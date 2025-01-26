@@ -8,7 +8,7 @@
 
 /.idea/*
 !/.idea/runConfigurations
-
+/.vscode/*
 # testing
 /coverage
 
