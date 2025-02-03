@@ -29,6 +29,10 @@ COPY . .
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
+ARG DATABASE_URI
+ENV DATABASE_URI ${DATABASE_URI}
+ARG PAYLOAD_SECRET
+ENV PAYLOAD_SECRET ${PAYLOAD_SECRET}
 
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
@@ -55,6 +59,11 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
+# Change ownership to the nextjs user
+RUN chown -R nextjs:nodejs /app
+# Set permissions (adjust as needed)
+RUN chmod -R 755 /app
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -63,9 +72,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
-
+RUN chown nextjs:nodejs /app/node_modules
 ENV PORT 3000
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+CMD HOSTNAME="0.0.0.0" NODE_OPTIONS='--enable-source-maps=true' node --max-old-space-size=4096 server.js
