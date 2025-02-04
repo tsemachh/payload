@@ -12,14 +12,20 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Set up Google Cloud credentials
+      # Step 1: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+
+      # Step 2: Set up Google Cloud credentials
       - name: Set up Google Cloud credentials
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 2: Set tag parameter based on the event type
+      # Step 3: Set tag parameter based on the event type
       - name: Set tag parameter
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -30,7 +36,7 @@ jobs:
             echo "TAG=release" >> $GITHUB_ENV
           fi
 
-      # Step 3: Permit runner to access MongoDB Atlas
+      # Step 4: Permit runner to access MongoDB Atlas
       - name: Permit runner to access MongoDB Atlas
         uses: textbook/atlas-ip@v1
         with:
@@ -38,17 +44,17 @@ jobs:
           atlas-public-key: ${{ secrets.ATLAS_PUBLIC_KEY }}
           group-id: ${{ vars.ATLAS_GROUP_ID }}
 
-      # Step 4: Checkout repository
+      # Step 5: Checkout repository
       - uses: actions/checkout@v3
 
-      # Step 5: Set up Docker Buildx
+      # Step 6: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           use: true
           version: latest
 
-      # Step 6: Cache Docker layers
+      # Step 7: Cache Docker layers
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
@@ -57,7 +63,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      # Step 7: Login to Google Cloud Registry (GCR)
+      # Step 8: Login to Google Cloud Registry (GCR)
       - name: Login to GCR (private registry)
         uses: docker/login-action@v2
         with:
@@ -65,7 +71,7 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 8: Build and push Docker image to GCR
+      # Step 9: Build and push Docker image to GCR
       - name: Build and push Docker image to GCR
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
@@ -82,13 +88,13 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache  # Cache for faster builds
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      # Step 9: Move cache after build
+      # Step 10: Move cache after build
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-      # Step 10: Run Docker container for Payload CMS and Test with curl
+      # Step 11: Run Docker container for Payload CMS and Test with curl
       - name: Run Docker container for Payload CMS and Test with curl
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
@@ -104,7 +110,7 @@ jobs:
           # Test if the application is responding on localhost:3000
           curl --silent --fail http://localhost:3000 || exit 1
 
-  # Step 11: Notify Slack on failure
+  # Step 12: Notify Slack on failure
   notify-slack:
     needs: [docker-build]
     if: failure()
@@ -113,5 +119,6 @@ jobs:
       - name: Send Slack Notification
         uses: rtCamp/action-slack-notify@v2
         with:
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          text: "Docker build or tests failed for branch ${{ github.ref }}. Please check the logs for details."
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          status: "Docker build or tests failed for branch ${{ github.ref }}. Please check the logs for details."
+    
