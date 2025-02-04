@@ -100,15 +100,27 @@ jobs:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
         run: |
-          docker run --rm \
-            -e DATABASE_URI=${{ secrets.DATABASE_URI }} \
-            -e PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }} \
+          # Start the container in the background
+          docker run --rm -d \
+            --name payload-container \
+            -e DATABASE_URI="${{ secrets.DATABASE_URI }}" \
+            -e PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}" \
             -p 3000:3000 \
-            me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }} &
-          # Sleep for 40 seconds to give the app time to start up
+            me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+
+          # Wait for the app to start
+          echo "Waiting for the application to start..."
           sleep 40
+
+          # Check logs for debugging
+          echo "Container logs:"
+          docker logs payload-container
+
           # Test if the application is responding on localhost:3000
           curl --silent --fail http://localhost:3000 || exit 1
+
+          # Stop the container after testing
+          docker stop payload-container
 
   # Step 12: Notify Slack on failure
   notify-slack:
@@ -121,4 +133,3 @@ jobs:
         with:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           status: "Docker build or tests failed for branch ${{ github.ref }}. Please check the logs for details."
-    
