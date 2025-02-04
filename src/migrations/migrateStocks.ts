@@ -3,38 +3,41 @@ import sql from 'mssql' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
-  server: 'LENOVOP15S', // Your database server
-  database: 'master', // Your database name
+  server: 'LENOVOP15S',
+  port: 1433, // Updated to the correct port from your results
+  database: 'master',
   options: {
-    encrypt: true, // For Azure
-    trustServerCertificate: true, // For self-signed certificates
+    trustServerCertificate: true,
+    encrypt: false, // Try this since you're connecting locally
   },
   authentication: {
-    type: 'ntlm',
+    type: 'ntlm', // Changed to ntlm for Windows Auth
     options: {
-      domain: '', // Leave empty if not using a domain
-      userName: '', // Leave empty if using integrated security
-      password: '', // Leave empty if using integrated security
+      domain: '', // Leave empty for local machine
+      userName: '', // Leave empty for Windows Auth
+      password: '', // Leave empty for Windows Auth
     },
   },
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
+  let pool: sql.ConnectionPool | null = null
+
   try {
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
     // Connect to SQL Server
-    await sql.connect(sqlConfig)
+    pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
 
     // Query the last 30 days of data
     console.log('Executing SQL query for last 30 days of stock data...')
-    const result = await sql.query`
+    const result = await pool.request().query(`
       SELECT stockID, name, symbol, type, closingRate, marketValue, registeredValue, valueDate, logUpdateID, longName
       FROM [dbEmda].[dbo].[stocks]
       WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE());
-    `
+    `)
     console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
 
     // Transform and insert data into Payload CMS
@@ -83,10 +86,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     throw error // Re-throw to ensure migration is marked as failed
   } finally {
     console.log('Closing SQL Server connection...')
-    await sql.pool.close() // Changed from sql.close() to sql.pool.close()
+    if (pool) {
+      await pool.close() // Close the connection pool
+    }
     console.log('SQL Server connection closed')
   }
 }
+
 // export async function down({ payload, req }: MigrateDownArgs): Promise<void> {
 //   // Implement the down migration if needed
 //   // This should ideally revert any changes made in the up function
