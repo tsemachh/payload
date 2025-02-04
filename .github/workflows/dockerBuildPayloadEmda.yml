@@ -19,11 +19,7 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 2: Checkout the repository
-      - name: Checkout the repository
-        uses: actions/checkout@v3
-
-      # Step 3: Set tag parameter based on the event type
+      # Step 2: Set tag parameter based on the event type
       - name: Set tag parameter
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -34,13 +30,16 @@ jobs:
             echo "TAG=release" >> $GITHUB_ENV
           fi
 
-      # Step 4: Permit runner to access MongoDB Atlas
+      # Step 3: Permit runner to access MongoDB Atlas
       - name: Permit runner to access MongoDB Atlas
         uses: textbook/atlas-ip@v1
         with:
           atlas-private-key: ${{ secrets.ATLAS_PRIVATE_KEY }}
           atlas-public-key: ${{ secrets.ATLAS_PUBLIC_KEY }}
           group-id: ${{ vars.ATLAS_GROUP_ID }}
+
+      # Step 4: Checkout repository
+      - uses: actions/checkout@v3
 
       # Step 5: Set up Docker Buildx
       - name: Set up Docker Buildx
