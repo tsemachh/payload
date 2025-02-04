@@ -34,12 +34,14 @@ ENV DATABASE_URI ${DATABASE_URI}
 ARG PAYLOAD_SECRET
 ENV PAYLOAD_SECRET ${PAYLOAD_SECRET}
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN corepack enable && \
+    corepack prepare pnpm@9.15.4 --activate && \
+    if [ -f yarn.lock ]; then yarn run build; \
+    elif [ -f package-lock.json ]; then npm run build; \
+    elif [ -f pnpm-lock.yaml ]; then pnpm run build; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
+
 
 # Production image, copy all the files and run next
 FROM base AS runner
