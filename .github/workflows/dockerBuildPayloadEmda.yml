@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       # Step 9: Build Docker image (no push)
-      - name: Build Docker image
+      - name: Build Docker image locally
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
@@ -80,7 +80,7 @@ jobs:
         with:
           context: ./  # Path to the repository
           push: false  # Do not push yet
-          tags: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}  # Target private GCR
+          tags: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}  # Local tag
           file: ./Dockerfile  # Path to Dockerfile
           build-args: |
             "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
@@ -100,7 +100,7 @@ jobs:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
         run: |
-          # Start the container in the background
+          # Start the container in the background with the locally built image
           docker run --rm -d \
             --name payload-container \
             -e DATABASE_URI="${{ secrets.DATABASE_URI }}" \
