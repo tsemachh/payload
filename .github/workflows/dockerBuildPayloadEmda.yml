@@ -104,6 +104,7 @@ jobs:
           # Start the container in the background with the locally built image
           docker run --rm -d \
             --name payload-container \
+            -e HOST="0.0.0.0" \
             -e DATABASE_URI="${{ secrets.DATABASE_URI }}" \
             -e PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}" \
             -p 3000:3000 \
