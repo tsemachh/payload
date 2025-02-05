@@ -80,6 +80,7 @@ jobs:
         with:
           context: ./  # Path to the repository
           push: false  # Do not push yet
+          load: true   # Load the built image into the Docker daemon
           tags: payload-image:local-test  # Local tag
           file: ./Dockerfile  # Path to Dockerfile
           build-args: |
@@ -127,7 +128,6 @@ jobs:
         run: |
           # Tag the local image with the GCR tag
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
