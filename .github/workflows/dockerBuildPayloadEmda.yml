@@ -119,7 +119,7 @@ jobs:
           docker logs payload-container
 
           # Test if the application is responding on localhost:3000 without additional curl flags
-          curl http://localhost:3000/ || exit 1
+          curl http://localhost:3000/admin || exit 1
 
           # Stop the container after testing
           docker stop payload-container
