@@ -58,7 +58,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           valueDate: row.valueDate,
           logUpdateID: row.logUpdateID,
           longName: row.longName,
-          status: 'active' as 'active' | 'suspended' | 'delisted',
         }
 
         // Insert into Payload CMS

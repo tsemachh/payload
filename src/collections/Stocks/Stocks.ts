@@ -29,7 +29,16 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'type',
-      type: 'text',
+      type: 'select',
+      options: [
+        { label: 'מניות', value: 'מניות' },
+        { label: 'כתבי אופציה', value: 'כתבי אופציה' },
+        { label: 'איגרות חוב', value: 'איגרות חוב' },
+        { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+        { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+        { label: 'תעודות מדד', value: 'תעודות מדד' },
+        { label: 'תעודות סל', value: 'תעודות סל' },
+      ],
     },
     {
       name: 'closingRate',
@@ -55,16 +64,6 @@ export const Stocks: CollectionConfig = {
     {
       name: 'longName',
       type: 'text',
-    },
-    {
-      name: 'status',
-      type: 'select',
-      options: [
-        { label: 'Active', value: 'active' },
-        { label: 'Suspended', value: 'suspended' },
-        { label: 'Delisted', value: 'delisted' },
-      ],
-      defaultValue: 'active',
     },
   ],
   hooks: {
