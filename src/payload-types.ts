@@ -104,14 +104,14 @@ export interface Stock {
   stockID?: number | null;
   name?: string | null;
   symbol?: string | null;
-  type?: string | null;
+  type?:
+    | ('מניות' | 'כתבי אופציה' | 'איגרות חוב' | 'איגרות חוב להמרה' | 'יחידת השתתפות' | 'תעודות מדד' | 'תעודות סל')
+    | null;
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
   valueDate: string;
-  logUpdateID?: number | null;
   longName?: string | null;
-  status?: ('active' | 'suspended' | 'delisted') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -222,9 +222,7 @@ export interface StocksSelect<T extends boolean = true> {
   marketValue?: T;
   registeredValue?: T;
   valueDate?: T;
-  logUpdateID?: T;
   longName?: T;
-  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }

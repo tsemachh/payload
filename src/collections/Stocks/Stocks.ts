@@ -14,7 +14,8 @@ export const Stocks: CollectionConfig = {
       name: 'stockID',
       type: 'number',
       unique: true, // Ensure stockID is unique
-      //required: true,
+      // required: true,
+      index : true
     },
     {
       name: 'name',
@@ -56,10 +57,6 @@ export const Stocks: CollectionConfig = {
       name: 'valueDate',
       type: 'date',
       required: true,
-    },
-    {
-      name: 'logUpdateID',
-      type: 'number',
     },
     {
       name: 'longName',
