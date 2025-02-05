@@ -71,7 +71,7 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 9: Build Docker image (no push)
+      # Step 9: Build Docker image locally with a temporary tag
       - name: Build Docker image locally
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
@@ -80,7 +80,7 @@ jobs:
         with:
           context: ./  # Path to the repository
           push: false  # Do not push yet
-          tags: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}  # Local tag
+          tags: payload-image:local-test  # Local tag
           file: ./Dockerfile  # Path to Dockerfile
           build-args: |
             "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
@@ -106,7 +106,7 @@ jobs:
             -e DATABASE_URI="${{ secrets.DATABASE_URI }}" \
             -e PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}" \
             -p 3000:3000 \
-            me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+            payload-image:local-test  # Use the local tag
 
           # Wait for the app to start
           echo "Waiting for the application to start..."
@@ -122,12 +122,13 @@ jobs:
           # Stop the container after testing
           docker stop payload-container
 
-      # Step 12: Push Docker image to GCR (only after test pass)
-      - name: Push Docker image to GCR
-        env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
-          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
+      # Step 12: Tag and Push Docker image to GCR (only after test pass)
+      - name: Tag and Push Docker image to GCR
         run: |
+          # Tag the local image with the GCR tag
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+
+          # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
   # Step 13: Notify Slack on failure
