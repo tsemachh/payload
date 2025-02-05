@@ -1,23 +1,18 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import sql from 'mssql' // Then you can use sql.close() directly
+import sql from 'mssql'
+import { Stock } from '@/payload-types' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
-  server: 'LENOVOP15S',
-  port: 1433, // Updated to the correct port from your results
-  database: 'master',
+  user: 'sa',
+  password: 'dockerStrongPwd123',
+  database: 'master', // Change this to your database name once created
+  server: 'localhost',
+  port: 1433,
   options: {
-    trustServerCertificate: true,
-    encrypt: false, // Try this since you're connecting locally
-  },
-  authentication: {
-    type: 'ntlm', // Changed to ntlm for Windows Auth
-    options: {
-      domain: '', // Leave empty for local machine
-      userName: '', // Leave empty for Windows Auth
-      password: '', // Leave empty for Windows Auth
-    },
-  },
+    encrypt: false, // For local dev, set to false
+    trustServerCertificate: true // For local dev
+  }
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
@@ -47,7 +42,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const row of result.recordset) {
       try {
-        const stockData = {
+        // @ts-ignore
+        const stockData:Stock = {
+          id:row.stockID,
           stockID: row.stockID,
           name: row.name,
           symbol: row.symbol,
@@ -56,9 +53,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           marketValue: row.marketValue,
           registeredValue: row.registeredValue,
           valueDate: row.valueDate,
-          logUpdateID: row.logUpdateID,
-          longName: row.longName,
-          status: 'active' as 'active' | 'suspended' | 'delisted',
+          longName: row.longName
         }
 
         // Insert into Payload CMS

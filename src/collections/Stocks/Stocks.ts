@@ -7,7 +7,7 @@ export const Stocks: CollectionConfig = {
   },
   versions: {
     drafts: false,
-    maxPerDoc: 365, // Store one year of historical data through versions
+    maxPerDoc: 365, // Store one year of historical data through versions //TDOO how much history we want tosave per stock
   },
   fields: [
     {
