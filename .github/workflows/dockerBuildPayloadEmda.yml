@@ -118,14 +118,15 @@ jobs:
           echo "Container logs:"
           docker logs payload-container
 
-          # Test if the application is responding on localhost:3000
-          curl --silent --fail http://localhost:3000/ || exit 1
+          # Test if the application is responding on localhost:3000 without additional curl flags
+          curl http://localhost:3000/ || exit 1
 
           # Stop the container after testing
           docker stop payload-container
 
-      # Step 12: Tag and Push Docker image to GCR (only after test pass)
+      # Step 12: Tag and Push Docker image to GCR (only after test pass and on push events)
       - name: Tag and Push Docker image to GCR
+        if: ${{ github.event_name == 'push' }}
         run: |
           # Tag the local image with the GCR tag
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
