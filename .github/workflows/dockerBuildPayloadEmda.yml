@@ -71,15 +71,15 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 9: Build and push Docker image to GCR
-      - name: Build and push Docker image to GCR
+      # Step 9: Build Docker image (no push)
+      - name: Build Docker image
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
         uses: docker/build-push-action@v3
         with:
           context: ./  # Path to the repository
-          push: true
+          push: false  # Do not push yet
           tags: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}  # Target private GCR
           file: ./Dockerfile  # Path to Dockerfile
           build-args: |
@@ -122,7 +122,15 @@ jobs:
           # Stop the container after testing
           docker stop payload-container
 
-  # Step 12: Notify Slack on failure
+      # Step 12: Push Docker image to GCR (only after test pass)
+      - name: Push Docker image to GCR
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
+        run: |
+          docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+
+  # Step 13: Notify Slack on failure
   notify-slack:
     needs: [docker-build]
     if: failure()
