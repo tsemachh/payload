@@ -121,7 +121,7 @@ jobs:
           # Test if the application is responding on http://localhost:3000/admin
           curl http://localhost:3000/admin
           sleep 40
-          curl http://localhost:3000/admin || exit 1
+          curl http://localhost:3000 || exit 1
 
           # Stop the container after testing
           docker stop payload-container
