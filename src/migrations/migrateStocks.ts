@@ -19,6 +19,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
+    await payload.delete({
+      collection: 'stocks',
+      where: {},
+    });
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -44,8 +48,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       try {
         // @ts-ignore
         const stockData:Stock = {
-          id:row.stockID,
-          stockID: row.stockID,
+          stockID:row.stockID,
           name: row.name,
           symbol: row.symbol,
           type: row.type,
@@ -55,13 +58,37 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           valueDate: row.valueDate,
           longName: row.longName
         }
-
-        // Insert into Payload CMS
-        await payload.create({
-          collection: 'stocks',
-          data: stockData,
-          req,
-        })
+        //console.log("Data",JSON.stringify(stockData, null, 2))
+        let id=null;
+        try{
+          const stock=await payload.find({
+            collection: 'stocks',
+            limit: 1,
+            depth: 0,
+            where: {
+              stockID: { equals: stockData.stockID},
+            },
+          })
+         // console.log("Stock",JSON.stringify(stock))
+          if (stock.docs.length >0 )
+            id=stock.docs[0].id;
+        }catch(error){
+        }
+        if (id){
+          // Insert into Payload CMS
+          await payload.update({
+            collection: 'stocks',
+            id: id,
+            data: stockData,
+            req,
+          })
+        }else{
+          // Insert into Payload CMS
+          await payload.create({
+            collection: 'stocks',
+            data: stockData,
+          })
+        }
 
         successCount++
         console.log(`✓ Inserted stock: ${row.symbol} (${successCount}/${result.recordset.length})`)

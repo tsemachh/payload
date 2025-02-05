@@ -14,7 +14,7 @@ export const Stocks: CollectionConfig = {
       name: 'stockID',
       type: 'number',
       unique: true, // Ensure stockID is unique
-      // required: true,
+      required: true,
       index : true
     },
     {
