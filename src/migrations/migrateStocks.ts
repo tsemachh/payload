@@ -4,15 +4,20 @@ import { Stock } from '@/payload-types' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'master', // Change this to your database name once created
-  server: 'localhost',
-  port: 1433,
+  server: 'localhost', // or your server name
+  database: 'emdaDb',
   options: {
-    encrypt: false, // For local dev, set to false
-    trustServerCertificate: true // For local dev
-  }
+    trustServerCertificate: true, // needed for local dev
+    enableArithAbort: true,
+    encrypt: false, // for local dev
+    // instanceName: 'SQLSERVER', // if you're using SQL Express
+    trustedConnection: true, // This enables Windows Authentication
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
@@ -43,8 +48,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of result.recordset) {
       try {
         // @ts-ignore
-        const stockData:Stock = {
-          id:row.stockID,
+        const stockData: Stock = {
+          id: row.stockID,
           stockID: row.stockID,
           name: row.name,
           symbol: row.symbol,
@@ -53,7 +58,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           marketValue: row.marketValue,
           registeredValue: row.registeredValue,
           valueDate: row.valueDate,
-          longName: row.longName
+          longName: row.longName,
         }
 
         // Insert into Payload CMS
