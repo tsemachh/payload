@@ -14,7 +14,8 @@ export const Stocks: CollectionConfig = {
       name: 'stockID',
       type: 'number',
       unique: true, // Ensure stockID is unique
-      //required: true,
+      // required: true,
+      index : true
     },
     {
       name: 'name',
@@ -29,8 +30,17 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'type',
-      type: 'text',
-    },
+      type: 'select',//TODO Add the seleccted options
+      options:[
+        { "label": "מניות", "value": "מניות" },
+    { "label": "כתבי אופציה", "value": "כתבי אופציה" },
+    { "label": "איגרות חוב", "value": "איגרות חוב" },
+    { "label": "איגרות חוב להמרה", "value": "איגרות חוב להמרה" },
+    { "label": "יחידת השתתפות", "value": "יחידת השתתפות" },
+    { "label": "תעודות מדד", "value": "תעודות מדד" },
+    { "label": "תעודות סל", "value": "תעודות סל" }
+  ]
+  },
     {
       name: 'closingRate',
       type: 'number',
@@ -49,22 +59,8 @@ export const Stocks: CollectionConfig = {
       required: true,
     },
     {
-      name: 'logUpdateID',
-      type: 'number',
-    },
-    {
       name: 'longName',
       type: 'text',
-    },
-    {
-      name: 'status',
-      type: 'select',
-      options: [
-        { label: 'Active', value: 'active' },
-        { label: 'Suspended', value: 'suspended' },
-        { label: 'Delisted', value: 'delisted' },
-      ],
-      defaultValue: 'active',
     },
   ],
   hooks: {
