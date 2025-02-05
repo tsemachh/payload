@@ -30,17 +30,17 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'type',
-      type: 'select',//TODO Add the seleccted options
-      options:[
-        { "label": "מניות", "value": "מניות" },
-    { "label": "כתבי אופציה", "value": "כתבי אופציה" },
-    { "label": "איגרות חוב", "value": "איגרות חוב" },
-    { "label": "איגרות חוב להמרה", "value": "איגרות חוב להמרה" },
-    { "label": "יחידת השתתפות", "value": "יחידת השתתפות" },
-    { "label": "תעודות מדד", "value": "תעודות מדד" },
-    { "label": "תעודות סל", "value": "תעודות סל" }
-  ]
-  },
+      type: 'select',
+      options: [
+        { label: 'מניות', value: 'מניות' },
+        { label: 'כתבי אופציה', value: 'כתבי אופציה' },
+        { label: 'איגרות חוב', value: 'איגרות חוב' },
+        { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+        { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+        { label: 'תעודות מדד', value: 'תעודות מדד' },
+        { label: 'תעודות סל', value: 'תעודות סל' },
+      ],
+    },
     {
       name: 'closingRate',
       type: 'number',
