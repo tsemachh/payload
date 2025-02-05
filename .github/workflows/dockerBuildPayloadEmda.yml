@@ -112,13 +112,15 @@ jobs:
 
           # Wait for the app to start
           echo "Waiting for the application to start..."
-          sleep 40
+          sleep 10
 
           # Check logs for debugging
           echo "Container logs:"
           docker logs payload-container
 
-          # Test if the application is responding on localhost:3000 without additional curl flags
+          # Test if the application is responding on http://localhost:3000/admin
+          curl http://localhost:3000/admin
+          sleep 40
           curl http://localhost:3000/admin || exit 1
 
           # Stop the container after testing
@@ -133,14 +135,13 @@ jobs:
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
-  # Step 13: Notify Slack on failure
   notify-slack:
-    needs: [docker-build]
+    needs: docker-build
     if: failure()
     runs-on: ubuntu-latest
     steps:
-      - name: Send Slack Notification
+      - uses: actions/checkout@v3
+      - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
-        with:
+        env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          status: "Docker build or tests failed for branch ${{ github.ref }}. Please check the logs for details."
