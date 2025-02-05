@@ -35,7 +35,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const result = await pool.request().query(`
       SELECT stockID, name, symbol, type, closingRate, marketValue, registeredValue, valueDate, logUpdateID, longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE());
+      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
+      ORDER BY valueDate ASC;
     `)
     console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
 
@@ -75,7 +76,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }catch(error){
         }
         if (id){
-          // Insert into Payload CMS
+          // Update Payload CMS
           await payload.update({
             collection: 'stocks',
             id: id,
