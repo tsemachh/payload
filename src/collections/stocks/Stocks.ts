@@ -3,70 +3,118 @@ import type { CollectionConfig } from 'payload'
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   admin: {
-    useAsTitle: 'symbol', // Use the stock symbol as the title in the admin panel
+    useAsTitle: 'stockID', //
+    defaultColumns: ['stockID', 'symbol', 'name', 'type', 'valueDate'],
   },
   versions: {
     drafts: false,
-    maxPerDoc: 365, // Store one year of historical data through versions //TDOO how much history we want tosave per stock
+    maxPerDoc: 365,
   },
   fields: [
     {
-      name: 'stockID',
-      type: 'number',
-      unique: true, // Ensure stockID is unique
-      required: true,
-      index : true
-    },
-    {
-      name: 'name',
-      type: 'text',
-      //required: true,
-    },
-    {
-      name: 'symbol',
-      type: 'text',
-      //required: true,
-      index: true, //index for faster queries
-    },
-    {
-      name: 'type',
-      type: 'select',
-      options: [
-        { label: 'מניות', value: 'מניות' },
-        { label: 'כתבי אופציה', value: 'כתבי אופציה' },
-        { label: 'איגרות חוב', value: 'איגרות חוב' },
-        { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
-        { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-        { label: 'תעודות מדד', value: 'תעודות מדד' },
-        { label: 'תעודות סל', value: 'תעודות סל' },
+      type: 'row',
+      fields: [
+        {
+          name: 'stockID',
+          type: 'number',
+          unique: true,
+          required: true,
+          index: true,
+          admin: {
+            width: '33%',
+            condition: (data) => !data?.id,
+            description: 'Stock ID can only be set during creation',
+            
+          },
+        },
+        {
+          name: 'symbol',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'name',
+          type: 'text',
+          admin: {
+            width: '33%',
+          },
+        },
       ],
     },
     {
-      name: 'closingRate',
-      type: 'number',
+      type: 'row',
+      fields: [
+        {
+          name: 'type',
+          type: 'select',
+          admin: {
+            width: '50%',
+          },
+          options: [
+            { label: 'מניות', value: 'מניות' },
+            { label: 'כתבי אופציה', value: 'כתבי אופציה' },
+            { label: 'איגרות חוב', value: 'איגרות חוב' },
+            { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודות מדד', value: 'תעודות מדד' },
+            { label: 'תעודות סל', value: 'תעודות סל' },
+          ],
+        },
+        {
+          name: 'longName',
+          type: 'text',
+          admin: {
+            width: '50%',
+          },
+        },
+      ],
     },
     {
-      name: 'marketValue',
-      type: 'number',
+      type: 'row',
+      fields: [
+        {
+          name: 'closingRate',
+          type: 'number',
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'marketValue',
+          type: 'number',
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'registeredValue',
+          type: 'number',
+          admin: {
+            width: '33%',
+          },
+        },
+      ],
     },
     {
-      name: 'registeredValue',
-      type: 'number',
-    },
-    {
-      name: 'valueDate',
-      type: 'date',
-      required: true,
-    },
-    {
-      name: 'longName',
-      type: 'text',
+      type: 'row',
+      fields: [
+        {
+          name: 'valueDate',
+          type: 'date',
+          required: true,
+          admin: {
+            width: '50%',
+          },
+        },
+      ],
     },
   ],
   hooks: {
     beforeChange: [
       async ({ data }) => {
-        // Ensure valueDate is set to the current date if not provided
         if (!data.valueDate) {
           return {
             ...data,
