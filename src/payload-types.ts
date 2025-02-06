@@ -101,6 +101,9 @@ export interface Media {
  */
 export interface Stock {
   id: string;
+  /**
+   * Stock ID can only be set during creation
+   */
   stockID?: number | null;
   name?: string | null;
   symbol?: string | null;

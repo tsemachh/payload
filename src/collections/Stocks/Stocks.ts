@@ -3,34 +3,52 @@ import type { CollectionConfig } from 'payload'
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   admin: {
-    useAsTitle: 'symbol', // Use the stock symbol as the title in the admin panel
+    useAsTitle: 'symbol',
+    // Remove invalid list view configuration
+    defaultColumns: ['stockID', 'symbol', 'name', 'type', 'valueDate'],
+    // Group is not supported in this way - we'll use field-level layout instead
   },
   versions: {
     drafts: false,
-    maxPerDoc: 365, // Store one year of historical data through versions //TDOO how much history we want tosave per stock
+    maxPerDoc: 365,
   },
   fields: [
     {
       name: 'stockID',
       type: 'number',
-      unique: true, // Ensure stockID is unique
+      unique: true,
       required: true,
-      index : true
+      index: true,
+      admin: {
+        description: 'Stock ID can only be set during creation',
+        position: 'sidebar',
+        condition: (data) => {
+          // Only allow editing if document is new (no id exists)
+          return !data?.id
+        },
+      },
     },
     {
       name: 'name',
       type: 'text',
-      //required: true,
+      admin: {
+        width: '50%',
+      },
     },
     {
       name: 'symbol',
       type: 'text',
-      //required: true,
-      index: true, //index for faster queries
+      index: true,
+      admin: {
+        width: '50%',
+      },
     },
     {
       name: 'type',
       type: 'select',
+      admin: {
+        width: '50%',
+      },
       options: [
         { label: 'מניות', value: 'מניות' },
         { label: 'כתבי אופציה', value: 'כתבי אופציה' },
@@ -44,29 +62,43 @@ export const Stocks: CollectionConfig = {
     {
       name: 'closingRate',
       type: 'number',
+      admin: {
+        width: '33%',
+      },
     },
     {
       name: 'marketValue',
       type: 'number',
+      admin: {
+        width: '33%',
+      },
     },
     {
       name: 'registeredValue',
       type: 'number',
+      admin: {
+        width: '33%',
+      },
     },
     {
       name: 'valueDate',
       type: 'date',
       required: true,
+      admin: {
+        width: '50%',
+      },
     },
     {
       name: 'longName',
       type: 'text',
+      admin: {
+        width: '50%',
+      },
     },
   ],
   hooks: {
     beforeChange: [
       async ({ data }) => {
-        // Ensure valueDate is set to the current date if not provided
         if (!data.valueDate) {
           return {
             ...data,

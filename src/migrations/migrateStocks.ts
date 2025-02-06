@@ -5,8 +5,8 @@ import { Stock } from '@/payload-types' // Then you can use sql.close() directly
 // SQL Server configuration
 const sqlConfig: sql.config = {
   user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'master', // Change this to your database name once created
+  password: '1234',
+  database: 'dbEmda', // Change this to your database name once created
   server: 'localhost',
   port: 1433,
   options: {
