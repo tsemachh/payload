@@ -50,12 +50,22 @@ export const Stocks: CollectionConfig = {
           },
           options: [
             { label: 'מניות', value: 'מניות' },
+            { label: 'אופציות', value: 'אופציות' },
             { label: 'כתבי אופציה', value: 'כתבי אופציה' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
             { label: 'תעודות מדד', value: 'תעודות מדד' },
             { label: 'תעודות סל', value: 'תעודות סל' },
+            { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
+            { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
+            { label: 'אחר', value: 'אחר' },
+            { label: 'זכויות', value: 'זכויות' },
+            { label: 'מק"מ', value: 'מק"מ' },
+            { label: 'שטרי הון', value: 'שטרי הון' },
+
+
+
           ],
         },
         {

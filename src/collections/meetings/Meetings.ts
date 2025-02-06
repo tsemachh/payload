@@ -35,7 +35,6 @@ export const Meetings: CollectionConfig = {
       name: 'meetingDate',
       label: 'מועד האסיפה',
       type: 'date',
-      required: true,
       admin: {
         description: 'Actual meeting date and time'
       },
@@ -61,7 +60,6 @@ export const Meetings: CollectionConfig = {
       label: 'מניה',
       type: 'relationship',
       relationTo: 'stocks',
-      required: true,
     },
     {
       name: 'votingDocUrl',
@@ -83,14 +81,12 @@ export const Meetings: CollectionConfig = {
       name: 'location',
       label: 'מיקום',
       type: 'text',
-      required: true,
     },
     {
       name: 'meetingType',
       label: 'סוג',
       type: 'relationship',
       relationTo: 'meeting-types',
-      required: true,
     },
     {
       name: 'comments',

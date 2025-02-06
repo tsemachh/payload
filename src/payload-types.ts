@@ -110,7 +110,22 @@ export interface Stock {
    */
   stockID?: number | null;
   type?:
-    | ('מניות' | 'כתבי אופציה' | 'איגרות חוב' | 'איגרות חוב להמרה' | 'יחידת השתתפות' | 'תעודות מדד' | 'תעודות סל')
+    | (
+        | 'מניות'
+        | 'אופציות'
+        | 'כתבי אופציה'
+        | 'איגרות חוב'
+        | 'איגרות חוב להמרה'
+        | 'יחידת השתתפות'
+        | 'תעודות מדד'
+        | 'תעודות סל'
+        | 'קרנות נאמנות'
+        | 'נייר ערך מסחרי'
+        | 'אחר'
+        | 'זכויות'
+        | 'מק"מ'
+        | 'שטרי הון'
+      )
     | null;
   valueDate: string;
   symbol?: string | null;
@@ -136,7 +151,7 @@ export interface Meeting {
   /**
    * Actual meeting date and time
    */
-  meetingDate: string;
+  meetingDate?: string | null;
   /**
    * The date which tells when we check the holders which are obilgated to attend the meeting
    */
@@ -145,7 +160,7 @@ export interface Meeting {
    * Max Date when proxy voting should be submitted
    */
   proxyStatementDate?: string | null;
-  stock: string | Stock;
+  stock?: (string | null) | Stock;
   /**
    * קישור לכתב הצבעה
    */
@@ -154,8 +169,8 @@ export interface Meeting {
    * קישור לזימון אסיפה
    */
   meetingInviteUrl?: string | null;
-  location: string;
-  meetingType: number | MeetingType;
+  location?: string | null;
+  meetingType?: (number | null) | MeetingType;
   comments?: string | null;
   /**
    * אימות תוצאות האסיפה
@@ -184,7 +199,7 @@ export interface Meeting {
 export interface MeetingType {
   id: number;
   name: string;
-  group?: ('1' | '2' | '3' | '4' | '6' | '5') | null;
+  group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
   updatedAt: string;
   createdAt: string;
 }
