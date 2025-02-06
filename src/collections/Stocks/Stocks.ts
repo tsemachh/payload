@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   admin: {
-    useAsTitle: 'stockID', //
+    useAsTitle: 'stockID',
     defaultColumns: ['stockID', 'symbol', 'name', 'type', 'valueDate'],
   },
   versions: {
@@ -24,7 +24,6 @@ export const Stocks: CollectionConfig = {
             width: '33%',
             condition: (data) => !data?.id,
             description: 'Stock ID can only be set during creation',
-            
           },
         },
         {
@@ -87,8 +86,26 @@ export const Stocks: CollectionConfig = {
           type: 'number',
           admin: {
             width: '33%',
+            readOnly: true,
+          },
+          hooks: {
+            beforeChange: [
+              ({ siblingData }) => {
+                // ensures marketValue is not stored in DB
+                delete siblingData['marketValue']
+              },
+            ],
+            afterRead: [
+              ({ data }) => {
+                if (data?.closingRate && data?.registeredValue) {
+                  return (data?.closingRate * data?.registeredValue) / 100
+                }
+                return data?.marketValue
+              },
+            ],
           },
         },
+
         {
           name: 'registeredValue',
           type: 'number',
