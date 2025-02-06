@@ -42,12 +42,28 @@ export const MeetingTypes: CollectionConfig = {
           label: 'אסיפות כתבי אופציה',
         },
         {
+          value: '5',
+          label: 'אסיפות תעודת סל',
+        },
+        {
           value: '6',
           label: 'יחידת השתתפות',
         },
         {
-          value: '5',
-          label: 'אסיפות תעודת סל',
+          value: '19',
+          label: 'בוטלה',
+        },
+        {
+          value: '20',
+          label: 'נדחתה ללא מועד',
+        },
+        {
+          value: '30',
+          label: 'אג"ח כהונת נאמן',
+        },
+        {
+          value: '-1',
+          label: '---',
         },
       ],
     },
