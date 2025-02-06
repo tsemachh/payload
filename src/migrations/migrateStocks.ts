@@ -5,7 +5,7 @@ import { Stock } from '@/payload-types' // Then you can use sql.close() directly
 // SQL Server configuration
 const sqlConfig: sql.config = {
   server: 'localhost', // or your server name
-  database: 'emdaDb',
+  database: 'dbEmda',
   options: {
     trustServerCertificate: true, // needed for local dev
     enableArithAbort: true,
