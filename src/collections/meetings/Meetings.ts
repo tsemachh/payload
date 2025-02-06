@@ -2,6 +2,10 @@ import type { CollectionConfig } from 'payload'
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
+  labels: {
+    plural: 'אסיפות',
+    singular: 'אסיפה',
+  },
   admin: {
     useAsTitle: 'meetingId',
     defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
@@ -12,103 +16,119 @@ export const Meetings: CollectionConfig = {
   fields: [
     {
       name: 'meetingId',
+      label: 'מספר אסיפה',
       type: 'number',
-      unique: true, // Ensure meetingId is unique
+      unique: true,
       required: true,
-      index : true
+      index: true
     },
     {
-      name: 'proofId', //proofId
+      name: 'proofId',
+      label: 'אסמכתא',
       type: 'text',
       maxLength: 20,
       admin: {
-        description: 'Reference ID for official meeting documentation',
+        description: 'Reference ID for official meeting documentation'
       },
     },
     {
-      name: 'meetingDate', //mdate
+      name: 'meetingDate',
+      label: 'מועד האסיפה',
       type: 'date',
       required: true,
       admin: {
-        description: 'Actual meeting date and time',
+        description: 'Actual meeting date and time'
       },
     },
     {
-      name: 'startDate', //sdate
+      name: 'holdingsLimit',
+      label: 'תאריך קובע',
       type: 'date',
       admin: {
-        description: 'Start date for meeting-related activities',
+        description: 'The date which tells when we check the holders which are obilgated to attend the meeting'
       },
     },
     {
-      name: 'proxyMaterialsDate', //proxyStatementDate
+      name: 'proxyStatementDate',
+      label: 'מועד מסירת ההצבעה',
       type: 'date',
       admin: {
-        description: 'Date when proxy voting materials were issued',
+        description: 'Max Date when proxy voting should be submitted'
       },
     },
     {
-      name: 'stock', //-stockID
+      name: 'stock',
+      label: 'מניה',
       type: 'relationship',
       relationTo: 'stocks',
       required: true,
     },
     {
-      name: 'primaryDocumentUrl', //-memourl
+      name: 'votingDocUrl',
+      label: 'כתב הצבעה',
       type: 'text',
       admin: {
-        description: 'URL to primary meeting documentation',
+        description: 'קישור לכתב הצבעה'
       },
     },
     {
-      name: 'supplementaryDocumentUrl', //-link2
+      name: 'meetingInviteUrl',
+      label: 'זימון אסיפה',
       type: 'text',
       admin: {
-        description: 'URL to supplementary meeting documentation',
+        description: 'קישור לזימון אסיפה'
       },
     },
     {
-      name: 'location', //location
+      name: 'location',
+      label: 'מיקום',
       type: 'text',
       required: true,
     },
     {
-      name: 'meetingType', //-mtype
+      name: 'meetingType',
+      label: 'סוג',
       type: 'relationship',
       relationTo: 'meeting-types',
       required: true,
     },
     {
-      name: 'comments', //comments
+      name: 'comments',
+      label: 'הערות',
       type: 'textarea',
     },
-   /* {
-      name: 'recommendation',
-      type: 'upload',
-      relationTo: 'media',
-      filterOptions: {
-        type: { equals: "recommendation" }
-      }
-    },*/
     {
-      name: 'resultsConfirmationStatus', //-ResultConfirm ??
+      name: 'resultsConfirmationStatus',
+      label: 'אימות תוצאות האסיפה',
       type: 'checkbox',
-    },
-    {
-      name: 'electronicVotingEnabled', //-ElectronicVoting
-      type: 'checkbox'
-    },
-    {
-      name: 'relatedMeetingId', //mIdConnection
-      type: 'relationship',
-      relationTo :"meetings",
       admin: {
-        description: 'ID of related meeting (for continued or postponed sessions)',
+        description: 'אימות תוצאות האסיפה'
       },
     },
     {
-      name: 'committeeInitiated', //CommiteeRequest
-      type: 'checkbox'
+      name: 'electronicVotingEnabled',
+      label: 'האם האסיפה מופיעה במערכת האלקטרונית?',
+      type: 'checkbox',
+      admin: {
+        description: 'האסיפה מופיעה במערכת האלקטרונית?'
+      },
+    },
+    {
+      name: 'relatedMeetingId',
+      label: 'אסיפה קשורה',
+      type: 'relationship',
+      relationTo: "meetings",
+      admin: {
+        description: 'ID of related meeting (for continued or postponed sessions)'
+      },
+    },
+    {
+      name: 'committeeInitiated',
+      label: 'האם פיננסי דורש ועדה?',
+      type: 'checkbox',
+      admin: {
+        description: 'פיננסי דורש ועדה'
+      },
     },
   ]
 }

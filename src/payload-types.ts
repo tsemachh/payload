@@ -135,31 +135,40 @@ export interface Meeting {
    */
   meetingDate: string;
   /**
-   * Start date for meeting-related activities
+   * The date which tells when we check the holders which are obilgated to attend the meeting
    */
-  startDate?: string | null;
+  holdingsLimit?: string | null;
   /**
-   * Date when proxy voting materials were issued
+   * Max Date when proxy voting should be submitted
    */
-  proxyMaterialsDate?: string | null;
+  proxyStatementDate?: string | null;
   stock: string | Stock;
   /**
-   * URL to primary meeting documentation
+   * קישור לכתב הצבעה
    */
-  primaryDocumentUrl?: string | null;
+  votingDocUrl?: string | null;
   /**
-   * URL to supplementary meeting documentation
+   * קישור לזימון אסיפה
    */
-  supplementaryDocumentUrl?: string | null;
+  meetingInviteUrl?: string | null;
   location: string;
   meetingType: number | MeetingType;
   comments?: string | null;
+  /**
+   * אימות תוצאות האסיפה
+   */
   resultsConfirmationStatus?: boolean | null;
+  /**
+   * האסיפה מופיעה במערכת האלקטרונית?
+   */
   electronicVotingEnabled?: boolean | null;
   /**
    * ID of related meeting (for continued or postponed sessions)
    */
   relatedMeetingId?: (string | null) | Meeting;
+  /**
+   * פיננסי דורש ועדה
+   */
   committeeInitiated?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -303,11 +312,11 @@ export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   proofId?: T;
   meetingDate?: T;
-  startDate?: T;
-  proxyMaterialsDate?: T;
+  holdingsLimit?: T;
+  proxyStatementDate?: T;
   stock?: T;
-  primaryDocumentUrl?: T;
-  supplementaryDocumentUrl?: T;
+  votingDocUrl?: T;
+  meetingInviteUrl?: T;
   location?: T;
   meetingType?: T;
   comments?: T;

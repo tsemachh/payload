@@ -2,6 +2,10 @@ import type { CollectionConfig } from 'payload'
 
 export const MeetingTypes: CollectionConfig = {
   slug: 'meeting-types',
+  labels: {
+    plural: 'סוגי אסיפות',
+    singular: 'סוג אסיפה',
+  },
   admin: {
     useAsTitle: 'name',
   },
