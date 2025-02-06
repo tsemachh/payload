@@ -105,16 +105,16 @@ export interface Stock {
    * Stock ID can only be set during creation
    */
   stockID?: number | null;
-  name?: string | null;
   symbol?: string | null;
+  name?: string | null;
   type?:
     | ('מניות' | 'כתבי אופציה' | 'איגרות חוב' | 'איגרות חוב להמרה' | 'יחידת השתתפות' | 'תעודות מדד' | 'תעודות סל')
     | null;
+  longName?: string | null;
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
   valueDate: string;
-  longName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -218,14 +218,14 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockID?: T;
-  name?: T;
   symbol?: T;
+  name?: T;
   type?: T;
+  longName?: T;
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
   valueDate?: T;
-  longName?: T;
   updatedAt?: T;
   createdAt?: T;
 }
