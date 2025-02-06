@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   admin: {
-    useAsTitle: 'symbol',
+    useAsTitle: 'stockID', //
     defaultColumns: ['stockID', 'symbol', 'name', 'type', 'valueDate'],
   },
   versions: {
