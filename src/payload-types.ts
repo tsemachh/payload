@@ -14,6 +14,8 @@ export interface Config {
     users: User;
     media: Media;
     stocks: Stock;
+    meetings: Meeting;
+    'meeting-types': MeetingType;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -23,6 +25,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
+    meetings: MeetingsSelect<false> | MeetingsSelect<true>;
+    'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -101,7 +105,7 @@ export interface Media {
  */
 export interface Stock {
   id: string;
-  stockID?: number | null;
+  stockID: number;
   name?: string | null;
   symbol?: string | null;
   type?:
@@ -112,6 +116,63 @@ export interface Stock {
   registeredValue?: number | null;
   valueDate: string;
   longName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings".
+ */
+export interface Meeting {
+  id: string;
+  meetingId: number;
+  /**
+   * Reference ID for official meeting documentation
+   */
+  proofId?: string | null;
+  /**
+   * Actual meeting date and time
+   */
+  meetingDate: string;
+  /**
+   * Start date for meeting-related activities
+   */
+  startDate?: string | null;
+  /**
+   * Date when proxy voting materials were issued
+   */
+  proxyMaterialsDate?: string | null;
+  stock: string | Stock;
+  /**
+   * URL to primary meeting documentation
+   */
+  primaryDocumentUrl?: string | null;
+  /**
+   * URL to supplementary meeting documentation
+   */
+  supplementaryDocumentUrl?: string | null;
+  location: string;
+  meetingType: number | MeetingType;
+  comments?: string | null;
+  resultsConfirmationStatus?: boolean | null;
+  electronicVotingEnabled?: boolean | null;
+  /**
+   * ID of related meeting (for continued or postponed sessions)
+   */
+  relatedMeetingId?: (string | null) | Meeting;
+  committeeInitiated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types".
+ */
+export interface MeetingType {
+  id: number;
+  name: string;
+  group?: ('1' | '2' | '3' | '4' | '6' | '5') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -133,6 +194,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stocks';
         value: string | Stock;
+      } | null)
+    | ({
+        relationTo: 'meetings';
+        value: string | Meeting;
+      } | null)
+    | ({
+        relationTo: 'meeting-types';
+        value: number | MeetingType;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -223,6 +292,41 @@ export interface StocksSelect<T extends boolean = true> {
   registeredValue?: T;
   valueDate?: T;
   longName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings_select".
+ */
+export interface MeetingsSelect<T extends boolean = true> {
+  meetingId?: T;
+  proofId?: T;
+  meetingDate?: T;
+  startDate?: T;
+  proxyMaterialsDate?: T;
+  stock?: T;
+  primaryDocumentUrl?: T;
+  supplementaryDocumentUrl?: T;
+  location?: T;
+  meetingType?: T;
+  comments?: T;
+  resultsConfirmationStatus?: T;
+  electronicVotingEnabled?: T;
+  relatedMeetingId?: T;
+  committeeInitiated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types_select".
+ */
+export interface MeetingTypesSelect<T extends boolean = true> {
+  id?: T;
+  name?: T;
+  group?: T;
   updatedAt?: T;
   createdAt?: T;
 }
