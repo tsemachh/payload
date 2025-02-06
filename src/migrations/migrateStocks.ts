@@ -4,26 +4,25 @@ import { Stock } from '@/payload-types' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
-  server: 'localhost', // or your server name
-  database: 'dbEmda',
+  user: 'sa',
+  password: 'dockerStrongPwd123',
+  database: 'master', // Change this to your database name once created
+  server: 'localhost',
+  port: 1433,
   options: {
-    trustServerCertificate: true, // needed for local dev
-    enableArithAbort: true,
-    encrypt: false, // for local dev
-    // instanceName: 'SQLSERVER', // if you're using SQL Express
-    trustedConnection: true, // This enables Windows Authentication
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
+    encrypt: false, // For local dev, set to false
+    trustServerCertificate: true // For local dev
+  }
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
+    await payload.delete({
+      collection: 'stocks',
+      where: {},
+    });
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -36,7 +35,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const result = await pool.request().query(`
       SELECT stockID, name, symbol, type, closingRate, marketValue, registeredValue, valueDate, logUpdateID, longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE());
+      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
+      ORDER BY valueDate ASC;
     `)
     console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
 
@@ -48,9 +48,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of result.recordset) {
       try {
         // @ts-ignore
-        const stockData: Stock = {
-          id: row.stockID,
-          stockID: row.stockID,
+        const stockData:Stock = {
+          stockID:row.stockID,
           name: row.name,
           symbol: row.symbol,
           type: row.type,
@@ -58,15 +57,39 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           marketValue: row.marketValue,
           registeredValue: row.registeredValue,
           valueDate: row.valueDate,
-          longName: row.longName,
+          longName: row.longName
         }
-
-        // Insert into Payload CMS
-        await payload.create({
-          collection: 'stocks',
-          data: stockData,
-          req,
-        })
+        //console.log("Data",JSON.stringify(stockData, null, 2))
+        let id=null;
+        try{
+          const stock=await payload.find({
+            collection: 'stocks',
+            limit: 1,
+            depth: 0,
+            where: {
+              stockID: { equals: stockData.stockID},
+            },
+          })
+         // console.log("Stock",JSON.stringify(stock))
+          if (stock.docs.length >0 )
+            id=stock.docs[0].id;
+        }catch(error){
+        }
+        if (id){
+          // Update Payload CMS
+          await payload.update({
+            collection: 'stocks',
+            id: id,
+            data: stockData,
+            req,
+          })
+        }else{
+          // Insert into Payload CMS
+          await payload.create({
+            collection: 'stocks',
+            data: stockData,
+          })
+        }
 
         successCount++
         console.log(`✓ Inserted stock: ${row.symbol} (${successCount}/${result.recordset.length})`)
