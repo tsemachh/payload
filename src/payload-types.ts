@@ -14,6 +14,8 @@ export interface Config {
     users: User;
     media: Media;
     stocks: Stock;
+    meetings: Meeting;
+    'meeting-types': MeetingType;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -23,6 +25,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
+    meetings: MeetingsSelect<false> | MeetingsSelect<true>;
+    'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -120,6 +124,72 @@ export interface Stock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings".
+ */
+export interface Meeting {
+  id: string;
+  meetingId: number;
+  /**
+   * Reference ID for official meeting documentation
+   */
+  proofId?: string | null;
+  /**
+   * Actual meeting date and time
+   */
+  meetingDate: string;
+  /**
+   * The date which tells when we check the holders which are obilgated to attend the meeting
+   */
+  holdingsLimit?: string | null;
+  /**
+   * Max Date when proxy voting should be submitted
+   */
+  proxyStatementDate?: string | null;
+  stock: string | Stock;
+  /**
+   * קישור לכתב הצבעה
+   */
+  votingDocUrl?: string | null;
+  /**
+   * קישור לזימון אסיפה
+   */
+  meetingInviteUrl?: string | null;
+  location: string;
+  meetingType: number | MeetingType;
+  comments?: string | null;
+  /**
+   * אימות תוצאות האסיפה
+   */
+  resultsConfirmationStatus?: boolean | null;
+  /**
+   * האסיפה מופיעה במערכת האלקטרונית?
+   */
+  electronicVotingEnabled?: boolean | null;
+  /**
+   * ID of related meeting (for continued or postponed sessions)
+   */
+  relatedMeetingId?: (string | null) | Meeting;
+  /**
+   * פיננסי דורש ועדה
+   */
+  committeeInitiated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types".
+ */
+export interface MeetingType {
+  id: number;
+  name: string;
+  group?: ('1' | '2' | '3' | '4' | '6' | '5') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -136,6 +206,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stocks';
         value: string | Stock;
+      } | null)
+    | ({
+        relationTo: 'meetings';
+        value: string | Meeting;
+      } | null)
+    | ({
+        relationTo: 'meeting-types';
+        value: number | MeetingType;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -226,6 +304,41 @@ export interface StocksSelect<T extends boolean = true> {
   marketValue?: T;
   registeredValue?: T;
   valueDate?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings_select".
+ */
+export interface MeetingsSelect<T extends boolean = true> {
+  meetingId?: T;
+  proofId?: T;
+  meetingDate?: T;
+  holdingsLimit?: T;
+  proxyStatementDate?: T;
+  stock?: T;
+  votingDocUrl?: T;
+  meetingInviteUrl?: T;
+  location?: T;
+  meetingType?: T;
+  comments?: T;
+  resultsConfirmationStatus?: T;
+  electronicVotingEnabled?: T;
+  relatedMeetingId?: T;
+  committeeInitiated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types_select".
+ */
+export interface MeetingTypesSelect<T extends boolean = true> {
+  id?: T;
+  name?: T;
+  group?: T;
   updatedAt?: T;
   createdAt?: T;
 }
