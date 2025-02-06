@@ -2,9 +2,23 @@ import type { CollectionConfig } from 'payload'
 
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
+  labels: {
+    plural: 'מניות',
+    singular: 'מניה',
+  },
   admin: {
     useAsTitle: 'stockID',
-    defaultColumns: ['stockID', 'symbol', 'name', 'type', 'valueDate'],
+    defaultColumns: [
+      'stockID',
+      'type',
+      'valueDate',
+      'symbol',
+      'name',
+      'longName',
+      'closingRate',
+      'marketValue',
+      'registeredValue',
+    ],
   },
   versions: {
     drafts: false,
@@ -16,6 +30,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockID',
+          label: 'מזהה מניה', // Stock ID
           type: 'number',
           unique: true,
           required: true,
@@ -23,34 +38,15 @@ export const Stocks: CollectionConfig = {
           admin: {
             width: '33%',
             condition: (data) => !data?.id,
-            description: 'Stock ID can only be set during creation',
+            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה', // Stock ID can only be set during creation
           },
         },
-        {
-          name: 'symbol',
-          type: 'text',
-          index: true,
-          admin: {
-            width: '33%',
-          },
-        },
-        {
-          name: 'name',
-          type: 'text',
-          admin: {
-            width: '33%',
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
         {
           name: 'type',
+          label: 'סוג נייר ערך', // Type
           type: 'select',
           admin: {
-            width: '50%',
+            width: '33%',
           },
           options: [
             { label: 'מניות', value: 'מניות' },
@@ -63,10 +59,42 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
-          name: 'longName',
+          name: 'valueDate',
+          label: 'תאריך ערך', // Value Date
+          type: 'date',
+          required: true,
+          admin: {
+            width: '33%',
+          },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'symbol',
+          label: 'סימול', // Symbol
+          type: 'text',
+          index: true,
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'name',
+          label: 'שם', // Name
           type: 'text',
           admin: {
-            width: '50%',
+            width: '33%',
+          },
+        },
+        {
+          name: 'longName',
+          label: 'שם מלא', // Long Name
+          type: 'text',
+          admin: {
+            width: '33%',
           },
         },
       ],
@@ -76,6 +104,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'closingRate',
+          label: 'שער סגירה', // Closing Rate
           type: 'number',
           admin: {
             width: '33%',
@@ -83,47 +112,35 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'marketValue',
+          label: 'שווי שוק', // Market Value
           type: 'number',
           admin: {
             width: '33%',
-            readOnly: true,
+            readOnly: true, // Prevent user modification
           },
           hooks: {
             beforeChange: [
               ({ siblingData }) => {
-                // ensures marketValue is not stored in DB
+                // Prevent storing the computed field in the database
                 delete siblingData['marketValue']
               },
             ],
             afterRead: [
               ({ data }) => {
                 if (data?.closingRate && data?.registeredValue) {
-                  return (data?.closingRate * data?.registeredValue) / 100
+                  return (data.closingRate * data.registeredValue) / 100
                 }
-                return data?.marketValue
+                return null
               },
             ],
           },
         },
-
         {
           name: 'registeredValue',
+          label: 'הון רשום', // Registered Value
           type: 'number',
           admin: {
             width: '33%',
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'valueDate',
-          type: 'date',
-          required: true,
-          admin: {
-            width: '50%',
           },
         },
       ],
