@@ -318,11 +318,12 @@ export function DataTable({ data }: DataTableProps) {
     // Apply sorting
     if (sortConfig) {
       result.sort((a: Assembly, b: Assembly) => {
+        /*
         const key = sortConfig.key as keyof Assembly
         let aValue = a[key]
         let bValue = b[key]
 
-/*        // Special handling for date columns
+     // Special handling for date columns
         if (key === 'recordDate' || key === 'votingSubmissionDate' || key === 'assemblyDate') {
           aValue = new Date(aValue as string).getTime()
           bValue = new Date(bValue as string).getTime()
