@@ -153,7 +153,7 @@ export interface Meeting {
    */
   meetingDate?: string | null;
   /**
-   * The date which tells when we check the holders which are obilgated to attend the meeting
+   * The date which tells when we check the holders which are obligated to attend the meeting
    */
   holdingsLimit?: string | null;
   /**
