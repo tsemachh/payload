@@ -7,6 +7,10 @@ const nextConfig = {
   },
   productionBrowserSourceMaps: true,
  output: 'standalone',
+  webpack: (config) => {
+    config.cache = false;
+    return config;
+  },
 }
 
 
