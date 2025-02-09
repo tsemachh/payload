@@ -34,8 +34,8 @@ export default function SearchResults() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Search Results for "{query}"</h1>
-      <DataTable columns={columns} data={results} />
+      <h1 className="text-2xl font-bold">Search Results for &quot;{query}&quot;</h1>
+      <DataTable columns data={results} />
     </div>
   )
 }
