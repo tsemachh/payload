@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ArrowUpDown, Search, FileText, Check, X, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Assembly } from '@/app/types'
+import type { Meeting as Assembly } from '@/payload-types'
 import type React from 'react'
 
 interface Column {
@@ -70,10 +70,10 @@ const BooleanFilterButton = ({
 
 const columns: Column[] = [
   {
-    key: 'accountNumber',
+    key: 'meetingId',
     header: 'חשבון',
     searchable: true,
-    render: (row) => (row.accountNumber ? row.accountNumber.replace(/\D/g, '') : ''),
+  /*  render: (row) => (row.meetingId ? row.meetingId.replace(/\D/g, '') : ''),*/
   },
   {
     key: 'securityNumber',
@@ -91,7 +91,7 @@ const columns: Column[] = [
     sortable: true,
   },
   {
-    key: 'marketValue',
+    key: 'registredValue',
     header: (
       <>
         שווי שוק
@@ -100,78 +100,80 @@ const columns: Column[] = [
       </>
     ),
     sortable: true,
-    render: (row) => new Intl.NumberFormat('he-IL').format(row.marketValue),
+/*
+    render: (row) => new Intl.NumberFormat('he-IL').format(row.registredValue),
+*/
   },
   {
-    key: 'assemblyType',
+    key: 'meetingType',
     header: 'סוג אסיפה',
     filterable: true,
   },
   {
-    key: 'recordDate',
+    key: 'proxyStatementDate',
     header: 'מועד קובע',
     sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.recordDate}</div>,
+    render: (row) => <div className="min-w-[100px]">{row.proxyStatementDate}</div>,
   },
   { key: 'recordTime', header: 'שעה' },
-  {
+/*  {
     key: 'votingSubmissionDate',
     header: 'תאריך מסירת הצבעות',
     sortable: true,
     render: (row) => <div className="min-w-[100px]">{row.votingSubmissionDate}</div>,
-  },
+  },*/
   { key: 'votingSubmissionTime', header: 'שעה' },
   {
-    key: 'assemblyDate',
+    key: 'meetingDate',
     header: 'תאריך האסיפה',
     sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.assemblyDate}</div>,
+    render: (row) => <div className="min-w-[100px]">{row.meetingDate}</div>,
   },
   { key: 'assemblyTime', header: 'שעה' },
-  {
+/*  {
     key: 'holdingPercentage',
     header: 'אחזקה (%)',
     sortable: true,
     render: (row) => `${row.holdingPercentage.toFixed(2)}%`,
-  },
-  {
-    key: 'holdingValue',
-    header: (
-      <>
-        שווי אחזקה
-        <br />
-        (מיליוני ₪)
-      </>
-    ),
-    sortable: true,
-    render: (row) => new Intl.NumberFormat('he-IL').format(row.holdingValue),
-  },
+  },*/
+  // {
+  //   key: 'holdingValue',
+  //   header: (
+  //     <>
+  //       שווי אחזקה
+  //       <br />
+  //       (מיליוני ₪)
+  //     </>
+  //   ),
+  //   sortable: true,
+  //   render: (row) => new Intl.NumberFormat('he-IL').format(row.holdingValue),
+  // },
   {
     key: 'location',
     header: 'מיקום',
     render: (row) => (
-      <div className="max-w-[200px] truncate" title={row.location}>
+      <div className="max-w-[200px] truncate" title={row.location as string}>
         {row.location}
       </div>
     ),
   },
-  {
+/*  {
     key: 'opinion',
     header: 'חוות דעת',
     render: (row) =>
       row.opinion.exists && (
         <FileText className={cn('h-4 w-4', !row.opinion.viewed && 'font-bold text-primary')} />
       ),
-  },
-  {
+  },*/
+/*  {
     key: 'votingPaper',
     header: 'כתב הצבעה',
     render: (row) =>
       row.votingPaper.exists && (
         <FileText className={cn('h-4 w-4', !row.votingPaper.viewed && 'font-bold text-primary')} />
       ),
-  },
-  {
+  },*/
+/*  {
     key: 'assemblyInvitation',
     header: 'זימון אסיפה',
     render: (row) =>
@@ -180,8 +182,8 @@ const columns: Column[] = [
           className={cn('h-4 w-4', !row.assemblyInvitation.viewed && 'font-bold text-primary')}
         />
       ),
-  },
-  {
+  },*/
+  /*{
     key: 'votingReceived',
     header: 'התקבלה הצבעה בעמדה',
     booleanFilterable: true,
@@ -201,7 +203,7 @@ const columns: Column[] = [
     booleanFilterable: true,
     render: (row) =>
       row.requiresFinancialCommittee ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
-  },
+  },*/
 ]
 
 interface DataTableProps {
@@ -276,13 +278,13 @@ export function DataTable({ data }: DataTableProps) {
   const filteredAndSortedData = useMemo(() => {
     let result = [...data]
 
-    // Apply filters
+/*    // Apply filters
     if (filters.assemblyType) {
       result = result.filter((item) => item.assemblyType === filters.assemblyType)
     }
     if (filters.securityType) {
       result = result.filter((item) => item.securityType === filters.securityType)
-    }
+    }*/
 
     // Apply boolean filters
     Object.entries(booleanFilters).forEach(([key, value]) => {
@@ -295,7 +297,7 @@ export function DataTable({ data }: DataTableProps) {
     })
 
     // Apply searches
-    if (searchTerms.accountNumber) {
+  /*  if (searchTerms.accountNumber) {
       result = result.filter((item) =>
         item.accountNumber.toLowerCase().includes(searchTerms.accountNumber.toLowerCase()),
       )
@@ -304,7 +306,7 @@ export function DataTable({ data }: DataTableProps) {
       result = result.filter((item) =>
         item.securityNumber.toLowerCase().includes(searchTerms.securityNumber.toLowerCase()),
       )
-    }
+    }*/
     if (searchTerms.general) {
       result = result.filter((item) =>
         Object.values(item).some((value) =>
@@ -320,7 +322,7 @@ export function DataTable({ data }: DataTableProps) {
         let aValue = a[key]
         let bValue = b[key]
 
-        // Special handling for date columns
+/*        // Special handling for date columns
         if (key === 'recordDate' || key === 'votingSubmissionDate' || key === 'assemblyDate') {
           aValue = new Date(aValue as string).getTime()
           bValue = new Date(bValue as string).getTime()
@@ -333,7 +335,7 @@ export function DataTable({ data }: DataTableProps) {
         }
 
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1*/
         return 0
       })
     }
@@ -467,7 +469,7 @@ export function DataTable({ data }: DataTableProps) {
                     key={`${row.id}-${String(column.key)}`}
                     className="py-2 px-3 text-right whitespace-nowrap"
                   >
-                    {column.render ? column.render(row) : row[column.key as keyof Assembly]}
+                    {column.render ? column.render(row) : row[column.key as keyof Meeting]}
                   </TableCell>
                 ))}
               </TableRow>
