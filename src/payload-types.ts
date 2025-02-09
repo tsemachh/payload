@@ -106,11 +106,9 @@ export interface Media {
 export interface Stock {
   id: string;
   /**
-   * Stock ID can only be set during creation
+   * מזהה מניה ניתן לעריכה רק בעת יצירה
    */
-  stockID?: number | null;
-  symbol?: string | null;
-  name?: string | null;
+  stockID: number;
   type?:
     | (
         | 'מניות'
@@ -129,11 +127,13 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
+  valueDate: string;
+  symbol?: string | null;
+  name?: string | null;
   longName?: string | null;
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
-  valueDate: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -311,14 +311,14 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockID?: T;
+  type?: T;
+  valueDate?: T;
   symbol?: T;
   name?: T;
-  type?: T;
   longName?: T;
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
-  valueDate?: T;
   updatedAt?: T;
   createdAt?: T;
 }
