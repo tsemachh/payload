@@ -16,7 +16,7 @@ export const Meetings: CollectionConfig = {
   fields: [
     {
       name: 'meetingId',
-      label: 'מספר אסיפה',
+      label: 'מזהה אסיפה',
       type: 'number',
       unique: true,
       required: true,
@@ -57,7 +57,7 @@ export const Meetings: CollectionConfig = {
     },
     {
       name: 'stock',
-      label: 'מניה',
+      label: 'נייר ערך',
       type: 'relationship',
       relationTo: 'stocks',
     },
