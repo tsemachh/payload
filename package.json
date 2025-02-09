@@ -15,8 +15,7 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "reinstall": "rm -rf node_modules .next \u0026\u0026 rm -rf .next \u0026\u0026 rm pnpm-lock.yaml  \u0026\u0026 pnpm --ignore-workspace install",
-
+    "reinstall": "rm -rf node_modules .next \u0026\u0026 rm -rf .next \u0026\u0026 rm pnpm-lock.yaml  \u0026\u0026 pnpm --ignore-workspace install"
   },
   "dependencies": {
     "@payloadcms/db-mongodb": "^3.20.0",
