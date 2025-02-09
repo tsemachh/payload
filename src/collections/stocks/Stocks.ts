@@ -30,7 +30,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockID',
-          label: 'מזהה מניה',
+          label: "מס' נייר",
           type: 'number',
           unique: true,
           required: true,
@@ -90,7 +90,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'name',
-          label: 'שם',
+          label: 'שם נייר',
           type: 'text',
           admin: {
             width: '33%',

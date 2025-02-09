@@ -19,7 +19,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingId',
-          label: 'מספר אסיפה',
+          label: "מס' אסיפה",
           type: 'number',
           unique: true,
           required: true,
@@ -41,7 +41,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingDate',
-          label: 'מועד האסיפה',
+          label: 'תאריך האסיפה',
           type: 'date',
           admin: {
             description: 'Actual meeting date and time',
@@ -49,7 +49,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'holdingsLimit',
-          label: 'תאריך קובע',
+          label: 'יום קובע',
           type: 'date',
           admin: {
             description:
@@ -58,7 +58,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'proxyStatementDate',
-          label: 'מועד מסירת ההצבעה',
+          label: 'תאריך מסירת ההצבעות',
           type: 'date',
           admin: {
             description: 'Max Date when proxy voting should be submitted',
@@ -71,13 +71,13 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'stock',
-          label: 'מניה',
+          label: "מס' נייר ערך",
           type: 'relationship',
           relationTo: 'stocks',
         },
         {
           name: 'votingDocUrl',
-          label: 'כתב הצבעה',
+          label: 'קישור לכתב הצבעה',
           type: 'text',
           admin: {
             description: 'קישור לכתב הצבעה',
@@ -98,12 +98,12 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'location',
-          label: 'מיקום',
+          label: 'כתובת האסיפה',
           type: 'text',
         },
         {
           name: 'meetingType',
-          label: 'סוג',
+          label: 'סוג האסיפה',
           type: 'relationship',
           relationTo: 'meeting-types',
         },
