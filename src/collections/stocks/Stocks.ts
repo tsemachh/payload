@@ -38,8 +38,25 @@ export const Stocks: CollectionConfig = {
           admin: {
             width: '33%',
             condition: (data) => !data?.id,
+
+            // readOnly: typeof window !== 'undefined' && window.location.pathname.includes('/create'),
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה', // Stock ID can only be set during creation
           },
+          // hooks: {
+          //   beforeChange: [
+          //     ({ data, req }) => {
+          //       // Prevent stockID modification if document exists
+          //       if (req.method === 'PUT' && data.id) {
+          //         // Remove stockID from update payload
+          //         delete data.stockID
+          //       }
+          //       return data
+          //     }
+          //   ]
+          // },
+          // access: {
+          //   update: ({ req }) => !req.doc, // Only allow if no existing document
+          // },
         },
         {
           name: 'type',
@@ -63,9 +80,6 @@ export const Stocks: CollectionConfig = {
             { label: 'זכויות', value: 'זכויות' },
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
-
-
-
           ],
         },
         {

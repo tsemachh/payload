@@ -108,7 +108,7 @@ export interface Stock {
   /**
    * מזהה מניה ניתן לעריכה רק בעת יצירה
    */
-  stockID?: number | null;
+  stockID: number;
   type?:
     | (
         | 'מניות'
