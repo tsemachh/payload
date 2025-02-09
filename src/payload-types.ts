@@ -14,6 +14,8 @@ export interface Config {
     users: User;
     media: Media;
     stocks: Stock;
+    meetings: Meeting;
+    'meeting-types': MeetingType;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -23,6 +25,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
+    meetings: MeetingsSelect<false> | MeetingsSelect<true>;
+    'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -101,17 +105,101 @@ export interface Media {
  */
 export interface Stock {
   id: string;
-  stockID?: number | null;
-  name?: string | null;
-  symbol?: string | null;
+  /**
+   * מזהה מניה ניתן לעריכה רק בעת יצירה
+   */
+  stockID: number;
   type?:
-    | ('מניות' | 'כתבי אופציה' | 'איגרות חוב' | 'איגרות חוב להמרה' | 'יחידת השתתפות' | 'תעודות מדד' | 'תעודות סל')
+    | (
+        | 'מניות'
+        | 'אופציות'
+        | 'כתבי אופציה'
+        | 'איגרות חוב'
+        | 'איגרות חוב להמרה'
+        | 'יחידת השתתפות'
+        | 'תעודות מדד'
+        | 'תעודות סל'
+        | 'קרנות נאמנות'
+        | 'נייר ערך מסחרי'
+        | 'אחר'
+        | 'זכויות'
+        | 'מק"מ'
+        | 'שטרי הון'
+      )
     | null;
+  valueDate: string;
+  symbol?: string | null;
+  name?: string | null;
+  longName?: string | null;
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
-  valueDate: string;
-  longName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings".
+ */
+export interface Meeting {
+  id: string;
+  meetingId: number;
+  /**
+   * Reference ID for official meeting documentation
+   */
+  proofId?: string | null;
+  /**
+   * Actual meeting date and time
+   */
+  meetingDate?: string | null;
+  /**
+   * The date which tells when we check the holders which are obilgated to attend the meeting
+   */
+  holdingsLimit?: string | null;
+  /**
+   * Max Date when proxy voting should be submitted
+   */
+  proxyStatementDate?: string | null;
+  stock?: (string | null) | Stock;
+  /**
+   * קישור לכתב הצבעה
+   */
+  votingDocUrl?: string | null;
+  /**
+   * קישור לזימון אסיפה
+   */
+  meetingInviteUrl?: string | null;
+  location?: string | null;
+  meetingType?: (number | null) | MeetingType;
+  comments?: string | null;
+  /**
+   * אימות תוצאות האסיפה
+   */
+  resultsConfirmationStatus?: boolean | null;
+  /**
+   * האסיפה מופיעה במערכת האלקטרונית?
+   */
+  electronicVotingEnabled?: boolean | null;
+  /**
+   * ID of related meeting (for continued or postponed sessions)
+   */
+  relatedMeetingId?: (string | null) | Meeting;
+  /**
+   * פיננסי דורש ועדה
+   */
+  committeeInitiated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types".
+ */
+export interface MeetingType {
+  id: number;
+  name: string;
+  group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -133,6 +221,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stocks';
         value: string | Stock;
+      } | null)
+    | ({
+        relationTo: 'meetings';
+        value: string | Meeting;
+      } | null)
+    | ({
+        relationTo: 'meeting-types';
+        value: number | MeetingType;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -215,14 +311,49 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockID?: T;
-  name?: T;
-  symbol?: T;
   type?: T;
+  valueDate?: T;
+  symbol?: T;
+  name?: T;
+  longName?: T;
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
-  valueDate?: T;
-  longName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings_select".
+ */
+export interface MeetingsSelect<T extends boolean = true> {
+  meetingId?: T;
+  proofId?: T;
+  meetingDate?: T;
+  holdingsLimit?: T;
+  proxyStatementDate?: T;
+  stock?: T;
+  votingDocUrl?: T;
+  meetingInviteUrl?: T;
+  location?: T;
+  meetingType?: T;
+  comments?: T;
+  resultsConfirmationStatus?: T;
+  electronicVotingEnabled?: T;
+  relatedMeetingId?: T;
+  committeeInitiated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meeting-types_select".
+ */
+export interface MeetingTypesSelect<T extends boolean = true> {
+  id?: T;
+  name?: T;
+  group?: T;
   updatedAt?: T;
   createdAt?: T;
 }
