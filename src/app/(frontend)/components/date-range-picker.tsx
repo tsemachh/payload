@@ -1,23 +1,21 @@
-"use client"
+import type * as React from "react";
+import { CalendarIcon } from "@radix-ui/react-icons";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 
-import type * as React from "react"
-import { CalendarIcon } from "@radix-ui/react-icons"
-import { addDays, format } from "date-fns"
-import { he } from "date-fns/locale"
-import type { DateRange } from "react-day-picker"
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export function DateRangePicker({
-  className,
-  dateRange,
-  onDateRangeChange,
-}: React.HTMLAttributes<HTMLDivElement> & {
-  dateRange: DateRange
-  onDateRangeChange: (range: DateRange) => void
+                                  className,
+                                  dateRange,
+                                  onDateRangeChange,
+                                }: React.HTMLAttributes<HTMLDivElement> & {
+  dateRange: DateRange;
+  onDateRangeChange: (range: DateRange) => void;
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -52,10 +50,10 @@ export function DateRangePicker({
             onSelect={onDateRangeChange}
             numberOfMonths={2}
             locale={he}
+            required // Add the required property here
           />
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }
-

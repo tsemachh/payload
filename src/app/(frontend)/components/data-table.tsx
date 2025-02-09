@@ -344,6 +344,7 @@ export function DataTable({ data }: DataTableProps) {
     return result
   }, [data, sortConfig, filters, booleanFilters, searchTerms])
 
+  // @ts-ignore
   return (
     <div className="space-y-4 text-right" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
@@ -359,7 +360,7 @@ export function DataTable({ data }: DataTableProps) {
               <Settings2 className="h-4 w-4 mr-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px] text-right" dir="rtl">
+          <DropdownMenuContent align="end" className="w-[200px] text-right">
             {columns.map((column) => (
               <DropdownMenuCheckboxItem
                 key={String(column.key)}
@@ -470,7 +471,7 @@ export function DataTable({ data }: DataTableProps) {
                     key={`${row.id}-${String(column.key)}`}
                     className="py-2 px-3 text-right whitespace-nowrap"
                   >
-                    {column.render ? column.render(row) : row[column.key as keyof Meeting]}
+                   {/* {column.render ? column.render(row) : row[column.key]}*/}
                   </TableCell>
                 ))}
               </TableRow>
