@@ -30,11 +30,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockID',
-<<<<<<< HEAD
           label: "מס' נייר",
-=======
-          label: 'מזהה', // Stock ID
->>>>>>> origin/main
           type: 'number',
           unique: true,
           required: true,
@@ -43,37 +39,13 @@ export const Stocks: CollectionConfig = {
             width: '33%',
             condition: (data) => !data?.id,
 
-<<<<<<< HEAD
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
-            //readOnly: true, // Set it to read-only by default
-=======
-            // readOnly: typeof window !== 'undefined' && window.location.pathname.includes('/create'),
-            description: 'מזהה נייר ערך ניתן לעריכה רק בעת יצירה', // Stock ID can only be set during creation
->>>>>>> origin/main
           },
-          // hooks: {
-          //   beforeChange: [
-          //     async ({ data, originalDoc, operation }) => {
-          //       if (operation === 'create') {
-          //         return data
-          //       } else {
-          //         return {
-          //           ...originalDoc,
-          //           stockID: originalDoc.stockID, // Preserve the original stockID value
-          //         }
-          //       }
-          //     },
-          //   ],
-          // },
         },
 
         {
           name: 'type',
-<<<<<<< HEAD
           label: 'סוג נייר ערך',
-=======
-          label: 'סוג', // Type
->>>>>>> origin/main
           type: 'select',
           admin: {
             width: '33%',
@@ -111,11 +83,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'symbol',
-<<<<<<< HEAD
           label: 'סימול',
-=======
-          label: 'סמל', // Symbol
->>>>>>> origin/main
           type: 'text',
           index: true,
           admin: {

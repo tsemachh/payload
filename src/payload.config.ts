@@ -13,8 +13,8 @@ import { he } from '@payloadcms/translations/languages/he'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Stocks } from '@/collections/stocks/Stocks'
-import { MeetingTypes } from '@/collections/meetings/MeetingsType'
-import { Meetings } from './collections/meetings/Meetings'
+import { MeetingTypes } from '@/collections/Meetings/MeetingsType'
+import { Meetings } from './collections/Meetings/Meetings'
 import { Roles } from '@shefing/authorization/roles'
 
 const filename = fileURLToPath(import.meta.url)
