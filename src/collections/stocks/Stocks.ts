@@ -38,9 +38,26 @@ export const Stocks: CollectionConfig = {
           admin: {
             width: '33%',
             condition: (data) => !data?.id,
+
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
+            //readOnly: true, // Set it to read-only by default
           },
+          // hooks: {
+          //   beforeChange: [
+          //     async ({ data, originalDoc, operation }) => {
+          //       if (operation === 'create') {
+          //         return data
+          //       } else {
+          //         return {
+          //           ...originalDoc,
+          //           stockID: originalDoc.stockID, // Preserve the original stockID value
+          //         }
+          //       }
+          //     },
+          //   ],
+          // },
         },
+
         {
           name: 'type',
           label: 'סוג נייר ערך',
