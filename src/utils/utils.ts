@@ -15,7 +15,9 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: number |
       },
     })
     if (stock.docs.length > 0) id = stock.docs[0].id
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
   return id
 }
 
