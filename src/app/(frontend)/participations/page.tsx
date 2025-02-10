@@ -41,7 +41,9 @@ export default function Participations() {
       <div className="flex justify-between items-center">
         <ExportButton data={participations} filename="participations" />
       </div>
+{/*
       <DataTable columns={columns} data={participations} />
+*/}
     </div>
   )
 }
