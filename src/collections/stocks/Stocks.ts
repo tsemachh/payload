@@ -3,21 +3,21 @@ import type { CollectionConfig } from 'payload'
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   labels: {
-    plural: 'מניות',
-    singular: 'מניה',
+    plural: 'ניירות ערך',
+    singular: 'נייר ערך',
   },
   admin: {
     useAsTitle: 'stockID',
     defaultColumns: [
       'stockID',
       'type',
-      'valueDate',
       'symbol',
       'name',
       'longName',
+      'registeredValue',
+      'valueDate',
       'closingRate',
       'marketValue',
-      'registeredValue',
     ],
   },
   versions: {
@@ -30,7 +30,11 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockID',
+<<<<<<< HEAD
           label: "מס' נייר",
+=======
+          label: 'מזהה', // Stock ID
+>>>>>>> origin/main
           type: 'number',
           unique: true,
           required: true,
@@ -39,8 +43,13 @@ export const Stocks: CollectionConfig = {
             width: '33%',
             condition: (data) => !data?.id,
 
+<<<<<<< HEAD
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
             //readOnly: true, // Set it to read-only by default
+=======
+            // readOnly: typeof window !== 'undefined' && window.location.pathname.includes('/create'),
+            description: 'מזהה נייר ערך ניתן לעריכה רק בעת יצירה', // Stock ID can only be set during creation
+>>>>>>> origin/main
           },
           // hooks: {
           //   beforeChange: [
@@ -60,7 +69,11 @@ export const Stocks: CollectionConfig = {
 
         {
           name: 'type',
+<<<<<<< HEAD
           label: 'סוג נייר ערך',
+=======
+          label: 'סוג', // Type
+>>>>>>> origin/main
           type: 'select',
           admin: {
             width: '33%',
@@ -98,7 +111,11 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'symbol',
+<<<<<<< HEAD
           label: 'סימול',
+=======
+          label: 'סמל', // Symbol
+>>>>>>> origin/main
           type: 'text',
           index: true,
           admin: {

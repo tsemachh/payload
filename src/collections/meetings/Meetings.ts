@@ -15,6 +15,7 @@ export const Meetings: CollectionConfig = {
   },
   fields: [
     {
+<<<<<<< HEAD
       type: 'row',
       fields: [
         {
@@ -35,6 +36,14 @@ export const Meetings: CollectionConfig = {
           },
         },
       ],
+=======
+      name: 'meetingId',
+      label: 'מזהה אסיפה',
+      type: 'number',
+      unique: true,
+      required: true,
+      index: true
+>>>>>>> origin/main
     },
     {
       type: 'row',
@@ -152,5 +161,81 @@ export const Meetings: CollectionConfig = {
         },
       ],
     },
+<<<<<<< HEAD
   ],
 }
+=======
+    {
+      name: 'stock',
+      label: 'נייר ערך',
+      type: 'relationship',
+      relationTo: 'stocks',
+    },
+    {
+      name: 'votingDocUrl',
+      label: 'כתב הצבעה',
+      type: 'text',
+      admin: {
+        description: 'קישור לכתב הצבעה'
+      },
+    },
+    {
+      name: 'meetingInviteUrl',
+      label: 'זימון אסיפה',
+      type: 'text',
+      admin: {
+        description: 'קישור לזימון אסיפה'
+      },
+    },
+    {
+      name: 'location',
+      label: 'מיקום',
+      type: 'text',
+    },
+    {
+      name: 'meetingType',
+      label: 'סוג',
+      type: 'relationship',
+      relationTo: 'meeting-types',
+    },
+    {
+      name: 'comments',
+      label: 'הערות',
+      type: 'textarea',
+    },
+    {
+      name: 'resultsConfirmationStatus',
+      label: 'אימות תוצאות האסיפה',
+      type: 'checkbox',
+      admin: {
+        description: 'אימות תוצאות האסיפה'
+      },
+    },
+    {
+      name: 'electronicVotingEnabled',
+      label: 'האם האסיפה מופיעה במערכת האלקטרונית?',
+      type: 'checkbox',
+      admin: {
+        description: 'האסיפה מופיעה במערכת האלקטרונית?'
+      },
+    },
+    {
+      name: 'relatedMeetingId',
+      label: 'אסיפה קשורה',
+      type: 'relationship',
+      relationTo: "meetings",
+      admin: {
+        description: 'ID of related meeting (for continued or postponed sessions)'
+      },
+    },
+    {
+      name: 'committeeInitiated',
+      label: 'האם פיננסי דורש ועדה?',
+      type: 'checkbox',
+      admin: {
+        description: 'פיננסי דורש ועדה'
+      },
+    },
+  ]
+}
+>>>>>>> origin/main

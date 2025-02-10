@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
+/.pnpm-store
 .pnp.js
 .yarn/install-state.gz
 
@@ -41,3 +42,10 @@ next-env.d.ts
 .env
 
 /media
+
+# Ignore all .terraform directories
+**/.terraform/
+
+# Ignore any files starting with .terraform at any depth
+**/.terraform*
+

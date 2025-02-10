@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Export connection strings (avoid double quotes)
 export mongo2="mongodb://localhost:27017"
 
