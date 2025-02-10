@@ -14,8 +14,8 @@ export function DateRangePicker({
                                   dateRange,
                                   onDateRangeChange,
                                 }: React.HTMLAttributes<HTMLDivElement> & {
-  dateRange: DateRange;
-  onDateRangeChange: (range: DateRange) => void;
+  dateRange: DateRange | undefined;
+  onDateRangeChange: (range: DateRange | undefined) => void;
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -50,7 +50,7 @@ export function DateRangePicker({
             onSelect={onDateRangeChange}
             numberOfMonths={2}
             locale={he}
-            required // Add the required property here
+            required
           />
         </PopoverContent>
       </Popover>
