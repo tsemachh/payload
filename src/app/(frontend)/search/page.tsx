@@ -47,8 +47,8 @@ export default function SearchResults() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Search Results for &quot;{query}&quot;</h1>
-      {/* <DataTable columns data={results} /> */}
       <DataTable data={results} />
+      {/* <DataTable columns data={results} /> */}
     </div>
   )
 }
