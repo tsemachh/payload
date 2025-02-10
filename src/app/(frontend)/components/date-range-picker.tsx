@@ -2,7 +2,7 @@ import type * as React from "react";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import type { DateRange } from "react-day-picker";
+import type { DateRange, SelectRangeEventHandler } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,15 @@ export function DateRangePicker({
                                   onDateRangeChange,
                                 }: React.HTMLAttributes<HTMLDivElement> & {
   dateRange: DateRange | undefined;
-  onDateRangeChange: (range: DateRange | undefined) => void;
+  onDateRangeChange: (range: DateRange) => void;  // Remove | undefined
 }) {
+  // Create a handler that matches SelectRangeEventHandler type
+  const handleSelect: SelectRangeEventHandler = (range) => {
+    if (range) {
+      onDateRangeChange(range);
+    }
+  };
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -47,10 +54,9 @@ export function DateRangePicker({
             mode="range"
             defaultMonth={dateRange?.from}
             selected={dateRange}
-            onSelect={onDateRangeChange}
+            onSelect={handleSelect}
             numberOfMonths={2}
             locale={he}
-            required
           />
         </PopoverContent>
       </Popover>
