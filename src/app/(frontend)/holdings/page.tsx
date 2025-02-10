@@ -40,7 +40,7 @@ export default function Holdings() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">החזקות</h1>
       <div className="flex justify-between items-center">
-        <FileUpload onUpload={handleFileUpload} />
+        <FileUpload onUploadAction={handleFileUpload} />
         <ExportButton data={holdings} filename="holdings" />
       </div>
       {/*
