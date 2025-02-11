@@ -68,17 +68,23 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 9: Build and test
+      # Step 9: Build, Test, and Push
       - name: Build, Test, and Push
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
         run: |
-          # Build the image
+          # Build the image with caching
           docker build \
             --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
             --build-arg DATABASE_URI="$DATABASE_URI" \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new \
             -t payload-image:local-test .
+
+          # Move cache
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
           # Run container
           docker run -d --name payload-container -p 3000:3000 payload-image:local-test
