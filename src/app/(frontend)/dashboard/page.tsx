@@ -22,7 +22,7 @@ export default function Dashboard() {
     const eventSource = new EventSource("/api/sse")
     eventSource.onmessage = (event) => {
       const update = JSON.parse(event.data)
-      if (update.type === "newAssembly") {
+      if (update.type === "newMeeting") {
         setStats((prev) => ({
           ...prev,
           upcomingAssemblies: prev.upcomingAssemblies + 1,

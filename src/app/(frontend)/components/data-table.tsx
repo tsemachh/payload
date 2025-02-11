@@ -26,17 +26,17 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ArrowUpDown, Search, FileText, Check, X, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Meeting as Assembly } from '@/payload-types'
 import type React from 'react'
+import { FutureMeetingTableData } from '../types'
 
 interface Column {
-  key: keyof Assembly | string
+  key: keyof FutureMeetingTableData | string
   header: string | React.ReactNode
   sortable?: boolean
   filterable?: boolean
   booleanFilterable?: boolean
   searchable?: boolean
-  render?: (row: Assembly) => React.ReactNode
+  render?: (row: FutureMeetingTableData) => React.ReactNode
 }
 
 type BooleanFilterState = 'none' | 'true' | 'false'
@@ -70,44 +70,40 @@ const BooleanFilterButton = ({
 
 const columns: Column[] = [
   {
-    key: 'meetingId',
+    key: 'id',
     header: 'חשבון',
     searchable: true,
-  /*  render: (row) => (row.meetingId ? row.meetingId.replace(/\D/g, '') : ''),*/
+    render: (row) => (row.id ? row.id.replace(/\D/g, '') : ''),
   },
   {
     key: 'securityNumber',
     header: 'מס׳ נייר',
     searchable: true,
+    render: (row) => <div className="min-w-[100px]">{row.securityNumber}</div>,
   },
   {
     key: 'securityType',
     header: 'סוג נייר',
     filterable: true,
+    render: (row) => <div className="min-w-[100px]">{row.securityType}</div>,
   },
   {
     key: 'companyName',
     header: 'שם חברה',
     sortable: true,
+    render: (row) => <div className="min-w-[100px]">{row.companyName}</div>,
   },
   {
-    key: 'registredValue',
-    header: (
-      <>
-        שווי שוק
-        <br />
-        (מיליוני ₪)
-      </>
-    ),
+    key: 'marketValue',
+    header: 'שווי שוק (מיליוני ₪)',
     sortable: true,
-/*
-    render: (row) => new Intl.NumberFormat('he-IL').format(row.registredValue),
-*/
+    render: (row) => new Intl.NumberFormat('he-IL').format(row.marketValue),
   },
   {
     key: 'meetingType',
     header: 'סוג אסיפה',
     filterable: true,
+    render: (row) => <div className="min-w-[100px]">{row.meetingType}</div>,
   },
   {
     key: 'proxyStatementDate',
@@ -115,39 +111,45 @@ const columns: Column[] = [
     sortable: true,
     render: (row) => <div className="min-w-[100px]">{row.proxyStatementDate}</div>,
   },
-  { key: 'recordTime', header: 'שעה' },
-/*  {
+  {
+    key: 'proxyStatementTime',
+    header: 'שעה',
+    render: (row) => <div className="min-w-[100px]">{row.proxyStatementTime}</div>,
+  },
+  {
     key: 'votingSubmissionDate',
     header: 'תאריך מסירת הצבעות',
     sortable: true,
     render: (row) => <div className="min-w-[100px]">{row.votingSubmissionDate}</div>,
-  },*/
-  { key: 'votingSubmissionTime', header: 'שעה' },
+  },
+  {
+    key: 'votingSubmissionTime',
+    header: 'שעה',
+    render: (row) => <div className="min-w-[100px]">{row.votingSubmissionTime}</div>,
+  },
   {
     key: 'meetingDate',
     header: 'תאריך האסיפה',
     sortable: true,
     render: (row) => <div className="min-w-[100px]">{row.meetingDate}</div>,
   },
-  { key: 'assemblyTime', header: 'שעה' },
-/*  {
+  {
+    key: 'meetingTime',
+    header: 'שעה',
+    render: (row) => <div className="min-w-[100px]">{row.meetingTime}</div>,
+  },
+  {
     key: 'holdingPercentage',
     header: 'אחזקה (%)',
     sortable: true,
     render: (row) => `${row.holdingPercentage.toFixed(2)}%`,
-  },*/
-  // {
-  //   key: 'holdingValue',
-  //   header: (
-  //     <>
-  //       שווי אחזקה
-  //       <br />
-  //       (מיליוני ₪)
-  //     </>
-  //   ),
-  //   sortable: true,
-  //   render: (row) => new Intl.NumberFormat('he-IL').format(row.holdingValue),
-  // },
+  },
+  {
+    key: 'holdingValue',
+    header: 'שווי אחזקה (מיליוני ₪)',
+    sortable: true,
+    render: (row) => new Intl.NumberFormat('he-IL').format(row.holdingValue),
+  },
   {
     key: 'location',
     header: 'מיקום',
@@ -157,33 +159,33 @@ const columns: Column[] = [
       </div>
     ),
   },
-/*  {
+  {
     key: 'opinion',
     header: 'חוות דעת',
     render: (row) =>
       row.opinion.exists && (
         <FileText className={cn('h-4 w-4', !row.opinion.viewed && 'font-bold text-primary')} />
       ),
-  },*/
-/*  {
+  },
+  {
     key: 'votingPaper',
     header: 'כתב הצבעה',
     render: (row) =>
       row.votingPaper.exists && (
         <FileText className={cn('h-4 w-4', !row.votingPaper.viewed && 'font-bold text-primary')} />
       ),
-  },*/
-/*  {
-    key: 'assemblyInvitation',
+  },
+  {
+    key: 'meetingInvitation',
     header: 'זימון אסיפה',
     render: (row) =>
-      row.assemblyInvitation.exists && (
+      row.meetingInvitation.exists && (
         <FileText
-          className={cn('h-4 w-4', !row.assemblyInvitation.viewed && 'font-bold text-primary')}
+          className={cn('h-4 w-4', !row.meetingInvitation.viewed && 'font-bold text-primary')}
         />
       ),
-  },*/
-  /*{
+  },
+  {
     key: 'votingReceived',
     header: 'התקבלה הצבעה בעמדה',
     booleanFilterable: true,
@@ -203,11 +205,11 @@ const columns: Column[] = [
     booleanFilterable: true,
     render: (row) =>
       row.requiresFinancialCommittee ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
-  },*/
+  },
 ]
 
 interface DataTableProps {
-  data: Assembly[]
+  data: FutureMeetingTableData[]
 }
 
 export function DataTable({ data }: DataTableProps) {
@@ -216,10 +218,10 @@ export function DataTable({ data }: DataTableProps) {
     direction: 'asc' | 'desc'
   } | null>(null)
   const [filters, setFilters] = useState<{
-    assemblyType: string
+    meetingType: string
     securityType: string
   }>({
-    assemblyType: '',
+    meetingType: '',
     securityType: '',
   })
   const [booleanFilters, setBooleanFilters] = useState<{
@@ -246,6 +248,7 @@ export function DataTable({ data }: DataTableProps) {
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[String(column.key)])
   }, [columnVisibility])
+  console.log('visibleColumns', visibleColumns)
 
   const handleSort = (key: string) => {
     setSortConfig((current) => {
@@ -256,7 +259,7 @@ export function DataTable({ data }: DataTableProps) {
     })
   }
 
-  const handleFilter = (key: 'assemblyType' | 'securityType', value: string) => {
+  const handleFilter = (key: 'meetingType' | 'securityType', value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -277,27 +280,26 @@ export function DataTable({ data }: DataTableProps) {
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data]
-
-/*    // Apply filters
-    if (filters.assemblyType) {
-      result = result.filter((item) => item.assemblyType === filters.assemblyType)
+    // Apply filters
+    if (filters.meetingType && filters.meetingType !== 'all') {
+      result = result.filter((item) => item.meetingType === filters.meetingType)
     }
-    if (filters.securityType) {
+    if (filters.securityType && filters.meetingType !== 'all') {
       result = result.filter((item) => item.securityType === filters.securityType)
-    }*/
+    }
 
     // Apply boolean filters
     Object.entries(booleanFilters).forEach(([key, value]) => {
       if (value !== 'none') {
         result = result.filter((item) => {
           const boolValue = value === 'true'
-          return item[key as keyof Assembly] === boolValue
+          return item[key as keyof FutureMeetingTableData] === boolValue
         })
       }
     })
 
     // Apply searches
-  /*  if (searchTerms.accountNumber) {
+    if (searchTerms.accountNumber) {
       result = result.filter((item) =>
         item.accountNumber.toLowerCase().includes(searchTerms.accountNumber.toLowerCase()),
       )
@@ -306,7 +308,7 @@ export function DataTable({ data }: DataTableProps) {
       result = result.filter((item) =>
         item.securityNumber.toLowerCase().includes(searchTerms.securityNumber.toLowerCase()),
       )
-    }*/
+    }
     if (searchTerms.general) {
       result = result.filter((item) =>
         Object.values(item).some((value) =>
@@ -314,17 +316,19 @@ export function DataTable({ data }: DataTableProps) {
         ),
       )
     }
-
     // Apply sorting
     if (sortConfig) {
-      result.sort((a: Assembly, b: Assembly) => {
-        /*
-        const key = sortConfig.key as keyof Assembly
+      result.sort((a: FutureMeetingTableData, b: FutureMeetingTableData) => {
+        const key = sortConfig.key as keyof FutureMeetingTableData
         let aValue = a[key]
         let bValue = b[key]
 
-     // Special handling for date columns
-        if (key === 'recordDate' || key === 'votingSubmissionDate' || key === 'assemblyDate') {
+        // Special handling for date columns
+        if (
+          key === 'proxyStatementDate' ||
+          key === 'votingSubmissionDate' ||
+          key === 'meetingDate'
+        ) {
           aValue = new Date(aValue as string).getTime()
           bValue = new Date(bValue as string).getTime()
         }
@@ -336,15 +340,15 @@ export function DataTable({ data }: DataTableProps) {
         }
 
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1*/
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
         return 0
       })
     }
+    console.log('data', data)
 
     return result
   }, [data, sortConfig, filters, booleanFilters, searchTerms])
 
-  // @ts-ignore
   return (
     <div className="space-y-4 text-right" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
@@ -424,9 +428,11 @@ export function DataTable({ data }: DataTableProps) {
                           <SelectValue placeholder={`סנן ${column.header}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="default">הכל</SelectItem>
+                          <SelectItem value="all">הכל</SelectItem>
                           {Array.from(
-                            new Set(data.map((item) => item[column.key as keyof Assembly])),
+                            new Set(
+                              data.map((item) => item[column.key as keyof FutureMeetingTableData]),
+                            ),
                           ).map((value) => (
                             <SelectItem key={String(value)} value={String(value)}>
                               {String(value)}
@@ -471,7 +477,7 @@ export function DataTable({ data }: DataTableProps) {
                     key={`${row.id}-${String(column.key)}`}
                     className="py-2 px-3 text-right whitespace-nowrap"
                   >
-                   {/* {column.render ? column.render(row) : row[column.key]}*/}
+                    {column.render && column.render(row)}
                   </TableCell>
                 ))}
               </TableRow>

@@ -1,17 +1,17 @@
-export type Assembly = {
+export type FutureMeetingTableData = {
   id: string
   accountNumber: string
   securityNumber: string
   securityType: string
   companyName: string
   marketValue: number
-  assemblyType: string
-  recordDate: string
-  recordTime: string
+  meetingType: string
+  proxyStatementDate: string
+  proxyStatementTime: string
   votingSubmissionDate: string
   votingSubmissionTime: string
-  assemblyDate: string
-  assemblyTime: string
+  meetingDate: string
+  meetingTime: string
   holdingPercentage: number
   holdingValue: number
   opinion: {
@@ -22,7 +22,7 @@ export type Assembly = {
     exists: boolean
     viewed: boolean
   }
-  assemblyInvitation: {
+  meetingInvitation: {
     exists: boolean
     viewed: boolean
   }
@@ -31,4 +31,3 @@ export type Assembly = {
   requiresFinancialCommittee: boolean
   location: string
 }
-
