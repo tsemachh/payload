@@ -24,6 +24,8 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          export_default_credentials: true  # Ensures gcloud CLI uses these credentials
+
 
       # Step 3: Set tag parameter based on the event type
       - name: Set tag parameter
