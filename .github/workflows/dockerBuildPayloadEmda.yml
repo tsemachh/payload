@@ -77,15 +77,19 @@ jobs:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
         run: |
-          # Build the image
+          # Build the image with cache options
           docker build \
             --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
             --build-arg DATABASE_URI="$DATABASE_URI" \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
             -t payload-image:local-test .
 
-          # Move cache
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          # Move cache if it exists
+          if [ -d /tmp/.buildx-cache-new ]; then
+            rm -rf /tmp/.buildx-cache
+            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          fi
 
           # Run container
           docker run -d --name payload-container -p 3000:3000 payload-image:local-test
@@ -98,6 +102,7 @@ jobs:
           echo "Container logs:"
           docker logs payload-container
 
+          # Test the application
           curl http://localhost:3000 || exit 1
 
           # Stop the container after testing
