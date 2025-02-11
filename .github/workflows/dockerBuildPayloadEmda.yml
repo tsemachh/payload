@@ -1,4 +1,4 @@
-name: Docker Emda Payload Image CI-CD
+name: Docker Emda Payload Image CI
 
 on:
   push:
@@ -24,7 +24,6 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
-          export_default_credentials: true  # Ensures gcloud CLI uses these credentials
 
       # Step 3: Set tag parameter based on the event type
       - name: Set tag parameter
@@ -36,7 +35,6 @@ jobs:
           else
             echo "TAG=release" >> $GITHUB_ENV
           fi
-
       # Step 4: Permit runner to access MongoDB Atlas
       - name: Permit runner to access MongoDB Atlas
         uses: textbook/atlas-ip@v1
@@ -63,7 +61,6 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-
       # Step 8: Login to Google Cloud Registry (GCR)
       - name: Login to GCR (private registry)
         uses: docker/login-action@v2
@@ -95,7 +92,6 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
       # Step 11: Run Docker container for Payload CMS and Test with curl
       - name: Run Docker container for Payload CMS and Test with curl
         env:
@@ -110,20 +106,15 @@ jobs:
             -e PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}" \
             -p 3000:3000 \
             payload-image:local-test  # Use the local tag
-
           # Wait for the app to start
           echo "Waiting for the application to start..."
           sleep 30
-
           # Check logs for debugging
           echo "Container logs:"
           docker logs payload-container
-
           curl http://localhost:3000 || exit 1
-
           # Stop the container after testing
           docker stop payload-container
-
       # Step 12: Tag and Push Docker image to GCR (only after test pass and on push events)
       - name: Tag and Push Docker image to GCR
         if: ${{ github.event_name == 'push' }}
@@ -132,24 +123,6 @@ jobs:
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-
-      # Step 13: Reset VM to Deploy New Image (Fixed Step)
-      - name: Reset VM to Deploy New Image
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
-        run: |
-          # Write the credentials to a temporary file
-          echo "$GOOGLE_APPLICATION_CREDENTIALS" > /tmp/gcp-creds.json
-
-          # Activate the service account using the temporary file
-          gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
-
-          # Reset the VM
-          gcloud compute instances reset payload-vm --zone=me-west1-b --project=${{ secrets.GCP_PROJECT_ID }}
-
-          # Clean up the temporary file
-          rm -f /tmp/gcp-creds.json
-
   notify-slack:
     needs: docker-build
     if: failure()
