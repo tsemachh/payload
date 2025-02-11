@@ -84,13 +84,8 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   name?: string | null;
-  isAdmin?: boolean | null;
-  isGeneratorUser?: boolean | null;
-  userRoles?: (string | Role)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -102,28 +97,13 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
- */
-export interface Role {
-  id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: string;
   alt: string;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
   url?: string | null;
   thumbnailURL?: string | null;
   filename?: string | null;
@@ -169,10 +149,8 @@ export interface Stock {
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -207,7 +185,7 @@ export interface Meeting {
    */
   meetingInviteUrl?: string | null;
   location?: string | null;
-  meetingType?: (string | null) | MeetingType;
+  meetingType?: (number | null) | MeetingType;
   comments?: string | null;
   /**
    * אימות תוצאות האסיפה
@@ -225,12 +203,8 @@ export interface Meeting {
    * פיננסי דורש ועדה
    */
   committeeInitiated?: boolean | null;
-  creator?: string | null;
-  updator?: string | null;
-  publishDate?: string | null;
-  publisher?: string | null;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -241,10 +215,19 @@ export interface MeetingType {
   id: number;
   name: string;
   group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -271,7 +254,7 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: 'meeting-types';
-        value: string | MeetingType;
+        value: number | MeetingType;
       } | null)
     | ({
         relationTo: 'roles';
@@ -325,13 +308,8 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
-  isAdmin?: T;
-  isGeneratorUser?: T;
-  userRoles?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -346,10 +324,8 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
   url?: T;
   thumbnailURL?: T;
   filename?: T;
@@ -374,10 +350,8 @@ export interface StocksSelect<T extends boolean = true> {
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -399,12 +373,8 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   relatedMeetingId?: T;
   committeeInitiated?: T;
-  creator?: T;
-  updator?: T;
-  publishDate?: T;
-  publisher?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
   _status?: T;
 }
 /**
@@ -415,10 +385,8 @@ export interface MeetingTypesSelect<T extends boolean = true> {
   id?: T;
   name?: T;
   group?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -427,10 +395,8 @@ export interface MeetingTypesSelect<T extends boolean = true> {
 export interface RolesSelect<T extends boolean = true> {
   name?: T;
   permissions?: T | RolePermissionsSelect<T>;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
   updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

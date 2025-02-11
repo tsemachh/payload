@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import userFields from '@shefing/authorization/user-fields'
+import { userFields } from '@shefing/authorization'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -17,7 +17,6 @@ export const Users: CollectionConfig = {
       label: 'שם משתמש',
       type: 'text',
     },
-    ...userFields, // Email added by default
-    // Add more fields as needed
+    ...userFields,
   ],
 }

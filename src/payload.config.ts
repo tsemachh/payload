@@ -1,4 +1,3 @@
-// storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { addAuthorsFields } from '@shefing/authors-info'
@@ -15,7 +14,7 @@ import { Media } from './collections/Media'
 import { Stocks } from '@/collections/stocks/Stocks'
 import { MeetingTypes } from '@/collections/meetings/MeetingsType'
 import { Meetings } from './collections/meetings/Meetings'
-import { Roles } from '@shefing/authorization/roles'
+import { Roles } from '@shefing/authorization'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
