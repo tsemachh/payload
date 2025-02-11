@@ -26,7 +26,6 @@ jobs:
           service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
           export_default_credentials: true  # Ensures gcloud CLI uses these credentials
 
-
       # Step 3: Set tag parameter based on the event type
       - name: Set tag parameter
         run: |
@@ -134,14 +133,22 @@ jobs:
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
-      # Step 13: Reset VM to Deploy New Image
+      # Step 13: Reset VM to Deploy New Image (Fixed Step)
       - name: Reset VM to Deploy New Image
         env:
-           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
         run: |
-          gcloud auth activate-service-account --key-file=<(echo "$GOOGLE_APPLICATION_CREDENTIALS")
+          # Write the credentials to a temporary file
+          echo "$GOOGLE_APPLICATION_CREDENTIALS" > /tmp/gcp-creds.json
+
+          # Activate the service account using the temporary file
+          gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
+
+          # Reset the VM
           gcloud compute instances reset payload-vm --zone=me-west1-b --project=${{ secrets.GCP_PROJECT_ID }}
 
+          # Clean up the temporary file
+          rm -f /tmp/gcp-creds.json
 
   notify-slack:
     needs: docker-build
