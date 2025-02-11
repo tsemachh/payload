@@ -1,4 +1,4 @@
-name: Docker Emda Payload Image CI
+name: Docker Emda Payload Image CI-CD
 
 on:
   push:
@@ -135,9 +135,8 @@ jobs:
       # Step 13: Reset VM to Deploy New Image
       - name: Reset VM to Deploy New Image
         run: |
-          gcloud compute instances reset payload-vm \
-          --zone=me-west1-b \
-          --project=emda-dev
+         gcloud compute instances reset payload-vm \
+         --zone=me-west1-b
 
   notify-slack:
     needs: docker-build
