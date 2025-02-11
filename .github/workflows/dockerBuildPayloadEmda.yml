@@ -24,8 +24,7 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
-          export_default_credentials: true  # Ensures gcloud CLI uses these credentials
-
+          
       # Step 3: Set tag parameter based on the event type
       - name: Set tag parameter
         run: |
@@ -143,6 +142,9 @@ jobs:
 
           # Activate the service account using the temporary file
           gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
+
+          # Explicitly set the GOOGLE_APPLICATION_CREDENTIALS environment variable to the temporary file
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
 
           # Reset the VM
           gcloud compute instances reset payload-vm --zone=me-west1-b --project=${{ secrets.GCP_PROJECT_ID }}
