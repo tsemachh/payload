@@ -15,7 +15,7 @@ export async function fetchMeetingsForTable() {
 
     return {
       id: meeting.id,
-      accountNumber: '', // TODO
+      accountNumber: "123456", // TODO
       securityNumber: stockPresent?.stockID?.toString() || '',
       securityType: stockPresent?.type || '',
       companyName: stockPresent?.name || '',

@@ -70,10 +70,10 @@ const BooleanFilterButton = ({
 
 const columns: Column[] = [
   {
-    key: 'id',
+    key: 'accountNumber',
     header: 'חשבון',
     searchable: true,
-    render: (row) => (row.id ? row.id.replace(/\D/g, '') : ''),
+    render: (row) => (row.accountNumber ? row.accountNumber.replace(/\D/g, '') : ''),
   },
   {
     key: 'securityNumber',
@@ -248,7 +248,6 @@ export function DataTable({ data }: DataTableProps) {
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[String(column.key)])
   }, [columnVisibility])
-  console.log('visibleColumns', visibleColumns)
 
   const handleSort = (key: string) => {
     setSortConfig((current) => {
@@ -344,7 +343,6 @@ export function DataTable({ data }: DataTableProps) {
         return 0
       })
     }
-    console.log('data', data)
 
     return result
   }, [data, sortConfig, filters, booleanFilters, searchTerms])
