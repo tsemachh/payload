@@ -1,4 +1,4 @@
-name: Docker Emda Payload Image CI
+name: Docker Emda Payload Image CI-CD
 
 on:
   push:
@@ -12,20 +12,23 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Authenticate to Google Cloud
+      # Step 1: Checkout code
+      - uses: actions/checkout@v3
+
+      # Step 2: Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 2: Set up Google Cloud credentials
-      - name: Set up Google Cloud credentials
+      # Step 3: Set up Google Cloud credentials
+      - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          export_default_credentials: true
 
-      # Step 3: Set tag parameter based on the event type
+      # Step 4: Set tag parameter
       - name: Set tag parameter
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -35,7 +38,8 @@ jobs:
           else
             echo "TAG=release" >> $GITHUB_ENV
           fi
-      # Step 4: Permit runner to access MongoDB Atlas
+
+      # Step 5: MongoDB Atlas access
       - name: Permit runner to access MongoDB Atlas
         uses: textbook/atlas-ip@v1
         with:
@@ -43,10 +47,7 @@ jobs:
           atlas-public-key: ${{ secrets.ATLAS_PUBLIC_KEY }}
           group-id: ${{ vars.ATLAS_GROUP_ID }}
 
-      # Step 5: Checkout repository
-      - uses: actions/checkout@v3
-
-      # Step 6: Set up Docker Buildx
+      # Step 6: Docker setup
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -61,61 +62,48 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      # Step 8: Login to Google Cloud Registry (GCR)
-      - name: Login to GCR (private registry)
+
+      # Step 8: Login to GCR
+      - name: Login to Google Container Registry
         uses: docker/login-action@v2
         with:
           registry: me-west1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      # Step 9: Build Docker image locally with a temporary tag
-      - name: Build Docker image locally
+      # Step 9: Build and test
+      - name: Build, Test, and Push
         env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
-          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
-        uses: docker/build-push-action@v3
-        with:
-          context: ./  # Path to the repository
-          push: false  # Do not push yet
-          load: true   # Load the built image into the Docker daemon
-          tags: payload-image:local-test  # Local tag
-          file: ./Dockerfile  # Path to Dockerfile
-          build-args: |
-            "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
-            "DATABASE_URI=${{ secrets.DATABASE_URI }}"
-          cache-from: type=local,src=/tmp/.buildx-cache  # Cache for faster builds
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-
-      # Step 10: Move cache after build
-      - name: Move cache
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
         run: |
+          # Build the image
+          docker build \
+            --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
+            --build-arg DATABASE_URI="$DATABASE_URI" \
+            -t payload-image:local-test .
+
+          # Move cache
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-      # Step 11: Run Docker container for Payload CMS and Test with curl
-      - name: Run Docker container for Payload CMS and Test with curl
-        env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}  # MongoDB connection string
-          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}  # Payload CMS secret
-        run: |
-          # Start the container in the background with the locally built image
-          docker run --rm -d \
-            --name payload-container \
-            -e HOST="0.0.0.0" \
-            -e DATABASE_URI="${{ secrets.DATABASE_URI }}" \
-            -e PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}" \
-            -p 3000:3000 \
-            payload-image:local-test  # Use the local tag
+
+          # Run container
+          docker run -d --name payload-container -p 3000:3000 payload-image:local-test
+
           # Wait for the app to start
           echo "Waiting for the application to start..."
           sleep 30
+
           # Check logs for debugging
           echo "Container logs:"
           docker logs payload-container
+
           curl http://localhost:3000 || exit 1
+
           # Stop the container after testing
           docker stop payload-container
-      # Step 12: Tag and Push Docker image to GCR (only after test pass and on push events)
+
+      # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
       - name: Tag and Push Docker image to GCR
         if: ${{ github.event_name == 'push' }}
         run: |
@@ -123,6 +111,14 @@ jobs:
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+
+      # Step 11: Reset VM
+      - name: Reset GCP VM
+        run: |
+          gcloud compute instances reset payload-vm \
+            --zone=me-west1-b \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
   notify-slack:
     needs: docker-build
     if: failure()
