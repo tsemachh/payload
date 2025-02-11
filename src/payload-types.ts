@@ -6,6 +6,18 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RolePermissions".
+ */
+export type RolePermissions =
+  | {
+      entity: ('users' | 'stocks' | 'meetings' | 'meeting-types' | 'roles')[];
+      type: ('write' | 'read' | 'publish')[];
+      id?: string | null;
+    }[]
+  | null;
+
 export interface Config {
   auth: {
     users: UserAuthOperations;
@@ -16,6 +28,7 @@ export interface Config {
     stocks: Stock;
     meetings: Meeting;
     'meeting-types': MeetingType;
+    roles: Role;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -27,6 +40,7 @@ export interface Config {
     stocks: StocksSelect<false> | StocksSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
+    roles: RolesSelect<false> | RolesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -69,6 +83,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  name?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -153,7 +168,7 @@ export interface Meeting {
    */
   meetingDate?: string | null;
   /**
-   * The date which tells when we check the holders which are obilgated to attend the meeting
+   * The date which tells when we check the holders which are obligated to attend the meeting
    */
   holdingsLimit?: string | null;
   /**
@@ -205,6 +220,17 @@ export interface MeetingType {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -229,6 +255,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'meeting-types';
         value: number | MeetingType;
+      } | null)
+    | ({
+        relationTo: 'roles';
+        value: string | Role;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -277,6 +307,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -356,6 +387,25 @@ export interface MeetingTypesSelect<T extends boolean = true> {
   group?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles_select".
+ */
+export interface RolesSelect<T extends boolean = true> {
+  name?: T;
+  permissions?: T | RolePermissionsSelect<T>;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RolePermissions_select".
+ */
+export interface RolePermissionsSelect<T extends boolean = true> {
+  entity?: T;
+  type?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
