@@ -17,6 +17,59 @@ export type RolePermissions =
       id?: string | null;
     }[]
   | null;
+/**
+ * Supported timezones in IANA format.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supportedTimezones".
+ */
+export type SupportedTimezones =
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -84,8 +137,13 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   name?: string | null;
-  updatedAt: string;
+  isAdmin?: boolean | null;
+  isGeneratorUser?: boolean | null;
+  userRoles?: (string | Role)[] | null;
+  creator?: string | null;
+  updator?: string | null;
   createdAt: string;
+  updatedAt: string;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -97,13 +155,28 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: string;
   alt: string;
-  updatedAt: string;
+  creator?: string | null;
+  updator?: string | null;
   createdAt: string;
+  updatedAt: string;
   url?: string | null;
   thumbnailURL?: string | null;
   filename?: string | null;
@@ -149,8 +222,10 @@ export interface Stock {
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
-  updatedAt: string;
+  creator?: string | null;
+  updator?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -185,7 +260,7 @@ export interface Meeting {
    */
   meetingInviteUrl?: string | null;
   location?: string | null;
-  meetingType?: (number | null) | MeetingType;
+  meetingType?: (string | null) | MeetingType;
   comments?: string | null;
   /**
    * אימות תוצאות האסיפה
@@ -203,8 +278,12 @@ export interface Meeting {
    * פיננסי דורש ועדה
    */
   committeeInitiated?: boolean | null;
-  updatedAt: string;
+  creator?: string | null;
+  updator?: string | null;
+  publishDate?: string | null;
+  publisher?: string | null;
   createdAt: string;
+  updatedAt: string;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -215,19 +294,10 @@ export interface MeetingType {
   id: number;
   name: string;
   group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
-  updatedAt: string;
+  creator?: string | null;
+  updator?: string | null;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
- */
-export interface Role {
-  id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
   updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -254,7 +324,7 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: 'meeting-types';
-        value: number | MeetingType;
+        value: string | MeetingType;
       } | null)
     | ({
         relationTo: 'roles';
@@ -308,8 +378,13 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
-  updatedAt?: T;
+  isAdmin?: T;
+  isGeneratorUser?: T;
+  userRoles?: T;
+  creator?: T;
+  updator?: T;
   createdAt?: T;
+  updatedAt?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -324,8 +399,10 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
-  updatedAt?: T;
+  creator?: T;
+  updator?: T;
   createdAt?: T;
+  updatedAt?: T;
   url?: T;
   thumbnailURL?: T;
   filename?: T;
@@ -350,8 +427,10 @@ export interface StocksSelect<T extends boolean = true> {
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
-  updatedAt?: T;
+  creator?: T;
+  updator?: T;
   createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -373,8 +452,12 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   relatedMeetingId?: T;
   committeeInitiated?: T;
-  updatedAt?: T;
+  creator?: T;
+  updator?: T;
+  publishDate?: T;
+  publisher?: T;
   createdAt?: T;
+  updatedAt?: T;
   _status?: T;
 }
 /**
@@ -385,8 +468,10 @@ export interface MeetingTypesSelect<T extends boolean = true> {
   id?: T;
   name?: T;
   group?: T;
-  updatedAt?: T;
+  creator?: T;
+  updator?: T;
   createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -395,8 +480,10 @@ export interface MeetingTypesSelect<T extends boolean = true> {
 export interface RolesSelect<T extends boolean = true> {
   name?: T;
   permissions?: T | RolePermissionsSelect<T>;
-  updatedAt?: T;
+  creator?: T;
+  updator?: T;
   createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
