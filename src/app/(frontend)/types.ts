@@ -1,33 +1,27 @@
 export type FutureMeetingTableData = {
-  id: string
-  accountNumber: string
-  securityNumber: string
-  securityType: string
-  companyName: string
-  marketValue: number
-  meetingType: string
-  proxyStatementDate: string
-  proxyStatementTime: string
-  votingSubmissionDate: string
-  votingSubmissionTime: string
-  meetingDate: string
-  meetingTime: string
-  holdingPercentage: number
-  holdingValue: number
-  opinion: {
-    exists: boolean
-    viewed: boolean
-  }
-  votingPaper: {
-    exists: boolean
-    viewed: boolean
-  }
-  meetingInvitation: {
-    exists: boolean
-    viewed: boolean
-  }
-  votingReceived: boolean
-  inElectronicSystem: boolean
-  requiresFinancialCommittee: boolean
-  location: string
+  meetingId: string
+  // proofId:string //אסמכתא  --------------
+  stockNumber: string //מספר נייר
+  stockType: string //סוג נייר
+  companyName: string //שם החברה
+  marketValue: number //שווי שוק מיליוני
+  meetingType: string //סוג האסיפה
+  meetingDate: string //מועד האסיפה
+  location: string //מיקום
+  holdingsLimit: string //תאריך קובע
+  proxyVotingDate: string //מועד מסירת ההצבעה
+  votingDocUrl: string //כתב הצבעה
+  meetingInviteUrl: string //זימון אסיפה
+  comments: string // - חוות דעת - הערות ??
+  electronicVotingEnabled: boolean //האם האסיפה מופיעה במערכת האלקטרונית?
+  resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
+  relatedMeetingId: boolean //אסיפה קשורה ??
+  committeeInitiated: boolean //האם פיננסי דורש ועדה?
+  _status: StatusType //סטטוס
+}
+
+export enum StatusType {
+  None = '',
+  Draft = 'draft',
+  Publish = 'publish',
 }

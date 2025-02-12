@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
-import { FutureMeetingTableData } from '../types'
+import { FutureMeetingTableData, StatusType } from '../types'
 
 export async function fetchMeetingsForTable() {
   const payload = await getPayload({ config })
@@ -14,37 +14,24 @@ export async function fetchMeetingsForTable() {
     if (typeof meeting.meetingType === 'object') meetingTypePresent = meeting.meetingType
 
     return {
-      id: meeting.id,
-      accountNumber: "123456", // TODO
-      securityNumber: stockPresent?.stockID?.toString() || '',
-      securityType: stockPresent?.type || '',
+      meetingId: meeting.id,
+      stockNumber: stockPresent?.stockID?.toString() || '',
+      stockType: stockPresent?.type || '',
       companyName: stockPresent?.name || '',
       marketValue: stockPresent?.marketValue || 0,
       meetingType: meetingTypePresent?.name || '',
-      proxyStatementDate: meeting.holdingsLimit?.split('T')[0] || '',
-      proxyStatementTime: meeting.holdingsLimit?.split('T')[1]?.split('.')[0] || '',
-      votingSubmissionDate: meeting.proxyStatementDate?.split('T')[0] || '',
-      votingSubmissionTime: meeting.proxyStatementDate?.split('T')[1]?.split('.')[0] || '',
       meetingDate: meeting.meetingDate?.split('T')[0] || '',
-      meetingTime: meeting.meetingDate?.split('T')[1]?.split('.')[0] || '',
-      holdingPercentage: 0, // TODO
-      holdingValue: 0, // TODO
-      opinion: {
-        exists: false, // TODO
-        viewed: false, // TODO
-      },
-      votingPaper: {
-        exists: !!meeting.votingDocUrl,
-        viewed: false, // TODO
-      },
-      meetingInvitation: {
-        exists: !!meeting.meetingInviteUrl,
-        viewed: false, // TODO
-      },
-      votingReceived: false, // TODO
-      inElectronicSystem: !!meeting.electronicVotingEnabled,
-      requiresFinancialCommittee: !!meeting.committeeInitiated,
       location: meeting.location || '',
+      holdingsLimit: meeting.holdingsLimit?.split('T')[0] || '',
+      proxyVotingDate: meeting.proxyStatementDate?.split('T')[0] || '',
+      votingDocUrl: meeting.votingDocUrl ? meeting.votingDocUrl : '',
+      meetingInviteUrl: meeting.meetingInviteUrl ? meeting.meetingInviteUrl : '',
+      comments: meeting.comments ? meeting.comments : '',
+      electronicVotingEnabled: !!meeting.electronicVotingEnabled,
+      resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
+      relatedMeetingId: !!meeting.relatedMeetingId,
+      committeeInitiated: !!meeting.committeeInitiated,
+      _status: meeting._status ? (meeting._status as StatusType) : StatusType.None,
     }
   })
 }

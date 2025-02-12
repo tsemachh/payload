@@ -69,23 +69,18 @@ const BooleanFilterButton = ({
 }
 
 const columns: Column[] = [
+  // proofId
   {
-    key: 'accountNumber',
-    header: 'חשבון',
-    searchable: true,
-    render: (row) => (row.accountNumber ? row.accountNumber.replace(/\D/g, '') : ''),
-  },
-  {
-    key: 'securityNumber',
+    key: 'stockNumber',
     header: 'מס׳ נייר',
     searchable: true,
-    render: (row) => <div className="min-w-[100px]">{row.securityNumber}</div>,
+    render: (row) => <div className="min-w-[100px]">{row.stockNumber}</div>,
   },
   {
-    key: 'securityType',
+    key: 'stockType',
     header: 'סוג נייר',
     filterable: true,
-    render: (row) => <div className="min-w-[100px]">{row.securityType}</div>,
+    render: (row) => <div className="min-w-[100px]">{row.stockType}</div>,
   },
   {
     key: 'companyName',
@@ -97,7 +92,8 @@ const columns: Column[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     sortable: true,
-    render: (row) => new Intl.NumberFormat('he-IL').format(row.marketValue),
+    render: (row) =>
+      new Intl.NumberFormat('he-IL').format(Number((row.marketValue / 1_000_000).toFixed(2))),
   },
   {
     key: 'meetingType',
@@ -106,49 +102,10 @@ const columns: Column[] = [
     render: (row) => <div className="min-w-[100px]">{row.meetingType}</div>,
   },
   {
-    key: 'proxyStatementDate',
-    header: 'מועד קובע',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.proxyStatementDate}</div>,
-  },
-  {
-    key: 'proxyStatementTime',
-    header: 'שעה',
-    render: (row) => <div className="min-w-[100px]">{row.proxyStatementTime}</div>,
-  },
-  {
-    key: 'votingSubmissionDate',
-    header: 'תאריך מסירת הצבעות',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.votingSubmissionDate}</div>,
-  },
-  {
-    key: 'votingSubmissionTime',
-    header: 'שעה',
-    render: (row) => <div className="min-w-[100px]">{row.votingSubmissionTime}</div>,
-  },
-  {
     key: 'meetingDate',
     header: 'תאריך האסיפה',
     sortable: true,
     render: (row) => <div className="min-w-[100px]">{row.meetingDate}</div>,
-  },
-  {
-    key: 'meetingTime',
-    header: 'שעה',
-    render: (row) => <div className="min-w-[100px]">{row.meetingTime}</div>,
-  },
-  {
-    key: 'holdingPercentage',
-    header: 'אחזקה (%)',
-    sortable: true,
-    render: (row) => `${row.holdingPercentage.toFixed(2)}%`,
-  },
-  {
-    key: 'holdingValue',
-    header: 'שווי אחזקה (מיליוני ₪)',
-    sortable: true,
-    render: (row) => new Intl.NumberFormat('he-IL').format(row.holdingValue),
   },
   {
     key: 'location',
@@ -160,52 +117,63 @@ const columns: Column[] = [
     ),
   },
   {
-    key: 'opinion',
-    header: 'חוות דעת',
-    render: (row) =>
-      row.opinion.exists && (
-        <FileText className={cn('h-4 w-4', !row.opinion.viewed && 'font-bold text-primary')} />
-      ),
+    key: 'holdingsLimit',
+    header: 'מועד קובע',
+    sortable: true,
+    render: (row) => <div className="min-w-[100px]">{row.holdingsLimit}</div>,
   },
   {
-    key: 'votingPaper',
+    key: 'proxyVotingDate',
+    header: 'תאריך מסירת הצבעות',
+    sortable: true,
+    render: (row) => <div className="min-w-[100px]">{row.proxyVotingDate}</div>,
+  },
+  {
+    key: 'votingDocUrl',
     header: 'כתב הצבעה',
     render: (row) =>
-      row.votingPaper.exists && (
-        <FileText className={cn('h-4 w-4', !row.votingPaper.viewed && 'font-bold text-primary')} />
-      ),
+      row.votingDocUrl ? (
+        <a href={row.votingDocUrl} target="_blank" rel="noopener noreferrer">
+          <FileText className="h-4 w-4 text-primary" />
+        </a>
+      ) : null,
   },
   {
-    key: 'meetingInvitation',
+    key: 'meetingInviteUrl',
     header: 'זימון אסיפה',
     render: (row) =>
-      row.meetingInvitation.exists && (
-        <FileText
-          className={cn('h-4 w-4', !row.meetingInvitation.viewed && 'font-bold text-primary')}
-        />
-      ),
+      row.meetingInviteUrl ? (
+        <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
+          <FileText className="h-4 w-4 text-primary" />
+        </a>
+      ) : null,
   },
   {
-    key: 'votingReceived',
-    header: 'התקבלה הצבעה בעמדה',
-    booleanFilterable: true,
-    render: (row) =>
-      row.votingReceived ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+    key: 'comments',
+    header: 'הערות',
+    render: (row) => (
+      <div className="max-w-[200px] truncate" title={row.location as string}>
+        {row.location}
+      </div>
+    ),
   },
   {
-    key: 'inElectronicSystem',
+    key: 'electronicVotingEnabled',
     header: 'האסיפה מופיעה במערכת האלק׳?',
     booleanFilterable: true,
     render: (row) =>
-      row.inElectronicSystem ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+      row.electronicVotingEnabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
+  // resultsConfirmationStatus
+  // relatedMeetingId
   {
-    key: 'requiresFinancialCommittee',
+    key: 'committeeInitiated',
     header: 'תאגיד פיננסי דורש ועדה',
     booleanFilterable: true,
     render: (row) =>
-      row.requiresFinancialCommittee ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+      row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
+  // _status
 ]
 
 interface DataTableProps {
@@ -219,25 +187,22 @@ export function DataTable({ data }: DataTableProps) {
   } | null>(null)
   const [filters, setFilters] = useState<{
     meetingType: string
-    securityType: string
+    stockType: string
   }>({
     meetingType: '',
-    securityType: '',
+    stockType: '',
   })
   const [booleanFilters, setBooleanFilters] = useState<{
     [key: string]: BooleanFilterState
   }>({
-    votingReceived: 'none',
-    inElectronicSystem: 'none',
-    requiresFinancialCommittee: 'none',
+    electronicVotingEnabled: 'none',
+    committeeInitiated: 'none',
   })
   const [searchTerms, setSearchTerms] = useState<{
-    accountNumber: string
-    securityNumber: string
+    stockNumber: string
     general: string
   }>({
-    accountNumber: '',
-    securityNumber: '',
+    stockNumber: '',
     general: '',
   })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>(
@@ -258,7 +223,7 @@ export function DataTable({ data }: DataTableProps) {
     })
   }
 
-  const handleFilter = (key: 'meetingType' | 'securityType', value: string) => {
+  const handleFilter = (key: 'meetingType' | 'stockType', value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -266,7 +231,7 @@ export function DataTable({ data }: DataTableProps) {
     setBooleanFilters((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSearch = (key: 'accountNumber' | 'securityNumber' | 'general', value: string) => {
+  const handleSearch = (key: 'stockNumber' | 'general', value: string) => {
     setSearchTerms((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -283,8 +248,8 @@ export function DataTable({ data }: DataTableProps) {
     if (filters.meetingType && filters.meetingType !== 'all') {
       result = result.filter((item) => item.meetingType === filters.meetingType)
     }
-    if (filters.securityType && filters.meetingType !== 'all') {
-      result = result.filter((item) => item.securityType === filters.securityType)
+    if (filters.stockType && filters.meetingType !== 'all') {
+      result = result.filter((item) => item.stockType === filters.stockType)
     }
 
     // Apply boolean filters
@@ -298,14 +263,9 @@ export function DataTable({ data }: DataTableProps) {
     })
 
     // Apply searches
-    if (searchTerms.accountNumber) {
+    if (searchTerms.stockNumber) {
       result = result.filter((item) =>
-        item.accountNumber.toLowerCase().includes(searchTerms.accountNumber.toLowerCase()),
-      )
-    }
-    if (searchTerms.securityNumber) {
-      result = result.filter((item) =>
-        item.securityNumber.toLowerCase().includes(searchTerms.securityNumber.toLowerCase()),
+        item.stockNumber.toLowerCase().includes(searchTerms.stockNumber.toLowerCase()),
       )
     }
     if (searchTerms.general) {
@@ -323,17 +283,13 @@ export function DataTable({ data }: DataTableProps) {
         let bValue = b[key]
 
         // Special handling for date columns
-        if (
-          key === 'proxyStatementDate' ||
-          key === 'votingSubmissionDate' ||
-          key === 'meetingDate'
-        ) {
+        if (key === 'holdingsLimit' || key === 'proxyVotingDate' || key === 'meetingDate') {
           aValue = new Date(aValue as string).getTime()
           bValue = new Date(bValue as string).getTime()
         }
 
         // Special handling for numeric columns
-        if (key === 'holdingPercentage' || key === 'holdingValue' || key === 'marketValue') {
+        if (key === 'marketValue') {
           aValue = Number(aValue)
           bValue = Number(bValue)
         }
@@ -350,32 +306,6 @@ export function DataTable({ data }: DataTableProps) {
   return (
     <div className="space-y-4 text-right" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <DropdownMenu open={isColumnSelectorOpen} onOpenChange={setIsColumnSelectorOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex justify-between items-center"
-              onClick={() => setIsColumnSelectorOpen((prev) => !prev)}
-            >
-              <span>הצג/הסתר עמודות</span>
-              <Settings2 className="h-4 w-4 mr-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px] text-right">
-            {columns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={String(column.key)}
-                checked={columnVisibility[String(column.key)]}
-                onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                onSelect={(event) => event.preventDefault()}
-                className="text-right"
-              >
-                {typeof column.header === 'string' ? column.header : 'עמודה'}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
         <div className="relative w-72">
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -385,6 +315,32 @@ export function DataTable({ data }: DataTableProps) {
             className="pr-10 text-right"
           />
         </div>
+        <DropdownMenu open={isColumnSelectorOpen} onOpenChange={setIsColumnSelectorOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex justify-between items-center"
+              onClick={() => setIsColumnSelectorOpen((prev) => !prev)}
+            >
+              <span>עמודות</span>
+              <Settings2 className="h-4 w-4 mr-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {columns.map((column) => (
+              <DropdownMenuCheckboxItem
+                key={String(column.key)}
+                checked={columnVisibility[String(column.key)]}
+                onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                onSelect={(event) => event.preventDefault()}
+                dir="rtl"
+              >
+                {typeof column.header === 'string' ? column.header : 'עמודה'}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="rounded-md border">
         <Table dir="rtl">
@@ -469,10 +425,10 @@ export function DataTable({ data }: DataTableProps) {
           </TableHeader>
           <TableBody>
             {filteredAndSortedData.map((row) => (
-              <TableRow key={row.id} className="hover:bg-muted">
+              <TableRow key={row.meetingId} className="hover:bg-muted">
                 {visibleColumns.map((column) => (
                   <TableCell
-                    key={`${row.id}-${String(column.key)}`}
+                    key={`${row.meetingId}-${String(column.key)}`}
                     className="py-2 px-3 text-right whitespace-nowrap"
                   >
                     {column.render && column.render(row)}
