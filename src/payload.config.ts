@@ -15,8 +15,6 @@ import { Stocks } from '@/collections/stocks/Stocks'
 import { MeetingTypes } from '@/collections/meetings/MeetingsType'
 import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
-import { Test } from './collections/test'
-
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -30,7 +28,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Stocks, Meetings, MeetingTypes, Roles, Test],
+  collections: [Users, Media, Stocks, Meetings, MeetingTypes, Roles],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
