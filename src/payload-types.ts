@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('users' | 'stocks' | 'meetings' | 'meeting-types' | 'roles' | 'test')[];
+      entity: ('users' | 'stocks' | 'meetings' | 'meeting-types' | 'roles')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -29,7 +29,6 @@ export interface Config {
     meetings: Meeting;
     'meeting-types': MeetingType;
     roles: Role;
-    test: Test;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -42,7 +41,6 @@ export interface Config {
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    test: TestSelect<false> | TestSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -250,20 +248,6 @@ export interface MeetingType {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "test".
- */
-export interface Test {
-  id: string;
-  test1?: string | null;
-  test2?: string | null;
-  test3?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -292,10 +276,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'roles';
         value: string | Role;
-      } | null)
-    | ({
-        relationTo: 'test';
-        value: string | Test;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -460,19 +440,6 @@ export interface RolePermissionsSelect<T extends boolean = true> {
   entity?: T;
   type?: T;
   id?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "test_select".
- */
-export interface TestSelect<T extends boolean = true> {
-  test1?: T;
-  test2?: T;
-  test3?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
