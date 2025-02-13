@@ -15,7 +15,6 @@ import { Stocks } from '@/collections/stocks/Stocks'
 import { MeetingTypes } from '@/collections/meetings/MeetingsType'
 import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
-
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
