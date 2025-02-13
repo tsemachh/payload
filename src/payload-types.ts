@@ -200,7 +200,7 @@ export interface Stock {
   type?:
     | (
         | 'מניות'
-        | 'אופציות'
+        | 'אופציה'
         | 'כתבי אופציה'
         | 'איגרות חוב'
         | 'איגרות חוב להמרה'
@@ -222,6 +222,8 @@ export interface Stock {
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
+  tradable?: boolean | null;
+  relatedStock?: (string | null) | Stock;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -427,6 +429,8 @@ export interface StocksSelect<T extends boolean = true> {
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
+  tradable?: T;
+  relatedStock?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

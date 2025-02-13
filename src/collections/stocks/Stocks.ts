@@ -43,7 +43,6 @@ export const Stocks: CollectionConfig = {
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
         },
-
         {
           name: 'type',
           label: 'סוג נייר ערך',
@@ -53,7 +52,7 @@ export const Stocks: CollectionConfig = {
           },
           options: [
             { label: 'מניות', value: 'מניות' },
-            { label: 'אופציות', value: 'אופציות' },
+            { label: 'אופציה', value: 'אופציה' },
             { label: 'כתבי אופציה', value: 'כתבי אופציה' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
@@ -154,7 +153,33 @@ export const Stocks: CollectionConfig = {
         },
       ],
     },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'tradable',
+          label: 'מניה נסחרת',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'relatedStock',
+          label: 'מניה מקבילה (נסחרת)',
+          type: 'relationship',
+          relationTo: 'stocks',
+          admin: {
+            // Display the field only if 'tradable' is false
+            condition: (siblingData) => !siblingData.tradable,
+            width: '33%',
+          },
+        },
+      ],
+    },
   ],
+
   hooks: {
     beforeChange: [
       async ({ data }) => {
