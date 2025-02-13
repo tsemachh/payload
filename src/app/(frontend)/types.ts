@@ -1,6 +1,6 @@
 export type FutureMeetingTableData = {
   meetingId: string
-  // proofId:string //אסמכתא  --------------
+  // proofId:type? //אסמכתא
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   companyName: string //שם החברה

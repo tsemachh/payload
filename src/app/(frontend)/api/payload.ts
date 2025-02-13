@@ -8,6 +8,7 @@ export async function fetchMeetingsForTable() {
   const meetings = await payload.find({ collection: 'meetings' })
 
   return meetings.docs.map((meeting): FutureMeetingTableData => {
+
     let stockPresent
     let meetingTypePresent
     if (typeof meeting.stock === 'object') stockPresent = meeting.stock
@@ -24,9 +25,9 @@ export async function fetchMeetingsForTable() {
       location: meeting.location || '',
       holdingsLimit: meeting.holdingsLimit?.split('T')[0] || '',
       proxyVotingDate: meeting.proxyStatementDate?.split('T')[0] || '',
-      votingDocUrl: meeting.votingDocUrl ? meeting.votingDocUrl : '',
-      meetingInviteUrl: meeting.meetingInviteUrl ? meeting.meetingInviteUrl : '',
-      comments: meeting.comments ? meeting.comments : '',
+      votingDocUrl: meeting.votingDocUrl || '',
+      meetingInviteUrl: meeting.meetingInviteUrl || '',
+      comments: meeting.comments || '',
       electronicVotingEnabled: !!meeting.electronicVotingEnabled,
       resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
       relatedMeetingId: !!meeting.relatedMeetingId,

@@ -148,15 +148,15 @@ const columns: Column[] = [
         </a>
       ) : null,
   },
-  {
-    key: 'comments',
-    header: 'הערות',
-    render: (row) => (
-      <div className="max-w-[200px] truncate" title={row.location as string}>
-        {row.location}
-      </div>
-    ),
-  },
+  // {
+  //   key: 'comments',
+  //   header: 'הערות',
+  //   render: (row) => (
+  //     <div className="max-w-[200px] truncate" title={row.comments as string}>
+  //       {row.comments}
+  //     </div>
+  //   ),
+  // },
   {
     key: 'electronicVotingEnabled',
     header: 'האסיפה מופיעה במערכת האלק׳?',
