@@ -35,10 +35,11 @@ export const Stocks: CollectionConfig = {
           unique: true,
           required: true,
           index: true,
+          access: {
+            update: () => false, // Prevent updates to the field
+          },
           admin: {
             width: '33%',
-            condition: (data) => !data?.id,
-
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
         },
