@@ -11,18 +11,21 @@ export const MeetingTypes: CollectionConfig = {
   },
   fields: [
     {
-      name: 'id', //-TypeId
+      name: 'id',
+      label: "מס' סוג אסיפה",
       type: 'number',
       required: true,
       unique: true,
     },
     {
-      name: 'name', //-Name
+      name: 'name',
+      label: 'שם',
       type: 'text',
       required: true,
     },
     {
-      name: 'group', //-GroupId
+      name: 'group',
+      label: 'קבוצה',
       type: 'select',
       options: [
         {

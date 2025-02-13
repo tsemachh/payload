@@ -30,37 +30,23 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockID',
-          label: 'מזהה', // Stock ID
+          label: "מס' נייר",
           type: 'number',
           unique: true,
           required: true,
           index: true,
+          access: {
+            update: () => false, // Prevent updates to the field
+          },
           admin: {
             width: '33%',
-            condition: (data) => !data?.id,
-
-            // readOnly: typeof window !== 'undefined' && window.location.pathname.includes('/create'),
-            description: 'מזהה נייר ערך ניתן לעריכה רק בעת יצירה', // Stock ID can only be set during creation
+            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
-          // hooks: {
-          //   beforeChange: [
-          //     ({ data, req }) => {
-          //       // Prevent stockID modification if document exists
-          //       if (req.method === 'PUT' && data.id) {
-          //         // Remove stockID from update payload
-          //         delete data.stockID
-          //       }
-          //       return data
-          //     }
-          //   ]
-          // },
-          // access: {
-          //   update: ({ req }) => !req.doc, // Only allow if no existing document
-          // },
         },
+
         {
           name: 'type',
-          label: 'סוג', // Type
+          label: 'סוג נייר ערך',
           type: 'select',
           admin: {
             width: '33%',
@@ -84,7 +70,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'valueDate',
-          label: 'תאריך ערך', // Value Date
+          label: 'תאריך ערך',
           type: 'date',
           required: true,
           admin: {
@@ -98,7 +84,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'symbol',
-          label: 'סמל', // Symbol
+          label: 'סימול',
           type: 'text',
           index: true,
           admin: {
@@ -107,7 +93,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'name',
-          label: 'שם', // Name
+          label: 'שם נייר',
           type: 'text',
           admin: {
             width: '33%',
@@ -115,7 +101,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'longName',
-          label: 'שם מלא', // Long Name
+          label: 'שם מלא',
           type: 'text',
           admin: {
             width: '33%',
@@ -128,7 +114,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'closingRate',
-          label: 'שער סגירה', // Closing Rate
+          label: 'שער סגירה',
           type: 'number',
           admin: {
             width: '33%',
@@ -136,16 +122,15 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'marketValue',
-          label: 'שווי שוק', // Market Value
+          label: 'שווי שוק',
           type: 'number',
           admin: {
             width: '33%',
-            readOnly: true, // Prevent user modification
+            readOnly: true,
           },
           hooks: {
             beforeChange: [
               ({ siblingData }) => {
-                // Prevent storing the computed field in the database
                 delete siblingData['marketValue']
               },
             ],
@@ -161,7 +146,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'registeredValue',
-          label: 'הון רשום', // Registered Value
+          label: 'הון רשום',
           type: 'number',
           admin: {
             width: '33%',

@@ -1,11 +1,11 @@
-// storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
+import { addAuthorsFields } from '@shefing/authors-info'
+import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
-import sharp from 'sharp'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
 
@@ -14,7 +14,7 @@ import { Media } from './collections/Media'
 import { Stocks } from '@/collections/stocks/Stocks'
 import { MeetingTypes } from '@/collections/meetings/MeetingsType'
 import { Meetings } from './collections/meetings/Meetings'
-
+import { Roles } from '@shefing/authorization'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -28,7 +28,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Stocks,Meetings,MeetingTypes],
+  collections: [Users, Media, Stocks, Meetings, MeetingTypes, Roles],
+  globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -37,9 +38,18 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  sharp,
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
+    addAccess({
+      rolesCollection: 'roles', // name of the collection defining the roles
+      permissionsField: 'permissions', // name of the field within the role collection
+      excludedCollections: ['media'], // enable to exclude some collections from permission control
+    }),
+    addAuthorsFields({
+      excludedCollections: [], //array of collections names to exclude
+      excludedGlobals: [], // array of globals names to exclude
+      usernameField: 'name', //name field to use from Users collection, 'user' by default
+    }),
   ],
 })
