@@ -8,11 +8,10 @@ export async function fetchMeetingsForTable() {
   const meetings = await payload.find({ collection: 'meetings' })
 
   return meetings.docs.map((meeting): FutureMeetingTableData => {
-
     let stockPresent
-    let meetingTypePresent
+    // let meetingTypePresent
     if (typeof meeting.stock === 'object') stockPresent = meeting.stock
-    if (typeof meeting.meetingType === 'object') meetingTypePresent = meeting.meetingType
+    // if (typeof meeting.meetingType === 'object') meetingTypePresent = meeting.meetingType
 
     return {
       meetingId: meeting.id,
@@ -20,7 +19,8 @@ export async function fetchMeetingsForTable() {
       stockType: stockPresent?.type || '',
       companyName: stockPresent?.name || '',
       marketValue: stockPresent?.marketValue || 0,
-      meetingType: meetingTypePresent?.name || '',
+      // meetingType: meetingTypePresent?.name || '',//TODO: docker build
+      meetingType: 'מיוחדת',
       meetingDate: meeting.meetingDate?.split('T')[0] || '',
       location: meeting.location || '',
       holdingsLimit: meeting.holdingsLimit?.split('T')[0] || '',
