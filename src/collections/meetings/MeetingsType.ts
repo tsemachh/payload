@@ -11,7 +11,7 @@ export const MeetingTypes: CollectionConfig = {
   },
   fields: [
     {
-      name: 'id',
+      name: 'typeId',
       label: "מס' סוג אסיפה",
       type: 'number',
       required: true,

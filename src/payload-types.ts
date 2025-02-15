@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('users' | 'stocks' | 'meetings' | 'meeting-types' | 'roles')[];
+      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'meeting-types' | 'roles')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -26,6 +26,7 @@ export interface Config {
     users: User;
     media: Media;
     stocks: Stock;
+    'stock-values': StockValue;
     meetings: Meeting;
     'meeting-types': MeetingType;
     roles: Role;
@@ -33,11 +34,16 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    stocks: {
+      values: 'stock-values';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
+    'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
@@ -140,15 +146,11 @@ export interface Media {
  */
 export interface Stock {
   id: string;
-  /**
-   * מזהה מניה ניתן לעריכה רק בעת יצירה
-   */
-  stockID?: number | null;
+  stockId: number;
   type?:
     | (
         | 'מניות'
         | 'אופציות'
-        | 'כתבי אופציה'
         | 'איגרות חוב'
         | 'איגרות חוב להמרה'
         | 'יחידת השתתפות'
@@ -162,10 +164,26 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
-  valueDate: string;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
+  values?: {
+    docs?: (string | StockValue)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-values".
+ */
+export interface StockValue {
+  id: string;
+  stockId: string | Stock;
+  valueDate: string;
   closingRate?: number | null;
   marketValue?: number | null;
   registeredValue?: number | null;
@@ -238,7 +256,8 @@ export interface Meeting {
  * via the `definition` "meeting-types".
  */
 export interface MeetingType {
-  id: number;
+  id: string;
+  typeId: number;
   name: string;
   group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
   creator?: string | null;
@@ -264,6 +283,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stocks';
         value: string | Stock;
+      } | null)
+    | ({
+        relationTo: 'stock-values';
+        value: string | StockValue;
       } | null)
     | ({
         relationTo: 'meetings';
@@ -365,12 +388,24 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "stocks_select".
  */
 export interface StocksSelect<T extends boolean = true> {
-  stockID?: T;
+  stockId?: T;
   type?: T;
-  valueDate?: T;
   symbol?: T;
   name?: T;
   longName?: T;
+  values?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-values_select".
+ */
+export interface StockValuesSelect<T extends boolean = true> {
+  stockId?: T;
+  valueDate?: T;
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
@@ -412,7 +447,7 @@ export interface MeetingsSelect<T extends boolean = true> {
  * via the `definition` "meeting-types_select".
  */
 export interface MeetingTypesSelect<T extends boolean = true> {
-  id?: T;
+  typeId?: T;
   name?: T;
   group?: T;
   creator?: T;
