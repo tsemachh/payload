@@ -32,8 +32,14 @@ export const Stocks: CollectionConfig = {
           type: 'number',
           unique: true, // Ensure stockID is unique
           required: true,
-          index : true,
-          label: "מס' נייר",
+          index: true,
+          access: {
+            update: () => false, // Prevent updates to the field
+          },
+          admin: {
+            width: '33%',
+            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
+          },
         },
         {
           name: 'type',
