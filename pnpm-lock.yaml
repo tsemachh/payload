@@ -22,7 +22,7 @@ importers:
         version: 3.23.0(payload@3.23.0(graphql@16.10.0)(monaco-editor@0.52.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))
       '@payloadcms/richtext-lexical':
         specifier: latest
-        version: 3.23.0(fc4d40da6601a00d30a76b17cc8744f7)
+        version: 3.23.0(eujrvk4wfpanyanzeha3cb4tl4)
       '@payloadcms/translations':
         specifier: ^3.22.0
         version: 3.23.0
@@ -7105,7 +7105,7 @@ snapshots:
       - aws-crt
       - encoding
 
-  '@payloadcms/richtext-lexical@3.23.0(fc4d40da6601a00d30a76b17cc8744f7)':
+  '@payloadcms/richtext-lexical@3.23.0(eujrvk4wfpanyanzeha3cb4tl4)':
     dependencies:
       '@faceless-ui/modal': 3.0.0-beta.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

@@ -40,6 +40,10 @@ export const StockValues: CollectionConfig = {
           type: 'date',
           required: true,
           admin: {
+            date:{
+              displayFormat: 'dd MMM yyy',
+              pickerAppearance: 'default',
+            },
             width: '33%',
           },
         },
