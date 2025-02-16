@@ -90,6 +90,8 @@ export interface Config {
   collectionsJoins: {
     stocks: {
       values: 'stock-values';
+      relations: 'stocks';
+      meetings: 'meetings';
     };
   };
   collectionsSelect: {
@@ -220,11 +222,21 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
+  relatedStock?: (string | null) | Stock;
+  tradable?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
   values?: {
     docs?: (string | StockValue)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  relations?: {
+    docs?: (string | Stock)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  meetings?: {
+    docs?: (string | Meeting)[] | null;
     hasNextPage?: boolean | null;
   } | null;
   creator?: string | null;
@@ -446,10 +458,14 @@ export interface MediaSelect<T extends boolean = true> {
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   type?: T;
+  relatedStock?: T;
+  tradable?: T;
   symbol?: T;
   name?: T;
   longName?: T;
   values?: T;
+  relations?: T;
+  meetings?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

@@ -13,12 +13,9 @@ export const Stocks: CollectionConfig = {
       'type',
       'symbol',
       'name',
-      'longName',
-      'registeredValue',
-      'valueDate',
-      'closingRate',
-      'marketValue',
+      'longName'
     ],
+    listSearchableFields: ['stockId', 'type','symbol','name','longName'],
   },
   versions: {
     drafts: false,
@@ -30,6 +27,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
+          label: 'מזהה מניה',
           unique: true, // Ensure stockID is unique
           required: true,
           index: true,
@@ -37,7 +35,7 @@ export const Stocks: CollectionConfig = {
             update: () => false, // Prevent updates to the field
           },
           admin: {
-            width: '33%',
+            width: '25%',
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
         },
@@ -46,7 +44,7 @@ export const Stocks: CollectionConfig = {
           label: 'סוג נייר ערך',
           type: 'select',
           admin: {
-            width: '33%',
+            width: '25%',
           },
           options: [
             { label: 'מניות', value: 'מניות' },
@@ -63,7 +61,34 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-        }
+        },
+        {
+          name: 'relatedStock',
+          label: 'מניה מקבילה (נסחרת)',
+          type: 'relationship',
+          relationTo: 'stocks',
+          admin: {
+            // Display the field only if 'tradable' is false
+/*
+            condition: (siblingData) => !siblingData.tradable,
+*/
+            width: '25%',
+          },
+          filterOptions: () => ({
+            tradable: {
+              equals: true,
+            },
+          }),
+        },
+        {
+          name: 'tradable',
+          label: 'מניה נסחרת',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            width: '25%',
+          },
+        },
       ],
     },
     {
@@ -106,6 +131,26 @@ export const Stocks: CollectionConfig = {
           'registeredValue',
           'closingRate',
           'marketValue']}
+    },
+    {
+      name: 'relations',
+      label:'מקושרים' ,
+      type: 'join',
+      collection: 'stocks',
+      on: 'relatedStock',
+      admin:{defaultColumns:[ 'stockId',
+          'type',
+          'symbol',
+          'name',
+          'longName']}
+    },
+    {
+      name: 'meetings',
+      label:'פגישות' ,
+      type: 'join',
+      collection: 'meetings',
+      on: 'stock',
+      admin:{defaultColumns:[ 'meetingId', 'meetingDate', 'meetingType']}
     }
   ]
 }
