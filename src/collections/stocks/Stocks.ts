@@ -7,9 +7,9 @@ export const Stocks: CollectionConfig = {
     singular: 'נייר ערך',
   },
   admin: {
-    useAsTitle: 'stockID',
+    useAsTitle: 'stockId',
     defaultColumns: [
-      'stockID',
+      'stockId',
       'type',
       'symbol',
       'name',
@@ -22,27 +22,25 @@ export const Stocks: CollectionConfig = {
   },
   versions: {
     drafts: false,
-    maxPerDoc: 365,
   },
   fields: [
     {
       type: 'row',
       fields: [
         {
-          name: 'stockID',
-          label: "מס' נייר",
+          name: 'stockId',
           type: 'number',
-          unique: true,
+          unique: true, // Ensure stockID is unique
           required: true,
           index: true,
+          access: {
+            update: () => false, // Prevent updates to the field
+          },
           admin: {
             width: '33%',
-            condition: (data) => !data?.id,
-
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
         },
-
         {
           name: 'type',
           label: 'סוג נייר ערך',
@@ -53,7 +51,6 @@ export const Stocks: CollectionConfig = {
           options: [
             { label: 'מניות', value: 'מניות' },
             { label: 'אופציות', value: 'אופציות' },
-            { label: 'כתבי אופציה', value: 'כתבי אופציה' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
@@ -66,16 +63,7 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-        },
-        {
-          name: 'valueDate',
-          label: 'תאריך ערך',
-          type: 'date',
-          required: true,
-          admin: {
-            width: '33%',
-          },
-        },
+        }
       ],
     },
     {
@@ -109,62 +97,15 @@ export const Stocks: CollectionConfig = {
       ],
     },
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'closingRate',
-          label: 'שער סגירה',
-          type: 'number',
-          admin: {
-            width: '33%',
-          },
-        },
-        {
-          name: 'marketValue',
-          label: 'שווי שוק',
-          type: 'number',
-          admin: {
-            width: '33%',
-            readOnly: true,
-          },
-          hooks: {
-            beforeChange: [
-              ({ siblingData }) => {
-                delete siblingData['marketValue']
-              },
-            ],
-            afterRead: [
-              ({ data }) => {
-                if (data?.closingRate && data?.registeredValue) {
-                  return (data.closingRate * data.registeredValue) / 100
-                }
-                return null
-              },
-            ],
-          },
-        },
-        {
-          name: 'registeredValue',
-          label: 'הון רשום',
-          type: 'number',
-          admin: {
-            width: '33%',
-          },
-        },
-      ],
-    },
-  ],
-  hooks: {
-    beforeChange: [
-      async ({ data }) => {
-        if (!data.valueDate) {
-          return {
-            ...data,
-            valueDate: new Date(),
-          }
-        }
-        return data
-      },
-    ],
-  },
+      name: 'values',
+      label:'ערכים' ,
+      type: 'join',
+      collection: 'stock-values',
+      on: 'stockId',
+      admin:{defaultColumns:['valueDate',
+          'registeredValue',
+          'closingRate',
+          'marketValue']}
+    }
+  ]
 }

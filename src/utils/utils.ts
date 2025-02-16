@@ -11,7 +11,28 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: number |
       limit: 1,
       depth: 0,
       where: {
-        stockID: { equals: stockID },
+        stockId: { equals: stockID },
+      },
+    })
+    if (stock.docs.length > 0) id = stock.docs[0].id
+  } catch (error) {
+    console.error(error)
+  }
+  return id
+}
+
+export async function getSeqeunceStockValueId(payload: BasePayload, stockID: number | null | undefined,valueDate:string) {
+  if (stockID === null) return null
+
+  let id = null
+
+  try {
+    const stock = await payload.find({
+      collection: 'stock-values',
+      limit: 1,
+      depth: 0,
+      where: {
+        stockId: { equals: stockID},valueDate:{equals:valueDate }
       },
     })
     if (stock.docs.length > 0) id = stock.docs[0].id
@@ -39,17 +60,17 @@ export async function getSeqeunceMeetingId(payload: BasePayload, meetingId: numb
   return id
 }
 
-export async function getSeqeunceMeetingType(payload: BasePayload, rowId: number | null) {
-  if (rowId === null) return null
+export async function getSeqeunceMeetingType(payload: BasePayload, typeId: number | null) {
+  if (typeId === null) return null
 
   let id = null
   try {
     const data = await payload.find({
-      collection: 'meetings',
+      collection: 'meeting-types',
       limit: 1,
       depth: 0,
       where: {
-        id: { equals: rowId },
+        typeId: { equals: typeId },
       },
     })
     if (data.docs.length > 0) id = data.docs[0].id

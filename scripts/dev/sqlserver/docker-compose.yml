@@ -1,0 +1,14 @@
+version: '3.9' # Or any compatible version
+
+services:
+  sql_server_test:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_server_test
+    ports:
+      - '1433:1433'
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: 'dockerStrongPwd123'
+    volumes:
+      - ./data:/var/opt/mssql/data
+    restart: always # Optional: Restarts the container if it crashes

@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Stock } from '@/payload-types'
-import {  getSeqeunceStockId,  } from '../utils/utils' // Then you can use sql.close() directly
+import { Stock, StockValue } from '@/payload-types'
+import { getSeqeunceStockId, getSeqeunceStockValueId } from '../utils/utils' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -13,23 +13,24 @@ const sqlConfig: sql.config = {
   options: {
     encrypt: false, // For local dev, set to false
     trustServerCertificate: true // For local dev
-  }
+  },
+  requestTimeout: 120000, // Increase timeout globally to 120 seconds
 }
 const stockTypesMap = new Map([
   ["אג\"ח היברידי קונצרני", "איגרות חוב"],
   ["אג\"ח קונצרני זר חו\"ל IG", "איגרות חוב"],
   ["אגח - השאלה", "איגרות חוב"],
-  ["אופציה", "כתבי אופציה"],
+  ["אופציה", "אופציות"],
   ["יה\"ש", "יחידת השתתפות"],
   ["יחידת השתתפות", "יחידת השתתפות"],
   ["מניות חול - זיקה לישראל", "מניות"],
   ["קרנות סל מניות ישראל", "קרנות נאמנות"],
   ["אג\"ח", "איגרות חוב"],
   ["אגרות חוב", "איגרות חוב"],
-  ["אופציות מניות", "כתבי אופציה"],
+  ["אופציות מניות", "אופציות"],
   ["הלוואות לא סחירות", "אחר"],
   ["זכויות", "זכויות"],
-  ["כתב אופציה מניות", "כתבי אופציה"],
+  ["כתב אופציה מניות", "אופציות"],
   ["מניות - קרנות סל מניות חו\"ל", "קרנות נאמנות"],
   ["מניות דואליות חו\"ל - דולר", "מניות"],
   ["נע\"מ", "נייר ערך מסחרי"],
@@ -44,8 +45,8 @@ const stockTypesMap = new Map([
   ["תעודות סל שאר העולם יורו", "תעודות סל"],
   ["תעודת סל", "תעודות סל"],
   ["תעודת סל מנית חול", "תעודות סל"],
-  ["אופציה על מניה", "כתבי אופציה"],
-  ["אופציות מעוף", "כתבי אופציה"],
+  ["אופציה על מניה", "אופציות"],
+  ["אופציות מעוף", "אופציות"],
   ["איגרות חוב להמרה", "איגרות חוב"],
   ["מניות חו\"ל - ארה\"ב דולר", "מניות"],
   ["מניות חול - אירופה יורו", "מניות"],
@@ -56,7 +57,7 @@ const stockTypesMap = new Map([
   ["ת סל אג\"ח ממשלתי", "תעודות סל"],
   ["תעודת מדד", "תעודות סל"],
   ["תעודת סל אג\"ח IG", "תעודות סל"],
-  ["כתבי אופציה", "כתבי אופציה"],
+  ["כתבי אופציה",  "אופציות"],
   ["מוצר מובנה", "אחר"],
   ["מניות לא סחירות בחו\"ל", "מניות"],
   ["מק\"מ", "מק\"מ"],
@@ -79,7 +80,7 @@ const stockTypesMap = new Map([
   ["איגרות חוב", "איגרות חוב"],
   ["אג\"ח זר COCO מחיקה", "איגרות חוב"],
   ["אג\"ח לא סחיר", "איגרות חוב"],
-  ["אופציות", "כתבי אופציה"],
+  ["אופציות", "אופציות"],
   ["חוב מובנה בחו\"ל - CLO יורו", "איגרות חוב"],
   ["מניות - חוזים על סחורות", "מניות"],
   ["מניות חו\"ל - שאר העולם דולר", "מניות"],
@@ -111,14 +112,31 @@ const stockTypesMap = new Map([
   ["קרנות סל מניות חו\"ל", "קרנות נאמנות"],
   ["תעודות סל זרות בחו\"ל -יורו", "תעודות סל"]
 ]);
+
+// @ts-ignore
+function getStockType(row) {
+  // Example usage:
+  let stocktype = row.type
+  if (stocktype) stocktype = stocktype.trim()
+  // @ts-ignore
+  const assetType = stockTypesMap.get(stocktype)
+  if (assetType) stocktype = assetType
+  return stocktype
+}
+
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-    await payload.delete({
+/*    await payload.delete({
       collection: 'stocks',
       where: {},
     })
+
+    await payload.delete({
+      collection: 'stock-values',
+      where: {},
+    })*/
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -131,7 +149,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const result = await pool.request().query(`
       SELECT stockID, name, symbol, type, closingRate, marketValue, registeredValue, valueDate, logUpdateID, longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
+      WHERE [valueDate] >= DATEADD(DAY, -60, GETDATE())
       ORDER BY valueDate ASC;
     `)
     console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
@@ -141,46 +159,58 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
     let stockData: Stock | null = null;
+    let stockValue: StockValue | null = null;
+    const stocks:Set<string>=new Set()
       for (const row of result.recordset) {
       try {
-        // @ts-ignore
-        // Example usage:
-        let stocktype=row.type;
-        if (stocktype)
-          stocktype=stocktype.trim()
-        // @ts-ignore
-        const assetType = stockTypesMap.get(stocktype)
-        if (assetType)
-          stocktype=assetType
+        const stockID:number = parseInt(row.stockID); // Example ObjectId
+        let stockSequence = await getSeqeunceStockId(payload, stockID)
 
+        if (!stocks.has(row.stockID) && !stockSequence) {
+            const stocktype = getStockType(row)
+            // @ts-ignore
+            stockData = {
+              stockId: stockID,
+              name: row.name,
+              symbol: row.symbol,
+              type: stocktype,
+              longName: row.longName
+            }
+            console.log("stockData",JSON.stringify(stockData))
+            // Insert into Payload CMS
+            const newStock:Stock=await payload.create({
+              collection: 'stocks',
+              data: stockData as Stock,
+            })
+          stockSequence=newStock.id;
+          stocks.add(row.stockID);
+        }
+         
         // @ts-ignore
-        stockData= {
-          stockID: row.stockID,
-          name: row.name,
-          symbol: row.symbol,
-          type: stocktype,
+        stockValue = {
+          stockId: stockSequence as string,
+          valueDate: row.valueDate,
           closingRate: row.closingRate,
           marketValue: row.marketValue,
           registeredValue: row.registeredValue,
-          valueDate: row.valueDate,
-          longName: row.longName
+          createdAt : row.createdAt,
         }
 
         //console.log("Data",JSON.stringify(stockData, null, 2))
-        const id = await getSeqeunceStockId(payload, stockData?.stockID)
+        const id = await getSeqeunceStockValueId(payload, row.stockID,row.valueDate)
         if (id) {
           // Update Payload CMS
           await payload.update({
-            collection: 'stocks',
+            collection: 'stock-values',
             id: id,
-            data: stockData as Stock,
+            data: stockValue as StockValue,
             req,
           })
         } else {
           // Insert into Payload CMS
           await payload.create({
-            collection: 'stocks',
-            data: stockData as Stock,
+            collection: 'stock-values',
+            data: stockValue as StockValue,
           })
         }
 
