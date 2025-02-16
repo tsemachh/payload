@@ -151,7 +151,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       FROM [dbEmda].[dbo].[stocks]
       WHERE [valueDate] >= DATEADD(DAY, -60, GETDATE())
       ORDER BY valueDate ASC;
-    `,{ timeout: 60000 })
+    `)
     console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
 
     // Transform and insert data into Payload CMS
