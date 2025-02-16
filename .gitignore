@@ -51,3 +51,5 @@ next-env.d.ts
 
 /scripts/bin
 /scripts/dump
+/scripts/dev/mongo/data
+

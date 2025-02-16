@@ -37,7 +37,6 @@ export const Stocks: CollectionConfig = {
             update: () => false, // Prevent updates to the field
           },
           admin: {
-            width: '33%',
             description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
           },
         },
@@ -45,9 +44,6 @@ export const Stocks: CollectionConfig = {
           name: 'type',
           label: 'סוג נייר ערך',
           type: 'select',
-          admin: {
-            width: '33%',
-          },
           options: [
             { label: 'מניות', value: 'מניות' },
             { label: 'אופציה', value: 'אופציה' },
@@ -63,6 +59,21 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
+        },
+        {
+          name: 'tradable',
+          label: 'מניה נסחרת',
+          type: 'checkbox',
+        },
+        {
+          name: 'relatedStock',
+          label: 'מניה מקבילה (נסחרת)',
+          type: 'relationship',
+          relationTo: 'stocks',
+          admin: {
+            // Display the field only if 'tradable' is false
+            condition: (siblingData) => !siblingData.tradable,
+          },
         },
       ],
     },
@@ -91,31 +102,6 @@ export const Stocks: CollectionConfig = {
           label: 'שם מלא',
           type: 'text',
           admin: {
-            width: '33%',
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'tradable',
-          label: 'מניה נסחרת',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            width: '33%',
-          },
-        },
-        {
-          name: 'relatedStock',
-          label: 'מניה מקבילה (נסחרת)',
-          type: 'relationship',
-          relationTo: 'stocks',
-          admin: {
-            // Display the field only if 'tradable' is false
-            condition: (siblingData) => !siblingData.tradable,
             width: '33%',
           },
         },
