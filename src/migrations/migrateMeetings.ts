@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting } from '@/payload-types'
-import {  getSeqeunceMeetingId, getSeqeunceStockId ,  } from '../utils/utils' // Then you can use sql.close() directly
+import { getSeqeunceMeetingId, getSeqeunceMeetingType, getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -20,10 +20,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-    await payload.delete({
+/*    await payload.delete({
       collection: 'meetings',
       where: {},
-    });
+    });*/
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -71,6 +71,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           console.log("Stockid can't be found:",row.stockID)
           continue;
         }
+        //Find meetingTypeId
+        const meetingTypeId = await getSeqeunceMeetingType(payload, row.mtype)
+        if (meetingTypeId === null){
+          console.log("Stockid can't be found:",row.mtype)
+          continue;
+        }
         //Find relatedf meeting Id
         const relatedMeetingId = await getSeqeunceMeetingId(payload, row.mIdConnection)
         // @ts-ignore
@@ -84,13 +90,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           votingDocUrl:row.memourl,
           meetingInviteUrl:row.link2,
           location:row.location,
-          meetingType:row.mtype,
+          meetingType:meetingTypeId,
           comments:row.comments,
           resultsConfirmationStatus:!!row.ResultConfirm,
           electronicVotingEnabled:!!row.ElectronicVoting,
           relatedMeetingId:relatedMeetingId,
           committeeInitiated:!!row.CommiteeRequest,
         }
+
         //console.log("Data",JSON.stringify(meetingData, null, 2))
         const id = await getSeqeunceMeetingId(payload, meetingData.meetingId)
         if (id){
@@ -110,11 +117,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         successCount++
-        console.log(`✓ Inserted Meeting: ${row.meetingId} (${successCount}/${result.recordset.length})`)
+        console.log(`✓ Inserted Meeting: ${row.id} (${successCount}/${result.recordset.length})`)
       } catch (insertError) {
         console.log("Row",JSON.stringify(row, null, 2))
         errorCount++
-        console.error(`✗ Failed to insert Meetingds ${row.meetingId}:`, insertError)
+        console.error(`✗ Failed to insert Meetingds ${row.id}:`, insertError)
         return;
       }
     }
