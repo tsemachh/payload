@@ -8,17 +8,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: [
-      'stockId',
-      'type',
-      'symbol',
-      'name',
-      'longName',
-      'registeredValue',
-      'valueDate',
-      'closingRate',
-      'marketValue',
-    ],
+    defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -30,6 +21,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
+          label: 'מזהה מניה',
           unique: true, // Ensure stockID is unique
           required: true,
           index: true,
@@ -74,6 +66,11 @@ export const Stocks: CollectionConfig = {
             // Display the field only if 'tradable' is false
             condition: (siblingData) => !siblingData.tradable,
           },
+          filterOptions: () => ({
+            tradable: {
+              equals: true,
+            },
+          }),
         },
       ],
     },
@@ -115,19 +112,21 @@ export const Stocks: CollectionConfig = {
       on: 'stockId',
       admin: { defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'] },
     },
+    {
+      name: 'relations',
+      label: 'מקושרים',
+      type: 'join',
+      collection: 'stocks',
+      on: 'relatedStock',
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+    },
+    {
+      name: 'meetings',
+      label: 'פגישות',
+      type: 'join',
+      collection: 'meetings',
+      on: 'stock',
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+    },
   ],
-
-  hooks: {
-    beforeChange: [
-      async ({ data }) => {
-        if (!data.valueDate) {
-          return {
-            ...data,
-            valueDate: new Date(),
-          }
-        }
-        return data
-      },
-    ],
-  },
 }
