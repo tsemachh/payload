@@ -90,6 +90,8 @@ export interface Config {
   collectionsJoins: {
     stocks: {
       values: 'stock-values';
+      relations: 'stocks';
+      meetings: 'meetings';
     };
   };
   collectionsSelect: {
@@ -200,13 +202,13 @@ export interface Media {
 export interface Stock {
   id: string;
   /**
-   * מזהה מניה ניתן לעריכה רק בעת יצירה
+   * ניתן להעריכה רק בעת יצירת נייר הערך
    */
   stockId: number;
   type?:
     | (
         | 'מניות'
-        | 'אופציות'
+        | 'אופציה'
         | 'איגרות חוב'
         | 'איגרות חוב להמרה'
         | 'יחידת השתתפות'
@@ -220,11 +222,21 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
+  tradable?: boolean | null;
+  relatedStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
   values?: {
     docs?: (string | StockValue)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  relations?: {
+    docs?: (string | Stock)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  meetings?: {
+    docs?: (string | Meeting)[] | null;
     hasNextPage?: boolean | null;
   } | null;
   creator?: string | null;
@@ -255,50 +267,20 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   meetingId: number;
-  /**
-   * Reference ID for official meeting documentation
-   */
   proofId?: string | null;
-  /**
-   * Actual meeting date and time
-   */
   meetingDate?: string | null;
-  /**
-   * The date which tells when we check the holders which are obligated to attend the meeting
-   */
   holdingsLimit?: string | null;
-  /**
-   * Max Date when proxy voting should be submitted
-   */
   proxyStatementDate?: string | null;
   stock?: (string | null) | Stock;
-  /**
-   * קישור לכתב הצבעה
-   */
   votingDocUrl?: string | null;
-  /**
-   * קישור לזימון אסיפה
-   */
   meetingInviteUrl?: string | null;
   location?: string | null;
   meetingType?: (string | null) | MeetingType;
   comments?: string | null;
-  /**
-   * אימות תוצאות האסיפה
-   */
   resultsConfirmationStatus?: boolean | null;
-  /**
-   * האסיפה מופיעה במערכת האלקטרונית?
-   */
   electronicVotingEnabled?: boolean | null;
-  /**
-   * ID of related meeting (for continued or postponed sessions)
-   */
-  relatedMeetingId?: (string | null) | Meeting;
-  /**
-   * פיננסי דורש ועדה
-   */
   committeeInitiated?: boolean | null;
+  relatedMeetingId?: (string | null) | Meeting;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -446,10 +428,14 @@ export interface MediaSelect<T extends boolean = true> {
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   type?: T;
+  tradable?: T;
+  relatedStock?: T;
   symbol?: T;
   name?: T;
   longName?: T;
   values?: T;
+  relations?: T;
+  meetings?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -488,8 +474,8 @@ export interface MeetingsSelect<T extends boolean = true> {
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
-  relatedMeetingId?: T;
   committeeInitiated?: T;
+  relatedMeetingId?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;

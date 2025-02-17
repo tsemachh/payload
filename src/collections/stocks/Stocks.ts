@@ -8,17 +8,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: [
-      'stockId',
-      'type',
-      'symbol',
-      'name',
-      'longName',
-      'registeredValue',
-      'valueDate',
-      'closingRate',
-      'marketValue',
-    ],
+    defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -30,6 +21,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
+          label: 'מזהה נייר ערך',
           unique: true, // Ensure stockID is unique
           required: true,
           index: true,
@@ -37,20 +29,16 @@ export const Stocks: CollectionConfig = {
             update: () => false, // Prevent updates to the field
           },
           admin: {
-            width: '33%',
-            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
+            description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
           },
         },
         {
           name: 'type',
           label: 'סוג נייר ערך',
           type: 'select',
-          admin: {
-            width: '33%',
-          },
           options: [
             { label: 'מניות', value: 'מניות' },
-            { label: 'אופציות', value: 'אופציות' },
+            { label: 'אופציה', value: 'אופציה' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
@@ -63,7 +51,27 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-        }
+        },
+        {
+          name: 'tradable',
+          label: 'נייר נסחר',
+          type: 'checkbox',
+        },
+        {
+          name: 'relatedStock',
+          label: 'נייר מקביל(נסחר)',
+          type: 'relationship',
+          relationTo: 'stocks',
+          admin: {
+            // Display the field only if 'tradable' is false
+            condition: (siblingData) => !siblingData.tradable,
+          },
+          filterOptions: () => ({
+            tradable: {
+              equals: true,
+            },
+          }),
+        },
       ],
     },
     {
@@ -98,14 +106,27 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'values',
-      label:'ערכים' ,
+      label: 'ערכים',
       type: 'join',
       collection: 'stock-values',
       on: 'stockId',
-      admin:{defaultColumns:['valueDate',
-          'registeredValue',
-          'closingRate',
-          'marketValue']}
-    }
-  ]
+      admin: { defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'] },
+    },
+    {
+      name: 'relations',
+      label: 'מקושרים',
+      type: 'join',
+      collection: 'stocks',
+      on: 'relatedStock',
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+    },
+    {
+      name: 'meetings',
+      label: 'פגישות',
+      type: 'join',
+      collection: 'meetings',
+      on: 'stock',
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+    },
+  ],
 }

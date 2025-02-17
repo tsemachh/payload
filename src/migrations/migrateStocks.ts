@@ -152,7 +152,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       WHERE [valueDate] >= DATEADD(DAY, -60, GETDATE())
       ORDER BY valueDate ASC;
     `)
-    console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
+
+      console.log(`Retrieved ${result.recordset.length} records from SQL Server`)
 
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
