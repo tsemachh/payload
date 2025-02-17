@@ -8,14 +8,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: [
-      'stockId',
-      'type',
-      'symbol',
-      'name',
-      'longName'
-    ],
-    listSearchableFields: ['stockId', 'type','symbol','name','longName'],
+    defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -27,7 +21,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
-          label: 'מזהה מניה',
+          label: 'מזהה נייר ערך',
           unique: true, // Ensure stockID is unique
           required: true,
           index: true,
@@ -35,20 +29,16 @@ export const Stocks: CollectionConfig = {
             update: () => false, // Prevent updates to the field
           },
           admin: {
-            width: '25%',
-            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
+            description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
           },
         },
         {
           name: 'type',
           label: 'סוג נייר ערך',
           type: 'select',
-          admin: {
-            width: '25%',
-          },
           options: [
             { label: 'מניות', value: 'מניות' },
-            { label: 'אופציות', value: 'אופציות' },
+            { label: 'אופציה', value: 'אופציה' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
@@ -63,31 +53,24 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
+          name: 'tradable',
+          label: 'נייר נסחר',
+          type: 'checkbox',
+        },
+        {
           name: 'relatedStock',
-          label: 'מניה מקבילה (נסחרת)',
+          label: 'נייר מקביל(נסחר)',
           type: 'relationship',
           relationTo: 'stocks',
           admin: {
             // Display the field only if 'tradable' is false
-/*
             condition: (siblingData) => !siblingData.tradable,
-*/
-            width: '25%',
           },
           filterOptions: () => ({
             tradable: {
               equals: true,
             },
           }),
-        },
-        {
-          name: 'tradable',
-          label: 'מניה נסחרת',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            width: '25%',
-          },
         },
       ],
     },
@@ -123,34 +106,27 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'values',
-      label:'ערכים' ,
+      label: 'ערכים',
       type: 'join',
       collection: 'stock-values',
       on: 'stockId',
-      admin:{defaultColumns:['valueDate',
-          'registeredValue',
-          'closingRate',
-          'marketValue']}
+      admin: { defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'] },
     },
     {
       name: 'relations',
-      label:'מקושרים' ,
+      label: 'מקושרים',
       type: 'join',
       collection: 'stocks',
       on: 'relatedStock',
-      admin:{defaultColumns:[ 'stockId',
-          'type',
-          'symbol',
-          'name',
-          'longName']}
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
     },
     {
       name: 'meetings',
-      label:'פגישות' ,
+      label: 'פגישות',
       type: 'join',
       collection: 'meetings',
       on: 'stock',
-      admin:{defaultColumns:[ 'meetingId', 'meetingDate', 'meetingType']}
-    }
-  ]
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+    },
+  ],
 }
