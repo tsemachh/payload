@@ -202,7 +202,7 @@ export interface Media {
 export interface Stock {
   id: string;
   /**
-   * מזהה מניה ניתן לעריכה רק בעת יצירה
+   * ניתן להעריכה רק בעת יצירת נייר הערך
    */
   stockId: number;
   type?:
@@ -222,8 +222,8 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
-  relatedStock?: (string | null) | Stock;
   tradable?: boolean | null;
+  relatedStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -428,8 +428,8 @@ export interface MediaSelect<T extends boolean = true> {
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   type?: T;
-  relatedStock?: T;
   tradable?: T;
+  relatedStock?: T;
   symbol?: T;
   name?: T;
   longName?: T;

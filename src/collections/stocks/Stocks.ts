@@ -21,7 +21,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
-          label: 'מזהה מניה',
+          label: 'מזהה נייר ערך',
           unique: true, // Ensure stockID is unique
           required: true,
           index: true,
@@ -29,7 +29,7 @@ export const Stocks: CollectionConfig = {
             update: () => false, // Prevent updates to the field
           },
           admin: {
-            description: 'מזהה מניה ניתן לעריכה רק בעת יצירה',
+            description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
           },
         },
         {
@@ -54,12 +54,12 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'tradable',
-          label: 'מניה נסחרת',
+          label: 'נייר נסחר',
           type: 'checkbox',
         },
         {
           name: 'relatedStock',
-          label: 'מניה מקבילה (נסחרת)',
+          label: 'נייר מקביל(נסחר)',
           type: 'relationship',
           relationTo: 'stocks',
           admin: {
