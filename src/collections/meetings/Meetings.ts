@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-
+//3-4
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -24,12 +24,32 @@ export const Meetings: CollectionConfig = {
           unique: true,
           required: true,
           index: true,
+          admin: { hidden: true },
         },
         {
-          name: 'proofId',
+          name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
           maxLength: 20,
+        },
+        {
+          name: 'state',
+          label: 'מצב האסיפה',
+          type: 'select',
+          options: [
+            { label: 'מתוכננת', value: 'scheduled' },
+            { label: 'התקיימה', value: 'completed' },
+            { label: 'נדחית', value: 'postponed' },
+            { label: 'נדחית ללא מועד', value: 'on-hold' },
+            { label: 'נמשכת', value: 'ongoing' },
+            { label: 'בוטלה', value: 'cancelled' },
+          ],
+        },
+        {
+          name: 'stock',
+          label: 'נייר ערך',
+          type: 'relationship',
+          relationTo: 'stocks',
         },
       ],
     },
@@ -38,39 +58,18 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingDate',
-          label: 'תאריך האסיפה',
-          type: 'date',
+          label: 'מועד האסיפה	',
+          type: 'date', //שעה ותאריך יש שעה??
         },
         {
           name: 'holdingsLimit',
-          label: 'יום קובע',
+          label: 'מועד קובע',
           type: 'date',
         },
         {
-          name: 'proxyStatementDate',
-          label: 'תאריך מסירת ההצבעות',
+          name: 'proxyVotingDate',
+          label: 'מועד מסירת ההצבעות',
           type: 'date',
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'stock',
-          label: "מס' נייר ערך",
-          type: 'relationship',
-          relationTo: 'stocks',
-        },
-        {
-          name: 'votingDocUrl',
-          label: 'קישור לכתב הצבעה',
-          type: 'text',
-        },
-        {
-          name: 'meetingInviteUrl',
-          label: 'זימון אסיפה',
-          type: 'text',
         },
       ],
     },
@@ -109,7 +108,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'resultsConfirmationStatus',
-          label: 'אימות תוצאות האסיפה',
+          label: 'אימות תוצאות האסיפה - רק לאסיפה שהתקיימה',
           type: 'checkbox',
         },
         {
@@ -121,12 +120,6 @@ export const Meetings: CollectionConfig = {
           name: 'committeeInitiated',
           label: 'האם פיננסי דורש ועדה?',
           type: 'checkbox',
-        },
-        {
-          name: 'relatedMeetingId',
-          label: 'אסיפה קשורה',
-          type: 'relationship',
-          relationTo: 'meetings',
         },
       ],
     },

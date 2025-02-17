@@ -265,13 +265,12 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   meetingId: number;
-  proofId?: string | null;
+  magnaId?: string | null;
+  state?: ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
+  stock?: (string | null) | Stock;
   meetingDate?: string | null;
   holdingsLimit?: string | null;
-  proxyStatementDate?: string | null;
-  stock?: (string | null) | Stock;
-  votingDocUrl?: string | null;
-  meetingInviteUrl?: string | null;
+  proxyVotingDate?: string | null;
   location?: string | null;
   type?:
     | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
@@ -280,7 +279,6 @@ export interface Meeting {
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
-  relatedMeetingId?: (string | null) | Meeting;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -444,20 +442,18 @@ export interface StockValuesSelect<T extends boolean = true> {
  */
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
-  proofId?: T;
+  magnaId?: T;
+  state?: T;
+  stock?: T;
   meetingDate?: T;
   holdingsLimit?: T;
-  proxyStatementDate?: T;
-  stock?: T;
-  votingDocUrl?: T;
-  meetingInviteUrl?: T;
+  proxyVotingDate?: T;
   location?: T;
   type?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
-  relatedMeetingId?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
