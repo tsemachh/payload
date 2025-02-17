@@ -8,7 +8,7 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
-    defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+    defaultColumns: ['meetingId', 'meetingDate'],
   },
   versions: {
     drafts: true,
@@ -83,10 +83,19 @@ export const Meetings: CollectionConfig = {
           type: 'text',
         },
         {
-          name: 'meetingType',
-          label: 'סוג האסיפה',
-          type: 'relationship',
-          relationTo: 'meeting-types',
+          name: 'type',
+          label: 'סןג אסיפה',
+          type: 'select',
+          options: [
+            { label: 'שנתית', value: 'שנתית' },
+            { label: 'מיוחדת', value: 'מיוחדת' },
+            { label: 'אג"ח', value: 'אג"ח' },
+            { label: 'אג"ח נמשכת', value: 'אג"ח נמשכת' },
+            { label: 'אופציה', value: 'אופציה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודת סל', value: 'תעודת סל' },
+            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+          ],
         },
         {
           name: 'comments',
