@@ -7,9 +7,11 @@ export default async function AssembliesPage() {
   // const futureMeetingTableData = [...originalData, ...originalData, ...originalData]
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-6">
+    <div className="space-y-6 flex flex-col items-center justify-center w-[100%]">
       <h1 className="text-2xl font-bold">אסיפות עתידיות</h1>
-      <DataTable data={futureMeetingTableData} />
+      <div className="max-w-full">
+        <DataTable data={futureMeetingTableData} />
+      </div>
     </div>
   )
 }

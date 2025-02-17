@@ -296,9 +296,9 @@ export function DataTable({ data }: DataTableProps) {
   }, [data, sortConfig, filters, booleanFilters, searchTerms])
 
   return (
-    <div className="space-y-4 text-right p-10 " dir="rtl">
+    <div className="space-y-4 text-right pr-10 pl-10 " dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <div className="relative w-80">
+        <div className="relative w-1/3">
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="חיפוש כללי..."
@@ -312,7 +312,7 @@ export function DataTable({ data }: DataTableProps) {
             <Button
               variant="outline"
               size="sm"
-              className="flex justify-between items-center"
+              className="flex justify-between items-center w-1/5"
               onClick={() => setIsColumnSelectorOpen((prev) => !prev)}
             >
               <span>עמודות</span>
@@ -334,8 +334,9 @@ export function DataTable({ data }: DataTableProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       <div className="bg-background">
-        <div className="rounded-md border" dir="ltr">
+        <div className="rounded-md border">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
             <Table className="w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20">
