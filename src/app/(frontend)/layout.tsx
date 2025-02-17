@@ -22,13 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col h-screen">
             <header className="border-b">
               <div className="container flex h-16 items-center justify-between">
                 <MainNav />
               </div>
             </header>
-            <main className="flex-1 container py-6">{children}</main>
+            <main className="flex-1 py-6">{children}</main>
           </div>
           <Notifications />
         </ThemeProvider>

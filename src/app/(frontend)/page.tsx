@@ -1,20 +1,17 @@
-'use client'
-
 import { DataTable } from '@/components/data-table'
-import { mockAssemblies } from './mockData'
+import { fetchMeetingsForTable } from './api/payload'
 
-export default function AssembliesPage() {
-  console.log('mockAssemblies:', mockAssemblies)
+export default async function AssembliesPage() {
+  const futureMeetingTableData = await fetchMeetingsForTable()
+  // const originalData = await fetchMeetingsForTable()
+  // const futureMeetingTableData = [...originalData, ...originalData, ...originalData]
 
   return (
-    <div className="space-y-6">
-      <h1
-        className="text-2xl font-bold"
-        onClick={() => console.log('mockAssemblies:', mockAssemblies)}
-      >
-        אסיפות עתידיות
-      </h1>
-      <DataTable data={mockAssemblies} />
+    <div className="space-y-6 flex flex-col items-center justify-center w-[100%]">
+      <h1 className="text-2xl font-bold">אסיפות עתידיות</h1>
+      <div className="max-w-full">
+        <DataTable data={futureMeetingTableData} />
+      </div>
     </div>
   )
 }
