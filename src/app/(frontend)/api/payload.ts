@@ -15,10 +15,11 @@ export async function fetchMeetingsForTable() {
 
     return {
       meetingId: meeting.id,
-      stockNumber: stockPresent?.stockID?.toString() || '',
+      stockNumber: stockPresent?.stockId?.toString() || '',
       stockType: stockPresent?.type || '',
       companyName: stockPresent?.name || '',
-      marketValue: stockPresent?.marketValue || 0,
+      // marketValue: stockPresent?.marketValue || 0,
+      marketValue:  0,
       // meetingType: meetingTypePresent?.name || '',//TODO: docker build
       meetingType: 'מיוחדת',
       meetingDate: meeting.meetingDate?.split('T')[0] || '',

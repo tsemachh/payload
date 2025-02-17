@@ -2,7 +2,9 @@ import { DataTable } from '@/components/data-table'
 import { fetchMeetingsForTable } from './api/payload'
 
 export default async function AssembliesPage() {
-  const futureMeetingTableData = await fetchMeetingsForTable()
+  // const futureMeetingTableData = await fetchMeetingsForTable()
+  const originalData = await fetchMeetingsForTable()
+  const futureMeetingTableData = [...originalData, ...originalData, ...originalData]
 
   return (
     <div className="space-y-6">

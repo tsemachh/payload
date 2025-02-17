@@ -27,7 +27,7 @@ import {
 import { ArrowUpDown, Search, FileText, Check, X, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type React from 'react'
-import { FutureMeetingTableData } from '../types'
+import type { FutureMeetingTableData } from '../types'
 
 interface Column {
   key: keyof FutureMeetingTableData | string
@@ -73,7 +73,6 @@ const columns: Column[] = [
   {
     key: 'stockNumber',
     header: 'מס׳ נייר',
-    searchable: true,
     render: (row) => <div className="min-w-[100px]">{row.stockNumber}</div>,
   },
   {
@@ -199,10 +198,8 @@ export function DataTable({ data }: DataTableProps) {
     committeeInitiated: 'none',
   })
   const [searchTerms, setSearchTerms] = useState<{
-    stockNumber: string
     general: string
   }>({
-    stockNumber: '',
     general: '',
   })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>(
@@ -231,7 +228,7 @@ export function DataTable({ data }: DataTableProps) {
     setBooleanFilters((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSearch = (key: 'stockNumber' | 'general', value: string) => {
+  const handleSearch = (key: 'general', value: string) => {
     setSearchTerms((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -263,11 +260,6 @@ export function DataTable({ data }: DataTableProps) {
     })
 
     // Apply searches
-    if (searchTerms.stockNumber) {
-      result = result.filter((item) =>
-        item.stockNumber.toLowerCase().includes(searchTerms.stockNumber.toLowerCase()),
-      )
-    }
     if (searchTerms.general) {
       result = result.filter((item) =>
         Object.values(item).some((value) =>
@@ -304,9 +296,9 @@ export function DataTable({ data }: DataTableProps) {
   }, [data, sortConfig, filters, booleanFilters, searchTerms])
 
   return (
-    <div className="space-y-4 text-right" dir="rtl">
+    <div className="space-y-4 text-right p-10 " dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <div className="relative w-72">
+        <div className="relative w-80">
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="חיפוש כללי..."
@@ -342,102 +334,108 @@ export function DataTable({ data }: DataTableProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
-        <Table dir="rtl">
-          <TableHeader className="bg-muted/50">
-            <TableRow className="hover:bg-muted/50 border-b border-border">
-              {visibleColumns.map((column) => (
-                <TableHead
-                  key={`header-${String(column.key)}`}
-                  className="text-right h-10 px-2 whitespace-nowrap"
-                >
-                  <div className="flex items-cente">
-                    <span className="text-xs font-bold">{column.header}</span>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-            <TableRow className="hover:bg-muted/50">
-              {visibleColumns.map((column) => (
-                <TableHead key={`filter-${String(column.key)}`} className="p-0">
-                  <div className="px-2 py-2 flex flex-col items-end">
-                    {column.searchable && (
-                      <Input
-                        placeholder={`חיפוש ${column.header}`}
-                        value={searchTerms[column.key as keyof typeof searchTerms] || ''}
-                        onChange={(e) =>
-                          handleSearch(column.key as keyof typeof searchTerms, e.target.value)
-                        }
-                        className="h-8 text-xs text-right w-full"
-                      />
-                    )}
-                    {column.filterable && (
-                      <Select
-                        value={filters[column.key as keyof typeof filters]}
-                        onValueChange={(value) =>
-                          handleFilter(column.key as keyof typeof filters, value)
-                        }
-                      >
-                        <SelectTrigger className="h-8 text-xs text-right w-full">
-                          <SelectValue placeholder={`סנן ${column.header}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">הכל</SelectItem>
-                          {Array.from(
-                            new Set(
-                              data.map((item) => item[column.key as keyof FutureMeetingTableData]),
-                            ),
-                          ).map((value) => (
-                            <SelectItem key={String(value)} value={String(value)}>
-                              {String(value)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    {column.booleanFilterable && (
-                      <div className="flex justify-between w-full">
-                        <BooleanFilterButton
-                          value={booleanFilters[String(column.key)]}
-                          onChange={(value) => handleBooleanFilter(String(column.key), value)}
-                        />
+      <div className="bg-background">
+        <div className="rounded-md border" dir="ltr">
+          <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
+            <Table className="w-full border-collapse relative" dir="rtl">
+              <TableHeader className="sticky top-0 bg-background z-20">
+                <TableRow className="bg-muted/50 border-b border-border">
+                  {visibleColumns.map((column) => (
+                    <TableHead
+                      key={`header-${String(column.key)}`}
+                      className="text-right h-10 px-2 whitespace-nowrap"
+                    >
+                      <div className="flex">
+                        <span className="text-xs font-bold">{column.header}</span>
                       </div>
-                    )}
-                    {column.sortable && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort(String(column.key))}
-                        className="h-8 w-full text-x"
+                    </TableHead>
+                  ))}
+                </TableRow>
+                <TableRow className="bg-muted/50 border-b border-border">
+                  {visibleColumns.map((column) => (
+                    <TableHead key={`filter-${String(column.key)}`} className="p-0">
+                      <div className="px-2 py-2 flex flex-col items-end">
+                        {column.searchable && (
+                          <Input
+                            placeholder={`חיפוש ${column.header}`}
+                            value={searchTerms[column.key as keyof typeof searchTerms] || ''}
+                            onChange={(e) =>
+                              handleSearch(column.key as keyof typeof searchTerms, e.target.value)
+                            }
+                            className="h-8 text-xs text-right w-full"
+                          />
+                        )}
+                        {column.filterable && (
+                          <Select
+                            value={filters[column.key as keyof typeof filters]}
+                            onValueChange={(value) =>
+                              handleFilter(column.key as keyof typeof filters, value)
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-xs text-right w-full">
+                              <SelectValue placeholder={`סנן ${column.header}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">הכל</SelectItem>
+                              {Array.from(
+                                new Set(
+                                  data.map(
+                                    (item) => item[column.key as keyof FutureMeetingTableData],
+                                  ),
+                                ),
+                              ).map((value) => (
+                                <SelectItem key={String(value)} value={String(value)}>
+                                  {String(value)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        {column.booleanFilterable && (
+                          <div className="flex justify-between w-full">
+                            <BooleanFilterButton
+                              value={booleanFilters[String(column.key)]}
+                              onChange={(value) => handleBooleanFilter(String(column.key), value)}
+                            />
+                          </div>
+                        )}
+                        {column.sortable && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort(String(column.key))}
+                            className="h-8 w-full text-x"
+                          >
+                            <ArrowUpDown
+                              className={cn(
+                                'h-3 w-3',
+                                sortConfig?.key === column.key &&
+                                  (sortConfig.direction === 'asc' ? 'rotate-180' : ''),
+                              )}
+                            />
+                          </Button>
+                        )}
+                      </div>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedData.map((row) => (
+                  <TableRow key={row.meetingId} className="hover:bg-muted">
+                    {visibleColumns.map((column) => (
+                      <TableCell
+                        key={`${row.meetingId}-${String(column.key)}`}
+                        className="py-2 px-3 text-right whitespace-nowrap"
                       >
-                        <ArrowUpDown
-                          className={cn(
-                            'h-3 w-3',
-                            sortConfig?.key === column.key &&
-                              (sortConfig.direction === 'asc' ? 'rotate-180' : ''),
-                          )}
-                        />
-                      </Button>
-                    )}
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAndSortedData.map((row) => (
-              <TableRow key={row.meetingId} className="hover:bg-muted">
-                {visibleColumns.map((column) => (
-                  <TableCell
-                    key={`${row.meetingId}-${String(column.key)}`}
-                    className="py-2 px-3 text-right whitespace-nowrap"
-                  >
-                    {column.render && column.render(row)}
-                  </TableCell>
+                        {column.render && column.render(row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
     </div>
   )

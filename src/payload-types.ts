@@ -200,7 +200,7 @@ export interface Media {
 export interface Stock {
   id: string;
   /**
-   * מזהה נייר ערך ניתן לעריכה רק בעת יצירה
+   * מזהה מניה ניתן לעריכה רק בעת יצירה
    */
   stockId: number;
   type?:
