@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -202,9 +202,36 @@ export function DataTable({ data }: DataTableProps) {
   }>({
     general: '',
   })
-  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>(
-    Object.fromEntries(columns.map((col) => [col.key, true])),
-  )
+  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  useEffect(() => {
+    const loadColumnVisibility = () => {
+      const storedColumns = localStorage.getItem('columnSelected')
+      if (storedColumns) {
+        try {
+          const parsedColumns = JSON.parse(storedColumns)
+          const validColumns = columns.map((col) => String(col.key))
+          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+
+          if (filteredColumns.length !== parsedColumns.length) {
+            localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
+          }
+
+          const newVisibility = Object.fromEntries(
+            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+          )
+          setColumnVisibility(newVisibility)
+        } catch (error) {
+          console.error('Error parsing stored columns:', error)
+          setColumnVisibility(Object.fromEntries(columns.map((col) => [String(col.key), true])))
+        }
+      } else {
+        setColumnVisibility(Object.fromEntries(columns.map((col) => [String(col.key), true])))
+      }
+    }
+
+    loadColumnVisibility()
+  }, [])
+
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
 
   const visibleColumns = useMemo(() => {
@@ -233,10 +260,14 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   const toggleColumnVisibility = (key: string) => {
-    setColumnVisibility((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
+    setColumnVisibility((prev) => {
+      const newVisibility = { ...prev, [key]: !prev[key] }
+      const selectedColumns = Object.entries(newVisibility)
+        .filter(([, isVisible]) => isVisible)
+        .map(([colKey]) => colKey)
+      localStorage.setItem('columnSelected', JSON.stringify(selectedColumns))
+      return newVisibility
+    })
   }
 
   const filteredAndSortedData = useMemo(() => {
