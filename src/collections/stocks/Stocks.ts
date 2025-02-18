@@ -51,7 +51,7 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-          index: true
+          index: true,
         },
         {
           name: 'tradable',
@@ -72,15 +72,6 @@ export const Stocks: CollectionConfig = {
               equals: true,
             },
           }),
-        },
-        {
-          name: 'tradable',
-          label: 'מניה נסחרת',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            width: '25%',
-          },
         },
       ],
     },
@@ -121,7 +112,7 @@ export const Stocks: CollectionConfig = {
       on: 'relatedStock',
       admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
     },
-   {
+    {
       name: 'meetings',
       label: 'אסיפות',
       type: 'join',

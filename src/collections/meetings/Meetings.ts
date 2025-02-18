@@ -106,7 +106,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'type',
-          label: 'סןג אסיפה',
+          label: 'סוג',
           type: 'select',
           options: [
             { label: 'שנתית', value: 'שנתית' },
@@ -118,8 +118,7 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
-          admin: {
-          }
+          
         },
         {
           name: 'comments',
