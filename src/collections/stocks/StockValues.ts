@@ -29,24 +29,23 @@ export const StockValues: CollectionConfig = {
           },
         },
         // {
-        //   name: 'link',
-        //   label: 'ghyurejfhiltgjro;hujk[py7//////////stockIDחר',
+        //   name: 'stockLink',
+        //   label: 'Stock Link',
         //   type: 'text',
         //   admin: {
-        //     width: '40%',
+        //     width: '50%',
         //     components: {
         //       Field: {
-        //         path: '/components/text/TextFromRelationField',
+        //         path: '/components/link/LinkFromRelationField',
         //         clientProps: {
-        //           relationField: 'profileEntity',
-        //           relationDisplayField: 'fullName',
-        //           fetchEndpoint: '/api/individualprofiles',
+        //           relationField: 'stockId',
+        //           baseUrl: 'https://market.tase.co.il/he/market_data/security/',
+        //           suffix: '/major_data',
         //         },
         //       },
         //     },
         //   },
         // },
-        //https://github.com/shefing/cm-website/blob/develop/packages/payload/src/components/text/TextFromRelationField.tsx
         {
           name: 'valueDate',
           label: 'תאריך ערך',

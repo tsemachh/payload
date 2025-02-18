@@ -23,7 +23,6 @@ export const Meetings: CollectionConfig = {
           type: 'number',
           unique: true,
           required: true,
-          index: true,
           admin: { hidden: true },
         },
         {
@@ -31,6 +30,24 @@ export const Meetings: CollectionConfig = {
           label: 'אסמכתא',
           type: 'text',
           maxLength: 20,
+        },
+        {
+          name: 'meetingLink',
+          label: 'Meeting Link',
+          type: 'text',
+          admin: {
+            width: '50%',
+            components: {
+              Field: {
+                path: '/components/link/LinkFromRelationField',
+                clientProps: {
+                  relationField: 'magnaId',
+                  baseUrl: 'https://www.magna.isa.gov.il/details?id=',
+                  suffix: '&file=0',
+                },
+              },
+            },
+          },
         },
         {
           name: 'state',
@@ -70,6 +87,7 @@ export const Meetings: CollectionConfig = {
           name: 'proxyVotingDate',
           label: 'מועד מסירת ההצבעות',
           type: 'date',
+          index: true,
         },
       ],
     },

@@ -26,6 +26,9 @@ importers:
       '@payloadcms/translations':
         specifier: ^3.23.0
         version: 3.23.0
+      '@payloadcms/ui':
+        specifier: ^3.23.0
+        version: 3.23.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.1.5(@babel/core@7.26.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.23.0(graphql@16.10.0)(monaco-editor@0.52.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@radix-ui/react-accordion':
         specifier: ^1.2.3
         version: 1.2.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

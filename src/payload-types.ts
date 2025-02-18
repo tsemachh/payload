@@ -266,6 +266,7 @@ export interface Meeting {
   id: string;
   meetingId: number;
   magnaId?: string | null;
+  meetingLink?: string | null;
   state?: ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
   stock?: (string | null) | Stock;
   meetingDate?: string | null;
@@ -443,6 +444,7 @@ export interface StockValuesSelect<T extends boolean = true> {
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   magnaId?: T;
+  meetingLink?: T;
   state?: T;
   stock?: T;
   meetingDate?: T;
