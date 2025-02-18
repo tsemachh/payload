@@ -163,8 +163,8 @@ export interface Stock {
         | 'שטרי הון'
       )
     | null;
-  tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
+  tradable?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -367,8 +367,8 @@ export interface PayloadMigration {
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   type?: T;
-  tradable?: T;
   relatedStock?: T;
+  tradable?: T;
   symbol?: T;
   name?: T;
   longName?: T;

@@ -4,4 +4,4 @@
 export mongo1="mongodb://localhost:27017"
 
 # Step 1: Take a dump from mongo1
-mongodump --uri $mongo1 --gzip --archive=./dump/backupFile.gz
+./bin/mongodump --uri $mongo1 --gzip --archive=./dump/backupFile.gz

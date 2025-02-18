@@ -15,8 +15,12 @@ import { Stocks } from '@/collections/stocks/Stocks'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
+/*import mongoose from 'mongoose';
+mongoose.set('debug', true);*/
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
 
 export default buildConfig({
   i18n: {
