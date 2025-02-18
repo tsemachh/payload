@@ -20,7 +20,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockId',
-          type: 'number',
+          type: 'text',
           label: 'מזהה נייר ערך',
           unique: true,
           required: true,
@@ -38,7 +38,7 @@ export const Stocks: CollectionConfig = {
           type: 'select',
           options: [
             { label: 'מניות', value: 'מניות' },
-            { label: 'אופציה', value: 'אופציה' },
+            { label: 'אופציות', value: 'אופציות' },
             { label: 'איגרות חוב', value: 'איגרות חוב' },
             { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },

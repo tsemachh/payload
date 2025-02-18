@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'roles')[];
+      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'roles' | 'migration-faults')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -82,6 +82,7 @@ export interface Config {
     'stock-values': StockValue;
     meetings: Meeting;
     roles: Role;
+    'migration-faults': MigrationFault;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -100,6 +101,7 @@ export interface Config {
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
+    'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -202,11 +204,11 @@ export interface Stock {
   /**
    * ניתן להעריכה רק בעת יצירת נייר הערך
    */
-  stockId: number;
+  stockId: string;
   type?:
     | (
         | 'מניות'
-        | 'אופציה'
+        | 'אופציות'
         | 'איגרות חוב'
         | 'איגרות חוב להמרה'
         | 'יחידת השתתפות'
@@ -289,6 +291,21 @@ export interface Meeting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "migration-faults".
+ */
+export interface MigrationFault {
+  id: string;
+  type?: ('stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
+  typeId?: string | null;
+  row?: string | null;
+  comments?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -317,6 +334,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'roles';
         value: string | Role;
+      } | null)
+    | ({
+        relationTo: 'migration-faults';
+        value: string | MigrationFault;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -482,6 +503,20 @@ export interface RolePermissionsSelect<T extends boolean = true> {
   entity?: T;
   type?: T;
   id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "migration-faults_select".
+ */
+export interface MigrationFaultsSelect<T extends boolean = true> {
+  type?: T;
+  typeId?: T;
+  row?: T;
+  comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

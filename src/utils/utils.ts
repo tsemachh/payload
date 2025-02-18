@@ -1,6 +1,6 @@
 import { BasePayload } from 'payload'
 
-export async function getSeqeunceStockId(payload: BasePayload, stockID: number | null | undefined) {
+export async function getSeqeunceStockId(payload: BasePayload, stockID: string | null | undefined) {
   if (stockID === null) return null
 
   let id = null
