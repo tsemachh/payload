@@ -28,25 +28,6 @@ export const StockValues: CollectionConfig = {
             width: '33%',
           },
         },
-        // {
-        //   name: 'link',
-        //   label: 'ghyurejfhiltgjro;hujk[py7//////////stockIDחר',
-        //   type: 'text',
-        //   admin: {
-        //     width: '40%',
-        //     components: {
-        //       Field: {
-        //         path: '/components/text/TextFromRelationField',
-        //         clientProps: {
-        //           relationField: 'profileEntity',
-        //           relationDisplayField: 'fullName',
-        //           fetchEndpoint: '/api/individualprofiles',
-        //         },
-        //       },
-        //     },
-        //   },
-        // },
-        //https://github.com/shefing/cm-website/blob/develop/packages/payload/src/components/text/TextFromRelationField.tsx
         {
           name: 'valueDate',
           label: 'תאריך ערך',

@@ -26,7 +26,7 @@ export const Stocks: CollectionConfig = {
           required: true,
           index: true,
           access: {
-            update: () => false, 
+            update: () => false,
           },
           admin: {
             description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
