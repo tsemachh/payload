@@ -137,16 +137,6 @@ const columns: Column[] = [
         </a>
       ) : null,
   },
-  {
-    key: 'meetingInviteUrl',
-    header: 'זימון אסיפה',
-    render: (row) =>
-      row.meetingInviteUrl ? (
-        <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
-          <FileText className="h-4 w-4 text-primary" />
-        </a>
-      ) : null,
-  },
   // {
   //   key: 'comments',
   //   header: 'הערות',
@@ -382,6 +372,7 @@ export function DataTable({ data }: DataTableProps) {
                       </div>
                     </TableHead>
                   ))}
+                  <TableHead className="w-1"></TableHead>
                 </TableRow>
                 <TableRow className="bg-muted/50 border-b border-border">
                   {visibleColumns.map((column) => (
@@ -449,19 +440,41 @@ export function DataTable({ data }: DataTableProps) {
                       </div>
                     </TableHead>
                   ))}
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={row.meetingId} className="hover:bg-muted">
+                  <TableRow
+                    key={row.meetingId}
+                    className="hover:bg-muted/70 group transition-colors"
+                  >
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap"
+                        className="py-2 px-3 text-right whitespace-nowrap group-hover:text-muted-foreground/70"
                       >
                         {column.render && column.render(row)}
                       </TableCell>
                     ))}
+                    <TableCell>
+                      <div className="relative h-full">
+                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hover:text-blue-800">
+                          {row.meetingInviteUrl && (
+                            <a
+                              href={row.meetingInviteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-2 space-x-reverse px-4 h-full hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="text-sm text-foreground hover:text-blue-800">
+                                זימון אסיפה
+                              </span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

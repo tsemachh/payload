@@ -21,7 +21,11 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: number |
   return id
 }
 
-export async function getSeqeunceStockValueId(payload: BasePayload, stockID: number | null | undefined,valueDate:string) {
+export async function getSeqeunceStockValueId(
+  payload: BasePayload,
+  stockID: number | null | undefined,
+  valueDate: string,
+) {
   if (stockID === null) return null
 
   let id = null
@@ -32,7 +36,8 @@ export async function getSeqeunceStockValueId(payload: BasePayload, stockID: num
       limit: 1,
       depth: 0,
       where: {
-        stockId: { equals: stockID},valueDate:{equals:valueDate }
+        stockId: { equals: stockID },
+        valueDate: { equals: valueDate },
       },
     })
     if (stock.docs.length > 0) id = stock.docs[0].id
@@ -56,7 +61,9 @@ export async function getSeqeunceMeetingId(payload: BasePayload, meetingId: numb
       },
     })
     if (data.docs.length > 0) id = data.docs[0].id
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
   return id
 }
 
@@ -74,6 +81,8 @@ export async function getSeqeunceMeetingType(payload: BasePayload, typeId: numbe
       },
     })
     if (data.docs.length > 0) id = data.docs[0].id
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
   return id
 }
