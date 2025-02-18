@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -137,16 +137,6 @@ const columns: Column[] = [
         </a>
       ) : null,
   },
-  {
-    key: 'meetingInviteUrl',
-    header: 'זימון אסיפה',
-    render: (row) =>
-      row.meetingInviteUrl ? (
-        <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
-          <FileText className="h-4 w-4 text-primary" />
-        </a>
-      ) : null,
-  },
   // {
   //   key: 'comments',
   //   header: 'הערות',
@@ -202,9 +192,36 @@ export function DataTable({ data }: DataTableProps) {
   }>({
     general: '',
   })
-  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>(
-    Object.fromEntries(columns.map((col) => [col.key, true])),
-  )
+  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  useEffect(() => {
+    const loadColumnVisibility = () => {
+      const storedColumns = localStorage.getItem('columnSelected')
+      if (storedColumns) {
+        try {
+          const parsedColumns = JSON.parse(storedColumns)
+          const validColumns = columns.map((col) => String(col.key))
+          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+
+          if (filteredColumns.length !== parsedColumns.length) {
+            localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
+          }
+
+          const newVisibility = Object.fromEntries(
+            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+          )
+          setColumnVisibility(newVisibility)
+        } catch (error) {
+          console.error('Error parsing stored columns:', error)
+          setColumnVisibility(Object.fromEntries(columns.map((col) => [String(col.key), true])))
+        }
+      } else {
+        setColumnVisibility(Object.fromEntries(columns.map((col) => [String(col.key), true])))
+      }
+    }
+
+    loadColumnVisibility()
+  }, [])
+
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
 
   const visibleColumns = useMemo(() => {
@@ -233,10 +250,14 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   const toggleColumnVisibility = (key: string) => {
-    setColumnVisibility((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
+    setColumnVisibility((prev) => {
+      const newVisibility = { ...prev, [key]: !prev[key] }
+      const selectedColumns = Object.entries(newVisibility)
+        .filter(([, isVisible]) => isVisible)
+        .map(([colKey]) => colKey)
+      localStorage.setItem('columnSelected', JSON.stringify(selectedColumns))
+      return newVisibility
+    })
   }
 
   const filteredAndSortedData = useMemo(() => {
@@ -351,6 +372,7 @@ export function DataTable({ data }: DataTableProps) {
                       </div>
                     </TableHead>
                   ))}
+                  <TableHead className="w-1"></TableHead>
                 </TableRow>
                 <TableRow className="bg-muted/50 border-b border-border">
                   {visibleColumns.map((column) => (
@@ -418,19 +440,41 @@ export function DataTable({ data }: DataTableProps) {
                       </div>
                     </TableHead>
                   ))}
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={row.meetingId} className="hover:bg-muted">
+                  <TableRow
+                    key={row.meetingId}
+                    className="hover:bg-muted/70 group transition-colors"
+                  >
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap"
+                        className="py-2 px-3 text-right whitespace-nowrap group-hover:text-muted-foreground/70"
                       >
                         {column.render && column.render(row)}
                       </TableCell>
                     ))}
+                    <TableCell>
+                      <div className="relative h-full">
+                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hover:text-blue-800">
+                          {row.meetingInviteUrl && (
+                            <a
+                              href={row.meetingInviteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-2 space-x-reverse px-4 h-full hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="text-sm text-foreground hover:text-blue-800">
+                                זימון אסיפה
+                              </span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
