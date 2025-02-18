@@ -61,28 +61,6 @@ export async function getSeqeunceMeetingId(payload: BasePayload, meetingId: numb
       },
     })
     if (data.docs.length > 0) id = data.docs[0].id
-  } catch (error) {
-    console.error(error)
-  }
-  return id
-}
-
-export async function getSeqeunceMeetingType(payload: BasePayload, typeId: number | null) {
-  if (typeId === null) return null
-
-  let id = null
-  try {
-    const data = await payload.find({
-      collection: 'meeting-types',
-      limit: 1,
-      depth: 0,
-      where: {
-        typeId: { equals: typeId },
-      },
-    })
-    if (data.docs.length > 0) id = data.docs[0].id
-  } catch (error) {
-    console.error(error)
-  }
+  } catch (error) {}
   return id
 }

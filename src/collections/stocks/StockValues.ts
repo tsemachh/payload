@@ -8,13 +8,7 @@ export const StockValues: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: [
-      'stockId',
-      'valueDate',
-      'registeredValue',
-      'closingRate',
-      'marketValue',
-    ],
+    defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
   },
   versions: {
     drafts: false,
@@ -27,7 +21,7 @@ export const StockValues: CollectionConfig = {
           name: 'stockId',
           label: "מס' נייר",
           type: 'relationship',
-          relationTo: "stocks",
+          relationTo: 'stocks',
           required: true,
           index: true,
           admin: {
@@ -40,7 +34,7 @@ export const StockValues: CollectionConfig = {
           type: 'date',
           required: true,
           admin: {
-            date:{
+            date: {
               displayFormat: 'dd MMM yyy',
               pickerAppearance: 'default',
             },
@@ -94,5 +88,5 @@ export const StockValues: CollectionConfig = {
         },
       ],
     },
-  ]
+  ],
 }

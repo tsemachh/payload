@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-
+//3-4
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -8,7 +8,7 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
-    defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+    defaultColumns: ['meetingId', 'meetingDate'],
   },
   versions: {
     drafts: true,
@@ -24,12 +24,33 @@ export const Meetings: CollectionConfig = {
           unique: true,
           required: true,
           index: true,
+          admin: { hidden: true },
         },
         {
-          name: 'proofId',
+          name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
           maxLength: 20,
+        },
+        {
+          name: 'state',
+          label: 'מצב האסיפה',
+          type: 'select',
+          options: [
+            { label: 'מתוכננת', value: 'scheduled' },
+            { label: 'התקיימה', value: 'completed' },
+            { label: 'נדחית', value: 'postponed' },
+            { label: 'נדחית ללא מועד', value: 'on-hold' },
+            { label: 'נמשכת', value: 'ongoing' },
+            { label: 'בוטלה', value: 'cancelled' },
+          ],
+        },
+        {
+          name: 'stock',
+          label: 'נייר ערך',
+          type: 'relationship',
+          relationTo: 'stocks',
+          index:true
         },
       ],
     },
@@ -38,39 +59,25 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingDate',
-          label: 'תאריך האסיפה',
+          label: 'מועד האסיפה	',
           type: 'date',
         },
         {
           name: 'holdingsLimit',
-          label: 'יום קובע',
+          label: 'מועד קובע',
           type: 'date',
+          admin: {
+            date: {
+              displayFormat: 'dd MMM yyy',
+              pickerAppearance: 'default',
+            },
+          },
         },
         {
-          name: 'proxyStatementDate',
-          label: 'תאריך מסירת ההצבעות',
+          name: 'proxyVotingDate',
+          label: 'מועד מסירת ההצבעות',
           type: 'date',
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'stock',
-          label: "מס' נייר ערך",
-          type: 'relationship',
-          relationTo: 'stocks',
-        },
-        {
-          name: 'votingDocUrl',
-          label: 'קישור לכתב הצבעה',
-          type: 'text',
-        },
-        {
-          name: 'meetingInviteUrl',
-          label: 'זימון אסיפה',
-          type: 'text',
+          index: true,
         },
       ],
     },
@@ -83,10 +90,21 @@ export const Meetings: CollectionConfig = {
           type: 'text',
         },
         {
-          name: 'meetingType',
-          label: 'סוג האסיפה',
-          type: 'relationship',
-          relationTo: 'meeting-types',
+          name: 'type',
+          label: 'סןג אסיפה',
+          type: 'select',
+          options: [
+            { label: 'שנתית', value: 'שנתית' },
+            { label: 'מיוחדת', value: 'מיוחדת' },
+            { label: 'אג"ח', value: 'אג"ח' },
+            { label: 'אג"ח נמשכת', value: 'אג"ח נמשכת' },
+            { label: 'אופציה', value: 'אופציה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודת סל', value: 'תעודת סל' },
+            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+          ],
+          admin: {
+          }
         },
         {
           name: 'comments',
@@ -102,6 +120,9 @@ export const Meetings: CollectionConfig = {
           name: 'resultsConfirmationStatus',
           label: 'אימות תוצאות האסיפה',
           type: 'checkbox',
+          admin: {
+            condition: (siblingData) => siblingData.state === 'completed',
+          },
         },
         {
           name: 'electronicVotingEnabled',
@@ -112,12 +133,6 @@ export const Meetings: CollectionConfig = {
           name: 'committeeInitiated',
           label: 'האם פיננסי דורש ועדה?',
           type: 'checkbox',
-        },
-        {
-          name: 'relatedMeetingId',
-          label: 'אסיפה קשורה',
-          type: 'relationship',
-          relationTo: 'meetings',
         },
       ],
     },

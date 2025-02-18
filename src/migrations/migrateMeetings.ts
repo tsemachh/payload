@@ -1,7 +1,37 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting } from '@/payload-types'
-import { getSeqeunceMeetingId, getSeqeunceMeetingType, getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
+import { getSeqeunceMeetingId,  getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
+// Define the mapping for TypeId to newType and newState
+const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
+  [-1, { newType: null, newState: null }],
+  [1, { newType: 'שנתית', newState: null }],
+  [2, { newType: 'שנתית', newState: 'postponed' }],
+  [4, { newType: 'מיוחדת', newState: null }],
+  [5, { newType: 'מיוחדת', newState: 'postponed' }],
+  [7, { newType: 'אג"ח', newState: null }],
+  [8, { newType: 'אג"ח', newState: null }],
+  [9, { newType: 'אג"ח', newState: null }],
+  [10, { newType: 'אופציה', newState: null }],
+  [11, { newType: 'אופציה', newState: 'postponed' }],
+  [13, { newType: 'יחידת השתתפות', newState: null }],
+  [14, { newType: 'יחידת השתתפות', newState: 'postponed' }],
+  [16, { newType: 'תעודת סל', newState: null }],
+  [17, { newType: 'תעודת סל', newState: 'postponed' }],
+  [19, { newType: null, newState: 'cancelled' }],
+  [20, { newType: null, newState: 'on-hold' }],
+  [30, { newType: 'אג"ח כהונת נאמן', newState: null }],
+]);
+
+// Function to get newType and newState based on TypeId
+function getTypeAndState(typeId: number): { newType: string | null; newState: string | null } {
+  const mapping = typeMappings.get(typeId);
+  if (mapping) {
+    return mapping;
+  } else {
+    throw new Error(`TypeId ${typeId} not found in mappings.`);
+  }
+}
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -72,29 +102,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue;
         }
         //Find meetingTypeId
-        const meetingTypeId = await getSeqeunceMeetingType(payload, row.mtype)
-        if (meetingTypeId === null){
-          console.log("Stockid can't be found:",row.mtype)
-          continue;
-        }
+        const { newType, newState } = getTypeAndState(row.mtype);
         //Find relatedf meeting Id
         const relatedMeetingId = await getSeqeunceMeetingId(payload, row.mIdConnection)
         // @ts-ignore
         const meetingData:Meeting = {
           meetingId:row.id,
           stock:stockId as string,
-          proofId:row.proofId,
+          magnaId:row.proofId,
           meetingDate:row.mdate,
           holdingsLimit:row.sdate,
-          proxyStatementDate:row.proxyStatementDate,
-          votingDocUrl:row.memourl,
-          meetingInviteUrl:row.link2,
+          proxyVotingDate:row.proxyStatementDate,
           location:row.location,
-          meetingType:meetingTypeId,
+          type:newType as ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן'),
+          state:newState as 'postponed' | 'cancelled' | 'on-hold' | 'scheduled' | 'completed' | 'ongoing' | null | undefined,
           comments:row.comments,
           resultsConfirmationStatus:!!row.ResultConfirm,
           electronicVotingEnabled:!!row.ElectronicVoting,
-          relatedMeetingId:relatedMeetingId,
           committeeInitiated:!!row.CommiteeRequest,
         }
 
@@ -102,7 +126,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const id = await getSeqeunceMeetingId(payload, meetingData.meetingId)
         if (id){
           // Update Payload CMS
-          await payload.update({
+          payload.update({
             collection: 'meetings',
             id: id,
             data: meetingData,
@@ -110,7 +134,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           })
         }else{
           // Insert into Payload CMS
-          await payload.create({
+          payload.create({
             collection: 'meetings',
             data: meetingData,
           })

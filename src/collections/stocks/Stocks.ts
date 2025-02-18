@@ -22,11 +22,11 @@ export const Stocks: CollectionConfig = {
           name: 'stockId',
           type: 'number',
           label: 'מזהה נייר ערך',
-          unique: true, // Ensure stockID is unique
+          unique: true,
           required: true,
           index: true,
           access: {
-            update: () => false, // Prevent updates to the field
+            update: () => false,
           },
           admin: {
             description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
@@ -51,19 +51,15 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-        },
-        {
-          name: 'tradable',
-          label: 'נייר נסחר',
-          type: 'checkbox',
+          index: true
         },
         {
           name: 'relatedStock',
           label: 'נייר מקביל(נסחר)',
           type: 'relationship',
           relationTo: 'stocks',
+          index: true,
           admin: {
-            // Display the field only if 'tradable' is false
             condition: (siblingData) => !siblingData.tradable,
           },
           filterOptions: () => ({
@@ -71,6 +67,15 @@ export const Stocks: CollectionConfig = {
               equals: true,
             },
           }),
+        },
+        {
+          name: 'tradable',
+          label: 'מניה נסחרת',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            width: '25%',
+          },
         },
       ],
     },
@@ -90,6 +95,7 @@ export const Stocks: CollectionConfig = {
           name: 'name',
           label: 'שם נייר',
           type: 'text',
+          index: true,
           admin: {
             width: '33%',
           },
@@ -98,6 +104,7 @@ export const Stocks: CollectionConfig = {
           name: 'longName',
           label: 'שם מלא',
           type: 'text',
+          index: true,
           admin: {
             width: '33%',
           },
@@ -120,7 +127,7 @@ export const Stocks: CollectionConfig = {
       on: 'relatedStock',
       admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
     },
-    {
+   {
       name: 'meetings',
       label: 'פגישות',
       type: 'join',
