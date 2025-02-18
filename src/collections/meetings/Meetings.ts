@@ -18,7 +18,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingId',
-          label: "מס' אסיפה",
+          label: 'מזהה אסיפה',
           type: 'number',
           unique: true,
           required: true,
@@ -49,7 +49,7 @@ export const Meetings: CollectionConfig = {
         // },
         {
           name: 'state',
-          label: 'מצב האסיפה',
+          label: 'מצב',
           type: 'select',
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
@@ -65,7 +65,7 @@ export const Meetings: CollectionConfig = {
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
-          index:true
+          index: true,
         },
       ],
     },
@@ -74,7 +74,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingDate',
-          label: 'מועד האסיפה	',
+          label: 'מועד האסיפה',
           type: 'date',
         },
         {
@@ -101,7 +101,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'location',
-          label: 'כתובת האסיפה',
+          label: 'כתובת',
           type: 'text',
         },
         {
@@ -118,7 +118,6 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
-          
         },
         {
           name: 'comments',
