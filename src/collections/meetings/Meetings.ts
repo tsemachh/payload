@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-//3-4
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -8,7 +7,7 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
-    defaultColumns: ['meetingId', 'meetingDate'],
+    defaultColumns: ['magnaId', 'stock', 'proxyVotingDate', 'meetingDate', 'type', 'state'],
   },
   versions: {
     drafts: true,
@@ -31,24 +30,23 @@ export const Meetings: CollectionConfig = {
           type: 'text',
           maxLength: 20,
         },
-        {
-          name: 'meetingLink',
-          label: 'Meeting Link',
-          type: 'text',
-          admin: {
-            width: '50%',
-            components: {
-              Field: {
-                path: '/components/link/LinkFromRelationField',
-                clientProps: {
-                  relationField: 'magnaId',
-                  baseUrl: 'https://www.magna.isa.gov.il/details?id=',
-                  suffix: '&file=0',
-                },
-              },
-            },
-          },
-        },
+        // {
+        //   name: 'meetingLink',
+        //   label: 'Meeting Link',
+        //   type: 'text',
+        //   admin: {
+        //     components: {
+        //       Field: {
+        //         path: '/components/link/LinkFromRelationField',
+        //         clientProps: {
+        //           relationField: 'magnaId',
+        //           baseUrl: 'https://www.magna.isa.gov.il/details?id=',
+        //           suffix: '&file=0',
+        //         },
+        //       },
+        //     },
+        //   },
+        // },
         {
           name: 'state',
           label: 'מצב האסיפה',

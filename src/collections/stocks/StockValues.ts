@@ -24,16 +24,13 @@ export const StockValues: CollectionConfig = {
           relationTo: 'stocks',
           required: true,
           index: true,
-          admin: {
-            width: '33%',
-          },
         },
         // {
         //   name: 'stockLink',
         //   label: 'Stock Link',
         //   type: 'text',
         //   admin: {
-        //     width: '50%',
+        // 
         //     components: {
         //       Field: {
         //         path: '/components/link/LinkFromRelationField',
@@ -56,7 +53,6 @@ export const StockValues: CollectionConfig = {
               displayFormat: 'dd MMM yyy',
               pickerAppearance: 'default',
             },
-            width: '33%',
           },
         },
       ],
@@ -68,16 +64,12 @@ export const StockValues: CollectionConfig = {
           name: 'closingRate',
           label: 'שער סגירה',
           type: 'number',
-          admin: {
-            width: '33%',
-          },
         },
         {
           name: 'marketValue',
           label: 'שווי שוק',
           type: 'number',
           admin: {
-            width: '33%',
             readOnly: true,
           },
           hooks: {
@@ -100,9 +92,6 @@ export const StockValues: CollectionConfig = {
           name: 'registeredValue',
           label: 'הון רשום',
           type: 'number',
-          admin: {
-            width: '33%',
-          },
         },
       ],
     },

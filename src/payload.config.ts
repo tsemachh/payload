@@ -28,7 +28,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Stocks,StockValues, Meetings, Roles],
+  collections: [Stocks,StockValues, Meetings, Users, Roles,Media],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

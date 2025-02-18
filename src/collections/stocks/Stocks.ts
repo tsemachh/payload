@@ -8,7 +8,7 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+    defaultColumns: ['stockId', 'type', 'symbol', 'name'],
     listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
   },
   versions: {
@@ -21,7 +21,7 @@ export const Stocks: CollectionConfig = {
         {
           name: 'stockId',
           type: 'number',
-          label: 'מזהה נייר ערך',
+          label: 'מזהה',
           unique: true,
           required: true,
           index: true,
@@ -34,7 +34,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'type',
-          label: 'סוג נייר ערך',
+          label: 'סוג',
           type: 'select',
           options: [
             { label: 'מניות', value: 'מניות' },
@@ -54,12 +54,12 @@ export const Stocks: CollectionConfig = {
         },
         {
           name: 'tradable',
-          label: 'נייר נסחר',
+          label: 'האם נסחר',
           type: 'checkbox',
         },
         {
           name: 'relatedStock',
-          label: 'נייר מקביל(נסחר)',
+          label: 'נייר ערך ראשי',
           type: 'relationship',
           relationTo: 'stocks',
           admin: {
@@ -81,31 +81,22 @@ export const Stocks: CollectionConfig = {
           label: 'סימול',
           type: 'text',
           index: true,
-          admin: {
-            width: '33%',
-          },
         },
         {
           name: 'name',
-          label: 'שם נייר',
+          label: 'שם',
           type: 'text',
-          admin: {
-            width: '33%',
-          },
         },
         {
           name: 'longName',
           label: 'שם מלא',
           type: 'text',
-          admin: {
-            width: '33%',
-          },
         },
       ],
     },
     {
       name: 'values',
-      label: 'ערכים',
+      label: 'שווי',
       type: 'join',
       collection: 'stock-values',
       on: 'stockId',
@@ -113,7 +104,7 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'relations',
-      label: 'מקושרים',
+      label: 'ניירות ערך עוקבים',
       type: 'join',
       collection: 'stocks',
       on: 'relatedStock',
@@ -121,7 +112,7 @@ export const Stocks: CollectionConfig = {
     },
     {
       name: 'meetings',
-      label: 'פגישות',
+      label: 'אסיפות',
       type: 'join',
       collection: 'meetings',
       on: 'stock',
