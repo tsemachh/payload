@@ -50,6 +50,7 @@ export const Meetings: CollectionConfig = {
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
+          index:true
         },
       ],
     },
@@ -102,6 +103,8 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          admin: {
+          }
         },
         {
           name: 'comments',
