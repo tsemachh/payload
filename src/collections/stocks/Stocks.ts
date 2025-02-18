@@ -22,11 +22,11 @@ export const Stocks: CollectionConfig = {
           name: 'stockId',
           type: 'number',
           label: 'מזהה נייר ערך',
-          unique: true, // Ensure stockID is unique
+          unique: true,
           required: true,
           index: true,
           access: {
-            update: () => false, // Prevent updates to the field
+            update: () => false,
           },
           admin: {
             description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
@@ -63,7 +63,6 @@ export const Stocks: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           admin: {
-            // Display the field only if 'tradable' is false
             condition: (siblingData) => !siblingData.tradable,
           },
           filterOptions: () => ({

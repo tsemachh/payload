@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'meeting-types' | 'roles')[];
+      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'roles')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -81,7 +81,6 @@ export interface Config {
     stocks: Stock;
     'stock-values': StockValue;
     meetings: Meeting;
-    'meeting-types': MeetingType;
     roles: Role;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -100,7 +99,6 @@ export interface Config {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
-    'meeting-types': MeetingTypesSelect<false> | MeetingTypesSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -267,20 +265,20 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   meetingId: number;
-  proofId?: string | null;
+  magnaId?: string | null;
+  state?: ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
+  stock?: (string | null) | Stock;
   meetingDate?: string | null;
   holdingsLimit?: string | null;
-  proxyStatementDate?: string | null;
-  stock?: (string | null) | Stock;
-  votingDocUrl?: string | null;
-  meetingInviteUrl?: string | null;
+  proxyVotingDate?: string | null;
   location?: string | null;
-  meetingType?: (string | null) | MeetingType;
+  type?:
+    | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
+    | null;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
-  relatedMeetingId?: (string | null) | Meeting;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -288,20 +286,6 @@ export interface Meeting {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "meeting-types".
- */
-export interface MeetingType {
-  id: string;
-  typeId: number;
-  name: string;
-  group?: ('1' | '2' | '3' | '4' | '5' | '6' | '19' | '20' | '30' | '-1') | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -329,10 +313,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'meetings';
         value: string | Meeting;
-      } | null)
-    | ({
-        relationTo: 'meeting-types';
-        value: string | MeetingType;
       } | null)
     | ({
         relationTo: 'roles';
@@ -462,20 +442,18 @@ export interface StockValuesSelect<T extends boolean = true> {
  */
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
-  proofId?: T;
+  magnaId?: T;
+  state?: T;
+  stock?: T;
   meetingDate?: T;
   holdingsLimit?: T;
-  proxyStatementDate?: T;
-  stock?: T;
-  votingDocUrl?: T;
-  meetingInviteUrl?: T;
+  proxyVotingDate?: T;
   location?: T;
-  meetingType?: T;
+  type?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
-  relatedMeetingId?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -483,19 +461,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "meeting-types_select".
- */
-export interface MeetingTypesSelect<T extends boolean = true> {
-  typeId?: T;
-  name?: T;
-  group?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
