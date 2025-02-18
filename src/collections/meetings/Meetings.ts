@@ -76,12 +76,18 @@ export const Meetings: CollectionConfig = {
         {
           name: 'meetingDate',
           label: 'מועד האסיפה	',
-          type: 'date', //שעה ותאריך יש שעה??
+          type: 'date',
         },
         {
           name: 'holdingsLimit',
           label: 'מועד קובע',
           type: 'date',
+          admin: {
+            date: {
+              displayFormat: 'dd MMM yyy',
+              pickerAppearance: 'default',
+            },
+          },
         },
         {
           name: 'proxyVotingDate',
@@ -126,8 +132,11 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'resultsConfirmationStatus',
-          label: 'אימות תוצאות האסיפה - רק לאסיפה שהתקיימה',
+          label: 'אימות תוצאות האסיפה',
           type: 'checkbox',
+          admin: {
+            condition: (siblingData) => siblingData.state === 'completed',
+          },
         },
         {
           name: 'electronicVotingEnabled',
