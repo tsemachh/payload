@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Export connection strings (avoid double quotes)
-export mongo1="mongodb+srv://channahk:eadDVXob0UnZ2DZE@cluster0.einyx.mongodb.net/"
+export mongo1="mongodb://localhost:27017"
 export mongo2="mongodb://localhost:27017"
 
 # Step 1: Take a dump from mongo1

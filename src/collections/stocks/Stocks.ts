@@ -129,9 +129,10 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'stocks',
       on: 'relatedStock',
-      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] ,disableListColumn : true,
-        disableListFilter: true},
-
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+        disableListColumn : true,
+        disableListFilter: true
+      },
     },
    {
       name: 'meetings',
@@ -139,8 +140,10 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'meetings',
       on: 'stock',
-      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],disableListColumn : true,
-        disableListFilter: true },
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+        disableListColumn : true,
+        disableListFilter: true
+      },
     },
   ],
 }

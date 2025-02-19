@@ -22,6 +22,7 @@ export const Meetings: CollectionConfig = {
           type: 'number',
           unique: true,
           required: true,
+          index: true,
           admin: { hidden: true },
         },
         {
@@ -32,7 +33,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'state',
-          label: 'סטטוס',
+          label: 'מצב',
           type: 'select',
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
@@ -102,12 +103,12 @@ export const Meetings: CollectionConfig = {
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
         },
-        {
-          name: 'comments',
-          label: 'הערות',
-          type: 'textarea',
-        },
       ],
+    },
+    {
+      name: 'comments',
+      label: 'הערות',
+      type: 'textarea',
     },
     {
       type: 'row',
