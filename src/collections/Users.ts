@@ -10,7 +10,10 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
   },
-  auth: true,
+  auth: {
+    useAPIKey: true,
+    tokenExpiration: (process.env.NODE_ENV == "production")? 43200 : 432000 // 12 hours in prod, 5 days in dev timeout
+  },
   fields: [
     {
       name: 'name',
