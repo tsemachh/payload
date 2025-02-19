@@ -53,7 +53,7 @@ export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateI
   console.log(`Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
   const stocks: Set<string> = new Set()
   for (const row of resultStockIds.recordset) {
-    stocks.add(row.stockID)
+    stocks.add(`${row.stockID}`)
   }
   return stocks
 }
@@ -66,7 +66,7 @@ export async function getStockRelations(pool: sql.ConnectionPool) {
   console.log(`Retrieved ${stockRelationResult.recordset.length} resultStockIds from SQL Server`)
   const stocks: Map<string,string> = new Map<string, string>
   for (const row of stockRelationResult.recordset) {
-    stocks.set(row.Id2,row.Id1)
+    stocks.set(`${row.Id2}`,`${row.Id1}`)
   }
   return stocks
 }
@@ -98,7 +98,7 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
       FROM [dbEmda].[dbo].[meetings]   `)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
-    stocks.add(row.stockID)
+    stocks.add(`${row.stockID}`)
   }
   return stocks
 }

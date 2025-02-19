@@ -172,6 +172,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let stockValue: StockValue | null = null
     const stockIdTOSequence: Map<string, string> = new Map<string, string>()
     for (const row of resultStocks.recordset) {
+      row.stockID=`${row.stockID}`
       const relatedStock=relationStocks.get(row.stockID)
       const hasTradableRelationStock = (relatedStock && predictaStocks.has(relatedStock))
       const isPredictaStock = predictaStocks.has(row.stockID)
@@ -182,7 +183,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         stockHasMeeting)
         {
           try {
-            let stockSequence = await getSeqeunceStockId(payload, row.stockID)
+            let stockSequence:string | null | undefined =stockIdTOSequence.get(row.stockID)
+            if (!stockSequence)
+              stockSequence = await getSeqeunceStockId(payload, row.stockID)
             const stocktype = getStockType(row)
             // @ts-ignore
             stockData = {
@@ -284,6 +287,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const row of resultStockValues.recordset) {
       try {
+        row.stockID = `${row.stockID}`
         const stockSequence = stockIdTOSequence.get(row.stockID)
         const isPredictaStock = predictaStocks.has(row.stockID)
 

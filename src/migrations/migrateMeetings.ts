@@ -94,7 +94,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of result.recordset) {
       try {
         // console.log("Row",JSON.stringify(row, null, 2))
-
+        row.stockID=`${row.stockID}`
         //Find stockId
         const stockId = await getSeqeunceStockId(payload, row.stockID)
         if (stockId === null){
@@ -123,6 +123,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           resultsConfirmationStatus:!!row.ResultConfirm,
           electronicVotingEnabled:!!row.ElectronicVoting,
           committeeInitiated:!!row.CommiteeRequest,
+          _status:"published"
         }
 
         //console.log("Data",JSON.stringify(meetingData, null, 2))
