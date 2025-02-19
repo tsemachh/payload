@@ -98,27 +98,26 @@ export const Stocks: CollectionConfig = {
                 },
               ],
             },
-          ],
-        },
-        {
-          label: 'שווי',
-          admin: { condition: (siblingData) => siblingData.tradable },
-          fields: [
             {
-              name: 'values',
-              label: 'שווי',
-              type: 'join',
-              collection: 'stock-values',
-              on: 'stockId',
-              admin: {
-                defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
-              },
+              type: 'row',
+              fields: [
+                {
+                  name: 'values',
+                  label: 'שווי',
+                  type: 'join',
+                  collection: 'stock-values',
+                  on: 'stockId',
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable,
+                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                  },
+                },
+              ],
             },
           ],
         },
         {
           label: 'ניירות ערך עוקבים',
-          admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
             {
               name: 'relations',
