@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('users' | 'stocks' | 'stock-values' | 'meetings' | 'roles' | 'migration-faults')[];
+      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document' | 'migration-faults')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -81,6 +81,7 @@ export interface Config {
     meetings: Meeting;
     users: User;
     roles: Role;
+    document: Document;
     'migration-faults': MigrationFault;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -99,6 +100,7 @@ export interface Config {
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
+    document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -232,6 +234,63 @@ export interface Meeting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  isAdmin?: boolean | null;
+  isGeneratorUser?: boolean | null;
+  userRoles?: (string | Role)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document".
+ */
+export interface Document {
+  id: string;
+  alt: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "migration-faults".
  */
 export interface MigrationFault {
@@ -271,6 +330,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'roles';
         value: string | Role;
+      } | null)
+    | ({
+        relationTo: 'document';
+        value: string | Document;
       } | null)
     | ({
         relationTo: 'migration-faults';
@@ -420,6 +483,26 @@ export interface RolePermissionsSelect<T extends boolean = true> {
   entity?: T;
   type?: T;
   id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document_select".
+ */
+export interface DocumentSelect<T extends boolean = true> {
+  alt?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
