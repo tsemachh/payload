@@ -51,7 +51,7 @@ export const Stocks: CollectionConfig = {
             { label: 'מק"מ', value: 'מק"מ' },
             { label: 'שטרי הון', value: 'שטרי הון' },
           ],
-          index: true
+          index: true,
         },
         {
           name: 'relatedStock',
@@ -119,7 +119,8 @@ export const Stocks: CollectionConfig = {
       on: 'stockId',
       admin: {
         defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
-        disableListColumn : true
+        disableListColumn: true,
+        disableListFilter: true,
       },
     },
     {
@@ -128,16 +129,23 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'stocks',
       on: 'relatedStock',
-      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] ,disableListColumn : true},
-
+      admin: {
+        defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+        disableListColumn: true,
+        disableListFilter: true,
+      },
     },
-   {
+    {
       name: 'meetings',
       label: 'פגישות',
       type: 'join',
       collection: 'meetings',
       on: 'stock',
-      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],disableListColumn : true },
+      admin: {
+        defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+        disableListColumn: true,
+        disableListFilter: true,
+      },
     },
   ],
 }
