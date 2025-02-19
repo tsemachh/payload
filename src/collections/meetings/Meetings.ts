@@ -32,7 +32,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'state',
-          label: 'מצב',
+          label: 'סטטוס',
           type: 'select',
           options: [
             { label: 'מתוכננת', value: 'scheduled' },

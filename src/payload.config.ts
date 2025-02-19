@@ -10,7 +10,7 @@ import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
 
 import { Users } from './collections/Users'
-import { Media } from './collections/Media'
+import { Document } from './collections/Document'
 import { Stocks } from '@/collections/stocks/Stocks'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
@@ -32,7 +32,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Stocks,StockValues, Meetings, Users, Roles,Media],
+  collections: [Stocks,StockValues, Meetings, Users, Roles,Document],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -48,7 +48,7 @@ export default buildConfig({
     addAccess({
       rolesCollection: 'roles', // name of the collection defining the roles
       permissionsField: 'permissions', // name of the field within the role collection
-      excludedCollections: ['media'], // enable to exclude some collections from permission control
+      excludedCollections: [], // enable to exclude some collections from permission control
     }),
     addAuthorsFields({
       excludedCollections: [], //array of collections names to exclude

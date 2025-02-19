@@ -41,7 +41,7 @@ next-env.d.ts
 
 .env
 
-/media
+/document
 
 # Ignore all .terraform directories
 **/.terraform/

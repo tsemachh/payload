@@ -7,6 +7,7 @@ export const StockValues: CollectionConfig = {
     singular: ' שווי נייר ערך',
   },
   admin: {
+    hidden: true,
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
   },
