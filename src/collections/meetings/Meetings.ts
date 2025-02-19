@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-//3-4
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -8,7 +7,7 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
-    defaultColumns: ['meetingId', 'meetingDate'],
+    defaultColumns: ['magnaId', 'stock', 'proxyVotingDate', 'meetingDate', 'type', 'state'],
   },
   versions: {
     drafts: true,
@@ -19,7 +18,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingId',
-          label: "מס' אסיפה",
+          label: 'מזהה אסיפה',
           type: 'number',
           unique: true,
           required: true,
@@ -34,7 +33,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'state',
-          label: 'מצב האסיפה',
+          label: 'מצב',
           type: 'select',
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
@@ -50,7 +49,7 @@ export const Meetings: CollectionConfig = {
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
-          index:true
+          index: true,
         },
       ],
     },
@@ -59,7 +58,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingDate',
-          label: 'מועד האסיפה	',
+          label: 'מועד האסיפה',
           type: 'date',
         },
         {
@@ -86,12 +85,12 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'location',
-          label: 'כתובת האסיפה',
+          label: 'כתובת',
           type: 'text',
         },
         {
           name: 'type',
-          label: 'סןג אסיפה',
+          label: 'סוג',
           type: 'select',
           options: [
             { label: 'שנתית', value: 'שנתית' },
@@ -103,15 +102,13 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
-          admin: {
-          }
-        },
-        {
-          name: 'comments',
-          label: 'הערות',
-          type: 'textarea',
         },
       ],
+    },
+    {
+      name: 'comments',
+      label: 'הערות',
+      type: 'textarea',
     },
     {
       type: 'row',

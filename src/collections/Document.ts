@@ -1,10 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
-export const Media: CollectionConfig = {
-  slug: 'media',
+export const Document: CollectionConfig = {
+  slug: 'document',
   labels: {
-    plural: 'מדיות',
-      singular: 'מדיה',
+    plural: 'מסמכים',
+    singular: 'מסמך',
   },
   access: {
     read: () => true,
