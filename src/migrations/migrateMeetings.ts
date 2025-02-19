@@ -10,8 +10,8 @@ const typeMappings = new Map<number, { newType: string | null; newState: string 
   [4, { newType: 'מיוחדת', newState: null }],
   [5, { newType: 'מיוחדת', newState: 'postponed' }],
   [7, { newType: 'אג"ח', newState: null }],
-  [8, { newType: 'אג"ח', newState: null }],
-  [9, { newType: 'אג"ח', newState: null }],
+  [8, { newType: 'אג"ח', newState: 'postponed' }],
+  [9, { newType: 'אג"ח', newState: 'ongoing' }],
   [10, { newType: 'אופציה', newState: null }],
   [11, { newType: 'אופציה', newState: 'postponed' }],
   [13, { newType: 'יחידת השתתפות', newState: null }],
@@ -21,7 +21,7 @@ const typeMappings = new Map<number, { newType: string | null; newState: string 
   [19, { newType: null, newState: 'cancelled' }],
   [20, { newType: null, newState: 'on-hold' }],
   [30, { newType: 'אג"ח כהונת נאמן', newState: null }],
-]);
+])
 
 // Function to get newType and newState based on TypeId
 function getTypeAndState(typeId: number): { newType: string | null; newState: string | null } {
@@ -94,7 +94,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of result.recordset) {
       try {
         // console.log("Row",JSON.stringify(row, null, 2))
-
+        row.stockID=`${row.stockID}`
         //Find stockId
         const stockId = await getSeqeunceStockId(payload, row.stockID)
         if (stockId === null){
@@ -102,9 +102,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue;
         }
         //Find meetingTypeId
-        const { newType, newState } = getTypeAndState(row.mtype);
-        //Find relatedf meeting Id
-        const relatedMeetingId = await getSeqeunceMeetingId(payload, row.mIdConnection)
+        // eslint-disable-next-line prefer-const
+        let { newType, newState } = getTypeAndState(row.mtype);
+        if (newState == null){
+          newState=(new Date(row.mdate) > new Date() ? "scheduled":"completed")
+        }
+
         // @ts-ignore
         const meetingData:Meeting = {
           meetingId:row.id,
@@ -120,6 +123,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           resultsConfirmationStatus:!!row.ResultConfirm,
           electronicVotingEnabled:!!row.ElectronicVoting,
           committeeInitiated:!!row.CommiteeRequest,
+          _status:"published"
         }
 
         //console.log("Data",JSON.stringify(meetingData, null, 2))
