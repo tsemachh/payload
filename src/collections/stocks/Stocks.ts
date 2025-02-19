@@ -117,7 +117,10 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'stock-values',
       on: 'stockId',
-      admin: { defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'] },
+      admin: {
+        defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+        disableListColumn : true
+      },
     },
     {
       name: 'relations',
@@ -125,7 +128,8 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'stocks',
       on: 'relatedStock',
-      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] ,disableListColumn : true},
+
     },
    {
       name: 'meetings',
@@ -133,7 +137,7 @@ export const Stocks: CollectionConfig = {
       type: 'join',
       collection: 'meetings',
       on: 'stock',
-      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],disableListColumn : true },
     },
   ],
 }
