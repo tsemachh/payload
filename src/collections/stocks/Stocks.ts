@@ -16,134 +16,131 @@ export const Stocks: CollectionConfig = {
   },
   fields: [
     {
-      type: 'tabs',
-      tabs: [
+      type: 'row',
+      fields: [
         {
-          label: 'תוכן',
-          fields: [
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'stockId',
-                  type: 'text',
-                  label: 'מזהה',
-                  unique: true,
-                  required: true,
-                  index: true,
-                  access: { update: () => false },
-                  admin: { description: 'ניתן להעריכה רק בעת יצירת נייר הערך' },
-                },
-                {
-                  name: 'type',
-                  label: 'סוג',
-                  type: 'select',
-                  options: [
-                    { label: 'מניות', value: 'מניות' },
-                    { label: 'אופציות', value: 'אופציות' },
-                    { label: 'איגרות חוב', value: 'איגרות חוב' },
-                    { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
-                    { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-                    { label: 'תעודות מדד', value: 'תעודות מדד' },
-                    { label: 'תעודות סל', value: 'תעודות סל' },
-                    { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
-                    { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
-                    { label: 'אחר', value: 'אחר' },
-                    { label: 'זכויות', value: 'זכויות' },
-                    { label: 'מק"מ', value: 'מק"מ' },
-                    { label: 'שטרי הון', value: 'שטרי הון' },
-                  ],
-                  index: true,
-                  admin: { condition: (siblingData) => siblingData.tradable },
-                },
-                {
-                  name: 'tradable',
-                  label: 'האם נסחר',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'relatedStock',
-                  label: 'נייר ערך ראשי',
-                  type: 'relationship',
-                  relationTo: 'stocks',
-                  index: true,
-                  admin: { condition: (siblingData) => !siblingData.tradable },
-                  filterOptions: () => ({
-                    tradable: { equals: true },
-                  }),
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'symbol',
-                  label: 'סימול',
-                  type: 'text',
-                  index: true,
-                  admin: { condition: (siblingData) => siblingData.tradable },
-                },
-                {
-                  name: 'name',
-                  label: 'שם',
-                  type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable },
-                },
-                {
-                  name: 'longName',
-                  label: 'שם מלא',
-                  type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable },
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'values',
-                  label: 'שווי',
-                  type: 'join',
-                  collection: 'stock-values',
-                  on: 'stockId',
-                  admin: {
-                    condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
-                  },
-                },
-              ],
-            },
-          ],
+          name: 'stockId',
+          type: 'text',
+          label: 'מזהה נייר ערך',
+          unique: true,
+          required: true,
+          index: true,
+          access: {
+            update: () => false,
+          },
+          admin: {
+            description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
+          },
         },
         {
-          label: 'ניירות ערך עוקבים',
-          fields: [
-            {
-              name: 'relations',
-              label: 'ניירות ערך עוקבים',
-              type: 'join',
-              collection: 'stocks',
-              on: 'relatedStock',
-              admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
-            },
+          name: 'type',
+          label: 'סוג נייר ערך',
+          type: 'select',
+          options: [
+            { label: 'מניות', value: 'מניות' },
+            { label: 'אופציות', value: 'אופציות' },
+            { label: 'איגרות חוב', value: 'איגרות חוב' },
+            { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודות מדד', value: 'תעודות מדד' },
+            { label: 'תעודות סל', value: 'תעודות סל' },
+            { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
+            { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
+            { label: 'אחר', value: 'אחר' },
+            { label: 'זכויות', value: 'זכויות' },
+            { label: 'מק"מ', value: 'מק"מ' },
+            { label: 'שטרי הון', value: 'שטרי הון' },
           ],
+          index: true
         },
         {
-          label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable },
-          fields: [
-            {
-              name: 'meetings',
-              label: 'אסיפות',
-              type: 'join',
-              collection: 'meetings',
-              on: 'stock',
-              admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+          name: 'relatedStock',
+          label: 'נייר מקביל(נסחר)',
+          type: 'relationship',
+          relationTo: 'stocks',
+          index: true,
+          admin: {
+            condition: (siblingData) => !siblingData.tradable,
+          },
+          filterOptions: () => ({
+            tradable: {
+              equals: true,
             },
-          ],
+          }),
+        },
+        {
+          name: 'tradable',
+          label: 'מניה נסחרת',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            width: '25%',
+          },
         },
       ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'symbol',
+          label: 'סימול',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'name',
+          label: 'שם נייר',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '33%',
+          },
+        },
+        {
+          name: 'longName',
+          label: 'שם מלא',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '33%',
+          },
+        },
+      ],
+    },
+    {
+      name: 'values',
+      label: 'ערכים',
+      type: 'join',
+      collection: 'stock-values',
+      on: 'stockId',
+      admin: {
+        defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+        disableListColumn : true,
+        disableListFilter: true,
+      },
+    },
+    {
+      name: 'relations',
+      label: 'מקושרים',
+      type: 'join',
+      collection: 'stocks',
+      on: 'relatedStock',
+      admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] ,disableListColumn : true,
+        disableListFilter: true},
+
+    },
+   {
+      name: 'meetings',
+      label: 'פגישות',
+      type: 'join',
+      collection: 'meetings',
+      on: 'stock',
+      admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],disableListColumn : true,
+        disableListFilter: true },
     },
   ],
 }
