@@ -20,7 +20,7 @@ export const Stocks: CollectionConfig = {
       fields: [
         {
           name: 'stockId',
-          type: 'number',
+          type: 'text',
           label: 'מזהה',
           unique: true,
           required: true,
