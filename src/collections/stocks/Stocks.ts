@@ -19,7 +19,6 @@ export const Stocks: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          name: 'content',
           label: 'תוכן',
           fields: [
             {
@@ -102,7 +101,6 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
-          name: 'financialData',
           label: 'שווי',
           admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
@@ -119,7 +117,6 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
-          name: 'relationsTab',
           label: 'ניירות ערך עוקבים',
           admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
@@ -134,7 +131,6 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
-          name: 'meetingsTab',
           label: 'אסיפות',
           admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
