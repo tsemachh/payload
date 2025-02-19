@@ -12,7 +12,7 @@
  */
 export type RolePermissions =
   | {
-      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles')[];
+      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -81,7 +81,7 @@ export interface Config {
     meetings: Meeting;
     users: User;
     roles: Role;
-    media: Media;
+    document: Document;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -99,7 +99,7 @@ export interface Config {
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
+    document: DocumentSelect<false> | DocumentSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -268,9 +268,9 @@ export interface Role {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "document".
  */
-export interface Media {
+export interface Document {
   id: string;
   alt: string;
   creator?: string | null;
@@ -315,8 +315,8 @@ export interface PayloadLockedDocument {
         value: string | Role;
       } | null)
     | ({
-        relationTo: 'media';
-        value: string | Media;
+        relationTo: 'document';
+        value: string | Document;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -465,9 +465,9 @@ export interface RolePermissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
+ * via the `definition` "document_select".
  */
-export interface MediaSelect<T extends boolean = true> {
+export interface DocumentSelect<T extends boolean = true> {
   alt?: T;
   creator?: T;
   updator?: T;
