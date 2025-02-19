@@ -15,6 +15,7 @@ import { Stocks } from '@/collections/stocks/Stocks'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
+import MigrationFaults   from '@/collections/migration/MigrationFaults'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 
@@ -32,7 +33,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Stocks,StockValues, Meetings, Roles],
+  collections: [Users, Media, Stocks,StockValues, Meetings, Roles,MigrationFaults],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

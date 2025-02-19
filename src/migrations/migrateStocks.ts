@@ -172,19 +172,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let stockValue: StockValue | null = null
     const stockIdTOSequence: Map<string, string> = new Map<string, string>()
     for (const row of resultStocks.recordset) {
+      row.stockID=`${row.stockID}`
       const relatedStock=relationStocks.get(row.stockID)
       const hasTradableRelationStock = (relatedStock && predictaStocks.has(relatedStock))
-      if (predictaStocks.has(row.stockID) ||
-        (emdaStocks.has(row.stockID) && hasTradableRelationStock) ||    //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
-        stocksInMeeting.has(row.stockID))
+      const isPredictaStock = predictaStocks.has(row.stockID)
+      const isEmdaStock = emdaStocks.has(row.stockID)
+      const stockHasMeeting = stocksInMeeting.has(row.stockID)
+      if (isPredictaStock ||
+        (isEmdaStock && hasTradableRelationStock) ||    //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
+        stockHasMeeting)
         {
           try {
-            const stockID: number = parseInt(row.stockID) // Example ObjectId
-            let stockSequence = await getSeqeunceStockId(payload, stockID)
+            let stockSequence:string | null | undefined =stockIdTOSequence.get(row.stockID)
+            if (!stockSequence)
+              stockSequence = await getSeqeunceStockId(payload, row.stockID)
             const stocktype = getStockType(row)
             // @ts-ignore
             stockData = {
-              stockId: stockID,
+              stockId: row.stockID,
               name: row.name,
               symbol: row.symbol,
               type: stocktype,
@@ -221,6 +226,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             throw insertError
           }
         }else{
+        const faultComments=`Stock not entitled to migration - isPredictaStock:${isPredictaStock} isEmdaStock:${isEmdaStock} hasTradableRelationStock:${hasTradableRelationStock} stockHasMeeting:${stockHasMeeting} 
+        `
+        payload.create({
+          collection: 'migration-faults',
+          data: {
+            type:"stock",
+            typeId: row.stockID,
+            row: JSON.stringify(row, null, 2),
+            comments:faultComments
+          },
+        })
         console.info(`✗ Failed to insert stock ${row.stockID}: - not entitled to migration`)
       }
     }
@@ -231,7 +247,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       try{
       const relatedStock = stockIdTOSequence.get(id2);
       const theStockToUpdate = stockIdTOSequence.get(id1);
-        if (theStockToUpdate && relatedStock) {
+      const isPredictaStock = predictaStocks.has(id2)
+
+        if (theStockToUpdate && relatedStock && isPredictaStock) {
           await payload.update({
             collection: 'stocks',
             id: theStockToUpdate,
@@ -244,6 +262,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`,
           )
         } else {
+          const faultComments=`Stock relation not available- stock :${id1} to stock ${id2} isPredictaStock:${isPredictaStock} `
+          payload.create({
+            collection: 'migration-faults',
+            data: {
+              type:"stock-relation",
+              typeId: id1+"->"+id2,
+              comments:faultComments
+            },
+          })
           errorCount++
           console.log(
             `✗ Failed to insert stock relation ${id1} (${successCount}/${relationStocksLength})`,
@@ -260,8 +287,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const row of resultStockValues.recordset) {
       try {
+        row.stockID = `${row.stockID}`
         const stockSequence = stockIdTOSequence.get(row.stockID)
-        if (!stockSequence) {
+        const isPredictaStock = predictaStocks.has(row.stockID)
+
+        if (!stockSequence || !isPredictaStock) {
+          const faultComments=`Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} 
+         `
+          payload.create({
+            collection: 'migration-faults',
+            data: {
+              type:"stock-value",
+              typeId: row.stockID,
+              row: JSON.stringify(row, null, 2),
+              comments:faultComments
+            },
+          })
           continue
         }
         // @ts-ignore
