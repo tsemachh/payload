@@ -53,6 +53,7 @@ export const Stocks: CollectionConfig = {
                 { label: 'שטרי הון', value: 'שטרי הון' },
               ],
               index: true,
+              admin: { condition: (siblingData) => siblingData.tradable },
             },
             {
               name: 'tradable',
@@ -65,13 +66,9 @@ export const Stocks: CollectionConfig = {
               type: 'relationship',
               relationTo: 'stocks',
               index: true,
-              admin: {
-                condition: (siblingData) => !siblingData.tradable,
-              },
+              admin: { condition: (siblingData) => !siblingData.tradable },
               filterOptions: () => ({
-                tradable: {
-                  equals: true,
-                },
+                tradable: { equals: true },
               }),
             },
           ],
@@ -79,9 +76,25 @@ export const Stocks: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            { name: 'symbol', label: 'סימול', type: 'text', index: true },
-            { name: 'name', label: 'שם', type: 'text' },
-            { name: 'longName', label: 'שם מלא', type: 'text' },
+            {
+              name: 'symbol',
+              label: 'סימול',
+              type: 'text',
+              index: true,
+              admin: { condition: (siblingData) => siblingData.tradable },
+            },
+            {
+              name: 'name',
+              label: 'שם',
+              type: 'text',
+              admin: { condition: (siblingData) => siblingData.tradable },
+            },
+            {
+              name: 'longName',
+              label: 'שם מלא',
+              type: 'text',
+              admin: { condition: (siblingData) => siblingData.tradable },
+            },
           ],
         },
       ],
@@ -90,6 +103,7 @@ export const Stocks: CollectionConfig = {
       type: 'group',
       name: 'financialData',
       label: 'שווי',
+      admin: { condition: (siblingData) => siblingData.tradable },
       fields: [
         {
           name: 'values',
@@ -105,6 +119,7 @@ export const Stocks: CollectionConfig = {
       type: 'group',
       name: 'relationsTab',
       label: 'ניירות ערך עוקבים',
+      admin: { condition: (siblingData) => siblingData.tradable },
       fields: [
         {
           name: 'relations',
@@ -120,6 +135,7 @@ export const Stocks: CollectionConfig = {
       type: 'group',
       name: 'meetingsTab',
       label: 'אסיפות',
+      admin: { condition: (siblingData) => siblingData.tradable },
       fields: [
         {
           name: 'meetings',
