@@ -182,6 +182,7 @@ export interface Stock {
    * ניתן להעריכה רק בעת יצירת נייר הערך
    */
   stockId: string;
+  fullName?: string | null;
   type?: StockType;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
@@ -406,6 +407,7 @@ export interface PayloadMigration {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
+  fullName?: T;
   type?: T;
   tradable?: T;
   relatedStock?: T;

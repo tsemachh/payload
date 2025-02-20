@@ -8,9 +8,9 @@ export const Stocks: CollectionConfig = {
     singular: 'נייר ערך',
   },
   admin: {
-    useAsTitle: 'stockId',
-    defaultColumns: ['stockId', 'type', 'symbol', 'name'],
-    listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
+    useAsTitle: 'fullName',
+    defaultColumns: ['fullName', 'type', 'name'],
+    listSearchableFields: ['fullName', 'type', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -33,13 +33,33 @@ export const Stocks: CollectionConfig = {
                   required: true,
                   index: true,
                   access: { update: () => false },
-                  admin: { description: 'ניתן להעריכה רק בעת יצירת נייר הערך' },
+                  admin: {
+                    description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
+                  },
+                },
+                {
+                  name: 'fullName',
+                  label: 'שם',
+                  type: 'text',
+                  admin: { readOnly: true },
+                  hooks: {
+                    beforeChange: [
+                      ({ siblingData }) => {
+                        delete siblingData['fullName']
+                      },
+                    ],
+                    afterRead: [
+                      ({ data }) => {
+                        return `${data?.stockId} - ${data?.symbol}`
+                      },
+                    ],
+                  },
                 },
                 {
                   name: 'type',
                   label: 'סוג',
                   type: 'select',
-                  interfaceName:'StockType',
+                  interfaceName: 'StockType',
                   options: [
                     { label: 'מניות', value: 'מניות' },
                     { label: 'אופציות', value: 'אופציות' },
@@ -152,7 +172,7 @@ export const Stocks: CollectionConfig = {
     {
       path: '/importStocks',
       method: 'post',
-      handler:ImportStocksEndPoint
-    }
+      handler: ImportStocksEndPoint,
+    },
   ],
 }
