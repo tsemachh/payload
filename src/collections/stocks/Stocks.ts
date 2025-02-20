@@ -39,6 +39,7 @@ export const Stocks: CollectionConfig = {
                   name: 'type',
                   label: 'סוג',
                   type: 'select',
+                  interfaceName:'StockType',
                   options: [
                     { label: 'מניות', value: 'מניות' },
                     { label: 'אופציות', value: 'אופציות' },
