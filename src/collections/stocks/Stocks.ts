@@ -9,7 +9,7 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: ['stockId', 'type', 'symbol', 'name'],
+    defaultColumns: ['stockId', 'type', 'name'],
     listSearchableFields: ['stockId', 'type', 'symbol', 'name', 'longName'],
   },
   versions: {
@@ -33,13 +33,28 @@ export const Stocks: CollectionConfig = {
                   required: true,
                   index: true,
                   access: { update: () => false },
-                  admin: { description: 'ניתן להעריכה רק בעת יצירת נייר הערך' },
+                  admin: {
+                    description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
+                  },
+                  hooks: {
+                    beforeChange: [
+                      ({ siblingData }) => {
+                        // ensures data is not stored in DB
+                        delete siblingData['completeName']
+                      },
+                    ],
+                    afterRead: [
+                      ({ data }) => {
+                        return `${data?.stockId} - ${data?.symbol}`
+                      },
+                    ],
+                  },
                 },
                 {
                   name: 'type',
                   label: 'סוג',
                   type: 'select',
-                  interfaceName:'StockType',
+                  interfaceName: 'StockType',
                   options: [
                     { label: 'מניות', value: 'מניות' },
                     { label: 'אופציות', value: 'אופציות' },
@@ -152,7 +167,7 @@ export const Stocks: CollectionConfig = {
     {
       path: '/importStocks',
       method: 'post',
-      handler:ImportEndPoint
-    }
+      handler: ImportEndPoint,
+    },
   ],
 }
