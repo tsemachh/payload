@@ -12,157 +12,62 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ArrowUpDown, Search, FileText, Check, X, Settings2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import {
+  ArrowUpDown,
+  Search,
+  Check,
+  X,
+  Settings2,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  FilterX,
+} from 'lucide-react'
 import type React from 'react'
 import type { FutureMeetingTableData } from '../types'
+import { cn } from '@/lib/utils'
 
 interface Column {
-  key: keyof FutureMeetingTableData | string
-  header: string | React.ReactNode
-  sortable?: boolean
+  key: keyof FutureMeetingTableData
+  header: string
+  type: 'string' | 'number' | 'date' | 'boolean'
   filterable?: boolean
-  booleanFilterable?: boolean
-  searchable?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
 }
 
-type BooleanFilterState = 'none' | 'true' | 'false'
-
-const BooleanFilterButton = ({
-  value,
-  onChange,
-}: {
-  value: BooleanFilterState
-  onChange: (value: BooleanFilterState) => void
-}) => {
-  const handleClick = () => {
-    if (value === 'none') onChange('true')
-    else if (value === 'true') onChange('false')
-    else onChange('none')
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn('h-8 w-8 p-0 hover:bg-muted', value !== 'none' && 'bg-primary/10')}
-      onClick={handleClick}
-    >
-      {value === 'true' && <Check className="h-4 w-4" />}
-      {value === 'false' && <X className="h-4 w-4" />}
-      {value === 'none' && <div className="h-4 w-4 border rounded" />}
-    </Button>
-  )
-}
-
 const columns: Column[] = [
-  // proofId
-  {
-    key: 'stockNumber',
-    header: 'מס׳ נייר',
-    render: (row) => <div className="min-w-[100px]">{row.stockNumber}</div>,
-  },
-  {
-    key: 'stockType',
-    header: 'סוג נייר',
-    filterable: true,
-    render: (row) => <div className="min-w-[100px]">{row.stockType}</div>,
-  },
-  {
-    key: 'companyName',
-    header: 'שם חברה',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.companyName}</div>,
-  },
-  {
-    key: 'marketValue',
-    header: 'שווי שוק (מיליוני ₪)',
-    sortable: true,
-    render: (row) =>
-      new Intl.NumberFormat('he-IL').format(Number((row.marketValue / 1_000_000).toFixed(2))),
-  },
-  {
-    key: 'meetingType',
-    header: 'סוג אסיפה',
-    filterable: true,
-    render: (row) => <div className="min-w-[100px]">{row.meetingType}</div>,
-  },
-  {
-    key: 'meetingDate',
-    header: 'תאריך האסיפה',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.meetingDate}</div>,
-  },
-  {
-    key: 'location',
-    header: 'מיקום',
-    render: (row) => (
-      <div className="max-w-[200px] truncate" title={row.location as string}>
-        {row.location}
-      </div>
-    ),
-  },
-  {
-    key: 'holdingsLimit',
-    header: 'מועד קובע',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.holdingsLimit}</div>,
-  },
-  {
-    key: 'proxyVotingDate',
-    header: 'תאריך מסירת הצבעות',
-    sortable: true,
-    render: (row) => <div className="min-w-[100px]">{row.proxyVotingDate}</div>,
-  },
-  {
-    key: 'votingDocUrl',
-    header: 'כתב הצבעה',
-    render: (row) =>
-      row.votingDocUrl ? (
-        <a href={row.votingDocUrl} target="_blank" rel="noopener noreferrer">
-          <FileText className="h-4 w-4 text-primary" />
-        </a>
-      ) : null,
-  },
-  // {
-  //   key: 'comments',
-  //   header: 'הערות',
-  //   render: (row) => (
-  //     <div className="max-w-[200px] truncate" title={row.comments as string}>
-  //       {row.comments}
-  //     </div>
-  //   ),
-  // },
+  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
+  { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
+  { key: 'companyName', header: 'שם חברה', type: 'string' },
+  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
+  { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
+  { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date' },
+  { key: 'location', header: 'מיקום', type: 'string' },
+  { key: 'holdingsLimit', header: 'מועד קובע', type: 'date' },
+  { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date' },
   {
     key: 'electronicVotingEnabled',
     header: 'האסיפה מופיעה במערכת האלק׳?',
-    booleanFilterable: true,
+    type: 'boolean',
+    filterable: true,
     render: (row) =>
       row.electronicVotingEnabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
-  // resultsConfirmationStatus
-  // relatedMeetingId
   {
     key: 'committeeInitiated',
     header: 'תאגיד פיננסי דורש ועדה',
-    booleanFilterable: true,
+    type: 'boolean',
+    filterable: true,
     render: (row) =>
       row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
-  // _status
 ]
 
 interface DataTableProps {
@@ -171,28 +76,14 @@ interface DataTableProps {
 
 export function DataTable({ data }: DataTableProps) {
   const [sortConfig, setSortConfig] = useState<{
-    key: string
+    key: keyof FutureMeetingTableData
     direction: 'asc' | 'desc'
   } | null>(null)
-  const [filters, setFilters] = useState<{
-    meetingType: string
-    stockType: string
-  }>({
-    meetingType: '',
-    stockType: '',
-  })
-  const [booleanFilters, setBooleanFilters] = useState<{
-    [key: string]: BooleanFilterState
-  }>({
-    electronicVotingEnabled: 'none',
-    committeeInitiated: 'none',
-  })
-  const [searchTerms, setSearchTerms] = useState<{
-    general: string
-  }>({
-    general: '',
-  })
+  const [filters, setFilters] = useState<{ [key: string]: Set<string> }>({})
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  const [searchTerm, setSearchTerm] = useState('')
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+
   useEffect(() => {
     const loadColumnVisibility = () => {
       const storedColumns = localStorage.getItem('columnSelected')
@@ -222,33 +113,6 @@ export function DataTable({ data }: DataTableProps) {
     loadColumnVisibility()
   }, [])
 
-  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
-
-  const visibleColumns = useMemo(() => {
-    return columns.filter((column) => columnVisibility[String(column.key)])
-  }, [columnVisibility])
-
-  const handleSort = (key: string) => {
-    setSortConfig((current) => {
-      if (current?.key === key) {
-        return current.direction === 'asc' ? { key, direction: 'desc' } : null
-      }
-      return { key, direction: 'asc' }
-    })
-  }
-
-  const handleFilter = (key: 'meetingType' | 'stockType', value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleBooleanFilter = (key: string, value: BooleanFilterState) => {
-    setBooleanFilters((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleSearch = (key: 'general', value: string) => {
-    setSearchTerms((prev) => ({ ...prev, [key]: value }))
-  }
-
   const toggleColumnVisibility = (key: string) => {
     setColumnVisibility((prev) => {
       const newVisibility = { ...prev, [key]: !prev[key] }
@@ -260,53 +124,69 @@ export function DataTable({ data }: DataTableProps) {
     })
   }
 
+  const handleSort = (key: keyof FutureMeetingTableData) => {
+    setSortConfig((current) => {
+      if (current?.key === key) {
+        return current.direction === 'asc' ? { key, direction: 'desc' } : null
+      }
+      return { key, direction: 'asc' }
+    })
+  }
+
+  const handleFilter = (key: keyof FutureMeetingTableData, value: string, checked: boolean) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev }
+      if (!newFilters[key]) {
+        newFilters[key] = new Set()
+      }
+      if (checked) {
+        newFilters[key].add(value)
+      } else {
+        newFilters[key].delete(value)
+      }
+      if (newFilters[key].size === 0) {
+        delete newFilters[key]
+      }
+      return { ...newFilters }
+    })
+  }
+
+  const removeFilter = (key: keyof FutureMeetingTableData) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev }
+      delete newFilters[key]
+      return { ...newFilters }
+    })
+  }
+
+  const getFilterIcon = (columnKey: keyof FutureMeetingTableData) => {
+    if (filters[columnKey] || sortConfig?.key === columnKey) {
+      return <FilterX className="h-4 w-4 text-primary" />
+    }
+    return <Filter className="h-4 w-4" />
+  }
+
   const filteredAndSortedData = useMemo(() => {
     let result = [...data]
     // Apply filters
-    if (filters.meetingType && filters.meetingType !== 'all') {
-      result = result.filter((item) => item.meetingType === filters.meetingType)
-    }
-    if (filters.stockType && filters.meetingType !== 'all') {
-      result = result.filter((item) => item.stockType === filters.stockType)
-    }
-
-    // Apply boolean filters
-    Object.entries(booleanFilters).forEach(([key, value]) => {
-      if (value !== 'none') {
+    Object.entries(filters).forEach(([key, values]) => {
+      const column = columns.find((col) => col.key === key)
+      if (column && column.type === 'boolean') {
         result = result.filter((item) => {
-          const boolValue = value === 'true'
-          return item[key as keyof FutureMeetingTableData] === boolValue
+          const itemValue = item[key as keyof FutureMeetingTableData]
+          return (values.has('✓') && itemValue === true) || (values.has('✗') && itemValue === false)
         })
+      } else {
+        result = result.filter((item) =>
+          values.has(String(item[key as keyof FutureMeetingTableData])),
+        )
       }
     })
-
-    // Apply searches
-    if (searchTerms.general) {
-      result = result.filter((item) =>
-        Object.values(item).some((value) =>
-          String(value).toLowerCase().includes(searchTerms.general.toLowerCase()),
-        ),
-      )
-    }
     // Apply sorting
     if (sortConfig) {
-      result.sort((a: FutureMeetingTableData, b: FutureMeetingTableData) => {
-        const key = sortConfig.key as keyof FutureMeetingTableData
-        let aValue = a[key]
-        let bValue = b[key]
-
-        // Special handling for date columns
-        if (key === 'holdingsLimit' || key === 'proxyVotingDate' || key === 'meetingDate') {
-          aValue = new Date(aValue as string).getTime()
-          bValue = new Date(bValue as string).getTime()
-        }
-
-        // Special handling for numeric columns
-        if (key === 'marketValue') {
-          aValue = Number(aValue)
-          bValue = Number(bValue)
-        }
-
+      result.sort((a, b) => {
+        const aValue = a[sortConfig.key]
+        const bValue = b[sortConfig.key]
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
         return 0
@@ -314,7 +194,45 @@ export function DataTable({ data }: DataTableProps) {
     }
 
     return result
-  }, [data, sortConfig, filters, booleanFilters, searchTerms])
+  }, [data, sortConfig, filters])
+
+  const visibleColumns = useMemo(() => {
+    return columns.filter((column) => columnVisibility[column.key])
+  }, [columnVisibility])
+
+  const getSortIcon = (columnKey: keyof FutureMeetingTableData) => {
+    if (sortConfig?.key === columnKey) {
+      return sortConfig.direction === 'asc' ? (
+        <ArrowUp className="h-4 w-4" />
+      ) : (
+        <ArrowDown className="h-4 w-4" />
+      )
+    }
+    return <ArrowUpDown className="h-4 w-4" />
+  }
+
+  const facetedFilters = useMemo(() => {
+    const facets: { [key: string]: { value: string; count: number }[] } = {}
+    columns.forEach((column) => {
+      if (column.filterable) {
+        if (column.type === 'boolean') {
+          const trueCount = data.filter((item) => item[column.key] === true).length
+          const falseCount = data.filter((item) => item[column.key] === false).length
+          facets[column.key] = [
+            { value: '✓', count: trueCount },
+            { value: '✗', count: falseCount },
+          ]
+        } else {
+          const values = new Set(data.map((item) => String(item[column.key])))
+          facets[column.key] = Array.from(values).map((value) => ({
+            value,
+            count: data.filter((item) => String(item[column.key]) === value).length,
+          }))
+        }
+      }
+    })
+    return facets
+  }, [data])
 
   return (
     <div className="space-y-4 text-right pr-10 pl-10 " dir="rtl">
@@ -323,19 +241,14 @@ export function DataTable({ data }: DataTableProps) {
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="חיפוש כללי..."
-            value={searchTerms.general}
-            onChange={(e) => handleSearch('general', e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 text-right"
           />
         </div>
-        <DropdownMenu open={isColumnSelectorOpen} onOpenChange={setIsColumnSelectorOpen}>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex justify-between items-center w-1/5"
-              onClick={() => setIsColumnSelectorOpen((prev) => !prev)}
-            >
+            <Button variant="outline" size="sm" className="flex justify-between items-center w-1/5">
               <span>עמודות</span>
               <Settings2 className="h-4 w-4 mr-2" />
             </Button>
@@ -360,87 +273,54 @@ export function DataTable({ data }: DataTableProps) {
         <div className="rounded-md border">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
             <Table className="w-full border-collapse relative" dir="rtl">
-              <TableHeader className="sticky top-0 bg-background z-20">
+              <TableHeader className="sticky top-0 bg-background z-20 bg-gray-100">
                 <TableRow className="bg-muted/50 border-b border-border">
                   {visibleColumns.map((column) => (
                     <TableHead
-                      key={`header-${String(column.key)}`}
-                      className="text-right h-10 px-2 whitespace-nowrap"
+                      key={column.key}
+                      className={cn('text-right', openDropdown === column.key ? 'bg-gray-200' : '')}
                     >
-                      <div className="flex">
-                        <span className="text-xs font-bold">{column.header}</span>
+                      <div className="flex items-center justify-start">
+                        <span>{column.header}</span>
+                        <DropdownMenu
+                          onOpenChange={(open) => setOpenDropdown(open ? column.key : null)}
+                        >
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              {getFilterIcon(column.key)}{' '}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent style={{ direction: 'rtl' }} align="center">
+                            <DropdownMenuItem onClick={() => handleSort(column.key)}>
+                              <span>מיון</span>
+                              {getSortIcon(column.key)}
+                            </DropdownMenuItem>
+                            {column.filterable && (
+                              <>
+                                <DropdownMenuSeparator />
+                                {facetedFilters[column.key].map(({ value, count }) => (
+                                  <DropdownMenuCheckboxItem
+                                    key={value}
+                                    checked={filters[column.key]?.has(value)}
+                                    onCheckedChange={(checked) =>
+                                      handleFilter(column.key, value, checked)
+                                    }
+                                  >
+                                    {value} ({count})
+                                  </DropdownMenuCheckboxItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => removeFilter(column.key)}>
+                                  הסר סינון
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableHead>
                   ))}
                   <TableHead className="w-1"></TableHead>
-                </TableRow>
-                <TableRow className="bg-muted/50 border-b border-border">
-                  {visibleColumns.map((column) => (
-                    <TableHead key={`filter-${String(column.key)}`} className="p-0">
-                      <div className="px-2 py-2 flex flex-col items-end">
-                        {column.searchable && (
-                          <Input
-                            placeholder={`חיפוש ${column.header}`}
-                            value={searchTerms[column.key as keyof typeof searchTerms] || ''}
-                            onChange={(e) =>
-                              handleSearch(column.key as keyof typeof searchTerms, e.target.value)
-                            }
-                            className="h-8 text-xs text-right w-full"
-                          />
-                        )}
-                        {column.filterable && (
-                          <Select
-                            value={filters[column.key as keyof typeof filters]}
-                            onValueChange={(value) =>
-                              handleFilter(column.key as keyof typeof filters, value)
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-xs text-right w-full">
-                              <SelectValue placeholder={`סנן ${column.header}`} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">הכל</SelectItem>
-                              {Array.from(
-                                new Set(
-                                  data.map(
-                                    (item) => item[column.key as keyof FutureMeetingTableData],
-                                  ),
-                                ),
-                              ).map((value) => (
-                                <SelectItem key={String(value)} value={String(value)}>
-                                  {String(value)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        {column.booleanFilterable && (
-                          <div className="flex justify-between w-full">
-                            <BooleanFilterButton
-                              value={booleanFilters[String(column.key)]}
-                              onChange={(value) => handleBooleanFilter(String(column.key), value)}
-                            />
-                          </div>
-                        )}
-                        {column.sortable && (
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort(String(column.key))}
-                            className="h-8 w-full text-x"
-                          >
-                            <ArrowUpDown
-                              className={cn(
-                                'h-3 w-3',
-                                sortConfig?.key === column.key &&
-                                  (sortConfig.direction === 'asc' ? 'rotate-180' : ''),
-                              )}
-                            />
-                          </Button>
-                        )}
-                      </div>
-                    </TableHead>
-                  ))}
-                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -454,12 +334,12 @@ export function DataTable({ data }: DataTableProps) {
                         key={`${row.meetingId}-${String(column.key)}`}
                         className="py-2 px-3 text-right whitespace-nowrap group-hover:text-muted-foreground/70"
                       >
-                        {column.render && column.render(row)}
+                        {column.render ? column.render(row) : String(row[column.key])}
                       </TableCell>
                     ))}
                     <TableCell>
                       <div className="relative h-full">
-                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hover:text-blue-800">
+                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ">
                           {row.meetingInviteUrl && (
                             <a
                               href={row.meetingInviteUrl}
