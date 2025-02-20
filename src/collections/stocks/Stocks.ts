@@ -9,8 +9,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['fullName', 'type', 'name'],
-    listSearchableFields: ['fullName', 'type', 'name', 'longName'],
+    defaultColumns: ['fullName', 'type', 'longName'],
+    listSearchableFields: ['symbol','stockId','type', 'name', 'longName'],
   },
   versions: {
     drafts: false,
