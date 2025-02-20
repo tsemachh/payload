@@ -39,7 +39,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'שם',
+                  label: 'מזהה - סמל',
                   type: 'text',
                   admin: { readOnly: true },
                   hooks: {
