@@ -33,6 +33,11 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      graphics: {
+        Logo: '/graphics/Logo',
+      },
+    },
     meta:{
       title:'עמדה',
       titleSuffix:'- ניהול',
