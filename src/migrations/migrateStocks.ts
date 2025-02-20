@@ -1,14 +1,15 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Stock, StockValue } from '@/payload-types'
-import { getSeqeunceStockId, getSeqeunceStockValueId } from '../utils/utils'
+import { Stock } from '@/payload-types'
+import { getSeqeunceStockId } from '../utils/utils'
 import {
   getAllStocksInMeetings,
   getEmdaStockIds,
   getPredictaStockIds,
   getStockRelations,
-  getStocks, getStockValues,
-} from '@/utils/migrateUtils' // Then you can use sql.close() directly
+  getStocks,
+  getStockValues, upsertStockFromImport, upsertStockValueFromImport,
+} from '@/utils/migrateUtils'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -132,8 +133,8 @@ const stockTypes = [
   'אחר',
   'זכויות',
   'מק"מ',
-  'שטרי הון'
-];
+  'שטרי הון',
+]
 // @ts-ignore
 function getStockType(row) {
   // Example usage:
@@ -142,8 +143,7 @@ function getStockType(row) {
   // @ts-ignore
   const assetType = stockTypesMap.get(stocktype)
   if (assetType) stocktype = assetType
-  if (!stockTypes.includes(stocktype))
-      stocktype="אחר"
+  if (!stockTypes.includes(stocktype)) stocktype = 'אחר'
   return stocktype
 }
 
@@ -161,80 +161,54 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const resultStocks = await getStocks(pool)
     const predictaStocks: Set<string> = await getPredictaStockIds(pool)
     const emdaStocks: Set<string> = await getEmdaStockIds(pool)
-    const relationStocks: Map<string,string>= await getStockRelations(pool)
-    const stocksInMeeting: Set<string> =await getAllStocksInMeetings(pool)
+    const relationStocks: Map<string, string> = await getStockRelations(pool)
+    const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
     const resultStockValues = await getStockValues(pool)
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
     let successCount = 0
     let errorCount = 0
-    let stockData: Stock | null = null
-    let stockValue: StockValue | null = null
     const stockIdTOSequence: Map<string, string> = new Map<string, string>()
     for (const row of resultStocks.recordset) {
-      row.stockID=`${row.stockID}`
-      const relatedStock=relationStocks.get(row.stockID)
-      const hasTradableRelationStock = (relatedStock && predictaStocks.has(relatedStock))
+      row.stockID = `${row.stockID}`
+      const relatedStock = relationStocks.get(row.stockID)
+      const hasTradableRelationStock = relatedStock && predictaStocks.has(relatedStock)
       const isPredictaStock = predictaStocks.has(row.stockID)
       const isEmdaStock = emdaStocks.has(row.stockID)
       const stockHasMeeting = stocksInMeeting.has(row.stockID)
-      if (isPredictaStock ||
-        (isEmdaStock && hasTradableRelationStock) ||    //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
-        stockHasMeeting)
-        {
-          try {
-            let stockSequence:string | null | undefined =stockIdTOSequence.get(row.stockID)
-            if (!stockSequence)
-              stockSequence = await getSeqeunceStockId(payload, row.stockID)
-            const stocktype = getStockType(row)
-            // @ts-ignore
-            stockData = {
-              stockId: row.stockID,
-              name: row.name,
-              symbol: row.symbol,
-              type: stocktype,
-              longName: row.longName,
-              tradable: predictaStocks.has(row.stockID),
-            }
+      if (
+        isPredictaStock ||
+        (isEmdaStock && hasTradableRelationStock) || //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
+        stockHasMeeting
+      ) {
+        try {
+          let stockSequence: string | null | undefined = stockIdTOSequence.get(row.stockID)
+          if (!stockSequence) stockSequence = await getSeqeunceStockId(payload, row.stockID)
+          row.type = getStockType(row)
 
-            if (!stockSequence) {
-              // Insert into Payload CMS
-              const newStock: Stock = await payload.create({
-                collection: 'stocks',
-                data: stockData as Stock,
-              })
-              stockIdTOSequence.set(row.stockID, newStock.id)
-              stockSequence = newStock.id
-            } else {
-              stockIdTOSequence.set(row.stockID, stockSequence)
-              payload.update({
-                collection: 'stocks',
-                id: stockSequence,
-                data: stockData as Stock,
-                req,
-              })
-            }
-            successCount++
-/*            console.log(
+          stockSequence=await upsertStockFromImport(stockSequence,row,req,predictaStocks.has(row.stockID))
+          stockIdTOSequence.set(row.stockID, stockSequence)
+
+          successCount++
+          /*            console.log(
               `✓ Inserted stock : ${row.stockID} (${successCount}/${resultStocks.recordset.length})`,
             )*/
-          } catch (insertError) {
-            errorCount++
-            console.log('ROW', JSON.stringify(row, null, 2))
-            console.log('Data', JSON.stringify(stockData, null, 2))
-            console.error(`✗ Failed to insert stock ${row.stockID}:`, insertError)
-            throw insertError
-          }
-        }else{
-        const faultComments=`Stock not entitled to migration - isPredictaStock:${isPredictaStock} isEmdaStock:${isEmdaStock} hasTradableRelationStock:${hasTradableRelationStock} stockHasMeeting:${stockHasMeeting} 
+        } catch (insertError) {
+          errorCount++
+          console.log('ROW', JSON.stringify(row, null, 2))
+          console.error(`✗ Failed to insert stock ${row.stockID}:`, insertError)
+          throw insertError
+        }
+      } else {
+        const faultComments = `Stock not entitled to migration - isPredictaStock:${isPredictaStock} isEmdaStock:${isEmdaStock} hasTradableRelationStock:${hasTradableRelationStock} stockHasMeeting:${stockHasMeeting} 
         `
         payload.create({
           collection: 'migration-faults',
           data: {
-            type:"stock",
+            type: 'stock',
             typeId: row.stockID,
             row: JSON.stringify(row, null, 2),
-            comments:faultComments
+            comments: faultComments,
           },
         })
         console.info(`✗ Failed to insert stock ${row.stockID}: - not entitled to migration`)
@@ -243,11 +217,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     successCount = 0
     errorCount = 0
     for (const [id1, id2] of relationStocks.entries()) {
-      const relationStocksLength=relationStocks.size
-      try{
-      const relatedStock = stockIdTOSequence.get(id2);
-      const theStockToUpdate = stockIdTOSequence.get(id1);
-      const isPredictaStock = predictaStocks.has(id2)
+      const relationStocksLength = relationStocks.size
+      try {
+        const relatedStock = stockIdTOSequence.get(id2)
+        const theStockToUpdate = stockIdTOSequence.get(id1)
+        const isPredictaStock = predictaStocks.has(id2)
 
         if (theStockToUpdate && relatedStock && isPredictaStock) {
           await payload.update({
@@ -258,17 +232,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             req,
           })
           successCount++
-          console.log(
-            `✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`,
-          )
+          console.log(`✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`)
         } else {
-          const faultComments=`Stock relation not available- stock :${id1} to stock ${id2} isPredictaStock:${isPredictaStock} `
+          const faultComments = `Stock relation not available- stock :${id1} to stock ${id2} isPredictaStock:${isPredictaStock} `
           payload.create({
             collection: 'migration-faults',
             data: {
-              type:"stock-relation",
-              typeId: id1+"->"+id2,
-              comments:faultComments
+              type: 'stock-relation',
+              typeId: id1 + '->' + id2,
+              comments: faultComments,
             },
           })
           errorCount++
@@ -292,46 +264,20 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const isPredictaStock = predictaStocks.has(row.stockID)
 
         if (!stockSequence || !isPredictaStock) {
-          const faultComments=`Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} 
+          const faultComments = `Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} 
          `
           payload.create({
             collection: 'migration-faults',
             data: {
-              type:"stock-value",
+              type: 'stock-value',
               typeId: row.stockID,
               row: JSON.stringify(row, null, 2),
-              comments:faultComments
+              comments: faultComments,
             },
           })
           continue
         }
-        // @ts-ignore
-        stockValue = {
-          stockId: stockSequence as string,
-          valueDate: row.valueDate,
-          closingRate: row.closingRate,
-          marketValue: row.marketValue,
-          registeredValue: row.registeredValue,
-          createdAt: row.createdAt,
-        }
-
-        //console.log("Data",JSON.stringify(stockData, null, 2))
-        const id = await getSeqeunceStockValueId(payload, row.stockID, row.valueDate)
-        if (id) {
-          // Update Payload CMS
-          payload.update({
-            collection: 'stock-values',
-            id: id,
-            data: stockValue as StockValue,
-            req,
-          })
-        } else {
-          // Insert into Payload CMS
-          payload.create({
-            collection: 'stock-values',
-            data: stockValue as StockValue,
-          })
-        }
+        await upsertStockValueFromImport( stockSequence, row, req)
 
         successCount++
         console.log(
@@ -340,7 +286,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       } catch (insertError) {
         errorCount++
         console.log('ROW', JSON.stringify(row, null, 2))
-        console.log('Data', JSON.stringify(stockData, null, 2))
         console.error(`✗ Failed to insert stock ${row.symbol}:`, insertError)
         throw insertError
       }
