@@ -26,12 +26,23 @@ const dirname = path.dirname(filename)
 
 export default buildConfig({
   i18n: {
-    supportedLanguages: { en, he },
+    supportedLanguages: {  he ,en },
   },
   admin: {
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    meta:{
+      title:'עמדה',
+      titleSuffix:'- ניהול',
+      icons: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          url: '/favicon.png',
+        }
+      ]
     },
   },
   collections: [Stocks,StockValues, Meetings, Users, Roles,Document,MigrationFaults],
