@@ -17,7 +17,7 @@ export type FutureMeetingTableData = {
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   relatedMeetingId: boolean //אסיפה קשורה ??
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
-  _status: StatusType //סטטוס
+  // _status: StatusType //סטטוס
 }
 
 export enum StatusType {
