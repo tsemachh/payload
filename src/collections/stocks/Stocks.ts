@@ -96,6 +96,73 @@ export const Stocks: CollectionConfig = {
                 },
               ],
             },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'symbol',
+                  label: 'סימול',
+                  type: 'text',
+                  index: true,
+                  admin: { condition: (siblingData) => siblingData.tradable },
+                },
+                {
+                  name: 'name',
+                  label: 'שם',
+                  type: 'text',
+                  admin: { condition: (siblingData) => siblingData.tradable },
+                },
+                {
+                  name: 'longName',
+                  label: 'שם מלא',
+                  type: 'text',
+                  admin: { condition: (siblingData) => siblingData.tradable },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'values',
+                  label: 'שווי',
+                  type: 'join',
+                  collection: 'stock-values',
+                  on: 'stockId',
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable,
+                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'ניירות ערך עוקבים',
+          fields: [
+            {
+              name: 'relations',
+              label: 'ניירות ערך עוקבים',
+              type: 'join',
+              collection: 'stocks',
+              on: 'relatedStock',
+              admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+            },
+          ],
+        },
+        {
+          label: 'אסיפות',
+          admin: { condition: (siblingData) => siblingData.tradable },
+          fields: [
+            {
+              name: 'meetings',
+              label: 'אסיפות',
+              type: 'join',
+              collection: 'meetings',
+              on: 'stock',
+              admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+            },
           ],
         },
       ],
@@ -105,7 +172,7 @@ export const Stocks: CollectionConfig = {
     {
       path: '/importStocks',
       method: 'post',
-      handler:ImportStocksEndPoint
-    }
+      handler: ImportStocksEndPoint,
+    },
   ],
 }

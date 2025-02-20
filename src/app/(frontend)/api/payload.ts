@@ -17,7 +17,7 @@ export async function fetchMeetingsForTable() {
       meetingId: meeting.id,
       stockNumber: stockPresent?.stockId?.toString() || '',
       stockType: stockPresent?.type || '',
-      // companyName: stockPresent?.name || '',
+      companyName: stockPresent?.name || '',
       // marketValue: stockPresent?.marketValue || 0,
       marketValue: 0,
       // meetingType: meetingTypePresent?.name || '',//TODO: docker build

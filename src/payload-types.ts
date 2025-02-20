@@ -121,7 +121,13 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    stocks: {
+      values: 'stock-values';
+      relations: 'stocks';
+      meetings: 'meetings';
+    };
+  };
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
@@ -180,6 +186,21 @@ export interface Stock {
   type?: StockType;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
+  symbol?: string | null;
+  name?: string | null;
+  longName?: string | null;
+  values?: {
+    docs?: (string | StockValue)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  relations?: {
+    docs?: (string | Stock)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  meetings?: {
+    docs?: (string | Meeting)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -390,6 +411,12 @@ export interface StocksSelect<T extends boolean = true> {
   type?: T;
   tradable?: T;
   relatedStock?: T;
+  symbol?: T;
+  name?: T;
+  longName?: T;
+  values?: T;
+  relations?: T;
+  meetings?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
