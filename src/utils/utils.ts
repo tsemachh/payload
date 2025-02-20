@@ -21,12 +21,12 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: string |
   return id
 }
 
-export async function getSeqeunceStockValueId(
+export async function getSequenceStockValueId(
   payload: BasePayload,
-  stockID: number | null | undefined,
+  stockSequence:string,
   valueDate: string,
 ) {
-  if (stockID === null) return null
+  if (stockSequence === null) return null
 
   let id = null
 
@@ -36,8 +36,8 @@ export async function getSeqeunceStockValueId(
       limit: 1,
       depth: 0,
       where: {
-        stockId: { equals: stockID },
-        valueDate: { equals: valueDate },
+        stockId: { equals: stockSequence},
+        valueDate: { equals: new Date(valueDate).toISOString() },
       },
     })
     if (stock.docs.length > 0) id = stock.docs[0].id
@@ -47,7 +47,7 @@ export async function getSeqeunceStockValueId(
   return id
 }
 
-export async function getSeqeunceMeetingId(payload: BasePayload, meetingId: number | null) {
+export async function getSequenceMeetingId(payload: BasePayload, meetingId: number | null) {
   if (meetingId === null) return null
 
   let id = null

@@ -1,4 +1,8 @@
 import sql from 'mssql'
+import ImportStock from '@/collections/stocks/imports/ImportStock'
+import { Stock, StockValue } from '@/payload-types'
+import { getSequenceStockValueId } from '@/utils/utils'
+import { PayloadRequest } from 'payload'
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
@@ -64,9 +68,9 @@ export async function getStockRelations(pool: sql.ConnectionPool) {
   `)
 
   console.log(`Retrieved ${stockRelationResult.recordset.length} resultStockIds from SQL Server`)
-  const stocks: Map<string,string> = new Map<string, string>
+  const stocks: Map<string, string> = new Map<string, string>()
   for (const row of stockRelationResult.recordset) {
-    stocks.set(`${row.Id2}`,`${row.Id1}`)
+    stocks.set(`${row.Id2}`, `${row.Id1}`)
   }
   return stocks
 }
@@ -103,3 +107,67 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
   return stocks
 }
 
+export function ImportedRowToStock(row: ImportStock) {}
+
+export async function upsertStockFromImport(
+  stockSequence: string | null,
+  row: ImportStock,
+  req: PayloadRequest,
+  tradable: boolean
+) {
+  
+  const stockData:Partial<Stock> = {
+    stockId: `${row.stockID}`,
+    name: row.name,
+    symbol: row.symbol,
+    type: row.type,
+    longName: row.longName,
+    tradable: tradable,
+  }
+
+  if (!stockSequence) {
+    // Insert into Payload CMS
+    const newStock: Stock = await req.payload.create({
+      collection: 'stocks',
+      data: stockData as Stock,
+    })
+    stockSequence = newStock.id
+  } else {
+    req.payload.update({
+      collection: 'stocks',
+      id: stockSequence,
+      data: stockData as Stock,
+    })
+  }
+  return stockSequence
+}
+
+export async function upsertStockValueFromImport(
+  stockSequence: string,
+  row: ImportStock,
+  req: PayloadRequest,
+) {
+  const stockValue: Partial<StockValue> | null = {
+    stockId: stockSequence as string,
+    valueDate: row.valueDate,
+    closingRate: row.closingRate,
+    marketValue: row.marketValue,
+    registeredValue: row.registeredValue,
+  }
+
+  const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
+  if (valueId) {
+    // Update Payload CMS
+    req.payload.update({
+      collection: 'stock-values',
+      id: valueId,
+      data: stockValue as StockValue,
+    })
+  } else {
+    // Insert into Payload CMS
+    req.payload.create({
+      collection: 'stock-values',
+      data: stockValue as StockValue,
+    })
+  }
+}

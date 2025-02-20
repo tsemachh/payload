@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting } from '@/payload-types'
-import { getSeqeunceMeetingId,  getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
+import { getSequenceMeetingId,  getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
   [-1, { newType: null, newState: null }],
@@ -127,7 +127,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         //console.log("Data",JSON.stringify(meetingData, null, 2))
-        const id = await getSeqeunceMeetingId(payload, meetingData.meetingId)
+        const id = await getSequenceMeetingId(payload, meetingData.meetingId)
         if (id){
           // Update Payload CMS
           payload.update({

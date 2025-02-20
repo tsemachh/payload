@@ -31,6 +31,7 @@ export const StockValues: CollectionConfig = {
           label: 'תאריך ערך',
           type: 'date',
           required: true,
+          index:true,
           admin: {
             date: {
               displayFormat: 'dd MMM yyy',

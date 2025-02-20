@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import ImportEndPoint from '@/collections/stocks/imports/ImportEndPoint'
+import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
@@ -105,7 +105,7 @@ export const Stocks: CollectionConfig = {
     {
       path: '/importStocks',
       method: 'post',
-      handler: ImportEndPoint,
-    },
+      handler:ImportStocksEndPoint
+    }
   ],
 }
