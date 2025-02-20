@@ -35,6 +35,7 @@ export const Meetings: CollectionConfig = {
           name: 'state',
           label: 'מצב',
           type: 'select',
+          interfaceName: 'MeetingState',
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
             { label: 'התקיימה', value: 'completed' },
@@ -92,6 +93,7 @@ export const Meetings: CollectionConfig = {
           name: 'type',
           label: 'סוג',
           type: 'select',
+          interfaceName: 'MeetingType',
           options: [
             { label: 'שנתית', value: 'שנתית' },
             { label: 'מיוחדת', value: 'מיוחדת' },
