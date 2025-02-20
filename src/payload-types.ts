@@ -8,39 +8,6 @@
 
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "StockType".
- */
-export type StockType =
-  | (
-      | 'מניות'
-      | 'אופציות'
-      | 'איגרות חוב'
-      | 'איגרות חוב להמרה'
-      | 'יחידת השתתפות'
-      | 'תעודות מדד'
-      | 'תעודות סל'
-      | 'קרנות נאמנות'
-      | 'נייר ערך מסחרי'
-      | 'אחר'
-      | 'זכויות'
-      | 'מק"מ'
-      | 'שטרי הון'
-    )
-  | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "MeetingState".
- */
-export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "MeetingType".
- */
-export type MeetingType =
-  | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
-  | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RolePermissions".
  */
 export type RolePermissions =
@@ -108,7 +75,6 @@ export interface Config {
   auth: {
     users: UserAuthOperations;
   };
-  blocks: {};
   collections: {
     stocks: Stock;
     'stock-values': StockValue;
@@ -183,7 +149,23 @@ export interface Stock {
    */
   stockId: string;
   fullName?: string | null;
-  type?: StockType;
+  type?:
+    | (
+        | 'מניות'
+        | 'אופציות'
+        | 'איגרות חוב'
+        | 'איגרות חוב להמרה'
+        | 'יחידת השתתפות'
+        | 'תעודות מדד'
+        | 'תעודות סל'
+        | 'קרנות נאמנות'
+        | 'נייר ערך מסחרי'
+        | 'אחר'
+        | 'זכויות'
+        | 'מק"מ'
+        | 'שטרי הון'
+      )
+    | null;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
   symbol?: string | null;
@@ -230,13 +212,15 @@ export interface Meeting {
   id: string;
   meetingId: number;
   magnaId?: string | null;
-  state?: MeetingState;
+  state?: ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
   stock?: (string | null) | Stock;
   meetingDate?: string | null;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   location?: string | null;
-  type?: MeetingType;
+  type?:
+    | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
+    | null;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;

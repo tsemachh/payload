@@ -46,12 +46,13 @@ const columns: Column[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
-  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
+  // { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
   { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
   { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date' },
   { key: 'location', header: 'מיקום', type: 'string' },
   { key: 'holdingsLimit', header: 'מועד קובע', type: 'date' },
   { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date' },
+  { key: 'comments', header: 'הערות', type: 'string' },
   {
     key: 'electronicVotingEnabled',
     header: 'האסיפה מופיעה במערכת האלק׳?',
@@ -61,6 +62,14 @@ const columns: Column[] = [
       row.electronicVotingEnabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
   {
+    key: 'resultsConfirmationStatus',
+    header: 'אימות תוצאות האסיפה',
+    type: 'boolean',
+    filterable: true,
+    render: (row) =>
+      row.resultsConfirmationStatus ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+  },
+  {
     key: 'committeeInitiated',
     header: 'תאגיד פיננסי דורש ועדה',
     type: 'boolean',
@@ -68,6 +77,7 @@ const columns: Column[] = [
     render: (row) =>
       row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
+  { key: '_status', header: 'סטטוס', type: 'string', filterable: true },
 ]
 
 interface DataTableProps {
