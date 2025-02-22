@@ -121,13 +121,7 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {
-    stocks: {
-      values: 'stock-values';
-      relations: 'stocks';
-      meetings: 'meetings';
-    };
-  };
+  collectionsJoins: {};
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;

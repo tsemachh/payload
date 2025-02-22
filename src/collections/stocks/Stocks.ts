@@ -129,6 +129,7 @@ export const Stocks: CollectionConfig = {
                   type: 'join',
                   collection: 'stock-values',
                   on: 'stockId',
+                  _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
                     defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
@@ -147,6 +148,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
+              _sanitized: true,
               admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
             },
           ],
@@ -161,6 +163,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'meetings',
               on: 'stock',
+              _sanitized: true,
               admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
             },
           ],
