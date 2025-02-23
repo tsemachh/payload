@@ -31,9 +31,8 @@ export const StockValues: CollectionConfig = {
           label: 'Stock Link',
           type: 'text',
           admin: {
-            position: 'sidebar',
             components: {
-              Field: {
+              Cell: {
                 path: '/components/link/LinkFromRelationField',
                 clientProps: {
                   relationField: 'stockId',
@@ -42,6 +41,7 @@ export const StockValues: CollectionConfig = {
                 },
               },
             },
+            readOnly: true,
           },
         },
         {

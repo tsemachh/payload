@@ -1,7 +1,6 @@
 'use client'
-
 import React, { useEffect } from 'react'
-import { TextField, useField, useFormInitializing } from '@payloadcms/ui'
+import { useField, useFormInitializing, TextField } from '@payloadcms/ui'
 import { TextFieldClientProps } from 'payload'
 
 export interface LinkFromRelationFieldProps {
@@ -31,19 +30,19 @@ const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClie
     path: `${relationField}`,
   })
 
-  // Generate and update link when relation value changes
   useEffect(() => {
     if (formInitializing) {
       return
     }
 
     if (relationValue) {
-      const generatedLink = `${baseUrl}${relationValue}${suffix}rrrrr`
+      const generatedLink = `${baseUrl}${relationValue}${suffix}`
       if (generatedLink !== value) {
         setValue(generatedLink)
+        console.log('generatedLink', generatedLink)
       }
     }
-  }, [formInitializing, relationValue, value, setValue, baseUrl, suffix])
+  }, [])
 
   return <TextField {...props} />
 }
