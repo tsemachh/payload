@@ -31,7 +31,7 @@ import {
   FilterX,
 } from 'lucide-react'
 import type React from 'react'
-import type { FutureMeetingTableData } from '../types'
+import { StatusType, type FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 
 interface Column {
@@ -77,7 +77,22 @@ const columns: Column[] = [
     render: (row) =>
       row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
-  { key: '_status', header: 'סטטוס', type: 'string', filterable: true },
+  {
+    key: '_status',
+    header: 'סטטוס',
+    type: 'string',
+    filterable: true,
+    render: (row) => {
+      switch (row._status) {
+        case StatusType.Publish:
+          return 'פורסם'
+        case StatusType.Draft:
+          return 'טיוטה'
+        default:
+          return row._status
+      }
+    },
+  },
 ]
 
 interface DataTableProps {
@@ -234,10 +249,22 @@ export function DataTable({ data }: DataTableProps) {
           ]
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
-          facets[column.key] = Array.from(values).map((value) => ({
-            value,
-            count: data.filter((item) => String(item[column.key]) === value).length,
-          }))
+          facets[column.key] =
+            column.key === '_status'
+              ? [
+                  {
+                    value: 'פורסם',
+                    count: data.filter(({ _status }) => _status === StatusType.Publish).length,
+                  },
+                  {
+                    value: 'טיוטה',
+                    count: data.filter(({ _status }) => _status === StatusType.Draft).length,
+                  },
+                ]
+              : Array.from(values).map((value) => ({
+                  value,
+                  count: data.filter((item) => String(item[column.key]) === value).length,
+                }))
         }
       }
     })

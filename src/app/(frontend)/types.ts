@@ -23,5 +23,5 @@ export type FutureMeetingTableData = {
 export enum StatusType {
   None = '',
   Draft = 'draft',
-  Publish = 'publish',
+  Publish = 'published',
 }
