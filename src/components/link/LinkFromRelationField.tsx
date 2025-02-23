@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect } from 'react'
-import { useField, useFormInitializing, TextField } from '@payloadcms/ui'
+import { useField, useFormInitializing } from '@payloadcms/ui'
 import { TextFieldClientProps } from 'payload'
 
 export interface LinkFromRelationFieldProps {
@@ -44,7 +44,11 @@ const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClie
     }
   }, [])
 
-  return <TextField {...props} />
+  return (
+    <a href={value} target="_blank" rel="noopener noreferrer">
+      {value}
+    </a>
+  )
 }
 
 export default LinkFromRelationField

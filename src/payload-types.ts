@@ -227,6 +227,7 @@ export interface Meeting {
   magnaId?: string | null;
   state?: MeetingState;
   stock?: (string | null) | Stock;
+  meetingLink?: string | null;
   meetingDate?: string | null;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
@@ -442,6 +443,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   magnaId?: T;
   state?: T;
   stock?: T;
+  meetingLink?: T;
   meetingDate?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;

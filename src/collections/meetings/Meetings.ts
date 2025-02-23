@@ -25,6 +25,7 @@ export const Meetings: CollectionConfig = {
           index: true,
           admin: { hidden: true },
         },
+
         {
           name: 'magnaId',
           label: 'אסמכתא',
@@ -51,6 +52,24 @@ export const Meetings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
+        },
+        {
+          name: 'meetingLink',
+          label: 'קישור למגנא',
+          type: 'text',
+          admin: {
+            components: {
+              Cell: {
+                path: '/components/link/LinkFromRelationField',
+                clientProps: {
+                  relationField: 'meetingId',
+                  baseUrl: 'https://www.magna.isa.gov.il/details?id=',
+                  suffix: '&file=0',
+                },
+              },
+            },
+            readOnly: true,
+          },
         },
       ],
     },

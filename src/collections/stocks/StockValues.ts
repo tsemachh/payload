@@ -28,7 +28,7 @@ export const StockValues: CollectionConfig = {
         },
         {
           name: 'stockLink',
-          label: 'Stock Link',
+          label: 'TASAקישור ל',
           type: 'text',
           admin: {
             components: {
