@@ -20,18 +20,36 @@ export const StockValues: CollectionConfig = {
       fields: [
         {
           name: 'stockId',
-          label: "מס' נייר",
+          label: 'מזהה',
           type: 'relationship',
           relationTo: 'stocks',
           required: true,
           index: true,
         },
         {
+          name: 'stockLink',
+          label: 'Stock Link',
+          type: 'text',
+          admin: {
+            position: 'sidebar',
+            components: {
+              Field: {
+                path: '/components/link/LinkFromRelationField',
+                clientProps: {
+                  relationField: 'stockId',
+                  baseUrl: 'https://market.tase.co.il/he/market_data/security/',
+                  suffix: '/major_data',
+                },
+              },
+            },
+          },
+        },
+        {
           name: 'valueDate',
           label: 'תאריך ערך',
           type: 'date',
           required: true,
-          index:true,
+          index: true,
           admin: {
             date: {
               displayFormat: 'dd MMM yyy',

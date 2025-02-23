@@ -10,7 +10,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['fullName', 'type', 'longName'],
-    listSearchableFields: ['symbol','stockId','type', 'name', 'longName'],
+    listSearchableFields: ['symbol', 'stockId', 'type', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -41,7 +41,7 @@ export const Stocks: CollectionConfig = {
                   name: 'fullName',
                   label: 'מזהה - סמל',
                   type: 'text',
-                  admin: { readOnly: true },
+                  admin: { readOnly: true, hidden: true },
                   hooks: {
                     beforeChange: [
                       ({ siblingData }) => {
@@ -132,7 +132,13 @@ export const Stocks: CollectionConfig = {
                   _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                    defaultColumns: [
+                      'valueDate',
+                      'registeredValue',
+                      'closingRate',
+                      'marketValue',
+                      'stockLink',
+                    ],
                   },
                 },
               ],
