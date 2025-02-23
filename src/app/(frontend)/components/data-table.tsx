@@ -31,7 +31,7 @@ import {
   FilterX,
 } from 'lucide-react'
 import type React from 'react'
-import type { FutureMeetingTableData } from '../types'
+import { StatusType, type FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 
 interface Column {
@@ -46,12 +46,13 @@ const columns: Column[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
-  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
+  // { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
   { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
   { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date' },
   { key: 'location', header: 'מיקום', type: 'string' },
   { key: 'holdingsLimit', header: 'מועד קובע', type: 'date' },
   { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date' },
+  { key: 'comments', header: 'הערות', type: 'string' },
   {
     key: 'electronicVotingEnabled',
     header: 'האסיפה מופיעה במערכת האלק׳?',
@@ -61,12 +62,36 @@ const columns: Column[] = [
       row.electronicVotingEnabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
   },
   {
+    key: 'resultsConfirmationStatus',
+    header: 'אימות תוצאות האסיפה',
+    type: 'boolean',
+    filterable: true,
+    render: (row) =>
+      row.resultsConfirmationStatus ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+  },
+  {
     key: 'committeeInitiated',
     header: 'תאגיד פיננסי דורש ועדה',
     type: 'boolean',
     filterable: true,
     render: (row) =>
       row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+  },
+  {
+    key: '_status',
+    header: 'סטטוס',
+    type: 'string',
+    filterable: true,
+    render: (row) => {
+      switch (row._status) {
+        case StatusType.Publish:
+          return 'פורסם'
+        case StatusType.Draft:
+          return 'טיוטה'
+        default:
+          return row._status
+      }
+    },
   },
 ]
 
@@ -224,10 +249,22 @@ export function DataTable({ data }: DataTableProps) {
           ]
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
-          facets[column.key] = Array.from(values).map((value) => ({
-            value,
-            count: data.filter((item) => String(item[column.key]) === value).length,
-          }))
+          facets[column.key] =
+            column.key === '_status'
+              ? [
+                  {
+                    value: 'פורסם',
+                    count: data.filter(({ _status }) => _status === StatusType.Publish).length,
+                  },
+                  {
+                    value: 'טיוטה',
+                    count: data.filter(({ _status }) => _status === StatusType.Draft).length,
+                  },
+                ]
+              : Array.from(values).map((value) => ({
+                  value,
+                  count: data.filter((item) => String(item[column.key]) === value).length,
+                }))
         }
       }
     })
@@ -278,7 +315,10 @@ export function DataTable({ data }: DataTableProps) {
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={column.key}
-                      className={cn('text-right', openDropdown === column.key ? 'bg-gray-200' : '')}
+                      className={cn(
+                        'text-right max-w-[200px] overflow-hidden text-ellipsis',
+                        openDropdown === column.key ? 'bg-gray-200' : '',
+                      )}
                     >
                       <div className="flex items-center justify-start">
                         <span>{column.header}</span>
@@ -332,14 +372,14 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap group-hover:text-muted-foreground/70"
+                        className="py-2 px-3 text-right whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis"
                       >
                         {column.render ? column.render(row) : String(row[column.key])}
                       </TableCell>
                     ))}
                     <TableCell>
                       <div className="relative h-full">
-                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ">
+                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 transition-opacity whitespace-nowrap ">
                           {row.meetingInviteUrl && (
                             <a
                               href={row.meetingInviteUrl}
