@@ -288,7 +288,10 @@ export function DataTable({ data }: DataTableProps) {
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={column.key}
-                      className={cn('text-right', openDropdown === column.key ? 'bg-gray-200' : '')}
+                      className={cn(
+                        'text-right max-w-[200px] overflow-hidden text-ellipsis',
+                        openDropdown === column.key ? 'bg-gray-200' : '',
+                      )}
                     >
                       <div className="flex items-center justify-start">
                         <span>{column.header}</span>
@@ -342,14 +345,14 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap group-hover:text-muted-foreground/70"
+                        className="py-2 px-3 text-right whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis"
                       >
                         {column.render ? column.render(row) : String(row[column.key])}
                       </TableCell>
                     ))}
                     <TableCell>
                       <div className="relative h-full">
-                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ">
+                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 transition-opacity whitespace-nowrap ">
                           {row.meetingInviteUrl && (
                             <a
                               href={row.meetingInviteUrl}
