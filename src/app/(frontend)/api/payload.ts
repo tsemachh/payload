@@ -5,14 +5,11 @@ import { FutureMeetingTableData, StatusType } from '../types'
 
 export async function fetchMeetingsForTable() {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings' })
-  console.log('!!!! meeting', meetings)
+  const meetings = await payload.find({ collection: 'meetings', limit: 200 })
 
   return meetings.docs.map((meeting): FutureMeetingTableData => {
     let stockPresent
-    // let meetingTypePresent
     if (typeof meeting.stock === 'object') stockPresent = meeting.stock
-    // if (typeof meeting.meetingType === 'object') meetingTypePresent = meeting.meetingType
 
     return {
       meetingId: meeting.meetingId,

@@ -19,20 +19,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  ArrowUpDown,
-  Search,
-  Check,
-  X,
-  Settings2,
-  Filter,
-  ArrowUp,
-  ArrowDown,
-  FilterX,
-} from 'lucide-react'
+import { Search, Check, X, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { StatusType, type FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
+import { DateRangePicker } from '@/components/date-range-picker'
+import { isWithinInterval } from 'date-fns'
 
 interface Column {
   key: keyof FutureMeetingTableData
@@ -46,12 +38,11 @@ const columns: Column[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
-  // { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)', type: 'number' },
   { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
-  { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date' },
+  { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date', filterable: true },
   { key: 'location', header: 'מיקום', type: 'string' },
-  { key: 'holdingsLimit', header: 'מועד קובע', type: 'date' },
-  { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date' },
+  { key: 'holdingsLimit', header: 'מועד קובע', type: 'date', filterable: true },
+  { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date', filterable: true },
   { key: 'comments', header: 'הערות', type: 'string' },
   {
     key: 'electronicVotingEnabled',
@@ -102,12 +93,12 @@ interface DataTableProps {
 export function DataTable({ data }: DataTableProps) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof FutureMeetingTableData
-    direction: 'asc' | 'desc'
-  } | null>(null)
-  const [filters, setFilters] = useState<{ [key: string]: Set<string> }>({})
+    direction: 'asc' | 'desc' | null
+  }>({ key: 'meetingDate', direction: 'asc' })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState('')
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [filters, setFilters] = useState<{ [key: string]: any }>({})
+  const [isFilterActive, setIsFilterActive] = useState(false)
 
   useEffect(() => {
     const loadColumnVisibility = () => {
@@ -151,128 +142,163 @@ export function DataTable({ data }: DataTableProps) {
 
   const handleSort = (key: keyof FutureMeetingTableData) => {
     setSortConfig((current) => {
-      if (current?.key === key) {
-        return current.direction === 'asc' ? { key, direction: 'desc' } : null
+      if (current.key === key) {
+        if (current.direction === 'asc') {
+          return { key, direction: 'desc' }
+        } else if (current.direction === 'desc') {
+          return { key, direction: null }
+        }
       }
       return { key, direction: 'asc' }
     })
   }
 
-  const handleFilter = (key: keyof FutureMeetingTableData, value: string, checked: boolean) => {
+  const handleFilter = (key: string, value: any) => {
     setFilters((prev) => {
       const newFilters = { ...prev }
-      if (!newFilters[key]) {
-        newFilters[key] = new Set()
-      }
-      if (checked) {
-        newFilters[key].add(value)
-      } else {
-        newFilters[key].delete(value)
-      }
-      if (newFilters[key].size === 0) {
+      if (value === undefined || value.length == 0) {
         delete newFilters[key]
+      } else {
+        newFilters[key] = value
       }
-      return { ...newFilters }
+      // If no filters remain, ensure isFilterActive stays true
+      // so the filter icons remain visible
+      return newFilters
     })
   }
 
-  const removeFilter = (key: keyof FutureMeetingTableData) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev }
-      delete newFilters[key]
-      return { ...newFilters }
-    })
-  }
-
-  const getFilterIcon = (columnKey: keyof FutureMeetingTableData) => {
-    if (filters[columnKey] || sortConfig?.key === columnKey) {
-      return <FilterX className="h-4 w-4 text-primary" />
-    }
-    return <Filter className="h-4 w-4" />
+  const resetFilters = () => {
+    setFilters({})
+    setIsFilterActive(!isFilterActive)
   }
 
   const filteredAndSortedData = useMemo(() => {
-    let result = [...data]
-    // Apply filters
-    Object.entries(filters).forEach(([key, values]) => {
-      const column = columns.find((col) => col.key === key)
-      if (column && column.type === 'boolean') {
-        result = result.filter((item) => {
-          const itemValue = item[key as keyof FutureMeetingTableData]
-          return (values.has('✓') && itemValue === true) || (values.has('✗') && itemValue === false)
-        })
-      } else {
-        result = result.filter((item) =>
-          values.has(String(item[key as keyof FutureMeetingTableData])),
-        )
-      }
-    })
-    // Apply sorting
-    if (sortConfig) {
-      result.sort((a, b) => {
-        const aValue = a[sortConfig.key]
-        const bValue = b[sortConfig.key]
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+    let filteredItems = [...data]
+
+    // Only apply filters if there are active filters
+    if (Object.keys(filters).length > 0) {
+      filteredItems = data.filter((item) => {
+        for (const [key, value] of Object.entries(filters)) {
+          // Skip empty filters
+          if (value === undefined || (Array.isArray(value) && value.length === 0)) {
+            continue
+          }
+
+          // Handle date filters
+          if (columns.find((col) => col.key === key)?.type === 'date') {
+            // Skip if either date is missing
+            if (!value.from || !value.to) {
+              continue
+            }
+
+            const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+            if (
+              !isWithinInterval(itemDate, {
+                start: value.from,
+                end: value.to,
+              })
+            ) {
+              return false
+            }
+          }
+          // Handle array filters (faceted)
+          else if (Array.isArray(value)) {
+            if (value.length === 0) {
+              continue
+            }
+            if (!value.includes(String(item[key as keyof FutureMeetingTableData]))) {
+              return false
+            }
+          }
+          // Handle other filter types
+          else if (value !== undefined && item[key as keyof FutureMeetingTableData] !== value) {
+            return false
+          }
+        }
+        return true
+      })
+    }
+
+    // Apply sorting if active
+    if (sortConfig.direction) {
+      filteredItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? 1 : -1
+        }
         return 0
       })
     }
 
-    return result
-  }, [data, sortConfig, filters])
+    return filteredItems
+  }, [data, filters, sortConfig])
 
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[column.key])
   }, [columnVisibility])
 
   const getSortIcon = (columnKey: keyof FutureMeetingTableData) => {
-    if (sortConfig?.key === columnKey) {
-      return sortConfig.direction === 'asc' ? (
-        <ArrowUp className="h-4 w-4" />
-      ) : (
-        <ArrowDown className="h-4 w-4" />
-      )
+    if (sortConfig.key === columnKey) {
+      if (sortConfig.direction === 'asc') {
+        return <ArrowUp className="h-4 w-4 ml-2" />
+      } else if (sortConfig.direction === 'desc') {
+        return <ArrowDown className="h-4 w-4 ml-2" />
+      }
     }
-    return <ArrowUpDown className="h-4 w-4" />
+    return null
+  }
+
+  const getFilterIcon = (columnKey: string) => {
+    if (!isFilterActive) return null
+    if (filters[columnKey]) {
+      return <Filter className="h-4 w-4 ml-2" />
+    }
+    return <ChevronDown className="h-4 w-4 ml-2" />
   }
 
   const facetedFilters = useMemo(() => {
     const facets: { [key: string]: { value: string; count: number }[] } = {}
     columns.forEach((column) => {
-      if (column.filterable) {
-        if (column.type === 'boolean') {
-          const trueCount = data.filter((item) => item[column.key] === true).length
-          const falseCount = data.filter((item) => item[column.key] === false).length
-          facets[column.key] = [
-            { value: '✓', count: trueCount },
-            { value: '✗', count: falseCount },
-          ]
-        } else {
-          const values = new Set(data.map((item) => String(item[column.key])))
-          facets[column.key] =
-            column.key === '_status'
-              ? [
-                  {
-                    value: 'פורסם',
-                    count: data.filter(({ _status }) => _status === StatusType.Publish).length,
-                  },
-                  {
-                    value: 'טיוטה',
-                    count: data.filter(({ _status }) => _status === StatusType.Draft).length,
-                  },
-                ]
-              : Array.from(values).map((value) => ({
-                  value,
-                  count: data.filter((item) => String(item[column.key]) === value).length,
-                }))
-        }
+      if (column.filterable && column.type !== 'date') {
+        const values = new Set(data.map((item) => String(item[column.key])))
+        facets[column.key] = Array.from(values).map((value) => ({
+          value,
+          count: data.filter((item) => String(item[column.key]) === value).length,
+        }))
+      } else if (column.filterable && column.type === 'boolean') {
+        const trueCount = data.filter((item) => item[column.key] === true).length
+        const falseCount = data.filter((item) => item[column.key] === false).length
+        facets[column.key] = [
+          { value: '✓', count: trueCount },
+          { value: '✗', count: falseCount },
+        ]
+      } else {
+        const values = new Set(data.map((item) => String(item[column.key])))
+        facets[column.key] =
+          column.key === '_status'
+            ? [
+                {
+                  value: 'פורסם',
+                  count: data.filter(({ _status }) => _status === StatusType.Publish).length,
+                },
+                {
+                  value: 'טיוטה',
+                  count: data.filter(({ _status }) => _status === StatusType.Draft).length,
+                },
+              ]
+            : Array.from(values).map((value) => ({
+                value,
+                count: data.filter((item) => String(item[column.key]) === value).length,
+              }))
       }
     })
     return facets
   }, [data])
 
   return (
-    <div className="space-y-4 text-right pr-10 pl-10 " dir="rtl">
+    <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
         <div className="relative w-1/3">
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -283,27 +309,38 @@ export function DataTable({ data }: DataTableProps) {
             className="pr-10 text-right"
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex justify-between items-center w-1/5">
-              <span>עמודות</span>
-              <Settings2 className="h-4 w-4 mr-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {columns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={String(column.key)}
-                checked={columnVisibility[String(column.key)]}
-                onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                onSelect={(event) => event.preventDefault()}
-                dir="rtl"
-              >
-                {typeof column.header === 'string' ? column.header : 'עמודה'}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex space-x-2 space-x-reverse">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resetFilters()}
+            className={cn('flex items-center', isFilterActive && 'bg-muted')}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            סינון
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex justify-between items-center">
+                <span>עמודות</span>
+                <Settings2 className="h-4 w-4 mr-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {columns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={String(column.key)}
+                  checked={columnVisibility[String(column.key)]}
+                  onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                  onSelect={(event) => event.preventDefault()}
+                  dir="rtl"
+                >
+                  {typeof column.header === 'string' ? column.header : 'עמודה'}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="bg-background">
@@ -315,48 +352,48 @@ export function DataTable({ data }: DataTableProps) {
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={column.key}
-                      className={cn(
-                        'text-right max-w-[200px] overflow-hidden text-ellipsis',
-                        openDropdown === column.key ? 'bg-gray-200' : '',
-                      )}
+                      className="text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer"
                     >
                       <div className="flex items-center justify-start">
-                        <span>{column.header}</span>
-                        <DropdownMenu
-                          onOpenChange={(open) => setOpenDropdown(open ? column.key : null)}
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              {getFilterIcon(column.key)}{' '}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent style={{ direction: 'rtl' }} align="center">
-                            <DropdownMenuItem onClick={() => handleSort(column.key)}>
-                              <span>מיון</span>
-                              {getSortIcon(column.key)}
-                            </DropdownMenuItem>
-                            {column.filterable && (
-                              <>
-                                <DropdownMenuSeparator />
-                                {facetedFilters[column.key].map(({ value, count }) => (
+                        <span onClick={() => handleSort(column.key)}>{column.header}</span>
+                        {getSortIcon(column.key)}
+                        {column.filterable && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                {getFilterIcon(column.key)}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {column.type === 'date' ? (
+                                <DateRangePicker
+                                  dateRange={filters[column.key] || { from: null, to: null }}
+                                  onDateRangeChange={(range) => handleFilter(column.key, range)}
+                                />
+                              ) : (
+                                facetedFilters[column.key]?.map(({ value, count }) => (
                                   <DropdownMenuCheckboxItem
                                     key={value}
-                                    checked={filters[column.key]?.has(value)}
-                                    onCheckedChange={(checked) =>
-                                      handleFilter(column.key, value, checked)
-                                    }
+                                    checked={(filters[column.key] || []).includes(value)}
+                                    onCheckedChange={(checked) => {
+                                      const currentFilters = filters[column.key] || []
+                                      const newFilters = checked
+                                        ? [...currentFilters, value]
+                                        : currentFilters.filter((v: any) => v !== value)
+                                      handleFilter(column.key, newFilters)
+                                    }}
                                   >
                                     {value} ({count})
                                   </DropdownMenuCheckboxItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => removeFilter(column.key)}>
-                                  הסר סינון
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                                ))
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleFilter(column.key, 'all')}>
+                                הסר סינון
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </TableHead>
                   ))}
