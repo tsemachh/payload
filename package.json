@@ -23,7 +23,6 @@
     "@payloadcms/db-mongodb": "^3.24.0",
     "@payloadcms/next": "^3.24.0",
     "@payloadcms/payload-cloud": "^3.24.0",
-    "@payloadcms/richtext-lexical": "^3.24.0",
     "@payloadcms/richtext-slate": "^3.24.0",
     "@payloadcms/translations": "^3.24.0",
     "@payloadcms/ui": "^3.24.0",

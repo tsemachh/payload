@@ -20,7 +20,7 @@ export const StockValues: CollectionConfig = {
       fields: [
         {
           name: 'stockId',
-          label: 'מזהה',
+          label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
           required: true,
