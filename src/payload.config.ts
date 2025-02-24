@@ -39,6 +39,7 @@ const logger = pino({
     hostname: os.hostname(), // Adds the computer name to every log
     env: process.env.NODE_ENV || 'development', // Optionally include NODE_ENV
   },
+  level: 'info'
 }, transport);
 
 const filename = fileURLToPath(import.meta.url)
