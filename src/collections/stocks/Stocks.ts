@@ -38,6 +38,24 @@ export const Stocks: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'stockLink',
+                  label: 'TASAקישור ל',
+                  type: 'text',
+                  admin: {
+                    components: {
+                      Field: {
+                        path: '/components/link/LinkFromRelationField',
+                        clientProps: {
+                          relationField: 'stockId',
+                          baseUrl: 'https://market.tase.co.il/he/market_data/security/',
+                          suffix: '/major_data',
+                        },
+                      },
+                    },
+                    readOnly: true,
+                  },
+                },
+                {
                   name: 'fullName',
                   label: 'מזהה - סימול',
                   type: 'text',
@@ -132,12 +150,7 @@ export const Stocks: CollectionConfig = {
                   _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: [
-                      'valueDate',
-                      'registeredValue',
-                      'closingRate',
-                      'marketValue',
-                    ],
+                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
                   },
                 },
               ],
