@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Meeting } from '@/payload-types'
+import { Meeting, MeetingState, MeetingType } from '@/payload-types'
 import { getSequenceMeetingId,  getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
@@ -117,8 +117,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           holdingsLimit:row.sdate,
           proxyVotingDate:row.proxyStatementDate,
           location:row.location,
-          type:newType as ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן'),
-          state:newState as 'postponed' | 'cancelled' | 'on-hold' | 'scheduled' | 'completed' | 'ongoing' | null | undefined,
+          type:newType as MeetingType,
+          state:newState as MeetingState,
           comments:row.comments,
           resultsConfirmationStatus:!!row.ResultConfirm,
           electronicVotingEnabled:!!row.ElectronicVoting,
