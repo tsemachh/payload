@@ -25,6 +25,7 @@ export const Meetings: CollectionConfig = {
           index: true,
           admin: { hidden: true },
         },
+
         {
           name: 'magnaId',
           label: 'אסמכתא',
