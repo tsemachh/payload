@@ -9,8 +9,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['fullName', 'type', 'longName'],
-    listSearchableFields: ['symbol','stockId','type', 'name', 'longName'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -39,9 +39,9 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מזהה - סמל',
+                  label: 'מזהה - שם',
                   type: 'text',
-                  admin: { readOnly: true },
+                  admin: { readOnly: true, hidden: true },
                   hooks: {
                     beforeChange: [
                       ({ siblingData }) => {
@@ -50,7 +50,7 @@ export const Stocks: CollectionConfig = {
                     ],
                     afterRead: [
                       ({ data }) => {
-                        return `${data?.stockId} - ${data?.symbol}`
+                        return `${data?.stockId} ${data?.name}`
                       },
                     ],
                   },
@@ -108,13 +108,13 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'name',
-                  label: 'שם',
+                  label: 'שם נייר ערך',
                   type: 'text',
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
                   name: 'longName',
-                  label: 'שם מלא',
+                  label: 'שם חברה',
                   type: 'text',
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
@@ -129,9 +129,15 @@ export const Stocks: CollectionConfig = {
                   type: 'join',
                   collection: 'stock-values',
                   on: 'stockId',
+                  _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                    defaultColumns: [
+                      'valueDate',
+                      'registeredValue',
+                      'closingRate',
+                      'marketValue',
+                    ],
                   },
                 },
               ],
@@ -147,6 +153,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
+              _sanitized: true,
               admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
             },
           ],
@@ -161,6 +168,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'meetings',
               on: 'stock',
+              _sanitized: true,
               admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
             },
           ],

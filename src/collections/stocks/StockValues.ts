@@ -20,7 +20,7 @@ export const StockValues: CollectionConfig = {
       fields: [
         {
           name: 'stockId',
-          label: "מס' נייר",
+          label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
           required: true,
@@ -31,7 +31,7 @@ export const StockValues: CollectionConfig = {
           label: 'תאריך ערך',
           type: 'date',
           required: true,
-          index:true,
+          index: true,
           admin: {
             date: {
               displayFormat: 'dd MMM yyy',
