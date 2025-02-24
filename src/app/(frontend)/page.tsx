@@ -6,7 +6,7 @@ export default async function AssembliesPage() {
 
   return (
     <div className="space-y-4 flex flex-col">
-      <h1 className="text-2xl font-bold text-center">אסיפות עתידיות</h1>
+      <h1 className="text-2xl font-bold text-center">אסיפות</h1>
       <DataTable data={futureMeetingTableData} />
     </div>
   )

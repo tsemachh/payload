@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@logtail/pino':
+        specifier: ^0.4.22
+        version: 0.4.22(pino@9.6.0)
       '@newesissrl/payload-exportcollections-plugin':
         specifier: ^0.1.9
         version: 0.1.9(@babel/core@7.26.9)(@emotion/react@11.14.0(@types/react@19.0.7)(react@19.0.0))(payload@3.24.0(graphql@16.10.0)(typescript@5.7.3))(react@19.0.0)(webpack@5.98.0)
@@ -176,6 +179,9 @@ importers:
       payload:
         specifier: ^3.24.0
         version: 3.24.0(graphql@16.10.0)(typescript@5.7.3)
+      pino:
+        specifier: ^9.5.0
+        version: 9.6.0
       react:
         specifier: 19.0.0
         version: 19.0.0
@@ -1201,6 +1207,23 @@ packages:
     peerDependencies:
       yjs: '>=13.5.22'
 
+  '@logtail/core@0.4.21':
+    resolution: {integrity: sha512-QDq194+24bwi4e+a/pxyf4X67NewhTvBmh9iwM2NhbSVSQz4Fo8xQn1Ul8zuUrXETycu/Od2D8wT2tZFNFx/7A==}
+
+  '@logtail/node@0.4.21':
+    resolution: {integrity: sha512-zpwkhJgcYaM+vsjotHRJthc0ot1vP0CAVy+fwrkL8XjfdC3NHiWb6f0agQpHlqdRX8RTsAbcYpWNXKPpFB5U9Q==}
+
+  '@logtail/pino@0.4.22':
+    resolution: {integrity: sha512-zt4kqzWl0JfZVR7T0ueLZfM2dX0rpTIGxfC/m4pNp5q/BAKURdiSxFK35IJRlEKEcFaxMs4+SFm2Hdq6spEw7g==}
+    peerDependencies:
+      pino: ^7.0.0 || ^8.0.0 || ^9.0.0
+
+  '@logtail/tools@0.4.21':
+    resolution: {integrity: sha512-xIaolScUwJEikllopGphxBX0lVlN/rA8pLAZiNCMNJXpPbwitoFKLW3w4qRuYdKoFCCJZKwOdwEqU2Fv0i9Cuw==}
+
+  '@logtail/types@0.4.20':
+    resolution: {integrity: sha512-nYsum10eJMTo+ySBlYXvSrvgD1NDCVUeOlxLBbelq3XUmHu9L48VNR3P0BOmhLamYCTEgjatTj0PyPLfjL1W9g==}
+
   '@monaco-editor/loader@1.5.0':
     resolution: {integrity: sha512-hKoGSM+7aAc7eRTRjpqAZucPmoNOC4UUbknb/VNoTkEIkCPhqV8LfbsgM1webRM7S/z21eHEx9Fkwx8Z/C/+Xw==}
 
@@ -1213,6 +1236,10 @@ packages:
 
   '@mongodb-js/saslprep@1.2.0':
     resolution: {integrity: sha512-+ywrb0AqkfaYuhHs6LxKWgqbh3I72EpEgESCw37o+9qPx9WTCkgDm2B+eMrwehGtHBWHFU4GXvnSCNiFhhausg==}
+
+  '@msgpack/msgpack@2.8.0':
+    resolution: {integrity: sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==}
+    engines: {node: '>= 10'}
 
   '@newesissrl/payload-exportcollections-plugin@0.1.9':
     resolution: {integrity: sha512-TN9lsoD/3SI0D2lFSQl2ziRSm8eSfJwkO+b1ttiWeMD/U60x64TheBKFj/WKG4m6oueJa4u9K+QZXriFp8hvuQ==}
@@ -2346,6 +2373,9 @@ packages:
   '@types/readable-stream@4.0.18':
     resolution: {integrity: sha512-21jK/1j+Wg+7jVw1xnSwy/2Q1VgVjWuFssbYGTREPUBeZ+rqVFl2udq0IkxzPC0ZhOzVceUbyIACFZKLqKEBlA==}
 
+  '@types/stack-trace@0.0.29':
+    resolution: {integrity: sha512-TgfOX+mGY/NyNxJLIbDWrO9DjGoVSW9+aB8H2yy1fy32jsvxijhmyJI9fDFgvz3YP4lvJaq9DzdR/M1bOgVc9g==}
+
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
@@ -2859,6 +2889,9 @@ packages:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
     engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
     hasBin: true
+
+  cross-fetch@3.2.0:
+    resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -4522,6 +4555,9 @@ packages:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
     engines: {node: '>=0.10.0'}
 
+  pino-abstract-transport@1.2.0:
+    resolution: {integrity: sha512-Guhh8EZfPCfH+PMXAb6rKOjGQEoy0xlAIn+irODG5kgfYV+BQ0rGYYWTIel3P5mmyXqkYkPmdIkywsn6QKUR1Q==}
+
   pino-abstract-transport@2.0.0:
     resolution: {integrity: sha512-F63x5tizV6WCh4R6RHyi2Ml+M70DNRXt/+HANowMflpgGFMAym/VKm6G7ZOQRjqN7XbGxK1Lg9t6ZrtzOaivMw==}
 
@@ -4534,6 +4570,10 @@ packages:
 
   pino@9.5.0:
     resolution: {integrity: sha512-xSEmD4pLnV54t0NOUN16yCl7RIB1c5UUOse5HSyEXtBp+FgFQyPeDutc+Q2ZO7/22vImV7VfEjH/1zV2QuqvYw==}
+    hasBin: true
+
+  pino@9.6.0:
+    resolution: {integrity: sha512-i85pKRCt4qMjZ1+L7sy2Ag4t1atFcdbEt76+7iRJn1g2BvsnRMGu9p8pivl9fs63M2kF/A0OacFZhTub+m/qMg==}
     hasBin: true
 
   pirates@4.0.6:
@@ -4912,6 +4952,10 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  serialize-error@8.1.0:
+    resolution: {integrity: sha512-3NnuWfM6vBYoy5gZFvHiYsVbafvI9vZv/+jlIigFn4oP4zjNPK3LhcY0xSCgeb1a5L8jO71Mit9LlNoi2UfDDQ==}
+    engines: {node: '>=10'}
+
   serialize-javascript@6.0.2:
     resolution: {integrity: sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==}
 
@@ -5040,6 +5084,9 @@ packages:
 
   stable-hash@0.0.4:
     resolution: {integrity: sha512-LjdcbuBeLcdETCrPn9i8AYAZ1eCtu4ECAWtP7UleOiZ9LzVxRzzUZEoZ8zB24nhkQnDWyET0I+3sWokSDS3E7g==}
+
+  stack-trace@0.0.10:
+    resolution: {integrity: sha512-KGzahc7puUKkzyMt+IqAep+TVNbKP+k2Lmwhub39m1AsTSkaDutx56aDCo+HLDzf/D26BIHTJWNiTG1KAJiQCg==}
 
   state-local@1.0.7:
     resolution: {integrity: sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==}
@@ -5289,6 +5336,10 @@ packages:
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
+
+  type-fest@0.20.2:
+    resolution: {integrity: sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==}
+    engines: {node: '>=10'}
 
   typed-array-buffer@1.0.3:
     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
@@ -7014,6 +7065,40 @@ snapshots:
       lexical: 0.21.0
       yjs: 13.6.23
 
+  '@logtail/core@0.4.21':
+    dependencies:
+      '@logtail/tools': 0.4.21
+      '@logtail/types': 0.4.20
+      serialize-error: 8.1.0
+
+  '@logtail/node@0.4.21':
+    dependencies:
+      '@logtail/core': 0.4.21
+      '@logtail/types': 0.4.20
+      '@msgpack/msgpack': 2.8.0
+      '@types/stack-trace': 0.0.29
+      cross-fetch: 3.2.0
+      minimatch: 3.1.2
+      serialize-error: 8.1.0
+      stack-trace: 0.0.10
+    transitivePeerDependencies:
+      - encoding
+
+  '@logtail/pino@0.4.22(pino@9.6.0)':
+    dependencies:
+      '@logtail/node': 0.4.21
+      '@logtail/types': 0.4.20
+      pino: 9.6.0
+      pino-abstract-transport: 1.2.0
+    transitivePeerDependencies:
+      - encoding
+
+  '@logtail/tools@0.4.21':
+    dependencies:
+      '@logtail/types': 0.4.20
+
+  '@logtail/types@0.4.20': {}
+
   '@monaco-editor/loader@1.5.0':
     dependencies:
       state-local: 1.0.7
@@ -7028,6 +7113,8 @@ snapshots:
   '@mongodb-js/saslprep@1.2.0':
     dependencies:
       sparse-bitfield: 3.0.3
+
+  '@msgpack/msgpack@2.8.0': {}
 
   '@newesissrl/payload-exportcollections-plugin@0.1.9(@babel/core@7.26.9)(@emotion/react@11.14.0(@types/react@19.0.7)(react@19.0.0))(payload@3.24.0(graphql@16.10.0)(typescript@5.7.3))(react@19.0.0)(webpack@5.98.0)':
     dependencies:
@@ -8429,6 +8516,8 @@ snapshots:
       '@types/node': 22.13.5
       safe-buffer: 5.1.2
 
+  '@types/stack-trace@0.0.29': {}
+
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
@@ -9045,6 +9134,12 @@ snapshots:
   cross-env@7.0.3:
     dependencies:
       cross-spawn: 7.0.6
+
+  cross-fetch@3.2.0:
+    dependencies:
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   cross-spawn@7.0.6:
     dependencies:
@@ -11031,6 +11126,11 @@ snapshots:
 
   pify@2.3.0: {}
 
+  pino-abstract-transport@1.2.0:
+    dependencies:
+      readable-stream: 4.7.0
+      split2: 4.2.0
+
   pino-abstract-transport@2.0.0:
     dependencies:
       split2: 4.2.0
@@ -11054,6 +11154,20 @@ snapshots:
   pino-std-serializers@7.0.0: {}
 
   pino@9.5.0:
+    dependencies:
+      atomic-sleep: 1.0.0
+      fast-redact: 3.5.0
+      on-exit-leak-free: 2.1.2
+      pino-abstract-transport: 2.0.0
+      pino-std-serializers: 7.0.0
+      process-warning: 4.0.1
+      quick-format-unescaped: 4.0.4
+      real-require: 0.2.0
+      safe-stable-stringify: 2.5.0
+      sonic-boom: 4.2.0
+      thread-stream: 3.1.0
+
+  pino@9.6.0:
     dependencies:
       atomic-sleep: 1.0.0
       fast-redact: 3.5.0
@@ -11462,6 +11576,10 @@ snapshots:
 
   semver@7.7.1: {}
 
+  serialize-error@8.1.0:
+    dependencies:
+      type-fest: 0.20.2
+
   serialize-javascript@6.0.2:
     dependencies:
       randombytes: 2.1.0
@@ -11630,6 +11748,8 @@ snapshots:
   sprintf-js@1.1.3: {}
 
   stable-hash@0.0.4: {}
+
+  stack-trace@0.0.10: {}
 
   state-local@1.0.7: {}
 
@@ -11922,6 +12042,8 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
+
+  type-fest@0.20.2: {}
 
   typed-array-buffer@1.0.3:
     dependencies:
