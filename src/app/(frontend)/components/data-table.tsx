@@ -30,7 +30,7 @@ import { TrueIcon, FalseIcon } from './ui/icons'
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
-  type: 'string' | 'number' | 'date' | 'boolean'
+  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
   filterable?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
 }
@@ -40,10 +40,58 @@ const columns: Column[] = [
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
   { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
-  { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date', filterable: true },
+  {
+    key: 'meetingDate',
+    header: 'מועד האסיפה',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.meetingDate)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
   { key: 'location', header: 'מיקום', type: 'string' },
-  { key: 'holdingsLimit', header: 'מועד קובע', type: 'date', filterable: true },
-  { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date', filterable: true },
+  {
+    key: 'holdingsLimit',
+    header: 'מועד קובע',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.holdingsLimit)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
+  {
+    key: 'proxyVotingDate',
+    header: 'מועד מסירת הצבעות',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.proxyVotingDate)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
   { key: 'comments', header: 'הערות', type: 'string' },
   {
     key: 'electronicVotingEnabled',
