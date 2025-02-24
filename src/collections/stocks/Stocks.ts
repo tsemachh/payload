@@ -84,6 +84,12 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                 },
                 {
+                  name: 'private',
+                  label: 'האם חברה פרטית',
+                  type: 'checkbox',
+                  admin: { condition: (siblingData) => !siblingData.tradable },
+                },
+                {
                   name: 'relatedStock',
                   label: 'נייר ערך ראשי',
                   type: 'relationship',
@@ -116,7 +122,7 @@ export const Stocks: CollectionConfig = {
                   name: 'longName',
                   label: 'שם חברה',
                   type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable },
+                  admin: { condition: (siblingData) => siblingData.tradable || siblingData.private},
                 },
               ],
             },
@@ -146,6 +152,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'ניירות ערך עוקבים',
+          admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
             {
               name: 'relations',
@@ -160,7 +167,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable },
+          admin: { condition: (siblingData) => siblingData.tradable || siblingData.private },
           fields: [
             {
               name: 'meetings',
