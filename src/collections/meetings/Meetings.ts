@@ -59,7 +59,7 @@ export const Meetings: CollectionConfig = {
           type: 'text',
           admin: {
             components: {
-              Cell: {
+              Field: {
                 path: '/components/link/LinkFromRelationField',
                 clientProps: {
                   relationField: 'meetingId',

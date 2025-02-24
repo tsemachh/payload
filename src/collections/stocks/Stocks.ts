@@ -9,8 +9,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['fullName', 'type', 'longName'],
-    listSearchableFields: ['symbol', 'stockId', 'type', 'name', 'longName'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName'],
   },
   versions: {
     drafts: false,
@@ -39,7 +39,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מזהה - סמל',
+                  label: 'מזהה - סימול',
                   type: 'text',
                   admin: { readOnly: true, hidden: true },
                   hooks: {
