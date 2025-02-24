@@ -63,7 +63,4 @@
   body {
     @apply bg-background text-foreground;
   }
-  .field-label {
-    @apply pt-[20px];
-  }
 }
