@@ -27,24 +27,6 @@ export const StockValues: CollectionConfig = {
           index: true,
         },
         {
-          name: 'stockLink',
-          label: 'TASAקישור ל',
-          type: 'text',
-          admin: {
-            components: {
-              Cell: {
-                path: '/components/link/LinkFromRelationField',
-                clientProps: {
-                  relationField: 'stockId',
-                  baseUrl: 'https://market.tase.co.il/he/market_data/security/',
-                  suffix: '/major_data',
-                },
-              },
-            },
-            readOnly: true,
-          },
-        },
-        {
           name: 'valueDate',
           label: 'תאריך ערך',
           type: 'date',

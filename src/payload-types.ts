@@ -207,7 +207,6 @@ export interface Stock {
 export interface StockValue {
   id: string;
   stockId: string | Stock;
-  stockLink?: string | null;
   valueDate: string;
   closingRate?: number | null;
   marketValue?: number | null;
@@ -227,7 +226,6 @@ export interface Meeting {
   magnaId?: string | null;
   state?: MeetingState;
   stock?: (string | null) | Stock;
-  meetingLink?: string | null;
   meetingDate?: string | null;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
@@ -424,7 +422,6 @@ export interface StocksSelect<T extends boolean = true> {
  */
 export interface StockValuesSelect<T extends boolean = true> {
   stockId?: T;
-  stockLink?: T;
   valueDate?: T;
   closingRate?: T;
   marketValue?: T;
@@ -443,7 +440,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   magnaId?: T;
   state?: T;
   stock?: T;
-  meetingLink?: T;
   meetingDate?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;

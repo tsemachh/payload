@@ -137,7 +137,6 @@ export const Stocks: CollectionConfig = {
                       'registeredValue',
                       'closingRate',
                       'marketValue',
-                      'stockLink',
                     ],
                   },
                 },
