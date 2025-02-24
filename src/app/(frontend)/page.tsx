@@ -15,7 +15,7 @@ export default function AssembliesPage() {
       <h1 className="text-2xl font-bold text-center">אסיפות</h1>
       <Suspense
         fallback={
-          <div className="flex flex-col min-h-[500px] items-center justify-center">
+          <div className="flex flex-col h-[500px] items-center pt-[100px] ">
             <LoadingSpinnerDiamond />
             <p className="text-center">טוען נתונים...</p>
           </div>
