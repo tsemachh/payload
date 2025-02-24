@@ -7,6 +7,7 @@ export interface LinkFromRelationFieldProps {
   relationField: string
   baseUrl: string
   suffix: string
+  name: string
 }
 
 const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClientProps> = (
@@ -31,10 +32,9 @@ const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClie
   })
 
   useEffect(() => {
-    if (formInitializing) {
-      return
-    }
-
+    // if (!formInitializing) {
+    //   return
+    // }
     if (relationValue) {
       const generatedLink = `${baseUrl}${relationValue}${suffix}`
       if (generatedLink !== value) {
@@ -42,11 +42,11 @@ const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClie
         console.log('generatedLink', generatedLink)
       }
     }
-  }, [])
+  }, [formInitializing, relationValue, value, setValue, baseUrl, suffix])
 
   return (
-    <a href={value} target="_blank" rel="noopener noreferrer">
-      {value}
+    <a style={{ paddingTop: '20px' }} href={value} target="_blank" rel="noopener noreferrer">
+      {props.name}
     </a>
   )
 }

@@ -37,6 +37,7 @@ export const Meetings: CollectionConfig = {
                   relationField: 'meetingId',
                   baseUrl: 'https://www.magna.isa.gov.il/details?id=',
                   suffix: '&file=0',
+                  name: 'קישור למגנא',
                 },
               },
             },

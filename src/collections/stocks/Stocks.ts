@@ -49,6 +49,7 @@ export const Stocks: CollectionConfig = {
                           relationField: 'stockId',
                           baseUrl: 'https://market.tase.co.il/he/market_data/security/',
                           suffix: '/major_data',
+                          name: 'TASA-קישור ל',
                         },
                       },
                     },
@@ -107,11 +108,20 @@ export const Stocks: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'stocks',
                   index: true,
-                  admin: { condition: (siblingData) => !siblingData.tradable },
+                  admin: { 
+                    condition: (siblingData) => !siblingData.tradable ,
+                    
+                    components: {
+                      Field: '/components/relation/RelationIconLink'
+                    }
+                   
+                    },
+                 
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),
                 },
+              
               ],
             },
             {
