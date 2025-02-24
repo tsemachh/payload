@@ -205,6 +205,13 @@ EOF
 
 # Navigate to payload 
 cd payload
+
+#backup logs
+sudo mkdir -p /payload/logs
+
+# Save previous logs before restarting
+sudo docker-compose logs --no-color --timestamps > "/payload/logs/docker-compose-$(date +"%Y-%m-%d_%H-%M-%S").txt"
+
 sudo docker-compose down || true
 
 # Clean docker cache
