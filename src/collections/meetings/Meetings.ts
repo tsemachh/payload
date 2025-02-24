@@ -18,7 +18,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'meetingId',
-          label: 'מזהה אסיפה',
+          label: 'מספר אסיפה',
           type: 'number',
           unique: true,
           required: true,
@@ -62,6 +62,12 @@ export const Meetings: CollectionConfig = {
           name: 'meetingDate',
           label: 'מועד האסיפה',
           type: 'date',
+          admin:{
+            date:{
+              displayFormat: 'HH:mm dd/MM/yyyy',
+              pickerAppearance: "dayAndTime",
+            }
+          }
         },
         {
           name: 'holdingsLimit',
@@ -69,7 +75,7 @@ export const Meetings: CollectionConfig = {
           type: 'date',
           admin: {
             date: {
-              displayFormat: 'dd MMM yyy',
+              displayFormat: 'dd/MM/yyyy',
               pickerAppearance: 'default',
             },
           },
@@ -79,6 +85,12 @@ export const Meetings: CollectionConfig = {
           label: 'מועד מסירת ההצבעות',
           type: 'date',
           index: true,
+          admin:{
+            date:{
+              displayFormat: 'HH:mm dd/MM/yyyy',
+              pickerAppearance: "dayAndTime",
+            }
+          }
         },
       ],
     },
@@ -99,7 +111,6 @@ export const Meetings: CollectionConfig = {
             { label: 'שנתית', value: 'שנתית' },
             { label: 'מיוחדת', value: 'מיוחדת' },
             { label: 'אג"ח', value: 'אג"ח' },
-            { label: 'אג"ח נמשכת', value: 'אג"ח נמשכת' },
             { label: 'אופציה', value: 'אופציה' },
             { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
             { label: 'תעודת סל', value: 'תעודת סל' },
