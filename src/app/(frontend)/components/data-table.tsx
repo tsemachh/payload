@@ -156,7 +156,7 @@ export function DataTable({ data }: DataTableProps) {
   const handleFilter = (key: string, value: any) => {
     setFilters((prev) => {
       const newFilters = { ...prev }
-      if (value === undefined || value.length == 0) {
+      if (value === 'all' || value.length == 0) {
         delete newFilters[key]
       } else {
         newFilters[key] = value
@@ -274,24 +274,23 @@ export function DataTable({ data }: DataTableProps) {
           { value: '✓', count: trueCount },
           { value: '✗', count: falseCount },
         ]
+      } else if (column.key === '_status') {
+        facets[column.key] = [
+          {
+            value: 'פורסם',
+            count: data.filter(({ _status }) => _status === StatusType.Publish).length,
+          },
+          {
+            value: 'טיוטה',
+            count: data.filter(({ _status }) => _status === StatusType.Draft).length,
+          },
+        ]
       } else {
         const values = new Set(data.map((item) => String(item[column.key])))
-        facets[column.key] =
-          column.key === '_status'
-            ? [
-                {
-                  value: 'פורסם',
-                  count: data.filter(({ _status }) => _status === StatusType.Publish).length,
-                },
-                {
-                  value: 'טיוטה',
-                  count: data.filter(({ _status }) => _status === StatusType.Draft).length,
-                },
-              ]
-            : Array.from(values).map((value) => ({
-                value,
-                count: data.filter((item) => String(item[column.key]) === value).length,
-              }))
+        facets[column.key] = Array.from(values).map((value) => ({
+          value,
+          count: data.filter((item) => String(item[column.key]) === value).length,
+        }))
       }
     })
     return facets
