@@ -174,10 +174,19 @@ export function DataTable({ data }: DataTableProps) {
 
   const filteredAndSortedData = useMemo(() => {
     let filteredItems = [...data]
+    // Apply search filter
+    if (searchTerm) {
+      const lowercasedSearchTerm = searchTerm.toLowerCase()
+      filteredItems = filteredItems.filter((item) =>
+        Object.values(item).some((value) =>
+          String(value).toLowerCase().includes(lowercasedSearchTerm),
+        ),
+      )
+    }
 
-    // Only apply filters if there are active filters
+    // Apply filters if there are active filters
     if (Object.keys(filters).length > 0) {
-      filteredItems = data.filter((item) => {
+      filteredItems = filteredItems.filter((item) => {
         for (const [key, value] of Object.entries(filters)) {
           // Skip empty filters
           if (value === undefined || (Array.isArray(value) && value.length === 0)) {
@@ -219,7 +228,7 @@ export function DataTable({ data }: DataTableProps) {
       })
     }
 
-    // Apply sorting if active
+    // Apply sorting
     if (sortConfig.direction) {
       filteredItems.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -233,7 +242,7 @@ export function DataTable({ data }: DataTableProps) {
     }
 
     return filteredItems
-  }, [data, filters, sortConfig])
+  }, [data, filters, searchTerm, sortConfig])
 
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[column.key])
