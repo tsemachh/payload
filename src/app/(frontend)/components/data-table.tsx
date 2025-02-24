@@ -106,8 +106,8 @@ interface DataTableProps {
 export function DataTable({ data }: DataTableProps) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof FutureMeetingTableData
-    direction: 'asc' | 'desc' | null
-  }>({ key: 'meetingDate', direction: 'asc' })
+    direction: 'asc' | 'desc'
+  }>({ key: 'meetingDate', direction: 'desc' })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
@@ -159,7 +159,7 @@ export function DataTable({ data }: DataTableProps) {
         if (current.direction === 'asc') {
           return { key, direction: 'desc' }
         } else if (current.direction === 'desc') {
-          return { key, direction: null }
+          return { key, direction: 'asc' }
         }
       }
       return { key, direction: 'asc' }
