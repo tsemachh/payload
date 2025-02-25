@@ -7,8 +7,11 @@ const nextConfig = {
   },
   productionBrowserSourceMaps: true,
  output: 'standalone',
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     config.cache = false;
+    if (!dev) {
+      config.devtool = 'source-map';
+    }
     return config;
   },
 }
