@@ -8,10 +8,9 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 //Logging
-import pino from 'pino'
-import logtailTransport from '@logtail/pino' // Direct ES Module import
-import os from 'os'
+import logger from './lib/logger';
 
 import { Users } from './collections/Users'
 import { Document } from './collections/Document'
@@ -23,30 +22,6 @@ import { Roles } from '@shefing/authorization'
 import MigrationFaults from '@/collections/migration/MigrationFaults'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
-const transport = await logtailTransport({
-  sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
-  options: {
-    endpoint: process.env.LOGTAIL_ENDPOINT || 'https://s1214463.eu-nbg-2.betterstackdata.com',
-  },
-})
-let username
-try {
-  username = os.userInfo().username
-} catch (error) {
-  username = process.env.USER || process.env.USERNAME || 'unknown'
-}
-const logger = pino(
-  {
-    base: {
-      user: username,
-      hostname: os.hostname(), // Adds the computer name to every log
-      env: process.env.NODE_ENV || 'development', // Optionally include NODE_ENV
-    },
-    level: 'info',
-  },
-  transport,
-)
-
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -88,6 +63,19 @@ export default buildConfig({
     url: process.env.DATABASE_URI || '',
   }),
   logger,
+  email: nodemailerAdapter({
+    transportOptions: {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    },
+    defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@emda.org.il',
+    defaultFromName: process.env.EMAIL_FROM_NAME || 'EMDA System',
+  }),
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
