@@ -5,17 +5,17 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--no-deprecation next lint && next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation node scripts/init-fetch.js& next dev",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation next lint && cross-env NODE_OPTIONS=--no-deprecation next build",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation node scripts/init-fetch.js& cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
-    "devturbo": "pnpm generate:types && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo",
-    "devg": "pnpm generate:types && pnpm generate:importmap && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo ",
+    "devturbo": "cross-env NODE_OPTIONS=--no-deprecation pnpm generate:types && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo",
+    "devg": "cross-env NODE_OPTIONS=--no-deprecation pnpm generate:types && cross-env NODE_OPTIONS=--no-deprecation pnpm generate:importmap && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo ",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "reinstall": "rm -rf node_modules .next && rm -rf .next && rm pnpm-lock.yaml  && pnpm --ignore-workspace install"
+    "reinstall": "rm -rf node_modules .next && rm -rf .next && rm pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install"
   },
   "dependencies": {
     "@logtail/pino": "^0.4.22",
@@ -64,6 +64,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.5.2",
+    "framer-motion": "^12.4.7",
     "graphql": "^16.10.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.475.0",

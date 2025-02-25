@@ -19,17 +19,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Check, X, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react'
+import { Search, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { StatusType, type FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
+import { TrueIcon, FalseIcon } from './ui/icons'
 
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
-  type: 'string' | 'number' | 'date' | 'boolean'
+  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
   filterable?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
 }
@@ -39,10 +40,58 @@ const columns: Column[] = [
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
   { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
-  { key: 'meetingDate', header: 'תאריך האסיפה', type: 'date', filterable: true },
+  {
+    key: 'meetingDate',
+    header: 'מועד האסיפה',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.meetingDate)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
   { key: 'location', header: 'מיקום', type: 'string' },
-  { key: 'holdingsLimit', header: 'מועד קובע', type: 'date', filterable: true },
-  { key: 'proxyVotingDate', header: 'תאריך מסירת הצבעות', type: 'date', filterable: true },
+  {
+    key: 'holdingsLimit',
+    header: 'מועד קובע',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.holdingsLimit)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
+  {
+    key: 'proxyVotingDate',
+    header: 'מועד מסירת הצבעות',
+    type: 'datetime',
+    filterable: true,
+    render: (row) => {
+      const date = new Date(row.proxyVotingDate)
+      return date.toLocaleString('he-IL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+  },
   { key: 'comments', header: 'הערות', type: 'string' },
   {
     key: 'electronicVotingEnabled',
@@ -50,7 +99,11 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     render: (row) =>
-      row.electronicVotingEnabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+      row.electronicVotingEnabled ? (
+        <TrueIcon className="h-4 w-4 text-green-500" />
+      ) : (
+        <FalseIcon className="h-4 w-4 text-red-500" />
+      ),
   },
   {
     key: 'resultsConfirmationStatus',
@@ -58,7 +111,11 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     render: (row) =>
-      row.resultsConfirmationStatus ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+      row.resultsConfirmationStatus ? (
+        <TrueIcon className="h-4 w-4 text-green-500" />
+      ) : (
+        <FalseIcon className="h-4 w-4 text-red-500" />
+      ),
   },
   {
     key: 'committeeInitiated',
@@ -66,7 +123,11 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     render: (row) =>
-      row.committeeInitiated ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />,
+      row.committeeInitiated ? (
+        <TrueIcon className="h-4 w-4 text-green-500" />
+      ) : (
+        <FalseIcon className="h-4 w-4 text-red-500" />
+      ),
   },
   {
     key: '_status',
@@ -93,8 +154,8 @@ interface DataTableProps {
 export function DataTable({ data }: DataTableProps) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof FutureMeetingTableData
-    direction: 'asc' | 'desc' | null
-  }>({ key: 'meetingDate', direction: 'asc' })
+    direction: 'asc' | 'desc'
+  }>({ key: 'meetingDate', direction: 'desc' })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
@@ -146,7 +207,7 @@ export function DataTable({ data }: DataTableProps) {
         if (current.direction === 'asc') {
           return { key, direction: 'desc' }
         } else if (current.direction === 'desc') {
-          return { key, direction: null }
+          return { key, direction: 'asc' }
         }
       }
       return { key, direction: 'asc' }
@@ -268,38 +329,34 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   const facetedFilters = useMemo(() => {
-    const facets: { [key: string]: { value: string; count: number }[] } = {}
+    const facets: { [key: string]: { value: string; count: number; icon?: React.ReactNode }[] } = {}
     columns.forEach((column) => {
-      if (column.filterable && column.type !== 'date') {
-        const values = new Set(data.map((item) => String(item[column.key])))
-        facets[column.key] = Array.from(values).map((value) => ({
-          value,
-          count: data.filter((item) => String(item[column.key]) === value).length,
-        }))
-      } else if (column.filterable && column.type === 'boolean') {
-        const trueCount = data.filter((item) => item[column.key] === true).length
-        const falseCount = data.filter((item) => item[column.key] === false).length
-        facets[column.key] = [
-          { value: '✓', count: trueCount },
-          { value: '✗', count: falseCount },
-        ]
-      } else if (column.key === '_status') {
-        facets[column.key] = [
-          {
-            value: 'פורסם',
-            count: data.filter(({ _status }) => _status === StatusType.Publish).length,
-          },
-          {
-            value: 'טיוטה',
-            count: data.filter(({ _status }) => _status === StatusType.Draft).length,
-          },
-        ]
-      } else {
-        const values = new Set(data.map((item) => String(item[column.key])))
-        facets[column.key] = Array.from(values).map((value) => ({
-          value,
-          count: data.filter((item) => String(item[column.key]) === value).length,
-        }))
+      if (column.filterable) {
+        if (column.type === 'boolean') {
+          const trueCount = data.filter((item) => item[column.key] === true).length
+          const falseCount = data.filter((item) => item[column.key] === false).length
+          facets[column.key] = [
+            {
+              value: 'true',
+              count: trueCount,
+              icon: <TrueIcon className="h-4 w-4 text-green-500" />,
+            },
+            {
+              value: 'false',
+              count: falseCount,
+              icon: <FalseIcon className="h-4 w-4 text-red-500" />,
+            },
+          ]
+        } else if (column.type === 'date') {
+          // Date columns don't need faceted filters
+          facets[column.key] = []
+        } else {
+          const values = new Set(data.map((item) => String(item[column.key])))
+          facets[column.key] = Array.from(values).map((value) => ({
+            value,
+            count: data.filter((item) => String(item[column.key]) === value).length,
+          }))
+        }
       }
     })
     return facets
@@ -379,7 +436,7 @@ export function DataTable({ data }: DataTableProps) {
                                   onDateRangeChange={(range) => handleFilter(column.key, range)}
                                 />
                               ) : (
-                                facetedFilters[column.key]?.map(({ value, count }) => (
+                                facetedFilters[column.key]?.map(({ value, count, icon }) => (
                                   <DropdownMenuCheckboxItem
                                     key={value}
                                     checked={(filters[column.key] || []).includes(value)}
@@ -391,7 +448,7 @@ export function DataTable({ data }: DataTableProps) {
                                       handleFilter(column.key, newFilters)
                                     }}
                                   >
-                                    {value} ({count})
+                                    {icon ? icon : value}({count})
                                   </DropdownMenuCheckboxItem>
                                 ))
                               )}

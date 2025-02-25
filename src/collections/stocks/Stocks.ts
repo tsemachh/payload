@@ -58,7 +58,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מזהה - סימול',
+                  label: 'מזהה - שם',
                   type: 'text',
                   admin: { readOnly: true, hidden: true },
                   hooks: {
@@ -69,7 +69,7 @@ export const Stocks: CollectionConfig = {
                     ],
                     afterRead: [
                       ({ data }) => {
-                        return `${data?.stockId} - ${data?.symbol}`
+                        return `${data?.stockId} ${data?.name}`
                       },
                     ],
                   },
@@ -103,6 +103,12 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                 },
                 {
+                  name: 'private',
+                  label: 'האם חברה פרטית',
+                  type: 'checkbox',
+                  admin: { condition: (siblingData) => !siblingData.tradable },
+                },
+                {
                   name: 'relatedStock',
                   label: 'נייר ערך ראשי',
                   type: 'relationship',
@@ -130,15 +136,15 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'name',
-                  label: 'שם',
+                  label: 'שם נייר ערך',
                   type: 'text',
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
                   name: 'longName',
-                  label: 'שם מלא',
+                  label: 'שם חברה',
                   type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable },
+                  admin: { condition: (siblingData) => siblingData.tradable || siblingData.private},
                 },
               ],
             },
@@ -163,6 +169,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'ניירות ערך עוקבים',
+          admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
             {
               name: 'relations',
@@ -177,7 +184,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable },
+          admin: { condition: (siblingData) => siblingData.tradable || siblingData.private },
           fields: [
             {
               name: 'meetings',

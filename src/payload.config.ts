@@ -55,6 +55,7 @@ export default buildConfig({
     supportedLanguages: { he, en },
   },
   admin: {
+    dateFormat:"HH:mm dd/MM/yyyy",
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),

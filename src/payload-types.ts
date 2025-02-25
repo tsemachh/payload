@@ -37,7 +37,7 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
  * via the `definition` "MeetingType".
  */
 export type MeetingType =
-  | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אג"ח נמשכת' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
+  | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema

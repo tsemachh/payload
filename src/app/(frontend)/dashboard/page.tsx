@@ -1,7 +1,7 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+'use client'
+//TODO: delete!
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -19,19 +19,19 @@ export default function Dashboard() {
     })
 
     // Set up SSE for real-time updates
-    const eventSource = new EventSource("/api/sse")
-    eventSource.onmessage = (event) => {
-      const update = JSON.parse(event.data)
-      if (update.type === "newMeeting") {
-        setStats((prev) => ({
-          ...prev,
-          upcomingAssemblies: prev.upcomingAssemblies + 1,
-        }))
-      }
-    }
+    // const eventSource = new EventSource("/api/sse")
+    // eventSource.onmessage = (event) => {
+    //   const update = JSON.parse(event.data)
+    //   if (update.type === "newMeeting") {
+    //     setStats((prev) => ({
+    //       ...prev,
+    //       upcomingAssemblies: prev.upcomingAssemblies + 1,
+    //     }))
+    //   }
+    // }
 
     return () => {
-      eventSource.close()
+      // eventSource.close()
     }
   }, [])
 
@@ -64,4 +64,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
