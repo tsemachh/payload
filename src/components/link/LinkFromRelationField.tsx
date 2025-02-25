@@ -13,13 +13,8 @@ export interface LinkFromRelationFieldProps {
 const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClientProps> = (
   props,
 ) => {
-  console.log('==============================================')
-
   const { relationField, baseUrl, suffix, path } = props
   const formInitializing = useFormInitializing()
-  console.log('formInitializing', formInitializing)
-  console.log('relationField', relationField)
-  console.log('props', props)
 
   // Field for storing the generated link
   const { value, setValue } = useField<string>({
@@ -32,9 +27,6 @@ const LinkFromRelationField: React.FC<LinkFromRelationFieldProps & TextFieldClie
   })
 
   useEffect(() => {
-    // if (!formInitializing) {
-    //   return
-    // }
     if (relationValue) {
       const generatedLink = `${baseUrl}${relationValue}${suffix}`
       if (generatedLink !== value) {
