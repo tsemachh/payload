@@ -42,6 +42,7 @@ export const Stocks: CollectionConfig = {
                   label: 'TASAקישור ל',
                   type: 'text',
                   admin: {
+                    condition: (siblingData) => siblingData.tradable,
                     components: {
                       Field: {
                         path: '/components/link/LinkFromRelationField',
@@ -144,7 +145,9 @@ export const Stocks: CollectionConfig = {
                   name: 'longName',
                   label: 'שם חברה',
                   type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable || siblingData.private},
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable || siblingData.private,
+                  },
                 },
               ],
             },

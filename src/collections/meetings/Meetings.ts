@@ -7,7 +7,15 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
-    defaultColumns: ['magnaId', 'stock', 'proxyVotingDate', 'meetingDate', 'type', 'state'],
+    defaultColumns: [
+      'magnaId',
+      'stock',
+      'type',
+      'holdingsLimit',
+      'proxyVotingDate',
+      'meetingDate',
+      'state',
+    ],
   },
   versions: {
     drafts: true,
@@ -24,6 +32,12 @@ export const Meetings: CollectionConfig = {
           required: true,
           index: true,
           admin: { hidden: true },
+        },
+        {
+          name: 'magnaId',
+          label: 'אסמכתא',
+          type: 'text',
+          maxLength: 20,
         },
         {
           name: 'meetingLink',
@@ -45,48 +59,32 @@ export const Meetings: CollectionConfig = {
           },
         },
         {
-          name: 'magnaId',
-          label: 'אסמכתא',
-          type: 'text',
-          maxLength: 20,
-        },
-        {
-          name: 'state',
-          label: 'מצב',
-          type: 'select',
-          interfaceName: 'MeetingState',
-          options: [
-            { label: 'מתוכננת', value: 'scheduled' },
-            { label: 'התקיימה', value: 'completed' },
-            { label: 'נדחית', value: 'postponed' },
-            { label: 'נדחית ללא מועד', value: 'on-hold' },
-            { label: 'נמשכת', value: 'ongoing' },
-            { label: 'בוטלה', value: 'cancelled' },
-          ],
-        },
-        {
           name: 'stock',
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
         },
+        {
+          name: 'type',
+          label: 'סוג',
+          type: 'select',
+          interfaceName: 'MeetingType',
+          options: [
+            { label: 'שנתית', value: 'שנתית' },
+            { label: 'מיוחדת', value: 'מיוחדת' },
+            { label: 'אג"ח', value: 'אג"ח' },
+            { label: 'אופציה', value: 'אופציה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודת סל', value: 'תעודת סל' },
+            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+          ],
+        },
       ],
     },
     {
       type: 'row',
       fields: [
-        {
-          name: 'meetingDate',
-          label: 'מועד האסיפה',
-          type: 'date',
-          admin:{
-            date:{
-              displayFormat: 'HH:mm dd/MM/yyyy',
-              pickerAppearance: "dayAndTime",
-            }
-          }
-        },
         {
           name: 'holdingsLimit',
           label: 'מועד קובע',
@@ -103,12 +101,23 @@ export const Meetings: CollectionConfig = {
           label: 'מועד מסירת ההצבעות',
           type: 'date',
           index: true,
-          admin:{
-            date:{
+          admin: {
+            date: {
               displayFormat: 'HH:mm dd/MM/yyyy',
-              pickerAppearance: "dayAndTime",
-            }
-          }
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+        {
+          name: 'meetingDate',
+          label: 'מועד האסיפה',
+          type: 'date',
+          admin: {
+            date: {
+              displayFormat: 'HH:mm dd/MM/yyyy',
+              pickerAppearance: 'dayAndTime',
+            },
+          },
         },
       ],
     },
@@ -121,18 +130,17 @@ export const Meetings: CollectionConfig = {
           type: 'text',
         },
         {
-          name: 'type',
-          label: 'סוג',
+          name: 'state',
+          label: 'מצב',
           type: 'select',
-          interfaceName: 'MeetingType',
+          interfaceName: 'MeetingState',
           options: [
-            { label: 'שנתית', value: 'שנתית' },
-            { label: 'מיוחדת', value: 'מיוחדת' },
-            { label: 'אג"ח', value: 'אג"ח' },
-            { label: 'אופציה', value: 'אופציה' },
-            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-            { label: 'תעודת סל', value: 'תעודת סל' },
-            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+            { label: 'מתוכננת', value: 'scheduled' },
+            { label: 'התקיימה', value: 'completed' },
+            { label: 'נדחית', value: 'postponed' },
+            { label: 'נדחית ללא מועד', value: 'on-hold' },
+            { label: 'נמשכת', value: 'ongoing' },
+            { label: 'בוטלה', value: 'cancelled' },
           ],
         },
       ],
