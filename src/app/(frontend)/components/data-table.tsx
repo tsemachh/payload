@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
 import { TrueIcon, FalseIcon } from './ui/icons'
+import { formatDateTime } from '../helpers/utils'
 
 interface Column {
   key: keyof FutureMeetingTableData
@@ -47,15 +48,7 @@ const columns: Column[] = [
     type: 'datetime',
     filterable: true,
     render: (row) => {
-      const date = new Date(row.meetingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.meetingDate)
     },
   },
   { key: 'location', header: 'מיקום', type: 'string' },
@@ -65,15 +58,7 @@ const columns: Column[] = [
     type: 'datetime',
     filterable: true,
     render: (row) => {
-      const date = new Date(row.holdingsLimit)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.holdingsLimit)
     },
   },
   {
@@ -82,15 +67,7 @@ const columns: Column[] = [
     type: 'datetime',
     filterable: true,
     render: (row) => {
-      const date = new Date(row.proxyVotingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.proxyVotingDate)
     },
   },
   { key: 'comments', header: 'הערות', type: 'string' },
@@ -489,9 +466,10 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className={`py-2 px-3 ${column.positionCenter ? 'text-right' : 'text-right'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
+                        className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-ls'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                       >
-                        {column.render ? column.render(row) : String(row[column.key])}
+                        {column.render ? column.render(row) : String(row.meetingId)}
                       </TableCell>
                     ))}
                     <TableCell>
