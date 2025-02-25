@@ -39,22 +39,42 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'stockLink',
-                  label: 'TASAקישור ל',
+                  label: 'קישור לבורסה',
                   type: 'text',
+                  virtual: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
                     components: {
                       Field: {
                         path: '/components/link/LinkFromRelationField',
                         clientProps: {
-                          relationField: 'stockId',
-                          baseUrl: 'https://market.tase.co.il/he/market_data/security/',
-                          suffix: '/major_data',
-                          name: 'הבורסה לניירות ערך',
+                          iconUrl: '/faviconStock.ico',
+                          iconAltText: 'קישור לבורסה',
                         },
                       },
+                      Cell:{
+                        path: '/components/link/LinkFromRelationCell',
+                        clientProps: {
+                          iconUrl: '/faviconStock.ico',
+                          iconAltText: 'קישור לבורסה',
+                        },
+                      }
                     },
                     readOnly: true,
+                  },
+                  hooks: {
+                    beforeChange: [
+                      ({ siblingData }) => {
+                        delete siblingData['stockLink']
+                      },
+                    ],
+                    afterRead: [
+                      ({ data}) => {
+                        if (data?.tradable)
+                          return `https://market.tase.co.il/he/market_data/security/${data?.stockId}/major_data`
+                        else return null
+                      },
+                    ],
                   },
                 },
                 {
