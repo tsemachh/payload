@@ -26,12 +26,14 @@ import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
 import { TrueIcon, FalseIcon } from './ui/icons'
+import { formatDateTime } from '../helpers/utils'
 
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
   type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
   filterable?: boolean
+  positionCenter?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
 }
 
@@ -44,17 +46,9 @@ const columns: Column[] = [
     key: 'meetingDate',
     header: 'מועד האסיפה',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.meetingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.meetingDate)
     },
   },
   { key: 'location', header: 'מיקום', type: 'string' },
@@ -62,34 +56,18 @@ const columns: Column[] = [
     key: 'holdingsLimit',
     header: 'מועד קובע',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.holdingsLimit)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.holdingsLimit, true)
     },
   },
   {
     key: 'proxyVotingDate',
     header: 'מועד מסירת הצבעות',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.proxyVotingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.proxyVotingDate)
     },
   },
   { key: 'comments', header: 'הערות', type: 'string' },
@@ -98,11 +76,12 @@ const columns: Column[] = [
     header: 'האסיפה מופיעה במערכת האלק׳?',
     type: 'boolean',
     filterable: true,
+    positionCenter: true,
     render: (row) =>
       row.electronicVotingEnabled ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
+        <TrueIcon className="h-6 w-6 text-green-500" />
       ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
+        <FalseIcon className="h-6 w-6 text-red-500" />
       ),
   },
   {
@@ -110,11 +89,12 @@ const columns: Column[] = [
     header: 'אימות תוצאות האסיפה',
     type: 'boolean',
     filterable: true,
+    positionCenter: true,
     render: (row) =>
       row.resultsConfirmationStatus ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
+        <TrueIcon className="h-6 w-6 text-green-500" />
       ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
+        <FalseIcon className="h-6 w-6 text-red-500" />
       ),
   },
   {
@@ -122,11 +102,12 @@ const columns: Column[] = [
     header: 'תאגיד פיננסי דורש ועדה',
     type: 'boolean',
     filterable: true,
+    positionCenter: true,
     render: (row) =>
       row.committeeInitiated ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
+        <TrueIcon className="h-6 w-6 text-green-500" />
       ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
+        <FalseIcon className="h-6 w-6 text-red-500" />
       ),
   },
   {
@@ -339,17 +320,28 @@ export function DataTable({ data }: DataTableProps) {
             {
               value: 'true',
               count: trueCount,
-              icon: <TrueIcon className="h-4 w-4 text-green-500" />,
+              icon: <TrueIcon className="h-6 w-6 text-green-500" />,
             },
             {
               value: 'false',
               count: falseCount,
-              icon: <FalseIcon className="h-4 w-4 text-red-500" />,
+              icon: <FalseIcon className="h-6 w-6 text-red-500" />,
             },
           ]
         } else if (column.type === 'date') {
           // Date columns don't need faceted filters
           facets[column.key] = []
+        } else if (column.key == '_status') {
+          facets[column.key] = [
+            {
+              value: 'פורסם',
+              count: data.filter(({ _status }) => _status === StatusType.Publish).length,
+            },
+            {
+              value: 'טיוטה',
+              count: data.filter(({ _status }) => _status === StatusType.Draft).length,
+            },
+          ]
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
           facets[column.key] = Array.from(values).map((value) => ({
@@ -422,7 +414,7 @@ export function DataTable({ data }: DataTableProps) {
                       <div className="flex items-center justify-start">
                         <span onClick={() => handleSort(column.key)}>{column.header}</span>
                         {getSortIcon(column.key)}
-                        {column.filterable && (
+                        {isFilterActive && column.filterable && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -474,7 +466,8 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis"
+                        style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
+                        className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                       >
                         {column.render ? column.render(row) : String(row[column.key])}
                       </TableCell>
