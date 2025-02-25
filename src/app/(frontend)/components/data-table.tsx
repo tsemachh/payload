@@ -46,7 +46,7 @@ const columns: Column[] = [
     key: 'meetingDate',
     header: 'מועד האסיפה',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
@@ -56,7 +56,7 @@ const columns: Column[] = [
     key: 'holdingsLimit',
     header: 'מועד קובע',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
       return formatDateTime(row.holdingsLimit, true)
     },
@@ -65,7 +65,7 @@ const columns: Column[] = [
     key: 'proxyVotingDate',
     header: 'מועד מסירת הצבעות',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
       return formatDateTime(row.proxyVotingDate)
     },
@@ -467,9 +467,9 @@ export function DataTable({ data }: DataTableProps) {
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
                         style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
-                        className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-ls'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                       >
-                        {column.render ? column.render(row) : String(row.meetingId)}
+                        {column.render ? column.render(row) : String(row[column.key])}
                       </TableCell>
                     ))}
                     <TableCell>
