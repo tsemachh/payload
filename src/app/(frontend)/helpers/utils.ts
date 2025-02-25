@@ -1,4 +1,4 @@
-export const formatDateTime = (originDate: string) => {
+export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return '-'
   const date = new Date(originDate)
   if (isNaN(date.getTime())) return '-'
@@ -13,7 +13,6 @@ export const formatDateTime = (originDate: string) => {
   })
     .format(date)
     .replaceAll('.', '/')
-    .replace(', ', ' ')
-  return newDate
-}
 
+  return withoutTime ? newDate.split(',')[0] : newDate.replace(/\./g, '/').replace(', ', ' ')
+}

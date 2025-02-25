@@ -58,7 +58,7 @@ const columns: Column[] = [
     type: 'datetime',
     filterable: true,
     render: (row) => {
-      return formatDateTime(row.holdingsLimit)
+      return formatDateTime(row.holdingsLimit, true)
     },
   },
   {
