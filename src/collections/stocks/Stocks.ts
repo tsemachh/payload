@@ -38,6 +38,26 @@ export const Stocks: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'stockLink',
+                  label: 'TASAקישור ל',
+                  type: 'text',
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable,
+                    components: {
+                      Field: {
+                        path: '/components/link/LinkFromRelationField',
+                        clientProps: {
+                          relationField: 'stockId',
+                          baseUrl: 'https://market.tase.co.il/he/market_data/security/',
+                          suffix: '/major_data',
+                          name: 'הבורסה לניירות ערך',
+                        },
+                      },
+                    },
+                    readOnly: true,
+                  },
+                },
+                {
                   name: 'fullName',
                   label: 'מזהה - שם',
                   type: 'text',
@@ -84,12 +104,21 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                 },
                 {
+                  name: 'private',
+                  label: 'האם חברה פרטית',
+                  type: 'checkbox',
+                  admin: { condition: (siblingData) => !siblingData.tradable },
+                },
+                {
                   name: 'relatedStock',
                   label: 'נייר ערך ראשי',
                   type: 'relationship',
                   relationTo: 'stocks',
                   index: true,
-                  admin: { condition: (siblingData) => !siblingData.tradable },
+                  admin: {
+                    condition: (siblingData) => !siblingData.tradable,
+                  },
+
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),
@@ -116,7 +145,9 @@ export const Stocks: CollectionConfig = {
                   name: 'longName',
                   label: 'שם חברה',
                   type: 'text',
-                  admin: { condition: (siblingData) => siblingData.tradable },
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable || siblingData.private,
+                  },
                 },
               ],
             },
@@ -132,12 +163,7 @@ export const Stocks: CollectionConfig = {
                   _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: [
-                      'valueDate',
-                      'registeredValue',
-                      'closingRate',
-                      'marketValue',
-                    ],
+                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
                   },
                 },
               ],
@@ -146,6 +172,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'ניירות ערך עוקבים',
+          admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
             {
               name: 'relations',
@@ -160,7 +187,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable },
+          admin: { condition: (siblingData) => siblingData.tradable || siblingData.private },
           fields: [
             {
               name: 'meetings',
