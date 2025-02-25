@@ -29,16 +29,16 @@ export type StockType =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "MeetingState".
- */
-export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
  */
 export type MeetingType =
   | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
   | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingState".
+ */
+export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RolePermissions".
@@ -176,9 +176,11 @@ export interface Stock {
    * ניתן להעריכה רק בעת יצירת נייר הערך
    */
   stockId: string;
+  stockLink?: string | null;
   fullName?: string | null;
   type?: StockType;
   tradable?: boolean | null;
+  private?: boolean | null;
   relatedStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
@@ -224,13 +226,14 @@ export interface Meeting {
   id: string;
   meetingId: number;
   magnaId?: string | null;
-  state?: MeetingState;
+  meetingLink?: string | null;
   stock?: (string | null) | Stock;
-  meetingDate?: string | null;
+  type?: MeetingType;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
+  meetingDate?: string | null;
   location?: string | null;
-  type?: MeetingType;
+  state?: MeetingState;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
@@ -401,9 +404,11 @@ export interface PayloadMigration {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
+  stockLink?: T;
   fullName?: T;
   type?: T;
   tradable?: T;
+  private?: T;
   relatedStock?: T;
   symbol?: T;
   name?: T;
@@ -438,13 +443,14 @@ export interface StockValuesSelect<T extends boolean = true> {
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   magnaId?: T;
-  state?: T;
+  meetingLink?: T;
   stock?: T;
-  meetingDate?: T;
+  type?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
+  meetingDate?: T;
   location?: T;
-  type?: T;
+  state?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;

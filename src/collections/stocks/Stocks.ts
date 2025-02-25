@@ -35,6 +35,16 @@ export const Stocks: CollectionConfig = {
                   access: { update: () => false },
                   admin: {
                     description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
+                    components: {
+                      Cell: {
+                        path: '/components/link/IconLinkCell',
+                        clientProps: {
+                          linkField: 'stockLink',
+                          iconUrl: '/faviconStock.ico',
+                          iconAltText: 'קישור לבורסה',
+                        },
+                      }
+                    },
                   },
                 },
                 {

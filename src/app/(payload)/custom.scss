@@ -22,3 +22,27 @@
     vertical-align: middle;
   }
 }
+
+.icon-link {
+  padding-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  span {
+    vertical-align: middle;
+  }
+
+  img {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+  }
+}
