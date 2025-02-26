@@ -426,7 +426,7 @@ export function DataTable({ data }: DataTableProps) {
                       </div>
                     </TableHead>
                   ))}
-                  <TableHead className="w-1"></TableHead>
+                  <TableHead className="sticky left-0 z-10 w-1"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -446,23 +446,18 @@ export function DataTable({ data }: DataTableProps) {
                           : highlightText(String(row[column.key]), searchTerm)}
                       </TableCell>
                     ))}
-                    <TableCell>
-                      <div className="relative h-full">
-                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 transition-opacity whitespace-nowrap ">
-                          {row.meetingInviteUrl && (
-                            <a
-                              href={row.meetingInviteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-2 space-x-reverse px-4 h-full hover:bg-muted/50 transition-colors"
-                            >
-                              <span className="text-sm text-foreground hover:text-blue-800">
-                                זימון אסיפה
-                              </span>
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                    <TableCell className="relative group sticky left-[80px] z-10">
+                      {row.meetingInviteUrl && (
+                        <a
+                          href={row.meetingInviteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="absolute hidden h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground hover:text-blue-800 whitespace-nowrap">
+                            זימון אסיפה
+                          </span>
+                        </a>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
