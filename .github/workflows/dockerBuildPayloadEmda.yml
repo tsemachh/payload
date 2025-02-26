@@ -1,4 +1,4 @@
-name: Docker Emda Payload Image CI-CD
+name: Docker Emda Payload Image CI
 
 on:
   push:
@@ -109,12 +109,12 @@ jobs:
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
-      # Step 11: Reset VM
-      - name: Reset GCP VM
-        run: |
-          gcloud compute instances reset payload-vm \
-            --zone=me-west1-b \
-            --project=${{ secrets.GCP_PROJECT_ID }}
+      # Step 11: Reset VM - moved to cron job
+      # - name: Reset GCP VM
+      #   run: |
+      #     gcloud compute instances reset payload-vm \
+      #       --zone=me-west1-b \
+      #       --project=${{ secrets.GCP_PROJECT_ID }}
 
   notify-slack:
     needs: docker-build
