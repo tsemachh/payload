@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
-import { formatDateTime } from '../helpers/utils'
+import { escapeRegExp, formatDateTime } from '../helpers/utils'
 
 interface Column {
   key: keyof FutureMeetingTableData
@@ -199,15 +199,30 @@ export function DataTable({ data }: DataTableProps) {
     setIsFilterActive(!isFilterActive)
   }
 
+
+  const highlightText = (text: string, highlight: string) => {
+    if (!highlight.trim()) {
+      return text
+    }
+    const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight)})`, 'gi')
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <span key={i} style={{ backgroundColor: 'yellow' }}>
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    )
+  }
+
   const filteredAndSortedData = useMemo(() => {
     let filteredItems = [...data]
     // Apply search filter
     if (searchTerm) {
-      const lowercasedSearchTerm = searchTerm.toLowerCase()
+      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
-        Object.values(item).some((value) =>
-          String(value).toLowerCase().includes(lowercasedSearchTerm),
-        ),
+          Object.values(item).some((value) => searchRegex.test(String(value))),
       )
     }
 
@@ -454,7 +469,9 @@ export function DataTable({ data }: DataTableProps) {
                         style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
                         className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                       >
-                        {column.render ? column.render(row) : String(row[column.key])}
+                        {column.render
+                          ? column.render(row)
+                          : highlightText(String(row[column.key]), searchTerm)}
                       </TableCell>
                     ))}
                     <TableCell>

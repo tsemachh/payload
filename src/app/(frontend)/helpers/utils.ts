@@ -16,3 +16,7 @@ export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
 
   return withoutTime ? newDate.split(',')[0] : newDate.replace(/\./g, '/').replace(', ', ' ')
 }
+
+export const escapeRegExp = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
