@@ -17,7 +17,12 @@ const MigrationFaults: CollectionConfig= {
       index:true
     }
   ],
-  admin:{group:"מיגרציה"},
+  admin: {
+    group:"מיגרציה",
+    useAsTitle: 'typeId',
+    defaultColumns: ['comments','type', 'typeId', 'row'],
+    listSearchableFields: ['comments','type', 'typeId', 'row'],
+  },
   labels:{
     plural: 'שגיאות במיגרציה ',
     singular: 'שגיאות במיגרציה ',
