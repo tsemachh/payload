@@ -163,6 +163,9 @@ resource "google_compute_instance" "payload_vm" {
   metadata_startup_script = <<-EOT
 #!/bin/bash
 
+# Set the timezone to Asia/Jerusalem
+sudo timedatectl set-timezone Asia/Jerusalem
+
 # Ensure the VM is up to date and install necessary dependencies
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
@@ -201,10 +204,18 @@ services:
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
     ports:
       - "3000:3000"
+    restart: always 
 EOF
 
 # Navigate to payload 
 cd payload
+
+#backup logs
+sudo mkdir -p /payload/logs
+
+# Save previous logs before restarting
+sudo docker-compose logs --no-color --timestamps > "/payload/logs/docker-compose-$(date +"%Y-%m-%d_%H-%M-%S").txt"
+
 sudo docker-compose down || true
 
 # Clean docker cache
