@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
-import { FutureMeetingTableData, StatusType } from '../types'
+import { FutureMeetingTableData } from '../types'
 
 export async function fetchMeetingsForTable() {
   const payload = await getPayload({ config })
@@ -29,7 +29,6 @@ export async function fetchMeetingsForTable() {
       electronicVotingEnabled: !!meeting.electronicVotingEnabled,
       resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
       committeeInitiated: !!meeting.committeeInitiated,
-      _status: meeting._status ? (meeting._status as StatusType) : StatusType.None,
     }
   })
 }

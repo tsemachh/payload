@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Search, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react'
 import type React from 'react'
-import { StatusType, type FutureMeetingTableData } from '../types'
+import type { FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
@@ -94,22 +94,6 @@ const columns: Column[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
-  },
-  {
-    key: '_status',
-    header: 'סטטוס',
-    type: 'string',
-    filterable: true,
-    render: (row) => {
-      switch (row._status) {
-        case StatusType.Publish:
-          return 'פורסם'
-        case StatusType.Draft:
-          return 'טיוטה'
-        default:
-          return row._status
-      }
-    },
   },
 ]
 
@@ -199,7 +183,6 @@ export function DataTable({ data }: DataTableProps) {
     setIsFilterActive(!isFilterActive)
   }
 
-
   const highlightText = (text: string, highlight: string) => {
     if (!highlight.trim()) {
       return text
@@ -222,7 +205,7 @@ export function DataTable({ data }: DataTableProps) {
     if (searchTerm) {
       const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
-          Object.values(item).some((value) => searchRegex.test(String(value))),
+        Object.values(item).some((value) => searchRegex.test(String(value))),
       )
     }
 
@@ -331,17 +314,6 @@ export function DataTable({ data }: DataTableProps) {
         } else if (column.type === 'date') {
           // Date columns don't need faceted filters
           facets[column.key] = []
-        } else if (column.key == '_status') {
-          facets[column.key] = [
-            {
-              value: 'פורסם',
-              count: data.filter(({ _status }) => _status === StatusType.Publish).length,
-            },
-            {
-              value: 'טיוטה',
-              count: data.filter(({ _status }) => _status === StatusType.Draft).length,
-            },
-          ]
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
           facets[column.key] = Array.from(values).map((value) => ({
