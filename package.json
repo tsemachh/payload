@@ -15,7 +15,7 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "reinstall": "rm -rf node_modules .next && rm -rf .next && rm pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install"
+    "reinstall": "rm -rf node_modules .next && rm -rf .next && rm -rf pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install"
   },
   "dependencies": {
     "@logtail/pino": "^0.4.22",
@@ -85,6 +85,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "tailwindcss-scoped-preflight": "^3.4.10",
     "vaul": "^1.1.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },

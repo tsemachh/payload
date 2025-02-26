@@ -1,4 +1,11 @@
 import type { CollectionConfig } from 'payload'
+import { IconLinkProps } from '../../components/link/IconLinkProps'
+
+const meetingLinkProps: IconLinkProps = {
+  urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
+  iconUrl: '/faviconMagna.ico',
+  iconAltText: 'קישור למגנא',
+}
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -38,24 +45,17 @@ export const Meetings: CollectionConfig = {
           label: 'אסמכתא',
           type: 'text',
           maxLength: 20,
-        },
-        {
-          name: 'meetingLink',
-          label: 'קישור למגנא',
-          type: 'text',
           admin: {
             components: {
-              Field: {
-                path: '/components/link/LinkFromRelationField',
-                clientProps: {
-                  relationField: 'meetingId',
-                  baseUrl: 'https://www.magna.isa.gov.il/details?id=',
-                  suffix: '&file=0',
-                  name: 'קישור למגנא',
-                },
+              Cell: {
+                path: '/components/link/IconLinkCell',
+                clientProps: meetingLinkProps,
               },
+              Field: {
+                path: '/components/link/IconLinkTextField',
+                clientProps: meetingLinkProps,
+              }
             },
-            readOnly: true,
           },
         },
         {
@@ -155,7 +155,7 @@ export const Meetings: CollectionConfig = {
       fields: [
         {
           name: 'resultsConfirmationStatus',
-          label: 'אימות תוצאות האסיפה',
+          label: 'אימות תוצאות',
           type: 'checkbox',
           admin: {
             condition: (siblingData) => siblingData.state === 'completed',
@@ -163,7 +163,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'electronicVotingEnabled',
-          label: 'האם האסיפה מופיעה במערכת האלקטרונית?',
+          label: 'האם מופיעה במערכת האלק׳?',
           type: 'checkbox',
         },
         {
