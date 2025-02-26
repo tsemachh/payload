@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import '../../app/global.css'
+import '../../app/styles/global.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { MainNav } from '@/components/main-nav'
 import { Notifications } from '@/components/notifications'
