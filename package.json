@@ -21,6 +21,7 @@
     "@logtail/pino": "^0.4.22",
     "@newesissrl/payload-exportcollections-plugin": "^0.1.9",
     "@payloadcms/db-mongodb": "^3.24.0",
+    "@payloadcms/plugin-search": "^3.24.0",
     "@payloadcms/next": "^3.24.0",
     "@payloadcms/payload-cloud": "^3.24.0",
     "@payloadcms/richtext-lexical": "^3.24.0",

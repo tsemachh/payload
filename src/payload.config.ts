@@ -21,6 +21,7 @@ import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
 
 import MigrationFaults from '@/collections/migration/MigrationFaults'
+import { emadaSearchPlugin } from './plugins/search'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 /*
@@ -93,6 +94,7 @@ export default buildConfig({
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
+    emadaSearchPlugin,
     addAccess({
       rolesCollection: 'roles', // name of the collection defining the roles
       permissionsField: 'permissions', // name of the field within the role collection
