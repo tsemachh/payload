@@ -172,11 +172,7 @@ export interface UserAuthOperations {
  */
 export interface Stock {
   id: string;
-  /**
-   * ניתן להעריכה רק בעת יצירת נייר הערך
-   */
   stockId: string;
-  stockLink?: string | null;
   fullName?: string | null;
   type?: StockType;
   tradable?: boolean | null;
@@ -226,7 +222,6 @@ export interface Meeting {
   id: string;
   meetingId: number;
   magnaId?: string | null;
-  meetingLink?: string | null;
   stock?: (string | null) | Stock;
   type?: MeetingType;
   holdingsLimit?: string | null;
@@ -404,7 +399,6 @@ export interface PayloadMigration {
  */
 export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
-  stockLink?: T;
   fullName?: T;
   type?: T;
   tradable?: T;
@@ -443,7 +437,6 @@ export interface StockValuesSelect<T extends boolean = true> {
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   magnaId?: T;
-  meetingLink?: T;
   stock?: T;
   type?: T;
   holdingsLimit?: T;

@@ -1,5 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
+import { IconLinkProps } from '../../components/link/IconLinkProps'
+
+const stockLinkProps: IconLinkProps = {
+  urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
+  iconUrl: '/faviconStock.ico',
+  iconAltText: 'קישור לבורסה',
+  visibilityField: 'tradable'
+}
 
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
@@ -34,57 +42,16 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   access: { update: () => false },
                   admin: {
-                    description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
                     components: {
                       Cell: {
                         path: '/components/link/IconLinkCell',
-                        clientProps: {
-                          linkField: 'stockLink',
-                          iconUrl: '/faviconStock.ico',
-                          iconAltText: 'קישור לבורסה',
-                        },
-                      }
-                    },
-                  },
-                },
-                {
-                  name: 'stockLink',
-                  label: 'קישור לבורסה',
-                  type: 'text',
-                  virtual: true,
-                  admin: {
-                    condition: (siblingData) => siblingData.tradable,
-                    components: {
+                        clientProps: stockLinkProps,
+                      },
                       Field: {
-                        path: '/components/link/LinkFromRelationField',
-                        clientProps: {
-                          iconUrl: '/faviconStock.ico',
-                          iconAltText: 'קישור לבורסה',
-                        },
-                      },
-                      Cell:{
-                        path: '/components/link/LinkFromRelationCell',
-                        clientProps: {
-                          iconUrl: '/faviconStock.ico',
-                          iconAltText: 'קישור לבורסה',
-                        },
+                        path: '/components/link/IconLinkTextField',
+                        clientProps: stockLinkProps,
                       }
                     },
-                    readOnly: true,
-                  },
-                  hooks: {
-                    beforeChange: [
-                      ({ siblingData }) => {
-                        delete siblingData['stockLink']
-                      },
-                    ],
-                    afterRead: [
-                      ({ data}) => {
-                        if (data?.tradable)
-                          return `https://market.tase.co.il/he/market_data/security/${data?.stockId}/major_data`
-                        else return null
-                      },
-                    ],
                   },
                 },
                 {

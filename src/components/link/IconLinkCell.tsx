@@ -1,19 +1,14 @@
 'use client'
 import React from 'react'
 import type { DefaultCellComponentProps } from 'payload'
+import { DefaultCell } from '@payloadcms/ui'
+import { IconLinkProps } from './IconLinkProps'
 
 /**
- * Props for the IconLink component
- * @interface IconLinkCellProps
- * @property {string} linkField - Field name to check in rowData for link
- * @property {string} iconUrl - URL of the icon to display
- * @property {string} iconAltText - Alt text for the icon
+ * Props for the IconLink Cell component
+ * Extends IconLinkProps with DefaultCellComponentProps
  */
-export interface IconLinkCellProps {
-  linkField: string
-  iconUrl: string
-  iconAltText: string
-}
+export type IconLinkCellProps = IconLinkProps & DefaultCellComponentProps
 
 /**
  * Cell component for displaying content with an optional icon link in PayloadCMS tables
@@ -21,34 +16,41 @@ export interface IconLinkCellProps {
  * @returns React component
  */
 const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
-  const { cellData, rowData } = props
-  const linkValue = rowData?.[props.linkField]
+  const { cellData, urlTemplate, iconUrl, iconAltText, visibilityField } = props
 
   if (!cellData) return null
 
-  if (linkValue) {
-    return (
-      <a
-        href={linkValue}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="icon-link"
-        title={linkValue}
-        onClick={(e) => {
-          // Prevent PayloadCMS form navigation warning
-          e.stopPropagation()
-        }}
-      >
-        <span>{cellData}</span>
-        <img
-          src={props.iconUrl}
-          alt={props.iconAltText}
-        />
-      </a>
-    )
-  }
+  const linkValue = urlTemplate.replace('${value}', cellData)
 
-  return <span>{cellData}</span>
+  // Check if the visibility field exists and its value is true in the row data
+  const isVisible = visibilityField ? props.rowData?.[visibilityField] === true : true
+  return (
+    <span className="inline-flex items-center">
+      <DefaultCell {...props} />
+      {isVisible && (
+        <img
+          src={iconUrl}
+          alt={iconAltText}
+          className="icon-link bg-white rounded-md mx-2 py-1 cursor-pointer"
+          title={linkValue}
+          onClick={(e) => {
+            // Prevent PayloadCMS form navigation warning
+            e.stopPropagation()
+            // Navigate to URL in same window
+            window.location.href = linkValue
+          }}
+          role="link"
+          tabIndex={0}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              e.stopPropagation()
+              window.location.href = linkValue
+            }
+          }}
+        />
+      )}
+    </span>
+  )
 }
 
 export default IconLinkCell
