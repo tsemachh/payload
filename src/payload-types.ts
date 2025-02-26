@@ -29,6 +29,11 @@ export type StockType =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StockOrigin".
+ */
+export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
  */
 export type MeetingType =
@@ -175,6 +180,7 @@ export interface Stock {
   stockId: string;
   fullName?: string | null;
   type?: StockType;
+  origin: StockOrigin;
   tradable?: boolean | null;
   private?: boolean | null;
   relatedStock?: (string | null) | Stock;
@@ -401,6 +407,7 @@ export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   fullName?: T;
   type?: T;
+  origin?: T;
   tradable?: T;
   private?: T;
   relatedStock?: T;
