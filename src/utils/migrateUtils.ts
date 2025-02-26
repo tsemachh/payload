@@ -113,7 +113,8 @@ export async function upsertStockFromImport(
   stockSequence: string | null,
   row: ImportStock,
   req: PayloadRequest,
-  tradable: boolean
+  tradable: boolean,
+  isForeign: boolean  = false
 ) {
   
   const stockData:Partial<Stock> = {
@@ -123,6 +124,7 @@ export async function upsertStockFromImport(
     type: row.type,
     longName: row.longName,
     tradable: tradable,
+    origin: (isForeign? "Foreign" : "TASE")
   }
 
   if (!stockSequence) {

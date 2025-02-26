@@ -162,6 +162,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const predictaStocks: Set<string> = await getPredictaStockIds(pool)
     const emdaStocks: Set<string> = await getEmdaStockIds(pool)
     const relationStocks: Map<string, string> = await getStockRelations(pool)
+    const rootRelatedStocks:Set<string> = new Set<string>(relationStocks.values())
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
     const resultStockValues = await getStockValues(pool)
     // Transform and insert data into Payload CMS
@@ -173,12 +174,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       row.stockID = `${row.stockID}`
       const relatedStock = relationStocks.get(row.stockID)
       const hasTradableRelationStock = relatedStock && predictaStocks.has(relatedStock)
+      const hasForeignRelationStock = relatedStock && !predictaStocks.has(relatedStock)
       const isPredictaStock = predictaStocks.has(row.stockID)
       const isEmdaStock = emdaStocks.has(row.stockID)
       const stockHasMeeting = stocksInMeeting.has(row.stockID)
+      const isRootForeignStock=rootRelatedStocks.has(row.stockID) && !isPredictaStock
       if (
         isPredictaStock ||
         (isEmdaStock && hasTradableRelationStock) || //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
+        (hasForeignRelationStock) || (isRootForeignStock) ||
         stockHasMeeting
       ) {
         try {
@@ -186,7 +190,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           if (!stockSequence) stockSequence = await getSeqeunceStockId(payload, row.stockID)
           row.type = getStockType(row)
 
-          stockSequence=await upsertStockFromImport(stockSequence,row,req,predictaStocks.has(row.stockID))
+          stockSequence=await upsertStockFromImport(stockSequence,row,req,isPredictaStock || isRootForeignStock,hasForeignRelationStock || isRootForeignStock )
           stockIdTOSequence.set(row.stockID, stockSequence)
 
           successCount++
@@ -216,14 +220,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     }
     successCount = 0
     errorCount = 0
+    const relationStocksLength = relationStocks.size
     for (const [id1, id2] of relationStocks.entries()) {
-      const relationStocksLength = relationStocks.size
       try {
         const relatedStock = stockIdTOSequence.get(id2)
         const theStockToUpdate = stockIdTOSequence.get(id1)
         const isPredictaStock = predictaStocks.has(id2)
 
-        if (theStockToUpdate && relatedStock && isPredictaStock) {
+        if (theStockToUpdate && relatedStock/* && isPredictaStock*/) {
           await payload.update({
             collection: 'stocks',
             id: theStockToUpdate,
@@ -262,9 +266,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         row.stockID = `${row.stockID}`
         const stockSequence = stockIdTOSequence.get(row.stockID)
         const isPredictaStock = predictaStocks.has(row.stockID)
+        const isRootForeignStock=rootRelatedStocks.has(row.stockID) && !isPredictaStock
 
-        if (!stockSequence || !isPredictaStock) {
-          const faultComments = `Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} 
+        if (!stockSequence || (!isPredictaStock && !isRootForeignStock)) {
+          const faultComments = `Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} isRootForeignStock:${isRootForeignStock} 
          `
           payload.create({
             collection: 'migration-faults',

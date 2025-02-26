@@ -18,7 +18,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName','origin'],
   },
   versions: {
     drafts: false,
@@ -94,6 +94,20 @@ export const Stocks: CollectionConfig = {
                   ],
                   index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
+                },
+                {
+                  name: 'origin',
+                  label: 'מקור',
+                  type: 'select',
+                  interfaceName: 'StockOrigin',
+                  options: [
+                    { label: 'בורסה', value: 'TASE' },
+                    { label: 'חו״ל', value: 'Foreign' },
+                    { label: 'פרטי', value: 'Private' }
+                  ],
+                  index: true,
+                  required: true,
+                  defaultValue : 'TASE'
                 },
                 {
                   name: 'tradable',
