@@ -1,7 +1,11 @@
 import type React from 'react'
 
-export function TrueIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
+interface IconProps {
+  iconType: boolean
+}
+
+export function BooleanIcon({ iconType, ...props }: IconProps & React.SVGProps<SVGSVGElement>) {
+  return iconType ? (
     <svg
       width="24"
       height="24"
@@ -18,11 +22,7 @@ export function TrueIcon(props: React.SVGProps<SVGSVGElement>) {
         strokeLinejoin="round"
       />
     </svg>
-  )
-}
-
-export function FalseIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
+  ) : (
     <svg
       width="24"
       height="24"

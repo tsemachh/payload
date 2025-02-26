@@ -25,7 +25,7 @@ import { StatusType, type FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
-import { TrueIcon, FalseIcon } from './ui/icons'
+import { BooleanIcon } from './ui/icons'
 import { formatDateTime } from '../helpers/utils'
 
 interface Column {
@@ -77,12 +77,7 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) =>
-      row.electronicVotingEnabled ? (
-        <TrueIcon className="h-6 w-6 text-green-500" />
-      ) : (
-        <FalseIcon className="h-6 w-6 text-red-500" />
-      ),
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
   },
   {
     key: 'resultsConfirmationStatus',
@@ -90,12 +85,7 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) =>
-      row.resultsConfirmationStatus ? (
-        <TrueIcon className="h-6 w-6 text-green-500" />
-      ) : (
-        <FalseIcon className="h-6 w-6 text-red-500" />
-      ),
+    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
   },
   {
     key: 'committeeInitiated',
@@ -103,12 +93,7 @@ const columns: Column[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) =>
-      row.committeeInitiated ? (
-        <TrueIcon className="h-6 w-6 text-green-500" />
-      ) : (
-        <FalseIcon className="h-6 w-6 text-red-500" />
-      ),
+    render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
   },
   {
     key: '_status',
@@ -320,12 +305,12 @@ export function DataTable({ data }: DataTableProps) {
             {
               value: 'true',
               count: trueCount,
-              icon: <TrueIcon className="h-6 w-6 text-green-500" />,
+              icon: <BooleanIcon iconType={true} />,
             },
             {
               value: 'false',
               count: falseCount,
-              icon: <FalseIcon className="h-6 w-6 text-red-500" />,
+              icon: <BooleanIcon iconType={false} />,
             },
           ]
         } else if (column.type === 'date') {
