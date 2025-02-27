@@ -257,6 +257,7 @@ LOCAL_DIGEST=$(sudo docker image inspect "${IMAGE}:${TAG}" --format '{{index .Re
 if [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image detected. Pulling..."
   sudo docker pull "${IMAGE}:${TAG}"
+  sudo docker-compose -f "${COMPOSE_FILE}" down
   sudo docker-compose -f "${COMPOSE_FILE}" up -d --force-recreate
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image updated."
 else
