@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Import Stocks API
+  description: API for importing stock data into the system
+  version: 1.0.0
+  
+servers:
+  - url: /api
+    description: Current server
+  
+paths:
+  /import-stocks:
+    post:
+      summary: Import stocks
+      description: Imports multiple stock records with their values
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ImportStock'
+      responses:
+        '200':
+          description: Successfully imported stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "successfully updated rows info , total:42 rows"
+        '403':
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "forbidden"
+
+components:
+  schemas:
+    ImportStock:
+      type: object
+      required:
+        - stockID
+        - name
+        - symbol
+        - type
+        - valueDate
+      properties:
+        stockID:
+          type: integer
+          description: Unique identifier for the stock
+          example: 1234
+        name:
+          type: string
+          description: Short name of the stock
+          example: "AAPL"
+        symbol:
+          type: string
+          description: Trading symbol
+          example: "AAPL"
+        type:
+          type: string
+          description: Type of security
+          enum:
+            - מניות
+            - אופציות
+            - איגרות חוב
+            - איגרות חוב להמרה
+            - יחידת השתתפות
+            - תעודות מדד
+            - תעודות סל
+            - קרנות נאמנות
+            - נייר ערך מסחרי
+            - אחר
+            - זכויות
+            - מק"מ
+            - שטרי הון
+        closingRate:
+          type: number
+          description: Closing rate of the stock
+          example: 175.84
+        marketValue:
+          type: number
+          description: Market value
+          example: 2800000000
+        registeredValue:
+          type: number
+          description: Registered value
+          example: 12500000
+        valueDate:
+          type: string
+          format: date-time
+          description: Date for which the values are applicable
+          example: "2024-02-25T00:00:00"
+        longName:
+          type: string
+          description: Full name of the stock
+          example: "Apple Inc."
+
+  securitySchemes:
+    userAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication for authorized users
