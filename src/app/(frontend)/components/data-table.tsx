@@ -19,19 +19,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Search, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown, FilterX } from 'lucide-react'
 import type React from 'react'
-import { StatusType, type FutureMeetingTableData } from '../types'
+import type { FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
-import { TrueIcon, FalseIcon } from './ui/icons'
+import { BooleanIcon } from './ui/icons'
+import { escapeRegExp, formatDateTime } from '../helpers/utils'
 
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
   type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
   filterable?: boolean
+  positionCenter?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
 }
 
@@ -44,17 +47,9 @@ const columns: Column[] = [
     key: 'meetingDate',
     header: 'מועד האסיפה',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.meetingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.meetingDate)
     },
   },
   { key: 'location', header: 'מיקום', type: 'string' },
@@ -62,34 +57,18 @@ const columns: Column[] = [
     key: 'holdingsLimit',
     header: 'מועד קובע',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.holdingsLimit)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.holdingsLimit, true)
     },
   },
   {
     key: 'proxyVotingDate',
     header: 'מועד מסירת הצבעות',
     type: 'datetime',
-    filterable: true,
+    // filterable: true,
     render: (row) => {
-      const date = new Date(row.proxyVotingDate)
-      return date.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return formatDateTime(row.proxyVotingDate)
     },
   },
   { key: 'comments', header: 'הערות', type: 'string' },
@@ -98,52 +77,24 @@ const columns: Column[] = [
     header: 'האסיפה מופיעה במערכת האלק׳?',
     type: 'boolean',
     filterable: true,
-    render: (row) =>
-      row.electronicVotingEnabled ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
-      ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
-      ),
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
   },
   {
     key: 'resultsConfirmationStatus',
     header: 'אימות תוצאות האסיפה',
     type: 'boolean',
     filterable: true,
-    render: (row) =>
-      row.resultsConfirmationStatus ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
-      ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
-      ),
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
   },
   {
     key: 'committeeInitiated',
     header: 'תאגיד פיננסי דורש ועדה',
     type: 'boolean',
     filterable: true,
-    render: (row) =>
-      row.committeeInitiated ? (
-        <TrueIcon className="h-4 w-4 text-green-500" />
-      ) : (
-        <FalseIcon className="h-4 w-4 text-red-500" />
-      ),
-  },
-  {
-    key: '_status',
-    header: 'סטטוס',
-    type: 'string',
-    filterable: true,
-    render: (row) => {
-      switch (row._status) {
-        case StatusType.Publish:
-          return 'פורסם'
-        case StatusType.Draft:
-          return 'טיוטה'
-        default:
-          return row._status
-      }
-    },
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
   },
 ]
 
@@ -233,15 +184,29 @@ export function DataTable({ data }: DataTableProps) {
     setIsFilterActive(!isFilterActive)
   }
 
+  const highlightText = (text: string, highlight: string) => {
+    if (!highlight.trim()) {
+      return text
+    }
+    const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight)})`, 'gi')
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <span key={i} style={{ backgroundColor: 'yellow' }}>
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    )
+  }
+
   const filteredAndSortedData = useMemo(() => {
     let filteredItems = [...data]
     // Apply search filter
     if (searchTerm) {
-      const lowercasedSearchTerm = searchTerm.toLowerCase()
+      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
-        Object.values(item).some((value) =>
-          String(value).toLowerCase().includes(lowercasedSearchTerm),
-        ),
+        Object.values(item).some((value) => searchRegex.test(String(value))),
       )
     }
 
@@ -339,12 +304,12 @@ export function DataTable({ data }: DataTableProps) {
             {
               value: 'true',
               count: trueCount,
-              icon: <TrueIcon className="h-4 w-4 text-green-500" />,
+              icon: <BooleanIcon iconType={true} />,
             },
             {
               value: 'false',
               count: falseCount,
-              icon: <FalseIcon className="h-4 w-4 text-red-500" />,
+              icon: <BooleanIcon iconType={false} />,
             },
           ]
         } else if (column.type === 'date') {
@@ -362,148 +327,190 @@ export function DataTable({ data }: DataTableProps) {
     return facets
   }, [data])
 
-  return (
-    <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
-      <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <div className="relative w-1/3">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="חיפוש כללי..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10 text-right"
-          />
-        </div>
-        <div className="flex space-x-2 space-x-reverse">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => resetFilters()}
-            className={cn('flex items-center', isFilterActive && 'bg-muted')}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            סינון
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex justify-between items-center">
-                <span>עמודות</span>
-                <Settings2 className="h-4 w-4 mr-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {columns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={String(column.key)}
-                  checked={columnVisibility[String(column.key)]}
-                  onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                  onSelect={(event) => event.preventDefault()}
-                  dir="rtl"
-                >
-                  {typeof column.header === 'string' ? column.header : 'עמודה'}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+  const renderTooltip = (content: React.ReactNode, tooltip: string) => (
+    <Tooltip>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent>
+        <p> {tooltip} </p>
+      </TooltipContent>
+    </Tooltip>
+  )
 
-      <div className="bg-background">
-        <div className="rounded-md border">
-          <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
-            <Table className="w-full border-collapse relative" dir="rtl">
-              <TableHeader className="sticky top-0 bg-background z-20 bg-gray-100">
-                <TableRow className="bg-muted/50 border-b border-border">
-                  {visibleColumns.map((column) => (
-                    <TableHead
-                      key={column.key}
-                      className="text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer"
-                    >
-                      <div className="flex items-center justify-start">
-                        <span onClick={() => handleSort(column.key)}>{column.header}</span>
-                        {getSortIcon(column.key)}
-                        {column.filterable && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                {getFilterIcon(column.key)}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {column.type === 'date' ? (
-                                <DateRangePicker
-                                  dateRange={filters[column.key] || { from: null, to: null }}
-                                  onDateRangeChange={(range) => handleFilter(column.key, range)}
-                                />
-                              ) : (
-                                facetedFilters[column.key]?.map(({ value, count, icon }) => (
-                                  <DropdownMenuCheckboxItem
-                                    key={value}
-                                    checked={(filters[column.key] || []).includes(value)}
-                                    onCheckedChange={(checked) => {
-                                      const currentFilters = filters[column.key] || []
-                                      const newFilters = checked
-                                        ? [...currentFilters, value]
-                                        : currentFilters.filter((v: any) => v !== value)
-                                      handleFilter(column.key, newFilters)
-                                    }}
-                                  >
-                                    {icon ? icon : value}({count})
-                                  </DropdownMenuCheckboxItem>
-                                ))
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleFilter(column.key, 'all')}>
-                                הסר סינון
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    </TableHead>
-                  ))}
-                  <TableHead className="w-1"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedData.map((row) => (
-                  <TableRow
-                    key={row.meetingId}
-                    className="hover:bg-muted/70 group transition-colors"
+  return (
+    <TooltipProvider>
+      <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
+        <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
+          <div className="relative w-1/3">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="חיפוש כללי..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 text-right"
+            />
+          </div>
+          <div className="flex space-x-2 space-x-reverse">
+            {renderTooltip(
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetFilters()}
+                className={cn(
+                  'flex justify-between items-center w-40',
+                  isFilterActive && 'bg-muted',
+                )}
+              >
+                {isFilterActive ? 'הסר סינון' : 'סינון'}
+                {isFilterActive ? (
+                  <FilterX className="h-4 w-4 mr-2" />
+                ) : (
+                  <Filter className="h-4 w-4 mr-2" />
+                )}
+              </Button>,
+              isFilterActive ? 'איפוס כל הסינונים' : 'הוספת כפתור לסינון בכל ראש עמודה ',
+            )}
+            <DropdownMenu>
+              {' '}
+              {renderTooltip(
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex justify-between items-center w-40"
                   >
+                    <span>עמודות</span>
+                    <Settings2 className="h-4 w-4 mr-2" />
+                  </Button>
+                </DropdownMenuTrigger>,
+                'בחירת עמודות להצגה',
+              )}
+              <DropdownMenuContent>
+                {columns.map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={String(column.key)}
+                    checked={columnVisibility[String(column.key)]}
+                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                    onSelect={(event) => event.preventDefault()}
+                    dir="rtl"
+                  >
+                    {typeof column.header === 'string' ? column.header : 'עמודה'}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="bg-background">
+          <div className="rounded-md border cursor-default">
+            <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
+              <Table className="w-full border-collapse relative" dir="rtl">
+                <TableHeader className="sticky top-0 bg-background z-20 bg-gray-100">
+                  <TableRow className="bg-muted/50 border-b border-border">
                     {visibleColumns.map((column) => (
-                      <TableCell
-                        key={`${row.meetingId}-${String(column.key)}`}
-                        className="py-2 px-3 text-right whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis"
+                      <TableHead
+                        key={column.key}
+                        className="text-right max-w-[200px] min-w-[70px] overflow-hidden text-ellipsis cursor-pointer"
                       >
-                        {column.render ? column.render(row) : String(row[column.key])}
-                      </TableCell>
+                        <div className="flex items-center justify-start">
+                          <span onClick={() => handleSort(column.key)}>{column.header}</span>
+                          {getSortIcon(column.key)}
+                          {isFilterActive && column.filterable && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  {getFilterIcon(column.key)}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {column.type === 'date' ? (
+                                  <DateRangePicker
+                                    dateRange={filters[column.key] || { from: null, to: null }}
+                                    onDateRangeChange={(range) => handleFilter(column.key, range)}
+                                  />
+                                ) : (
+                                  facetedFilters[column.key]?.map(({ value, count, icon }) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={value}
+                                      checked={(filters[column.key] || []).includes(value)}
+                                      onCheckedChange={(checked) => {
+                                        const currentFilters = filters[column.key] || []
+                                        const newFilters = checked
+                                          ? [...currentFilters, value]
+                                          : currentFilters.filter((v: any) => v !== value)
+                                        handleFilter(column.key, newFilters)
+                                      }}
+                                    >
+                                      {icon ? icon : value}({count})
+                                    </DropdownMenuCheckboxItem>
+                                  ))
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleFilter(column.key, 'all')}>
+                                  הסר סינון
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </TableHead>
                     ))}
-                    <TableCell>
-                      <div className="relative h-full">
-                        <div className="absolute left-0 top-0 bottom-0 opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 transition-opacity whitespace-nowrap ">
-                          {row.meetingInviteUrl && (
+                    <TableHead className="sticky left-0 z-10 w-1"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedData.map((row) => (
+                    <TableRow
+                      key={row.meetingId}
+                      className="hover:bg-muted/70 group transition-colors"
+                    >
+                      {visibleColumns.map((column) => (
+                        <TableCell
+                          key={`${row.meetingId}-${String(column.key)}`}
+                          style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
+                          className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        >
+                          {renderTooltip(
+                            <span>
+                              {column.render
+                                ? column.render(row)
+                                : highlightText(String(row[column.key]), searchTerm)}
+                            </span>,
+                            String(
+                              column.type == 'boolean'
+                                ? row[column.key]
+                                  ? 'כן'
+                                  : 'לא'
+                                : column.render
+                                  ? column.render(row)
+                                  : row[column.key],
+                            ),
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell className="relative group sticky left-[80px] z-10">
+                        {row.meetingInviteUrl &&
+                          renderTooltip(
                             <a
                               href={row.meetingInviteUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center space-x-2 space-x-reverse px-4 h-full hover:bg-muted/50 transition-colors"
                             >
-                              <span className="text-sm text-foreground hover:text-blue-800">
+                              <span className="absolute hidden h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground hover:text-blue-800 whitespace-nowrap">
                                 זימון אסיפה
                               </span>
-                            </a>
+                            </a>,
+                            'פתיחת זימון האסיפה',
                           )}
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

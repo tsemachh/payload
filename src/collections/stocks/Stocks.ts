@@ -19,6 +19,10 @@ export const Stocks: CollectionConfig = {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
     listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName','origin'],
+    pagination: {
+      defaultLimit: 500,
+      limits: [10, 20, 50,100,200,500],
+    },
   },
   versions: {
     drafts: false,
