@@ -17,8 +17,11 @@ const MigrationFaults: CollectionConfig= {
       index:true
     }
   ],
-  admin:{
+  admin: {
     group:"מיגרציה",
+    useAsTitle: 'typeId',
+    defaultColumns: ['comments','type', 'typeId', 'row'],
+    listSearchableFields: ['comments','type', 'typeId', 'row'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50,100,200,500],
