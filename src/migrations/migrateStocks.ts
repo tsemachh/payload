@@ -173,10 +173,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const isPredictaStock = predictaStocks.has(row.stockID)
       const isEmdaStock = emdaStocks.has(row.stockID)
       const stockHasMeeting = stocksInMeeting.has(row.stockID)
+      const isRootEmdaStock=rootRelatedStocks.has(row.stockID) && isEmdaStock
       const isRootForeignStock=rootRelatedStocks.has(row.stockID) && !isPredictaStock
       if (
         isPredictaStock ||
-        (isEmdaStock && hasTradableRelationStock) || //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
+        (isEmdaStock && (hasTradableRelationStock || isRootEmdaStock)) ||
         (hasForeignRelationStock) || (isRootForeignStock) ||
         stockHasMeeting
       ) {
@@ -229,9 +230,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       try {
         const relatedStock = stockIdTOSequence.get(id2)
         const theStockToUpdate = stockIdTOSequence.get(id1)
-        const isPredictaStock = predictaStocks.has(id2)
 
-        if (theStockToUpdate && relatedStock/* && isPredictaStock*/) {
+        if (theStockToUpdate && relatedStock) {
           await payload.update({
             collection: 'stocks',
             id: theStockToUpdate,
@@ -248,9 +248,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'stock-relation',
             typeId: `${id1}->${id2}`,
             comments: createStockRelationFaultComment({
-              stockId1: id1,
-              stockId2: id2,
-              isPredictaStock,
+              stockId1: `${id1}-${theStockToUpdate}`,
+              stockId2: `${id2}-${relatedStock}`,
             }),
           })
           errorCount++

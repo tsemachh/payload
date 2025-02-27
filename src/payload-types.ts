@@ -50,16 +50,7 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
  */
 export type RolePermissions =
   | {
-      entity: (
-        | 'stocks'
-        | 'stock-values'
-        | 'meetings'
-        | 'users'
-        | 'roles'
-        | 'document'
-        | 'migration-faults'
-        | 'search'
-      )[];
+      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document' | 'migration-faults')[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -131,7 +122,6 @@ export interface Config {
     roles: Role;
     document: Document;
     'migration-faults': MigrationFault;
-    search: Search;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -145,7 +135,6 @@ export interface Config {
     roles: RolesSelect<false> | RolesSelect<true>;
     document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
-    search: SearchSelect<false> | SearchSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -334,42 +323,6 @@ export interface MigrationFault {
   updatedAt: string;
 }
 /**
- * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "search".
- */
-export interface Search {
-  id: string;
-  title?: string | null;
-  priority?: number | null;
-  doc:
-    | {
-        relationTo: 'stocks';
-        value: string | Stock;
-      }
-    | {
-        relationTo: 'meetings';
-        value: string | Meeting;
-      }
-    | {
-        relationTo: 'migration-faults';
-        value: string | MigrationFault;
-      };
-  stockId?: string | null;
-  name?: string | null;
-  symbol?: string | null;
-  meetingId?: number | null;
-  magnaId?: string | null;
-  type?: string | null;
-  typeId?: string | null;
-  comments?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
@@ -403,10 +356,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
-      } | null)
-    | ({
-        relationTo: 'search';
-        value: string | Search;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -587,27 +536,6 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   type?: T;
   typeId?: T;
   row?: T;
-  comments?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "search_select".
- */
-export interface SearchSelect<T extends boolean = true> {
-  title?: T;
-  priority?: T;
-  doc?: T;
-  stockId?: T;
-  name?: T;
-  symbol?: T;
-  meetingId?: T;
-  magnaId?: T;
-  type?: T;
-  typeId?: T;
   comments?: T;
   creator?: T;
   updator?: T;
