@@ -61,13 +61,11 @@ export function createStockFaultComment({
 export function createStockRelationFaultComment({
   stockId1,
   stockId2,
-  isPredictaStock,
 }: {
   stockId1: string
   stockId2: string
-  isPredictaStock: boolean
 }): string {
-  return `Stock relation not available - stock :${stockId1} to stock ${stockId2} isPredictaStock:${isPredictaStock}`
+  return `Stock relation not available - stock :${stockId1} to stock ${stockId2} i`
 }
 
 /**
