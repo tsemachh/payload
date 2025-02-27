@@ -220,7 +220,7 @@ export const Stocks: CollectionConfig = {
   ],
   endpoints: [
     {
-      path: '/importStocks',
+      path: '/import-stocks',
       method: 'post',
       handler: ImportStocksEndPoint,
     },
