@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
-import { FutureMeetingTableData, StatusType } from '../types'
+import { FutureMeetingTableData } from '../types'
 
 export async function fetchMeetingsForTable() {
   const payload = await getPayload({ config })
@@ -18,10 +18,10 @@ export async function fetchMeetingsForTable() {
       companyName: stockPresent?.name || '',
       // marketValue: stockPresent?.marketValue || 0,
       meetingType: meeting.type || '',
-      meetingDate: meeting.meetingDate?.split('T')[0] || '',
+      meetingDate: meeting.meetingDate || '',
       location: meeting.location || '',
-      holdingsLimit: meeting.holdingsLimit?.split('T')[0] || '',
-      proxyVotingDate: meeting.proxyVotingDate?.split('T')[0] || '',
+      holdingsLimit: meeting.holdingsLimit || '',
+      proxyVotingDate: meeting.proxyVotingDate || '',
       // votingDocUrl: meeting.votingDocUrl || '',
       // meetingInviteUrl: meeting.meetingInviteUrl || '',
       meetingInviteUrl: 'https://github.com/orgs/shefing/projects/3/views/1',
@@ -29,7 +29,6 @@ export async function fetchMeetingsForTable() {
       electronicVotingEnabled: !!meeting.electronicVotingEnabled,
       resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
       committeeInitiated: !!meeting.committeeInitiated,
-      _status: meeting._status ? (meeting._status as StatusType) : StatusType.None,
     }
   })
 }

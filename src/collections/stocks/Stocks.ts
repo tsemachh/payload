@@ -1,5 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
+import { IconLinkProps } from '../../components/link/IconLinkProps'
+
+const stockLinkProps: IconLinkProps = {
+  urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
+  iconUrl: '/faviconStock.ico',
+  iconAltText: 'קישור לבורסה',
+  visibilityField: 'tradable'
+}
 
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
@@ -10,7 +18,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName','origin'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50,100,200,500],
@@ -38,27 +46,16 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   access: { update: () => false },
                   admin: {
-                    description: 'ניתן להעריכה רק בעת יצירת נייר הערך',
-                  },
-                },
-                {
-                  name: 'stockLink',
-                  label: 'TASAקישור ל',
-                  type: 'text',
-                  admin: {
-                    condition: (siblingData) => siblingData.tradable,
                     components: {
-                      Field: {
-                        path: '/components/link/LinkFromRelationField',
-                        clientProps: {
-                          relationField: 'stockId',
-                          baseUrl: 'https://market.tase.co.il/he/market_data/security/',
-                          suffix: '/major_data',
-                          name: 'הבורסה לניירות ערך',
-                        },
+                      Cell: {
+                        path: '/components/link/IconLinkCell',
+                        clientProps: stockLinkProps,
                       },
+                      Field: {
+                        path: '/components/link/IconLinkTextField',
+                        clientProps: stockLinkProps,
+                      }
                     },
-                    readOnly: true,
                   },
                 },
                 {
@@ -101,6 +98,20 @@ export const Stocks: CollectionConfig = {
                   ],
                   index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
+                },
+                {
+                  name: 'origin',
+                  label: 'מקור',
+                  type: 'select',
+                  interfaceName: 'StockOrigin',
+                  options: [
+                    { label: 'בורסה', value: 'TASE' },
+                    { label: 'חו״ל', value: 'Foreign' },
+                    { label: 'פרטי', value: 'Private' }
+                  ],
+                  index: true,
+                  required: true,
+                  defaultValue : 'TASE'
                 },
                 {
                   name: 'tradable',
