@@ -9,7 +9,7 @@ servers:
     description: Current server
   
 paths:
-  /stocks/importStocks:
+  /stocks/import-stocks:
     post:
       summary: Import stocks
       description: Imports multiple stock records with their values
