@@ -64,7 +64,7 @@ export default function SwaggerLayout({
       </head>
       <body>
         {children}
-        <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+        <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js" async></script>
       </body>
     </html>
   )
