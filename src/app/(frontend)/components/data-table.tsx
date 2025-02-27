@@ -20,7 +20,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Search, Settings2, ArrowUp, ArrowDown, Filter, ChevronDown, FilterX } from 'lucide-react'
+import {
+  Search,
+  Settings2,
+  ArrowUp,
+  ArrowDown,
+  Filter,
+  ChevronDown,
+  FilterX,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import type { FutureMeetingTableData } from '../types'
 import { cn } from '@/lib/utils'
@@ -28,6 +37,7 @@ import { DateRangePicker } from '@/components/date-range-picker'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
 import { escapeRegExp, formatDateTime } from '../helpers/utils'
+import { Checkbox } from './ui/checkbox'
 
 interface Column {
   key: keyof FutureMeetingTableData
@@ -168,20 +178,36 @@ export function DataTable({ data }: DataTableProps) {
   const handleFilter = (key: string, value: any) => {
     setFilters((prev) => {
       const newFilters = { ...prev }
-      if (value === 'all' || value.length == 0) {
-        delete newFilters[key]
-      } else {
+      if (value === 'all') {
+        // Initialize all options as checked when resetting the filter
+        const allOptions = Array.from(
+          new Set(data.map((item) => String(item[key as keyof FutureMeetingTableData]))),
+        )
+        newFilters[key] = allOptions
+      } else if (Array.isArray(value)) {
         newFilters[key] = value
       }
-      // If no filters remain, ensure isFilterActive stays true
-      // so the filter icons remain visible
       return newFilters
     })
   }
 
   const resetFilters = () => {
-    setFilters({})
-    setIsFilterActive(!isFilterActive)
+    if (isFilterActive) {
+      setFilters({})
+      setIsFilterActive(false)
+    } else {
+      const initialFilters: { [key: string]: any } = {}
+      columns.forEach((column) => {
+        if (column.filterable) {
+          const allOptions = Array.from(
+            new Set(data.map((item) => String(item[column.key as keyof FutureMeetingTableData]))),
+          )
+          initialFilters[column.key] = allOptions
+        }
+      })
+      setFilters(initialFilters)
+      setIsFilterActive(true)
+    }
   }
 
   const highlightText = (text: string, highlight: string) => {
@@ -214,9 +240,9 @@ export function DataTable({ data }: DataTableProps) {
     if (Object.keys(filters).length > 0) {
       filteredItems = filteredItems.filter((item) => {
         for (const [key, value] of Object.entries(filters)) {
-          // Skip empty filters
-          if (value === undefined || (Array.isArray(value) && value.length === 0)) {
-            continue
+          // If the filter is an empty array, no items should pass
+          if (Array.isArray(value) && value.length === 0) {
+            return false
           }
 
           // Handle date filters
@@ -238,15 +264,12 @@ export function DataTable({ data }: DataTableProps) {
           }
           // Handle array filters (faceted)
           else if (Array.isArray(value)) {
-            if (value.length === 0) {
-              continue
-            }
             if (!value.includes(String(item[key as keyof FutureMeetingTableData]))) {
               return false
             }
           }
           // Handle other filter types
-          else if (value !== undefined && item[key as keyof FutureMeetingTableData] !== value) {
+          else if (item[key as keyof FutureMeetingTableData] !== value) {
             return false
           }
         }
@@ -342,12 +365,18 @@ export function DataTable({ data }: DataTableProps) {
         <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
           <div className="relative w-1/3">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            {searchTerm && (
+              <X
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ז-10"
+                onClick={() => setSearchTerm('')}
+              />
+            )}
             <Input
               placeholder="חיפוש כללי..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-10 text-right"
-            />
+            ></Input>
           </div>
           <div className="flex space-x-2 space-x-reverse">
             {renderTooltip(
@@ -432,7 +461,9 @@ export function DataTable({ data }: DataTableProps) {
                                   facetedFilters[column.key]?.map(({ value, count, icon }) => (
                                     <DropdownMenuCheckboxItem
                                       key={value}
-                                      checked={(filters[column.key] || []).includes(value)}
+                                      checked={
+                                        !filters[column.key] || filters[column.key].includes(value)
+                                      }
                                       onCheckedChange={(checked) => {
                                         const currentFilters = filters[column.key] || []
                                         const newFilters = checked
@@ -440,14 +471,30 @@ export function DataTable({ data }: DataTableProps) {
                                           : currentFilters.filter((v: any) => v !== value)
                                         handleFilter(column.key, newFilters)
                                       }}
+                                      className="flex items-center justify-between py-2 remove-checked"
                                     >
-                                      {icon ? icon : value}({count})
+                                      <Checkbox
+                                        checked={
+                                          !filters[column.key] ||
+                                          filters[column.key].includes(value)
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">{icon ? icon : value}</span>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                          {count}
+                                        </span>
+                                      </div>
                                     </DropdownMenuCheckboxItem>
                                   ))
                                 )}
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleFilter(column.key, 'all')}>
-                                  הסר סינון
+                                <DropdownMenuItem
+                                  className="justify-center text-center"
+                                  onClick={() => handleFilter(column.key, 'all')}
+                                >
+                                  בחר הכל
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -455,7 +502,7 @@ export function DataTable({ data }: DataTableProps) {
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="sticky left-0 z-10 w-1"></TableHead>
+                    <TableHead className="sticky left-0 z-10 w-0"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
