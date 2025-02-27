@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Import Stocks API
-  description: API for importing stock data into the system
+  description: API for importing stock data into the עמדה system
   version: 1.0.0
   
 servers:
@@ -12,7 +12,7 @@ paths:
   /stocks/import-stocks:
     post:
       summary: Import stocks
-      description: Imports multiple stock records with their values
+      description: Imports array of stock records with their values
       security:
         - userAuth: []
       requestBody:
@@ -22,7 +22,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/ImportStock'
+                $ref: '#/components/schemas/ImportedStock'
       responses:
         '200':
           description: Successfully imported stocks
@@ -47,7 +47,8 @@ paths:
 
 components:
   schemas:
-    ImportStock:
+    ImportedStock:
+      description:  אובייקט נייר ערך
       type: object
       required:
         - stockID
@@ -58,19 +59,19 @@ components:
       properties:
         stockID:
           type: integer
-          description: Unique identifier for the stock
-          example: 1234
+          description: מזהה נייר ערך
+          example: 1080597
         name:
           type: string
-          description: Short name of the stock
-          example: "AAPL"
+          description: שם נייר ערך
+          example: "גילת טלקום"
         symbol:
           type: string
-          description: Trading symbol
-          example: "AAPL"
+          description: סימול נייר ערך
+          example: "גלטל"
         type:
           type: string
-          description: Type of security
+          description: סוג נייר ערך
           enum:
             - מניות
             - אופציות
@@ -87,25 +88,25 @@ components:
             - שטרי הון
         closingRate:
           type: number
-          description: Closing rate of the stock
-          example: 175.84
+          description: שער סגירה
+          example: 68.6
         marketValue:
           type: number
-          description: Market value
-          example: 2800000000
+          description: שווי שוק
+          example: 59043375.159
         registeredValue:
           type: number
-          description: Registered value
-          example: 12500000
+          description: הון רשום
+          example: 86069060
         valueDate:
           type: string
           format: date-time
-          description: Date for which the values are applicable
+          description: תאריך ערך
           example: "2024-02-25T00:00:00"
         longName:
           type: string
-          description: Full name of the stock
-          example: "Apple Inc."
+          description: שם חברה
+          example: "סאטקום מערכות בע״ם"
 
   securitySchemes:
     userAuth:
