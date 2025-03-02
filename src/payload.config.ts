@@ -106,7 +106,12 @@ export default buildConfig({
     }),
   ],
   jobs: {
-    tasks: [updateCompletedMeetings], // Use the imported job
+    tasks: [
+      {
+        handler: path.resolve(dirname, 'src/jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
+        slug: 'update-completed-meetings',
+      },
+    ],
     autoRun: [
       {
         cron: '0 0 * * *', // Every midnight
@@ -115,5 +120,6 @@ export default buildConfig({
       },
     ],
     shouldAutoRun: async () => true,
-  },
+
+  }
 })
