@@ -21,6 +21,7 @@ import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
 
 import MigrationFaults from '@/collections/migration/MigrationFaults'
+import { updateCompletedMeetings } from './jobs/updateCompletedMeetings'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 /*
@@ -57,7 +58,7 @@ export default buildConfig({
     supportedLanguages: { he, en },
   },
   admin: {
-    dateFormat:"HH:mm dd/MM/yyyy",
+    dateFormat: 'HH:mm dd/MM/yyyy',
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
@@ -89,7 +90,7 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-//  logger,
+  //  logger,
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
@@ -104,4 +105,15 @@ export default buildConfig({
       usernameField: 'name', //name field to use from Users collection, 'user' by default
     }),
   ],
+  jobs: {
+    tasks: [updateCompletedMeetings], // Use the imported job
+    autoRun: [
+      {
+        cron: '0 0 * * *', // Every midnight
+        limit: 100,
+        queue: 'daily',
+      },
+    ],
+    shouldAutoRun: async () => true,
+  },
 })
