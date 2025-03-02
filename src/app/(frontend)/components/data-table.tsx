@@ -302,7 +302,7 @@ export function DataTable({ data }: DataTableProps) {
       if (sortConfig.direction === 'asc') {
         return <ArrowUp className="h-4 w-4 ml-2" />
       } else if (sortConfig.direction === 'desc') {
-        return <ArrowDown className="h-4 w-4 ml-2" />
+        return <ArrowDown className="h-4 w-4 " />
       }
     }
     return null
@@ -439,7 +439,10 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableHead
                         key={column.key}
-                        className="text-right max-w-[200px] min-w-[70px] overflow-hidden text-ellipsis cursor-pointer"
+                        className={cn(
+                          'text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer',
+                          sortConfig.key === column.key && 'bg-gray-200',
+                        )}
                       >
                         <div className="flex items-center justify-start">
                           <span onClick={() => handleSort(column.key)}>{column.header}</span>
