@@ -25,7 +25,7 @@ import { Roles } from '@shefing/authorization'
 import MigrationFaults from '@/collections/migration/MigrationFaults'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
-/*
+
 const transport = await logtailTransport({
   sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
   options: {
@@ -49,7 +49,7 @@ const logger = pino(
   },
   transport,
 )
-*/
+
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -91,7 +91,7 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-//  logger,
+  logger,
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
