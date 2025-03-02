@@ -13,7 +13,7 @@ export const initPayloadTest = async (options: InitOptions) => {
       }
     }
 
-    await payload.init({
+    await payload.init({    // @ts-ignore
       config,
       secret: 'test-secret'
     })

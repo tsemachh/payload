@@ -147,6 +147,9 @@ export interface Config {
     'firms-groups': {
       firms: 'firms';
     };
+    accounts: {
+      accounts: 'accounts';
+    };
   };
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
@@ -400,6 +403,10 @@ export interface Account {
   firm: string | Firm;
   isCentralAccount?: boolean | null;
   parentAccount?: (string | null) | Account;
+  accounts?: {
+    docs?: (string | Account)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -682,6 +689,7 @@ export interface AccountsSelect<T extends boolean = true> {
   firm?: T;
   isCentralAccount?: T;
   parentAccount?: T;
+  accounts?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

@@ -69,5 +69,16 @@ export const Accounts: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'accounts',
+      label: 'תתי חשבונות',
+      type: 'join',
+      collection: 'accounts',
+      on: 'parentAccount',
+      admin: {
+        defaultColumns: ['accountNumber', 'name'],
+        condition: (data) => data.isCentralAccount
+      }
+    }
   ],
 }
