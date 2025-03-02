@@ -50,7 +50,18 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
  */
 export type RolePermissions =
   | {
-      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document' | 'migration-faults')[];
+      entity: (
+        | 'stocks'
+        | 'stock-values'
+        | 'meetings'
+        | 'users'
+        | 'roles'
+        | 'document'
+        | 'migration-faults'
+        | 'firms'
+        | 'firms-groups'
+        | 'accounts'
+      )[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -122,11 +133,21 @@ export interface Config {
     roles: Role;
     document: Document;
     'migration-faults': MigrationFault;
+    firms: Firm;
+    'firms-groups': FirmsGroup;
+    accounts: Account;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    firms: {
+      accounts: 'accounts';
+    };
+    'firms-groups': {
+      firms: 'firms';
+    };
+  };
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
@@ -135,6 +156,9 @@ export interface Config {
     roles: RolesSelect<false> | RolesSelect<true>;
     document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
+    firms: FirmsSelect<false> | FirmsSelect<true>;
+    'firms-groups': FirmsGroupsSelect<false> | FirmsGroupsSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -313,10 +337,69 @@ export interface Document {
  */
 export interface MigrationFault {
   id: string;
-  type?: ('stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
+  type?: ('account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
   typeId?: string | null;
   row?: string | null;
   comments?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firms".
+ */
+export interface Firm {
+  id: string;
+  firmId: number;
+  order?: number | null;
+  name: string;
+  groups?: (string | FirmsGroup)[] | null;
+  active?: boolean | null;
+  showResearch?: boolean | null;
+  setResearchAsDefault?: boolean | null;
+  showResearchBond?: boolean | null;
+  setResearchAsDefaultBond?: boolean | null;
+  showResearchTrusteeship?: boolean | null;
+  setResearchAsDefaultTrusteeship?: boolean | null;
+  accounts?: {
+    docs?: (string | Account)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firms-groups".
+ */
+export interface FirmsGroup {
+  id: string;
+  groupId: number;
+  name: string;
+  firms?: {
+    docs?: (string | Firm)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts".
+ */
+export interface Account {
+  id: string;
+  accountNumber: number;
+  name: string;
+  firm: string | Firm;
+  isCentralAccount?: boolean | null;
+  parentAccount?: (string | null) | Account;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -356,6 +439,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
+      } | null)
+    | ({
+        relationTo: 'firms';
+        value: string | Firm;
+      } | null)
+    | ({
+        relationTo: 'firms-groups';
+        value: string | FirmsGroup;
+      } | null)
+    | ({
+        relationTo: 'accounts';
+        value: string | Account;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -537,6 +632,56 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   typeId?: T;
   row?: T;
   comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firms_select".
+ */
+export interface FirmsSelect<T extends boolean = true> {
+  firmId?: T;
+  order?: T;
+  name?: T;
+  groups?: T;
+  active?: T;
+  showResearch?: T;
+  setResearchAsDefault?: T;
+  showResearchBond?: T;
+  setResearchAsDefaultBond?: T;
+  showResearchTrusteeship?: T;
+  setResearchAsDefaultTrusteeship?: T;
+  accounts?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firms-groups_select".
+ */
+export interface FirmsGroupsSelect<T extends boolean = true> {
+  groupId?: T;
+  name?: T;
+  firms?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts_select".
+ */
+export interface AccountsSelect<T extends boolean = true> {
+  accountNumber?: T;
+  name?: T;
+  firm?: T;
+  isCentralAccount?: T;
+  parentAccount?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
