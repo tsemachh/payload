@@ -6,7 +6,7 @@ const nextConfig = {
     serverSourceMaps: true,
   },
   productionBrowserSourceMaps: true,
- output: 'standalone',
+  output: 'standalone',
   webpack: (config, { dev }) => {
     config.cache = false;
     if (!dev) {
@@ -15,7 +15,5 @@ const nextConfig = {
     return config;
   },
 }
-
-
 
 export default withPayload(nextConfig)

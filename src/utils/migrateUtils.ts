@@ -1,8 +1,9 @@
 import sql from 'mssql'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
-import { Stock, StockValue } from '@/payload-types'
+import { Stock, StockValue, StockOrigin } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
-import { PayloadRequest } from 'payload'
+import { Payload, PayloadRequest } from 'payload'
+import { logMigrationFault } from './migrationFaultUtils'
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
@@ -61,7 +62,7 @@ export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateI
   }
   return stocks
 }
-export async function getStockRelations(pool: sql.ConnectionPool) {
+export async function getStockRelations(pool: sql.ConnectionPool, payload: Payload) {
   const stockRelationResult = await pool.request().query(`
       SELECT [Id1], [Id2]
       FROM [dbEmda].[dbo].[tblSecurityIdConnections]
@@ -70,7 +71,20 @@ export async function getStockRelations(pool: sql.ConnectionPool) {
   console.log(`Retrieved ${stockRelationResult.recordset.length} resultStockIds from SQL Server`)
   const stocks: Map<string, string> = new Map<string, string>()
   for (const row of stockRelationResult.recordset) {
-    stocks.set(`${row.Id2}`, `${row.Id1}`)
+    const id1 = `${row.Id1}`
+    const id2 = `${row.Id2}`
+
+    if (!stocks.has(id2))
+      stocks.set(id2, id1)
+    else {
+      await logMigrationFault({
+        payload,
+        type: 'stock-relation',
+        typeId: id2,
+        row:JSON.stringify(row,null,2),
+        comments: `Multiple relation: ${id2} has already relation to ${stocks.get(id2)}, so ${id2}->${id1} will not be inserted`,
+      })
+    }
   }
   return stocks
 }
@@ -116,26 +130,26 @@ export async function upsertStockFromImport(
   tradable: boolean,
   isForeign: boolean  = false
 ) {
-  
-  const stockData:Partial<Stock> = {
+
+  const stockData: Partial<Stock> = {
     stockId: `${row.stockID}`,
-    name: row.name,
-    symbol: row.symbol,
-    type: row.type,
-    longName: row.longName,
-    tradable: tradable,
-    origin: (isForeign? "Foreign" : "TASE")
+    name: row.name || null,
+    symbol: row.symbol || null,
+    type: row.type || null,
+    longName: row.longName || null,
+    tradable: tradable as boolean | null,
+    origin: (isForeign ? "Foreign" : "TASE") as StockOrigin
   }
 
   if (!stockSequence) {
     // Insert into Payload CMS
-    const newStock: Stock = await req.payload.create({
+    const newStock = await req.payload.create({
       collection: 'stocks',
       data: stockData as Stock,
     })
     stockSequence = newStock.id
   } else {
-    req.payload.update({
+    await req.payload.update({
       collection: 'stocks',
       id: stockSequence,
       data: stockData as Stock,
@@ -152,9 +166,9 @@ export async function upsertStockValueFromImport(
   const stockValue: Partial<StockValue> | null = {
     stockId: stockSequence as string,
     valueDate: row.valueDate,
-    closingRate: row.closingRate,
-    marketValue: row.marketValue,
-    registeredValue: row.registeredValue,
+    closingRate: row.closingRate || null,
+    marketValue: row.marketValue || null,
+    registeredValue: row.registeredValue || null,
   }
 
   const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
