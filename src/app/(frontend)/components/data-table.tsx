@@ -302,7 +302,7 @@ export function DataTable({ data }: DataTableProps) {
       if (sortConfig.direction === 'asc') {
         return <ArrowUp className="h-4 w-4 ml-2" />
       } else if (sortConfig.direction === 'desc') {
-        return <ArrowDown className="h-4 w-4 ml-2" />
+        return <ArrowDown className="h-4 w-4 " />
       }
     }
     return null
@@ -310,7 +310,7 @@ export function DataTable({ data }: DataTableProps) {
 
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
-    if (filters[columnKey]) {
+    if (facetedFilters[columnKey]?.length != filters[columnKey].length) {
       return <Filter className="h-4 w-4 ml-2" />
     }
     return <ChevronDown className="h-4 w-4 ml-2" />
@@ -323,18 +323,21 @@ export function DataTable({ data }: DataTableProps) {
         if (column.type === 'boolean') {
           const trueCount = data.filter((item) => item[column.key] === true).length
           const falseCount = data.filter((item) => item[column.key] === false).length
-          facets[column.key] = [
-            {
+          facets[column.key] = []
+          if (trueCount > 0) {
+            facets[column.key].push({
               value: 'true',
               count: trueCount,
               icon: <BooleanIcon iconType={true} />,
-            },
-            {
+            })
+          }
+          if (falseCount > 0) {
+            facets[column.key].push({
               value: 'false',
               count: falseCount,
               icon: <BooleanIcon iconType={false} />,
-            },
-          ]
+            })
+          }
         } else if (column.type === 'date') {
           // Date columns don't need faceted filters
           facets[column.key] = []
@@ -439,7 +442,10 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableHead
                         key={column.key}
-                        className="text-right max-w-[200px] min-w-[70px] overflow-hidden text-ellipsis cursor-pointer"
+                        className={cn(
+                          'text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer',
+                          sortConfig.key === column.key && 'bg-gray-200',
+                        )}
                       >
                         <div className="flex items-center justify-start">
                           <span onClick={() => handleSort(column.key)}>{column.header}</span>
