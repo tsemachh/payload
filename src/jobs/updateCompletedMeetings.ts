@@ -1,4 +1,5 @@
 import { Meeting } from '@/payload-types'
+import { Console } from 'console'
 
 type UpdateCompletedMeetingsResult = {
   updatedCount: number
@@ -14,6 +15,9 @@ export const updateCompletedMeetings: ({
   req: any
 }) => Promise<UpdateCompletedMeetingsResult> = async ({ input, job, req }) => {
   try {
+    console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+    console.log('aaaaaaaaaaaaaaafaaaaaaaaaaaaa')
+
     req.payload.logger.info('Job is running at 11:00 AM!')
 
     const now = new Date().toISOString()

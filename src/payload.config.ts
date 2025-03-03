@@ -54,6 +54,10 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
+  onInit: async (payload) => {
+    payload.logger.info('Payload initialized')
+    payload.logger.info('Registered jobs:', payload.jobs || 'None')
+  },
   i18n: {
     supportedLanguages: { he, en },
   },
@@ -108,8 +112,7 @@ export default buildConfig({
   jobs: {
     tasks: [
       {
-        handler:
-          path.resolve(dirname, 'src/jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
+        handler: './src/jobs/updateCompletedMeetings.ts#updateCompletedMeetings',
         slug: 'update-completed-meetings',
       },
     ],
@@ -120,6 +123,10 @@ export default buildConfig({
         queue: 'daily',
       },
     ],
-    shouldAutoRun: async () => true,
+    shouldAutoRun: async () => {
+      const result = true // or add your condition here
+      console.log(`--------------------------------shouldAutoRun: ${result}`)
+      return result
+    },
   },
 })
