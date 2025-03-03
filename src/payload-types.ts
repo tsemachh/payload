@@ -46,6 +46,11 @@ export type MeetingType =
 export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UserType".
+ */
+export type UserType = ('1' | '2' | '3' | '4') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RolePermissions".
  */
 export type RolePermissions =
@@ -66,6 +71,11 @@ export type RolePermissions =
       id?: string | null;
     }[]
   | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MigrationType".
+ */
+export type MigrationType = ('user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
 /**
  * Supported timezones in IANA format.
  *
@@ -281,6 +291,28 @@ export interface Meeting {
 export interface User {
   id: string;
   name?: string | null;
+  userType?: UserType;
+  legacyId?: number | null;
+  firms?:
+    | {
+        firmId: string | Firm;
+        emailOnNoHoldings?: boolean | null;
+        votePermission?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   */
+  userIp?: string | null;
+  showQr?: boolean | null;
+  changePassword?: boolean | null;
+  lastLogin?: string | null;
+  qrCodeData?: {
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
   isAdmin?: boolean | null;
   isGeneratorUser?: boolean | null;
   userRoles?: (string | Role)[] | null;
@@ -299,55 +331,6 @@ export interface User {
   loginAttempts?: number | null;
   lockUntil?: string | null;
   password?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
- */
-export interface Role {
-  id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document".
- */
-export interface Document {
-  id: string;
-  alt: string;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "migration-faults".
- */
-export interface MigrationFault {
-  id: string;
-  type?: ('account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
-  typeId?: string | null;
-  row?: string | null;
-  comments?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -407,6 +390,55 @@ export interface Account {
     docs?: (string | Account)[] | null;
     hasNextPage?: boolean | null;
   } | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document".
+ */
+export interface Document {
+  id: string;
+  alt: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "migration-faults".
+ */
+export interface MigrationFault {
+  id: string;
+  type?: MigrationType;
+  typeId?: string | null;
+  row?: string | null;
+  comments?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -571,6 +603,27 @@ export interface MeetingsSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  userType?: T;
+  legacyId?: T;
+  firms?:
+    | T
+    | {
+        firmId?: T;
+        emailOnNoHoldings?: T;
+        votePermission?: T;
+        id?: T;
+      };
+  userIp?: T;
+  showQr?: T;
+  changePassword?: T;
+  lastLogin?: T;
+  qrCodeData?:
+    | T
+    | {
+        createDate?: T;
+        lastCodeFailureDate?: T;
+        codeFailuresSinceLastSuccess?: T;
+      };
   isAdmin?: T;
   isGeneratorUser?: T;
   userRoles?: T;

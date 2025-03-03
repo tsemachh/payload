@@ -152,6 +152,14 @@ export const Firms: CollectionConfig = {
       on: 'firm',
       where : {isCentralAccount:{equals:true}},
       admin: { defaultColumns: ['accountNumber', 'name', 'isCentralAccount'] },
-    }
+    },
+/*    {
+      name: 'users',
+      label: 'משתמשים',
+      type: 'join',
+      collection: 'users',
+      on: 'firmId',
+      admin: { defaultColumns: [ 'name'] },
+    }*/
   ],
 }

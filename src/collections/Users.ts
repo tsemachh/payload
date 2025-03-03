@@ -9,11 +9,15 @@ export const Users: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'email',
-    group:"ניהול"
+    group: "ניהול",
+    pagination: {
+      defaultLimit: 500,
+      limits: [10, 20, 50,100,200,500],
+    },
   },
   auth: {
     useAPIKey: true,
-    tokenExpiration: (process.env.NODE_ENV == "production")? 43200 : 432000 // 12 hours in prod, 5 days in dev timeout
+    tokenExpiration: (process.env.NODE_ENV == "production") ? 43200 : 432000 // 12 hours in prod, 5 days in dev timeout
   },
   fields: [
     {
@@ -21,6 +25,98 @@ export const Users: CollectionConfig = {
       label: 'שם משתמש',
       type: 'text',
     },
+    {
+      name: 'userType',
+      label: 'סוג משתמש',
+      type: 'select',
+      interfaceName: 'UserType',
+      options: [
+        { label: 'מנהל מערכת', value: '1' },
+        { label: 'משתמש רגיל', value: '2' },
+        { label: 'משתמש בלי זכות הצבעה', value: '3' },
+        { label: 'מבקר', value: '4' }
+      ],
+      defaultValue: '2'
+    },
+    {
+      name: 'legacyId',
+      label: 'מספר משתמש',
+      type: 'number',
+      index: true
+    },
+    {
+      name: 'firms',
+      label: 'חברות',
+      type: 'array',
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              name: 'firmId',
+              type: 'relationship',
+              relationTo: 'firms',
+              required: true,
+            },
+            {
+              name: 'emailOnNoHoldings',
+              label: 'התראה על אי החזקות',
+              type: 'checkbox',
+            },
+            {
+              name: 'votePermission',
+              label: 'הרשאת הצבעה',
+              type: 'checkbox',
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'userIp',
+      label: 'כתובות IP',
+      type: 'text',
+      admin: {
+        description: 'הזן כתובות IP מופרדות בנקודה-פסיק (;)'
+      }
+    },
+    {
+      name: 'showQr',
+      label: 'הצג QR',
+      type: 'checkbox',
+    },
+    {
+      name: 'changePassword',
+      label: 'שינוי סיסמה',
+      type: 'checkbox',
+    },
+    {
+      name: 'lastLogin',
+      label: 'התחברות אחרונה',
+      type: 'text',
+    },
+    {
+      name: 'qrCodeData',
+      label: 'נתוני QR',
+      type: 'group',
+      fields: [
+        {
+          name: 'createDate',
+          label: 'תאריך יצירה',
+          type: 'date',
+        },
+        {
+          name: 'lastCodeFailureDate',
+          label: 'תאריך כישלון אחרון',
+          type: 'date',
+        },
+        {
+          name: 'codeFailuresSinceLastSuccess',
+          label: 'מספר כישלונות מאז הצלחה אחרונה',
+          type: 'number',
+        }
+      ]
+    },
     ...userFields,
-  ],
+  ]
 }
