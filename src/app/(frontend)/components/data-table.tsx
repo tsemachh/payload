@@ -19,7 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Search,
   Settings2,
@@ -353,17 +352,7 @@ export function DataTable({ data }: DataTableProps) {
     return facets
   }, [data])
 
-  const renderTooltip = (content: React.ReactNode, tooltip: string) => (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent>
-        <p> {tooltip} </p>
-      </TooltipContent>
-    </Tooltip>
-  )
-
   return (
-    <TooltipProvider>
       <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
         <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
           <div className="relative w-1/3">
@@ -382,40 +371,30 @@ export function DataTable({ data }: DataTableProps) {
             ></Input>
           </div>
           <div className="flex space-x-2 space-x-reverse">
-            {renderTooltip(
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => resetFilters()}
-                className={cn(
-                  'flex justify-between items-center w-40',
-                  isFilterActive && 'bg-muted',
-                )}
-              >
-                {isFilterActive ? 'הסר סינון' : 'סינון'}
-                {isFilterActive ? (
-                  <FilterX className="h-4 w-4 mr-2" />
-                ) : (
-                  <Filter className="h-4 w-4 mr-2" />
-                )}
-              </Button>,
-              isFilterActive ? 'איפוס כל הסינונים' : 'הוספת כפתור לסינון בכל ראש עמודה ',
-            )}
-            <DropdownMenu>
-              {' '}
-              {renderTooltip(
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex justify-between items-center w-40"
-                  >
-                    <span>עמודות</span>
-                    <Settings2 className="h-4 w-4 mr-2" />
-                  </Button>
-                </DropdownMenuTrigger>,
-                'בחירת עמודות להצגה',
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => resetFilters()}
+              className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
+            >
+              {isFilterActive ? 'הסר סינון' : 'סינון'}
+              {isFilterActive ? (
+                <FilterX className="h-4 w-4 mr-2" />
+              ) : (
+                <Filter className="h-4 w-4 mr-2" />
               )}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex justify-between items-center w-40"
+                >
+                  <span>עמודות</span>
+                  <Settings2 className="h-4 w-4 mr-2" />
+                </Button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {columns.map((column) => (
                   <DropdownMenuCheckboxItem
@@ -521,40 +500,28 @@ export function DataTable({ data }: DataTableProps) {
                         <TableCell
                           key={`${row.meetingId}-${String(column.key)}`}
                           style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
-                          className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                          className={`truncate py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr ' : ''} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                          ref={(el) => {
+                            if (!el) return
+                            el.setAttribute(
+                              'title',
+                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                            )
+                          }}
                         >
-                          {renderTooltip(
-                            <span>
-                              {column.render
-                                ? column.render(row)
-                                : highlightText(String(row[column.key]), searchTerm)}
-                            </span>,
-                            String(
-                              column.type == 'boolean'
-                                ? row[column.key]
-                                  ? 'כן'
-                                  : 'לא'
-                                : column.render
-                                  ? column.render(row)
-                                  : row[column.key],
-                            ),
-                          )}
+                          {column.render
+                            ? column.render(row)
+                            : highlightText(String(row[column.key]), searchTerm)}
                         </TableCell>
                       ))}
                       <TableCell className="relative group sticky left-[80px] z-10">
-                        {row.meetingInviteUrl &&
-                          renderTooltip(
-                            <a
-                              href={row.meetingInviteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <span className="absolute hidden h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground hover:text-blue-800 whitespace-nowrap">
-                                זימון אסיפה
-                              </span>
-                            </a>,
-                            'פתיחת זימון האסיפה',
-                          )}
+                        {row.meetingInviteUrl && (
+                          <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
+                            <span className="absolute hidden underlined-text h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground text-blue-700 hover:text-blue-500 whitespace-nowrap">
+                              זימון אסיפה
+                            </span>
+                          </a>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -564,6 +531,5 @@ export function DataTable({ data }: DataTableProps) {
           </div>
         </div>
       </div>
-    </TooltipProvider>
   )
 }
