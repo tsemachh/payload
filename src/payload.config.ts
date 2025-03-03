@@ -4,7 +4,7 @@ import { addAuthorsFields } from '@shefing/authors-info'
 import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, Payload } from 'payload'
 import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
@@ -90,6 +90,14 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
+    onInit: async (payload: Payload) =>{
+      const createdJob = await payload.jobs.queue({
+        task: 'update-completed-meetings',
+        input: {},
+      })
+    },
+
+
   //  logger,
   plugins: [
     payloadCloudPlugin(),
@@ -109,13 +117,13 @@ export default buildConfig({
     tasks: [
       {
         handler:
-          path.resolve(dirname, 'src/jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
+          path.resolve(dirname, 'jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
         slug: 'update-completed-meetings',
       },
     ],
     autoRun: [
       {
-        cron: '* * * * *',
+        cron: '0/1 * * * *',
         limit: 100,
         queue: 'daily',
       },
