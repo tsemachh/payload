@@ -108,18 +108,18 @@ export default buildConfig({
   jobs: {
     tasks: [
       {
-        handler: path.resolve(dirname, 'src/jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
+        handler:
+          path.resolve(dirname, 'src/jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
         slug: 'update-completed-meetings',
       },
     ],
     autoRun: [
       {
-        cron: '0 0 * * *', // Every midnight
+        cron: '* * * * *',
         limit: 100,
         queue: 'daily',
       },
     ],
     shouldAutoRun: async () => true,
-
-  }
+  },
 })
