@@ -310,7 +310,7 @@ export function DataTable({ data }: DataTableProps) {
 
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
-    if (filters[columnKey]) {
+    if (facetedFilters[columnKey]?.length != filters[columnKey].length) {
       return <Filter className="h-4 w-4 ml-2" />
     }
     return <ChevronDown className="h-4 w-4 ml-2" />
@@ -323,18 +323,21 @@ export function DataTable({ data }: DataTableProps) {
         if (column.type === 'boolean') {
           const trueCount = data.filter((item) => item[column.key] === true).length
           const falseCount = data.filter((item) => item[column.key] === false).length
-          facets[column.key] = [
-            {
+          facets[column.key] = []
+          if (trueCount > 0) {
+            facets[column.key].push({
               value: 'true',
               count: trueCount,
               icon: <BooleanIcon iconType={true} />,
-            },
-            {
+            })
+          }
+          if (falseCount > 0) {
+            facets[column.key].push({
               value: 'false',
               count: falseCount,
               icon: <BooleanIcon iconType={false} />,
-            },
-          ]
+            })
+          }
         } else if (column.type === 'date') {
           // Date columns don't need faceted filters
           facets[column.key] = []
