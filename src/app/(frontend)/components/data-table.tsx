@@ -485,11 +485,12 @@ export function DataTable({ data }: DataTableProps) {
                       key={column.key}
                       className={cn(
                         'text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer',
-                        sortConfig.key === column.key && 'bg-gray-200',
+                        sortConfig.key === column.key && 'bg-[#9fa8d9]',
                       )}
+                      onClick={() => handleSort(column.key)}
                     >
                       <div className="flex items-center justify-start">
-                        <span onClick={() => handleSort(column.key)}>{column.header}</span>
+                        <span>{column.header}</span>
                         {getSortIcon(column.key)}
                         {isFilterActive && column.filterable && (
                           <DropdownMenu>
@@ -587,7 +588,7 @@ export function DataTable({ data }: DataTableProps) {
                     <TableCell className="relative group sticky left-[80px] z-10">
                       {row.meetingInviteUrl && (
                         <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
-                          <span className="absolute hidden underlined-text h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground text-blue-700 hover:text-blue-500 whitespace-nowrap">
+                          <span className="absolute hidden underlined-text decoration-2 h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-[#9fa8da]-100 group-hover:w-[100px] text-sm text-foreground text-blue-600 hover:text-blue-500 whitespace-nowrap">
                             קישור למגנה
                           </span>
                         </a>
