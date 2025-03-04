@@ -3,32 +3,27 @@ import 'dotenv/config'
 import config from '@/payload.config'
 import { FutureMeetingTableData } from '../types'
 
-async function fetchStockValues(stockPresent: any, holdingsLimit: string | null | undefined) {
-  if (!holdingsLimit || !stockPresent?.id) return null
-
-  const payload = await getPayload({ config }) // יצירת חיבור חדש
-  const result = await payload.find({
-    collection: 'stock-values',
-    where: {
-      stockId: { equals: stockPresent.id },
-      valueDate: { equals: new Date(holdingsLimit).toISOString() },
-    },
-    limit: 0,
-  })
-
-  return result.docs.length > 0 ? result.docs[0] : null
-}
-
 export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 0 })
+  const meetings = await payload.find({ collection: 'meetings', limit: 1000 })
 
   const meetingData: FutureMeetingTableData[] = await Promise.all(
     meetings.docs.map(async (meeting) => {
       let stockPresent = null
       if (typeof meeting.stock === 'object') stockPresent = meeting.stock
 
-      const stocksVales = await fetchStockValues(stockPresent, meeting.holdingsLimit)
+      let stocksVales = null
+      if (meeting.holdingsLimit) {
+        const result = await payload.find({
+          collection: 'stock-values',
+          where: {
+            stockId: { equals: stockPresent?.id },
+            valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() },
+          },
+          limit: 0,
+        })
+        stocksVales = result.docs.length > 0 ? result.docs[0] : null
+      }
 
       return {
         meetingId: meeting.meetingId,
