@@ -5,8 +5,13 @@ import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
 
 async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
+  //TODO: Temporary until the data is updated.
+  const futureMeetingTableDataTemporary = futureMeetingTableData.filter(
+    (meeting) => meeting.marketValue && meeting.registeredValue,
+  )
+  //TODO: Temporary until the data is updated.
 
-  return <DataTable data={futureMeetingTableData} />
+  return <DataTable data={futureMeetingTableDataTemporary} />
 }
 
 export default function AssembliesPage() {
