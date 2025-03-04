@@ -94,13 +94,12 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-    onInit: async (payload: Payload) =>{
-      const createdJob = await payload.jobs.queue({
-        task: 'update-completed-meetings',
-        input: {},
-      })
-    },
-
+  // onInit: async (payload: Payload) => {
+  //   const createdJob = await payload.jobs.queue({
+  //     task: 'update-completed-meetings',
+  //     input: {},
+  //   })
+  // },
 
   //  logger,
   plugins: [
@@ -117,25 +116,25 @@ export default buildConfig({
       usernameField: 'name', //name field to use from Users collection, 'user' by default
     }),
   ],
-  jobs: {
-    tasks: [
-      {
-        handler:
-          path.resolve(dirname, 'jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
-        slug: 'update-completed-meetings',
-      },
-    ],
-    autoRun: [
-      {
-        cron: '0/1 * * * *',
-        limit: 100,
-        queue: 'daily',
-      },
-    ],
-    shouldAutoRun: async () => {
-      const result = true // or add your condition here
-      console.log(`--------------------------------shouldAutoRun: ${result}`)
-      return result
-    },
-  },
+  // jobs: {
+  //   tasks: [
+  //     {
+  //       handler:
+  //         path.resolve(dirname, 'jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
+  //       slug: 'update-completed-meetings',
+  //     },
+  //   ],
+  //   autoRun: [
+  //     {
+  //       cron: '0/1 * * * *',
+  //       limit: 100,
+  //       queue: 'daily',
+  //     },
+  //   ],
+  //   shouldAutoRun: async () => {
+  //     const result = true // or add your condition here
+  //     console.log(`--------------------------------shouldAutoRun: ${result}`)
+  //     return result
+  //   },
+  // },
 })

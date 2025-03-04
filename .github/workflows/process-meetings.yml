@@ -12,7 +12,7 @@ jobs:
       - name: Process Meetings
         run: |
           curl -X POST \
-            -H "Authorization: users API-Key ${{ secrets.API_KEY }}" \
+            -H "Authorization: users API-Key ${{secrets.API_KEY}}" \
             -H "Content-Type: application/json" \
             -d '{"runType": "github-action", "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' \
-            ${{ secrets.API_URL }}/api/meetings/process-meetings
+            ${{secrets.API_URL}}/api/meetings/process-meetings
