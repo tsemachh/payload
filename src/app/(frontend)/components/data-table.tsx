@@ -37,11 +37,13 @@ import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
 import { escapeRegExp, formatDateTime } from '../helpers/utils'
 import { Checkbox } from './ui/checkbox'
+import { MeetingState } from '@/payload-types'
+import { meetingStateMap } from '../helpers/maps'
 
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
-  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
+  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean' | 'number'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
@@ -50,18 +52,51 @@ interface Column {
 const columns: Column[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
+  { key: 'stockSymbol', header: 'סימול', type: 'string' },
+  { key: 'stockName', header: 'שם נייר ערך', type: 'string' },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
-  { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
+  {
+    key: 'stockTradable',
+    header: 'נייר ערך נסחר',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+  },
+  {
+    key: 'marketValue',
+    header: 'שווי שוק (מיליוני ₪)',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL').format(Number((row.marketValue / 1_000_000).toFixed(3))),
+  },
+  {
+    key: 'registeredValue',
+    header: 'ערך נקוב (מיליוני ₪)',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL').format(Number((row.registeredValue / 1_000_000).toFixed(3))),
+  },
+  { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
     key: 'meetingDate',
-    header: 'מועד האסיפה',
+    header: 'מועד',
     type: 'datetime',
     // filterable: true,
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
   },
-  { key: 'location', header: 'מיקום', type: 'string' },
+  { key: 'reference', header: 'אסמכתא', type: 'string' },
+
+  {
+    key: 'meetingState',
+    header: 'מצב',
+    type: 'string',
+    filterable: true,
+    render: (row) =>
+      meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
+  },
   {
     key: 'holdingsLimit',
     header: 'מועד קובע',
@@ -80,22 +115,23 @@ const columns: Column[] = [
       return formatDateTime(row.proxyVotingDate)
     },
   },
+  { key: 'location', header: 'מיקום', type: 'string' },
   { key: 'comments', header: 'הערות', type: 'string' },
   {
-    key: 'electronicVotingEnabled',
-    header: 'האסיפה מופיעה במערכת האלק׳?',
-    type: 'boolean',
-    filterable: true,
-    positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
-  },
-  {
     key: 'resultsConfirmationStatus',
-    header: 'אימות תוצאות האסיפה',
+    header: 'אימות תוצאות',
     type: 'boolean',
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
+  },
+  {
+    key: 'electronicVotingEnabled',
+    header: 'מופיעה במערכת האלק׳',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
   },
   {
     key: 'committeeInitiated',
@@ -289,10 +325,15 @@ export function DataTable({ data }: DataTableProps) {
     // Apply sorting
     if (sortConfig.direction) {
       filteredItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        if (sortConfig.key == null) return sortConfig.direction === 'asc' ? -1 : 1
+        const bValue = b[sortConfig.key]
+        const aValue = a[sortConfig.key]
+        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'asc' ? 1 : -1
         }
         return 0
@@ -322,7 +363,9 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   const facetedFilters = useMemo(() => {
-    const facets: { [key: string]: { value: string; count: number; icon?: React.ReactNode }[] } = {}
+    const facets: {
+      [key: string]: { value: string; count: number; icon?: React.ReactNode; translate?: string }[]
+    } = {}
     columns.forEach((column) => {
       if (column.filterable) {
         if (column.type === 'boolean') {
@@ -343,9 +386,22 @@ export function DataTable({ data }: DataTableProps) {
               icon: <BooleanIcon iconType={false} />,
             })
           }
-        } else if (column.type === 'date') {
-          // Date columns don't need faceted filters
-          facets[column.key] = []
+        }
+        if (column.key === 'meetingState') {
+          const meetingStateCounts = data.reduce(
+            (acc, { meetingState }) => {
+              if (!meetingState) return acc // Skip null values
+              acc[meetingState] = (acc[meetingState] || 0) + 1
+              return acc
+            },
+            {} as Record<Exclude<MeetingState, null>, number>,
+          )
+
+          facets[column.key] = Object.entries(meetingStateCounts).map(([state, count]) => ({
+            value: state,
+            count,
+            translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+          }))
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
           facets[column.key] = Array.from(values).map((value) => ({
@@ -449,35 +505,40 @@ export function DataTable({ data }: DataTableProps) {
                                   onDateRangeChange={(range) => handleFilter(column.key, range)}
                                 />
                               ) : (
-                                facetedFilters[column.key]?.map(({ value, count, icon }) => (
-                                  <DropdownMenuCheckboxItem
-                                    key={value}
-                                    checked={
-                                      !filters[column.key] || filters[column.key].includes(value)
-                                    }
-                                    onCheckedChange={(checked) => {
-                                      const currentFilters = filters[column.key] || []
-                                      const newFilters = checked
-                                        ? [...currentFilters, value]
-                                        : currentFilters.filter((v: any) => v !== value)
-                                      handleFilter(column.key, newFilters)
-                                    }}
-                                    className="flex items-center justify-between py-2 remove-checked"
-                                  >
-                                    <Checkbox
+                                facetedFilters[column.key]?.map(
+                                  ({ value, count, icon, translate }) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={value}
                                       checked={
                                         !filters[column.key] || filters[column.key].includes(value)
                                       }
-                                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                    />
-                                    <div className="flex justify-between gap-2" dir="rtl">
-                                      <span className="text-right">{icon ? icon : value}</span>
-                                      <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                        {count}
-                                      </span>
-                                    </div>
-                                  </DropdownMenuCheckboxItem>
-                                ))
+                                      onCheckedChange={(checked) => {
+                                        const currentFilters = filters[column.key] || []
+                                        const newFilters = checked
+                                          ? [...currentFilters, value]
+                                          : currentFilters.filter((v: any) => v !== value)
+                                        handleFilter(column.key, newFilters)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          !filters[column.key] ||
+                                          filters[column.key].includes(value)
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">
+                                          {icon ? icon : translate ? translate : value}
+                                        </span>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                          {count}
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  ),
+                                )
                               )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -504,8 +565,12 @@ export function DataTable({ data }: DataTableProps) {
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
-                        style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
-                        className={`truncate py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr ' : ''} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        style={{
+                          direction: column.type === 'datetime' ? 'ltr' : 'rtl',
+                          placeItems: column.positionCenter ? 'center' : 'unset',
+                          textAlign: column.positionCenter ? 'center' : 'right',
+                        }}
+                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                         ref={(el) => {
                           if (!el) return
                           el.setAttribute(
@@ -523,7 +588,7 @@ export function DataTable({ data }: DataTableProps) {
                       {row.meetingInviteUrl && (
                         <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
                           <span className="absolute hidden underlined-text h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground text-blue-700 hover:text-blue-500 whitespace-nowrap">
-                            זימון אסיפה
+                            קישור למגנה
                           </span>
                         </a>
                       )}
