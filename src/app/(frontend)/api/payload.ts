@@ -5,7 +5,7 @@ import { FutureMeetingTableData } from '../types'
 
 export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 1000 })
+  const meetings = await payload.find({ collection: 'meetings', limit: 500 })
 
   const meetingData: FutureMeetingTableData[] = await Promise.all(
     meetings.docs.map(async (meeting) => {

@@ -68,14 +68,14 @@ const columns: Column[] = [
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL').format(Number((row.marketValue / 1_000_000).toFixed(3))),
+      new Intl.NumberFormat('he-IL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(
+        row.marketValue / 1_000_000,
+      ),
   },
   {
     key: 'registeredValue',
-    header: 'ערך נקוב (מיליוני ₪)',
+    header: 'ערך נקוב',
     type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL').format(Number((row.registeredValue / 1_000_000).toFixed(3))),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
@@ -478,18 +478,18 @@ export function DataTable({ data }: DataTableProps) {
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
             <Table className="w-full border-collapse relative" dir="rtl">
-              <TableHeader className="sticky top-0 bg-background z-20 bg-gray-100">
+              <TableHeader className="sticky top-0 bg-background z-20 bg-[#9fa8da]">
                 <TableRow className="bg-muted/50 border-b border-border">
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={column.key}
                       className={cn(
                         'text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer',
-                        sortConfig.key === column.key && 'bg-gray-200',
                       )}
+                      onClick={() => handleSort(column.key)}
                     >
                       <div className="flex items-center justify-start">
-                        <span onClick={() => handleSort(column.key)}>{column.header}</span>
+                        <span>{column.header}</span>
                         {getSortIcon(column.key)}
                         {isFilterActive && column.filterable && (
                           <DropdownMenu>
@@ -558,10 +558,7 @@ export function DataTable({ data }: DataTableProps) {
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow
-                    key={row.meetingId}
-                    className="hover:bg-muted/70 group transition-colors"
-                  >
+                  <TableRow key={row.meetingId} className="group hover:bg-[rgba(26,35,126,0.7)]">
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
@@ -584,13 +581,20 @@ export function DataTable({ data }: DataTableProps) {
                           : highlightText(String(row[column.key]), searchTerm)}
                       </TableCell>
                     ))}
-                    <TableCell className="relative group sticky left-[80px] z-10">
+                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0">
                       {row.meetingInviteUrl && (
-                        <a href={row.meetingInviteUrl} target="_blank" rel="noopener noreferrer">
-                          <span className="absolute hidden underlined-text h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground text-blue-700 hover:text-blue-500 whitespace-nowrap">
+                        <div className="relative flex items-center">
+                          <span className="absolute right-[-100px] top-0 h-full w-[100px] opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-[#6b6da7]"></span>
+                          <a
+                            href={row.meetingInviteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline text-transparent group-hover:w-[100px] group-hover:bg-opacity-100 group-hover:bg-[#6b6da7] text-sm text-foreground group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap"
+                          >
                             קישור למגנה
-                          </span>
-                        </a>
+                          </a>
+                          <div className="w-0 h-[40px] opacity-0 group-hover:w-[100px] group-hover:opacity-100  bg-gradient-to-r from-[#6b6da7] "></div>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
