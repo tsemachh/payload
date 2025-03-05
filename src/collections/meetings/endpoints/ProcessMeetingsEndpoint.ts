@@ -20,25 +20,25 @@ const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
         meetingDate: { less_than: now },
         state: { equals: 'scheduled' },
       },
+      limit: 1000,
     })
 
     // Process found meetings
     if (scheduledPastMeetings.length > 0) {
-      const updateResults = await Promise.all(
+       await Promise.all(
         scheduledPastMeetings.map((meeting) =>
           req.payload.update({
             collection: 'meetings',
             id: meeting.id,
             data: {
               state: 'completed',
-              lastProcessed: now,
             },
           }),
         ),
       )
 
       req.payload.logger.info(
-        `Updated ${scheduledPastMeetings.length} meetings to 'completed' state`,
+        `Updated ${scheduledPastMeetings.length} meetings to 'completed' state. Processed IDs: ${scheduledPastMeetings.map((m) => m.id).join(', ')}`,
       )
 
       return Response.json({

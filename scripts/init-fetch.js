@@ -5,4 +5,4 @@ setTimeout(async () => {
   } catch (error) {
     console.error('Failed to fetch admin data:', error)
   }
-}, 10000) // 5000ms delay
+}, 5000) // 5000ms delay

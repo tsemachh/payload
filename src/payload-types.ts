@@ -188,20 +188,17 @@ export interface Stock {
   name?: string | null;
   longName?: string | null;
   values?: {
-    docs?: (string | StockValue)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+    docs?: (string | StockValue)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
   relations?: {
-    docs?: (string | Stock)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+    docs?: (string | Stock)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
   meetings?: {
-    docs?: (string | Meeting)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+    docs?: (string | Meeting)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
