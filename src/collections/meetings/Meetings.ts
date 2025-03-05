@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
+import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -25,7 +26,7 @@ export const Meetings: CollectionConfig = {
     ],
     pagination: {
       defaultLimit: 500,
-      limits: [10, 20, 50,100,200,500],
+      limits: [10, 20, 50, 100, 200, 500],
     },
   },
   versions: {
@@ -58,7 +59,7 @@ export const Meetings: CollectionConfig = {
               Field: {
                 path: '/components/link/IconLinkTextField',
                 clientProps: meetingLinkProps,
-              }
+              },
             },
           },
         },
@@ -178,4 +179,12 @@ export const Meetings: CollectionConfig = {
       ],
     },
   ],
+  endpoints: [
+    {
+      path: '/process-meetings',
+      method: 'post',
+      handler: ProcessMeetingsEndpoint,
+    },
+  ],
+  // ... rest of collection config
 }
