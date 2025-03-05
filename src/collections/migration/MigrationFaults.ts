@@ -4,7 +4,7 @@ const MigrationFaults: CollectionConfig= {
   slug : 'migration-faults',
   versions:false,
   fields:[
-    {type:"select",name:"type",index:true,options:["user","account","stock","stock-value","stock-relation","meeting"],
+    {type:"select",name:"type",index:true,options:["holding","user","account","stock","stock-value","stock-relation","meeting"],
     interfaceName:'MigrationType'
     },
     {type:"text",name:"typeId",index:true},

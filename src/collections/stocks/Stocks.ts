@@ -107,6 +107,7 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
+                    { label: 'לא סחיר', value: 'NonTradable' },
                     { label: 'פרטי', value: 'Private' }
                   ],
                   index: true,
@@ -119,12 +120,6 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                 },
                 {
-                  name: 'private',
-                  label: 'האם חברה פרטית',
-                  type: 'checkbox',
-                  admin: { condition: (siblingData) => !siblingData.tradable },
-                },
-                {
                   name: 'relatedStock',
                   label: 'נייר ערך ראשי',
                   type: 'relationship',
@@ -133,7 +128,6 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => !siblingData.tradable,
                   },
-
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),
@@ -161,7 +155,7 @@ export const Stocks: CollectionConfig = {
                   label: 'שם חברה',
                   type: 'text',
                   admin: {
-                    condition: (siblingData) => siblingData.tradable || siblingData.private,
+                    condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private'
                   },
                 },
               ],
@@ -202,7 +196,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable || siblingData.private },
+          admin: { condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private' },
           fields: [
             {
               name: 'meetings',

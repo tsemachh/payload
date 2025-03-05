@@ -26,6 +26,12 @@ export const Users: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'active',
+      label: 'משתמש פעיל',
+      type: 'checkbox',
+      index: true
+    },
+    {
       name: 'userType',
       label: 'סוג משתמש',
       type: 'select',

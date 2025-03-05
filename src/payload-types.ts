@@ -31,7 +31,7 @@ export type StockType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "StockOrigin".
  */
-export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
+export type StockOrigin = 'TASE' | 'Foreign' | 'NonTradable' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
@@ -66,6 +66,7 @@ export type RolePermissions =
         | 'firms'
         | 'firms-groups'
         | 'accounts'
+        | 'holdings'
       )[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
@@ -75,7 +76,9 @@ export type RolePermissions =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
  */
-export type MigrationType = ('user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
+export type MigrationType =
+  | ('holding' | 'user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting')
+  | null;
 /**
  * Supported timezones in IANA format.
  *
@@ -146,6 +149,7 @@ export interface Config {
     firms: Firm;
     'firms-groups': FirmsGroup;
     accounts: Account;
+    holdings: Holding;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -159,6 +163,7 @@ export interface Config {
     };
     accounts: {
       accounts: 'accounts';
+      holdings: 'holdings';
     };
   };
   collectionsSelect: {
@@ -172,6 +177,7 @@ export interface Config {
     firms: FirmsSelect<false> | FirmsSelect<true>;
     'firms-groups': FirmsGroupsSelect<false> | FirmsGroupsSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
+    holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -219,7 +225,6 @@ export interface Stock {
   type?: StockType;
   origin: StockOrigin;
   tradable?: boolean | null;
-  private?: boolean | null;
   relatedStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
@@ -390,6 +395,25 @@ export interface Account {
     docs?: (string | Account)[] | null;
     hasNextPage?: boolean | null;
   } | null;
+  holdings?: {
+    docs?: (string | Holding)[] | null;
+    hasNextPage?: boolean | null;
+  } | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  account: string | Account;
+  stock: string | Stock;
+  quantity: number;
+  valueDate: string;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -490,6 +514,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'accounts';
         value: string | Account;
+      } | null)
+    | ({
+        relationTo: 'holdings';
+        value: string | Holding;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -543,7 +571,6 @@ export interface StocksSelect<T extends boolean = true> {
   type?: T;
   origin?: T;
   tradable?: T;
-  private?: T;
   relatedStock?: T;
   symbol?: T;
   name?: T;
@@ -743,6 +770,21 @@ export interface AccountsSelect<T extends boolean = true> {
   isCentralAccount?: T;
   parentAccount?: T;
   accounts?: T;
+  holdings?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings_select".
+ */
+export interface HoldingsSelect<T extends boolean = true> {
+  account?: T;
+  stock?: T;
+  quantity?: T;
+  valueDate?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

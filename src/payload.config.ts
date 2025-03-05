@@ -20,6 +20,7 @@ import { Firms , FirmsGroups } from '@/collections/firms/Firms'
 import { Accounts } from '@/collections/accounts/Accounts'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
+import { Holdings } from '@/collections/holdings/Holdings'
 import { Roles } from '@shefing/authorization'
 
 import MigrationFaults from '@/collections/migration/MigrationFaults'
@@ -83,7 +84,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Firms, FirmsGroups, Accounts],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Firms, FirmsGroups, Accounts, Holdings],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
