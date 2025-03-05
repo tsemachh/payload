@@ -6,7 +6,7 @@ const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityField: 'tradable'
+  visibilityField: 'tradable',
 }
 
 export const Stocks: CollectionConfig = {
@@ -18,10 +18,10 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName','origin'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin'],
     pagination: {
       defaultLimit: 500,
-      limits: [10, 20, 50,100,200,500],
+      limits: [10, 20, 50, 100, 200, 500],
     },
   },
   versions: {
@@ -54,7 +54,7 @@ export const Stocks: CollectionConfig = {
                       Field: {
                         path: '/components/link/IconLinkTextField',
                         clientProps: stockLinkProps,
-                      }
+                      },
                     },
                   },
                 },
@@ -108,11 +108,11 @@ export const Stocks: CollectionConfig = {
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
                     { label: 'לא סחיר', value: 'NonTradable' },
-                    { label: 'פרטי', value: 'Private' }
+                    { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
                   required: true,
-                  defaultValue : 'TASE'
+                  defaultValue: 'TASE',
                 },
                 {
                   name: 'tradable',

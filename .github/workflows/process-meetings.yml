@@ -1,0 +1,30 @@
+name: Process Meetings
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run at midnight UTC
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  process-meetings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Meetings
+        run: |
+          echo "::group::Processing Meetings API Call"
+          echo "Making API request to process meetings..."
+          response=$(curl -v -X POST \
+            -H "Authorization: users API-Key ${{secrets.API_KEY}}" \
+            -H "Content-Type: application/json" \
+            -d '{"runType": "github-action", "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' \
+            ${{secrets.API_URL}}/api/meetings/process-meetings)
+          status=$?
+
+          echo "API Response:"
+          echo "$response"
+
+          if [ $status -ne 0 ]; then
+            echo "::error::API call failed with status $status"
+            exit 1
+          fi
+          echo "::endgroup::"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Table,
   TableBody,
@@ -19,7 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Search,
   Settings2,
@@ -38,11 +37,13 @@ import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
 import { escapeRegExp, formatDateTime } from '../helpers/utils'
 import { Checkbox } from './ui/checkbox'
+import { MeetingState } from '@/payload-types'
+import { meetingStateMap } from '../helpers/maps'
 
 interface Column {
   key: keyof FutureMeetingTableData
   header: string
-  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean'
+  type: 'string' | 'number' | 'date' | 'datetime' | 'boolean' | 'number'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: FutureMeetingTableData) => React.ReactNode
@@ -51,18 +52,51 @@ interface Column {
 const columns: Column[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
+  { key: 'stockSymbol', header: 'סימול', type: 'string' },
+  { key: 'stockName', header: 'שם נייר ערך', type: 'string' },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
-  { key: 'meetingType', header: 'סוג אסיפה', type: 'string', filterable: true },
+  {
+    key: 'stockTradable',
+    header: 'נייר ערך נסחר',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+  },
+  {
+    key: 'marketValue',
+    header: 'שווי שוק (מיליוני ₪)',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(
+        row.marketValue / 1_000_000,
+      ),
+  },
+  {
+    key: 'registeredValue',
+    header: 'ערך נקוב',
+    type: 'number',
+  },
+  { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
     key: 'meetingDate',
-    header: 'מועד האסיפה',
+    header: 'מועד',
     type: 'datetime',
     // filterable: true,
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
   },
-  { key: 'location', header: 'מיקום', type: 'string' },
+  { key: 'reference', header: 'אסמכתא', type: 'string' },
+
+  {
+    key: 'meetingState',
+    header: 'מצב',
+    type: 'string',
+    filterable: true,
+    render: (row) =>
+      meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
+  },
   {
     key: 'holdingsLimit',
     header: 'מועד קובע',
@@ -81,22 +115,23 @@ const columns: Column[] = [
       return formatDateTime(row.proxyVotingDate)
     },
   },
+  { key: 'location', header: 'מיקום', type: 'string' },
   { key: 'comments', header: 'הערות', type: 'string' },
   {
-    key: 'electronicVotingEnabled',
-    header: 'האסיפה מופיעה במערכת האלק׳?',
-    type: 'boolean',
-    filterable: true,
-    positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
-  },
-  {
     key: 'resultsConfirmationStatus',
-    header: 'אימות תוצאות האסיפה',
+    header: 'אימות תוצאות',
     type: 'boolean',
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
+  },
+  {
+    key: 'electronicVotingEnabled',
+    header: 'מופיעה במערכת האלק׳',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
   },
   {
     key: 'committeeInitiated',
@@ -151,7 +186,11 @@ export function DataTable({ data }: DataTableProps) {
     loadColumnVisibility()
   }, [])
 
-  const toggleColumnVisibility = (key: string) => {
+  const visibleColumns = useMemo(() => {
+    return columns.filter((column) => columnVisibility[column.key])
+  }, [columnVisibility])
+
+  const toggleColumnVisibility = useCallback((key: string) => {
     setColumnVisibility((prev) => {
       const newVisibility = { ...prev, [key]: !prev[key] }
       const selectedColumns = Object.entries(newVisibility)
@@ -160,9 +199,9 @@ export function DataTable({ data }: DataTableProps) {
       localStorage.setItem('columnSelected', JSON.stringify(selectedColumns))
       return newVisibility
     })
-  }
+  }, [])
 
-  const handleSort = (key: keyof FutureMeetingTableData) => {
+  const handleSort = useCallback((key: keyof FutureMeetingTableData) => {
     setSortConfig((current) => {
       if (current.key === key) {
         if (current.direction === 'asc') {
@@ -173,25 +212,28 @@ export function DataTable({ data }: DataTableProps) {
       }
       return { key, direction: 'asc' }
     })
-  }
+  }, [])
 
-  const handleFilter = (key: string, value: any) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev }
-      if (value === 'all') {
-        // Initialize all options as checked when resetting the filter
-        const allOptions = Array.from(
-          new Set(data.map((item) => String(item[key as keyof FutureMeetingTableData]))),
-        )
-        newFilters[key] = allOptions
-      } else if (Array.isArray(value)) {
-        newFilters[key] = value
-      }
-      return newFilters
-    })
-  }
+  const handleFilter = useCallback(
+    (key: string, value: any) => {
+      setFilters((prev) => {
+        const newFilters = { ...prev }
+        if (value === 'all') {
+          // Initialize all options as checked when resetting the filter
+          const allOptions = Array.from(
+            new Set(data.map((item) => String(item[key as keyof FutureMeetingTableData]))),
+          )
+          newFilters[key] = allOptions
+        } else if (Array.isArray(value)) {
+          newFilters[key] = value
+        }
+        return newFilters
+      })
+    },
+    [data],
+  )
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     if (isFilterActive) {
       setFilters({})
       setIsFilterActive(false)
@@ -208,9 +250,9 @@ export function DataTable({ data }: DataTableProps) {
       setFilters(initialFilters)
       setIsFilterActive(true)
     }
-  }
+  }, [data, isFilterActive])
 
-  const highlightText = (text: string, highlight: string) => {
+  const highlightText = useCallback((text: string, highlight: string) => {
     if (!highlight.trim()) {
       return text
     }
@@ -224,15 +266,18 @@ export function DataTable({ data }: DataTableProps) {
         part
       ),
     )
-  }
+  }, [])
 
   const filteredAndSortedData = useMemo(() => {
     let filteredItems = [...data]
-    // Apply search filter
+    // Apply search filter only on visible columns
     if (searchTerm) {
       const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
-        Object.values(item).some((value) => searchRegex.test(String(value))),
+        visibleColumns.some((column) => {
+          const value = item[column.key]
+          return typeof value === 'string' && searchRegex.test(value)
+        }),
       )
     }
 
@@ -280,10 +325,15 @@ export function DataTable({ data }: DataTableProps) {
     // Apply sorting
     if (sortConfig.direction) {
       filteredItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        if (sortConfig.key == null) return sortConfig.direction === 'asc' ? -1 : 1
+        const bValue = b[sortConfig.key]
+        const aValue = a[sortConfig.key]
+        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'asc' ? 1 : -1
         }
         return 0
@@ -291,18 +341,14 @@ export function DataTable({ data }: DataTableProps) {
     }
 
     return filteredItems
-  }, [data, filters, searchTerm, sortConfig])
-
-  const visibleColumns = useMemo(() => {
-    return columns.filter((column) => columnVisibility[column.key])
-  }, [columnVisibility])
+  }, [data, filters, searchTerm, sortConfig, visibleColumns])
 
   const getSortIcon = (columnKey: keyof FutureMeetingTableData) => {
     if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
         return <ArrowUp className="h-4 w-4 ml-2" />
       } else if (sortConfig.direction === 'desc') {
-        return <ArrowDown className="h-4 w-4 ml-2" />
+        return <ArrowDown className="h-4 w-4 " />
       }
     }
     return null
@@ -310,34 +356,52 @@ export function DataTable({ data }: DataTableProps) {
 
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
-    if (filters[columnKey]) {
+    if (facetedFilters[columnKey]?.length != filters[columnKey].length) {
       return <Filter className="h-4 w-4 ml-2" />
     }
     return <ChevronDown className="h-4 w-4 ml-2" />
   }
 
   const facetedFilters = useMemo(() => {
-    const facets: { [key: string]: { value: string; count: number; icon?: React.ReactNode }[] } = {}
+    const facets: {
+      [key: string]: { value: string; count: number; icon?: React.ReactNode; translate?: string }[]
+    } = {}
     columns.forEach((column) => {
       if (column.filterable) {
         if (column.type === 'boolean') {
           const trueCount = data.filter((item) => item[column.key] === true).length
           const falseCount = data.filter((item) => item[column.key] === false).length
-          facets[column.key] = [
-            {
+          facets[column.key] = []
+          if (trueCount > 0) {
+            facets[column.key].push({
               value: 'true',
               count: trueCount,
               icon: <BooleanIcon iconType={true} />,
-            },
-            {
+            })
+          }
+          if (falseCount > 0) {
+            facets[column.key].push({
               value: 'false',
               count: falseCount,
               icon: <BooleanIcon iconType={false} />,
+            })
+          }
+        }
+        if (column.key === 'meetingState') {
+          const meetingStateCounts = data.reduce(
+            (acc, { meetingState }) => {
+              if (!meetingState) return acc // Skip null values
+              acc[meetingState] = (acc[meetingState] || 0) + 1
+              return acc
             },
-          ]
-        } else if (column.type === 'date') {
-          // Date columns don't need faceted filters
-          facets[column.key] = []
+            {} as Record<Exclude<MeetingState, null>, number>,
+          )
+
+          facets[column.key] = Object.entries(meetingStateCounts).map(([state, count]) => ({
+            value: state,
+            count,
+            translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+          }))
         } else {
           const values = new Set(data.map((item) => String(item[column.key])))
           facets[column.key] = Array.from(values).map((value) => ({
@@ -350,115 +414,99 @@ export function DataTable({ data }: DataTableProps) {
     return facets
   }, [data])
 
-  const renderTooltip = (content: React.ReactNode, tooltip: string) => (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent>
-        <p> {tooltip} </p>
-      </TooltipContent>
-    </Tooltip>
-  )
-
   return (
-    <TooltipProvider>
-      <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
-        <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-          <div className="relative w-1/3">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            {searchTerm && (
-              <X
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ז-10"
-                onClick={() => setSearchTerm('')}
-              />
+    <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
+      <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
+        <div className="relative w-1/3">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {searchTerm && (
+            <X
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ז-10"
+              onClick={() => setSearchTerm('')}
+            />
+          )}
+          <Input
+            placeholder="חיפוש כללי..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-10 text-right"
+          ></Input>
+        </div>
+        <div className="flex space-x-2 space-x-reverse">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resetFilters()}
+            className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
+          >
+            {isFilterActive ? 'הסר סינון' : 'סינון'}
+            {isFilterActive ? (
+              <FilterX className="h-4 w-4 mr-2" />
+            ) : (
+              <Filter className="h-4 w-4 mr-2" />
             )}
-            <Input
-              placeholder="חיפוש כללי..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10 text-right"
-            ></Input>
-          </div>
-          <div className="flex space-x-2 space-x-reverse">
-            {renderTooltip(
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => resetFilters()}
-                className={cn(
-                  'flex justify-between items-center w-40',
-                  isFilterActive && 'bg-muted',
-                )}
+                className="flex justify-between items-center w-40"
               >
-                {isFilterActive ? 'הסר סינון' : 'סינון'}
-                {isFilterActive ? (
-                  <FilterX className="h-4 w-4 mr-2" />
-                ) : (
-                  <Filter className="h-4 w-4 mr-2" />
-                )}
-              </Button>,
-              isFilterActive ? 'איפוס כל הסינונים' : 'הוספת כפתור לסינון בכל ראש עמודה ',
-            )}
-            <DropdownMenu>
-              {' '}
-              {renderTooltip(
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex justify-between items-center w-40"
-                  >
-                    <span>עמודות</span>
-                    <Settings2 className="h-4 w-4 mr-2" />
-                  </Button>
-                </DropdownMenuTrigger>,
-                'בחירת עמודות להצגה',
-              )}
-              <DropdownMenuContent>
-                {columns.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={String(column.key)}
-                    checked={columnVisibility[String(column.key)]}
-                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                    onSelect={(event) => event.preventDefault()}
-                    dir="rtl"
-                  >
-                    {typeof column.header === 'string' ? column.header : 'עמודה'}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                <span>עמודות</span>
+                <Settings2 className="h-4 w-4 mr-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {columns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={String(column.key)}
+                  checked={columnVisibility[String(column.key)]}
+                  onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                  onSelect={(event) => event.preventDefault()}
+                  dir="rtl"
+                >
+                  {typeof column.header === 'string' ? column.header : 'עמודה'}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      </div>
 
-        <div className="bg-background">
-          <div className="rounded-md border cursor-default">
-            <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
-              <Table className="w-full border-collapse relative" dir="rtl">
-                <TableHeader className="sticky top-0 bg-background z-20 bg-gray-100">
-                  <TableRow className="bg-muted/50 border-b border-border">
-                    {visibleColumns.map((column) => (
-                      <TableHead
-                        key={column.key}
-                        className="text-right max-w-[200px] min-w-[70px] overflow-hidden text-ellipsis cursor-pointer"
-                      >
-                        <div className="flex items-center justify-start">
-                          <span onClick={() => handleSort(column.key)}>{column.header}</span>
-                          {getSortIcon(column.key)}
-                          {isFilterActive && column.filterable && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  {getFilterIcon(column.key)}
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                {column.type === 'date' ? (
-                                  <DateRangePicker
-                                    dateRange={filters[column.key] || { from: null, to: null }}
-                                    onDateRangeChange={(range) => handleFilter(column.key, range)}
-                                  />
-                                ) : (
-                                  facetedFilters[column.key]?.map(({ value, count, icon }) => (
+      <div className="bg-background">
+        <div className="rounded-md border cursor-default">
+          <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
+            <Table className="w-full border-collapse relative" dir="rtl">
+              <TableHeader className="sticky top-0 bg-background z-20 bg-[#9fa8da]">
+                <TableRow className="bg-muted/50 border-b border-border">
+                  {visibleColumns.map((column) => (
+                    <TableHead
+                      key={column.key}
+                      className={cn(
+                        'text-right max-w-[200px] overflow-hidden text-ellipsis cursor-pointer',
+                      )}
+                      onClick={() => handleSort(column.key)}
+                    >
+                      <div className="flex items-center justify-start">
+                        <span>{column.header}</span>
+                        {getSortIcon(column.key)}
+                        {isFilterActive && column.filterable && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                {getFilterIcon(column.key)}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {column.type === 'date' ? (
+                                <DateRangePicker
+                                  dateRange={filters[column.key] || { from: null, to: null }}
+                                  onDateRangeChange={(range) => handleFilter(column.key, range)}
+                                />
+                              ) : (
+                                facetedFilters[column.key]?.map(
+                                  ({ value, count, icon, translate }) => (
                                     <DropdownMenuCheckboxItem
                                       key={value}
                                       checked={
@@ -481,83 +529,81 @@ export function DataTable({ data }: DataTableProps) {
                                         className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
                                       />
                                       <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">{icon ? icon : value}</span>
+                                        <span className="text-right">
+                                          {icon ? icon : translate ? translate : value}
+                                        </span>
                                         <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
                                           {count}
                                         </span>
                                       </div>
                                     </DropdownMenuCheckboxItem>
-                                  ))
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="justify-center text-center"
-                                  onClick={() => handleFilter(column.key, 'all')}
-                                >
-                                  בחר הכל
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="sticky left-0 z-10 w-0"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedData.map((row) => (
-                    <TableRow
-                      key={row.meetingId}
-                      className="hover:bg-muted/70 group transition-colors"
-                    >
-                      {visibleColumns.map((column) => (
-                        <TableCell
-                          key={`${row.meetingId}-${String(column.key)}`}
-                          style={column.type == 'datetime' ? { direction: 'ltr' } : {}}
-                          className={`py-2 px-3 ${column.positionCenter ? 'place-items-center' : 'text-right'}  ${column.type == 'datetime' ? ' ltr bg-blue' : 'bg-red'} whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
-                        >
-                          {renderTooltip(
-                            <span>
-                              {column.render
-                                ? column.render(row)
-                                : highlightText(String(row[column.key]), searchTerm)}
-                            </span>,
-                            String(
-                              column.type == 'boolean'
-                                ? row[column.key]
-                                  ? 'כן'
-                                  : 'לא'
-                                : column.render
-                                  ? column.render(row)
-                                  : row[column.key],
-                            ),
-                          )}
-                        </TableCell>
-                      ))}
-                      <TableCell className="relative group sticky left-[80px] z-10">
-                        {row.meetingInviteUrl &&
-                          renderTooltip(
-                            <a
-                              href={row.meetingInviteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <span className="absolute hidden h-full group-hover:flex items-center justify-center inset-0 group-hover:inline group-hover:bg-opacity-100 group-hover:bg-gray-100 group-hover:w-[100px] text-sm text-foreground hover:text-blue-800 whitespace-nowrap">
-                                זימון אסיפה
-                              </span>
-                            </a>,
-                            'פתיחת זימון האסיפה',
-                          )}
-                      </TableCell>
-                    </TableRow>
+                                  ),
+                                )
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="justify-center text-center"
+                                onClick={() => handleFilter(column.key, 'all')}
+                              >
+                                בחר הכל
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </TableHead>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
+                  <TableHead className="sticky left-0 z-10 w-0"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedData.map((row) => (
+                  <TableRow key={row.meetingId} className="group hover:bg-[rgba(26,35,126,0.7)]">
+                    {visibleColumns.map((column) => (
+                      <TableCell
+                        key={`${row.meetingId}-${String(column.key)}`}
+                        style={{
+                          direction: column.type === 'datetime' ? 'ltr' : 'rtl',
+                          placeItems: column.positionCenter ? 'center' : 'unset',
+                          textAlign: column.positionCenter ? 'center' : 'right',
+                        }}
+                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        ref={(el) => {
+                          if (!el) return
+                          el.setAttribute(
+                            'title',
+                            el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                          )
+                        }}
+                      >
+                        {column.render
+                          ? column.render(row)
+                          : highlightText(String(row[column.key]), searchTerm)}
+                      </TableCell>
+                    ))}
+                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0">
+                      {row.meetingInviteUrl && (
+                        <div className="relative flex items-center">
+                          <span className="absolute right-[-100px] top-0 h-full w-[100px] opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-[#6b6da7]"></span>
+                          <a
+                            href={row.meetingInviteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline text-transparent group-hover:w-[100px] group-hover:bg-opacity-100 group-hover:bg-[#6b6da7] text-sm text-foreground group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap"
+                          >
+                            קישור למגנה
+                          </a>
+                          <div className="w-0 h-[40px] opacity-0 group-hover:w-[100px] group-hover:opacity-100  bg-gradient-to-r from-[#6b6da7] "></div>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   )
 }

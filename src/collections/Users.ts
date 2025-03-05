@@ -9,15 +9,11 @@ export const Users: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'email',
-    group: "ניהול",
-    pagination: {
-      defaultLimit: 500,
-      limits: [10, 20, 50,100,200,500],
-    },
+    group:"ניהול"
   },
   auth: {
     useAPIKey: true,
-    tokenExpiration: (process.env.NODE_ENV == "production") ? 43200 : 432000 // 12 hours in prod, 5 days in dev timeout
+    tokenExpiration: process.env.NODE_ENV == 'production' ? 43200 : 432000, // 12 hours in prod, 5 days in dev timeout
   },
   fields: [
     {
