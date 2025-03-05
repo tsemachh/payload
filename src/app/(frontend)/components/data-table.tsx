@@ -68,14 +68,14 @@ const columns: Column[] = [
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL').format(Number((row.marketValue / 1_000_000).toFixed(3))),
+      new Intl.NumberFormat('he-IL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(
+        row.marketValue / 1_000_000,
+      ),
   },
   {
     key: 'registeredValue',
-    header: 'ערך נקוב (מיליוני ₪)',
+    header: 'ערך נקוב',
     type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL').format(Number((row.registeredValue / 1_000_000).toFixed(3))),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
