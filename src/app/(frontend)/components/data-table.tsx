@@ -259,7 +259,7 @@ export function DataTable({ data }: DataTableProps) {
     const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight)})`, 'gi')
     return text.split(regex).map((part, i) =>
       regex.test(part) ? (
-        <span key={i} style={{ backgroundColor: 'yellow' }}>
+        <span key={i} className="bg-primary/20">
           {part}
         </span>
       ) : (
@@ -478,8 +478,8 @@ export function DataTable({ data }: DataTableProps) {
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
             <Table className="w-full border-collapse relative" dir="rtl">
-              <TableHeader className="sticky top-0 bg-background z-20 bg-[#9fa8da]">
-                <TableRow className="bg-muted/50 border-b border-border">
+              <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
+                <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={column.key}
@@ -558,7 +558,7 @@ export function DataTable({ data }: DataTableProps) {
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={row.meetingId} className="group hover:bg-[rgba(26,35,126,0.7)]">
+                  <TableRow key={row.meetingId} className="group hover:bg-primary/20">
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${row.meetingId}-${String(column.key)}`}
@@ -581,19 +581,20 @@ export function DataTable({ data }: DataTableProps) {
                           : highlightText(String(row[column.key]), searchTerm)}
                       </TableCell>
                     ))}
-                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0">
+                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
                       {row.meetingInviteUrl && (
                         <div className="relative flex items-center">
-                          <span className="absolute right-[-100px] top-0 h-full w-[100px] opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-[#6b6da7]"></span>
+                          <div className="absolute right-0 top-0 h-full bg-background opacity-0 group-hover:opacity-100 transition-all duration-200"></div>
+                          <span className="absolute right-[-100px] top-0 h-full w-[100px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></span>
                           <a
                             href={row.meetingInviteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline text-transparent group-hover:w-[100px] group-hover:bg-opacity-100 group-hover:bg-[#6b6da7] text-sm text-foreground group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap"
+                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline w-[100px] group-hover:bg-secondary text-sm text-transparent group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap z-30 transition-all duration-200"
                           >
                             קישור למגנה
                           </a>
-                          <div className="w-0 h-[40px] opacity-0 group-hover:w-[100px] group-hover:opacity-100  bg-gradient-to-r from-[#6b6da7] "></div>
+                          <div className="w-[100px] h-[40px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></div>
                         </div>
                       )}
                     </TableCell>
