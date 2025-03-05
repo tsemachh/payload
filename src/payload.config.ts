@@ -4,7 +4,7 @@ import { addAuthorsFields } from '@shefing/authors-info'
 import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig, Payload } from 'payload'
+import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
@@ -21,7 +21,6 @@ import { Meetings } from './collections/meetings/Meetings'
 import { Roles } from '@shefing/authorization'
 
 import MigrationFaults from '@/collections/migration/MigrationFaults'
-import { updateCompletedMeetings } from './jobs/updateCompletedMeetings'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 /*
@@ -54,15 +53,11 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
-  onInit: async (payload) => {
-    payload.logger.info('Payload initialized')
-    payload.logger.info('Registered jobs:', payload.jobs || 'None')
-  },
   i18n: {
     supportedLanguages: { he, en },
   },
   admin: {
-    dateFormat: 'HH:mm dd/MM/yyyy',
+    dateFormat:"HH:mm dd/MM/yyyy",
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
@@ -84,7 +79,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users , Roles, Document, MigrationFaults],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -94,14 +89,7 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  // onInit: async (payload: Payload) => {
-  //   const createdJob = await payload.jobs.queue({
-  //     task: 'update-completed-meetings',
-  //     input: {},
-  //   })
-  // },
-
-  //  logger,
+//  logger,
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder
@@ -116,25 +104,4 @@ export default buildConfig({
       usernameField: 'name', //name field to use from Users collection, 'user' by default
     }),
   ],
-  // jobs: {
-  //   tasks: [
-  //     {
-  //       handler:
-  //         path.resolve(dirname, 'jobs/updateCompletedMeetings.ts') + '#updateCompletedMeetings',
-  //       slug: 'update-completed-meetings',
-  //     },
-  //   ],
-  //   autoRun: [
-  //     {
-  //       cron: '0/1 * * * *',
-  //       limit: 100,
-  //       queue: 'daily',
-  //     },
-  //   ],
-  //   shouldAutoRun: async () => {
-  //     const result = true // or add your condition here
-  //     console.log(`--------------------------------shouldAutoRun: ${result}`)
-  //     return result
-  //   },
-  // },
 })
