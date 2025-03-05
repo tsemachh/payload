@@ -589,7 +589,7 @@ export function DataTable({ data }: DataTableProps) {
                             href={row.meetingInviteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline text-transparent group-hover:w-[100px] group-hover:bg-opacity-100 group-hover:bg-[#6b6da7] text-sm text-foreground group-hover:text-blue-600 group-hover:text-blue-500 whitespace-nowrap"
+                            className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline text-transparent group-hover:w-[100px] group-hover:bg-opacity-100 group-hover:bg-[#6b6da7] text-sm text-foreground group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap"
                           >
                             קישור למגנה
                           </a>
