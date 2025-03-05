@@ -84,7 +84,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults],
+  collections: [Stocks, StockValues, Meetings, Users , Roles, Document, MigrationFaults],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next lint && cross-env NODE_OPTIONS=--no-deprecation next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation node scripts/init-fetch.js& cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation node scripts/init-fetch.js& cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devturbo": "cross-env NODE_OPTIONS=--no-deprecation pnpm generate:types && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo",
     "devg": "cross-env NODE_OPTIONS=--no-deprecation pnpm generate:types && cross-env NODE_OPTIONS=--no-deprecation pnpm generate:importmap && cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" next dev --turbo ",

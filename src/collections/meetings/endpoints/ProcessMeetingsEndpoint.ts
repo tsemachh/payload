@@ -1,9 +1,13 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
 const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
+    if (req === null) {
+      return Response.json({ error: 'forbidden' }, { status: 403 })
+    }
     if (!req.user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+      return Response.json({ error: 'forbidden' }, { status: 403 })
     }
 
     // Get current date in ISO format
@@ -56,7 +60,7 @@ const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
       {
         success: false,
         error: 'Failed to process meetings',
-        details: error.message,
+        details: error,
       },
       { status: 500 },
     )
