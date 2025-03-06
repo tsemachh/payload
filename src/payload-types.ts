@@ -31,7 +31,7 @@ export type StockType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "StockOrigin".
  */
-export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
+export type StockOrigin = 'TASE' | 'Foreign' | 'NonTradable' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
@@ -58,6 +58,7 @@ export type RolePermissions =
         | 'roles'
         | 'document'
         | 'migration-faults'
+        | 'stock-migration-mapping'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -131,6 +132,7 @@ export interface Config {
     roles: Role;
     document: Document;
     'migration-faults': MigrationFault;
+    'stock-migration-mapping': StockMigrationMapping;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -146,6 +148,7 @@ export interface Config {
     roles: RolesSelect<false> | RolesSelect<true>;
     document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
+    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -201,8 +204,8 @@ export interface Stock {
   type?: StockType;
   origin: StockOrigin;
   tradable?: boolean | null;
-  private?: boolean | null;
   relatedStock?: (string | null) | Stock;
+  active?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -339,6 +342,20 @@ export interface MigrationFault {
   typeId?: string | null;
   row?: string | null;
   comments?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping".
+ */
+export interface StockMigrationMapping {
+  id: string;
+  stockId: number;
+  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
+  isin?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -509,6 +526,10 @@ export interface PayloadLockedDocument {
         value: string | MigrationFault;
       } | null)
     | ({
+        relationTo: 'stock-migration-mapping';
+        value: string | StockMigrationMapping;
+      } | null)
+    | ({
         relationTo: 'exports';
         value: string | Export;
       } | null)
@@ -568,8 +589,8 @@ export interface StocksSelect<T extends boolean = true> {
   type?: T;
   origin?: T;
   tradable?: T;
-  private?: T;
   relatedStock?: T;
+  active?: T;
   symbol?: T;
   name?: T;
   longName?: T;
@@ -696,6 +717,19 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   typeId?: T;
   row?: T;
   comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping_select".
+ */
+export interface StockMigrationMappingSelect<T extends boolean = true> {
+  stockId?: T;
+  type?: T;
+  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

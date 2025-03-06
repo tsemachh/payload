@@ -107,6 +107,7 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
+                    { label: 'לא סחיר', value: 'NonTradable' },
                     { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
@@ -117,12 +118,6 @@ export const Stocks: CollectionConfig = {
                   name: 'tradable',
                   label: 'האם נסחר',
                   type: 'checkbox',
-                },
-                {
-                  name: 'private',
-                  label: 'האם חברה פרטית',
-                  type: 'checkbox',
-                  admin: { condition: (siblingData) => !siblingData.tradable },
                 },
                 {
                   name: 'relatedStock',
@@ -137,6 +132,12 @@ export const Stocks: CollectionConfig = {
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),
+                },
+                {
+                  name: 'active',
+                  label: 'מניה פעילה',
+                  type: 'checkbox',
+                  index: true
                 },
               ],
             },
@@ -161,7 +162,7 @@ export const Stocks: CollectionConfig = {
                   label: 'שם חברה',
                   type: 'text',
                   admin: {
-                    condition: (siblingData) => siblingData.tradable || siblingData.private,
+                    condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private'
                   },
                 },
               ],
@@ -202,7 +203,7 @@ export const Stocks: CollectionConfig = {
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable || siblingData.private },
+          admin: { condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private' },
           fields: [
             {
               name: 'meetings',
