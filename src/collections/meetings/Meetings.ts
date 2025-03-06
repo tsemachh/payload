@@ -10,9 +10,12 @@ const meetingLinkProps: IconLinkProps = {
 }
 //export type Validate<TValue = any, TData = any, TSiblingData = any, TFieldConfig extends object = object> = (value: null | TValue | undefined, options: ValidateOptions<TData, TSiblingData, TFieldConfig, TValue>) => Promise<string | true> | string | true;
 
-const validateMeetingState = (value:string, data:Meeting ) => {
+const validateMeetingState = (value: string | null | undefined, options: any) => {
+  if (!value) return true
+  
+  const { siblingData } = options
   const currentDate = new Date()
-  const meetingDate = data.meetingDate ? new Date(data.meetingDate) : null
+  const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
 
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
