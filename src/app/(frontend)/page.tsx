@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { DataTable } from '@/components/data-table'
 import { fetchMeetingsForTable } from './api/payload'
 import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
+import { meetingColumns, renderMeetingActions } from './columns'
 
 async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
@@ -11,7 +12,17 @@ async function MeetingsTable() {
   )
   //TODO: Temporary until the data is updated.
 
-  return <DataTable data={futureMeetingTableDataTemporary} />
+  return (
+    <DataTable 
+      data={futureMeetingTableDataTemporary} 
+      columns={meetingColumns}
+      idField="meetingId"
+      defaultSortField="meetingDate"
+      defaultSortDirection="desc"
+      tableId="meetings-table"
+      renderRowActions={renderMeetingActions}
+    />
+  )
 }
 
 export default function AssembliesPage() {
