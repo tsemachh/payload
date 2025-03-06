@@ -1,5 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
+import {importExportPlugin} from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
 import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -23,7 +24,7 @@ import { Roles } from '@shefing/authorization'
 import MigrationFaults from '@/collections/migration/MigrationFaults'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
-/*
+
 const transport = await logtailTransport({
   sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
   options: {
@@ -47,7 +48,7 @@ const logger = pino(
   },
   transport,
 )
-*/
+
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -89,8 +90,18 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-//  logger,
+  logger,
   plugins: [
+    importExportPlugin({
+      collections: ['users', 'stocks','meetings'],
+      overrideExportCollection: (collection) => {
+        collection.admin.group = 'ניהול'
+        collection.labels = {plural:'יצוא קבצים',singular:'יצוא קובץ'}
+        collection.upload.staticDir = path.resolve(dirname, 'uploads')
+        return collection
+      },
+      disableJobsQueue: true,
+    }),
     payloadCloudPlugin(),
     // storage-adapter-placeholder
     addAccess({
