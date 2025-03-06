@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
 
@@ -7,6 +7,46 @@ const meetingLinkProps: IconLinkProps = {
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
+
+const validateMeetingState = (value, { data }) => {
+  const currentDate = new Date();
+  const meetingDate = data.meetingDate ? new Date(data.meetingDate) : null;
+  const previousMeetingDate = data.id && data._status !== 'draft' ? new Date(data.existingDoc?.meetingDate) : null;
+
+  if (!meetingDate) {
+    return 'יש לספק תאריך אסיפה';
+  }
+
+  switch (value) {
+    case 'completed':
+      if (meetingDate > currentDate) {
+        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר';
+      }
+      break;
+
+    case 'postponed':
+      if (!previousMeetingDate || previousMeetingDate >= meetingDate) {
+        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר';
+      }
+      break;
+
+    case 'on-hold':
+      if (previousMeetingDate && previousMeetingDate.getTime() !== meetingDate.getTime()) {
+        return 'מצב ״נדחית ללא מועד״ מתאפשר רק אם מועד האסיפה לא השתנה';
+      }
+      break;
+
+    case 'scheduled':
+      if (meetingDate <= currentDate) {
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד';
+      }
+      break;
+  }
+
+  return true;
+};
+
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -139,6 +179,7 @@ export const Meetings: CollectionConfig = {
           label: 'מצב',
           type: 'select',
           interfaceName: 'MeetingState',
+          validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
             { label: 'התקיימה', value: 'completed' },
@@ -186,5 +227,4 @@ export const Meetings: CollectionConfig = {
       handler: ProcessMeetingsEndpoint,
     },
   ],
-  // ... rest of collection config
 }
