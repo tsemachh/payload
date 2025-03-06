@@ -1,50 +1,51 @@
-import type { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
+import { Meeting } from '@/payload-types'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
+//export type Validate<TValue = any, TData = any, TSiblingData = any, TFieldConfig extends object = object> = (value: null | TValue | undefined, options: ValidateOptions<TData, TSiblingData, TFieldConfig, TValue>) => Promise<string | true> | string | true;
 
-const validateMeetingState = (value, { data }) => {
-  const currentDate = new Date();
-  const meetingDate = data.meetingDate ? new Date(data.meetingDate) : null;
+const validateMeetingState = (value:string, data:Meeting ) => {
+  const currentDate = new Date()
+  const meetingDate = data.meetingDate ? new Date(data.meetingDate) : null
 
   if (!meetingDate) {
-    return 'יש לספק מועד אסיפה';
+    return 'יש לספק מועד אסיפה'
   }
 
   switch (value) {
     case 'completed':
       if (meetingDate > currentDate) {
-        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר';
+        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
       }
-      break;
+      break
 
     case 'postponed':
       if (meetingDate < currentDate) {
-        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר';
+        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר'
       }
-      break;
+      break
 
     case 'scheduled':
       if (meetingDate < currentDate) {
-        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד';
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
       }
-      break;
+      break
 
     case 'ongoing':
       if (meetingDate < currentDate) {
-        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד';
+        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
       }
-      break;
+      break
   }
 
-  return true;
-};
-
+  return true
+}
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
