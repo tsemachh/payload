@@ -11,10 +11,9 @@ const meetingLinkProps: IconLinkProps = {
 const validateMeetingState = (value, { data }) => {
   const currentDate = new Date();
   const meetingDate = data.meetingDate ? new Date(data.meetingDate) : null;
-  const previousMeetingDate = data.id && data._status !== 'draft' ? new Date(data.existingDoc?.meetingDate) : null;
 
   if (!meetingDate) {
-    return 'יש לספק תאריך אסיפה';
+    return 'יש לספק מועד אסיפה';
   }
 
   switch (value) {
@@ -25,20 +24,20 @@ const validateMeetingState = (value, { data }) => {
       break;
 
     case 'postponed':
-      if (!previousMeetingDate || previousMeetingDate >= meetingDate) {
+      if (meetingDate < currentDate) {
         return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר';
       }
       break;
 
-    case 'on-hold':
-      if (previousMeetingDate && previousMeetingDate.getTime() !== meetingDate.getTime()) {
-        return 'מצב ״נדחית ללא מועד״ מתאפשר רק אם מועד האסיפה לא השתנה';
+    case 'scheduled':
+      if (meetingDate < currentDate) {
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד';
       }
       break;
 
-    case 'scheduled':
-      if (meetingDate <= currentDate) {
-        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד';
+    case 'ongoing':
+      if (meetingDate < currentDate) {
+        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד';
       }
       break;
   }
