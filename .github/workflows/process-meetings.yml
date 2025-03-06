@@ -14,10 +14,10 @@ jobs:
           echo "::group::Processing Meetings API Call"
           echo "Making API request to process meetings..."
           response=$(curl -v -X POST \
-            -H "Authorization: users API-Key ${{secrets.API_KEY}}" \
+            -H "Authorization: users API-Key ${{secrets.CRON_DEV_API_KEY}}" \
             -H "Content-Type: application/json" \
             -d '{"runType": "github-action", "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' \
-            ${{secrets.API_URL}}/api/meetings/process-meetings)
+            ${{secrets.CRON_DEV_API_URL}}/api/meetings/process-meetings)
           status=$?
 
           echo "API Response:"
