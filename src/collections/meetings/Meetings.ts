@@ -8,7 +8,6 @@ const meetingLinkProps: IconLinkProps = {
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
-//export type Validate<TValue = any, TData = any, TSiblingData = any, TFieldConfig extends object = object> = (value: null | TValue | undefined, options: ValidateOptions<TData, TSiblingData, TFieldConfig, TValue>) => Promise<string | true> | string | true;
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
