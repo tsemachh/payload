@@ -184,6 +184,12 @@ export const Stocks: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'comments',
+              label: 'הערות',
+              type: 'textarea',
+            },
+
           ],
         },
         {
