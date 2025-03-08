@@ -123,22 +123,47 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 
 export function ImportedRowToStock(row: ImportStock) {}
 
+export type StockMappingType = 'NotActive' | 'NonTradable' | 'Private' | 'Foreign';
+
+export async function getStockIdsByMappingType(payload: Payload, type: StockMappingType): Promise<Set<string>> {
+  const result = await payload.find({
+    collection: 'stock-migration-mapping',
+    where: {
+      type: {
+        equals: type
+      }
+    },
+    limit: 1000,
+  });
+
+  console.log(`Retrieved ${result.docs.length} ${type.toLowerCase()} stocks from stock migration mapping`);
+  const stocks: Set<string> = new Set();
+  for (const doc of result.docs) {
+    stocks.add(`${doc.stockId}`);
+  }
+  return stocks;
+}
+
 export async function upsertStockFromImport(
   stockSequence: string | null,
   row: ImportStock,
   req: PayloadRequest,
   tradable: boolean,
-  isForeign: boolean  = false
+  origin: StockOrigin  = "TASE",
+  active: boolean | null = true,
+  comments:string =""
 ) {
 
   const stockData: Partial<Stock> = {
+    active : active,
     stockId: `${row.stockID}`,
     name: row.name || null,
     symbol: row.symbol || null,
     type: row.type || null,
     longName: row.longName || null,
     tradable: tradable as boolean | null,
-    origin: (isForeign ? "Foreign" : "TASE") as StockOrigin
+    origin: origin,
+    comments
   }
 
   if (!stockSequence) {

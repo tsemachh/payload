@@ -1,20 +1,25 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Stock, StockType } from '@/payload-types'
-import { getStockType, StockRow } from '@/utils/migrationUtils'
+import { Stock, StockOrigin } from '@/payload-types'
+import { getStockType } from '@/utils/migrateStockUtils'
 import { getSeqeunceStockId } from '../utils/utils'
 import {
   getAllStocksInMeetings,
   getEmdaStockIds,
   getPredictaStockIds,
+  getStockIdsByMappingType,
   getStockRelations,
   getStocks,
-  getStockValues, upsertStockFromImport, upsertStockValueFromImport,
+  getStockValues,
+  upsertStockFromImport,
+  upsertStockValueFromImport,
 } from '@/utils/migrateUtils'
 import {
-  logMigrationFault,
+  createErrorFaultComment,
   createStockFaultComment,
-  createStockRelationFaultComment, createErrorFaultComment, createStockValueFaultComment,
+  createStockRelationFaultComment,
+  createStockValueFaultComment,
+  logMigrationFault,
 } from '@/utils/migrationFaultUtils'
 
 // SQL Server configuration
@@ -30,6 +35,7 @@ const sqlConfig: sql.config = {
   },
   requestTimeout: 120000, // Increase timeout globally to 120 seconds
 }
+
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
@@ -41,40 +47,107 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
 
-    const resultStocks = await getStocks(pool)
-    const predictaStocks: Set<string> = await getPredictaStockIds(pool)
-    const emdaStocks: Set<string> = await getEmdaStockIds(pool)
-    const relationStocks: Map<string, string> = await getStockRelations(pool, payload)
-    const rootRelatedStocks:Set<string> = new Set<string>(relationStocks.values())
+    const resultStocks = await getStocks(pool) //AllStocks
+    const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
+    const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
+    const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
+    const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
-    const resultStockValues = await getStockValues(pool)
+    const resultStockValues = await getStockValues(pool) //TODO need to take only 7 years back of stocks
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
     let successCount = 0
     let errorCount = 0
     const stockIdTOSequence: Map<string, string> = new Map<string, string>()
+
+    // Get stock status from migration mapping
+    console.log('Fetching stock statuses from migration mapping...')
+    const [notActiveStocks, nonTradableStocks, privateStocks, foreignStocks] = await Promise.all([
+      getStockIdsByMappingType(payload, 'NotActive'),
+      getStockIdsByMappingType(payload, 'NonTradable'),
+      getStockIdsByMappingType(payload, 'Private'),
+      getStockIdsByMappingType(payload, 'Foreign'),
+    ])
+
+    console.log("notative",JSON.stringify(notActiveStocks))
     for (const row of resultStocks.recordset) {
       row.stockID = `${row.stockID}`
+      // Check stock status from migration mapping
       const relatedStock = relationStocks.get(row.stockID)
-      const hasTradableRelationStock:boolean = !!(relatedStock && predictaStocks.has(relatedStock))
-      const hasForeignRelationStock = relatedStock && !predictaStocks.has(relatedStock)
-      const isPredictaStock = predictaStocks.has(row.stockID)
-      const isEmdaStock = emdaStocks.has(row.stockID)
-      const stockHasMeeting = stocksInMeeting.has(row.stockID)
-      const isRootEmdaStock=rootRelatedStocks.has(row.stockID) && isEmdaStock
-      const isRootForeignStock=rootRelatedStocks.has(row.stockID) && !isPredictaStock
-      if (
-        isPredictaStock ||
-        (isEmdaStock && (hasTradableRelationStock || isRootEmdaStock)) ||
-        (hasForeignRelationStock) || (isRootForeignStock) ||
-        stockHasMeeting
-      ) {
+      const isRootStock = rootRelatedStocks.has(row.stockID)
+
+      // Consolidate all stock statuses in one place
+      const stockStatuses = {
+        // Basic statuses from mapping
+        isNotActive: notActiveStocks.has(row.stockID),
+        isNonTradable: nonTradableStocks.has(row.stockID),
+        isPrivate: privateStocks.has(row.stockID),
+
+        // Stock source statuses
+        isPredictaStock: predictaStocks.has(row.stockID),
+        isEmdaStock: emdaStocks.has(row.stockID),
+
+        // Meeting status
+        hasActiveMeeting: stocksInMeeting.has(row.stockID),
+
+        // Relationship statuses
+        hasTradableRelation: !!(relatedStock && predictaStocks.has(relatedStock)),
+        hasForeignRelation: !!(relatedStock && foreignStocks.has(relatedStock)),
+
+        // Root statuses
+        isRootStock: isRootStock,
+        isRootEmda: isRootStock && emdaStocks.has(row.stockID),
+
+        // Foreign status (including relations)
+        isForeign: foreignStocks.has(row.stockID) || 
+                  !!(relatedStock && foreignStocks.has(relatedStock))
+      }
+
+      // Determine if stock should be processed
+      const shouldProcessStock =
+        stockStatuses.isPredictaStock ||
+        stockStatuses.isEmdaStock ||
+        stockStatuses.hasActiveMeeting ||
+        stockStatuses.isForeign ||
+        stockStatuses.isPrivate ||
+        stockStatuses.isNonTradable ||
+        stockStatuses.isNotActive
+
+      if (shouldProcessStock) {
         try {
           let stockSequence: string | null | undefined = stockIdTOSequence.get(row.stockID)
           if (!stockSequence) stockSequence = await getSeqeunceStockId(payload, row.stockID)
           row.type = getStockType(row)
 
-          stockSequence=await upsertStockFromImport(stockSequence,row,req,isPredictaStock || isRootForeignStock,hasForeignRelationStock || isRootForeignStock )
+          // Determine origin with clear priority
+          let origin: StockOrigin = 'TASE'
+          if (stockStatuses.isPrivate) origin = 'Private'
+          else if (stockStatuses.isNonTradable) origin = 'NonTradable'
+          else if (stockStatuses.isForeign) origin = 'Foreign'
+
+          // Determine tradable status:
+          // - Predicta stocks are tradable
+          // - Root EMDA stocks are tradable
+          // - Foreign stocks are tradable unless they are non-tradable or private
+          const isTradable =
+            stockStatuses.isPredictaStock ||
+            stockStatuses.isRootStock ||
+            stockStatuses.isForeign
+
+          // Determine active status:
+          // - Not active stocks are never active
+          // - Stocks with meetings are not active unless they are Predicta or EMDA stocks
+          const isActive = !(stockStatuses.isNotActive || (stockStatuses.hasActiveMeeting && !stockStatuses.isPredictaStock && !stockStatuses.isEmdaStock))
+
+          stockSequence = await upsertStockFromImport(
+            stockSequence,
+            row,
+            req,
+            isTradable,
+            origin,
+            isActive,
+            JSON.stringify(stockStatuses)
+          )
           stockIdTOSequence.set(row.stockID, stockSequence)
 
           successCount++
@@ -102,10 +175,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           type: 'stock',
           typeId: row.stockID,
           comments: createStockFaultComment({
-            isPredictaStock,
-            isEmdaStock,
-            hasTradableRelationStock,
-            stockHasMeeting,
+            isPredictaStock: stockStatuses.isPredictaStock,
+            isEmdaStock: stockStatuses.isEmdaStock,
+            hasTradableRelationStock: stockStatuses.hasTradableRelation,
+            stockHasMeeting: stockStatuses.hasActiveMeeting,
           }),
           row,
         })
@@ -124,7 +197,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'stocks',
             id: theStockToUpdate,
             data: {
-              relatedStock: relatedStock as Stock['id']
+              relatedStock: relatedStock as Stock['id'],
             },
             req,
           })
@@ -168,7 +241,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         row.stockID = `${row.stockID}`
         const stockSequence = stockIdTOSequence.get(row.stockID)
         const isPredictaStock = predictaStocks.has(row.stockID)
-        const isRootForeignStock=rootRelatedStocks.has(row.stockID) && !isPredictaStock
+        const isRootForeignStock = rootRelatedStocks.has(row.stockID) && !isPredictaStock
 
         if (!stockSequence || (!isPredictaStock && !isRootForeignStock)) {
           await logMigrationFault({
@@ -180,7 +253,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           })
           continue
         }
-        await upsertStockValueFromImport( stockSequence, row, req)
+        await upsertStockValueFromImport(stockSequence, row, req)
 
         successCount++
         console.log(
