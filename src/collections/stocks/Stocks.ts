@@ -132,6 +132,12 @@ export const Stocks: CollectionConfig = {
                     tradable: { equals: true },
                   }),
                 },
+                {
+                  name: 'active',
+                  label: 'מניה פעילה',
+                  type: 'checkbox',
+                  index: true
+                },
               ],
             },
             {
@@ -177,6 +183,12 @@ export const Stocks: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'comments',
+              label: 'הערות',
+              type: 'textarea',
+            },
+
           ],
         },
         {
