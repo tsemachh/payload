@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
-import { Meeting } from '@/payload-types'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -44,17 +43,16 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   }
      return true
 }}
+interface AccessArgs {
+  data?: {
+    state?: string;
+  };
+}
 
 // Function to check if document should be read-only
-const getReadOnlyAccess = ({ data}) => {
-   if(data?.state === 'completed' || data?.state === 'cancelled')
+const getReadOnlyAccess = ({ data }: AccessArgs): boolean => {
+  if(data?.state === 'completed' || data?.state === 'cancelled')
      return false
-  return true
-}
-// Function to check if document should be read-only
-const getReadOnlyAccessMeetingDate = ({ data}) => {
-  if(data?.state === 'on-hold' || data?.state === 'completed' || data?.state === 'cancelled')
-    return false
   return true
 }
 
@@ -83,7 +81,7 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
-
+// Add this to the collection config
   fields: [
     {
       type: 'row',
@@ -192,24 +190,11 @@ export const Meetings: CollectionConfig = {
               displayFormat: 'HH:mm dd/MM/yyyy',
               pickerAppearance: 'dayAndTime',
             },
-            description: (data) => data?.state === 'on-hold' ? 'מועד האסיפה לא זמין במצב ״נדחית ללא מועד״' : undefined,
           },
           access: {
-            update: getReadOnlyAccessMeetingDate
+            update: getReadOnlyAccess
           },
-          hooks: {
-            beforeChange: [
-              ({ siblingData,value }) => {
-                // Handle meetingDate when state is on-hold
-                if (siblingData.state === 'on-hold') {
-                  console.log(`-------data ${siblingData}`)
-                  console.log(`-------data.state ${siblingData.state}`)
-                  return null
-                }
-                return value
-              }
-            ],
-          },
+
         },
       ],
     },
@@ -230,6 +215,16 @@ export const Meetings: CollectionConfig = {
           type: 'select',
           access: {
             update: getReadOnlyAccess
+          },
+          hooks: {
+            beforeChange: [
+              ({ siblingData,value }) => {
+                if (value === 'on-hold') {
+                  siblingData.meetingDate =null
+                }
+                return value
+              }
+            ],
           },
           interfaceName: 'MeetingState',
           validate: validateMeetingState,
