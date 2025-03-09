@@ -6,21 +6,31 @@ import { meetingColumns, renderMeetingActions } from './columns'
 
 async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
-  //TODO: Temporary until the data is updated.
-  const futureMeetingTableDataTemporary = futureMeetingTableData.filter(
-    (meeting) => meeting.marketValue && meeting.registeredValue,
-  )
-  //TODO: Temporary until the data is updated.
 
+  const pastDateFilterOptions = [
+    { value: 'yesterday', label: 'אתמול' },
+    { value: 'lastWeek', label: 'שבוע החל מאתמול' },
+    { value: 'lastMonth', label: 'חודש החל מאתמול' },
+    { value: 'allPast', label: 'כל התאריכים שעברו' },
+  ]
+
+  const futureDateFilterOptions = [
+    { value: 'today', label: 'היום' },
+    { value: 'nextWeek', label: 'עוד שבוע מהיום' },
+    { value: 'nextMonth', label: 'עוד חודש מהיום' },
+    { value: 'allFuture', label: 'כל התאריכים העתידיים' },
+  ]
   return (
-    <DataTable 
-      data={futureMeetingTableDataTemporary} 
+    <DataTable
+      data={futureMeetingTableData}
       columns={meetingColumns}
       idField="meetingId"
       defaultSortField="meetingDate"
       defaultSortDirection="desc"
       tableId="meetings-table"
       renderRowActions={renderMeetingActions}
+      pastDateFilterOptions={pastDateFilterOptions}
+      futureDateFilterOptions={futureDateFilterOptions}
     />
   )
 }
