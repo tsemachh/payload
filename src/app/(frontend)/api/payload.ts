@@ -14,10 +14,14 @@ export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]>
 
       let stocksVales = null
       if (meeting.holdingsLimit) {
+        const stockIdToUse = stockPresent?.relatedStock
+          ? (stockPresent.relatedStock as { id: string }).id 
+          : stockPresent?.id
+
         const result = await payload.find({
           collection: 'stock-values',
           where: {
-            stockId: { equals: stockPresent?.id },
+            stockId: { equals: stockIdToUse },
             valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() },
           },
           limit: 0,

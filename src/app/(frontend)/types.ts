@@ -23,3 +23,8 @@ export type FutureMeetingTableData = {
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
 }
+
+export type DateFilterOption = {
+  value: string
+  label: string
+}
