@@ -13,7 +13,12 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+  if (value == "on-hold" && !meetingDate)
+    return true
 
+  if (!meetingDate) {
+    return 'יש לספק מועד אסיפה'
+  }
   if (meetingDate) {
      switch (value) {
     case 'completed':
