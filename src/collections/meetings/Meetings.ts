@@ -1,26 +1,26 @@
 import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
-import { Meeting } from '@/payload-types'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
-
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
-  
+
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+  if (value == "on-hold" && !meetingDate)
+    return true
 
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
   }
-
-  switch (value) {
+  if (meetingDate) {
+     switch (value) {
     case 'completed':
       if (meetingDate > currentDate) {
         return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
@@ -45,7 +45,18 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
       }
       break
   }
+     return true
+}}
+interface AccessArgs {
+  data?: {
+    state?: string;
+  };
+}
 
+// Function to check if document should be read-only
+const getReadOnlyAccess = ({ data }: AccessArgs): boolean => {
+  if(data?.state === 'completed' || data?.state === 'cancelled')
+     return false
   return true
 }
 
@@ -74,6 +85,7 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
+// Add this to the collection config
   fields: [
     {
       type: 'row',
@@ -86,6 +98,9 @@ export const Meetings: CollectionConfig = {
           required: true,
           index: true,
           admin: { hidden: true },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'magnaId',
@@ -104,6 +119,9 @@ export const Meetings: CollectionConfig = {
               },
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'stock',
@@ -111,6 +129,9 @@ export const Meetings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'type',
@@ -126,6 +147,9 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          access: {
+            update: getReadOnlyAccess
+          },
         },
       ],
     },
@@ -142,6 +166,9 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'default',
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'proxyVotingDate',
@@ -154,6 +181,9 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'meetingDate',
@@ -165,6 +195,10 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
+
         },
       ],
     },
@@ -175,12 +209,29 @@ export const Meetings: CollectionConfig = {
           name: 'location',
           label: 'כתובת',
           type: 'text',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'state',
           label: 'מצב',
           type: 'select',
+          access: {
+            update: getReadOnlyAccess
+          },
+          hooks: {
+            beforeChange: [
+              ({ siblingData,value }) => {
+                if (value === 'on-hold') {
+                  siblingData.meetingDate =null
+                }
+                return value
+              }
+            ],
+          },
           interfaceName: 'MeetingState',
+          // @ts-expect-error
           validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
@@ -197,6 +248,9 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
+      access: {
+        update: getReadOnlyAccess
+      },
     },
     {
       type: 'row',
@@ -208,16 +262,25 @@ export const Meetings: CollectionConfig = {
           admin: {
             condition: (siblingData) => siblingData.state === 'completed',
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'electronicVotingEnabled',
           label: 'האם מופיעה במערכת האלק׳?',
           type: 'checkbox',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'committeeInitiated',
           label: 'האם פיננסי דורש ועדה?',
           type: 'checkbox',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
       ],
     },
