@@ -78,6 +78,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           id: originalStock.id,
           data: {
             relatedStock: newStockSequence,
+            tradable : false
           },
         })
         // Update all stocks that had this stock as related to point to the new ISIN stock
@@ -94,6 +95,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'stocks',
             id: stock.id,
             data: {
+              tradable : false,
               relatedStock: newStockSequence,
             },
           })
