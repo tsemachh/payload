@@ -99,8 +99,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         isRootEmda: isRootStock && emdaStocks.has(row.stockID),
 
         // Foreign status (including relations)
-        isForeign: foreignStocks.has(row.stockID) || 
-                  !!(relatedStock && foreignStocks.has(relatedStock))
+        isForeign: foreignStocks.has(row.stockID) 
       }
 
       // Determine if stock should be processed
