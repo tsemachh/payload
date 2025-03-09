@@ -2,35 +2,6 @@ import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
 import { Meeting } from '@/payload-types'
-import { Access, FieldHook } from 'payload/types';
-
-const isReadOnly: Access = ({ data }) => {
-  console.log('🔍 Checking document access control...');
-  console.log(`----------data isReadOnly: ${data}`);
-
-  if (data?.state === 'completed' || data?.state === 'cancelled') {
-    console.log(`⛔ Document is read-only! State: ${data.state}`);
-    return false; // Prevent all updates if state is completed or cancelled
-  }
-
-  console.log('✅ Document is editable.');
-  return true;
-};
-
-// Hook to ensure `meetingDate` is always `undefined` when state is `on-hold`
-const afterReadMeetingDate: FieldHook = ({ data, value }) => {
-  console.log('📖 onRead hook triggered for meetingDate');
-  console.log(`----------data const afterReadMeetingDate data
-: ${data}value:${value}`);
-
-  if (data?.state === 'on-hold') {
-    console.log('🔄 State is "on-hold" - Setting meetingDate to undefined');
-    return undefined;
-  }
-
-  console.log('✅ Returning original meetingDate:', value);
-  return value;
-};
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -40,7 +11,7 @@ const meetingLinkProps: IconLinkProps = {
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
-  
+
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
@@ -78,11 +49,28 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   return true
 }
 
+// Function to check if document should be read-only
+const isDocumentReadOnly = ({ data }) => {
+  return data?.state === 'completed' || data?.state === 'cancelled'
+}
+
+// Function to determine access control based on document state
+const getReadOnlyAccess = ({ data, field }) => {
+  // For entire document: read-only if state is completed or cancelled
+  if (isDocumentReadOnly({ data })) {
+    return false
+  }
+
+  // For meetingDate field: read-only if state is on-hold
+  // if (field.name === 'meetingDate' && data?.state === 'on-hold') {
+  //   return false
+  // }
+
+  return true
+}
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
-  access: {
-    update: isReadOnly, // 🔒 Make document read-only for "completed" and "cancelled"
-  },
   labels: {
     plural: 'אסיפות',
     singular: 'אסיפה',
@@ -106,6 +94,21 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
+  //hooks: {
+  //   beforeChange: [
+  //     ({ data, originalDoc }) => {
+  //       // Handle meetingDate when state is on-hold
+  //       if (data.state === 'on-hold') {
+  //         return {
+  //           ...data,
+  //           meetingDate: undefined,
+  //         }
+  //       }
+  //       return data
+  //     }
+  //   ],
+  // },
+
   fields: [
     {
       type: 'row',
@@ -118,6 +121,9 @@ export const Meetings: CollectionConfig = {
           required: true,
           index: true,
           admin: { hidden: true },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'magnaId',
@@ -136,6 +142,9 @@ export const Meetings: CollectionConfig = {
               },
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'stock',
@@ -143,6 +152,9 @@ export const Meetings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'type',
@@ -158,6 +170,9 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          access: {
+            update: getReadOnlyAccess
+          },
         },
       ],
     },
@@ -174,6 +189,9 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'default',
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'proxyVotingDate',
@@ -186,19 +204,23 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'meetingDate',
           label: 'מועד האסיפה',
           type: 'date',
-          hooks: {
-            afterRead: [afterReadMeetingDate], // 🛑 Ensure meetingDate is undefined when "on-hold"
-          },
           admin: {
             date: {
               displayFormat: 'HH:mm dd/MM/yyyy',
               pickerAppearance: 'dayAndTime',
             },
+            //condition: (data) => data.state !== 'on-hold',
+          },
+          access: {
+            update: getReadOnlyAccess
           },
         },
       ],
@@ -210,11 +232,17 @@ export const Meetings: CollectionConfig = {
           name: 'location',
           label: 'כתובת',
           type: 'text',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'state',
           label: 'מצב',
           type: 'select',
+          access: {
+            update: getReadOnlyAccess
+          },
           interfaceName: 'MeetingState',
           validate: validateMeetingState,
           options: [
@@ -232,6 +260,9 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
+      access: {
+        update: getReadOnlyAccess
+      },
     },
     {
       type: 'row',
@@ -243,16 +274,25 @@ export const Meetings: CollectionConfig = {
           admin: {
             condition: (siblingData) => siblingData.state === 'completed',
           },
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'electronicVotingEnabled',
           label: 'האם מופיעה במערכת האלק׳?',
           type: 'checkbox',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
         {
           name: 'committeeInitiated',
           label: 'האם פיננסי דורש ועדה?',
           type: 'checkbox',
+          access: {
+            update: getReadOnlyAccess
+          },
         },
       ],
     },
