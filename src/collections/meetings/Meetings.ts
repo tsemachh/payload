@@ -1,12 +1,54 @@
 import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
+import { Meeting } from '@/payload-types'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
+
+const validateMeetingState = (value: string | null | undefined, options: any) => {
+  if (!value) return true
+  
+  const { siblingData } = options
+  const currentDate = new Date()
+  const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+
+  if (!meetingDate) {
+    return 'יש לספק מועד אסיפה'
+  }
+
+  switch (value) {
+    case 'completed':
+      if (meetingDate > currentDate) {
+        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
+      }
+      break
+
+    case 'postponed':
+      if (meetingDate < currentDate) {
+        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר'
+      }
+      break
+
+    case 'scheduled':
+      if (meetingDate < currentDate) {
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+      }
+      break
+
+    case 'ongoing':
+      if (meetingDate < currentDate) {
+        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+      }
+      break
+  }
+
+  return true
+}
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -139,6 +181,7 @@ export const Meetings: CollectionConfig = {
           label: 'מצב',
           type: 'select',
           interfaceName: 'MeetingState',
+          validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
             { label: 'התקיימה', value: 'completed' },
@@ -186,5 +229,4 @@ export const Meetings: CollectionConfig = {
       handler: ProcessMeetingsEndpoint,
     },
   ],
-  // ... rest of collection config
 }

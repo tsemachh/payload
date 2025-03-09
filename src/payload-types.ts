@@ -31,7 +31,7 @@ export type StockType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "StockOrigin".
  */
-export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
+export type StockOrigin = 'TASE' | 'Foreign' | 'NonTradable' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
@@ -50,7 +50,16 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
  */
 export type RolePermissions =
   | {
-      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document' | 'migration-faults')[];
+      entity: (
+        | 'stocks'
+        | 'stock-values'
+        | 'meetings'
+        | 'users'
+        | 'roles'
+        | 'document'
+        | 'migration-faults'
+        | 'stock-migration-mapping'
+      )[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
@@ -122,6 +131,7 @@ export interface Config {
     roles: Role;
     document: Document;
     'migration-faults': MigrationFault;
+    'stock-migration-mapping': StockMigrationMapping;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -135,6 +145,7 @@ export interface Config {
     roles: RolesSelect<false> | RolesSelect<true>;
     document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
+    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -182,8 +193,8 @@ export interface Stock {
   type?: StockType;
   origin: StockOrigin;
   tradable?: boolean | null;
-  private?: boolean | null;
   relatedStock?: (string | null) | Stock;
+  active?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -191,6 +202,7 @@ export interface Stock {
     docs?: (string | StockValue)[] | null;
     hasNextPage?: boolean | null;
   } | null;
+  comments?: string | null;
   relations?: {
     docs?: (string | Stock)[] | null;
     hasNextPage?: boolean | null;
@@ -324,6 +336,20 @@ export interface MigrationFault {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping".
+ */
+export interface StockMigrationMapping {
+  id: string;
+  stockId: number;
+  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
+  isin?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -356,6 +382,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
+      } | null)
+    | ({
+        relationTo: 'stock-migration-mapping';
+        value: string | StockMigrationMapping;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -409,12 +439,13 @@ export interface StocksSelect<T extends boolean = true> {
   type?: T;
   origin?: T;
   tradable?: T;
-  private?: T;
   relatedStock?: T;
+  active?: T;
   symbol?: T;
   name?: T;
   longName?: T;
   values?: T;
+  comments?: T;
   relations?: T;
   meetings?: T;
   creator?: T;
@@ -537,6 +568,19 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   typeId?: T;
   row?: T;
   comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping_select".
+ */
+export interface StockMigrationMappingSelect<T extends boolean = true> {
+  stockId?: T;
+  type?: T;
+  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
