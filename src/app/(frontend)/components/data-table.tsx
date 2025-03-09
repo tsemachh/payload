@@ -76,6 +76,7 @@ const columns: Column[] = [
     key: 'registeredValue',
     header: 'ערך נקוב',
     type: 'number',
+    render: (row) => row.marketValue.toLocaleString(),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
