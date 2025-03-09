@@ -11,10 +11,13 @@ const meetingLinkProps: IconLinkProps = {
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
-  
+
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+
+  if (value == "on-hold" && !meetingDate)
+    return true
 
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'

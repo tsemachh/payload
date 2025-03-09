@@ -1,6 +1,6 @@
 import { Payload } from 'payload'
 
-export type MigrationFaultType = 'stock' | 'stock-relation' | 'stock-value'
+export type MigrationFaultType = 'stock' | 'stock-relation' | 'stock-value' | 'meeting'
 
 interface LogMigrationFaultProps {
   payload: Payload
