@@ -16,6 +16,9 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   if (value == "on-hold" && !meetingDate)
     return true
 
+  if (value == "on-hold" && !meetingDate)
+    return true
+
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
   }
