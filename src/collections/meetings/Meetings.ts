@@ -2,6 +2,35 @@ import type { CollectionConfig } from 'payload'
 import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
 import { Meeting } from '@/payload-types'
+import { Access, FieldHook } from 'payload/types';
+
+const isReadOnly: Access = ({ data }) => {
+  console.log('🔍 Checking document access control...');
+  console.log(`----------data isReadOnly: ${data}`);
+
+  if (data?.state === 'completed' || data?.state === 'cancelled') {
+    console.log(`⛔ Document is read-only! State: ${data.state}`);
+    return false; // Prevent all updates if state is completed or cancelled
+  }
+
+  console.log('✅ Document is editable.');
+  return true;
+};
+
+// Hook to ensure `meetingDate` is always `undefined` when state is `on-hold`
+const afterReadMeetingDate: FieldHook = ({ data, value }) => {
+  console.log('📖 onRead hook triggered for meetingDate');
+  console.log(`----------data const afterReadMeetingDate data
+: ${data}value:${value}`);
+
+  if (data?.state === 'on-hold') {
+    console.log('🔄 State is "on-hold" - Setting meetingDate to undefined');
+    return undefined;
+  }
+
+  console.log('✅ Returning original meetingDate:', value);
+  return value;
+};
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -51,6 +80,9 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
+  access: {
+    update: isReadOnly, // 🔒 Make document read-only for "completed" and "cancelled"
+  },
   labels: {
     plural: 'אסיפות',
     singular: 'אסיפה',
@@ -159,6 +191,9 @@ export const Meetings: CollectionConfig = {
           name: 'meetingDate',
           label: 'מועד האסיפה',
           type: 'date',
+          hooks: {
+            afterRead: [afterReadMeetingDate], // 🛑 Ensure meetingDate is undefined when "on-hold"
+          },
           admin: {
             date: {
               displayFormat: 'HH:mm dd/MM/yyyy',
