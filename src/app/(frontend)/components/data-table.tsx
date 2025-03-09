@@ -231,7 +231,17 @@ export function DataTable<T extends Record<string, any>>({
     if (isFilterActive) {
       setFilters({})
       setIsFilterActive(false)
-      setDateFilters({})
+      const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+      columns.forEach((column) => {
+        if (column.type === 'datetime' && column.filterable) {
+          console.log('datetime', column.key)
+          initialDateFilters[column.key as string] = {
+            past: 'allPast',
+            future: 'allFuture',
+          }
+        }
+      })
+      setDateFilters(initialDateFilters)
     } else {
       const initialFilters: { [key: string]: any } = {}
       columns.forEach((column) => {
@@ -244,6 +254,21 @@ export function DataTable<T extends Record<string, any>>({
       })
       setFilters(initialFilters)
       setIsFilterActive(true)
+      const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+      columns.forEach((column) => {
+        if (column.key === 'meetingDate' && column.filterable) {
+          initialDateFilters[column.key as string] = {
+            past: '',
+            future: 'allFuture',
+          }
+        } else if (column.type === 'datetime' && column.filterable) {
+          initialDateFilters[column.key as string] = {
+            past: 'allPast',
+            future: 'allFuture',
+          }
+        }
+      })
+      setDateFilters(initialDateFilters)
     }
   }, [data, columns, isFilterActive])
 
@@ -371,7 +396,7 @@ export function DataTable<T extends Record<string, any>>({
         // Clear all filters for this column
         setDateFilters((prev) => {
           const newFilters = { ...prev }
-          delete newFilters[columnKey]
+          newFilters[columnKey] = { past: 'allPast', future: 'allFuture' }
           return newFilters
         })
         return
@@ -561,7 +586,7 @@ export function DataTable<T extends Record<string, any>>({
                       <div className="flex items-center justify-start">
                         <span>{column.header}</span>
                         {getSortIcon(column.key)}
-                        {isFilterActive && ( //TODO: add column.filterable &&
+                        {isFilterActive && column.filterable && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -573,9 +598,6 @@ export function DataTable<T extends Record<string, any>>({
                                 <div className="flex">
                                   {/* Past dates column */}
                                   <div className="p-2">
-                                    <div className="font-medium text-sm mb-2 text-right">
-                                      תאריכים בעבר
-                                    </div>
                                     {pastDateFilterOptions.map((option) => {
                                       const counts = getDateFilterCounts(String(column.key))
                                       const isChecked =
@@ -607,15 +629,9 @@ export function DataTable<T extends Record<string, any>>({
                                       )
                                     })}
                                   </div>
-
-                                  {/* Separator */}
                                   <div className="border-r border-gray-200 mx-2"></div>
-
                                   {/* Future dates column */}
                                   <div className="p-2">
-                                    <div className="font-medium text-sm mb-2 text-right">
-                                      תאריכים בעתיד
-                                    </div>
                                     {futureDateFilterOptions.map((option) => {
                                       const counts = getDateFilterCounts(String(column.key))
                                       const isChecked =
@@ -688,9 +704,13 @@ export function DataTable<T extends Record<string, any>>({
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="justify-center text-center"
-                                onClick={() => handleFilter(String(column.key), 'all')}
+                                onClick={() =>
+                                  column.type === 'datetime'
+                                    ? handleDateFilter(String(column.key), '', false)
+                                    : handleFilter(String(column.key), 'all')
+                                }
                               >
-                                בחר הכל
+                                הסר סינון
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
