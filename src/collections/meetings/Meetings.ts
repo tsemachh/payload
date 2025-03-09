@@ -7,7 +7,6 @@ const meetingLinkProps: IconLinkProps = {
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
-
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
 
@@ -227,6 +226,7 @@ export const Meetings: CollectionConfig = {
             ],
           },
           interfaceName: 'MeetingState',
+          // @ts-expect-error
           validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
