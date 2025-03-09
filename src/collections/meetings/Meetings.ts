@@ -16,11 +16,8 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
 
-  if (!meetingDate) {
-    return 'יש לספק מועד אסיפה'
-  }
-
-  switch (value) {
+  if (meetingDate) {
+     switch (value) {
     case 'completed':
       if (meetingDate > currentDate) {
         return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
@@ -45,27 +42,19 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
       }
       break
   }
-
-  return true
-}
+     return true
+}}
 
 // Function to check if document should be read-only
-const isDocumentReadOnly = ({ data }) => {
-  return data?.state === 'completed' || data?.state === 'cancelled'
+const getReadOnlyAccess = ({ data}) => {
+   if(data?.state === 'completed' || data?.state === 'cancelled')
+     return false
+  return true
 }
-
-// Function to determine access control based on document state
-const getReadOnlyAccess = ({ data, field }) => {
-  // For entire document: read-only if state is completed or cancelled
-  if (isDocumentReadOnly({ data })) {
+// Function to check if document should be read-only
+const getReadOnlyAccessMeetingDate = ({ data}) => {
+  if(data?.state === 'on-hold' || data?.state === 'completed' || data?.state === 'cancelled')
     return false
-  }
-
-  // For meetingDate field: read-only if state is on-hold
-  // if (field.name === 'meetingDate' && data?.state === 'on-hold') {
-  //   return false
-  // }
-
   return true
 }
 
@@ -94,20 +83,6 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
-  //hooks: {
-  //   beforeChange: [
-  //     ({ data, originalDoc }) => {
-  //       // Handle meetingDate when state is on-hold
-  //       if (data.state === 'on-hold') {
-  //         return {
-  //           ...data,
-  //           meetingDate: undefined,
-  //         }
-  //       }
-  //       return data
-  //     }
-  //   ],
-  // },
 
   fields: [
     {
@@ -217,10 +192,23 @@ export const Meetings: CollectionConfig = {
               displayFormat: 'HH:mm dd/MM/yyyy',
               pickerAppearance: 'dayAndTime',
             },
-            //condition: (data) => data.state !== 'on-hold',
+            description: (data) => data?.state === 'on-hold' ? 'מועד האסיפה לא זמין במצב ״נדחית ללא מועד״' : undefined,
           },
           access: {
-            update: getReadOnlyAccess
+            update: getReadOnlyAccessMeetingDate
+          },
+          hooks: {
+            beforeChange: [
+              ({ siblingData,value }) => {
+                // Handle meetingDate when state is on-hold
+                if (siblingData.state === 'on-hold') {
+                  console.log(`-------data ${siblingData}`)
+                  console.log(`-------data.state ${siblingData.state}`)
+                  return null
+                }
+                return value
+              }
+            ],
           },
         },
       ],
