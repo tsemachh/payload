@@ -38,6 +38,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'meetingDate',
     header: 'מועד',
     type: 'datetime',
+    filterable: true,
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
@@ -55,6 +56,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'holdingsLimit',
     header: 'מועד קובע',
     type: 'datetime',
+    filterable: true,
     render: (row) => {
       return formatDateTime(row.holdingsLimit, true)
     },
@@ -63,6 +65,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'proxyVotingDate',
     header: 'מועד מסירת הצבעות',
     type: 'datetime',
+    filterable: true,
     render: (row) => {
       return formatDateTime(row.proxyVotingDate)
     },

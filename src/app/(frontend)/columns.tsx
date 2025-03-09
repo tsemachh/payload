@@ -1,7 +1,7 @@
 'use client'
 
 import { BooleanIcon } from '@/components/ui/icons'
-import { escapeRegExp, formatDateTime } from './helpers/utils'
+import { formatDateTime } from './helpers/utils'
 import { FutureMeetingTableData } from './types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from './helpers/maps'
@@ -98,8 +98,8 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
 ]
 
 export const renderMeetingActions = (row: FutureMeetingTableData) => {
-  if (!row.meetingInviteUrl) return null;
-  
+  if (!row.meetingInviteUrl) return null
+
   return (
     <div className="relative flex items-center">
       <div className="absolute right-0 top-0 h-full bg-background opacity-0 group-hover:opacity-100 transition-all duration-200"></div>
@@ -114,5 +114,5 @@ export const renderMeetingActions = (row: FutureMeetingTableData) => {
       </a>
       <div className="w-[100px] h-[40px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></div>
     </div>
-  );
+  )
 }
