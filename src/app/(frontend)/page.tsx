@@ -6,15 +6,10 @@ import { meetingColumns, renderMeetingActions } from './columns'
 
 async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
-  //TODO: Temporary until the data is updated.
-  const futureMeetingTableDataTemporary = futureMeetingTableData.filter(
-    (meeting) => meeting.marketValue && meeting.registeredValue,
-  )
-  //TODO: Temporary until the data is updated.
 
   return (
-    <DataTable 
-      data={futureMeetingTableDataTemporary} 
+    <DataTable
+      data={futureMeetingTableData}
       columns={meetingColumns}
       idField="meetingId"
       defaultSortField="meetingDate"
