@@ -46,3 +46,7 @@
     vertical-align: middle;
   }
 }
+
+.field-type.relationship.subCompanies.relationship--allow-create .relationship--multi-value-label__content {
+  max-width:300px;
+}
