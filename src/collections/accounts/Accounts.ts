@@ -8,7 +8,7 @@ export const Accounts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'accountNumber',
-    defaultColumns: ['name', 'accountNumber', 'firm'],
+    defaultColumns: ['name', 'accountNumber', 'company'],
     listSearchableFields: ['name', 'accountNumber'],
     pagination: {
       defaultLimit: 500,
@@ -44,10 +44,10 @@ export const Accounts: CollectionConfig = {
           required: true,
         },
         {
-          name: 'firm',
+          name: 'company',
           label: 'חברה',
           type: 'relationship',
-          relationTo: 'firms',
+          relationTo: 'companies',
           required: true,
           index: true,
         },

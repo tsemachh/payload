@@ -15,7 +15,7 @@ import logger from './lib/logger';
 import { Users } from './collections/Users'
 import { Document } from './collections/Document'
 import { Stocks } from './collections/stocks/Stocks'
-import { Firms , FirmsGroups } from '@/collections/firms/Firms'
+import { Companies } from '@/collections/companies/Companies'
 import { Accounts } from '@/collections/accounts/Accounts'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
@@ -56,7 +56,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Firms, FirmsGroups, Accounts, Holdings, StockMigrationMapping],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

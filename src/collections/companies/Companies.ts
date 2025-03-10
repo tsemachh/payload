@@ -1,55 +1,7 @@
 import type { CollectionConfig } from 'payload'
-export const FirmsGroups: CollectionConfig = {
-  slug: 'firms-groups',
-  labels: {
-    plural: ' קבוצות חברות',
-    singular: ' קבוצת חברות',
-  },
-  admin: {
-    useAsTitle: 'name',
-    defaultColumns: [
-      'name', 'groupId'
-    ],
-    pagination: {
-      defaultLimit: 500,
-      limits: [10, 20, 50, 100, 200, 500],
-    },
-  },
-  versions: {},
-  fields: [
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'groupId',
-          label: 'מספר קבוצה',
-          type: 'number',
-          unique: true,
-          required: true,
-          index: true,
-          admin: { hidden: true },
-        },
-        {
-          name: 'name',
-          label: 'שם',
-          type: 'text',
-          required: true,
-        },
-      ]
-    },
-    {
-      name: 'firms',
-      label: 'חברות',
-      type: 'join',
-      collection: 'firms',
-      on: 'groups',
-      admin: { defaultColumns: ['firmId', 'name'] },
-    }
-    ]
-}
 
-export const Firms: CollectionConfig = {
-  slug: 'firms',
+export const Companies: CollectionConfig = {
+  slug: 'companies',
   labels: {
     plural: 'חברות',
     singular: 'חברה',
@@ -57,9 +9,9 @@ export const Firms: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: [
-      'name','firmId'
+      'name','companyId'
     ],
-    listSearchableFields: ['name','firmId'],
+    listSearchableFields: ['name','companyId'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50,100,200,500],
@@ -72,7 +24,7 @@ export const Firms: CollectionConfig = {
       type: 'row',
       fields: [
         {
-          name: 'firmId',
+          name: 'companyId',
           label: 'מספר חברה',
           type: 'number',
           unique: true,
@@ -93,21 +45,22 @@ export const Firms: CollectionConfig = {
           required: true,
         },
         {
-          name: 'groups',
-          label: 'קבוצת חברות',
-          type: 'relationship',
-          relationTo: 'firms-groups',
-          index: true,
-          hasMany: true
-        },
-
-        {
           name: 'active',
           label: 'האם פעיל',
           type: 'checkbox',
           defaultValue: true,
        },
       ],
+    },
+    {
+      name: 'subCompanies',
+      type : 'relationship',
+      label: 'חברות בת',
+      relationTo: 'companies',
+      hasMany : true,
+      admin:{
+        className :"subCompanies"
+      }
     },
     {
       type: 'row',
@@ -149,9 +102,12 @@ export const Firms: CollectionConfig = {
       label: 'חשבונות',
       type: 'join',
       collection: 'accounts',
-      on: 'firm',
+      on: 'company',
       where : {isCentralAccount:{equals:true}},
-      admin: { defaultColumns: ['accountNumber', 'name', 'isCentralAccount'] },
+      admin: {
+        defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
+        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0
+      },
     },
 /*    {
       name: 'users',

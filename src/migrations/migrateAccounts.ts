@@ -53,16 +53,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of resultAccounts.recordset) {
       try {
         // Find or create the firm
-        const firmResult = await payload.find({
-          collection: 'firms',
+        const companyResult = await payload.find({
+          collection: 'companies',
           where: {
-            firmId: {
+            companyId: {
               equals: row.firmId,
             },
           },
         })
 
-        if (firmResult.docs.length === 0) {
+        if (companyResult.docs.length === 0) {
           console.error(`No firm found for firmId: ${row.firmId}`)
           // Report to migration faults
           await payload.create({
@@ -78,7 +78,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
 
-        const firmId = firmResult.docs[0].id
+        const companyId = companyResult.docs[0].id
 
         // Check if account exists for this firm
         const existingAccount = await payload.find({
@@ -87,8 +87,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             accountNumber: {
               equals: row.accountNumber,
             },
-            firm: {
-              equals: firmId,
+            company: {
+              equals: companyId,
             },
           },
         })
@@ -96,7 +96,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const accountData: Partial<Account> = {
           accountNumber: row.accountNumber,
           name: row.name,
-          firm: firmId,
+          company: companyId,
           isCentralAccount : true
         }
 

@@ -67,16 +67,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       for (const row of subAccounts.recordset) {
         try {
           // Find the firm
-          const firmResult = await payload.find({
-            collection: 'firms',
+          const companyResult = await payload.find({
+            collection: 'companies',
             where: {
-              firmId: {
+              companyId: {
                 equals: row.firmId
               }
             }
           })
 
-          if (firmResult.docs.length === 0) {
+          if (companyResult.docs.length === 0) {
             // Report to migration faults
             await payload.create({
               collection: 'migration-faults',
@@ -90,7 +90,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             continue
           }
 
-          const firmId = firmResult.docs[0].id
+          const companyId = companyResult.docs[0].id
 
           // Find the parent account (accountIdNew)
           const parentAccountResult = await payload.find({
@@ -103,8 +103,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                 },
                 {
-                  firm: {
-                    equals: firmId
+                  company: {
+                    equals: companyId
                   }
                 }
               ]
@@ -131,7 +131,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const accountData: Partial<Account> = {
             accountNumber: row.accountIdOld,
             name: `Sub Account ${row.accountIdOld}`,
-            firm: firmId,
+            company: companyId,
             isCentralAccount: false,
             parentAccount: parentAccountId
           }
@@ -147,8 +147,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                 },
                 {
-                  firm: {
-                    equals: firmId
+                  company: {
+                    equals: companyId
                   }
                 }
               ]

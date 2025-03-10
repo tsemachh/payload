@@ -60,7 +60,7 @@ async function findAccount(payload: any, firm: string, subAccountNum: number, re
   const accounts = await payload.find({
     collection: 'accounts',
     where: {
-      'firm.firmId': { equals: firm },
+      'company.companyId': { equals: firm },
       accountNumber: { equals: subAccountNum },
     },
     req,

@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { User, UserType } from '@/payload-types'
+import { Company, User, UserCompany } from '@/payload-types'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 
 // SQL Server configuration
@@ -136,21 +136,25 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const userProfileCode = userProfileCodes.find(p => p.UserId === userProfile.UserId)
         const userFirms = usersToFirms.filter(f => f.userID === userProfile.UserId)
 
-        // Transform firms data
-        const firms = []
+        // Transform companies data
+        const companies: {
+          companyId: string | Company;
+          permission?: ('read' | 'write') | null;
+          id?: string | null;
+        }[] = []
         for (const firm of userFirms) {
           try {
             // Find the firm in the new system
-            const existingFirm = await payload.find({
-              collection: 'firms',
+            const existingCompany = await payload.find({
+              collection: 'companies',
               where: {
-                firmId: {
+                companyId: {
                   equals: firm.firmID.toString()
                 }
               }
             })
 
-            if (!existingFirm.docs.length) {
+            if (!existingCompany.docs.length) {
               await logMigrationFault({
                 payload,
                 type: 'user',
@@ -161,11 +165,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               continue
             }
 
-            firms.push({
-              firmId: existingFirm.docs[0].id,
-              emailOnNoHoldings: !!firm.emailOnNoHoldings,
-              votePermission: !!firm.votePermission
-            })
+            // Create a new object with the correct property name
+            const companyObj = {
+              companyId: existingCompany.docs[0].id,
+              permission: 'write' as const
+            };
+            companies.push(companyObj)
           } catch (error) {
 
             await logMigrationFault({
@@ -196,18 +201,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           legacyId: userProfile.UserId,
 
           // User type and permissions
-          userType: userProfile.UserType.toString() as UserType,
           isAdmin: userProfile.UserType === 1,
           // Firm relationships
-          firms: firms,
+          companies: companies,
           // Profile settings
           userIp: userProfile?.UserIP || '',
-          showQr: !!userProfile?.ShowQr,
           changePassword: !!userProfile?.ChangePassword ,
           lastLogin: userProfile?.LastLogin as string | null | undefined,
-
           // QR code lifecycle data
           qrCodeData: userProfileCode ? {
+            showQr: !!userProfile?.ShowQr,
             createDate: userProfileCode.CreateDate ? new Date(userProfileCode.CreateDate).toISOString() : null,
             lastCodeFailureDate: userProfileCode.LastCodeFailureDate ? new Date(userProfileCode.LastCodeFailureDate).toISOString() : null,
             codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess
@@ -262,10 +265,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         successCount++
         if (existingUser.docs.length > 0) {
           updatedCount++
-          console.log(`✓ Updated user ${userProfile.UserName} (${userProfile.UserId}) with ${firms.length} firms`)
+          console.log(`✓ Updated user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`)
         } else {
           createdCount++
-          console.log(`✓ Created user ${userProfile.UserName} (${userProfile.UserId}) with ${firms.length} firms`)
+          console.log(`✓ Created user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`)
         }
       } catch (error) {
         errorCount++

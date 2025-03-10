@@ -17,62 +17,73 @@ export const Users: CollectionConfig = {
   },
   fields: [
     {
-      name: 'name',
-      label: 'שם משתמש',
-      type: 'text',
+      type: 'row',
+      fields:[
+        {
+          name: 'name',
+          label: 'שם משתמש',
+          type: 'text',
+        },
+
+        {
+          name: 'legacyId',
+          label: 'מספר משתמש לגאסי',
+          type: 'number',
+          index: true
+        },
+        {
+          name: 'active',
+          label: 'משתמש פעיל',
+          type: 'checkbox',
+          index: true
+        },
+      ]
     },
     {
-      name: 'active',
-      label: 'משתמש פעיל',
-      type: 'checkbox',
-      index: true
-    },
-    {
-      name: 'userType',
-      label: 'סוג משתמש',
-      type: 'select',
-      interfaceName: 'UserType',
-      options: [
-        { label: 'מנהל מערכת', value: '1' },
-        { label: 'משתמש רגיל', value: '2' },
-        { label: 'משתמש בלי זכות הצבעה', value: '3' },
-        { label: 'מבקר', value: '4' }
-      ],
-      defaultValue: '2'
-    },
-    {
-      name: 'legacyId',
-      label: 'מספר משתמש',
-      type: 'number',
-      index: true
-    },
-    {
-      name: 'firms',
+      name: 'companies',
       label: 'חברות',
+      labels: {
+        plural: 'חברות',
+        singular: 'חברה',
+      },
       type: 'array',
+      interfaceName: "UserCompany",
       fields: [
         {
           type: "row",
           fields: [
             {
-              name: 'firmId',
+              label: 'חברה',
+              name: 'companyId',
               type: 'relationship',
-              relationTo: 'firms',
+              relationTo: 'companies',
               required: true,
             },
             {
-              name: 'emailOnNoHoldings',
-              label: 'התראה על אי החזקות',
-              type: 'checkbox',
-            },
-            {
-              name: 'votePermission',
-              label: 'הרשאת הצבעה',
-              type: 'checkbox',
+              name: 'permission',
+              label: 'הרשאה',
+              type: 'select',
+              options:[{label:'צפיה בהצבעות ודוחות' , value:'read'},{label:'הזנת אחזקות והצבעה' , value:'write'}],
+              defaultValue: 'write'
             }
           ]
         }
       ]
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'lastLogin',
+          label: 'התחברות אחרונה',
+          type: 'text',
+        },
+        {
+          name: 'changePassword',
+          label: 'שינוי סיסמה',
+          type: 'checkbox',
+          admin:{hidden:true}
+        }],
     },
     {
       name: 'userIp',
@@ -82,42 +93,37 @@ export const Users: CollectionConfig = {
         description: 'הזן כתובות IP מופרדות בנקודה-פסיק (;)'
       }
     },
-    {
-      name: 'showQr',
-      label: 'הצג QR',
-      type: 'checkbox',
-    },
-    {
-      name: 'changePassword',
-      label: 'שינוי סיסמה',
-      type: 'checkbox',
-    },
-    {
-      name: 'lastLogin',
-      label: 'התחברות אחרונה',
-      type: 'text',
-    },
+
     {
       name: 'qrCodeData',
       label: 'נתוני QR',
       type: 'group',
       fields: [
         {
-          name: 'createDate',
-          label: 'תאריך יצירה',
-          type: 'date',
-        },
-        {
-          name: 'lastCodeFailureDate',
-          label: 'תאריך כישלון אחרון',
-          type: 'date',
-        },
-        {
-          name: 'codeFailuresSinceLastSuccess',
-          label: 'מספר כישלונות מאז הצלחה אחרונה',
-          type: 'number',
-        }
-      ]
+          type: 'row',
+            fields:[
+            {
+              name: 'showQr',
+              label: 'הצג QR',
+              type: 'checkbox',
+            },
+            {
+              name: 'createDate',
+              label: 'תאריך יצירה',
+              type: 'date',
+            },
+            {
+              name: 'lastCodeFailureDate',
+              label: 'תאריך כישלון אחרון',
+              type: 'date',
+            },
+            {
+              name: 'codeFailuresSinceLastSuccess',
+              label: 'מספר כישלונות מאז הצלחה אחרונה',
+              type: 'number',
+            }
+          ]
+      }]
     },
     ...userFields,
   ]
