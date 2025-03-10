@@ -88,6 +88,23 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
+  hooks:{
+    afterChange: [
+      ({ doc,req,context,  }) => {
+        console.log(`--------------data.id${doc.id}`)
+        console.log(`--------------data${doc[0]}`)
+
+        console.log(`--------------data.meetingId${doc.meetingId}`)
+        console.log(`--------------req${req}`)
+        console.log(`--------------context${context}`)
+
+        if (doc.meetingId == null) {
+          doc.meetingId=doc.id
+        }
+        return doc
+      }
+    ],
+  },
 // Add this to the collection config
   fields: [
     {
@@ -98,12 +115,12 @@ export const Meetings: CollectionConfig = {
           label: 'מספר אסיפה',
           type: 'number',
           unique: true,
-          required: true,
           index: true,
           admin: { hidden: true },
           access: {
             update: getReadOnlyAccess
           },
+
         },
         {
           name: 'magnaId',
