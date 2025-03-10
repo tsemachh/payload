@@ -241,7 +241,7 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
-  meetingId: number;
+  meetingId?: number | null;
   magnaId?: string | null;
   stock?: (string | null) | Stock;
   type?: MeetingType;
