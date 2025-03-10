@@ -27,8 +27,6 @@ export const Companies: CollectionConfig = {
           name: 'companyId',
           label: 'מספר חברה',
           type: 'number',
-          unique: true,
-          required: true,
           index: true,
           admin: { hidden: true },
         },
