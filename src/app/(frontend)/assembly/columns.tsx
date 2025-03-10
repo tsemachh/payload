@@ -36,7 +36,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
     key: 'meetingDate',
-    header: 'מועד',
+    header: 'מועד האסיפה',
     type: 'datetime',
     filterable: true,
     render: (row) => {
@@ -97,3 +97,23 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
   },
 ]
+
+export const renderMeetingActions = (row: FutureMeetingTableData) => {
+  if (!row.meetingInviteUrl) return null
+
+  return (
+    <div className="relative flex items-center">
+      <div className="absolute right-0 top-0 h-full bg-background opacity-0 group-hover:opacity-100 transition-all duration-200"></div>
+      <span className="absolute right-[-100px] top-0 h-full w-[100px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></span>
+      <a
+        href={row.meetingInviteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline w-[100px] group-hover:bg-secondary text-sm text-transparent group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap z-30 transition-all duration-200"
+      >
+        קישור למגנה
+      </a>
+      <div className="w-[100px] h-[40px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></div>
+    </div>
+  )
+}

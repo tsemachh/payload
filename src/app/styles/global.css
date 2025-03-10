@@ -57,31 +57,31 @@
     --chart-5: 350 85% 60%;
   }
 
-  .sophia {
-    --background: 210 40% 98%;
-    --foreground: 210 40% 20%;
-    --card: 210 40% 98%;
-    --card-foreground: 210 40% 20%;
-    --popover: 210 40% 98%;
-    --popover-foreground: 210 40% 20%;
-    --primary: 210 85% 60%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 210 30% 92%;
-    --secondary-foreground: 210 40% 20%;
-    --muted: 210 30% 92%;
-    --muted-foreground: 210 30% 40%;
-    --accent: 210 85% 60%;
-    --accent-foreground: 210 20% 98%;
+  .blue {
+    --background: 190 20% 98%;
+    --foreground: 190 40% 20%;
+    --card: 190 20% 98%;
+    --card-foreground: 190 40% 20%;
+    --popover: 190 20% 98%;
+    --popover-foreground: 190 40% 20%;
+    --primary: 190 40% 20%;
+    --primary-foreground: 190 20% 98%;
+    --secondary: 190 30% 92%;
+    --secondary-foreground: 190 40% 20%;
+    --muted: 190 30% 92%;
+    --muted-foreground: 190 30% 40%;
+    --accent: 190 85% 60%;
+    --accent-foreground: 190 20% 98%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 210 30% 92%;
-    --input: 210 30% 92%;
-    --ring: 210 85% 60%;
-    --chart-1: 210 85% 60%;
-    --chart-2: 225 80% 55%;
-    --chart-3: 195 80% 55%;
-    --chart-4: 240 85% 60%;
-    --chart-5: 180 85% 60%;
+    --destructive-foreground: 190 20% 98%;
+    --border: 190 30% 92%;
+    --input: 190 30% 92%;
+    --ring: 190 85% 60%;
+    --chart-1: 190 85% 60%;
+    --chart-2: 205 80% 55%;
+    --chart-3: 175 80% 55%;
+    --chart-4: 220 85% 60%;
+    --chart-5: 160 85% 60%;
   }
 
   .red {
