@@ -9,16 +9,16 @@ async function MeetingsTable() {
 
   const pastDateFilterOptions = [
     { value: 'yesterday', label: 'אתמול' },
-    { value: 'lastWeek', label: 'שבוע החל מאתמול' },
-    { value: 'lastMonth', label: 'חודש החל מאתמול' },
-    { value: 'allPast', label: 'כל התאריכים שעברו' },
+    { value: 'lastWeek', label: 'שבוע שעבר' },
+    { value: 'lastMonth', label: 'חודש שעבר' },
+    { value: 'allPast', label: 'בעבר' },
   ]
 
   const futureDateFilterOptions = [
     { value: 'today', label: 'היום' },
-    { value: 'nextWeek', label: 'עוד שבוע מהיום' },
-    { value: 'nextMonth', label: 'עוד חודש מהיום' },
-    { value: 'allFuture', label: 'כל התאריכים העתידיים' },
+    { value: 'nextWeek', label: 'השבוע' },
+    { value: 'nextMonth', label: 'החודש' },
+    { value: 'allFuture', label: 'בעתיד' },
   ]
   return (
     <DataTable

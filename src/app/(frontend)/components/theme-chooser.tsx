@@ -36,21 +36,21 @@ export function ThemeChooser() {
             <div className="mr-2 h-4 w-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-900" />
             <span>System</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('sophia')}>
+          <DropdownMenuItem onClick={() => setTheme('blue')}>
             <div className="mr-2 h-4 w-4 rounded-full bg-blue-400" />
-            <span>Sophia</span>
+            <span>Blue</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme('red')}>
             <div className="mr-2 h-4 w-4 rounded-full bg-red-500" />
             <span>Red</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('purple')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-purple-500" />
-            <span>Purple</span>
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme('green')}>
             <div className="mr-2 h-4 w-4 rounded-full bg-green-500" />
             <span>Green</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('purple')}>
+            <div className="mr-2 h-4 w-4 rounded-full bg-purple-500" />
+            <span>Purple</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme('pink')}>
             <div className="mr-2 h-4 w-4 rounded-full bg-pink-500" />
