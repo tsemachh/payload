@@ -95,7 +95,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Total holdings to process: ${totalCount}`)
 
     const pageSize = 1000
-    let offset = 283003;//0 //TODO change back to 0
+    let offset = 0;//0 //TODO change back to 0
     let successCount = 0
     let errorCount = 0
 
