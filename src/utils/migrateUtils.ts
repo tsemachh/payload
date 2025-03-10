@@ -5,6 +5,19 @@ import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
 
+export async function getSqlConnection(): Promise<sql.ConnectionPool> {
+  const pool = await sql.connect({
+    user: 'emda',
+    password: 'Aa123456',
+    database: 'dbEmda',
+    server: '10.0.0.9',
+    options: {
+      encrypt: true
+    }
+  })
+  return pool
+}
+
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
       SELECT DISTINCT [stockID]

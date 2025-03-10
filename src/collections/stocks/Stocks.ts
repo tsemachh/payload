@@ -128,7 +128,6 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => !siblingData.tradable,
                   },
-
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),
