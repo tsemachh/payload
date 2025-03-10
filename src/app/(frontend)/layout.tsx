@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-          themes={['light', 'dark', 'system', 'sophia', 'red', 'purple', 'green', 'pink']}
+          themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
         >
           <div className="flex flex-col h-screen">
             <header className="border-b">

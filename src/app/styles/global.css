@@ -57,8 +57,8 @@
     --chart-5: 350 85% 60%;
   }
 
-  .sophia {
---background: 190 20% 98%;
+  .blue {
+    --background: 190 20% 98%;
     --foreground: 190 40% 20%;
     --card: 190 20% 98%;
     --card-foreground: 190 40% 20%;
