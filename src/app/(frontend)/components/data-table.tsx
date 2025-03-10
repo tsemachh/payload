@@ -105,7 +105,7 @@ export function DataTable<T extends Record<string, any>>({
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(false)
+  const [isFilterActive, setIsFilterActive] = useState(true)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string }
   }>({})
