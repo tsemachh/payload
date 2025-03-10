@@ -532,10 +532,18 @@ export function DataTable<T extends Record<string, any>>({
         return <Filter />
       }
     }
-    if (facetedFilters[columnKey]?.length !== filters[columnKey]?.length) {
-      return <Filter />
+    if (!filters[columnKey]) {
+      return <ChevronDown className="h-4 w-4 ml-2" />
     }
-    return <ChevronDown />
+    const allPossibleValues = Array.from(
+      new Set(data.map((item) => String(item[columnKey as keyof FutureMeetingTableData]))),
+    )
+    const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
+    return allSelected ? (
+      <ChevronDown className="h-4 w-4 ml-2" />
+    ) : (
+      <Filter className="h-4 w-4 ml-2" />
+    )
   }
 
   // Generate faceted filters
