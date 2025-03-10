@@ -96,7 +96,7 @@ export const Meetings: CollectionConfig = {
         {
           name: 'meetingId',
           label: 'מספר אסיפה',
-          type: 'number',
+          type: 'text',
           unique: true,
           index: true,
           admin: { hidden: true },
