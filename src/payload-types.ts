@@ -276,7 +276,7 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
-  meetingId?: number | null;
+  meetingId?: string | null;
   magnaId?: string | null;
   stock?: (string | null) | Stock;
   type?: MeetingType;

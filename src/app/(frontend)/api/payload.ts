@@ -30,7 +30,7 @@ export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]>
       }
 
       return {
-        meetingId: meeting.meetingId,
+        meetingId: meeting.meetingId || "",
         stockNumber: stockPresent?.stockId?.toString() || '',
         stockType: stockPresent?.type || '',
         stockSymbol: stockPresent?.symbol || '',
