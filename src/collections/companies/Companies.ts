@@ -9,16 +9,15 @@ export const Companies: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: [
-      'name','companyId'
+      'name', 'companyId',
     ],
-    listSearchableFields: ['name','companyId'],
+    listSearchableFields: ['name', 'companyId'],
     pagination: {
       defaultLimit: 500,
-      limits: [10, 20, 50,100,200,500],
+      limits: [10, 20, 50, 100, 200, 500],
     },
   },
-  versions: {
-  },
+  versions: {},
   fields: [
     {
       type: 'row',
@@ -47,18 +46,31 @@ export const Companies: CollectionConfig = {
           label: 'האם פעיל',
           type: 'checkbox',
           defaultValue: true,
-       },
+        },
       ],
     },
     {
-      name: 'subCompanies',
-      type : 'relationship',
-      label: 'חברות בת',
-      relationTo: 'companies',
-      hasMany : true,
-      admin:{
-        className :"subCompanies"
-      }
+      type: 'row',
+      fields: [
+        {
+          name: 'subCompanies',
+          type: 'relationship',
+          label: 'חברות בת',
+          index: true,
+          relationTo: 'companies',
+          hasMany: true,
+          admin: {
+            className: 'subCompanies',
+          },
+        },
+        {
+          name: 'parentCompany',
+          type: 'join',
+          label: 'חברת אב',
+          collection: 'companies',
+          on: 'subCompanies',
+        },
+      ],
     },
     {
       type: 'row',
@@ -101,19 +113,19 @@ export const Companies: CollectionConfig = {
       type: 'join',
       collection: 'accounts',
       on: 'company',
-      where : {isCentralAccount:{equals:true}},
+      where: { isCentralAccount: { equals: true } },
       admin: {
         defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
-        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0
+        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
       },
     },
-/*    {
-      name: 'users',
-      label: 'משתמשים',
-      type: 'join',
-      collection: 'users',
-      on: 'firmId',
-      admin: { defaultColumns: [ 'name'] },
-    }*/
+    /*    {
+          name: 'users',
+          label: 'משתמשים',
+          type: 'join',
+          collection: 'users',
+          on: 'firmId',
+          admin: { defaultColumns: [ 'name'] },
+        }*/
   ],
 }

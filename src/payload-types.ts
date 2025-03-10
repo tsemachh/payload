@@ -162,6 +162,7 @@ export interface Config {
   };
   collectionsJoins: {
     companies: {
+      parentCompany: 'companies';
       accounts: 'accounts';
     };
     accounts: {
@@ -349,6 +350,11 @@ export interface Company {
   name: string;
   active?: boolean | null;
   subCompanies?: (string | Company)[] | null;
+  parentCompany?: {
+    docs?: (string | Company)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   showResearch?: boolean | null;
   setResearchAsDefault?: boolean | null;
   showResearchBond?: boolean | null;
@@ -739,6 +745,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   name?: T;
   active?: T;
   subCompanies?: T;
+  parentCompany?: T;
   showResearch?: T;
   setResearchAsDefault?: T;
   showResearchBond?: T;
