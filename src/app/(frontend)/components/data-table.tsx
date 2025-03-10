@@ -105,7 +105,7 @@ export function DataTable<T extends Record<string, any>>({
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(false)
+  const [isFilterActive, setIsFilterActive] = useState(true)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string }
   }>({})
@@ -143,8 +143,22 @@ export function DataTable<T extends Record<string, any>>({
         Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
       )
     }
-
     loadColumnVisibility()
+    const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+    columns.forEach((column) => {
+      if (column.key === 'meetingDate' && column.filterable) {
+        initialDateFilters[column.key as string] = {
+          past: '',
+          future: 'allFuture',
+        }
+      } else if (column.type === 'datetime' && column.filterable) {
+        initialDateFilters[column.key as string] = {
+          past: 'allPast',
+          future: 'allFuture',
+        }
+      }
+    })
+    setDateFilters(initialDateFilters)
   }, [columns, tableId])
 
   // Filter columns based on visibility
@@ -336,7 +350,7 @@ export function DataTable<T extends Record<string, any>>({
       columns.forEach((column) => {
         if (column.key === 'meetingDate' && column.filterable) {
           initialDateFilters[column.key as string] = {
-            past: '',
+            past: 'allPast',
             future: 'allFuture',
           }
         } else if (column.type === 'datetime' && column.filterable) {
