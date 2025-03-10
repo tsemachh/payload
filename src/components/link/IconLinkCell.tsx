@@ -36,15 +36,15 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
           onClick={(e) => {
             // Prevent PayloadCMS form navigation warning
             e.stopPropagation()
-            // Navigate to URL in same window
-            window.location.href = linkValue
+            // Navigate to URL in new window
+            window.open(linkValue, '_blank')
           }}
           role="link"
           tabIndex={0}
           onKeyPress={(e) => {
             if (e.key === 'Enter') {
               e.stopPropagation()
-              window.location.href = linkValue
+              window.open(linkValue, '_blank')
             }
           }}
         />
