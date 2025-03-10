@@ -47,7 +47,7 @@ export async function getSequenceStockValueId(
   return id
 }
 
-export async function getSequenceMeetingId(payload: BasePayload, meetingId: number | null) {
+export async function getSequenceMeetingId(payload: BasePayload, meetingId: string | null) {
   if (meetingId === null) return null
 
   let id = null
