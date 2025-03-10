@@ -434,9 +434,9 @@ export function DataTable<T extends Record<string, any>>({
   const getSortIcon = (columnKey: keyof T) => {
     if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
-        return <ArrowUp className="h-4 w-4 ml-2" />
+        return <ArrowUp className="h-4 w-4" />
       } else if (sortConfig.direction === 'desc') {
-        return <ArrowDown className="h-4 w-4 " />
+        return <ArrowDown className="h-4 w-4" />
       }
     }
     return null
@@ -445,16 +445,25 @@ export function DataTable<T extends Record<string, any>>({
   // Get filter icon for column header
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
-    if (facetedFilters[columnKey]?.length !== filters[columnKey]?.length) {
-      return <Filter className="h-4 w-4 ml-2" />
+    const column = columns.find((col) => col.key === columnKey)
+    if (column?.type === 'datetime') {
+      const dateFilter = dateFilters[columnKey]
+      if (dateFilter?.past === 'allPast' && dateFilter?.future === 'allFuture') {
+        return <ChevronDown />
+      } else {
+        return <Filter />
+      }
     }
-    return <ChevronDown className="h-4 w-4 ml-2" />
+    if (facetedFilters[columnKey]?.length !== filters[columnKey]?.length) {
+      return <Filter />
+    }
+    return <ChevronDown />
   }
 
   // Generate faceted filters
   const facetedFilters = useMemo(() => {
     const facets: {
-      [key: string]: { value: string; count: number; icon?: React.ReactNode; translate?: string }[]
+      [key: string]: FacetedFilterItem[]
     } = {}
     columns.forEach((column) => {
       if (column.filterable) {
@@ -476,8 +485,7 @@ export function DataTable<T extends Record<string, any>>({
               icon: <BooleanIcon iconType={false} />,
             })
           }
-        }
-        if (column.key === 'meetingState') {
+        } else if (column.key === 'meetingState') {
           const meetingStateCounts = data.reduce(
             (acc, { meetingState }) => {
               if (!meetingState) return acc // Skip null values
@@ -540,7 +548,7 @@ export function DataTable<T extends Record<string, any>>({
               <Filter className="h-4 w-4 mr-2" />
             )}
           </Button>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
@@ -587,7 +595,7 @@ export function DataTable<T extends Record<string, any>>({
                         <span>{column.header}</span>
                         {getSortIcon(column.key)}
                         {isFilterActive && column.filterable && (
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                 {getFilterIcon(String(column.key))}
@@ -614,6 +622,7 @@ export function DataTable<T extends Record<string, any>>({
                                             )
                                           }}
                                           className="flex items-center justify-between py-2 remove-checked"
+                                          onSelect={(e) => e.preventDefault()}
                                         >
                                           <Checkbox
                                             checked={isChecked}
@@ -648,6 +657,7 @@ export function DataTable<T extends Record<string, any>>({
                                             )
                                           }}
                                           className="flex items-center justify-between py-2 remove-checked"
+                                          onSelect={(e) => e.preventDefault()}
                                         >
                                           <Checkbox
                                             checked={isChecked}
@@ -666,7 +676,7 @@ export function DataTable<T extends Record<string, any>>({
                                 </div>
                               ) : (
                                 facetedFilters[column.key as string]?.map(
-                                  ({ value, count, icon, translate }) => (
+                                  ({ value, count, icon, translate }: FacetedFilterItem) => (
                                     <DropdownMenuCheckboxItem
                                       key={value}
                                       checked={
@@ -681,6 +691,7 @@ export function DataTable<T extends Record<string, any>>({
                                         handleFilter(String(column.key), newFilters)
                                       }}
                                       className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
                                     >
                                       <Checkbox
                                         checked={
