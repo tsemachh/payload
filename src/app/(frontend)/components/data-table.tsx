@@ -434,9 +434,9 @@ export function DataTable<T extends Record<string, any>>({
   const getSortIcon = (columnKey: keyof T) => {
     if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
-        return <ArrowUp className="h-4 w-4 ml-2" />
+        return <ArrowUp className="h-4 w-4" />
       } else if (sortConfig.direction === 'desc') {
-        return <ArrowDown className="h-4 w-4 " />
+        return <ArrowDown className="h-4 w-4" />
       }
     }
     return null
@@ -449,15 +449,15 @@ export function DataTable<T extends Record<string, any>>({
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (dateFilter?.past === 'allPast' && dateFilter?.future === 'allFuture') {
-        return <ChevronDown className="h-4 w-4 ml-2" />
+        return <ChevronDown />
       } else {
-        return <Filter className="h-4 w-4 ml-2" />
+        return <Filter />
       }
     }
     if (facetedFilters[columnKey]?.length !== filters[columnKey]?.length) {
-      return <Filter className="h-4 w-4 ml-2" />
+      return <Filter />
     }
-    return <ChevronDown className="h-4 w-4 ml-2" />
+    return <ChevronDown />
   }
 
   // Generate faceted filters
@@ -485,8 +485,7 @@ export function DataTable<T extends Record<string, any>>({
               icon: <BooleanIcon iconType={false} />,
             })
           }
-        }
-        if (column.key === 'meetingState') {
+        } else if (column.key === 'meetingState') {
           const meetingStateCounts = data.reduce(
             (acc, { meetingState }) => {
               if (!meetingState) return acc // Skip null values
