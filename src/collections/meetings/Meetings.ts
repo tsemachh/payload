@@ -53,15 +53,17 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
 interface AccessArgs {
   data?: {
     state?: string;
+    _status?:string;
   };
 }
 
 // Function to check if document should be read-only
 const getReadOnlyAccess = ({ data }: AccessArgs): boolean => {
-
-  if(data?.state === 'completed' || data?.state === 'cancelled')
-     return false
-  return true
+  console.log(`----------1--${data?._status}`)
+  console.log(`--------2----${data?.state}`)
+  if (data?._status === 'draft') return true;
+  if (data?.state === 'completed' || data?.state === 'cancelled') return false;
+  return true;
 }
 
 export const Meetings: CollectionConfig = {
