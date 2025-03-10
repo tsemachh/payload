@@ -16,9 +16,6 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   if (value == "on-hold" && !meetingDate)
     return true
 
-  if (value == "on-hold" && !meetingDate)
-    return true
-
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
   }
@@ -32,7 +29,7 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
 
     case 'postponed':
       if (meetingDate < currentDate) {
-        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר'
+        return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
       }
       break
 
@@ -50,21 +47,6 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   }
      return true
 }}
-interface AccessArgs {
-  data?: {
-    state?: string;
-    _status?:string;
-  };
-}
-
-// Function to check if document should be read-only
-const getReadOnlyAccess = ({ data }: AccessArgs): boolean => {
-  console.log(`----------1--${data?._status}`)
-  console.log(`--------2----${data?.state}`)
-  if (data?._status === 'draft') return true;
-  if (data?.state === 'completed' || data?.state === 'cancelled') return false;
-  return true;
-}
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
@@ -102,9 +84,6 @@ export const Meetings: CollectionConfig = {
           unique: true,
           index: true,
           admin: { hidden: true },
-          access: {
-            update: getReadOnlyAccess
-          },
 
         },
         {
@@ -124,9 +103,6 @@ export const Meetings: CollectionConfig = {
               },
             },
           },
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'stock',
@@ -134,9 +110,6 @@ export const Meetings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'type',
@@ -152,9 +125,6 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
-          access: {
-            update: getReadOnlyAccess
-          },
         },
       ],
     },
@@ -171,9 +141,6 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'default',
             },
           },
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'proxyVotingDate',
@@ -186,9 +153,6 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'meetingDate',
@@ -199,9 +163,6 @@ export const Meetings: CollectionConfig = {
               displayFormat: 'HH:mm dd/MM/yyyy',
               pickerAppearance: 'dayAndTime',
             },
-          },
-          access: {
-            update: getReadOnlyAccess
           },
 
         },
@@ -214,17 +175,11 @@ export const Meetings: CollectionConfig = {
           name: 'location',
           label: 'כתובת',
           type: 'text',
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'state',
           label: 'מצב',
           type: 'select',
-          access: {
-            update: getReadOnlyAccess
-          },
           hooks: {
             beforeChange: [
               ({ siblingData,value }) => {
@@ -253,9 +208,7 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
-      access: {
-        update: getReadOnlyAccess
-      },
+ 
     },
     {
       type: 'row',
@@ -267,25 +220,16 @@ export const Meetings: CollectionConfig = {
           admin: {
             condition: (siblingData) => siblingData.state === 'completed',
           },
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'electronicVotingEnabled',
           label: 'האם מופיעה במערכת האלק׳?',
           type: 'checkbox',
-          access: {
-            update: getReadOnlyAccess
-          },
         },
         {
           name: 'committeeInitiated',
           label: 'האם פיננסי דורש ועדה?',
           type: 'checkbox',
-          access: {
-            update: getReadOnlyAccess
-          },
         },
       ],
     },
