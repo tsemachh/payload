@@ -105,7 +105,7 @@ export function DataTable<T extends Record<string, any>>({
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(true)
+  const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string }
   }>({})
@@ -199,14 +199,92 @@ export function DataTable<T extends Record<string, any>>({
     [data],
   )
 
+  const getFilteredDataExcludingColumn = useCallback(
+    (columnKey: string) => {
+      let filteredItems = [...data]
+
+      // Apply date filters except for the current column
+      Object.entries(dateFilters).forEach(([key, { past, future }]) => {
+        if (key === columnKey || (!past && !future)) return // Skip current column or if no options selected
+
+        filteredItems = filteredItems.filter((item) => {
+          const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+
+          // Check if the item matches the past filter
+          const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
+
+          // Check if the item matches the future filter
+          const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
+
+          // Item passes if it matches either the past or future filter
+          return matchesPast || matchesFuture
+        })
+      })
+
+      // Apply search filter
+      if (searchTerm) {
+        const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
+        filteredItems = filteredItems.filter((item) =>
+          visibleColumns.some((column) => {
+            const value = item[column.key]
+            return typeof value === 'string' && searchRegex.test(value)
+          }),
+        )
+      }
+
+      // Apply other filters except for the current column
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === columnKey) return // Skip current column
+
+        // If the filter is an empty array, no items should pass
+        if (Array.isArray(value) && value.length === 0) {
+          filteredItems = []
+          return
+        }
+
+        // Handle date filters
+        if (columns.find((col) => col.key === key)?.type === 'datetime') {
+          // Skip if either date is missing
+          if (!value.from || !value.to) {
+            return
+          }
+
+          filteredItems = filteredItems.filter((item) => {
+            const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+            return isWithinInterval(itemDate, {
+              start: value.from,
+              end: value.to,
+            })
+          })
+        }
+        // Handle array filters (faceted)
+        else if (Array.isArray(value)) {
+          filteredItems = filteredItems.filter((item) =>
+            value.includes(String(item[key as keyof FutureMeetingTableData])),
+          )
+        }
+        // Handle other filter types
+        else {
+          filteredItems = filteredItems.filter(
+            (item) => item[key as keyof FutureMeetingTableData] === value,
+          )
+        }
+      })
+
+      return filteredItems
+    },
+    [columns, data, dateFilters, filters, searchTerm, visibleColumns],
+  )
+
   const getDateFilterCounts = useCallback(
     (columnKey: string) => {
+      const filteredData = getFilteredDataExcludingColumn(columnKey)
       const counts: Record<string, number> = {}
 
       // Count items for past date options
       pastDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
-        counts[option.value] = data.filter((item) => {
+        counts[option.value] = filteredData.filter((item) => {
           const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
           return isDateInRange(itemDate, dateRange)
         }).length
@@ -215,7 +293,7 @@ export function DataTable<T extends Record<string, any>>({
       // Count items for future date options
       futureDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
-        counts[option.value] = data.filter((item) => {
+        counts[option.value] = filteredData.filter((item) => {
           const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
           return isDateInRange(itemDate, dateRange)
         }).length
@@ -223,7 +301,7 @@ export function DataTable<T extends Record<string, any>>({
 
       return counts
     },
-    [data, pastDateFilterOptions, futureDateFilterOptions],
+    [pastDateFilterOptions, futureDateFilterOptions, getFilteredDataExcludingColumn],
   )
 
   // Reset filters
@@ -467,9 +545,14 @@ export function DataTable<T extends Record<string, any>>({
     } = {}
     columns.forEach((column) => {
       if (column.filterable) {
+        const filteredData = getFilteredDataExcludingColumn(column.key as string)
         if (column.type === 'boolean') {
-          const trueCount = data.filter((item) => item[column.key] === true).length
-          const falseCount = data.filter((item) => item[column.key] === false).length
+          const trueCount = filteredData.filter(
+            (item) => item[column.key as keyof typeof item] === true,
+          ).length
+          const falseCount = filteredData.filter(
+            (item) => item[column.key as keyof typeof item] === false,
+          ).length
           facets[column.key as string] = []
           if (trueCount > 0) {
             facets[column.key as string].push({
@@ -486,7 +569,7 @@ export function DataTable<T extends Record<string, any>>({
             })
           }
         } else if (column.key === 'meetingState') {
-          const meetingStateCounts = data.reduce(
+          const meetingStateCounts = filteredData.reduce(
             (acc, { meetingState }) => {
               if (!meetingState) return acc // Skip null values
               acc[meetingState as keyof typeof acc] =
@@ -504,16 +587,16 @@ export function DataTable<T extends Record<string, any>>({
             }),
           )
         } else {
-          const values = new Set(data.map((item) => String(item[column.key])))
+          const values = new Set(filteredData.map((item) => String(item[column.key])))
           facets[column.key as string] = Array.from(values).map((value) => ({
             value,
-            count: data.filter((item) => String(item[column.key]) === value).length,
+            count: filteredData.filter((item) => String(item[column.key]) === value).length,
           }))
         }
       }
     })
     return facets
-  }, [columns, data])
+  }, [columns, getFilteredDataExcludingColumn])
 
   // Render the data table
   return (
