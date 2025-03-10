@@ -1,7 +1,7 @@
 import { StockType } from '@/payload-types'
 
 export default interface ImportStock {
-  stockID: number;
+  stockID: number | string;
   name: string;
   symbol: string;
   type: StockType;

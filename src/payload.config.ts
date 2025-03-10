@@ -1,5 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
+import {importExportPlugin} from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
 import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -14,12 +15,16 @@ import logger from './lib/logger';
 
 import { Users } from './collections/Users'
 import { Document } from './collections/Document'
-import { Stocks } from '@/collections/stocks/Stocks'
+import { Stocks } from './collections/stocks/Stocks'
+import { Companies } from '@/collections/companies/Companies'
+import { Accounts } from '@/collections/accounts/Accounts'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
+import { Holdings } from '@/collections/holdings/Holdings'
 import { Roles } from '@shefing/authorization'
 
-import MigrationFaults from '@/collections/migration/MigrationFaults'
+import MigrationFaults from './collections/migration/MigrationFaults'
+import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 const filename = fileURLToPath(import.meta.url)
@@ -52,7 +57,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -77,6 +82,16 @@ export default buildConfig({
     defaultFromName: process.env.EMAIL_FROM_NAME || 'EMDA System',
   }),
   plugins: [
+  /*  importExportPlugin({
+      collections: ['stocks','meetings'],
+      overrideExportCollection: (collection) => {
+        collection.admin.group = 'ניהול'
+        collection.labels = {plural:'יצוא קבצים',singular:'יצוא קובץ'}
+        collection.upload.staticDir = path.resolve(dirname, 'uploads')
+        return collection
+      },
+      disableJobsQueue: true,
+    }),*/
     payloadCloudPlugin(),
     // storage-adapter-placeholder
     addAccess({

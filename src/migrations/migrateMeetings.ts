@@ -1,7 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId,  getSeqeunceStockId } from '../utils/utils' // Then you can use sql.close() directly
+import { getSequenceMeetingId,  getSeqeunceStockId } from '@/utils/utils' // Then you can use sql.close() directly
+import { logMigrationFault } from '@/utils/migrationFaultUtils'
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
   [-1, { newType: null, newState: null }],
@@ -50,10 +51,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-/*    await payload.delete({
-      collection: 'meetings',
-      where: {},
-    });*/
+    /*    await payload.delete({
+          collection: 'meetings',
+          where: {},
+        });*/
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -99,15 +100,46 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const stockId = await getSeqeunceStockId(payload, row.stockID)
         if (stockId === null){
           console.log("Stockid can't be found:",row.stockID)
+          await logMigrationFault({
+            payload,
+            type: 'meeting',
+            typeId: `${row.id}`,
+            comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
+            row
+          })
           continue;
         }
         //Find meetingTypeId
         // eslint-disable-next-line prefer-const
         let { newType, newState } = getTypeAndState(row.mtype);
+        const meetingDate=new Date(row.mdate)
+        const now = new Date()
         if (newState == null){
-          newState=(new Date(row.mdate) > new Date() ? "scheduled":"completed")
+          newState=(meetingDate > now ? "scheduled":"completed")
+        }
+        switch (newState) {
+          case 'postponed':
+          case 'ongoing':
+            if (meetingDate <  now) {
+              newState= 'completed'
+            }
+            break
+          case 'on-hold':
+            row.mdate = null
+            break
         }
 
+        if (row.mdate == null && newState != 'on-hold'){
+          //Here Junie report to migration-fault the error
+          await logMigrationFault({
+            payload,
+            type: 'meeting',
+            typeId: `${row.id}`,
+            comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
+            row
+          })
+          continue
+        }
         // @ts-ignore
         const meetingData:Meeting = {
           meetingId:row.id,
@@ -127,7 +159,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         //console.log("Data",JSON.stringify(meetingData, null, 2))
-        const id = await getSequenceMeetingId(payload, meetingData.meetingId)
+        const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
         if (id){
           // Update Payload CMS
           payload.update({

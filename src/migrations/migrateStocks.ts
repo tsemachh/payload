@@ -1,15 +1,26 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Stock } from '@/payload-types'
+import { Stock, StockOrigin } from '@/payload-types'
+import { getStockType } from '@/utils/migrateStockUtils'
 import { getSeqeunceStockId } from '../utils/utils'
 import {
   getAllStocksInMeetings,
   getEmdaStockIds,
   getPredictaStockIds,
+  getStockIdsByMappingType,
   getStockRelations,
   getStocks,
-  getStockValues, upsertStockFromImport, upsertStockValueFromImport,
+  getStockValues,
+  upsertStockFromImport,
+  upsertStockValueFromImport,
 } from '@/utils/migrateUtils'
+import {
+  createErrorFaultComment,
+  createStockFaultComment,
+  createStockRelationFaultComment,
+  createStockValueFaultComment,
+  logMigrationFault,
+} from '@/utils/migrationFaultUtils'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -24,128 +35,6 @@ const sqlConfig: sql.config = {
   },
   requestTimeout: 120000, // Increase timeout globally to 120 seconds
 }
-const stockTypesMap = new Map([
-  ['אג"ח היברידי קונצרני', 'איגרות חוב'],
-  ['אג"ח קונצרני זר חו"ל IG', 'איגרות חוב'],
-  ['אגח - השאלה', 'איגרות חוב'],
-  ['אופציה', 'אופציות'],
-  ['יה"ש', 'יחידת השתתפות'],
-  ['יחידת השתתפות', 'יחידת השתתפות'],
-  ['מניות חול - זיקה לישראל', 'מניות'],
-  ['קרנות סל מניות ישראל', 'קרנות נאמנות'],
-  ['אג"ח', 'איגרות חוב'],
-  ['אגרות חוב', 'איגרות חוב'],
-  ['אופציות מניות', 'אופציות'],
-  ['הלוואות לא סחירות', 'אחר'],
-  ['זכויות', 'זכויות'],
-  ['כתב אופציה מניות', 'אופציות'],
-  ['מניות - קרנות סל מניות חו"ל', 'קרנות נאמנות'],
-  ['מניות דואליות חו"ל - דולר', 'מניות'],
-  ['נע"מ', 'נייר ערך מסחרי'],
-  ['אג"ח - השאלה', 'איגרות חוב'],
-  ['יחידות השתתפות', 'יחידת השתתפות'],
-  ['מניות יתר', 'מניות'],
-  ['נייר ערך מסחרי', 'נייר ערך מסחרי'],
-  ['קרן טכנולוגיה עילית', 'אחר'],
-  ['קרנות סל מניות חול', 'קרנות נאמנות'],
-  ['תעודות סל מנייתיות ארה"ב', 'תעודות סל'],
-  ['תעודות סל שאר העולם דולר', 'תעודות סל'],
-  ['תעודות סל שאר העולם יורו', 'תעודות סל'],
-  ['תעודת סל', 'תעודות סל'],
-  ['תעודת סל מנית חול', 'תעודות סל'],
-  ['אופציה על מניה', 'אופציות'],
-  ['אופציות מעוף', 'אופציות'],
-  ['איגרות חוב להמרה', 'איגרות חוב'],
-  ['מניות חו"ל - ארה"ב דולר', 'מניות'],
-  ['מניות חול - אירופה יורו', 'מניות'],
-  ['מניות ישראליות ארה"ב-דולר', 'מניות'],
-  ['מניות ישראליות דואליות דולר', 'מניות'],
-  ['קרן נאמנות', 'קרנות נאמנות'],
-  ['שטר הון', 'שטרי הון'],
-  ['ת סל אג"ח ממשלתי', 'תעודות סל'],
-  ['תעודת מדד', 'תעודות סל'],
-  ['תעודת סל אג"ח IG', 'תעודות סל'],
-  ['כתבי אופציה', 'אופציות'],
-  ['מוצר מובנה', 'אחר'],
-  ['מניות לא סחירות בחו"ל', 'מניות'],
-  ['מק"מ', 'מק"מ'],
-  ['קרנות סל', 'קרנות נאמנות'],
-  ['ריבית של אג"ח חו"ל', 'איגרות חוב'],
-  ['תעודות סל אג"ח HY', 'תעודות סל'],
-  ['תעודות סל אירופה יורו', 'תעודות סל'],
-  ['תעודות סל ארה"ב דולר', 'תעודות סל'],
-  ['אג"ח קונצרני ישראלי חו"ל', 'איגרות חוב'],
-  ['אגח קונצרן', 'איגרות חוב'],
-  ['איגרות חוב', 'איגרות חוב'],
-  ['חוב מובנה בחו"ל - CLO דולר', 'איגרות חוב'],
-  ['מניה לא סחירה', 'מניות'],
-  ['מניות חו"ל - יין יפני', 'מניות'],
-  ['מניות ישראליות דואליות-שטרלינג', 'מניות'],
-  ['מניות לא סחירות', 'מניות'],
-  ['קרן סל חו"ל', 'קרנות נאמנות'],
-  ['תעודות סל', 'תעודות סל'],
-  ['תעודות סל מניות חול', 'תעודות סל'],
-  ['איגרות חוב', 'איגרות חוב'],
-  ['אג"ח זר COCO מחיקה', 'איגרות חוב'],
-  ['אג"ח לא סחיר', 'איגרות חוב'],
-  ['אופציות', 'אופציות'],
-  ['חוב מובנה בחו"ל - CLO יורו', 'איגרות חוב'],
-  ['מניות - חוזים על סחורות', 'מניות'],
-  ['מניות חו"ל - שאר העולם דולר', 'מניות'],
-  ['מניות ישראליות בחול - דולר', 'מניות'],
-  ['קרנות נאמנות', 'קרנות נאמנות'],
-  ['ת סל אג"ח ממשלתי EM מטבע מקומי', 'תעודות סל'],
-  ['תעודות סל זרות בחו"ל - דולר', 'תעודות סל'],
-  ['תעודת סל מניות חו"ל', 'תעודות סל'],
-  ['אגח זר COCO המרה', 'איגרות חוב'],
-  ['מניה', 'מניות'],
-  ['מניות', 'מניות'],
-  ['קרן נאמנות/סל/השקעה', 'קרנות נאמנות'],
-  ['שטרי הון', 'שטרי הון'],
-  ['תעודות סל אירופה לישט', 'תעודות סל'],
-  ['אג"ח קונצרני זר חו"ל HY', 'איגרות חוב'],
-  ['אופציה על מניה לא סחירה', 'אופציות'],
-  ['אופציות על מניות בארץ', 'אופציות'],
-  ['איגרות חוב לא סחיר', 'איגרות חוב'],
-  ['קרן סל', 'קרנות נאמנות'],
-  ['קרנות סל שקליות', 'קרנות נאמנות'],
-  ['תעודות סל אירופה דולר', 'תעודות סל'],
-  ['תעודות סל יפן דולר', 'תעודות סל'],
-  ['תעודות סל יפן יין', 'תעודות סל'],
-  ['אג"ח היברידי פיננסי ביטוח', 'איגרות חוב'],
-  ['אג"ח ממשלתיות', 'איגרות חוב'],
-  ['הלוואות', 'אחר'],
-  ['מניות ל"ס', 'מניות'],
-  ['קרן סל מניות חו"ל', 'קרנות נאמנות'],
-  ['קרנות סל מניות חו"ל', 'קרנות נאמנות'],
-  ['תעודות סל זרות בחו"ל -יורו', 'תעודות סל'],
-])
-const stockTypes = [
-  'מניות',
-  'אופציות',
-  'איגרות חוב',
-  'איגרות חוב להמרה',
-  'יחידת השתתפות',
-  'תעודות מדד',
-  'תעודות סל',
-  'קרנות נאמנות',
-  'נייר ערך מסחרי',
-  'אחר',
-  'זכויות',
-  'מק"מ',
-  'שטרי הון',
-]
-// @ts-ignore
-function getStockType(row) {
-  // Example usage:
-  let stocktype = row.type
-  if (stocktype) stocktype = stocktype.trim()
-  // @ts-ignore
-  const assetType = stockTypesMap.get(stocktype)
-  if (assetType) stocktype = assetType
-  if (!stockTypes.includes(stocktype)) stocktype = 'אחר'
-  return stocktype
-}
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -158,100 +47,189 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
 
-    const resultStocks = await getStocks(pool)
-    const predictaStocks: Set<string> = await getPredictaStockIds(pool)
-    const emdaStocks: Set<string> = await getEmdaStockIds(pool)
-    const relationStocks: Map<string, string> = await getStockRelations(pool)
+    const resultStocks = await getStocks(pool) //AllStocks
+    const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
+    const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
+    const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
+    const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
-    const resultStockValues = await getStockValues(pool)
+    const resultStockValues = await getStockValues(pool) //TODO need to take only 7 years back of stocks
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
     let successCount = 0
     let errorCount = 0
     const stockIdTOSequence: Map<string, string> = new Map<string, string>()
+
+    // Get stock status from migration mapping
+    console.log('Fetching stock statuses from migration mapping...')
+    const [notActiveStocks, nonTradableStocks, privateStocks, foreignStocks] = await Promise.all([
+      getStockIdsByMappingType(payload, 'NotActive'),
+      getStockIdsByMappingType(payload, 'NonTradable'),
+      getStockIdsByMappingType(payload, 'Private'),
+      getStockIdsByMappingType(payload, 'Foreign'),
+    ])
+
+    console.log("notative",JSON.stringify(notActiveStocks))
     for (const row of resultStocks.recordset) {
       row.stockID = `${row.stockID}`
+      // Check stock status from migration mapping
       const relatedStock = relationStocks.get(row.stockID)
-      const hasTradableRelationStock = relatedStock && predictaStocks.has(relatedStock)
-      const isPredictaStock = predictaStocks.has(row.stockID)
-      const isEmdaStock = emdaStocks.has(row.stockID)
-      const stockHasMeeting = stocksInMeeting.has(row.stockID)
-      if (
-        isPredictaStock ||
-        (isEmdaStock && hasTradableRelationStock) || //TODO what shuld we do ith other stocks ? ( Foreign excahnge )?
-        stockHasMeeting
-      ) {
+      const isRootStock = rootRelatedStocks.has(row.stockID)
+
+      // Consolidate all stock statuses in one place
+      const stockStatuses = {
+        // Basic statuses from mapping
+        isNotActive: notActiveStocks.has(row.stockID),
+        isNonTradable: nonTradableStocks.has(row.stockID),
+        isPrivate: privateStocks.has(row.stockID),
+
+        // Stock source statuses
+        isPredictaStock: predictaStocks.has(row.stockID),
+        isEmdaStock: emdaStocks.has(row.stockID),
+
+        // Meeting status
+        hasActiveMeeting: stocksInMeeting.has(row.stockID),
+
+        // Relationship statuses
+        hasTradableRelation: !!(relatedStock && predictaStocks.has(relatedStock)),
+        hasForeignRelation: !!(relatedStock && foreignStocks.has(relatedStock)),
+
+        // Root statuses
+        isRootStock: isRootStock,
+        isRootEmda: isRootStock && emdaStocks.has(row.stockID),
+
+        // Foreign status (including relations)
+        isForeign: foreignStocks.has(row.stockID) 
+      }
+
+      // Determine if stock should be processed
+      const shouldProcessStock =
+        stockStatuses.isPredictaStock ||
+        stockStatuses.isEmdaStock ||
+        stockStatuses.hasActiveMeeting ||
+        stockStatuses.isForeign ||
+        stockStatuses.isPrivate ||
+        stockStatuses.isNonTradable ||
+        stockStatuses.isNotActive
+
+      if (shouldProcessStock) {
         try {
           let stockSequence: string | null | undefined = stockIdTOSequence.get(row.stockID)
           if (!stockSequence) stockSequence = await getSeqeunceStockId(payload, row.stockID)
           row.type = getStockType(row)
 
-          stockSequence=await upsertStockFromImport(stockSequence,row,req,predictaStocks.has(row.stockID))
+          // Determine origin with clear priority
+          let origin: StockOrigin = 'TASE'
+          if (stockStatuses.isPrivate) origin = 'Private'
+          else if (stockStatuses.isNonTradable) origin = 'NonTradable'
+          else if (stockStatuses.isForeign) origin = 'Foreign'
+
+          // Determine tradable status:
+          // - Predicta stocks are tradable
+          // - Root EMDA stocks are tradable
+          // - Foreign stocks are tradable unless they are non-tradable or private
+          const isTradable =
+            stockStatuses.isPredictaStock ||
+            stockStatuses.isRootStock ||
+            stockStatuses.isForeign
+
+          // Determine active status:
+          // - Not active stocks are never active
+          // - Stocks with meetings are not active unless they are Predicta or EMDA stocks
+          const isActive = !(stockStatuses.isNotActive || (stockStatuses.hasActiveMeeting && !stockStatuses.isPredictaStock && !stockStatuses.isEmdaStock))
+
+          stockSequence = await upsertStockFromImport(
+            stockSequence,
+            row,
+            req,
+            isTradable,
+            origin,
+            isActive,
+            JSON.stringify(stockStatuses)
+          )
           stockIdTOSequence.set(row.stockID, stockSequence)
 
           successCount++
           /*            console.log(
               `✓ Inserted stock : ${row.stockID} (${successCount}/${resultStocks.recordset.length})`,
             )*/
-        } catch (insertError) {
+        } catch (error) {
           errorCount++
-          console.log('ROW', JSON.stringify(row, null, 2))
-          console.error(`✗ Failed to insert stock ${row.stockID}:`, insertError)
-          throw insertError
-        }
-      } else {
-        const faultComments = `Stock not entitled to migration - isPredictaStock:${isPredictaStock} isEmdaStock:${isEmdaStock} hasTradableRelationStock:${hasTradableRelationStock} stockHasMeeting:${stockHasMeeting} 
-        `
-        payload.create({
-          collection: 'migration-faults',
-          data: {
+          await logMigrationFault({
+            payload,
             type: 'stock',
             typeId: row.stockID,
-            row: JSON.stringify(row, null, 2),
-            comments: faultComments,
-          },
+            comments: createErrorFaultComment({
+              operation: 'insert stock',
+              id: row.stockID,
+              error: error instanceof Error ? error : new Error(String(error)),
+            }),
+            row,
+          })
+          throw error
+        }
+      } else {
+        await logMigrationFault({
+          payload,
+          type: 'stock',
+          typeId: row.stockID,
+          comments: createStockFaultComment({
+            isPredictaStock: stockStatuses.isPredictaStock,
+            isEmdaStock: stockStatuses.isEmdaStock,
+            hasTradableRelationStock: stockStatuses.hasTradableRelation,
+            stockHasMeeting: stockStatuses.hasActiveMeeting,
+          }),
+          row,
         })
-        console.info(`✗ Failed to insert stock ${row.stockID}: - not entitled to migration`)
       }
     }
     successCount = 0
     errorCount = 0
+    const relationStocksLength = relationStocks.size
     for (const [id1, id2] of relationStocks.entries()) {
-      const relationStocksLength = relationStocks.size
       try {
         const relatedStock = stockIdTOSequence.get(id2)
         const theStockToUpdate = stockIdTOSequence.get(id1)
-        const isPredictaStock = predictaStocks.has(id2)
 
-        if (theStockToUpdate && relatedStock && isPredictaStock) {
+        if (theStockToUpdate && relatedStock) {
           await payload.update({
             collection: 'stocks',
             id: theStockToUpdate,
-            // @ts-ignore
-            data: { relatedStock: relatedStock },
+            data: {
+              relatedStock: relatedStock as Stock['id'],
+            },
             req,
           })
           successCount++
           console.log(`✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`)
         } else {
-          const faultComments = `Stock relation not available- stock :${id1} to stock ${id2} isPredictaStock:${isPredictaStock} `
-          payload.create({
-            collection: 'migration-faults',
-            data: {
-              type: 'stock-relation',
-              typeId: id1 + '->' + id2,
-              comments: faultComments,
-            },
+          await logMigrationFault({
+            payload,
+            type: 'stock-relation',
+            typeId: `${id1}->${id2}`,
+            comments: createStockRelationFaultComment({
+              stockId1: `${id1}-${theStockToUpdate}`,
+              stockId2: `${id2}-${relatedStock}`,
+            }),
           })
           errorCount++
           console.log(
             `✗ Failed to insert stock relation ${id1} (${successCount}/${relationStocksLength})`,
           )
         }
-      } catch (insertError) {
+      } catch (error) {
         errorCount++
-        console.error(`✗ Failed to insert stock relation ${id1}:`, insertError)
-        throw insertError
+        await logMigrationFault({
+          payload,
+          type: 'stock-relation',
+          typeId: `${id1}->${id2}`,
+          comments: createErrorFaultComment({
+            operation: 'insert stock relation',
+            id: `${id1}->${id2}`,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }),
+        })
+        throw error
       }
     }
     successCount = 0
@@ -262,32 +240,37 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         row.stockID = `${row.stockID}`
         const stockSequence = stockIdTOSequence.get(row.stockID)
         const isPredictaStock = predictaStocks.has(row.stockID)
+        const isRootForeignStock = rootRelatedStocks.has(row.stockID) && !isPredictaStock
 
-        if (!stockSequence || !isPredictaStock) {
-          const faultComments = `Stock value not migrated stock :${row.stockID} isPredictaStock ${isPredictaStock} 
-         `
-          payload.create({
-            collection: 'migration-faults',
-            data: {
-              type: 'stock-value',
-              typeId: row.stockID,
-              row: JSON.stringify(row, null, 2),
-              comments: faultComments,
-            },
+        if (!stockSequence || (!isPredictaStock && !isRootForeignStock)) {
+          await logMigrationFault({
+            payload,
+            type: 'stock-value',
+            typeId: row.stockID,
+            comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock}`,
+            row,
           })
           continue
         }
-        await upsertStockValueFromImport( stockSequence, row, req)
+        await upsertStockValueFromImport(stockSequence, row, req)
 
         successCount++
         console.log(
           `✓ Inserted stock value: ${row.symbol} (${successCount}/${resultStockValues.recordset.length})`,
         )
-      } catch (insertError) {
+      } catch (error) {
         errorCount++
-        console.log('ROW', JSON.stringify(row, null, 2))
-        console.error(`✗ Failed to insert stock ${row.symbol}:`, insertError)
-        throw insertError
+        await logMigrationFault({
+          payload,
+          type: 'stock-value',
+          typeId: row.symbol,
+          comments: createStockValueFaultComment({
+            stockId: row.symbol,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }),
+          row,
+        })
+        throw error
       }
     }
 

@@ -29,9 +29,9 @@ export type StockType =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "MeetingState".
+ * via the `definition` "StockOrigin".
  */
-export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
+export type StockOrigin = 'TASE' | 'Foreign' | 'NonTradable' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
@@ -41,14 +41,49 @@ export type MeetingType =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingState".
+ */
+export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UserCompany".
+ */
+export type UserCompany =
+  | {
+      companyId: string | Company;
+      permission?: ('read' | 'write') | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RolePermissions".
  */
 export type RolePermissions =
   | {
-      entity: ('stocks' | 'stock-values' | 'meetings' | 'users' | 'roles' | 'document' | 'migration-faults')[];
+      entity: (
+        | 'stocks'
+        | 'stock-values'
+        | 'meetings'
+        | 'users'
+        | 'roles'
+        | 'document'
+        | 'migration-faults'
+        | 'companies'
+        | 'accounts'
+        | 'holdings'
+        | 'stock-migration-mapping'
+      )[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MigrationType".
+ */
+export type MigrationType =
+  | ('holding' | 'user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting')
   | null;
 /**
  * Supported timezones in IANA format.
@@ -117,11 +152,23 @@ export interface Config {
     roles: Role;
     document: Document;
     'migration-faults': MigrationFault;
+    companies: Company;
+    accounts: Account;
+    holdings: Holding;
+    'stock-migration-mapping': StockMigrationMapping;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    companies: {
+      accounts: 'accounts';
+    };
+    accounts: {
+      accounts: 'accounts';
+      holdings: 'holdings';
+    };
+  };
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
@@ -130,6 +177,10 @@ export interface Config {
     roles: RolesSelect<false> | RolesSelect<true>;
     document: DocumentSelect<false> | DocumentSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
+    companies: CompaniesSelect<false> | CompaniesSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
+    holdings: HoldingsSelect<false> | HoldingsSelect<true>;
+    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -172,29 +223,32 @@ export interface UserAuthOperations {
  */
 export interface Stock {
   id: string;
-  /**
-   * ניתן להעריכה רק בעת יצירת נייר הערך
-   */
   stockId: string;
   fullName?: string | null;
   type?: StockType;
+  origin: StockOrigin;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
+  active?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
   values?: {
-    docs?: (string | StockValue)[] | null;
-    hasNextPage?: boolean | null;
-  } | null;
+    docs?: (string | StockValue)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  comments?: string | null;
   relations?: {
-    docs?: (string | Stock)[] | null;
-    hasNextPage?: boolean | null;
-  } | null;
+    docs?: (string | Stock)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   meetings?: {
-    docs?: (string | Meeting)[] | null;
-    hasNextPage?: boolean | null;
-  } | null;
+    docs?: (string | Meeting)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -222,15 +276,15 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
-  meetingId: number;
+  meetingId?: string | null;
   magnaId?: string | null;
-  state?: MeetingState;
   stock?: (string | null) | Stock;
-  meetingDate?: string | null;
+  type?: MeetingType;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
+  meetingDate?: string | null;
   location?: string | null;
-  type?: MeetingType;
+  state?: MeetingState;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
@@ -250,6 +304,21 @@ export interface Meeting {
 export interface User {
   id: string;
   name?: string | null;
+  legacyId?: number | null;
+  active?: boolean | null;
+  companies?: UserCompany;
+  lastLogin?: string | null;
+  changePassword?: boolean | null;
+  /**
+   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   */
+  userIp?: string | null;
+  qrCodeData?: {
+    showQr?: boolean | null;
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
   isAdmin?: boolean | null;
   isGeneratorUser?: boolean | null;
   userRoles?: (string | Role)[] | null;
@@ -268,6 +337,74 @@ export interface User {
   loginAttempts?: number | null;
   lockUntil?: string | null;
   password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "companies".
+ */
+export interface Company {
+  id: string;
+  companyId?: number | null;
+  order?: number | null;
+  name: string;
+  active?: boolean | null;
+  subCompanies?: (string | Company)[] | null;
+  showResearch?: boolean | null;
+  setResearchAsDefault?: boolean | null;
+  showResearchBond?: boolean | null;
+  setResearchAsDefaultBond?: boolean | null;
+  showResearchTrusteeship?: boolean | null;
+  setResearchAsDefaultTrusteeship?: boolean | null;
+  accounts?: {
+    docs?: (string | Account)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts".
+ */
+export interface Account {
+  id: string;
+  accountNumber: number;
+  name: string;
+  company: string | Company;
+  isCentralAccount?: boolean | null;
+  parentAccount?: (string | null) | Account;
+  accounts?: {
+    docs?: (string | Account)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  holdings?: {
+    docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  account: string | Account;
+  stock: string | Stock;
+  quantity: number;
+  valueDate: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -309,10 +446,24 @@ export interface Document {
  */
 export interface MigrationFault {
   id: string;
-  type?: ('stock' | 'stock-value' | 'stock-relation' | 'meeting') | null;
+  type?: MigrationType;
   typeId?: string | null;
   row?: string | null;
   comments?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping".
+ */
+export interface StockMigrationMapping {
+  id: string;
+  stockId: number;
+  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
+  isin?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -352,6 +503,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
+      } | null)
+    | ({
+        relationTo: 'companies';
+        value: string | Company;
+      } | null)
+    | ({
+        relationTo: 'accounts';
+        value: string | Account;
+      } | null)
+    | ({
+        relationTo: 'holdings';
+        value: string | Holding;
+      } | null)
+    | ({
+        relationTo: 'stock-migration-mapping';
+        value: string | StockMigrationMapping;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -403,12 +570,15 @@ export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   fullName?: T;
   type?: T;
+  origin?: T;
   tradable?: T;
   relatedStock?: T;
+  active?: T;
   symbol?: T;
   name?: T;
   longName?: T;
   values?: T;
+  comments?: T;
   relations?: T;
   meetings?: T;
   creator?: T;
@@ -438,13 +608,13 @@ export interface StockValuesSelect<T extends boolean = true> {
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   magnaId?: T;
-  state?: T;
   stock?: T;
-  meetingDate?: T;
+  type?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
+  meetingDate?: T;
   location?: T;
-  type?: T;
+  state?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
@@ -463,6 +633,20 @@ export interface MeetingsSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  legacyId?: T;
+  active?: T;
+  companies?: T | UserCompanySelect<T>;
+  lastLogin?: T;
+  changePassword?: T;
+  userIp?: T;
+  qrCodeData?:
+    | T
+    | {
+        showQr?: T;
+        createDate?: T;
+        lastCodeFailureDate?: T;
+        codeFailuresSinceLastSuccess?: T;
+      };
   isAdmin?: T;
   isGeneratorUser?: T;
   userRoles?: T;
@@ -480,6 +664,15 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UserCompany_select".
+ */
+export interface UserCompanySelect<T extends boolean = true> {
+  companyId?: T;
+  permission?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -531,6 +724,72 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   typeId?: T;
   row?: T;
   comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "companies_select".
+ */
+export interface CompaniesSelect<T extends boolean = true> {
+  companyId?: T;
+  order?: T;
+  name?: T;
+  active?: T;
+  subCompanies?: T;
+  showResearch?: T;
+  setResearchAsDefault?: T;
+  showResearchBond?: T;
+  setResearchAsDefaultBond?: T;
+  showResearchTrusteeship?: T;
+  setResearchAsDefaultTrusteeship?: T;
+  accounts?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts_select".
+ */
+export interface AccountsSelect<T extends boolean = true> {
+  accountNumber?: T;
+  name?: T;
+  company?: T;
+  isCentralAccount?: T;
+  parentAccount?: T;
+  accounts?: T;
+  holdings?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings_select".
+ */
+export interface HoldingsSelect<T extends boolean = true> {
+  account?: T;
+  stock?: T;
+  quantity?: T;
+  valueDate?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping_select".
+ */
+export interface StockMigrationMappingSelect<T extends boolean = true> {
+  stockId?: T;
+  type?: T;
+  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

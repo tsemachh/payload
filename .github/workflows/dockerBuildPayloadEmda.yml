@@ -1,4 +1,4 @@
-name: Docker Emda Payload Image CI-CD
+name: Docker Emda Payload Image CI
 
 on:
   push:
@@ -56,7 +56,7 @@ jobs:
 
       # Step 7: Cache Docker layers
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -109,12 +109,12 @@ jobs:
           # Push the tagged image to GCR
           docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
 
-      # Step 11: Reset VM
-      - name: Reset GCP VM
-        run: |
-          gcloud compute instances reset payload-vm \
-            --zone=me-west1-b \
-            --project=${{ secrets.GCP_PROJECT_ID }}
+      # Step 11: Reset VM - moved to cron job
+      # - name: Reset GCP VM
+      #   run: |
+      #     gcloud compute instances reset payload-vm \
+      #       --zone=me-west1-b \
+      #       --project=${{ secrets.GCP_PROJECT_ID }}
 
   notify-slack:
     needs: docker-build

@@ -1,4 +1,53 @@
 import type { CollectionConfig } from 'payload'
+import { IconLinkProps } from '../../components/link/IconLinkProps'
+import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
+
+const meetingLinkProps: IconLinkProps = {
+  urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
+  iconUrl: '/faviconMagna.ico',
+  iconAltText: 'קישור למגנא',
+}
+const validateMeetingState = (value: string | null | undefined, options: any) => {
+  if (!value) return true
+
+  const { siblingData } = options
+  const currentDate = new Date()
+  const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+  if (value == "on-hold" && !meetingDate)
+    return true
+
+  if (!meetingDate) {
+    return 'יש לספק מועד אסיפה'
+  }
+  if (meetingDate) {
+     switch (value) {
+    case 'completed':
+      if (meetingDate > currentDate) {
+        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
+      }
+      break
+
+    case 'postponed':
+      if (meetingDate < currentDate) {
+        return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
+      }
+      break
+
+    case 'scheduled':
+      if (meetingDate < currentDate) {
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+      }
+      break
+
+    case 'ongoing':
+      if (meetingDate < currentDate) {
+        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+      }
+      break
+  }
+     return true
+}}
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -16,6 +65,10 @@ export const Meetings: CollectionConfig = {
       'meetingDate',
       'state',
     ],
+    pagination: {
+      defaultLimit: 500,
+      limits: [10, 20, 50, 100, 200, 500],
+    },
   },
   versions: {
     drafts: true,
@@ -27,35 +80,28 @@ export const Meetings: CollectionConfig = {
         {
           name: 'meetingId',
           label: 'מספר אסיפה',
-          type: 'number',
+          type: 'text',
           unique: true,
-          required: true,
           index: true,
           admin: { hidden: true },
+
         },
         {
           name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
           maxLength: 20,
-        },
-        {
-          name: 'meetingLink',
-          label: 'קישור למגנא',
-          type: 'text',
           admin: {
             components: {
+              Cell: {
+                path: '/components/link/IconLinkCell',
+                clientProps: meetingLinkProps,
+              },
               Field: {
-                path: '/components/link/LinkFromRelationField',
-                clientProps: {
-                  relationField: 'meetingId',
-                  baseUrl: 'https://www.magna.isa.gov.il/details?id=',
-                  suffix: '&file=0',
-                  name: 'קישור למגנא',
-                },
+                path: '/components/link/IconLinkTextField',
+                clientProps: meetingLinkProps,
               },
             },
-            readOnly: true,
           },
         },
         {
@@ -118,6 +164,7 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
+
         },
       ],
     },
@@ -133,7 +180,19 @@ export const Meetings: CollectionConfig = {
           name: 'state',
           label: 'מצב',
           type: 'select',
+          hooks: {
+            beforeChange: [
+              ({ siblingData,value }) => {
+                if (value === 'on-hold') {
+                  siblingData.meetingDate =null
+                }
+                return value
+              }
+            ],
+          },
           interfaceName: 'MeetingState',
+          // @ts-expect-error
+          validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
             { label: 'התקיימה', value: 'completed' },
@@ -149,13 +208,14 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
+ 
     },
     {
       type: 'row',
       fields: [
         {
           name: 'resultsConfirmationStatus',
-          label: 'אימות תוצאות האסיפה',
+          label: 'אימות תוצאות',
           type: 'checkbox',
           admin: {
             condition: (siblingData) => siblingData.state === 'completed',
@@ -163,7 +223,7 @@ export const Meetings: CollectionConfig = {
         },
         {
           name: 'electronicVotingEnabled',
-          label: 'האם האסיפה מופיעה במערכת האלקטרונית?',
+          label: 'האם מופיעה במערכת האלק׳?',
           type: 'checkbox',
         },
         {
@@ -172,6 +232,13 @@ export const Meetings: CollectionConfig = {
           type: 'checkbox',
         },
       ],
+    },
+  ],
+  endpoints: [
+    {
+      path: '/process-meetings',
+      method: 'post',
+      handler: ProcessMeetingsEndpoint,
     },
   ],
 }

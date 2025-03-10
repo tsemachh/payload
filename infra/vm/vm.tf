@@ -163,6 +163,9 @@ resource "google_compute_instance" "payload_vm" {
   metadata_startup_script = <<-EOT
 #!/bin/bash
 
+# Set the timezone to Asia/Jerusalem
+sudo timedatectl set-timezone Asia/Jerusalem
+
 # Ensure the VM is up to date and install necessary dependencies
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
@@ -201,10 +204,18 @@ services:
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
     ports:
       - "3000:3000"
+    restart: always 
 EOF
 
 # Navigate to payload 
 cd payload
+
+#backup logs
+sudo mkdir -p /payload/logs
+
+# Save previous logs before restarting
+sudo docker-compose logs --no-color --timestamps > "/payload/logs/docker-compose-$(date +"%Y-%m-%d_%H-%M-%S").txt"
+
 sudo docker-compose down || true
 
 # Clean docker cache
@@ -217,6 +228,54 @@ sudo docker-compose pull
 # Run Docker Compose
 gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 sudo docker-compose up -d
+
+#Setup cron job for updates
+
+sudo mkdir -p /payload/logs/cron
+
+cat > /payload/docker-image-updater.sh << 'EOF'
+#!/bin/bash
+
+# Configure these variables
+IMAGE="me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image"
+TAG="latest"
+COMPOSE_FILE="/payload/docker-compose.yml"
+
+# Authenticate with GCR
+sudo gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
+
+# Get current digests
+REMOTE_DIGEST=$(sudo gcloud container images list-tags "${IMAGE}" \
+  --filter="tags=${TAG}" \
+  --format='get(digest)' \
+  --sort-by=~TIMESTAMP \
+  --limit=1)
+
+LOCAL_DIGEST=$(sudo docker image inspect "${IMAGE}:${TAG}" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d '@' -f 2)
+
+# Check if update needed
+if [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
+  echo "$(date +"%Y-%m-%d %H:%M:%S") - New image detected. Pulling..."
+  sudo docker pull "${IMAGE}:${TAG}"
+  sudo docker-compose -f "${COMPOSE_FILE}" down
+  sudo docker-compose -f "${COMPOSE_FILE}" up -d --force-recreate
+  echo "$(date +"%Y-%m-%d %H:%M:%S") - New image updated."
+else
+  echo "No changes detected."
+fi
+EOF
+
+chmod +x /payload/docker-image-updater.sh
+
+touch /payload/logs/cron/docker-updater-log.txt
+chmod 644 /payload/logs/cron/docker-updater-log.txt
+
+# Add the cron job to the root user's crontab
+if ! crontab -l 2>/dev/null | grep -q "/payload/docker-image-updater.sh"; then
+  (crontab -l 2>/dev/null; echo "*/3 * * * * /payload/docker-image-updater.sh >> /payload/logs/cron/docker-updater-log-$(date +'%Y-%m-%d-%H-%M-%S').txt 2>&1") | crontab -
+fi
+
+
 EOT
 
   tags = ["https-server", "ssh-server"]

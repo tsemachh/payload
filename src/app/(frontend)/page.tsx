@@ -2,11 +2,37 @@ import { Suspense } from 'react'
 import { DataTable } from '@/components/data-table'
 import { fetchMeetingsForTable } from './api/payload'
 import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
+import { meetingColumns, renderMeetingActions } from './columns'
 
 async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
 
-  return <DataTable data={futureMeetingTableData} />
+  const pastDateFilterOptions = [
+    { value: 'yesterday', label: 'אתמול' },
+    { value: 'lastWeek', label: 'שבוע שעבר' },
+    { value: 'lastMonth', label: 'חודש שעבר' },
+    { value: 'allPast', label: 'בעבר' },
+  ]
+
+  const futureDateFilterOptions = [
+    { value: 'today', label: 'היום' },
+    { value: 'nextWeek', label: 'השבוע' },
+    { value: 'nextMonth', label: 'החודש' },
+    { value: 'allFuture', label: 'בעתיד' },
+  ]
+  return (
+    <DataTable
+      data={futureMeetingTableData}
+      columns={meetingColumns}
+      idField="meetingId"
+      defaultSortField="meetingDate"
+      defaultSortDirection="desc"
+      tableId="meetings-table"
+      renderRowActions={renderMeetingActions}
+      pastDateFilterOptions={pastDateFilterOptions}
+      futureDateFilterOptions={futureDateFilterOptions}
+    />
+  )
 }
 
 export default function AssembliesPage() {
