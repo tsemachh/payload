@@ -344,7 +344,7 @@ export interface User {
  */
 export interface Company {
   id: string;
-  companyId: number;
+  companyId?: number | null;
   order?: number | null;
   name: string;
   active?: boolean | null;
