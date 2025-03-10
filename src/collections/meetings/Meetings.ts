@@ -58,6 +58,7 @@ interface AccessArgs {
 
 // Function to check if document should be read-only
 const getReadOnlyAccess = ({ data }: AccessArgs): boolean => {
+
   if(data?.state === 'completed' || data?.state === 'cancelled')
      return false
   return true

@@ -1,7 +1,7 @@
 import { MeetingState } from '@/payload-types'
 
 export type FutureMeetingTableData = {
-  meetingId: number //TODO: change to string!
+  meetingId: number|null //TODO: change to string!
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
