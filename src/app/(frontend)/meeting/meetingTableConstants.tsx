@@ -26,7 +26,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
       ),
   },
@@ -34,6 +34,8 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'registeredValue',
     header: 'ערך נקוב',
     type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.marketValue / 1),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
