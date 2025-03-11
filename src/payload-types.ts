@@ -31,7 +31,7 @@ export type StockType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "StockOrigin".
  */
-export type StockOrigin = 'TASE' | 'Foreign' | 'NonTradable' | 'Private';
+export type StockOrigin = 'TASE' | 'Foreign' | 'Deleted' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
@@ -162,6 +162,7 @@ export interface Config {
   };
   collectionsJoins: {
     companies: {
+      parentCompany: 'companies';
       accounts: 'accounts';
     };
     accounts: {
@@ -348,6 +349,14 @@ export interface Company {
   order?: number | null;
   name: string;
   active?: boolean | null;
+  /**
+   * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
+   */
+  parentCompany?: {
+    docs?: (string | Company)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   subCompanies?: (string | Company)[] | null;
   showResearch?: boolean | null;
   setResearchAsDefault?: boolean | null;
@@ -738,6 +747,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   order?: T;
   name?: T;
   active?: T;
+  parentCompany?: T;
   subCompanies?: T;
   showResearch?: T;
   setResearchAsDefault?: T;
