@@ -35,21 +35,22 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
   })
 
   // Derive the link value
-  const linkValue = value ? urlTemplate.replace('${value}', value) : null
+  const linkValue = urlTemplate.replace('${value}', value || '')
 
   // Evaluate visibility using the already collected values
   const isVisible = React.useMemo(() => {
+    if (!value) return false
     if (!visibilityConditions) return true
     return Object.entries(visibilityConditions).every(
       ([field, expectedValue]) => conditionFieldValues[field] === expectedValue
     )
-  }, [conditionFieldValues, visibilityConditions])
+  }, [value, conditionFieldValues, visibilityConditions])
 
   return (
     <div className="inline-flex items-center">
       <span className="flex-grow mr-2 relative">
         <TextField {...remainingProps} path={path} />
-        {linkValue && isVisible && (
+        {isVisible && (
           <a
             href={linkValue}
             target="_blank"
