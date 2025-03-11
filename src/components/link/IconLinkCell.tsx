@@ -34,11 +34,10 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
     <span className="inline-flex items-center">
       <DefaultCell {...props} />
       {isVisible && (
-
         <img
           src={iconUrl}
           alt={iconAltText}
-          className="icon-link bg-white rounded-md mx-2 py-1 cursor-pointer"
+          className="icon-link bg-white rounded-full w-[26px] h-[26px] mx-2 py-1 cursor-pointer"
           title={linkValue}
           onClick={(e) => {
             // Prevent PayloadCMS form navigation warning
@@ -59,5 +58,4 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
     </span>
   )
 }
-
 export default IconLinkCell
