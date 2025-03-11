@@ -230,17 +230,15 @@ export function DataTable<T extends Record<string, any>>({
 
       // Apply date filters except for the current column
       Object.entries(dateFilters).forEach(([key, { past, future }]) => {
-        if (key === columnKey || (!past && !future)) return // Skip current column or if no options selected
-
+        if (key === columnKey) return // Skip current column
+        // If both past and future are set to 'all', treat it as no filter
+        if (past === 'allPast' && future === 'allFuture') return
         filteredItems = filteredItems.filter((item) => {
           const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
-
           // Check if the item matches the past filter
           const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
-
           // Check if the item matches the future filter
           const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
-
           // Item passes if it matches either the past or future filter
           return matchesPast || matchesFuture
         })
@@ -395,7 +393,8 @@ export function DataTable<T extends Record<string, any>>({
 
     // Apply date filters
     Object.entries(dateFilters).forEach(([columnKey, { past, future }]) => {
-      if (!past && !future) return // Skip if no options selected
+      // If both past and future are set to 'all', treat it as no filter
+      if (past === 'allPast' && future === 'allFuture') return
       filteredItems = filteredItems.filter((item) => {
         const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
         // Check if the item matches the past filter
@@ -483,7 +482,6 @@ export function DataTable<T extends Record<string, any>>({
         return 0
       })
     }
-
     return filteredItems
   }, [data, filters, searchTerm, sortConfig, visibleColumns, dateFilters, columns])
 
@@ -552,17 +550,13 @@ export function DataTable<T extends Record<string, any>>({
       }
     }
     if (!filters[columnKey]) {
-      return <ChevronDown className="h-4 w-4 ml-2" />
+      return <ChevronDown className="h-4 w-4 " />
     }
     const allPossibleValues = Array.from(
       new Set(data.map((item) => String(item[columnKey as keyof FutureMeetingTableData]))),
     )
     const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
-    return allSelected ? (
-      <ChevronDown className="h-4 w-4 ml-2" />
-    ) : (
-      <Filter className="h-4 w-4 ml-2" />
-    )
+    return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
   }
 
   // Generate faceted filters
