@@ -28,6 +28,7 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
     <span className="inline-flex items-center">
       <DefaultCell {...props} />
       {isVisible && (
+
         <img
           src={iconUrl}
           alt={iconAltText}
