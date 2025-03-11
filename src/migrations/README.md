@@ -1,4 +1,9 @@
 Migrations order:
 - Stocks
 - Foreign stocks
-- Meetings (Need to disable validation on state)
+- Meetings 
+- Firms
+- Users
+- Accounts
+- Sub Accounts
+- Holdings

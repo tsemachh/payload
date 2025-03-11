@@ -51,10 +51,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-/*    await payload.delete({
-      collection: 'meetings',
-      where: {},
-    });*/
+    /*    await payload.delete({
+          collection: 'meetings',
+          where: {},
+        });*/
     console.log('Starting migration process...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
@@ -159,7 +159,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         //console.log("Data",JSON.stringify(meetingData, null, 2))
-        const id = await getSequenceMeetingId(payload, meetingData.meetingId)
+        const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
         if (id){
           // Update Payload CMS
           payload.update({
