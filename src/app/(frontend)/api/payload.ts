@@ -5,7 +5,7 @@ import { FutureMeetingTableData } from '../types'
 
 export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 500 })
+  const meetings = await payload.find({ collection: 'meetings', limit: 200 })
 
   const meetingData: FutureMeetingTableData[] = await Promise.all(
     meetings.docs.map(async (meeting) => {
@@ -15,7 +15,7 @@ export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]>
       let stocksVales = null
       if (meeting.holdingsLimit) {
         const stockIdToUse = stockPresent?.relatedStock
-          ? (stockPresent.relatedStock as { id: string }).id 
+          ? (stockPresent.relatedStock as { id: string }).id
           : stockPresent?.id
 
         const result = await payload.find({

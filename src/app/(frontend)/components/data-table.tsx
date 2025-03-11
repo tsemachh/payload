@@ -144,6 +144,17 @@ export function DataTable<T extends Record<string, any>>({
       )
     }
     loadColumnVisibility()
+    // Filters:
+    const initialFilters: { [key: string]: any } = {}
+    columns.forEach((column) => {
+      if (column.filterable) {
+        const allOptions = Array.from(
+          new Set(data.map((item) => String(item[column.key as keyof T]))),
+        )
+        initialFilters[String(column.key)] = allOptions
+      }
+    })
+    setFilters(initialFilters)
     const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
     columns.forEach((column) => {
       if (column.key === 'meetingDate' && column.filterable) {
@@ -159,7 +170,7 @@ export function DataTable<T extends Record<string, any>>({
       }
     })
     setDateFilters(initialDateFilters)
-  }, [columns, tableId])
+  }, [columns, data, tableId])
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
@@ -237,7 +248,8 @@ export function DataTable<T extends Record<string, any>>({
 
       // Apply search filter
       if (searchTerm) {
-        const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
+        const trimmedSearchTerm = searchTerm.trim()
+        const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
         filteredItems = filteredItems.filter((item) =>
           visibleColumns.some((column) => {
             const value = item[column.key]
@@ -249,20 +261,17 @@ export function DataTable<T extends Record<string, any>>({
       // Apply other filters except for the current column
       Object.entries(filters).forEach(([key, value]) => {
         if (key === columnKey) return // Skip current column
-
         // If the filter is an empty array, no items should pass
         if (Array.isArray(value) && value.length === 0) {
           filteredItems = []
           return
         }
-
         // Handle date filters
         if (columns.find((col) => col.key === key)?.type === 'datetime') {
           // Skip if either date is missing
           if (!value.from || !value.to) {
             return
           }
-
           filteredItems = filteredItems.filter((item) => {
             const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
             return isWithinInterval(itemDate, {
@@ -284,7 +293,6 @@ export function DataTable<T extends Record<string, any>>({
           )
         }
       })
-
       return filteredItems
     },
     [columns, data, dateFilters, filters, searchTerm, visibleColumns],
@@ -369,7 +377,7 @@ export function DataTable<T extends Record<string, any>>({
     if (!highlight.trim()) {
       return text
     }
-    const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight)})`, 'gi')
+    const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight.trim())})`, 'gi')
     return text.split(regex).map((part, i) =>
       regex.test(part) ? (
         <span key={i} className="bg-primary/20">
@@ -388,16 +396,12 @@ export function DataTable<T extends Record<string, any>>({
     // Apply date filters
     Object.entries(dateFilters).forEach(([columnKey, { past, future }]) => {
       if (!past && !future) return // Skip if no options selected
-
       filteredItems = filteredItems.filter((item) => {
         const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
-
         // Check if the item matches the past filter
         const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
-
         // Check if the item matches the future filter
         const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
-
         // Item passes if it matches either the past or future filter
         return matchesPast || matchesFuture
       })
@@ -405,7 +409,8 @@ export function DataTable<T extends Record<string, any>>({
 
     // Apply search filter only on visible columns
     if (searchTerm) {
-      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(searchTerm)}`, 'i')
+      const trimmedSearchTerm = searchTerm.trim()
+      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
         visibleColumns.some((column) => {
           const value = item[column.key]
