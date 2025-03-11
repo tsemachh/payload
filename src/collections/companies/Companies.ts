@@ -9,7 +9,7 @@ export const Companies: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: [
-      'name', 'companyId',
+      'name', 'companyId','accounts','parentCompany','subCompanies'
     ],
     listSearchableFields: ['name', 'companyId'],
     pagination: {
@@ -47,6 +47,19 @@ export const Companies: CollectionConfig = {
           type: 'checkbox',
           defaultValue: true,
         },
+        {
+          name: 'parentCompany',
+          type: 'join',
+          label: 'חברת אם',
+          collection: 'companies',
+          on: 'subCompanies',
+          defaultLimit: 1,
+          admin:{
+            allowCreate: false,
+            defaultColumns:["name","subCompanies","parentCompany"],
+            description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם'
+          }
+        },
       ],
     },
     {
@@ -62,13 +75,6 @@ export const Companies: CollectionConfig = {
           admin: {
             className: 'subCompanies',
           },
-        },
-        {
-          name: 'parentCompany',
-          type: 'join',
-          label: 'חברת אב',
-          collection: 'companies',
-          on: 'subCompanies',
         },
       ],
     },

@@ -18,8 +18,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin','tradable'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -108,7 +108,7 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
-                    { label: 'לא סחיר', value: 'NonTradable' },
+                    { label: 'מחוקה', value: 'Deleted' },
                     { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
