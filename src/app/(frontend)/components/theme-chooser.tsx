@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Palette } from 'lucide-react'
 
-// רשימת הצבעים
 const themes = [
   { name: 'Light', value: 'light', color: 'bg-gray-100 border border-gray-300' },
   { name: 'Dark', value: 'dark', color: 'bg-gray-900' },
@@ -27,13 +26,11 @@ export function ThemeChooser() {
   const { setTheme, theme } = useTheme()
   const defaultTheme = 'blue'
 
-  // טוען את הבחירה מה-localStorage
   React.useEffect(() => {
     const storedTheme = localStorage.getItem('theme') || defaultTheme
     setTheme(storedTheme)
   }, [setTheme])
 
-  // פונקציה לשינוי ושמירה
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
