@@ -18,15 +18,13 @@ export type IconLinkCellProps = IconLinkProps & DefaultCellComponentProps
 const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
   const { cellData, urlTemplate, iconUrl, iconAltText, visibilityConditions } = props
 
-  if (!cellData) return null
-
-  const linkValue = urlTemplate.replace('${value}', cellData)
+  const linkValue = urlTemplate.replace('${value}', cellData || '')
 
   // Check if all conditions in visibilityConditions are met
   // If no conditions are provided, default to visible
-  let isVisible = true
+  let isVisible = cellData ? true : false
   if (visibilityConditions && props.rowData) {
-    isVisible = Object.entries(visibilityConditions).every(([field, expectedValue]) => 
+    isVisible = isVisible && Object.entries(visibilityConditions).every(([field, expectedValue]) => 
       props.rowData?.[field] === expectedValue
     )
   }
