@@ -690,14 +690,18 @@ export function DataTable<T extends Record<string, any>>({
                     <TableHead
                       key={String(column.key)}
                       className={cn(
-                        'text-right overflow-hidden text-ellipsis cursor-pointer',
+                        'text-right overflow-hidden text-ellipsis',
                         column.width ? column.width : 'max-w-[200px]',
                       )}
-                      onClick={() => handleSort(column.key)}
                     >
                       <div className="flex items-center justify-start">
-                        <span>{column.header}</span>
-                        {getSortIcon(column.key)}
+                        <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
+                          {column.header}
+                        </span>
+                        <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
+                          {getSortIcon(column.key)}
+                        </span>
+
                         {isFilterActive && column.filterable && (
                           <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
