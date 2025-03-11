@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useAuth } from "@/providers/auth-provider"
 
-export default function RecoverPassword() {
+// Client component that uses useSearchParams
+function RecoverPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -134,5 +135,14 @@ export default function RecoverPassword() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Main component that wraps the content in a Suspense boundary
+export default function RecoverPassword() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen p-4">Loading...</div>}>
+      <RecoverPasswordContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import LogoImage from "@/graphics/Logo/emda_logo.png"
@@ -13,7 +13,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useAuth } from "@/providers/auth-provider"
 
-export default function SignIn() {
+// Client component that uses useSearchParams
+function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
@@ -114,5 +115,14 @@ export default function SignIn() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Main component that wraps the content in a Suspense boundary
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   )
 }
