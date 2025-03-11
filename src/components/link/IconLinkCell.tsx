@@ -16,14 +16,14 @@ export type IconLinkCellProps = IconLinkProps & DefaultCellComponentProps
  * @returns React component
  */
 const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
-  const { cellData, urlTemplate, iconUrl, iconAltText, visibilityField } = props
+  const { cellData, urlTemplate, iconUrl, iconAltText, visibilityField ,visibilityCompareValue = true } = props
 
   if (!cellData) return null
 
   const linkValue = urlTemplate.replace('${value}', cellData)
 
   // Check if the visibility field exists and its value is true in the row data
-  const isVisible = visibilityField ? props.rowData?.[visibilityField] === true : true
+  const isVisible = visibilityField ? props.rowData?.[visibilityField] === visibilityCompareValue : true
   return (
     <span className="inline-flex items-center">
       <DefaultCell {...props} />

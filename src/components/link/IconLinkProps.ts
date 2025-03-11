@@ -11,4 +11,5 @@ export interface IconLinkProps {
   iconUrl: string
   iconAltText: string
   visibilityField?: string
+  visibilityCompareValue?: string | boolean
 }
