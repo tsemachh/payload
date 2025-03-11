@@ -16,18 +16,34 @@ export type IconLinkFieldProps = IconLinkProps & TextFieldClientProps
  * @returns React component
  */
 const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
-  const { path, urlTemplate, iconUrl, iconAltText, visibilityField,visibilityCompareValue=true, ...remainingProps } = props
+  const { path, urlTemplate, iconUrl, iconAltText, visibilityConditions, ...remainingProps } = props
 
-  const { value } = useField<string>({
-    path: path,
+  // Main field value
+  const { value } = useField<string>({ path: path })
+
+  // Get all condition field values at the top level instead of inside reduce
+  const conditionFieldValues: Record<string, any> = {}
+
+  // Extract all field names from visibilityConditions
+  const conditionFields = visibilityConditions ? Object.keys(visibilityConditions) : []
+
+  // Call useField for each condition field at the top level
+  conditionFields.forEach(fieldName => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { value: fieldValue } = useField<any>({ path: fieldName })
+    conditionFieldValues[fieldName] = fieldValue
   })
 
-  const { value: visibilityValue } = useField<boolean>({
-    path: visibilityField || '',
-  })
-
+  // Derive the link value
   const linkValue = value ? urlTemplate.replace('${value}', value) : null
-  const isVisible = visibilityField ? visibilityValue === visibilityCompareValue : true
+
+  // Evaluate visibility using the already collected values
+  const isVisible = React.useMemo(() => {
+    if (!visibilityConditions) return true
+    return Object.entries(visibilityConditions).every(
+      ([field, expectedValue]) => conditionFieldValues[field] === expectedValue
+    )
+  }, [conditionFieldValues, visibilityConditions])
 
   return (
     <div className="inline-flex items-center">
@@ -38,7 +54,7 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
             href={linkValue}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white rounded-md px-2 py-1 cursor-pointer ml-2  absolute top-[25px] left-[-5px]"
+            className="absolute top-[32px] left-[9px] w-[26px] h-[26px] flex items-center justify-center bg-white rounded-full border border-gray-300 shadow-sm cursor-pointer"
             title={linkValue}
             onClick={(e) => {
               // Prevent PayloadCMS form navigation warning
@@ -49,7 +65,6 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
           </a>
         )}
       </span>
-
     </div>
   )
 }
