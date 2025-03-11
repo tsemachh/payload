@@ -6,7 +6,8 @@ const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityField: 'tradable',
+  visibilityField: 'origin',
+  visibilityCompareValue: 'TASE'
 }
 
 export const Stocks: CollectionConfig = {

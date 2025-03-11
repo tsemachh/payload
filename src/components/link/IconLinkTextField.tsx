@@ -16,7 +16,7 @@ export type IconLinkFieldProps = IconLinkProps & TextFieldClientProps
  * @returns React component
  */
 const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
-  const { path, urlTemplate, iconUrl, iconAltText, visibilityField, ...remainingProps } = props
+  const { path, urlTemplate, iconUrl, iconAltText, visibilityField,visibilityCompareValue=true, ...remainingProps } = props
 
   const { value } = useField<string>({
     path: path,
@@ -27,13 +27,13 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
   })
 
   const linkValue = value ? urlTemplate.replace('${value}', value) : null
-  const isVisible = visibilityField ? visibilityValue === true : true
+  const isVisible = visibilityField ? visibilityValue === visibilityCompareValue : true
 
   return (
     <div className="inline-flex items-center">
       <span className="flex-grow mr-2 relative">
         <TextField {...remainingProps} path={path} />
-        {linkValue && (
+        {linkValue && isVisible && (
           <a
             href={linkValue}
             target="_blank"
