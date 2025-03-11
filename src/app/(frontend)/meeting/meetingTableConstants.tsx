@@ -1,9 +1,11 @@
-import { Column } from '../components/data-table'
-import { FutureMeetingTableData } from '../types'
-import { BooleanIcon } from '../components/ui/icons'
+'use client'
+
+import { BooleanIcon } from '@/components/ui/icons'
 import { formatDateTime } from '../helpers/utils'
+import { FutureMeetingTableData } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
+import { Column } from '@/components/data-table'
 
 export const meetingColumns: Column<FutureMeetingTableData>[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
@@ -24,7 +26,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
       ),
   },
@@ -32,6 +34,8 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'registeredValue',
     header: 'ערך נקוב',
     type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.marketValue / 1),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
@@ -117,3 +121,17 @@ export const renderMeetingActions = (row: FutureMeetingTableData) => {
     </div>
   )
 }
+
+export const pastDateFilterOptions = [
+  { value: 'yesterday', label: 'אתמול' },
+  { value: 'lastWeek', label: 'שבוע שעבר' },
+  { value: 'lastMonth', label: 'חודש שעבר' },
+  { value: 'allPast', label: 'בעבר' },
+]
+
+export const futureDateFilterOptions = [
+  { value: 'today', label: 'היום' },
+  { value: 'nextWeek', label: 'השבוע' },
+  { value: 'nextMonth', label: 'החודש' },
+  { value: 'allFuture', label: 'בעתיד' },
+]
