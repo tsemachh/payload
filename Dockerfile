@@ -74,7 +74,8 @@ EXPOSE 3000
 RUN chown nextjs:nodejs /app/node_modules
 
 ENV PORT 3000
+ENV HOST ${HOST:-0.0.0.0}
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0"  NODE_OPTIONS='--enable-source-maps=true' node --max-old-space-size=4096 server.js
+CMD HOSTNAME="${HOST}"  NODE_OPTIONS='--enable-source-maps=true' node --max-old-space-size=4096 server.js

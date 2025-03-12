@@ -64,3 +64,15 @@ export async function getSequenceMeetingId(payload: BasePayload, meetingId: stri
   } catch (error) {}
   return id
 }
+
+export const getCollectionDoc = async (req: any, collectionType: string, id: string) => {
+  try {
+    return await req.payload.findByID({
+      collection: collectionType,
+      id: id,
+    });
+  } catch (error) {
+    console.error(`Error finding document in collection ${collectionType}:`, error);
+    throw error;
+  }
+};

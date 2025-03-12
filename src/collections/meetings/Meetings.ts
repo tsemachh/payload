@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
+import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -94,11 +94,11 @@ export const Meetings: CollectionConfig = {
           admin: {
             components: {
               Cell: {
-                path: '/components/link/IconLinkCell',
+                path: '/admincomponents/link/IconLinkCell',
                 clientProps: meetingLinkProps,
               },
               Field: {
-                path: '/components/link/IconLinkTextField',
+                path: '/admincomponents/link/IconLinkTextField',
                 clientProps: meetingLinkProps,
               },
             },
