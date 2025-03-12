@@ -50,7 +50,7 @@ export interface Column<T> {
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
   defaultVisible?: boolean
-  width?: string
+  width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
 }
 
@@ -704,16 +704,17 @@ export function DataTable<T extends Record<string, any>>({
       <div className="bg-background">
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
-            <Table className="w-full border-collapse relative" dir="rtl">
+            <Table className=" w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={String(column.key)}
-                      className={cn(
-                        'text-right overflow-hidden text-ellipsis min-[70px]',
-                        column.width ? column.width : 'max-w-[200px]',
-                      )}
+                      className={cn('text-right overflow-hidden text-ellipsis')}
+                      style={{
+                        maxWidth: column.width ? `${column.width}px  !important` : '200px',
+                        width: column.width ? `${column.width}px  !important` : 'auto',
+                      }}
                     >
                       <div className="flex items-center justify-start">
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
@@ -900,6 +901,8 @@ export function DataTable<T extends Record<string, any>>({
                           direction: column.type === 'datetime' ? 'ltr' : 'rtl',
                           placeItems: column.positionCenter ? 'center' : 'unset',
                           textAlign: column.positionCenter ? 'center' : 'right',
+                          maxWidth: column.width ? `${column.width}px  !important` : '200px',
+                          width: column.width ? `${column.width}px  !important` : 'auto',
                         }}
                         className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                         ref={(el) => {
