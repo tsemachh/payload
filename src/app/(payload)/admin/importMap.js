@@ -1,5 +1,5 @@
-import { default as default_aed42c2ab83c43dc48d2c81997540af0 } from '../../../components/link/IconLinkCell'
-import { default as default_23a1be2fa32f1d1537ce3f2bfec2d489 } from '../../../components/link/IconLinkTextField'
+import { default as default_aed42c2ab83c43dc48d2c81997540af0 } from '../../../admincomponents/link/IconLinkCell.js'
+import { default as default_23a1be2fa32f1d1537ce3f2bfec2d489 } from '../../../admincomponents/link/IconLinkTextField.js'
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { ExportSaveButton as ExportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
