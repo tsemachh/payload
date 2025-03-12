@@ -82,8 +82,8 @@ export default buildConfig({
     defaultFromName: process.env.EMAIL_FROM_NAME || 'EMDA System',
   }),
   plugins: [
-  /*  importExportPlugin({
-      collections: ['stocks','meetings'],
+  importExportPlugin({
+      collections: ['stocks','meetings','companies'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
         collection.labels = {plural:'יצוא קבצים',singular:'יצוא קובץ'}
@@ -91,7 +91,7 @@ export default buildConfig({
         return collection
       },
       disableJobsQueue: true,
-    }),*/
+    }),
     payloadCloudPlugin(),
     // storage-adapter-placeholder
     addAccess({

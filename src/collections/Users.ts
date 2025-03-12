@@ -1,5 +1,27 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig,  PayloadRequest } from 'payload'
 import { userFields } from '@shefing/authorization'
+import type { Company } from '@/payload-types'
+import { getCollectionDoc } from '@/utils/utils'
+async function getLeafCompanies(company:Company|string,req:PayloadRequest):Promise<string[]>{
+
+  let leafCompanies:string[]=[]
+  let theCompany:Company
+  if (typeof company === "string"){
+    theCompany=await getCollectionDoc(req,"companies",company)as Company
+  }else {
+    theCompany = company as Company
+  }
+  if (theCompany.accounts && theCompany.accounts?.docs && theCompany.accounts?.docs?.length > 0){//Companies with accounts
+    leafCompanies.push(theCompany.id)
+  }else{
+    if (theCompany?.subCompanies)
+      for (let i = 0; i < theCompany?.subCompanies.length; i++) {
+        const subCompany = theCompany.subCompanies[i]
+        leafCompanies=leafCompanies.concat(await getLeafCompanies(subCompany,req))
+      }
+  }
+  return leafCompanies
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -9,7 +31,7 @@ export const Users: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'email',
-    group:"ניהול"
+    group: 'ניהול',
   },
   auth: {
     useAPIKey: true,
@@ -18,7 +40,7 @@ export const Users: CollectionConfig = {
   fields: [
     {
       type: 'row',
-      fields:[
+      fields: [
         {
           name: 'name',
           label: 'שם משתמש',
@@ -29,15 +51,15 @@ export const Users: CollectionConfig = {
           name: 'legacyId',
           label: 'מספר משתמש לגאסי',
           type: 'number',
-          index: true
+          index: true,
         },
         {
           name: 'active',
           label: 'משתמש פעיל',
           type: 'checkbox',
-          index: true
+          index: true,
         },
-      ]
+      ],
     },
     {
       name: 'companies',
@@ -47,10 +69,10 @@ export const Users: CollectionConfig = {
         singular: 'חברה',
       },
       type: 'array',
-      interfaceName: "UserCompany",
+      interfaceName: 'UserCompany',
       fields: [
         {
-          type: "row",
+          type: 'row',
           fields: [
             {
               label: 'חברה',
@@ -63,12 +85,43 @@ export const Users: CollectionConfig = {
               name: 'permission',
               label: 'הרשאה',
               type: 'select',
-              options:[{label:'צפיה בהצבעות ודוחות' , value:'read'},{label:'הזנת אחזקות והצבעה' , value:'write'}],
-              defaultValue: 'write'
+              options: [{ label: 'צפיה בהצבעות ודוחות', value: 'read' }, {
+                label: 'הזנת אחזקות והצבעה',
+                value: 'write',
+              }],
+              defaultValue: 'write',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'leafCompanies',
+      label: 'כל החברות עם החשבונות(כולל חברות בת)',
+      type: 'relationship',
+      relationTo: 'companies',
+      hasMany: true,
+      admin: {
+        readOnly: true,
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            delete siblingData['allCompanies']
+          },
+        ],
+        afterRead: [
+          async ({ data , req }) => {
+            let leafCompanies:string[]=[]
+            for (let i = 0; i < data?.companies?.length || 0; i++) {
+              const company = data?.companies?.[i]
+              const leafRecurseCompanies= await getLeafCompanies(company.companyId,req)
+              leafCompanies=leafCompanies.concat(leafRecurseCompanies)
             }
-          ]
-        }
-      ]
+            return leafCompanies
+          },
+        ],
+      },
     },
     {
       type: 'row',
@@ -82,7 +135,7 @@ export const Users: CollectionConfig = {
           name: 'changePassword',
           label: 'שינוי סיסמה',
           type: 'checkbox',
-          admin:{hidden:true}
+          admin: { hidden: true },
         }],
     },
     {
@@ -90,8 +143,8 @@ export const Users: CollectionConfig = {
       label: 'כתובות IP',
       type: 'text',
       admin: {
-        description: 'הזן כתובות IP מופרדות בנקודה-פסיק (;)'
-      }
+        description: 'הזן כתובות IP מופרדות בנקודה-פסיק (;)',
+      },
     },
 
     {
@@ -101,7 +154,7 @@ export const Users: CollectionConfig = {
       fields: [
         {
           type: 'row',
-            fields:[
+          fields: [
             {
               name: 'showQr',
               label: 'הצג QR',
@@ -121,10 +174,10 @@ export const Users: CollectionConfig = {
               name: 'codeFailuresSinceLastSuccess',
               label: 'מספר כישלונות מאז הצלחה אחרונה',
               type: 'number',
-            }
-          ]
-      }]
+            },
+          ],
+        }],
     },
     ...userFields,
-  ]
+  ],
 }

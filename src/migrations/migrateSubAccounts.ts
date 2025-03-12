@@ -78,7 +78,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
           if (companyResult.docs.length === 0) {
             // Report to migration faults
-            await payload.create({
+            payload.create({
               collection: 'migration-faults',
               data: {
                 type: 'account',
@@ -113,7 +113,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
           if (parentAccountResult.docs.length === 0) {
             // Report to migration faults
-            await payload.create({
+             payload.create({
               collection: 'migration-faults',
               data: {
                 type: 'account',
@@ -157,7 +157,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
           if (existingAccount.docs.length > 0) {
             // Update existing sub-account
-            await payload.update({
+            payload.update({
               collection: 'accounts',
               id: existingAccount.docs[0].id,
               data: accountData
@@ -165,7 +165,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             console.log(`Updated sub-account: ${row.accountIdOld} for firm: ${row.firmId}`)
           } else {
             // Create new sub-account
-            await payload.create({
+            payload.create({
               collection: 'accounts',
               data: accountData as Account
             })
