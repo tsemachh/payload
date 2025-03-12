@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/data-table'
+import { DataTable } from '@/app/(frontend)/components/data-table-static'
 import { fetchMeetingsForTable } from '../api/payload'
 import {
   futureDateFilterOptions,
