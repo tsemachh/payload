@@ -94,11 +94,11 @@ export const Meetings: CollectionConfig = {
           admin: {
             components: {
               Cell: {
-                path: '/components/link/IconLinkCell',
+                path: '/admincomponents/link/IconLinkCell',
                 clientProps: meetingLinkProps,
               },
               Field: {
-                path: '/components/link/IconLinkTextField',
+                path: '/admincomponents/link/IconLinkTextField',
                 clientProps: meetingLinkProps,
               },
             },

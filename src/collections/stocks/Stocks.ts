@@ -48,11 +48,11 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     components: {
                       Cell: {
-                        path: '/components/link/IconLinkCell',
+                        path: '/admincomponents/link/IconLinkCell',
                         clientProps: stockLinkProps,
                       },
                       Field: {
-                        path: '/components/link/IconLinkTextField',
+                        path: '/admincomponents/link/IconLinkTextField',
                         clientProps: stockLinkProps,
                       },
                     },
