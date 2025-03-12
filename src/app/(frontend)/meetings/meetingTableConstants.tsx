@@ -26,7 +26,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
-    width: 100,
+    width: 80,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
