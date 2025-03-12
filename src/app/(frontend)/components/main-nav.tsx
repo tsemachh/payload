@@ -19,6 +19,15 @@ export function MainNav() {
         אסיפות עתידיות
       </Link>
       <Link
+        href="/meetings-past"
+        className={cn(
+          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
+          pathname === '/past-assemblies' ? 'text-primary' : 'text-muted-foreground',
+        )}
+      >
+        אסיפות עבר
+      </Link>
+      <Link
         href="/participations"
         className={cn(
           'text-sm font-medium transition-colors hover:text-primary px-3 py-2',

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
-import { MeetingsTable } from './meetings/MeetingsTable'
+import { MeetingsTable } from './meetings/Table'
 
 export default function MeetingsPage() {
   return (

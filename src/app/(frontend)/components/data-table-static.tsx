@@ -78,7 +78,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   columnsLabel?: string
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTableStatic<T extends Record<string, any>>({
   data,
   columns,
   pastDateFilterOptions = [],
