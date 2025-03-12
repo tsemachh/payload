@@ -202,6 +202,8 @@ services:
     environment:
       - DATABASE_URI=mongodb+srv://channahk:eadDVXob0UnZ2DZE@cluster0.einyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
+      - HOST=emda-dev.shefing.com
+      - NEXT_PUBLIC_SERVER_URL=https://emda-dev.shefing.com
     ports:
       - "3000:3000"
     restart: always 
@@ -337,15 +339,15 @@ resource "google_compute_backend_service" "payload_backend" {
 
   backend {
     group = google_compute_instance_group.payload_instance_group.self_link
-    
+
   }
-  
+
   protocol = "HTTP"        
   port_name = "http"  
-      
+
   session_affinity = "NONE"
   timeout_sec      = 30
-  
+
 }
 
 # URL Map
