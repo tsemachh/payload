@@ -304,7 +304,6 @@ export function DataTable<T extends Record<string, any>>({
           // Check if the item matches the future filter
           const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
           // Item passes if it matches either the past or future filter
-          if (!(matchesPast || matchesFuture)) console.log('item', item)
           return matchesPast || matchesFuture
         })
       })
@@ -823,7 +822,11 @@ export function DataTable<T extends Record<string, any>>({
                                       <div className="flex justify-between gap-2" dir="rtl">
                                         <span className="text-right">{emptyDateOption.label}</span>
                                         <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                          {getDateFilterCounts(String(column.key))[emptyDateOption.value]}
+                                          {
+                                            getDateFilterCounts(String(column.key))[
+                                              emptyDateOption.value
+                                            ]
+                                          }
                                         </span>
                                       </div>
                                     </DropdownMenuCheckboxItem>
