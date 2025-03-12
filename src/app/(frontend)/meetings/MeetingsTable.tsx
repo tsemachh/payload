@@ -5,7 +5,7 @@ import {
   meetingColumns,
   pastDateFilterOptions,
   renderMeetingActions,
-} from '../meeting/meetingTableConstants'
+} from '../meetings/meetingTableConstants'
 
 export async function MeetingsTable() {
   const futureMeetingTableData = await fetchMeetingsForTable()
