@@ -5,7 +5,7 @@ import { FutureMeetingTableData } from '../types'
 
 export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 200 })
+  const meetings = await payload.find({ collection: 'meetings', limit: 500 })
 
   const meetingData: FutureMeetingTableData[] = await Promise.all(
     meetings.docs.map(async (meeting) => {
@@ -31,23 +31,23 @@ export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]>
 
       return {
         meetingId: meeting.meetingId,
-        stockNumber: stockPresent?.stockId?.toString() || '',
-        stockType: stockPresent?.type || '',
-        stockSymbol: stockPresent?.symbol || '',
-        stockName: stockPresent?.name || '',
-        companyName: stockPresent?.longName || '',
+        stockNumber: stockPresent?.stockId?.toString() || '-',
+        stockType: stockPresent?.type || '-',
+        stockSymbol: stockPresent?.symbol || '-',
+        stockName: stockPresent?.name || '-',
+        companyName: stockPresent?.longName || '-',
         stockTradable: stockPresent?.tradable || false,
         marketValue: stocksVales?.marketValue || 0,
         registeredValue: stocksVales?.registeredValue || 0,
-        meetingType: meeting.type || '',
-        meetingDate: meeting.meetingDate || '',
-        reference: meeting.magnaId || '',
-        location: meeting.location || '',
-        holdingsLimit: meeting.holdingsLimit || '',
-        proxyVotingDate: meeting.proxyVotingDate || '',
+        meetingType: meeting.type || '-',
+        meetingDate: meeting.meetingDate || '-',
+        reference: meeting.magnaId || '-',
+        location: meeting.location || '-',
+        holdingsLimit: meeting.holdingsLimit || '-',
+        proxyVotingDate: meeting.proxyVotingDate || '-',
         meetingState: meeting.state || null,
         meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
-        comments: meeting.comments || '',
+        comments: meeting.comments || '-',
         electronicVotingEnabled: !!meeting.electronicVotingEnabled,
         resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
         committeeInitiated: !!meeting.committeeInitiated,
