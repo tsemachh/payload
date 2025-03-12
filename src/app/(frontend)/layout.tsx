@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import '../../app/styles/global.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import { MainNav } from '@/components/main-nav'
 import { Notifications } from '@/components/notifications'
-import { ThemeChooser } from '@/components/theme-chooser'
+import { AuthProvider } from '@/providers/auth-provider'
+import { HeaderWithNav } from './components/header-with-nav'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,24 +20,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
-        >
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
+          >
           <div className="flex flex-col h-screen">
-            <header className="border-b">
-              <div className="flex h-16 items-center justify-between">
-                <MainNav />
-                <ThemeChooser />
-              </div>
-            </header>
+            <HeaderWithNav />
             <main className="flex-1 py-6">{children}</main>
           </div>
           <Notifications />
         </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )

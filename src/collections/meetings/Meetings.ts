@@ -1,26 +1,26 @@
 import type { CollectionConfig } from 'payload'
-import { IconLinkProps } from '../../components/link/IconLinkProps'
 import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
-import { Meeting } from '@/payload-types'
+import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
-
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
-  
+
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
+  if (value == "on-hold" && !meetingDate)
+    return true
 
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
   }
-
-  switch (value) {
+  if (meetingDate) {
+     switch (value) {
     case 'completed':
       if (meetingDate > currentDate) {
         return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
@@ -29,7 +29,7 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
 
     case 'postponed':
       if (meetingDate < currentDate) {
-        return 'מצב ״נדחית״ מתאפשר רק אם מועד האסיפה הוזז למועד מאוחר יותר'
+        return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
       }
       break
 
@@ -45,9 +45,8 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
       }
       break
   }
-
-  return true
-}
+     return true
+}}
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
@@ -81,11 +80,11 @@ export const Meetings: CollectionConfig = {
         {
           name: 'meetingId',
           label: 'מספר אסיפה',
-          type: 'number',
+          type: 'text',
           unique: true,
-          required: true,
           index: true,
           admin: { hidden: true },
+
         },
         {
           name: 'magnaId',
@@ -95,11 +94,11 @@ export const Meetings: CollectionConfig = {
           admin: {
             components: {
               Cell: {
-                path: '/components/link/IconLinkCell',
+                path: '/admincomponents/link/IconLinkCell',
                 clientProps: meetingLinkProps,
               },
               Field: {
-                path: '/components/link/IconLinkTextField',
+                path: '/admincomponents/link/IconLinkTextField',
                 clientProps: meetingLinkProps,
               },
             },
@@ -165,6 +164,7 @@ export const Meetings: CollectionConfig = {
               pickerAppearance: 'dayAndTime',
             },
           },
+
         },
       ],
     },
@@ -180,7 +180,18 @@ export const Meetings: CollectionConfig = {
           name: 'state',
           label: 'מצב',
           type: 'select',
+          hooks: {
+            beforeChange: [
+              ({ siblingData,value }) => {
+                if (value === 'on-hold') {
+                  siblingData.meetingDate =null
+                }
+                return value
+              }
+            ],
+          },
           interfaceName: 'MeetingState',
+          // @ts-expect-error
           validate: validateMeetingState,
           options: [
             { label: 'מתוכננת', value: 'scheduled' },
@@ -197,6 +208,7 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
+ 
     },
     {
       type: 'row',

@@ -47,7 +47,7 @@ export async function getSequenceStockValueId(
   return id
 }
 
-export async function getSequenceMeetingId(payload: BasePayload, meetingId: number | null) {
+export async function getSequenceMeetingId(payload: BasePayload, meetingId: string | null) {
   if (meetingId === null) return null
 
   let id = null
@@ -64,3 +64,15 @@ export async function getSequenceMeetingId(payload: BasePayload, meetingId: numb
   } catch (error) {}
   return id
 }
+
+export const getCollectionDoc = async (req: any, collectionType: string, id: string) => {
+  try {
+    return await req.payload.findByID({
+      collection: collectionType,
+      id: id,
+    });
+  } catch (error) {
+    console.error(`Error finding document in collection ${collectionType}:`, error);
+    throw error;
+  }
+};

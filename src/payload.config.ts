@@ -15,8 +15,11 @@ import logger from './lib/logger';
 import { Users } from './collections/Users'
 import { Document } from './collections/Document'
 import { Stocks } from './collections/stocks/Stocks'
+import { Companies } from '@/collections/companies/Companies'
+import { Accounts } from '@/collections/accounts/Accounts'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
+import { Holdings } from '@/collections/holdings/Holdings'
 import { Roles } from '@shefing/authorization'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
@@ -53,7 +56,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, StockMigrationMapping],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -65,8 +68,8 @@ export default buildConfig({
   }),
   logger,
   plugins: [
-  /*  importExportPlugin({
-      collections: ['stocks','meetings'],
+  importExportPlugin({
+      collections: ['stocks','meetings','companies'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
         collection.labels = {plural:'יצוא קבצים',singular:'יצוא קובץ'}
@@ -74,7 +77,7 @@ export default buildConfig({
         return collection
       },
       disableJobsQueue: true,
-    }),*/
+    }),
     payloadCloudPlugin(),
     // storage-adapter-placeholder
     addAccess({

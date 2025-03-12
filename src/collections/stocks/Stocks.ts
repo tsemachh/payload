@@ -1,12 +1,12 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
-import { IconLinkProps } from '../../components/link/IconLinkProps'
+import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityField: 'tradable',
+  visibilityConditions: { origin: 'TASE' ,tradable:true}
 }
 
 export const Stocks: CollectionConfig = {
@@ -17,8 +17,8 @@ export const Stocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin','tradable'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -48,11 +48,11 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     components: {
                       Cell: {
-                        path: '/components/link/IconLinkCell',
+                        path: '/admincomponents/link/IconLinkCell',
                         clientProps: stockLinkProps,
                       },
                       Field: {
-                        path: '/components/link/IconLinkTextField',
+                        path: '/admincomponents/link/IconLinkTextField',
                         clientProps: stockLinkProps,
                       },
                     },
@@ -107,7 +107,7 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
-                    { label: 'לא סחיר', value: 'NonTradable' },
+                    { label: 'מחוקה', value: 'Deleted' },
                     { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
@@ -128,7 +128,6 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => !siblingData.tradable,
                   },
-
                   filterOptions: () => ({
                     tradable: { equals: true },
                   }),

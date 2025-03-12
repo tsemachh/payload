@@ -1,13 +1,14 @@
 import { Payload } from 'payload'
+import { MigrationType } from '@/payload-types'
 
 export type MigrationFaultType = 'stock' | 'stock-relation' | 'stock-value'
 
 interface LogMigrationFaultProps {
   payload: Payload
-  type: MigrationFaultType
+  type: MigrationType
   typeId: string
   comments: string
-  row?: any
+  row?: string
 }
 
 /**
