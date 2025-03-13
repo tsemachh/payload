@@ -5,7 +5,7 @@ import { formatDateTime } from '../helpers/utils'
 import { FutureMeetingTableData } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { Column } from '@/components/data-table'
+import { Column } from '@/app/(frontend)/components/data-table-static'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<FutureMeetingTableData>[] = [
@@ -26,7 +26,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
-    width: 100,
+    width: 80,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
@@ -37,7 +37,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     header: 'ערך נקוב',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.marketValue / 1),
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
