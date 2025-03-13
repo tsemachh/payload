@@ -2,13 +2,13 @@
 
 import { BooleanIcon } from '@/components/ui/icons'
 import { formatDateTime } from '../helpers/utils'
-import { FutureMeetingTableData } from '../types'
+import { MeetingTableDataType } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { Column } from '@/app/(frontend)/components/data-table-static'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
-export const meetingColumns: Column<FutureMeetingTableData>[] = [
+export const meetingColumns: Column<MeetingTableDataType>[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
   { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
   { key: 'stockSymbol', header: 'סימול', type: 'string' },
@@ -104,7 +104,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
   },
 ]
 
-export const renderMeetingActions = (row: FutureMeetingTableData) => {
+export const renderMeetingActions = (row: MeetingTableDataType) => {
   if (!row.meetingInviteUrl) return null
 
   return (

@@ -37,7 +37,7 @@ import { escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpe
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { DateFilterOption, FutureMeetingTableData } from '../types'
+import { DateFilterOption, MeetingTableDataType } from '../types'
 import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -195,7 +195,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       // If all filters are in their default state, skip filtering
       if (past === 'allPast' && future === 'allFuture' && empty) return
       filteredItems = filteredItems.filter((item) => {
-        const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
         if (!isValidDate(dateValue)) {
           return empty
         }
@@ -292,7 +292,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         // If both past and future are set to 'all', treat it as no filter
         if (past === 'allPast' && future === 'allFuture' && empty) return
         filteredItems = filteredItems.filter((item) => {
-          const dateValue = item[key as keyof FutureMeetingTableData] as string
+          const dateValue = item[key as keyof MeetingTableDataType] as string
 
           // Check if the date is empty/invalid and if we should include it
           if (!isValidDate(dateValue)) {
@@ -335,7 +335,7 @@ export function DataTableStatic<T extends Record<string, any>>({
             return
           }
           filteredItems = filteredItems.filter((item) => {
-            const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+            const itemDate = new Date(item[key as keyof MeetingTableDataType] as string)
             return isWithinInterval(itemDate, {
               start: value.from,
               end: value.to,
@@ -345,13 +345,13 @@ export function DataTableStatic<T extends Record<string, any>>({
         // Handle array filters (faceted)
         else if (Array.isArray(value)) {
           filteredItems = filteredItems.filter((item) =>
-            value.includes(String(item[key as keyof FutureMeetingTableData])),
+            value.includes(String(item[key as keyof MeetingTableDataType])),
           )
         }
         // Handle other filter types
         else {
           filteredItems = filteredItems.filter(
-            (item) => item[key as keyof FutureMeetingTableData] === value,
+            (item) => item[key as keyof MeetingTableDataType] === value,
           )
         }
       })
@@ -369,7 +369,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       pastDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
           if (!isValidDate(dateValue)) return false
           const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
@@ -380,7 +380,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       futureDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
           if (!isValidDate(dateValue)) return false
           const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
@@ -389,7 +389,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
       // Count items with empty/invalid dates
       counts[emptyDateOption.value] = filteredData.filter((item) => {
-        const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
         return !isValidDate(dateValue)
       }).length
 
@@ -574,7 +574,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       return <ChevronDown className="h-4 w-4 " />
     }
     const allPossibleValues = Array.from(
-      new Set(data.map((item) => String(item[columnKey as keyof FutureMeetingTableData]))),
+      new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
     )
     const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
     return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
