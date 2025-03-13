@@ -1,7 +1,8 @@
 'use client'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
+import { Calendar, CalendarCheck, BarChart3, Briefcase, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function MainNav() {
@@ -12,46 +13,61 @@ export function MainNav() {
       <Link
         href="/"
         className={cn(
-          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
-          pathname === '/' ? 'text-primary' : 'text-muted-foreground',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          pathname === '/'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
         )}
       >
-        אסיפות עתידיות
+        <Calendar className="h-4 w-4 ml-2" />
+        אסיפות
       </Link>
       <Link
         href="/meetings-past"
         className={cn(
-          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
-          pathname === '/past-assemblies' ? 'text-primary' : 'text-muted-foreground',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          pathname === '/meetings-past'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
         )}
       >
+        <History className="h-4 w-4 ml-2" />
         אסיפות עבר
       </Link>
       <Link
         href="/participations"
         className={cn(
-          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
-          pathname === '/participations' ? 'text-primary' : 'text-muted-foreground',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          pathname === '/participations'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
         )}
       >
+        <CalendarCheck className="h-4 w-4 ml-2" />
         השתתפויות
       </Link>
       <Link
         href="/holdings"
         className={cn(
-          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
-          pathname === '/holdings' ? 'text-primary' : 'text-muted-foreground',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          pathname === '/holdings'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
         )}
       >
+        <Briefcase className="h-4 w-4 ml-2" />
         אחזקות
       </Link>
       <Link
         href="/dashboard"
         className={cn(
-          'text-sm font-medium transition-colors hover:text-primary px-3 py-2',
-          pathname === '/dashboard' ? 'text-primary' : 'text-muted-foreground',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          pathname === '/dashboard'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
         )}
       >
+        <BarChart3 className="h-4 w-4 ml-2" />
         לוח בקרה
       </Link>
     </nav>
