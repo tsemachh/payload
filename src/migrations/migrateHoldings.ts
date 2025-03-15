@@ -30,7 +30,7 @@ async function getHoldingsCount(pool: sql.ConnectionPool): Promise<number> {
   const result = await pool.request().query(`
       SELECT COUNT(*) as count
       FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] >= DATEADD(day, -${DAYS_TO_IMPORT}, GETDATE())
+      WHERE [date1] >= '2025-01-01'
   `)
   return result.recordset[0].count
 }
@@ -47,7 +47,7 @@ async function getHoldingsPage(pool: sql.ConnectionPool, offset: number, pageSiz
            , [date1]
            , [date_update]
       FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] >= DATEADD(DAY, -${DAYS_TO_IMPORT}, GETDATE())
+      WHERE [date1] >= '2025-01-01'
       ORDER BY [stockNum], [firm], [subAccountNum]          
       OFFSET @offsetRows ROWS
       FETCH NEXT @fetchRows ROWS ONLY
@@ -72,7 +72,7 @@ async function findStock(payload: any, stockNum: string, req: any) {
   const stocks = await payload.find({
     collection: 'stocks',
     where: {
-      stockId: { equals: stockNum },
+      stockId: { equals: `${stockNum}` },
     },
     req,
   })
@@ -80,7 +80,7 @@ async function findStock(payload: any, stockNum: string, req: any) {
 }
 
 //const DAYS_TO_IMPORT: number = 365 * 7
-const DAYS_TO_IMPORT:number = 30
+const DAYS_TO_IMPORT:number = 90
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
