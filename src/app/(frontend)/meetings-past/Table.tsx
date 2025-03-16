@@ -1,17 +1,17 @@
-import { DataTable } from '@/components/data-table'
 import { fetchMeetingsForTable } from '../api/payload'
 import {
   futureDateFilterOptions,
   meetingColumns,
   pastDateFilterOptions,
   renderMeetingActions,
-} from '../meeting/meetingTableConstants'
+} from '../meetings/meetingTableConstants'
+import { DataTableDynamic } from '../components/data-table-dynamic'
 
-export async function MeetingsTable() {
+export async function MeetingsTablePast() {
   const futureMeetingTableData = await fetchMeetingsForTable()
 
   return (
-    <DataTable
+    <DataTableDynamic
       data={futureMeetingTableData}
       columns={meetingColumns}
       idField="meetingId"

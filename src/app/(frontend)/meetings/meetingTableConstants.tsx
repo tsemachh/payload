@@ -5,7 +5,8 @@ import { formatDateTime } from '../helpers/utils'
 import { FutureMeetingTableData } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { Column } from '@/components/data-table'
+import { Column } from '@/app/(frontend)/components/data-table-static'
+import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<FutureMeetingTableData>[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
@@ -25,6 +26,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
+    width: 80,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
@@ -35,7 +37,7 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     header: 'ערך נקוב',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.marketValue / 1),
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
   },
   { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
   {
@@ -120,6 +122,32 @@ export const renderMeetingActions = (row: FutureMeetingTableData) => {
       <div className="w-[100px] h-[40px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></div>
     </div>
   )
+}
+
+export const getDateRange = (option: string): { start: Date; end: Date } => {
+  const today = startOfDay(new Date())
+  const yesterday = subDays(today, 1)
+
+  switch (option) {
+    case 'today':
+      return { start: today, end: endOfDay(today) }
+    case 'nextWeek':
+      return { start: today, end: endOfDay(addDays(today, 7)) }
+    case 'nextMonth':
+      return { start: today, end: endOfDay(addDays(today, 30)) }
+    case 'allFuture':
+      return { start: today, end: new Date(8640000000000000) } // Max date
+    case 'yesterday':
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
+    case 'lastWeek':
+      return { start: startOfDay(subDays(yesterday, 6)), end: endOfDay(yesterday) }
+    case 'lastMonth':
+      return { start: startOfDay(subDays(yesterday, 29)), end: endOfDay(yesterday) }
+    case 'allPast':
+      return { start: new Date(-8640000000000000), end: endOfDay(yesterday) } // Min date
+    default:
+      return { start: today, end: today }
+  }
 }
 
 export const pastDateFilterOptions = [
