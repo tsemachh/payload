@@ -51,7 +51,6 @@ export const updateCompaniesMeetingsOnHoldingChange = async (
     await processCompaniesMeetings(
       req,
       meetings.map(meeting => meeting.id),
-      [getIdOfRelationField(account.company) as string]
     )
 
     req.payload.logger.info(`Updated companies-meetings for holding ${holding.id}`)

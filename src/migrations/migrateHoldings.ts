@@ -129,7 +129,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
 
     for (const account of commonAccounts.docs) {
-      let company = account.company as Company
+      const company = account.company as Company
       if (company?.companyId && account.accountNumber) {
         const key = `${company.companyId}-${account.accountNumber}`
         accountCache.set(key, account.id)
@@ -221,7 +221,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             continue
           }
 
-          let accountId = accountCache.get(accountKey)
+          const accountId = accountCache.get(accountKey)
 
           if (!accountId) {
             notFoundAccounts.add(accountKey)

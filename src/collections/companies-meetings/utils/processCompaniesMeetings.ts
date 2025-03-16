@@ -22,8 +22,8 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
   })
   for (let i = 0; i < holdings.length; i++) {
     const holding = holdings[i]
-    let account: Account = holding.account as Account
-    let companyId: string = getIdOfRelationField(account.company) as string
+    const account: Account = holding.account as Account
+    const companyId: string = getIdOfRelationField(account.company) as string
     if (!companies.includes(companyId)) {// Avoid duplicate companyIds
       companies.push(companyId)
       isDirty = true
@@ -50,13 +50,11 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
  *
  * @param req PayloadRequest object
  * @param meetingIds Optional array of meeting IDs to process. If not provided, all meetings will be processed.
- * @param companyIds Optional array of company IDs to process. If not provided, all companies will be processed.
  */
 export const processCompaniesMeetings = async (
   req: PayloadRequest,
   meetingIds?: string[],
-  companyIds?: string[],
-): Promise<void> => {
+  ): Promise<void> => {
   try {
     req.payload.logger.info('Starting to load companies')
     let where = {}
