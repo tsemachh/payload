@@ -201,7 +201,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
-              _sanitized: true,
+//              _sanitized: true,
               admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
             },
           ],

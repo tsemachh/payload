@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
-import ProcessMeetingsEndpoint from './endpoints/ProcessMeetingsEndpoint'
+import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
+import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 
 const meetingLinkProps: IconLinkProps = {
   urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
@@ -72,6 +73,13 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
+  },
+  hooks: {
+    afterChange: [
+      async ({ req, doc }) => {
+        await updateCompaniesMeetingsOnMeetingChange(req, doc)
+      },
+    ],
   },
   fields: [
     {
@@ -208,7 +216,7 @@ export const Meetings: CollectionConfig = {
       name: 'comments',
       label: 'הערות',
       type: 'textarea',
- 
+
     },
     {
       type: 'row',
@@ -233,12 +241,18 @@ export const Meetings: CollectionConfig = {
         },
       ],
     },
+    {
+      type:'relationship',
+      relationTo: 'companies',
+      hasMany: true,
+      name: 'companies'
+    }
   ],
   endpoints: [
     {
       path: '/process-meetings',
       method: 'post',
-      handler: ProcessMeetingsEndpoint,
+      handler: ProcessMeetingStateEndpoint,
     },
   ],
 }
