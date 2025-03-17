@@ -1507,7 +1507,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
       {pagination && (
         <div className="flex items-center justify-between space-x-2 py-4">
           <div className="flex-1 text-sm text-muted-foreground">
-            סה&quot;כ {pagination.totalItems} פריטים
+            סה&quot;כ {pagination.totalItems.toLocaleString()} פריטים
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Button
