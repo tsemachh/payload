@@ -56,6 +56,13 @@ export const Meetings: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'meetingId',
+    listSearchableFields: ['magnaId',
+      'stock',
+      'type',
+      'holdingsLimit',
+      'proxyVotingDate',
+      'meetingDate',
+      'state'],
     defaultColumns: [
       'magnaId',
       'stock',
@@ -90,6 +97,7 @@ export const Meetings: CollectionConfig = {
           name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
+          index: true,
           maxLength: 20,
           admin: {
             components: {

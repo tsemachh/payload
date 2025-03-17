@@ -5,12 +5,26 @@ import { formatDateTime } from '../helpers/utils'
 import { FutureMeetingTableData } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { Column } from '@/app/(frontend)/components/data-table-static'
+import { Column } from '@/app/(frontend)/components/data-table-dynamic'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<FutureMeetingTableData>[] = [
-  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string' },
-  { key: 'stockType', header: 'סוג נייר', type: 'string', filterable: true },
+  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber' },
+  { key: 'stockType', header: 'סוג נייר', type: 'enum', filterable: true ,options: [
+      { label: 'מניות', value: 'מניות' },
+      { label: 'אופציות', value: 'אופציות' },
+      { label: 'איגרות חוב', value: 'איגרות חוב' },
+      { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+      { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+      { label: 'תעודות מדד', value: 'תעודות מדד' },
+      { label: 'תעודות סל', value: 'תעודות סל' },
+      { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
+      { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
+      { label: 'אחר', value: 'אחר' },
+      { label: 'זכויות', value: 'זכויות' },
+      { label: 'מק"מ', value: 'מק"מ' },
+      { label: 'שטרי הון', value: 'שטרי הון' },
+    ],},
   { key: 'stockSymbol', header: 'סימול', type: 'string' },
   { key: 'stockName', header: 'שם נייר ערך', type: 'string' },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
@@ -39,7 +53,15 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
   },
-  { key: 'meetingType', header: 'סוג', type: 'string', filterable: true },
+  { key: 'meetingType', header: 'סוג', type: 'enum', filterable: true ,options:[
+      { label: 'שנתית', value: 'שנתית' },
+      { label: 'מיוחדת', value: 'מיוחדת' },
+      { label: 'אג"ח', value: 'אג"ח' },
+      { label: 'אופציה', value: 'אופציה' },
+      { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+      { label: 'תעודת סל', value: 'תעודת סל' },
+      { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+    ]},
   {
     key: 'meetingDate',
     header: 'מועד האסיפה',
@@ -53,8 +75,16 @@ export const meetingColumns: Column<FutureMeetingTableData>[] = [
   {
     key: 'meetingState',
     header: 'מצב',
-    type: 'string',
+    type: 'enum',
     filterable: true,
+    options:[
+      { label: 'מתוכננת', value: 'scheduled' },
+      { label: 'התקיימה', value: 'completed' },
+      { label: 'נדחית', value: 'postponed' },
+      { label: 'נדחית ללא מועד', value: 'on-hold' },
+      { label: 'נמשכת', value: 'ongoing' },
+      { label: 'בוטלה', value: 'cancelled' },
+    ],
     render: (row) =>
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
   },
