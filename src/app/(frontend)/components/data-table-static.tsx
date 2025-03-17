@@ -37,21 +37,23 @@ import { escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpe
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { DateFilterOption, FutureMeetingTableData } from '../types'
+import { DateFilterOption, MeetingTableDataType } from '../types'
 import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
+import { PaginationProps } from './data-table-dynamic'
 
 // Base column type for all tables
 export interface Column<T> {
   key: keyof T
   header: string
-  type: 'string' | 'number' | 'datetime' | 'boolean'
+  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
   defaultVisible?: boolean
   width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
+  options?: { label: string; value: string }[]
 }
 
 // Structure for faceted filters
@@ -76,6 +78,16 @@ export interface DataTableProps<T extends Record<string, any>> {
   searchPlaceholder?: string
   filterLabel?: string
   columnsLabel?: string
+  onlyFuture?: boolean
+  pagination?: PaginationProps
+  isLoading?: boolean
+  onServerSort?: (field: string) => void
+  onServerSearch?: (term: string) => void
+  onServerFilter?: (field: string, values: string[]) => void
+  serverSideProcessing?: boolean
+  initialSearchTerm?: string
+  activeFilters?: Record<string, string[]>
+  setActiveFilters?: (filters: Record<string, string[]>) => void
 }
 
 export function DataTableStatic<T extends Record<string, any>>({
@@ -91,6 +103,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   searchPlaceholder = 'חיפוש כללי...',
   filterLabel = 'סינון',
   columnsLabel = 'עמודות',
+  onlyFuture = false,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -102,7 +115,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(true)
+  const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
   }>({})
@@ -159,7 +172,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         initialDateFilters[column.key as string] = {
           past: column.key === 'meetingDate' ? '' : 'allPast',
           future: 'allFuture',
-          empty: column.key === 'meetingDate' ? false : true,
+          empty: true,
         }
       }
     })
@@ -195,7 +208,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       // If all filters are in their default state, skip filtering
       if (past === 'allPast' && future === 'allFuture' && empty) return
       filteredItems = filteredItems.filter((item) => {
-        const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
         if (!isValidDate(dateValue)) {
           return empty
         }
@@ -292,7 +305,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         // If both past and future are set to 'all', treat it as no filter
         if (past === 'allPast' && future === 'allFuture' && empty) return
         filteredItems = filteredItems.filter((item) => {
-          const dateValue = item[key as keyof FutureMeetingTableData] as string
+          const dateValue = item[key as keyof MeetingTableDataType] as string
 
           // Check if the date is empty/invalid and if we should include it
           if (!isValidDate(dateValue)) {
@@ -335,7 +348,7 @@ export function DataTableStatic<T extends Record<string, any>>({
             return
           }
           filteredItems = filteredItems.filter((item) => {
-            const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+            const itemDate = new Date(item[key as keyof MeetingTableDataType] as string)
             return isWithinInterval(itemDate, {
               start: value.from,
               end: value.to,
@@ -345,13 +358,13 @@ export function DataTableStatic<T extends Record<string, any>>({
         // Handle array filters (faceted)
         else if (Array.isArray(value)) {
           filteredItems = filteredItems.filter((item) =>
-            value.includes(String(item[key as keyof FutureMeetingTableData])),
+            value.includes(String(item[key as keyof MeetingTableDataType])),
           )
         }
         // Handle other filter types
         else {
           filteredItems = filteredItems.filter(
-            (item) => item[key as keyof FutureMeetingTableData] === value,
+            (item) => item[key as keyof MeetingTableDataType] === value,
           )
         }
       })
@@ -369,7 +382,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       pastDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
           if (!isValidDate(dateValue)) return false
           const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
@@ -380,7 +393,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       futureDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
           if (!isValidDate(dateValue)) return false
           const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
@@ -389,7 +402,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
       // Count items with empty/invalid dates
       counts[emptyDateOption.value] = filteredData.filter((item) => {
-        const dateValue = item[columnKey as keyof FutureMeetingTableData] as string
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
         return !isValidDate(dateValue)
       }).length
 
@@ -517,7 +530,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: column.key === 'meetingDate' ? '' : 'allPast',
             future: 'allFuture',
-            empty: column.key === 'meetingDate' ? false : true,
+            empty: true,
           }
         }
       })
@@ -558,6 +571,12 @@ export function DataTableStatic<T extends Record<string, any>>({
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
+    if (column?.key == 'meetingDate' && onlyFuture) {
+      const dateFilter = dateFilters[columnKey]
+      if (dateFilter?.future === 'allFuture' && dateFilter?.empty) {
+        return <ChevronDown />
+      }
+    }
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (
@@ -574,7 +593,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       return <ChevronDown className="h-4 w-4 " />
     }
     const allPossibleValues = Array.from(
-      new Set(data.map((item) => String(item[columnKey as keyof FutureMeetingTableData]))),
+      new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
     )
     const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
     return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
@@ -736,41 +755,48 @@ export function DataTableStatic<T extends Record<string, any>>({
                               {column.type === 'datetime' ? (
                                 <div className="flex flex-col">
                                   <div className="flex">
-                                    {/* Past dates column */}
-                                    <div className="p-2">
-                                      {pastDateFilterOptions.map((option) => {
-                                        const counts = getDateFilterCounts(String(column.key))
-                                        const isChecked =
-                                          dateFilters[String(column.key)]?.past === option.value
-                                        return (
-                                          <DropdownMenuCheckboxItem
-                                            key={option.value}
-                                            checked={isChecked}
-                                            onCheckedChange={(checked) => {
-                                              handleDateFilter(
-                                                String(column.key),
-                                                option.value,
-                                                checked,
-                                              )
-                                            }}
-                                            className="flex items-center justify-between py-2 remove-checked"
-                                            onSelect={(e) => e.preventDefault()}
-                                          >
-                                            <Checkbox
-                                              checked={isChecked}
-                                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                            />
-                                            <div className="flex justify-between gap-2" dir="rtl">
-                                              <span className="text-right">{option.label}</span>
-                                              <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                                {counts[option.value]}
-                                              </span>
-                                            </div>
-                                          </DropdownMenuCheckboxItem>
-                                        )
-                                      })}
-                                    </div>
-                                    <div className="border-r border-gray-200 mx-2"></div>
+                                    {!(column.key == 'meetingDate' && onlyFuture) && (
+                                      <>
+                                        {/* Past dates column */}
+                                        <div className="p-2">
+                                          {pastDateFilterOptions.map((option) => {
+                                            const counts = getDateFilterCounts(String(column.key))
+                                            const isChecked =
+                                              dateFilters[String(column.key)]?.past === option.value
+                                            return (
+                                              <DropdownMenuCheckboxItem
+                                                key={option.value}
+                                                checked={isChecked}
+                                                onCheckedChange={(checked) => {
+                                                  handleDateFilter(
+                                                    String(column.key),
+                                                    option.value,
+                                                    checked,
+                                                  )
+                                                }}
+                                                className="flex items-center justify-between py-2 remove-checked"
+                                                onSelect={(e) => e.preventDefault()}
+                                              >
+                                                <Checkbox
+                                                  checked={isChecked}
+                                                  className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                                />
+                                                <div
+                                                  className="flex justify-between gap-2"
+                                                  dir="rtl"
+                                                >
+                                                  <span className="text-right">{option.label}</span>
+                                                  <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                                    {counts[option.value]}
+                                                  </span>
+                                                </div>
+                                              </DropdownMenuCheckboxItem>
+                                            )
+                                          })}
+                                        </div>
+                                        <div className="border-r border-gray-200 mx-2"></div>
+                                      </>
+                                    )}
                                     {/* Future dates column */}
                                     <div className="p-2">
                                       {futureDateFilterOptions.map((option) => {

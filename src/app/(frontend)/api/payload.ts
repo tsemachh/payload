@@ -1,13 +1,32 @@
 import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
-import { FutureMeetingTableData } from '../types'
+import { MeetingTableDataType } from '../types'
 
-export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]> {
+export async function fetchMeetingsForTable(
+  page: number = 1,
+  pageSize: number = 25,
+  onlyFuture?: boolean,
+): Promise<{
+  data: MeetingTableDataType[]
+  totalItems: number
+  totalPages: number
+}> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 500 })
+  const meetings = await payload.find({
+    collection: 'meetings',
+    limit: pageSize,
+    page: page,
+    where: onlyFuture
+      ? {
+          meetingDate: {
+            greater_than_equal: new Date().toISOString(),
+          },
+        }
+      : {},
+  })
 
-  const meetingData: FutureMeetingTableData[] = await (
+  const meetingData: MeetingTableDataType[] = await (
     await Promise.all(
       meetings.docs.map(async (meeting) => {
         let stockPresent = null
@@ -63,6 +82,11 @@ export async function fetchMeetingsForTable(): Promise<FutureMeetingTableData[]>
         }
       }),
     )
-  ).filter((item): item is FutureMeetingTableData => item !== null)
-  return meetingData
+  ).filter((item): item is MeetingTableDataType => item !== null)
+
+  return {
+    data: meetingData,
+    totalItems: meetings.totalDocs,
+    totalPages: meetings.totalPages,
+  }
 }

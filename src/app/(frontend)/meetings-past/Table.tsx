@@ -1,26 +1,14 @@
 import { fetchMeetingsForTable } from '../api/payload'
-import {
-  futureDateFilterOptions,
-  meetingColumns,
-  pastDateFilterOptions,
-  renderMeetingActions,
-} from '../meetings/meetingTableConstants'
-import { DataTableDynamic } from '../components/data-table-dynamic'
+import { MeetingsTablePastClient } from './ClientTable'
 
 export async function MeetingsTablePast() {
-  const futureMeetingTableData = await fetchMeetingsForTable()
+  const { data: futureMeetingTableData, totalItems, totalPages } = await fetchMeetingsForTable(1, 25)
 
   return (
-    <DataTableDynamic
-      data={futureMeetingTableData}
-      columns={meetingColumns}
-      idField="meetingId"
-      defaultSortField="meetingDate"
-      defaultSortDirection="desc"
-      tableId="meetings-table"
-      renderRowActions={renderMeetingActions}
-      pastDateFilterOptions={pastDateFilterOptions}
-      futureDateFilterOptions={futureDateFilterOptions}
+    <MeetingsTablePastClient 
+      initialData={futureMeetingTableData}
+      initialTotalItems={totalItems}
+      initialTotalPages={totalPages}
     />
   )
 }
