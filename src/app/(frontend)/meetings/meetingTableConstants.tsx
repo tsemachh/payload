@@ -32,18 +32,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     ],
   },
   { key: 'stockName', header: 'שם נייר', type: 'string' },
-  {
-    key: 'marketValue',
-    header: 'שווי שוק (מיליוני ₪)',
-    type: 'number',
-    width: 80,
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.marketValue / 1_000_000,
-      ),
-  },
-  { key: 'stockSymbol', header: 'סימול', type: 'string' },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
+  { key: 'stockSymbol', header: 'סימול', type: 'string' },
   {
     key: 'stockTradable',
     header: 'נייר ערך נסחר',
@@ -59,6 +49,16 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
+  },
+  {
+    key: 'marketValue',
+    header: 'שווי שוק (מיליוני ₪)',
+    type: 'number',
+    width: 80,
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
+        row.marketValue / 1_000_000,
+      ),
   },
   {
     key: 'meetingType',
@@ -145,6 +145,21 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
   },
+]
+
+export const defaultVisibleColumns = [
+  'stockNumber',
+  'stockType',
+  'stockName',
+  'marketValue',
+  'registeredValue',
+  'meetingType',
+  'meetingDate',
+  'holdingsLimit',
+  'proxyVotingDate',
+  'comments',
+  'electronicVotingEnabled',
+  'committeeInitiated',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {
