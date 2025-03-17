@@ -105,7 +105,16 @@ export const Meetings: CollectionConfig = {
           },
         },
         {
-          name: 'stock',
+          name: 'document',
+          label: 'מסמך הזימון',//TODO: icon pdf
+          type: 'upload',
+          relationTo: 'document',
+          admin: {
+            condition: (data) => !data.magnaId,
+          },
+        },
+        {
+          name: 'stock',//אם פה זה קבל אייקון בקודם אז גם פה יקבל אם לא- FETCH אני ארחיב את השדה ויוסיפו URL ויהיה סתם עיגול אפורTODO
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
