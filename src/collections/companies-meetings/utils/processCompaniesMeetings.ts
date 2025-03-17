@@ -31,7 +31,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
   }
   if (isDirty) {
     req.payload.logger.info('Successfully processed companies-meeting:' + meeting.id + ' with companies:' + companies.toString())
-    req.payload.update({
+    await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
       data: {
@@ -58,22 +58,7 @@ export const processCompaniesMeetings = async (
   try {
     req.payload.logger.info('Starting to load companies')
     let where = {}
-  /*  if (companyIds) {
-      where = { id: { in: companyIds } }
-    }
-    // Get all leaf companies (companies with accounts) or specific companies if companyIds is provided
-    const { docs: allCompanies } = await req.payload.find({
-      collection: 'companies',
-      limit: 1000,
-      where,
-    })
-    const leafCompanies = allCompanies.filter((theCompany) => {
-      return (theCompany.accounts && theCompany.accounts?.docs && theCompany.accounts?.docs?.length > 0)
-    })
-    req.payload.logger.info('loaded companies:' + leafCompanies.length)
-    // Create a map of company IDs to their account IDs
-    const companyAccountsMap = new Map<string, string[]>()
-  */  // Get all meetings or specific meetings if meetingIds is provided
+ // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
     if (meetingIds) {
       where = { id: { in: meetingIds } }
@@ -88,29 +73,36 @@ export const processCompaniesMeetings = async (
       sort: '-holdingsLimit',
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)
-/*
-    for (const company of leafCompanies) {
-      const accounts = company?.accounts?.docs
-      if (accounts)// Store the account IDs for this company
-        companyAccountsMap.set(company.id,
-          accounts.map(getIdOfRelationField) as string[])
-    }
-*/
 
-    // For each leaf company, get its account IDs
+    // Process meetings in batches to avoid MongoDB session issues
+    const batchSize = 10; // Process 10 meetings at a time
     const promises: Promise<void>[] = []
-    for (const meeting of meetings) {
-      // Skip if meeting doesn't have a stock or holdingsLimit
-      if (!meeting.stock || !meeting.holdingsLimit) {
-        continue
+
+    // Process meetings in batches
+    for (let i = 0; i < meetings.length; i += batchSize) {
+      const batchPromises: Promise<void>[] = []
+      const batchEnd = Math.min(i + batchSize, meetings.length)
+
+      req.payload.logger.info(`Processing batch ${i/batchSize + 1} (meetings ${i+1}-${batchEnd} of ${meetings.length})`)
+
+      // Create promises for this batch
+      for (let j = i; j < batchEnd; j++) {
+        const meeting = meetings[j]
+        // Skip if meeting doesn't have a stock or holdingsLimit
+        if (!meeting.stock || !meeting.holdingsLimit) {
+          continue
+        }
+        const promise = processMeeting(meeting, req).then(() => {
+          console.log('meeting finished', meeting.id)
+        })
+        batchPromises.push(promise)
       }
-      processMeeting(meeting, req).then(() => {
-        console.log('meeting finiahed', meeting.id)
-      })
+
+      // Wait for this batch to complete before moving to the next
+      await Promise.all(batchPromises)
+      req.payload.logger.info(`Completed batch ${i/batchSize + 1}`)
     }
 
-    // Wait for all meetings to be processed
-    await Promise.all(promises)
     req.payload.logger.info('End of process: All meetings have been processed')
   }//@ts-ignore
   catch (error: Error) {

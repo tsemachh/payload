@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
+import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 
@@ -245,7 +247,8 @@ export const Meetings: CollectionConfig = {
       type:'relationship',
       relationTo: 'companies',
       hasMany: true,
-      name: 'companies'
+      name: 'companies',
+      label: 'חברות'
     }
   ],
   endpoints: [
@@ -253,6 +256,11 @@ export const Meetings: CollectionConfig = {
       path: '/process-meetings',
       method: 'post',
       handler: ProcessMeetingStateEndpoint,
+    },
+    {
+      path: '/process-companies',
+      method: 'post',
+      handler: ProcessMeetingCompaniesEndPoint,
     },
   ],
 }

@@ -131,14 +131,5 @@ export const Companies: CollectionConfig = {
       on: 'companies',
       name: 'meetings'
     }
-
-    /*    {
-          name: 'users',
-          label: 'משתמשים',
-          type: 'join',
-          collection: 'users',
-          on: 'firmId',
-          admin: { defaultColumns: [ 'name'] },
-        }*/
   ],
 }

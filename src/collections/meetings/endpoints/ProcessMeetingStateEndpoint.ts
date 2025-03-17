@@ -1,5 +1,4 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
-import { processCompaniesMeetings } from '../../companies-meetings/utils/processCompaniesMeetings'
 
 const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
   try {
@@ -44,9 +43,6 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
     } else {
       req.payload.logger.info('No meetings to update during the scheduled process')
     }
-
-    // Process users-meetings and companies-meetings collections
-    await processCompaniesMeetings(req)
 
     return Response.json({
       success: true,

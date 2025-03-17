@@ -17,6 +17,9 @@ const sqlConfig: sql.config = {
   requestTimeout: 3600000, // Increase timeout globally to 120 seconds
 }
 
+//const DAYS_TO_IMPORT: number = 365 * 7
+const START_DATE_TO_IMPORT:string = '2025-01-01'
+
 interface HoldingRow {
   stockNum: string
   firm: string
@@ -30,7 +33,7 @@ async function getHoldingsCount(pool: sql.ConnectionPool): Promise<number> {
   const result = await pool.request().query(`
       SELECT COUNT(*) as count
       FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] >= '2025-01-01'
+      WHERE [date1] >= '${START_DATE_TO_IMPORT}'
   `)
   return result.recordset[0].count
 }
@@ -45,7 +48,7 @@ async function getHoldingsPage(pool: sql.ConnectionPool, offset: number, pageSiz
            , [date1]
            , [date_update]
       FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] >= '2025-01-01'
+      WHERE [date1] >= '${START_DATE_TO_IMPORT}'
       ORDER BY [stockNum], [firm], [subAccountNum]          
       OFFSET ${offset} ROWS
       FETCH NEXT ${pageSize} ROWS ONLY
@@ -77,8 +80,7 @@ async function findStock(payload: any, stockNum: string, req: any) {
   return stocks.docs[0]?.id
 }
 
-//const DAYS_TO_IMPORT: number = 365 * 7
-const DAYS_TO_IMPORT:number = 90
+
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
@@ -86,7 +88,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Starting holdings migration process...')
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
-    console.log(`Importing holdings for the last ${DAYS_TO_IMPORT} days`)
+    console.log(`Importing holdings from ${START_DATE_TO_IMPORT} date`)
 
     // Get total count
     const totalCount = await getHoldingsCount(pool)
@@ -108,7 +110,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Prefetching common stocks...')
     const commonStocks = await payload.find({
       collection: 'stocks',
-      limit: 2500,
+      limit: 5000,
       where:{origin:{equals:'TASE'}},
       req,
     })
@@ -296,6 +298,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             payload.create({
               collection: 'holdings',
               data: data as Holding,
+              context: { from: 'migration' },
               req
             })
           )

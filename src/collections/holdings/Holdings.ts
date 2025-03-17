@@ -11,13 +11,14 @@ export const Holdings: CollectionConfig = {
     useAsTitle: 'id',
     defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
   },
-/*  hooks: {
+ hooks: {
     afterChange: [
       async ({ req, doc }) => {
-        await updateCompaniesMeetingsOnHoldingChange(req, doc)
+        if (req.context?.from != 'migration')
+          await updateCompaniesMeetingsOnHoldingChange(req, doc)
       },
     ],
-  },*/
+  },
   fields: [
     {
       type: 'row',

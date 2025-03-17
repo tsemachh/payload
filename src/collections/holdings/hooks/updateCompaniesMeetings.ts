@@ -37,7 +37,7 @@ export const updateCompaniesMeetingsOnHoldingChange = async (
       collection: 'meetings',
       where: {
         and: [
-          { stock: { in: getStockIds(holding.stock as Stock) } },
+          { stock: { in: await getStockIds(holding.stock as Stock) } },
           { holdingsLimit: { equals: holding.valueDate } },
         ],
       },
