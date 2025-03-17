@@ -8,7 +8,7 @@ import { meetingStateMap } from '../helpers/maps'
 import { Column } from '@/app/(frontend)/components/data-table-dynamic'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
-export const meetingColumns: Column<FutureMeetingTableData>[] = [
+export const meetingColumns: Column<MeetingTableDataType>[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber' },
   { key: 'stockType', header: 'סוג נייר', type: 'enum', filterable: true ,options: [
       { label: 'מניות', value: 'מניות' },

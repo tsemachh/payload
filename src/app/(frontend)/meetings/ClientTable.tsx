@@ -8,18 +8,18 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableDynamic } from '../components/data-table-dynamic'
-import { FutureMeetingTableData } from '../types'
+import { MeetingTableDataType } from '../types'
 
 export function MeetingsTableClient({ 
   initialData, 
   initialTotalItems, 
   initialTotalPages 
 }: { 
-  initialData: FutureMeetingTableData[], 
+  initialData: MeetingTableDataType[], 
   initialTotalItems: number, 
   initialTotalPages: number 
 }) {
-  const [data, setData] = useState<FutureMeetingTableData[]>(initialData)
+  const [data, setData] = useState<MeetingTableDataType[]>(initialData)
   const [totalItems, setTotalItems] = useState(initialTotalItems)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [currentPage, setCurrentPage] = useState(1)
@@ -146,7 +146,7 @@ export function MeetingsTableClient({
       data={data}
       columns={meetingColumns}
       idField="meetingId"
-      defaultSortField={sortField as keyof FutureMeetingTableData}
+      defaultSortField={sortField as keyof MeetingTableDataType}
       defaultSortDirection={sortDirection}
       tableId="meetings-table"
       renderRowActions={renderMeetingActions}

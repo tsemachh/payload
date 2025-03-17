@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { FutureMeetingTableData } from '@/app/(frontend)/types'
+import { MeetingTableDataType } from '@/app/(frontend)/types'
 import { getDbFieldName } from '@/app/(frontend)/meetings/sortFieldMapping'
 import { getDateRange } from '@/app/(frontend)/meetings/meetingTableConstants'
 
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
       where: whereClause as any // Type assertion to bypass complex nested type issues
     })
 
-    const meetingData: FutureMeetingTableData[] = await (
+    const meetingData: MeetingTableDataType[] = await (
       await Promise.all(
         meetings.docs.map(async (meeting) => {
           let stockPresent = null
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
           }
         }),
       )
-    ).filter((item): item is FutureMeetingTableData => item !== null)
+    ).filter((item): item is MeetingTableDataType => item !== null)
 
     return NextResponse.json({
       data: meetingData,
