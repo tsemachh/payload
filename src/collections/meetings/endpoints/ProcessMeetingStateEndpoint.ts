@@ -1,6 +1,6 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
-const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
+const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     if (req === null) {
@@ -25,7 +25,7 @@ const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Process found meetings
     if (scheduledPastMeetings.length > 0) {
-       await Promise.all(
+      await Promise.all(
         scheduledPastMeetings.map((meeting) =>
           req.payload.update({
             collection: 'meetings',
@@ -40,19 +40,16 @@ const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
       req.payload.logger.info(
         `Updated ${scheduledPastMeetings.length} meetings to 'completed' state. Processed IDs: ${scheduledPastMeetings.map((m) => m.id).join(', ')}`,
       )
-
-      return Response.json({
-        success: true,
-        message: `Successfully processed ${scheduledPastMeetings.length} meetings`,
-        processedIds: scheduledPastMeetings.map((m) => m.id),
-      })
+    } else {
+      req.payload.logger.info('No meetings to update during the scheduled process')
     }
 
-    req.payload.logger.info('No meetings to update during the scheduled process')
     return Response.json({
       success: true,
-      message: 'No meetings required processing',
-      processedIds: [],
+      message: scheduledPastMeetings.length > 0 
+        ? `Successfully processed ${scheduledPastMeetings.length} meetings and updated users-meetings collection`
+        : 'No meetings required state update, but users-meetings collection was updated',
+      processedIds: scheduledPastMeetings.map((m) => m.id),
     })
   } catch (error) {
     req.payload.logger.error(`Error processing meetings: ${JSON.stringify(error)}`)
@@ -67,4 +64,4 @@ const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
   }
 }
 
-export default ProcessMeetingsEndpoint
+export default ProcessMeetingStateEndpoint
