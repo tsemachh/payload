@@ -1,4 +1,16 @@
-import { BasePayload } from 'payload'
+import { BasePayload,  TypeWithID } from 'payload'
+import type { Stock } from '@/payload-types'
+
+export async function getStockIds(stock: Stock) {
+  const stockIds: string[] = []
+  stockIds.push(stock.id)
+  if (stock.relations) {
+    stock.relations.docs?.forEach((stock: Stock | string) => {
+      stockIds.push(getIdOfRelationField(stock) as string)
+    })
+  }
+  return stockIds
+}
 
 export async function getSeqeunceStockId(payload: BasePayload, stockID: string | null | undefined) {
   if (stockID === null) return null
@@ -76,3 +88,7 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
     throw error;
   }
 };
+
+export const getIdOfRelationField = (item: TypeWithID | string) => {
+  return (typeof item == "string" ? item : item.id)
+}

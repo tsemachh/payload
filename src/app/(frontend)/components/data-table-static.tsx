@@ -33,23 +33,27 @@ import type React from 'react'
 import { cn } from '@/lib/utils'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
-import { escapeRegExp, getDateRange, isDateInRange, isDateOption } from '../helpers/utils'
+import { escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpers/utils'
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { DateFilterOption, FutureMeetingTableData } from '../types'
+import { DateFilterOption, MeetingTableDataType } from '../types'
+import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
+import { v4 as uuidv4 } from 'uuid'
+import { PaginationProps } from './data-table-dynamic'
 
 // Base column type for all tables
 export interface Column<T> {
   key: keyof T
   header: string
-  type: 'string' | 'number' | 'datetime' | 'boolean'
+  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
   defaultVisible?: boolean
-  width?: string
+  width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
+  options?: { label: string; value: string }[]
 }
 
 // Structure for faceted filters
@@ -74,9 +78,19 @@ export interface DataTableProps<T extends Record<string, any>> {
   searchPlaceholder?: string
   filterLabel?: string
   columnsLabel?: string
+  onlyFuture?: boolean
+  pagination?: PaginationProps
+  isLoading?: boolean
+  onServerSort?: (field: string) => void
+  onServerSearch?: (term: string) => void
+  onServerFilter?: (field: string, values: string[]) => void
+  serverSideProcessing?: boolean
+  initialSearchTerm?: string
+  activeFilters?: Record<string, string[]>
+  setActiveFilters?: (filters: Record<string, string[]>) => void
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTableStatic<T extends Record<string, any>>({
   data,
   columns,
   pastDateFilterOptions = [],
@@ -89,8 +103,8 @@ export function DataTable<T extends Record<string, any>>({
   searchPlaceholder = 'חיפוש כללי...',
   filterLabel = 'סינון',
   columnsLabel = 'עמודות',
+  onlyFuture = false,
 }: DataTableProps<T>) {
-  // State for sorting configuration
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
@@ -98,52 +112,51 @@ export function DataTable<T extends Record<string, any>>({
     key: (defaultSortField || columns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
-
-  // State for column visibility
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
-
-  // State for search and filters
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(true)
+  const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
-    [key: string]: { past: string; future: string }
+    [key: string]: { past: string; future: string; empty: boolean }
   }>({})
+  const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
-  // Load column visibility from localStorage
   useEffect(() => {
-    const storageKey = `columnVisibility-${tableId}`
-    const loadColumnVisibility = () => {
-      const storedColumns = localStorage.getItem(storageKey)
-      if (storedColumns) {
-        try {
-          const parsedColumns = JSON.parse(storedColumns)
-          const validColumns = columns.map((col) => String(col.key))
-          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+    // Load column visibility from localStorage
+   const loadColumnVisibility = () => {
+     const storedColumns = localStorage.getItem('columnSelected')
+     if (storedColumns) {
+       try {
+         const parsedColumns = JSON.parse(storedColumns)
+         const validColumns = columns.map((col) => String(col.key))
+         const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
-          if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem(storageKey, JSON.stringify(filteredColumns))
-          }
+         if (filteredColumns.length !== parsedColumns.length) {
+           localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
+         }
 
-          const newVisibility = Object.fromEntries(
-            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
-          )
-          setColumnVisibility(newVisibility)
-        } catch (error) {
-          console.error('Error parsing stored columns:', error)
-          setDefaultVisibility()
-        }
-      } else {
-        setDefaultVisibility()
-      }
-    }
+         const newVisibility = Object.fromEntries(
+           columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+         )
+         setColumnVisibility(newVisibility)
+       } catch (error) {
+         console.error('Error parsing stored columns:', error)
+         setDefaultColumnVisibility()
+       }
+     } else {
+       setDefaultColumnVisibility()
+     }
+   }
 
-    const setDefaultVisibility = () => {
-      setColumnVisibility(
-        Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
-      )
-    }
-    loadColumnVisibility()
+   const setDefaultColumnVisibility = () => {
+     const newVisibility = Object.fromEntries(
+       columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+     )
+     setColumnVisibility(newVisibility)
+     localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
+   }
+
+   loadColumnVisibility()
     // Filters:
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
@@ -155,17 +168,14 @@ export function DataTable<T extends Record<string, any>>({
       }
     })
     setFilters(initialFilters)
-    const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+    const initialDateFilters: { [key: string]: { past: string; future: string; empty: boolean } } =
+      {}
     columns.forEach((column) => {
-      if (column.key === 'meetingDate' && column.filterable) {
+      if (column.type === 'datetime' && column.filterable) {
         initialDateFilters[column.key as string] = {
-          past: '',
+          past: column.key === 'meetingDate' ? '' : 'allPast',
           future: 'allFuture',
-        }
-      } else if (column.type === 'datetime' && column.filterable) {
-        initialDateFilters[column.key as string] = {
-          past: 'allPast',
-          future: 'allFuture',
+          empty: true,
         }
       }
     })
@@ -192,50 +202,120 @@ export function DataTable<T extends Record<string, any>>({
     [tableId],
   )
 
-  // Handle sort
-  const handleSort = useCallback((key: keyof T) => {
-    setSortConfig((current) => {
-      if (current.key === key) {
-        if (current.direction === 'asc') {
-          return { key, direction: 'desc' }
-        } else {
-          return { key, direction: 'asc' }
-        }
-      }
-      return { key, direction: 'asc' }
-    })
-  }, [])
+  // Filter and sort data
+  const filteredAndSortedData = useMemo(() => {
+    let filteredItems = [...data]
 
-  // Handle filter
-  const handleFilter = useCallback(
-    (key: string, value: any) => {
-      setFilters((prev) => {
-        const newFilters = { ...prev }
-        if (value === 'all') {
-          // Initialize all options as checked when resetting the filter
-          const allOptions = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
-          newFilters[key] = allOptions
-        } else if (Array.isArray(value)) {
-          newFilters[key] = value
+    // Apply date filters
+    Object.entries(dateFilters).forEach(([columnKey, { past, future, empty }]) => {
+      // If all filters are in their default state, skip filtering
+      if (past === 'allPast' && future === 'allFuture' && empty) return
+      filteredItems = filteredItems.filter((item) => {
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
+        if (!isValidDate(dateValue)) {
+          return empty
         }
-        return newFilters
+        const itemDate = new Date(dateValue)
+        const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
+        const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
+        return matchesPast || matchesFuture
       })
-    },
-    [data],
-  )
+    })
+
+    // Apply filters if there are active filters
+    if (Object.keys(filters).length > 0) {
+      filteredItems = filteredItems.filter((item) => {
+        for (const [key, value] of Object.entries(filters)) {
+          // If the filter is an empty array, no items should pass
+          if (Array.isArray(value) && value.length === 0) {
+            return false
+          }
+          // Handle date filters
+          if (columns.find((col) => col.key === key)?.type === 'datetime') {
+            // Skip if either date is missing
+            if (!value.from || !value.to) {
+              continue
+            }
+            const itemDate = new Date(item[key as keyof T] as string)
+            if (
+              !isWithinInterval(itemDate, {
+                start: value.from,
+                end: value.to,
+              })
+            ) {
+              return false
+            }
+          }
+          // Handle array filters (faceted)
+          else if (Array.isArray(value)) {
+            if (!value.includes(String(item[key as keyof T]))) {
+              return false
+            }
+          }
+          // Handle other filter types
+          else if (item[key as keyof T] !== value) {
+            return false
+          }
+        }
+        return true
+      })
+    }
+
+    // Apply search filter only on visible columns
+    if (searchTerm) {
+      const trimmedSearchTerm = searchTerm.trim()
+      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
+      filteredItems = filteredItems.filter((item) =>
+        visibleColumns.some((column) => {
+          const value = item[column.key]
+          return typeof value === 'string' && searchRegex.test(value)
+        }),
+      )
+    }
+
+    // Apply sorting
+    if (sortConfig.direction) {
+      filteredItems.sort((a, b) => {
+        const column = columns.find((col) => col.key === sortConfig.key)
+        const sortKey = column?.sortKey || sortConfig.key
+
+        if (sortConfig.key == null) return sortConfig.direction === 'asc' ? -1 : 1
+
+        const bValue = b[sortKey]
+        const aValue = a[sortKey]
+
+        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1
+        }
+        return 0
+      })
+    }
+    return filteredItems
+  }, [data, filters, searchTerm, sortConfig, visibleColumns, dateFilters, columns])
 
   const getFilteredDataExcludingColumn = useCallback(
     (columnKey: string) => {
       let filteredItems = [...data]
-
       // Apply date filters except for the current column
-      Object.entries(dateFilters).forEach(([key, { past, future }]) => {
+      Object.entries(dateFilters).forEach(([key, { past, future, empty }]) => {
         if (key === columnKey) return // Skip current column
         // If both past and future are set to 'all', treat it as no filter
-        if (past === 'allPast' && future === 'allFuture') return
+        if (past === 'allPast' && future === 'allFuture' && empty) return
         filteredItems = filteredItems.filter((item) => {
-          const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
-          // Check if the item matches the past filter
+          const dateValue = item[key as keyof MeetingTableDataType] as string
+
+          // Check if the date is empty/invalid and if we should include it
+          if (!isValidDate(dateValue)) {
+            return empty
+          }
+
+          const itemDate = new Date(dateValue) // Check if the item matches the past filter
           const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
           // Check if the item matches the future filter
           const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
@@ -271,7 +351,7 @@ export function DataTable<T extends Record<string, any>>({
             return
           }
           filteredItems = filteredItems.filter((item) => {
-            const itemDate = new Date(item[key as keyof FutureMeetingTableData] as string)
+            const itemDate = new Date(item[key as keyof MeetingTableDataType] as string)
             return isWithinInterval(itemDate, {
               start: value.from,
               end: value.to,
@@ -281,13 +361,13 @@ export function DataTable<T extends Record<string, any>>({
         // Handle array filters (faceted)
         else if (Array.isArray(value)) {
           filteredItems = filteredItems.filter((item) =>
-            value.includes(String(item[key as keyof FutureMeetingTableData])),
+            value.includes(String(item[key as keyof MeetingTableDataType])),
           )
         }
         // Handle other filter types
         else {
           filteredItems = filteredItems.filter(
-            (item) => item[key as keyof FutureMeetingTableData] === value,
+            (item) => item[key as keyof MeetingTableDataType] === value,
           )
         }
       })
@@ -305,7 +385,9 @@ export function DataTable<T extends Record<string, any>>({
       pastDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
+          if (!isValidDate(dateValue)) return false
+          const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
         }).length
       })
@@ -314,28 +396,119 @@ export function DataTable<T extends Record<string, any>>({
       futureDateFilterOptions.forEach((option) => {
         const dateRange = getDateRange(option.value)
         counts[option.value] = filteredData.filter((item) => {
-          const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
+          const dateValue = item[columnKey as keyof MeetingTableDataType] as string
+          if (!isValidDate(dateValue)) return false
+          const itemDate = new Date(dateValue)
           return isDateInRange(itemDate, dateRange)
         }).length
       })
 
+      // Count items with empty/invalid dates
+      counts[emptyDateOption.value] = filteredData.filter((item) => {
+        const dateValue = item[columnKey as keyof MeetingTableDataType] as string
+        return !isValidDate(dateValue)
+      }).length
+
       return counts
     },
-    [pastDateFilterOptions, futureDateFilterOptions, getFilteredDataExcludingColumn],
+    [
+      getFilteredDataExcludingColumn,
+      pastDateFilterOptions,
+      futureDateFilterOptions,
+      emptyDateOption.value,
+    ],
   )
 
+  // Handle sort
+  const handleSort = useCallback((key: keyof T) => {
+    setSortConfig((current) => {
+      if (current.key === key) {
+        if (current.direction === 'asc') {
+          return { key, direction: 'desc' }
+        } else {
+          return { key, direction: 'asc' }
+        }
+      }
+      return { key, direction: 'asc' }
+    })
+  }, [])
+
+  // Handle filter
+  const handleFilter = useCallback(
+    (key: string, value: any) => {
+      setFilters((prev) => {
+        const newFilters = { ...prev }
+        if (value === 'all') {
+          // Initialize all options as checked when resetting the filter
+          const allOptions = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
+          newFilters[key] = allOptions
+        } else if (Array.isArray(value)) {
+          newFilters[key] = value
+        }
+        return newFilters
+      })
+    },
+    [data],
+  )
+
+  // Handle date filter
+  const handleDateFilter = useCallback(
+    (columnKey: string, option: string, checked: boolean) => {
+      if (option === '') {
+        // Clear all filters for this column
+        setDateFilters((prev) => {
+          const newFilters = { ...prev }
+          newFilters[columnKey] = { past: 'allPast', future: 'allFuture', empty: true }
+          return newFilters
+        })
+        return
+      }
+
+      setDateFilters((prev) => {
+        const currentFilter = prev[columnKey] || { past: '', future: '', empty: true }
+        const newFilter = { ...currentFilter }
+
+        if (option === 'empty') {
+          // Toggle the empty filter
+          newFilter.empty = checked
+        } else if (isDateOption(option, pastDateFilterOptions)) {
+          // If unchecking, clear the past filter
+          if (!checked) {
+            newFilter.past = ''
+          } else {
+            // Replace the past filter with the new option
+            newFilter.past = option
+          }
+        } else if (isDateOption(option, futureDateFilterOptions)) {
+          // If unchecking, clear the future filter
+          if (!checked) {
+            newFilter.future = ''
+          } else {
+            // Replace the future filter with the new option
+            newFilter.future = option
+          }
+        }
+
+        return { ...prev, [columnKey]: newFilter }
+      })
+    },
+    [pastDateFilterOptions, futureDateFilterOptions],
+  )
   // Reset filters
   const resetFilters = useCallback(() => {
     if (isFilterActive) {
       setFilters({})
       setIsFilterActive(false)
-      const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+      const initialDateFilters: {
+        [key: string]: { past: string; future: string; empty: boolean }
+      } = {}
       columns.forEach((column) => {
         if (column.type === 'datetime' && column.filterable) {
           console.log('datetime', column.key)
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
+            empty: true,
           }
         }
       })
@@ -352,17 +525,15 @@ export function DataTable<T extends Record<string, any>>({
       })
       setFilters(initialFilters)
       setIsFilterActive(true)
-      const initialDateFilters: { [key: string]: { past: string; future: string } } = {}
+      const initialDateFilters: {
+        [key: string]: { past: string; future: string; empty: boolean }
+      } = {}
       columns.forEach((column) => {
-        if (column.key === 'meetingDate' && column.filterable) {
+        if (column.type === 'datetime' && column.filterable) {
           initialDateFilters[column.key as string] = {
-            past: 'allPast',
+            past: column.key === 'meetingDate' ? '' : 'allPast',
             future: 'allFuture',
-          }
-        } else if (column.type === 'datetime' && column.filterable) {
-          initialDateFilters[column.key as string] = {
-            past: 'allPast',
-            future: 'allFuture',
+            empty: true,
           }
         }
       })
@@ -387,144 +558,6 @@ export function DataTable<T extends Record<string, any>>({
     )
   }, [])
 
-  // Filter and sort data
-  const filteredAndSortedData = useMemo(() => {
-    let filteredItems = [...data]
-
-    // Apply date filters
-    Object.entries(dateFilters).forEach(([columnKey, { past, future }]) => {
-      // If both past and future are set to 'all', treat it as no filter
-      if (past === 'allPast' && future === 'allFuture') return
-      filteredItems = filteredItems.filter((item) => {
-        const itemDate = new Date(item[columnKey as keyof FutureMeetingTableData] as string)
-        // Check if the item matches the past filter
-        const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
-        // Check if the item matches the future filter
-        const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
-        // Item passes if it matches either the past or future filter
-        return matchesPast || matchesFuture
-      })
-    })
-
-    // Apply search filter only on visible columns
-    if (searchTerm) {
-      const trimmedSearchTerm = searchTerm.trim()
-      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
-      filteredItems = filteredItems.filter((item) =>
-        visibleColumns.some((column) => {
-          const value = item[column.key]
-          return typeof value === 'string' && searchRegex.test(value)
-        }),
-      )
-    }
-
-    // Apply filters if there are active filters
-    if (Object.keys(filters).length > 0) {
-      filteredItems = filteredItems.filter((item) => {
-        for (const [key, value] of Object.entries(filters)) {
-          // If the filter is an empty array, no items should pass
-          if (Array.isArray(value) && value.length === 0) {
-            return false
-          }
-
-          // Handle date filters
-          if (columns.find((col) => col.key === key)?.type === 'datetime') {
-            // Skip if either date is missing
-            if (!value.from || !value.to) {
-              continue
-            }
-
-            const itemDate = new Date(item[key as keyof T] as string)
-            if (
-              !isWithinInterval(itemDate, {
-                start: value.from,
-                end: value.to,
-              })
-            ) {
-              return false
-            }
-          }
-          // Handle array filters (faceted)
-          else if (Array.isArray(value)) {
-            if (!value.includes(String(item[key as keyof T]))) {
-              return false
-            }
-          }
-          // Handle other filter types
-          else if (item[key as keyof T] !== value) {
-            return false
-          }
-        }
-        return true
-      })
-    }
-
-    // Apply sorting
-    if (sortConfig.direction) {
-      filteredItems.sort((a, b) => {
-        const column = columns.find((col) => col.key === sortConfig.key)
-        const sortKey = column?.sortKey || sortConfig.key
-
-        if (sortConfig.key == null) return sortConfig.direction === 'asc' ? -1 : 1
-
-        const bValue = b[sortKey]
-        const aValue = a[sortKey]
-
-        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
-        if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1
-
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1
-        }
-        return 0
-      })
-    }
-    return filteredItems
-  }, [data, filters, searchTerm, sortConfig, visibleColumns, dateFilters, columns])
-
-  const handleDateFilter = useCallback(
-    (columnKey: string, option: string, checked: boolean) => {
-      if (option === '') {
-        // Clear all filters for this column
-        setDateFilters((prev) => {
-          const newFilters = { ...prev }
-          newFilters[columnKey] = { past: 'allPast', future: 'allFuture' }
-          return newFilters
-        })
-        return
-      }
-
-      setDateFilters((prev) => {
-        const currentFilter = prev[columnKey] || { past: '', future: '' }
-        const newFilter = { ...currentFilter }
-
-        if (isDateOption(option, pastDateFilterOptions)) {
-          // If unchecking, clear the past filter
-          if (!checked) {
-            newFilter.past = ''
-          } else {
-            // Replace the past filter with the new option
-            newFilter.past = option
-          }
-        } else if (isDateOption(option, futureDateFilterOptions)) {
-          // If unchecking, clear the future filter
-          if (!checked) {
-            newFilter.future = ''
-          } else {
-            // Replace the future filter with the new option
-            newFilter.future = option
-          }
-        }
-
-        return { ...prev, [columnKey]: newFilter }
-      })
-    },
-    [pastDateFilterOptions, futureDateFilterOptions],
-  )
-
   // Get sort icon for column header
   const getSortIcon = (columnKey: keyof T) => {
     if (sortConfig.key === columnKey) {
@@ -541,9 +574,19 @@ export function DataTable<T extends Record<string, any>>({
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
+    if (column?.key == 'meetingDate' && onlyFuture) {
+      const dateFilter = dateFilters[columnKey]
+      if (dateFilter?.future === 'allFuture' && dateFilter?.empty) {
+        return <ChevronDown />
+      }
+    }
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
-      if (dateFilter?.past === 'allPast' && dateFilter?.future === 'allFuture') {
+      if (
+        dateFilter?.past === 'allPast' &&
+        dateFilter?.future === 'allFuture' &&
+        dateFilter?.empty
+      ) {
         return <ChevronDown />
       } else {
         return <Filter />
@@ -553,7 +596,7 @@ export function DataTable<T extends Record<string, any>>({
       return <ChevronDown className="h-4 w-4 " />
     }
     const allPossibleValues = Array.from(
-      new Set(data.map((item) => String(item[columnKey as keyof FutureMeetingTableData]))),
+      new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
     )
     const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
     return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
@@ -683,18 +726,20 @@ export function DataTable<T extends Record<string, any>>({
       <div className="bg-background">
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
-            <Table className="w-full border-collapse relative" dir="rtl">
+            <Table className=" w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={String(column.key)}
-                      className={cn(
-                        'text-right overflow-hidden text-ellipsis',
-                        column.width ? column.width : 'max-w-[200px]',
-                      )}
+                      className={cn('text-right overflow-hidden text-ellipsis')}
                     >
-                      <div className="flex items-center justify-start">
+                      <div
+                        className="flex items-center justify-start"
+                        style={{
+                          width: column.width ? `${column.width}px` : 'auto',
+                        }}
+                      >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
                           {column.header}
                         </span>
@@ -711,75 +756,111 @@ export function DataTable<T extends Record<string, any>>({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                               {column.type === 'datetime' ? (
-                                <div className="flex">
-                                  {/* Past dates column */}
-                                  <div className="p-2">
-                                    {pastDateFilterOptions.map((option) => {
-                                      const counts = getDateFilterCounts(String(column.key))
-                                      const isChecked =
-                                        dateFilters[String(column.key)]?.past === option.value
-                                      return (
-                                        <DropdownMenuCheckboxItem
-                                          key={option.value}
-                                          checked={isChecked}
-                                          onCheckedChange={(checked) => {
-                                            handleDateFilter(
-                                              String(column.key),
-                                              option.value,
-                                              checked,
+                                <div className="flex flex-col">
+                                  <div className="flex">
+                                    {!(column.key == 'meetingDate' && onlyFuture) && (
+                                      <>
+                                        {/* Past dates column */}
+                                        <div className="p-2">
+                                          {pastDateFilterOptions.map((option) => {
+                                            const counts = getDateFilterCounts(String(column.key))
+                                            const isChecked =
+                                              dateFilters[String(column.key)]?.past === option.value
+                                            return (
+                                              <DropdownMenuCheckboxItem
+                                                key={option.value}
+                                                checked={isChecked}
+                                                onCheckedChange={(checked) => {
+                                                  handleDateFilter(
+                                                    String(column.key),
+                                                    option.value,
+                                                    checked,
+                                                  )
+                                                }}
+                                                className="flex items-center justify-between py-2 remove-checked"
+                                                onSelect={(e) => e.preventDefault()}
+                                              >
+                                                <Checkbox
+                                                  checked={isChecked}
+                                                  className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                                />
+                                                <div
+                                                  className="flex justify-between gap-2"
+                                                  dir="rtl"
+                                                >
+                                                  <span className="text-right">{option.label}</span>
+                                                  <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                                    {counts[option.value]}
+                                                  </span>
+                                                </div>
+                                              </DropdownMenuCheckboxItem>
                                             )
-                                          }}
-                                          className="flex items-center justify-between py-2 remove-checked"
-                                          onSelect={(e) => e.preventDefault()}
-                                        >
-                                          <Checkbox
+                                          })}
+                                        </div>
+                                        <div className="border-r border-gray-200 mx-2"></div>
+                                      </>
+                                    )}
+                                    {/* Future dates column */}
+                                    <div className="p-2">
+                                      {futureDateFilterOptions.map((option) => {
+                                        const counts = getDateFilterCounts(String(column.key))
+                                        const isChecked =
+                                          dateFilters[String(column.key)]?.future === option.value
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
                                             checked={isChecked}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                          />
-                                          <div className="flex justify-between gap-2" dir="rtl">
-                                            <span className="text-right">{option.label}</span>
-                                            <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                              {counts[option.value]}
-                                            </span>
-                                          </div>
-                                        </DropdownMenuCheckboxItem>
-                                      )
-                                    })}
+                                            onCheckedChange={(checked) => {
+                                              handleDateFilter(
+                                                String(column.key),
+                                                option.value,
+                                                checked,
+                                              )
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <Checkbox
+                                              checked={isChecked}
+                                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                            />
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                              <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                                {counts[option.value]}
+                                              </span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        )
+                                      })}
+                                    </div>
                                   </div>
-                                  <div className="border-r border-gray-200 mx-2"></div>
-                                  {/* Future dates column */}
-                                  <div className="p-2">
-                                    {futureDateFilterOptions.map((option) => {
-                                      const counts = getDateFilterCounts(String(column.key))
-                                      const isChecked =
-                                        dateFilters[String(column.key)]?.future === option.value
-                                      return (
-                                        <DropdownMenuCheckboxItem
-                                          key={option.value}
-                                          checked={isChecked}
-                                          onCheckedChange={(checked) => {
-                                            handleDateFilter(
-                                              String(column.key),
-                                              option.value,
-                                              checked,
-                                            )
-                                          }}
-                                          className="flex items-center justify-between py-2 remove-checked"
-                                          onSelect={(e) => e.preventDefault()}
-                                        >
-                                          <Checkbox
-                                            checked={isChecked}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                          />
-                                          <div className="flex justify-between gap-2" dir="rtl">
-                                            <span className="text-right">{option.label}</span>
-                                            <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                              {counts[option.value]}
-                                            </span>
-                                          </div>
-                                        </DropdownMenuCheckboxItem>
-                                      )
-                                    })}
+
+                                  {/* Empty date option */}
+                                  <div className="p-2 border-t border-gray-200 mt-2">
+                                    <DropdownMenuCheckboxItem
+                                      checked={dateFilters[String(column.key)]?.empty}
+                                      onSelect={(e) => e.preventDefault()}
+                                      onCheckedChange={(checked) => {
+                                        handleDateFilter(String(column.key), 'empty', checked)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                    >
+                                      <Checkbox
+                                        checked={dateFilters[String(column.key)]?.empty}
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">{emptyDateOption.label}</span>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                          {
+                                            getDateFilterCounts(String(column.key))[
+                                              emptyDateOption.value
+                                            ]
+                                          }
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
                                   </div>
                                 </div>
                               ) : (
@@ -842,7 +923,7 @@ export function DataTable<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={String(row[idField])} className="group hover:bg-primary/20">
+                  <TableRow key={uuidv4()} className="group hover:bg-primary/20">
                     {visibleColumns.map((column) => (
                       <TableCell
                         key={`${String(row[idField])}-${String(column.key)}`}

@@ -1,14 +1,14 @@
 import { MeetingState } from '@/payload-types'
 
-export type FutureMeetingTableData = {
+export type MeetingTableDataType = {
   meetingId: string
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
-  stockName: string //שם נייר ערך
+  stockName: string //שם נייר
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
-  marketValue: number  //שווי שוק
+  marketValue: number //שווי שוק
   registeredValue: number //ערך נקוב
   meetingType: string //סוג האסיפה
   meetingDate: string //מועד האסיפה

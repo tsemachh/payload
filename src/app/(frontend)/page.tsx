@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
-import { MeetingsTable } from './meeting/MeetingsTable'
+import { MeetingsTableFuture } from './meetings/Table'
 
 export default function MeetingsPage() {
   return (
@@ -14,7 +14,7 @@ export default function MeetingsPage() {
           </div>
         }
       >
-        <MeetingsTable />
+        <MeetingsTableFuture />
       </Suspense>
     </div>
   )
