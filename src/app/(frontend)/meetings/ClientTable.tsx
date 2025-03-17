@@ -7,17 +7,19 @@ import {
   pastDateFilterOptions,
   renderMeetingActions,
 } from './meetingTableConstants'
-import { DataTableDynamic } from '../components/data-table-dynamic'
+import { DataTableStatic } from '../components/data-table-static'
 import { MeetingTableDataType } from '../types'
 
-export function MeetingsTableClient({ 
-  initialData, 
-  initialTotalItems, 
-  initialTotalPages 
-}: { 
-  initialData: MeetingTableDataType[], 
-  initialTotalItems: number, 
-  initialTotalPages: number 
+export function MeetingsTableClient({
+  initialData,
+  initialTotalItems,
+  initialTotalPages,
+  onlyFuture,
+}: {
+  initialData: MeetingTableDataType[]
+  initialTotalItems: number
+  initialTotalPages: number
+  onlyFuture?: boolean
 }) {
   const [data, setData] = useState<MeetingTableDataType[]>(initialData)
   const [totalItems, setTotalItems] = useState(initialTotalItems)
@@ -31,14 +33,16 @@ export function MeetingsTableClient({
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({})
   const [facetData, setFacetData] = useState<Record<string, Record<string, number>>>({})
   const [isFacetLoading, setIsFacetLoading] = useState(false)
-  const pageSize = 25
+  const pageSize = 1000
 
   // Fetch facet data
   const fetchFacetData = async () => {
     setIsFacetLoading(true)
     try {
       const filtersParam = encodeURIComponent(JSON.stringify(filters))
-      const response = await fetch(`/api/meetings?facetsOnly=true&filters=${filtersParam}&search=${encodeURIComponent(searchTerm)}`)
+      const response = await fetch(
+        `/api/meetings?facetsOnly=true&filters=${filtersParam}&search=${encodeURIComponent(searchTerm)}`,
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch facet data')
       }
@@ -56,7 +60,9 @@ export function MeetingsTableClient({
     setIsLoading(true)
     try {
       const filtersParam = encodeURIComponent(JSON.stringify(filters))
-      const response = await fetch(`/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`)
+      const response = await fetch(
+        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`,
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }
@@ -79,9 +85,7 @@ export function MeetingsTableClient({
 
   const handleSort = async (field: string) => {
     // If clicking the same field, toggle direction, otherwise set to asc
-    const newDirection = field === sortField 
-      ? sortDirection === 'asc' ? 'desc' : 'asc'
-      : 'asc';
+    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
 
     setSortField(field)
     setSortDirection(newDirection)
@@ -119,17 +123,17 @@ export function MeetingsTableClient({
 
   // Initialize activeFilters with empty arrays for enum columns
   useEffect(() => {
-    const initialActiveFilters = { ...activeFilters };
+    const initialActiveFilters = { ...activeFilters }
 
     // For each column with type 'enum', initialize with empty array
-    meetingColumns.forEach(column => {
+    meetingColumns.forEach((column) => {
       if (column.type === 'enum' && column.options) {
-        initialActiveFilters[column.key as string] = [];
+        initialActiveFilters[column.key as string] = []
       }
-    });
+    })
 
-    setActiveFilters(initialActiveFilters);
-  }, []);
+    setActiveFilters(initialActiveFilters)
+  }, [])
 
   // Fetch facet data on component mount
   useEffect(() => {
@@ -142,7 +146,7 @@ export function MeetingsTableClient({
   }, [])
 
   return (
-    <DataTableDynamic
+    <DataTableStatic
       data={data}
       columns={meetingColumns}
       idField="meetingId"
@@ -152,12 +156,13 @@ export function MeetingsTableClient({
       renderRowActions={renderMeetingActions}
       pastDateFilterOptions={pastDateFilterOptions}
       futureDateFilterOptions={futureDateFilterOptions}
+      onlyFuture={onlyFuture}
       pagination={{
         pageSize,
         totalItems,
         totalPages,
         currentPage,
-        onPageChange: handlePageChange
+        onPageChange: handlePageChange,
       }}
       isLoading={isLoading || isFacetLoading}
       onServerSort={handleSort}

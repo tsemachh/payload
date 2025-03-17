@@ -3,12 +3,27 @@ import 'dotenv/config'
 import config from '@/payload.config'
 import { MeetingTableDataType } from '../types'
 
-export async function fetchMeetingsForTable(page: number = 1, pageSize: number = 25): Promise<{ data: MeetingTableDataType[], totalItems: number, totalPages: number }> {
+export async function fetchMeetingsForTable(
+  page: number = 1,
+  pageSize: number = 25,
+  onlyFuture?: boolean,
+): Promise<{
+  data: MeetingTableDataType[]
+  totalItems: number
+  totalPages: number
+}> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ 
-    collection: 'meetings', 
+  const meetings = await payload.find({
+    collection: 'meetings',
     limit: pageSize,
-    page: page
+    page: page,
+    where: onlyFuture
+      ? {
+          meetingDate: {
+            greater_than_equal: new Date().toISOString(),
+          },
+        }
+      : {},
   })
 
   const meetingData: MeetingTableDataType[] = await (
@@ -72,6 +87,6 @@ export async function fetchMeetingsForTable(page: number = 1, pageSize: number =
   return {
     data: meetingData,
     totalItems: meetings.totalDocs,
-    totalPages: meetings.totalPages
+    totalPages: meetings.totalPages,
   }
 }
