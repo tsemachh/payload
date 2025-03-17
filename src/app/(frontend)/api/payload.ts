@@ -19,9 +19,10 @@ export async function fetchMeetingsForTable(
     page: page,
     where: onlyFuture
       ? {
-          meetingDate: {
-            greater_than_equal: new Date().toISOString(),
-          },
+          $or: [
+            { meetingDate: { greater_than_equal: new Date().toISOString() } },
+            { meetingDate: { exists: false } },
+          ],
         }
       : {},
   })
