@@ -37,7 +37,9 @@ export function MeetingsTablePastClient({
     setIsLoading(true)
     try {
       const filtersParam = encodeURIComponent(JSON.stringify(filters))
-      const response = await fetch(`/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`)
+      const response = await fetch(
+        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`,
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }
@@ -60,14 +62,11 @@ export function MeetingsTablePastClient({
 
   const handleSort = async (field: string) => {
     // If clicking the same field, toggle direction, otherwise set to asc
-    const newDirection = field === sortField 
-      ? sortDirection === 'asc' ? 'desc' : 'asc'
-      : 'asc';
+    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
 
     setSortField(field)
     setSortDirection(newDirection)
     await fetchData(currentPage)
-
   }
 
   const handleSearch = async (term: string) => {
@@ -92,17 +91,17 @@ export function MeetingsTablePastClient({
 
   // Initialize activeFilters with empty arrays for enum columns
   useEffect(() => {
-    const initialActiveFilters = { ...activeFilters };
+    const initialActiveFilters = { ...activeFilters }
 
     // For each column with type 'enum', initialize with empty array
-    meetingColumns.forEach(column => {
+    meetingColumns.forEach((column) => {
       if (column.type === 'enum' && column.options) {
-        initialActiveFilters[column.key as string] = [];
+        initialActiveFilters[column.key as string] = []
       }
-    });
+    })
 
-    setActiveFilters(initialActiveFilters);
-  }, []);
+    setActiveFilters(initialActiveFilters)
+  }, [])
 
   return (
     <DataTableDynamic

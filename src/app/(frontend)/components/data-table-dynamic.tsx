@@ -151,7 +151,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
   useEffect(() => {
     // Load column visibility from localStorage
     const loadColumnVisibility = () => {
-      const storedColumns = localStorage.getItem('columnSelected')
+      const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
       if (storedColumns) {
         try {
           const parsedColumns = JSON.parse(storedColumns)
@@ -159,7 +159,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
           const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
           if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
+            localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
           }
 
           const newVisibility = Object.fromEntries(
@@ -180,7 +180,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
         columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
       )
       setColumnVisibility(newVisibility)
-      localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
+      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
     }
 
     loadColumnVisibility()

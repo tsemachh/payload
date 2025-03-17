@@ -123,40 +123,40 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   useEffect(() => {
     // Load column visibility from localStorage
-   const loadColumnVisibility = () => {
-     const storedColumns = localStorage.getItem('columnSelected')
-     if (storedColumns) {
-       try {
-         const parsedColumns = JSON.parse(storedColumns)
-         const validColumns = columns.map((col) => String(col.key))
-         const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+    const loadColumnVisibility = () => {
+      const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
+      if (storedColumns) {
+        try {
+          const parsedColumns = JSON.parse(storedColumns)
+          const validColumns = columns.map((col) => String(col.key))
+          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
-         if (filteredColumns.length !== parsedColumns.length) {
-           localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
-         }
+          if (filteredColumns.length !== parsedColumns.length) {
+            localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
+          }
 
-         const newVisibility = Object.fromEntries(
-           columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
-         )
-         setColumnVisibility(newVisibility)
-       } catch (error) {
-         console.error('Error parsing stored columns:', error)
-         setDefaultColumnVisibility()
-       }
-     } else {
-       setDefaultColumnVisibility()
-     }
-   }
+          const newVisibility = Object.fromEntries(
+            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+          )
+          setColumnVisibility(newVisibility)
+        } catch (error) {
+          console.error('Error parsing stored columns:', error)
+          setDefaultColumnVisibility()
+        }
+      } else {
+        setDefaultColumnVisibility()
+      }
+    }
 
-   const setDefaultColumnVisibility = () => {
-     const newVisibility = Object.fromEntries(
-       columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
-     )
-     setColumnVisibility(newVisibility)
-     localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
-   }
+    const setDefaultColumnVisibility = () => {
+      const newVisibility = Object.fromEntries(
+        columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+      )
+      setColumnVisibility(newVisibility)
+      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
+    }
 
-   loadColumnVisibility()
+    loadColumnVisibility()
     // Filters:
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
