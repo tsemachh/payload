@@ -115,7 +115,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
-  const [isFilterActive, setIsFilterActive] = useState(true)
+  const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
   }>({})
@@ -172,7 +172,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         initialDateFilters[column.key as string] = {
           past: column.key === 'meetingDate' ? '' : 'allPast',
           future: 'allFuture',
-          empty: column.key === 'meetingDate' ? false : true,
+          empty: true,
         }
       }
     })
@@ -530,7 +530,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: column.key === 'meetingDate' ? '' : 'allPast',
             future: 'allFuture',
-            empty: column.key === 'meetingDate' ? false : true,
+            empty: true,
           }
         }
       })
@@ -571,6 +571,12 @@ export function DataTableStatic<T extends Record<string, any>>({
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
+    if (column?.key == 'meetingDate' && onlyFuture) {
+      const dateFilter = dateFilters[columnKey]
+      if (dateFilter?.future === 'allFuture' && dateFilter?.empty) {
+        return <ChevronDown />
+      }
+    }
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (
