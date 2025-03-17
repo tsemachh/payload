@@ -20,7 +20,7 @@ export function MainNav() {
         )}
       >
         <Calendar className="h-4 w-4 ml-2" />
-        אסיפות
+        אסיפות עתיד
       </Link>
       <Link
         href="/meetings-past"
@@ -32,7 +32,7 @@ export function MainNav() {
         )}
       >
         <History className="h-4 w-4 ml-2" />
-        אסיפות עבר
+        כלל האסיפות
       </Link>
       <Link
         href="/participations"
