@@ -3,9 +3,13 @@ import 'dotenv/config'
 import config from '@/payload.config'
 import { MeetingTableDataType } from '../types'
 
-export async function fetchMeetingsForTable(): Promise<MeetingTableDataType[]> {
+export async function fetchMeetingsForTable(page: number = 1, pageSize: number = 25): Promise<{ data: FutureMeetingTableData[], totalItems: number, totalPages: number }> {
   const payload = await getPayload({ config })
-  const meetings = await payload.find({ collection: 'meetings', limit: 500 })
+  const meetings = await payload.find({ 
+    collection: 'meetings', 
+    limit: pageSize,
+    page: page
+  })
 
   const meetingData: MeetingTableDataType[] = await (
     await Promise.all(
@@ -63,6 +67,11 @@ export async function fetchMeetingsForTable(): Promise<MeetingTableDataType[]> {
         }
       }),
     )
-  ).filter((item): item is MeetingTableDataType => item !== null)
-  return meetingData
+  ).filter((item): item is FutureMeetingTableData => item !== null)
+
+  return {
+    data: meetingData,
+    totalItems: meetings.totalDocs,
+    totalPages: meetings.totalPages
+  }
 }
