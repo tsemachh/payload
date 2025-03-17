@@ -1,7 +1,7 @@
 import { fetchMeetingsForTable } from '../api/payload'
 import { MeetingsTableClient } from './ClientTable'
 
-export async function MeetingsTable() {
+export async function MeetingsTableFuture() {
   const onlyFuture = true
   const {
     data: futureMeetingTableData,

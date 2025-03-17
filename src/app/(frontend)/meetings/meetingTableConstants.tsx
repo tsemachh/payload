@@ -10,7 +10,12 @@ import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber' },
-  { key: 'stockType', header: 'סוג נייר', type: 'enum', filterable: true ,options: [
+  {
+    key: 'stockType',
+    header: 'סוג נייר',
+    type: 'enum',
+    filterable: true,
+    options: [
       { label: 'מניות', value: 'מניות' },
       { label: 'אופציות', value: 'אופציות' },
       { label: 'איגרות חוב', value: 'איגרות חוב' },
@@ -24,10 +29,11 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'זכויות', value: 'זכויות' },
       { label: 'מק"מ', value: 'מק"מ' },
       { label: 'שטרי הון', value: 'שטרי הון' },
-    ],},
-  { key: 'stockSymbol', header: 'סימול', type: 'string' },
-  { key: 'stockName', header: 'שם נייר ערך', type: 'string' },
+    ],
+  },
+  { key: 'stockName', header: 'שם נייר', type: 'string' },
   { key: 'companyName', header: 'שם חברה', type: 'string' },
+  { key: 'stockSymbol', header: 'סימול', type: 'string' },
   {
     key: 'stockTradable',
     header: 'נייר ערך נסחר',
@@ -35,6 +41,14 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+  },
+
+  {
+    key: 'registeredValue',
+    header: 'ערך נקוב',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
   },
   {
     key: 'marketValue',
@@ -47,13 +61,11 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       ),
   },
   {
-    key: 'registeredValue',
-    header: 'ערך נקוב',
-    type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
-  },
-  { key: 'meetingType', header: 'סוג', type: 'enum', filterable: true ,options:[
+    key: 'meetingType',
+    header: 'סוג אסיפה',
+    type: 'enum',
+    filterable: true,
+    options: [
       { label: 'שנתית', value: 'שנתית' },
       { label: 'מיוחדת', value: 'מיוחדת' },
       { label: 'אג"ח', value: 'אג"ח' },
@@ -61,7 +73,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
       { label: 'תעודת סל', value: 'תעודת סל' },
       { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
-    ]},
+    ],
+  },
   {
     key: 'meetingDate',
     header: 'מועד האסיפה',
@@ -70,23 +83,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
-  },
-  { key: 'reference', header: 'אסמכתא', type: 'string' },
-  {
-    key: 'meetingState',
-    header: 'מצב',
-    type: 'enum',
-    filterable: true,
-    options:[
-      { label: 'מתוכננת', value: 'scheduled' },
-      { label: 'התקיימה', value: 'completed' },
-      { label: 'נדחית', value: 'postponed' },
-      { label: 'נדחית ללא מועד', value: 'on-hold' },
-      { label: 'נמשכת', value: 'ongoing' },
-      { label: 'בוטלה', value: 'cancelled' },
-    ],
-    render: (row) =>
-      meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
   },
   {
     key: 'holdingsLimit',
@@ -105,6 +101,23 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.proxyVotingDate)
     },
+  },
+  { key: 'reference', header: 'אסמכתא', type: 'string' },
+  {
+    key: 'meetingState',
+    header: 'מצב',
+    type: 'enum',
+    filterable: true,
+    options: [
+      { label: 'מתוכננת', value: 'scheduled' },
+      { label: 'התקיימה', value: 'completed' },
+      { label: 'נדחית', value: 'postponed' },
+      { label: 'נדחית ללא מועד', value: 'on-hold' },
+      { label: 'נמשכת', value: 'ongoing' },
+      { label: 'בוטלה', value: 'cancelled' },
+    ],
+    render: (row) =>
+      meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
   },
   { key: 'location', header: 'מיקום', type: 'string' },
   { key: 'comments', header: 'הערות', type: 'string' },
@@ -132,6 +145,21 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
   },
+]
+
+export const defaultVisibleColumns = [
+  'stockNumber',
+  'stockType',
+  'stockName',
+  'marketValue',
+  'registeredValue',
+  'meetingType',
+  'meetingDate',
+  'holdingsLimit',
+  'proxyVotingDate',
+  'comments',
+  'electronicVotingEnabled',
+  'committeeInitiated',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

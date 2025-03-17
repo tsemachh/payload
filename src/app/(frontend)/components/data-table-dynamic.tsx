@@ -38,7 +38,7 @@ import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { DateFilterOption } from '../types'
-import { getDateRange } from '../meetings/meetingTableConstants'
+import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
 // Base column type for all tables
@@ -52,7 +52,7 @@ export interface Column<T> {
   defaultVisible?: boolean
   width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
-  options?:  { label: string; value: string; }[]
+  options?: { label: string; value: string }[]
 }
 
 // Structure for faceted filters
@@ -145,14 +145,13 @@ export function DataTableDynamic<T extends Record<string, any>>({
 
   // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
-    setSearchTerm(initialSearchTerm);
-  }, [initialSearchTerm]);
+    setSearchTerm(initialSearchTerm)
+  }, [initialSearchTerm])
 
   useEffect(() => {
     // Load column visibility from localStorage
-    const storageKey = `columnVisibility-${tableId}`
     const loadColumnVisibility = () => {
-      const storedColumns = localStorage.getItem(storageKey)
+      const storedColumns = localStorage.getItem('columnSelected')
       if (storedColumns) {
         try {
           const parsedColumns = JSON.parse(storedColumns)
@@ -160,7 +159,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
           const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
           if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem(storageKey, JSON.stringify(filteredColumns))
+            localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
           }
 
           const newVisibility = Object.fromEntries(
@@ -169,17 +168,21 @@ export function DataTableDynamic<T extends Record<string, any>>({
           setColumnVisibility(newVisibility)
         } catch (error) {
           console.error('Error parsing stored columns:', error)
-          setDefaultVisibility()
+          setDefaultColumnVisibility()
         }
       } else {
-        setDefaultVisibility()
+        setDefaultColumnVisibility()
       }
     }
-    const setDefaultVisibility = () => {
-      setColumnVisibility(
-        Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
+
+    const setDefaultColumnVisibility = () => {
+      const newVisibility = Object.fromEntries(
+        columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
       )
+      setColumnVisibility(newVisibility)
+      localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
     }
+
     loadColumnVisibility()
     // Filters:
     const initialFilters: { [key: string]: any } = {}
@@ -326,7 +329,17 @@ export function DataTableDynamic<T extends Record<string, any>>({
       })
     }
     return filteredItems
-  }, [data, filters, searchTerm, sortConfig, visibleColumns, dateFilters, columns, pagination, serverSideProcessing])
+  }, [
+    data,
+    filters,
+    searchTerm,
+    sortConfig,
+    visibleColumns,
+    dateFilters,
+    columns,
+    pagination,
+    serverSideProcessing,
+  ])
 
   const getFilteredDataExcludingColumn = useCallback(
     (columnKey: string) => {
@@ -395,9 +408,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
         }
         // Handle other filter types
         else {
-          filteredItems = filteredItems.filter(
-            (item) => item[key as keyof T] === value,
-          )
+          filteredItems = filteredItems.filter((item) => item[key as keyof T] === value)
         }
       })
       return filteredItems
@@ -449,24 +460,27 @@ export function DataTableDynamic<T extends Record<string, any>>({
   )
 
   // Handle sort
-  const handleSort = useCallback((key: keyof T) => {
-    if (serverSideProcessing && onServerSort) {
-      // Use server-side sorting
-      onServerSort(key as string);
-    } else {
-      // Use client-side sorting
-      setSortConfig((current) => {
-        if (current.key === key) {
-          if (current.direction === 'asc') {
-            return { key, direction: 'desc' }
-          } else {
-            return { key, direction: 'asc' }
+  const handleSort = useCallback(
+    (key: keyof T) => {
+      if (serverSideProcessing && onServerSort) {
+        // Use server-side sorting
+        onServerSort(key as string)
+      } else {
+        // Use client-side sorting
+        setSortConfig((current) => {
+          if (current.key === key) {
+            if (current.direction === 'asc') {
+              return { key, direction: 'desc' }
+            } else {
+              return { key, direction: 'asc' }
+            }
           }
-        }
-        return { key, direction: 'asc' }
-      })
-    }
-  }, [serverSideProcessing, onServerSort])
+          return { key, direction: 'asc' }
+        })
+      }
+    },
+    [serverSideProcessing, onServerSort],
+  )
 
   // Handle filter
   const handleFilter = useCallback(
@@ -475,9 +489,9 @@ export function DataTableDynamic<T extends Record<string, any>>({
       if (serverSideProcessing && onServerFilter) {
         if (value === 'all') {
           // Clear filter
-          onServerFilter(key, []);
+          onServerFilter(key, [])
         } else if (Array.isArray(value)) {
-          onServerFilter(key, value);
+          onServerFilter(key, value)
         }
       } else {
         // Client-side filtering
@@ -547,12 +561,12 @@ export function DataTableDynamic<T extends Record<string, any>>({
         // If filters are active, clear all filters
         columns.forEach((column) => {
           if (column.filterable) {
-            onServerFilter(column.key as string, []);
+            onServerFilter(column.key as string, [])
           }
-        });
+        })
       }
       // Toggle filter visibility
-      setIsFilterActive(!isFilterActive);
+      setIsFilterActive(!isFilterActive)
     } else {
       // Client-side filtering
       if (isFilterActive) {
@@ -678,45 +692,44 @@ export function DataTableDynamic<T extends Record<string, any>>({
 
       columns.forEach((column) => {
         if (column.filterable) {
-          const columnKey = column.key as string;
+          const columnKey = column.key as string
 
           if (column.key === 'meetingState') {
             // For meeting state, create facets from the data we have
-            const uniqueStates = new Set<string>();
+            const uniqueStates = new Set<string>()
 
             // Add states from the current data
-            data.forEach(item => {
-              const state = item.meetingState as string;
-              if (state) uniqueStates.add(state);
-            });
+            data.forEach((item) => {
+              const state = item.meetingState as string
+              if (state) uniqueStates.add(state)
+            })
 
             // Create facets for meeting states
-            facets[columnKey] = Array.from(uniqueStates).map(state => ({
+            facets[columnKey] = Array.from(uniqueStates).map((state) => ({
               value: state,
               count: 0, // We don't have counts
               translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
-            }));
-          }
-          else {
+            }))
+          } else {
             // For other filterable columns, create facets from the data we have
-            const uniqueValues = new Set<string>();
+            const uniqueValues = new Set<string>()
 
             // Add values from the current data
-            data.forEach(item => {
-              const value = String(item[column.key as keyof T] || '');
-              if (value) uniqueValues.add(value);
-            });
+            data.forEach((item) => {
+              const value = String(item[column.key as keyof T] || '')
+              if (value) uniqueValues.add(value)
+            })
 
             // Create facets for each value
-            facets[columnKey] = Array.from(uniqueValues).map(value => ({
+            facets[columnKey] = Array.from(uniqueValues).map((value) => ({
               value,
               count: 0, // We don't have counts
-            }));
+            }))
           }
         }
-      });
+      })
 
-      return facets;
+      return facets
     }
 
     // Client-side facet calculation (original implementation)
@@ -788,9 +801,9 @@ export function DataTableDynamic<T extends Record<string, any>>({
             <X
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground cursor-pointer z-10"
               onClick={() => {
-                setSearchTerm('');
+                setSearchTerm('')
                 if (serverSideProcessing && onServerSearch) {
-                  onServerSearch('');
+                  onServerSearch('')
                 }
               }}
             />
@@ -799,14 +812,14 @@ export function DataTableDynamic<T extends Record<string, any>>({
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => {
-              const newValue = e.target.value;
-              setSearchTerm(newValue);
+              const newValue = e.target.value
+              setSearchTerm(newValue)
               if (serverSideProcessing && onServerSearch) {
                 // Use debounce for server-side search
                 const delayDebounceFn = setTimeout(() => {
-                  onServerSearch(newValue.trim());
-                }, 500);
-                return () => clearTimeout(delayDebounceFn);
+                  onServerSearch(newValue.trim())
+                }, 500)
+                return () => clearTimeout(delayDebounceFn)
               }
             }}
             className="pr-10 text-right"
@@ -879,14 +892,14 @@ export function DataTableDynamic<T extends Record<string, any>>({
                       }}
                     >
                       <div className="flex items-center justify-start">
-                        <span 
-                          className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`} 
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
                           {column.header}
                         </span>
-                        <span 
-                          className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
                           {getSortIcon(column.key)}
@@ -1001,362 +1014,418 @@ export function DataTableDynamic<T extends Record<string, any>>({
                                     </DropdownMenuCheckboxItem>
                                   </div>
                                 </div>
-                              ) : (
-                                serverSideProcessing 
-                                ? (
-                                  // For server-side filtering, show simple checkboxes without facet counts
-                                  column.type == 'datetime' as string
-                                  ? (
-                                    // For datetime columns, show past and future date options
-                                    <div className="flex flex-col">
-                                      <div className="flex">
-                                        {/* Past dates column */}
-                                        <div className="p-2">
-                                          {pastDateFilterOptions.map((option) => (
-                                            <DropdownMenuCheckboxItem
-                                              key={option.value}
-                                              checked={activeFilters[column.key as string]?.includes(`past:${option.value}`) || false}
-                                              onCheckedChange={(checked) => {
-                                                const currentFilters = activeFilters[column.key as string] || []
-                                                // Remove any existing past: filters
-                                                const filteredFilters = currentFilters.filter(v => !v.startsWith('past:'))
-                                                // Add the new filter if checked
-                                                const newFilters = checked
-                                                  ? [...filteredFilters, `past:${option.value}`]
-                                                  : filteredFilters
-                                                handleFilter(String(column.key), newFilters)
-                                              }}
-                                              className="flex items-center justify-between py-2 remove-checked"
-                                              onSelect={(e) => e.preventDefault()}
-                                            >
-                                              <Checkbox
-                                                checked={activeFilters[column.key as string]?.includes(`past:${option.value}`) || false}
-                                                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                              />
-                                              <div className="flex justify-between gap-2" dir="rtl">
-                                                <span className="text-right">{option.label}</span>
-                                              </div>
-                                            </DropdownMenuCheckboxItem>
-                                          ))}
-                                        </div>
-                                        <div className="border-r border-gray-200 mx-2"></div>
-                                        {/* Future dates column */}
-                                        <div className="p-2">
-                                          {futureDateFilterOptions.map((option) => (
-                                            <DropdownMenuCheckboxItem
-                                              key={option.value}
-                                              checked={activeFilters[column.key as string]?.includes(`future:${option.value}`) || false}
-                                              onCheckedChange={(checked) => {
-                                                const currentFilters = activeFilters[column.key as string] || []
-                                                // Remove any existing future: filters
-                                                const filteredFilters = currentFilters.filter(v => !v.startsWith('future:'))
-                                                // Add the new filter if checked
-                                                const newFilters = checked
-                                                  ? [...filteredFilters, `future:${option.value}`]
-                                                  : filteredFilters
-                                                handleFilter(String(column.key), newFilters)
-                                              }}
-                                              className="flex items-center justify-between py-2 remove-checked"
-                                              onSelect={(e) => e.preventDefault()}
-                                            >
-                                              <Checkbox
-                                                checked={activeFilters[column.key as string]?.includes(`future:${option.value}`) || false}
-                                                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                              />
-                                              <div className="flex justify-between gap-2" dir="rtl">
-                                                <span className="text-right">{option.label}</span>
-                                              </div>
-                                            </DropdownMenuCheckboxItem>
-                                          ))}
-                                        </div>
+                              ) : serverSideProcessing ? (
+                                // For server-side filtering, show simple checkboxes without facet counts
+                                column.type == ('datetime' as string) ? (
+                                  // For datetime columns, show past and future date options
+                                  <div className="flex flex-col">
+                                    <div className="flex">
+                                      {/* Past dates column */}
+                                      <div className="p-2">
+                                        {pastDateFilterOptions.map((option) => (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
+                                            checked={
+                                              activeFilters[column.key as string]?.includes(
+                                                `past:${option.value}`,
+                                              ) || false
+                                            }
+                                            onCheckedChange={(checked) => {
+                                              const currentFilters =
+                                                activeFilters[column.key as string] || []
+                                              // Remove any existing past: filters
+                                              const filteredFilters = currentFilters.filter(
+                                                (v) => !v.startsWith('past:'),
+                                              )
+                                              // Add the new filter if checked
+                                              const newFilters = checked
+                                                ? [...filteredFilters, `past:${option.value}`]
+                                                : filteredFilters
+                                              handleFilter(String(column.key), newFilters)
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <Checkbox
+                                              checked={
+                                                activeFilters[column.key as string]?.includes(
+                                                  `past:${option.value}`,
+                                                ) || false
+                                              }
+                                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                            />
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        ))}
                                       </div>
-
-                                      {/* Empty date option */}
-                                      <div className="p-2 border-t border-gray-200 mt-2">
-                                        <DropdownMenuCheckboxItem
-                                          checked={activeFilters[column.key as string]?.includes('empty') || false}
-                                          onSelect={(e) => e.preventDefault()}
-                                          onCheckedChange={(checked) => {
-                                            const currentFilters = activeFilters[column.key as string] || []
-                                            const newFilters = checked
-                                              ? [...currentFilters, 'empty']
-                                              : currentFilters.filter(v => v !== 'empty')
-                                            handleFilter(String(column.key), newFilters)
-                                          }}
-                                          className="flex items-center justify-between py-2 remove-checked"
-                                        >
-                                          <Checkbox
-                                            checked={activeFilters[column.key as string]?.includes('empty') || false}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                          />
-                                          <div className="flex justify-between gap-2" dir="rtl">
-                                            <span className="text-right">ללא תאריך</span>
-                                          </div>
-                                        </DropdownMenuCheckboxItem>
+                                      <div className="border-r border-gray-200 mx-2"></div>
+                                      {/* Future dates column */}
+                                      <div className="p-2">
+                                        {futureDateFilterOptions.map((option) => (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
+                                            checked={
+                                              activeFilters[column.key as string]?.includes(
+                                                `future:${option.value}`,
+                                              ) || false
+                                            }
+                                            onCheckedChange={(checked) => {
+                                              const currentFilters =
+                                                activeFilters[column.key as string] || []
+                                              // Remove any existing future: filters
+                                              const filteredFilters = currentFilters.filter(
+                                                (v) => !v.startsWith('future:'),
+                                              )
+                                              // Add the new filter if checked
+                                              const newFilters = checked
+                                                ? [...filteredFilters, `future:${option.value}`]
+                                                : filteredFilters
+                                              handleFilter(String(column.key), newFilters)
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <Checkbox
+                                              checked={
+                                                activeFilters[column.key as string]?.includes(
+                                                  `future:${option.value}`,
+                                                ) || false
+                                              }
+                                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                            />
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        ))}
                                       </div>
                                     </div>
-                                  )
-                                  : column.type === 'enum' && column.options
-                                  ? (
-                                    // For enum columns, use the provided options
-                                    column.options.map(option => (
+
+                                    {/* Empty date option */}
+                                    <div className="p-2 border-t border-gray-200 mt-2">
                                       <DropdownMenuCheckboxItem
-                                        key={option.value}
-                                        checked={activeFilters[column.key as string]?.includes(option.value) || false}
+                                        checked={
+                                          activeFilters[column.key as string]?.includes('empty') ||
+                                          false
+                                        }
+                                        onSelect={(e) => e.preventDefault()}
                                         onCheckedChange={(checked) => {
-                                          const currentFilters = activeFilters[column.key as string] || []
+                                          const currentFilters =
+                                            activeFilters[column.key as string] || []
                                           const newFilters = checked
-                                            ? [...currentFilters, option.value]
-                                            : currentFilters.filter(v => v !== option.value)
+                                            ? [...currentFilters, 'empty']
+                                            : currentFilters.filter((v) => v !== 'empty')
                                           handleFilter(String(column.key), newFilters)
                                         }}
                                         className="flex items-center justify-between py-2 remove-checked"
-                                        onSelect={(e) => e.preventDefault()}
                                       >
                                         <Checkbox
-                                          checked={activeFilters[column.key as string]?.includes(option.value) || false}
+                                          checked={
+                                            activeFilters[column.key as string]?.includes(
+                                              'empty',
+                                            ) || false
+                                          }
                                           className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
                                         />
                                         <div className="flex justify-between gap-2" dir="rtl">
-                                          <span className="text-right">
-                                            {option.label}
-                                          </span>
+                                          <span className="text-right">ללא תאריך</span>
                                         </div>
                                       </DropdownMenuCheckboxItem>
-                                    ))
-                                  )
-                                  : column.type === 'boolean' 
-                                  ? (
-                                    // Special handling for boolean columns
-                                    <>
-                                      <DropdownMenuCheckboxItem
-                                        key="true"
-                                        checked={activeFilters[column.key as string]?.includes('true') || false}
-                                        onCheckedChange={(checked) => {
-                                          if (serverSideProcessing) {
-                                            // For server-side, just update the local state
-                                            const currentFilters = [...(activeFilters[column.key as string] || [])];
-                                            let newFilters: string[] = [];
+                                    </div>
+                                  </div>
+                                ) : column.type === 'enum' && column.options ? (
+                                  // For enum columns, use the provided options
+                                  column.options.map((option) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={option.value}
+                                      checked={
+                                        activeFilters[column.key as string]?.includes(
+                                          option.value,
+                                        ) || false
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        const currentFilters =
+                                          activeFilters[column.key as string] || []
+                                        const newFilters = checked
+                                          ? [...currentFilters, option.value]
+                                          : currentFilters.filter((v) => v !== option.value)
+                                        handleFilter(String(column.key), newFilters)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          activeFilters[column.key as string]?.includes(
+                                            option.value,
+                                          ) || false
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">{option.label}</span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  ))
+                                ) : column.type === 'boolean' ? (
+                                  // Special handling for boolean columns
+                                  <>
+                                    <DropdownMenuCheckboxItem
+                                      key="true"
+                                      checked={
+                                        activeFilters[column.key as string]?.includes('true') ||
+                                        false
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        if (serverSideProcessing) {
+                                          // For server-side, just update the local state
+                                          const currentFilters = [
+                                            ...(activeFilters[column.key as string] || []),
+                                          ]
+                                          let newFilters: string[] = []
 
-                                            if (checked) {
-                                              // Add 'true' if it's not already there
-                                              if (!currentFilters.includes('true')) {
-                                                newFilters = [...currentFilters, 'true'];
-                                              } else {
-                                                newFilters = [...currentFilters];
-                                              }
+                                          if (checked) {
+                                            // Add 'true' if it's not already there
+                                            if (!currentFilters.includes('true')) {
+                                              newFilters = [...currentFilters, 'true']
                                             } else {
-                                              // Remove 'true' if it's there
-                                              newFilters = currentFilters.filter(v => v !== 'true');
-                                            }
-
-                                            // Update the activeFilters state
-                                            if (setActiveFilters) {
-                                              const newActiveFilters = { ...activeFilters };
-                                              newActiveFilters[column.key as string] = newFilters;
-                                              setActiveFilters(newActiveFilters);
+                                              newFilters = [...currentFilters]
                                             }
                                           } else {
-                                            // For client-side, apply the filter immediately
-                                            const currentFilters = filters[column.key as string] || [];
-                                            let newFilters: string[] = [];
-
-                                            if (checked) {
-                                              if (!currentFilters.includes('true')) {
-                                                newFilters = [...currentFilters, 'true'];
-                                              } else {
-                                                newFilters = [...currentFilters];
-                                              }
-                                            } else {
-                                              newFilters = currentFilters.filter((v: string) => v !== 'true');
-                                            }
-
-                                            // Only send filter if one option is selected (not both or none)
-                                            const hasFalse = newFilters.includes('false');
-                                            const hasTrue = newFilters.includes('true');
-
-                                            if ((hasTrue && !hasFalse) || (!hasTrue && hasFalse)) {
-                                              handleFilter(String(column.key), newFilters);
-                                            } else {
-                                              // If both or none are selected, clear the filter
-                                              handleFilter(String(column.key), []);
-                                            }
+                                            // Remove 'true' if it's there
+                                            newFilters = currentFilters.filter((v) => v !== 'true')
                                           }
-                                        }}
-                                        className="flex items-center justify-between py-2 remove-checked"
-                                        onSelect={(e) => e.preventDefault()}
-                                      >
-                                        <Checkbox
-                                          checked={activeFilters[column.key as string]?.includes('true') || false}
-                                          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                        />
-                                        <div className="flex justify-between gap-2" dir="rtl">
-                                          <span className="text-right">
-                                            <BooleanIcon iconType={true} />
-                                          </span>
-                                        </div>
-                                      </DropdownMenuCheckboxItem>
 
-                                      <DropdownMenuCheckboxItem
-                                        key="false"
-                                        checked={activeFilters[column.key as string]?.includes('false') || false}
-                                        onCheckedChange={(checked) => {
-                                          if (serverSideProcessing) {
-                                            // For server-side, just update the local state
-                                            const currentFilters = [...(activeFilters[column.key as string] || [])];
-                                            let newFilters: string[] = [];
+                                          // Update the activeFilters state
+                                          if (setActiveFilters) {
+                                            const newActiveFilters = { ...activeFilters }
+                                            newActiveFilters[column.key as string] = newFilters
+                                            setActiveFilters(newActiveFilters)
+                                          }
+                                        } else {
+                                          // For client-side, apply the filter immediately
+                                          const currentFilters = filters[column.key as string] || []
+                                          let newFilters: string[] = []
 
-                                            if (checked) {
-                                              // Add 'false' if it's not already there
-                                              if (!currentFilters.includes('false')) {
-                                                newFilters = [...currentFilters, 'false'];
-                                              } else {
-                                                newFilters = [...currentFilters];
-                                              }
+                                          if (checked) {
+                                            if (!currentFilters.includes('true')) {
+                                              newFilters = [...currentFilters, 'true']
                                             } else {
-                                              // Remove 'false' if it's there
-                                              newFilters = currentFilters.filter(v => v !== 'false');
-                                            }
-
-                                            // Update the activeFilters state
-                                            if (setActiveFilters) {
-                                              const newActiveFilters = { ...activeFilters };
-                                              newActiveFilters[column.key as string] = newFilters;
-                                              setActiveFilters(newActiveFilters);
+                                              newFilters = [...currentFilters]
                                             }
                                           } else {
-                                            // For client-side, apply the filter immediately
-                                            const currentFilters = filters[column.key as string] || [];
-                                            let newFilters: string[] = [];
-
-                                            if (checked) {
-                                              if (!currentFilters.includes('false')) {
-                                                newFilters = [...currentFilters, 'false'];
-                                              } else {
-                                                newFilters = [...currentFilters];
-                                              }
-                                            } else {
-                                              newFilters = currentFilters.filter((v: string) => v !== 'false');
-                                            }
-
-                                            // Only send filter if one option is selected (not both or none)
-                                            const hasFalse = newFilters.includes('false');
-                                            const hasTrue = newFilters.includes('true');
-
-                                            if ((hasTrue && !hasFalse) || (!hasTrue && hasFalse)) {
-                                              handleFilter(String(column.key), newFilters);
-                                            } else {
-                                              // If both or none are selected, clear the filter
-                                              handleFilter(String(column.key), []);
-                                            }
+                                            newFilters = currentFilters.filter(
+                                              (v: string) => v !== 'true',
+                                            )
                                           }
-                                        }}
-                                        className="flex items-center justify-between py-2 remove-checked"
-                                        onSelect={(e) => e.preventDefault()}
-                                      >
-                                        <Checkbox
-                                          checked={activeFilters[column.key as string]?.includes('false') || false}
-                                          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                        />
-                                        <div className="flex justify-between gap-2" dir="rtl">
-                                          <span className="text-right">
-                                            <BooleanIcon iconType={false} />
-                                          </span>
-                                        </div>
-                                      </DropdownMenuCheckboxItem>
-                                    </>
-                                  )
-                                  : (
-                                    // For non-boolean columns, show values from current data
-                                    facetedFilters[column.key as string]?.map(
-                                      ({ value, translate }: FacetedFilterItem) => (
-                                        <DropdownMenuCheckboxItem
-                                          key={value}
-                                          checked={activeFilters[column.key as string]?.includes(value) || false}
-                                          onCheckedChange={(checked) => {
-                                            // For server-side, just update the local state to show checkbox checked/unchecked
-                                            if (serverSideProcessing) {
-                                              // Create a copy of the current filters
-                                              const currentFilters = [...(activeFilters[column.key as string] || [])];
 
-                                              // Update the filters based on checked state
-                                              const newFilters = checked
-                                                ? [...currentFilters, value]
-                                                : currentFilters.filter(v => v !== value);
+                                          // Only send filter if one option is selected (not both or none)
+                                          const hasFalse = newFilters.includes('false')
+                                          const hasTrue = newFilters.includes('true')
 
-                                              // Update the activeFilters state
-                                              if (setActiveFilters) {
-                                                const newActiveFilters = { ...activeFilters };
-                                                newActiveFilters[column.key as string] = newFilters;
+                                          if ((hasTrue && !hasFalse) || (!hasTrue && hasFalse)) {
+                                            handleFilter(String(column.key), newFilters)
+                                          } else {
+                                            // If both or none are selected, clear the filter
+                                            handleFilter(String(column.key), [])
+                                          }
+                                        }
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          activeFilters[column.key as string]?.includes('true') ||
+                                          false
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">
+                                          <BooleanIcon iconType={true} />
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
 
-                                                // Update the state without applying the filter
-                                                setActiveFilters(newActiveFilters);
-                                              }
+                                    <DropdownMenuCheckboxItem
+                                      key="false"
+                                      checked={
+                                        activeFilters[column.key as string]?.includes('false') ||
+                                        false
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        if (serverSideProcessing) {
+                                          // For server-side, just update the local state
+                                          const currentFilters = [
+                                            ...(activeFilters[column.key as string] || []),
+                                          ]
+                                          let newFilters: string[] = []
+
+                                          if (checked) {
+                                            // Add 'false' if it's not already there
+                                            if (!currentFilters.includes('false')) {
+                                              newFilters = [...currentFilters, 'false']
                                             } else {
-                                              // For client-side, apply the filter immediately
-                                              const currentFilters = filters[column.key as string] || [];
-                                              const newFilters = checked
-                                                ? [...currentFilters, value]
-                                                : currentFilters.filter((v: string) => v !== value);
-
-                                              handleFilter(String(column.key), newFilters);
+                                              newFilters = [...currentFilters]
                                             }
-                                          }}
-                                          className="flex items-center justify-between py-2 remove-checked"
-                                          onSelect={(e) => e.preventDefault()}
-                                        >
-                                          <Checkbox
-                                            checked={activeFilters[column.key as string]?.includes(value) || false}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                          />
-                                          <div className="flex justify-between gap-2" dir="rtl">
-                                            <span className="text-right">
-                                              {translate ? translate : value}
-                                            </span>
-                                          </div>
-                                        </DropdownMenuCheckboxItem>
-                                      )
-                                    )
-                                  )
-                                )
-                                : (
-                                  // Original client-side filtering with facet counts
+                                          } else {
+                                            // Remove 'false' if it's there
+                                            newFilters = currentFilters.filter((v) => v !== 'false')
+                                          }
+
+                                          // Update the activeFilters state
+                                          if (setActiveFilters) {
+                                            const newActiveFilters = { ...activeFilters }
+                                            newActiveFilters[column.key as string] = newFilters
+                                            setActiveFilters(newActiveFilters)
+                                          }
+                                        } else {
+                                          // For client-side, apply the filter immediately
+                                          const currentFilters = filters[column.key as string] || []
+                                          let newFilters: string[] = []
+
+                                          if (checked) {
+                                            if (!currentFilters.includes('false')) {
+                                              newFilters = [...currentFilters, 'false']
+                                            } else {
+                                              newFilters = [...currentFilters]
+                                            }
+                                          } else {
+                                            newFilters = currentFilters.filter(
+                                              (v: string) => v !== 'false',
+                                            )
+                                          }
+
+                                          // Only send filter if one option is selected (not both or none)
+                                          const hasFalse = newFilters.includes('false')
+                                          const hasTrue = newFilters.includes('true')
+
+                                          if ((hasTrue && !hasFalse) || (!hasTrue && hasFalse)) {
+                                            handleFilter(String(column.key), newFilters)
+                                          } else {
+                                            // If both or none are selected, clear the filter
+                                            handleFilter(String(column.key), [])
+                                          }
+                                        }
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          activeFilters[column.key as string]?.includes('false') ||
+                                          false
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">
+                                          <BooleanIcon iconType={false} />
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  </>
+                                ) : (
+                                  // For non-boolean columns, show values from current data
                                   facetedFilters[column.key as string]?.map(
-                                    ({ value, count, icon, translate }: FacetedFilterItem) => (
+                                    ({ value, translate }: FacetedFilterItem) => (
                                       <DropdownMenuCheckboxItem
                                         key={value}
                                         checked={
-                                          !filters[column.key as string] ||
-                                          filters[column.key as string].includes(value)
+                                          activeFilters[column.key as string]?.includes(value) ||
+                                          false
                                         }
                                         onCheckedChange={(checked) => {
-                                          const currentFilters = filters[column.key as string] || []
-                                          const newFilters = checked
-                                            ? [...currentFilters, value]
-                                            : currentFilters.filter((v: any) => v !== value)
-                                          handleFilter(String(column.key), newFilters)
+                                          // For server-side, just update the local state to show checkbox checked/unchecked
+                                          if (serverSideProcessing) {
+                                            // Create a copy of the current filters
+                                            const currentFilters = [
+                                              ...(activeFilters[column.key as string] || []),
+                                            ]
+
+                                            // Update the filters based on checked state
+                                            const newFilters = checked
+                                              ? [...currentFilters, value]
+                                              : currentFilters.filter((v) => v !== value)
+
+                                            // Update the activeFilters state
+                                            if (setActiveFilters) {
+                                              const newActiveFilters = { ...activeFilters }
+                                              newActiveFilters[column.key as string] = newFilters
+
+                                              // Update the state without applying the filter
+                                              setActiveFilters(newActiveFilters)
+                                            }
+                                          } else {
+                                            // For client-side, apply the filter immediately
+                                            const currentFilters =
+                                              filters[column.key as string] || []
+                                            const newFilters = checked
+                                              ? [...currentFilters, value]
+                                              : currentFilters.filter((v: string) => v !== value)
+
+                                            handleFilter(String(column.key), newFilters)
+                                          }
                                         }}
                                         className="flex items-center justify-between py-2 remove-checked"
                                         onSelect={(e) => e.preventDefault()}
                                       >
                                         <Checkbox
                                           checked={
-                                            !filters[column.key as string] ||
-                                            filters[column.key as string].includes(value)
+                                            activeFilters[column.key as string]?.includes(value) ||
+                                            false
                                           }
                                           className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
                                         />
                                         <div className="flex justify-between gap-2" dir="rtl">
                                           <span className="text-right">
-                                            {icon ? icon : translate ? translate : value}
-                                          </span>
-                                          <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                            {count}
+                                            {translate ? translate : value}
                                           </span>
                                         </div>
                                       </DropdownMenuCheckboxItem>
-                                    )
+                                    ),
                                   )
+                                )
+                              ) : (
+                                // Original client-side filtering with facet counts
+                                facetedFilters[column.key as string]?.map(
+                                  ({ value, count, icon, translate }: FacetedFilterItem) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={value}
+                                      checked={
+                                        !filters[column.key as string] ||
+                                        filters[column.key as string].includes(value)
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        const currentFilters = filters[column.key as string] || []
+                                        const newFilters = checked
+                                          ? [...currentFilters, value]
+                                          : currentFilters.filter((v: any) => v !== value)
+                                        handleFilter(String(column.key), newFilters)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          !filters[column.key as string] ||
+                                          filters[column.key as string].includes(value)
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">
+                                          {icon ? icon : translate ? translate : value}
+                                        </span>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                          {count}
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  ),
                                 )
                               )}
                               <DropdownMenuSeparator />
@@ -1367,8 +1436,9 @@ export function DataTableDynamic<T extends Record<string, any>>({
                                     // Apply the current filter selection
                                     if (onServerFilter) {
                                       // Get the current filter values from the activeFilters state
-                                      const currentFilters = activeFilters[column.key as string] || [];
-                                      onServerFilter(String(column.key), currentFilters);
+                                      const currentFilters =
+                                        activeFilters[column.key as string] || []
+                                      onServerFilter(String(column.key), currentFilters)
                                     }
                                   }}
                                 >
@@ -1437,7 +1507,7 @@ export function DataTableDynamic<T extends Record<string, any>>({
       {pagination && (
         <div className="flex items-center justify-between space-x-2 py-4">
           <div className="flex-1 text-sm text-muted-foreground">
-            סה&quot;כ {pagination.totalItems} פריטים
+            סה&quot;כ {pagination.totalItems.toLocaleString()} פריטים
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Button

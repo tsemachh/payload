@@ -38,7 +38,7 @@ import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { DateFilterOption, MeetingTableDataType } from '../types'
-import { getDateRange } from '../meetings/meetingTableConstants'
+import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 import { PaginationProps } from './data-table-dynamic'
 
@@ -123,37 +123,40 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   useEffect(() => {
     // Load column visibility from localStorage
-    const storageKey = `columnVisibility-${tableId}`
-    const loadColumnVisibility = () => {
-      const storedColumns = localStorage.getItem(storageKey)
-      if (storedColumns) {
-        try {
-          const parsedColumns = JSON.parse(storedColumns)
-          const validColumns = columns.map((col) => String(col.key))
-          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+   const loadColumnVisibility = () => {
+     const storedColumns = localStorage.getItem('columnSelected')
+     if (storedColumns) {
+       try {
+         const parsedColumns = JSON.parse(storedColumns)
+         const validColumns = columns.map((col) => String(col.key))
+         const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
-          if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem(storageKey, JSON.stringify(filteredColumns))
-          }
+         if (filteredColumns.length !== parsedColumns.length) {
+           localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
+         }
 
-          const newVisibility = Object.fromEntries(
-            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
-          )
-          setColumnVisibility(newVisibility)
-        } catch (error) {
-          console.error('Error parsing stored columns:', error)
-          setDefaultVisibility()
-        }
-      } else {
-        setDefaultVisibility()
-      }
-    }
-    const setDefaultVisibility = () => {
-      setColumnVisibility(
-        Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
-      )
-    }
-    loadColumnVisibility()
+         const newVisibility = Object.fromEntries(
+           columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+         )
+         setColumnVisibility(newVisibility)
+       } catch (error) {
+         console.error('Error parsing stored columns:', error)
+         setDefaultColumnVisibility()
+       }
+     } else {
+       setDefaultColumnVisibility()
+     }
+   }
+
+   const setDefaultColumnVisibility = () => {
+     const newVisibility = Object.fromEntries(
+       columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+     )
+     setColumnVisibility(newVisibility)
+     localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
+   }
+
+   loadColumnVisibility()
     // Filters:
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {

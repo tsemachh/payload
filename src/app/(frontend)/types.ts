@@ -5,7 +5,7 @@ export type MeetingTableDataType = {
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
-  stockName: string //שם נייר ערך
+  stockName: string //שם נייר
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
   marketValue: number //שווי שוק
