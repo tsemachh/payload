@@ -6,7 +6,7 @@ import { MeetingTableDataType } from '../types'
 export async function fetchMeetingsForTable(
   page: number = 1,
   pageSize: number = 25,
-  onlyFuture?: boolean,
+  onlyFuture: boolean = false,
 ): Promise<{
   data: MeetingTableDataType[]
   totalItems: number
