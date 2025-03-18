@@ -1,0 +1,28 @@
+import type { CollectionConfig } from 'payload'
+import { processStocksFeedCsv } from './processStocksFeedCsv'
+
+export const StocksFeed: CollectionConfig = {
+  slug: 'stocks-feed',
+  labels: {
+    plural: 'קבצי מניות',
+    singular: 'קובץ מניות',
+  },
+  access: {
+    read: () => true,
+  },
+  hooks: {
+    afterChange: [
+      async ({ req, doc }) => {
+        await processStocksFeedCsv(req, doc)
+      },
+    ],
+  },
+  fields: [
+    {
+      name: 'comments',
+      type: 'text',
+      label: 'הערות',
+    },
+  ],
+  upload: true,
+}
