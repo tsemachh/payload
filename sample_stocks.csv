@@ -1,0 +1,11 @@
+stockID,name,symbol,type,closingRate,marketValue,registeredValue,valueDate,longName
+1001,Apple Inc.,AAPL,אחר,150.25,2000000,1800000,2023-11-15,Apple Inc. Technology Company
+1002,Microsoft Corporation,MSFT,אחר,300.75,3500000,3200000,2023-11-15,Microsoft Corporation Software Company
+1003,Tesla Inc.,TSLA,אחר,250.50,1500000,1400000,2023-11-15,Tesla Inc. Electric Vehicles
+1004,Amazon.com Inc.,AMZN,אחר,130.20,4000000,3800000,2023-11-15,Amazon.com Inc. E-commerce and Cloud Services
+1005,Bank Hapoalim,POLI,מניות,3200.10,800000,750000,2023-11-15,Bank Hapoalim Ltd. Banking Services
+1006,Teva Pharmaceutical,TEVA,מניות,1250.75,600000,580000,2023-11-15,Teva Pharmaceutical Industries Ltd.
+1007,Israel Government Bond,GOVT5,איגרות חוב,102.50,500000,500000,2023-11-15,Israel Government 5-Year Bond
+1008,Tel Aviv ETF,TA35,תעודות סל,2500.30,300000,290000,2023-11-15,Tel Aviv 35 Index ETF
+1009,Delek Group,DLEKG,יחידת השתתפות,1800.45,400000,380000,2023-11-15,Delek Group Ltd. Energy Company
+1010,Israel Short Term Bond,MAKAM,מק"מ,100.10,200000,200000,2023-11-15,Israel Short Term Government Bond
