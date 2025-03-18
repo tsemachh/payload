@@ -20,7 +20,7 @@ import {
 import { Search, Settings2, ArrowUp, ArrowDown, X } from 'lucide-react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
-import { escapeRegExp } from '../helpers/utils'
+import { calculateColumnWidths, escapeRegExp } from '../helpers/utils'
 import { v4 as uuidv4 } from 'uuid'
 import { DataTableProps } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
@@ -256,7 +256,7 @@ export function DataTableServer<T extends Record<string, any>>({
         )}
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(108vh-300px)] overflow-auto relative">
-            <Table className=" w-full border-collapse relative" dir="rtl">
+            <Table className="table-auto w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
@@ -268,7 +268,12 @@ export function DataTableServer<T extends Record<string, any>>({
                         width: column.width ? `${column.width}px  !important` : 'auto',
                       }}
                     >
-                      <div className="flex items-center justify-start">
+                      <div
+                        className="flex items-center justify-start"
+                        style={{
+                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length)}px`,
+                        }}
+                      >
                         <span
                           className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
