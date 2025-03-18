@@ -185,7 +185,7 @@ export const renderMeetingActions = (row: MeetingTableDataType) => {
         rel="noopener noreferrer"
         className="absolute h-[40px] overflow-hidden flex underlined-text decoration-2 items-center justify-center inset-0 inline w-[100px] group-hover:bg-secondary text-sm text-transparent group-hover:text-blue-600 group-hover:underline group-hover:decoration-2 whitespace-nowrap z-30 transition-all duration-200"
       >
-        קישור למגנה
+        זימון לאסיפה
       </a>
       <div className="w-[100px] h-[40px] opacity-0 group-hover:opacity-100 bg-gradient-to-r from-secondary z-20 transition-all duration-200"></div>
     </div>
