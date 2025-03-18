@@ -8,7 +8,7 @@ import { meetingStateMap } from '../helpers/maps'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
-  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 50 },
+  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {
     key: 'stockType',
     header: 'סוג נייר',
@@ -50,18 +50,17 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
-    minWidth: 60,
+    minWidth: 90,
   },
   {
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
-    width: 80,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
       ),
-    minWidth: 65,
+    minWidth: 70,
   },
   {
     key: 'meetingType',
@@ -77,7 +76,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'תעודת סל', value: 'תעודת סל' },
       { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
     ],
-    minWidth: 50,
+    minWidth: 60,
   },
   {
     key: 'meetingDate',

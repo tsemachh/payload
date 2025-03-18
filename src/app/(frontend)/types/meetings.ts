@@ -38,7 +38,7 @@ export interface Column<T> {
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
   defaultVisible?: boolean
-  minWidth?: number
+  minWidth: number
   width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
   options?: { label: string; value: string }[]
