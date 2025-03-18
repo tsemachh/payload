@@ -7,7 +7,7 @@ import {
   pastDateFilterOptions,
   renderMeetingActions,
 } from '../meetings/meetingTableConstants'
-import { DataTableDynamic } from '@/components/data-table-dynamic'
+import { DataTableServer } from '../components/data-table-server'
 import { MeetingTableDataType } from '../types'
 
 export function MeetingsTablePastClient({
@@ -27,8 +27,6 @@ export function MeetingsTablePastClient({
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [filters, setFilters] = useState<Record<string, string[]>>({})
-  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({})
 
   const pageSize = 25
 
@@ -36,9 +34,8 @@ export function MeetingsTablePastClient({
   const fetchData = async (page: number) => {
     setIsLoading(true)
     try {
-      const filtersParam = encodeURIComponent(JSON.stringify(filters))
       const response = await fetch(
-        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`,
+        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}`,
       )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
@@ -74,37 +71,11 @@ export function MeetingsTablePastClient({
     await fetchData(1) // Reset to first page on new search
   }
 
-  const handleFilter = async (field: string, values: string[]) => {
-    const newFilters = { ...filters }
 
-    if (values.length === 0) {
-      // Remove filter if empty
-      delete newFilters[field]
-    } else {
-      // Update filter values
-      newFilters[field] = values
-    }
 
-    setFilters(newFilters)
-    await fetchData(1) // Reset to first page on filter change
-  }
-
-  // Initialize activeFilters with empty arrays for enum columns
-  useEffect(() => {
-    const initialActiveFilters = { ...activeFilters }
-
-    // For each column with type 'enum', initialize with empty array
-    meetingColumns.forEach((column) => {
-      if (column.type === 'enum' && column.options) {
-        initialActiveFilters[column.key as string] = []
-      }
-    })
-
-    setActiveFilters(initialActiveFilters)
-  }, [])
 
   return (
-    <DataTableDynamic
+    <DataTableServer
       data={data}
       columns={meetingColumns}
       idField="meetingId"
@@ -112,8 +83,6 @@ export function MeetingsTablePastClient({
       defaultSortDirection={sortDirection}
       tableId="meetings-table"
       renderRowActions={renderMeetingActions}
-      pastDateFilterOptions={pastDateFilterOptions}
-      futureDateFilterOptions={futureDateFilterOptions}
       pagination={{
         pageSize,
         totalItems,
@@ -124,12 +93,8 @@ export function MeetingsTablePastClient({
       isLoading={isLoading}
       onServerSort={handleSort}
       onServerSearch={handleSearch}
-      onServerFilter={handleFilter}
-      serverSideProcessing={true}
       initialSearchTerm={searchTerm}
       searchPlaceholder="חיפוש בכל השדות..."
-      activeFilters={activeFilters}
-      setActiveFilters={setActiveFilters}
     />
   )
 }

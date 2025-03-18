@@ -5,7 +5,7 @@ import { formatDateTime } from '../helpers/utils'
 import { MeetingTableDataType } from '../types'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { Column } from '@/app/(frontend)/components/data-table-dynamic'
+import { Column } from '@/components/data-table-static'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [

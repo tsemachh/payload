@@ -6,7 +6,7 @@ export async function MeetingsTablePast() {
     data: futureMeetingTableData,
     totalItems,
     totalPages,
-  } = await fetchMeetingsForTable(1, 1000)
+  } = await fetchMeetingsForTable(1, 25)
 
   return (
     <MeetingsTablePastClient

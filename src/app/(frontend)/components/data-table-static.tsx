@@ -40,7 +40,7 @@ import { meetingStateMap } from '../helpers/maps'
 import { DateFilterOption, MeetingTableDataType } from '../types'
 import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
-import { PaginationProps } from './data-table-dynamic'
+import { PaginationProps } from './data-table-server'
 
 // Base column type for all tables
 export interface Column<T> {
