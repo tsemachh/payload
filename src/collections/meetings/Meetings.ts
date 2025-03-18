@@ -12,7 +12,7 @@ const meetingLinkProps: IconLinkProps = {
 }
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
-  iconUrl: '/grayCircleIcon.ico', // You'll need to create this icon
+  iconUrl: '/link.ico', // You'll need to create this icon
   iconAltText: 'קישור ידני',
 }
 
@@ -102,9 +102,9 @@ export const Meetings: CollectionConfig = {
           });
 
           console.log(`--- stock data:`, stock);
-
+          //req.context?.required=true;
           // נבדוק האם יש צורך באסמכתא
-          data.magnaIdRequired = !(stock?.origin === 'TASE' && stock?.tradable === true)
+          data.magnaIdRequired = stock?.origin === 'TASE' && stock?.tradable === true
         }
 
         return data;
@@ -143,32 +143,55 @@ export const Meetings: CollectionConfig = {
           label: 'אסמכתא',
           type: 'text',
           index: true,
+         // virtual:true,
           //maxLength: 20,
           validate: (value:any, { data }:{data:any}) => {
-            if (!data.magnaIdRequired && !value) {
+            if (data.magnaIdRequired && !value) {
               return 'חובה להזין אסמכתא כאשר נייר הערך נסחר ב-TASE';
             }
             return true;
           },
           admin: {
-            condition: (data) => !data.magnaIdRequired,
+            condition: (data) => data.stock && data.magnaIdRequired,
+            components: {
+              Cell: {
+                path: '/admincomponents/link/IconLinkCell',
+                clientProps: meetingLinkProps,
+              },
+              Field: {
+                path: '/admincomponents/link/IconLinkTextField',
+                clientProps: meetingLinkProps,
+              },
+            },
           },
         },
         {
           name: 'manualLink',
           label: 'קישור ידני',
           type: 'text',
+         // virtual:true,
           admin: {
-            condition: (data) => !data.magnaIdRequired, // יציג רק אם magnaId לא חובה
+            condition: (data) => data.stock && !data.magnaIdRequired, // יציג רק אם magnaId לא חובה
+            components: {
+              Cell: {
+                path: '/admincomponents/link/IconLinkCell',
+                clientProps: PropsManualLink,
+              },
+              Field: {
+                path: '/admincomponents/link/IconLinkTextField',
+                clientProps: PropsManualLink,
+              },
+            },
           },
         },
         {
           name: 'document',
           label: 'מסמך הזימון',
           type: 'upload',
-          relationTo: 'document',
+         // virtual:true,
+          relationTo: 'documents',
           admin: {
-            condition: (data) => !data.magnaId && !data.manualLink,
+            condition: (data) => data.stock && !data.magnaId && !data.manualLink,
           },
         },
         {
@@ -182,7 +205,7 @@ export const Meetings: CollectionConfig = {
           },
           hooks: {
             afterRead: [
-              async ({ data }) => {
+              async ({ data ,req}) => {
                 if (data?.magnaId) {
                   return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
                 }
@@ -190,7 +213,12 @@ export const Meetings: CollectionConfig = {
                   return data.manualLink;
                 }
                 if (data?.document) {
-                  return `${process.env.SERVER_URL}/api/documents/${data.document}`;
+                    const document = await req.payload.findByID({
+                      collection: 'documents',
+                      id: data.document,
+                    });
+                  return `${process.env.SERVER_URL}/api/documents/file/${document.filename}`;
+
                 }
                 return null;
               },

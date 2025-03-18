@@ -13,7 +13,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import logger from './lib/logger';
 
 import { Users } from './collections/Users'
-import { Document } from './collections/Document'
+import { Documents } from './collections/Documents'
 import { Stocks } from './collections/stocks/Stocks'
 import { Companies } from '@/collections/companies/Companies'
 import { Accounts } from '@/collections/accounts/Accounts'
@@ -56,7 +56,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

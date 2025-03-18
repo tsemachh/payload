@@ -67,7 +67,7 @@ export type RolePermissions =
         | 'meetings'
         | 'users'
         | 'roles'
-        | 'document'
+        | 'documents'
         | 'migration-faults'
         | 'companies'
         | 'accounts'
@@ -151,7 +151,7 @@ export interface Config {
     meetings: Meeting;
     users: User;
     roles: Role;
-    document: Document;
+    documents: Document;
     'migration-faults': MigrationFault;
     companies: Company;
     accounts: Account;
@@ -183,7 +183,7 @@ export interface Config {
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    document: DocumentSelect<false> | DocumentSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     companies: CompaniesSelect<false> | CompaniesSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
@@ -322,7 +322,7 @@ export interface Meeting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document".
+ * via the `definition` "documents".
  */
 export interface Document {
   id: string;
@@ -663,7 +663,7 @@ export interface PayloadLockedDocument {
         value: string | Role;
       } | null)
     | ({
-        relationTo: 'document';
+        relationTo: 'documents';
         value: string | Document;
       } | null)
     | ({
@@ -876,9 +876,9 @@ export interface RolePermissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document_select".
+ * via the `definition` "documents_select".
  */
-export interface DocumentSelect<T extends boolean = true> {
+export interface DocumentsSelect<T extends boolean = true> {
   alt?: T;
   creator?: T;
   updator?: T;
