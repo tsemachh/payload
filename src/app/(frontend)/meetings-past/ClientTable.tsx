@@ -1,14 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
-  futureDateFilterOptions,
   meetingColumns,
-  pastDateFilterOptions,
   renderMeetingActions,
 } from '../meetings/meetingTableConstants'
 import { DataTableServer } from '../components/data-table-server'
-import { MeetingTableDataType } from '../types'
+import { MeetingTableDataType } from '../types/meetings'
 
 export function MeetingsTablePastClient({
   initialData,
@@ -36,7 +34,7 @@ export function MeetingsTablePastClient({
     setIsLoading(true)
     try {
       // Use the provided term if available, otherwise use the searchTerm state
-      const searchValue = term !== undefined ? term : searchTerm;
+      const searchValue = term !== undefined ? term : searchTerm
       const response = await fetch(
         `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchValue)}`,
       )
@@ -79,9 +77,6 @@ export function MeetingsTablePastClient({
     setPageSize(newPageSize)
     await fetchData(1) // Reset to first page on page size change
   }
-
-
-
 
   return (
     <DataTableServer

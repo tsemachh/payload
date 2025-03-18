@@ -1,5 +1,5 @@
 import { isWithinInterval } from 'date-fns'
-import { DateFilterOption } from '../types'
+import { DateFilterOption } from '../types/meetings'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return '-'

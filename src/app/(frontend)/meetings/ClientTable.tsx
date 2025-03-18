@@ -8,7 +8,7 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '../components/data-table-static'
-import { MeetingTableDataType } from '../types'
+import { MeetingTableDataType } from '../types/meetings'
 
 export function MeetingsTableClient({
   initialData,

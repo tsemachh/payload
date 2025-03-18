@@ -22,47 +22,7 @@ import type React from 'react'
 import { cn } from '@/lib/utils'
 import { escapeRegExp } from '../helpers/utils'
 import { v4 as uuidv4 } from 'uuid'
-
-// Base column type for all tables
-export interface Column<T> {
-  key: keyof T
-  header: string
-  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
-  positionCenter?: boolean
-  render?: (row: T) => React.ReactNode
-  defaultVisible?: boolean
-  width?: number
-  sortKey?: keyof T // Allow sorting by a different key than displayed
-}
-
-// Pagination props
-export interface PaginationProps {
-  pageSize: number
-  totalItems: number
-  totalPages: number
-  currentPage?: number
-  onPageChange?: (page: number) => void
-  onPageSizeChange?: (pageSize: number) => void
-  pageSizeOptions?: number[]
-}
-
-// Data table props with generic type
-export interface DataTableProps<T extends Record<string, any>> {
-  data: T[]
-  columns: Column<T>[]
-  idField: keyof T
-  defaultSortField?: keyof T
-  defaultSortDirection?: 'asc' | 'desc'
-  tableId?: string // For storing column visibility in localStorage
-  renderRowActions?: (row: T) => React.ReactNode
-  searchPlaceholder?: string
-  columnsLabel?: string
-  pagination?: PaginationProps
-  isLoading?: boolean
-  onServerSort?: (field: string) => void
-  onServerSearch?: (term: string) => void
-  initialSearchTerm?: string
-}
+import { DataTableProps } from '../types/meetings'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -171,7 +131,7 @@ export function DataTableServer<T extends Record<string, any>>({
   const filteredAndSortedData = useMemo(() => {
     // If server-side processing is enabled, skip client-side filtering and sorting
     return [...data]
-  }, [data, searchTerm, sortConfig, visibleColumns, columns])
+  }, [data])
 
   // Handle sort
   const handleSort = useCallback(

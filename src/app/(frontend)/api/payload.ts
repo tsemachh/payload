@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
-import { MeetingTableDataType } from '../types'
+import { MeetingTableDataType } from '../types/meetings'
 
 export async function fetchMeetingsForTable(
   page: number = 1,
