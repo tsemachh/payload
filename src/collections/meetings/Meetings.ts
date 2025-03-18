@@ -111,23 +111,67 @@ export const Meetings: CollectionConfig = {
 
         },
         {
+          name: 'stock',
+          label: 'נייר ערך',
+          type: 'relationship',
+          relationTo: 'stocks',
+          index: true,
+          required: true,
+          hooks: {
+            beforeChange: [
+              async ({ data, req }) => {
+              console.log("----beforeValidate")
+                console.log(`--- ${data?.stock}`)
+
+                if (data?.stock) {
+                  const stock = await req.payload.findByID({
+                    collection: 'stocks',
+                    id: data.stock,
+                  });
+                  console.log(`--- stocks${stock}`)
+
+                  const isTaseTradable:boolean = stock?.origin === 'TASE' && stock?.tradable === true;
+                  console.log(`--- isTaseTradable${isTaseTradable}`)
+
+                  // נוסיף אינדיקציה פנימית כדי לדעת אם magnaId נדרש
+                  data.magnaIdRequired = isTaseTradable;
+                }
+                return data;
+              },
+            ],
+          },
+        },
+        {
           name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
           index: true,
-          maxLength: 20,
+          //maxLength: 20,
+          validate: (value:any, { data }:{data:any}) => {
+            if (data.magnaIdRequired && !value) {
+              return 'חובה להזין אסמכתא כאשר נייר הערך נסחר ב-TASE';
+            }
+            return true;
+          },
           admin: {
-            //שדה זה יופיע רק אם: origin: 'TASE' ,tradable:true
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: meetingLinkProps,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: meetingLinkProps,
-              },
-            },
+            condition: (data) => data.magnaIdRequired,
+          },
+        },
+        {
+          name: 'manualLink',
+          label: 'קישור ידני',
+          type: 'text',
+          admin: {
+            condition: (data) => !data.magnaIdRequired, // יציג רק אם magnaId לא חובה
+          },
+        },
+        {
+          name: 'document',
+          label: 'מסמך הזימון',
+          type: 'upload',
+          relationTo: 'document',
+          admin: {
+            condition: (data) => !data.magnaId && !data.manualLink,
           },
         },
         {
@@ -137,82 +181,26 @@ export const Meetings: CollectionConfig = {
           admin: {
             readOnly: true,
             description: 'קישור מחושב אוטומטית למסמך הזימון',
-            hidden:true
+            hidden: true,
           },
           hooks: {
-            beforeChange: [
-              async ({ data, req }) => {
-                // Check if we have magnaId
-                if (data) {
-                  if (data.magnaId) {
-                    return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
-                  }
-                  // Check if we have manual link
-                  else if (data.manualLink) {
-                    return data.manualLink;
-                  }
-                  // Check if we have document
-                  else if (data.document) {
-                    // Assuming your documents have a URL field or similar
-                    const documentURL = `${process.env.SERVER_URL}/api/documents/${data.document}`;
-                    return documentURL;
-                  }
+            afterRead: [
+              async ({ data }) => {
+                if (data?.magnaId) {
+                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                }
+                if (data?.manualLink) {
+                  return data.manualLink;
+                }
+                if (data?.document) {
+                  return `${process.env.SERVER_URL}/api/documents/${data.document}`;
                 }
                 return null;
-              }
-            ]}
-          },
-        {
-        name: 'manualLink',
-        label: 'קישור ידני',
-        type: 'text',
-        admin: {
-          condition: (data) => !data.magnaId,
-
-          // condition: async ({ data, siblingData }) => {
-          //   // Show only if there's no magnaId and we need to get the stock info
-          //   if (data.stock || siblingData.stock) {
-          //     const stockId = data.stock || siblingData.stock;
-          //     // Here you would check if the stock is traded or not
-          //     // This is a placeholder - replace with actual logic
-          //     const stock = await payload.findByID({
-          //       collection: 'stocks',
-          //       id: stockId
-          //     });
-          //     return !stock.isTraded; // Show manual link only for non-traded stocks
-          //   }
-          //   return false;
-          // },
-          components: {
-        Cell: {
-          path: '/admincomponents/link/IconLinkCell',
-          clientProps: meetingLinkProps,
-        },
-        Field: {
-          path: '/admincomponents/link/IconLinkTextField',
-          clientProps: meetingLinkProps,
-        },
-      },
-        },
-      },
-      {
-          name: 'document',
-          label: 'מסמך הזימון',//TODO: icon pdf
-          type: 'upload',
-          relationTo: 'document',
-          admin: {
-            condition: (data) => !data.magnaId || !data.manualLink
+              },
+            ],
           },
         },
-        {
-          name: 'stock',//אם פה זה קבל אייקון בקודם אז גם פה יקבל אם לא- FETCH אני ארחיב את השדה ויוסיפו URL ויהיה סתם עיגול אפורTODO
-          label: 'נייר ערך',
-          type: 'relationship',
-          relationTo: 'stocks',
-          index: true,
-          required: true,
 
-        },
         {
           name: 'type',
           label: 'סוג',

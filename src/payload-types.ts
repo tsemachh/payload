@@ -293,9 +293,14 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   meetingId?: string | null;
+  stock: string | Stock;
   magnaId?: string | null;
+  manualLink?: string | null;
   document?: (string | null) | Document;
-  stock?: (string | null) | Stock;
+  /**
+   * קישור מחושב אוטומטית למסמך הזימון
+   */
+  meetingLink?: string | null;
   type?: MeetingType;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
@@ -776,9 +781,11 @@ export interface StockValuesSelect<T extends boolean = true> {
  */
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
-  magnaId?: T;
-  document?: T;
   stock?: T;
+  magnaId?: T;
+  manualLink?: T;
+  document?: T;
+  meetingLink?: T;
   type?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
