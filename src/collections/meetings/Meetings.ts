@@ -91,11 +91,31 @@ export const Meetings: CollectionConfig = {
     drafts: true,
   },
   hooks: {
+    beforeChange: [
+      async ({ data, req }) => {
+        console.log("---- beforeChange מופעל עבור המסמך כולו");
+
+        if (data?.stock) {
+          const stock = await req.payload.findByID({
+            collection: 'stocks',
+            id: data.stock,
+          });
+
+          console.log(`--- stock data:`, stock);
+
+          // נבדוק האם יש צורך באסמכתא
+          data.magnaIdRequired = !(stock?.origin === 'TASE' && stock?.tradable === true)
+        }
+
+        return data;
+      },
+    ],
     afterChange: [
       async ({ req, doc }) => {
         await updateCompaniesMeetingsOnMeetingChange(req, doc)
       },
     ],
+
   },
   fields: [
     {
@@ -117,29 +137,6 @@ export const Meetings: CollectionConfig = {
           relationTo: 'stocks',
           index: true,
           required: true,
-          hooks: {
-            beforeChange: [
-              async ({ data, req }) => {
-              console.log("----beforeValidate")
-                console.log(`--- ${data?.stock}`)
-
-                if (data?.stock) {
-                  const stock = await req.payload.findByID({
-                    collection: 'stocks',
-                    id: data.stock,
-                  });
-                  console.log(`--- stocks${stock}`)
-
-                  const isTaseTradable:boolean = stock?.origin === 'TASE' && stock?.tradable === true;
-                  console.log(`--- isTaseTradable${isTaseTradable}`)
-
-                  // נוסיף אינדיקציה פנימית כדי לדעת אם magnaId נדרש
-                  data.magnaIdRequired = isTaseTradable;
-                }
-                return data;
-              },
-            ],
-          },
         },
         {
           name: 'magnaId',
@@ -148,13 +145,13 @@ export const Meetings: CollectionConfig = {
           index: true,
           //maxLength: 20,
           validate: (value:any, { data }:{data:any}) => {
-            if (data.magnaIdRequired && !value) {
+            if (!data.magnaIdRequired && !value) {
               return 'חובה להזין אסמכתא כאשר נייר הערך נסחר ב-TASE';
             }
             return true;
           },
           admin: {
-            condition: (data) => data.magnaIdRequired,
+            condition: (data) => !data.magnaIdRequired,
           },
         },
         {
