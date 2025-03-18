@@ -613,6 +613,12 @@ export function DataTableStatic<T extends Record<string, any>>({
     return facets
   }, [columns, getFilteredDataExcludingColumn])
 
+  const calculateColumnWidths = (minWidth: number): number => {
+    const screenWidth = window.innerWidth
+    const columnCount = visibleColumns.length
+
+    return Math.max((screenWidth / columnCount) * (minWidth / 100), minWidth)
+  }
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
@@ -677,7 +683,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       <div className="bg-background">
         <div className="rounded-md border cursor-default">
           <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
-            <Table className=" w-full border-collapse relative" dir="rtl">
+            <Table className="table-auto w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
@@ -688,7 +694,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: column.width ? `${column.width}px` : 'auto',
+                          width: `${calculateColumnWidths(column.minWidth)}px`,
                         }}
                       >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
@@ -883,7 +889,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                           placeItems: column.positionCenter ? 'center' : 'unset',
                           textAlign: column.positionCenter ? 'center' : 'right',
                         }}
-                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
                         ref={(el) => {
                           if (!el) return
                           el.setAttribute(
