@@ -33,7 +33,7 @@ import type React from 'react'
 import { cn } from '@/lib/utils'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
-import { escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpers/utils'
+import { calculateColumnWidths, escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpers/utils'
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -613,12 +613,6 @@ export function DataTableStatic<T extends Record<string, any>>({
     return facets
   }, [columns, getFilteredDataExcludingColumn])
 
-  const calculateColumnWidths = (minWidth: number): number => {
-    const screenWidth = window.innerWidth
-    const columnCount = visibleColumns.length
-
-    return Math.max((screenWidth / columnCount) * (minWidth / 100), minWidth)
-  }
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
@@ -694,7 +688,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: `${calculateColumnWidths(column.minWidth)}px`,
+                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length)}px`,
                         }}
                       >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
