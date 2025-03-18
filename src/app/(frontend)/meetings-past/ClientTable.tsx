@@ -32,11 +32,13 @@ export function MeetingsTablePastClient({
   const [pageSize, setPageSize] = useState<number>(initialPageSize)
 
   // Fetch data with current filters, sort, and search
-  const fetchData = async (page: number) => {
+  const fetchData = async (page: number, term?: string) => {
     setIsLoading(true)
     try {
+      // Use the provided term if available, otherwise use the searchTerm state
+      const searchValue = term !== undefined ? term : searchTerm;
       const response = await fetch(
-        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}`,
+        `/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchValue)}`,
       )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
@@ -69,7 +71,8 @@ export function MeetingsTablePastClient({
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term)
-    await fetchData(1) // Reset to first page on new search
+    // Use the new term directly in the API call instead of relying on state update
+    await fetchData(1, term) // Reset to first page on new search
   }
 
   const handlePageSizeChange = async (newPageSize: number) => {
