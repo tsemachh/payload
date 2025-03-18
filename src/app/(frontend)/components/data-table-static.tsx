@@ -37,58 +37,9 @@ import { escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpe
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { DateFilterOption, MeetingTableDataType } from '../types'
+import { DataTableProps, FacetedFilterItem, MeetingTableDataType } from '../types/meetings'
 import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
-import { PaginationProps } from './data-table-dynamic'
-
-// Base column type for all tables
-export interface Column<T> {
-  key: keyof T
-  header: string
-  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
-  filterable?: boolean
-  positionCenter?: boolean
-  render?: (row: T) => React.ReactNode
-  defaultVisible?: boolean
-  width?: number
-  sortKey?: keyof T // Allow sorting by a different key than displayed
-  options?: { label: string; value: string }[]
-}
-
-// Structure for faceted filters
-export interface FacetedFilterItem {
-  value: string
-  count: number
-  icon?: React.ReactNode
-  translate?: string
-}
-
-// Data table props with generic type
-export interface DataTableProps<T extends Record<string, any>> {
-  data: T[]
-  columns: Column<T>[]
-  pastDateFilterOptions?: DateFilterOption[]
-  futureDateFilterOptions?: DateFilterOption[]
-  idField: keyof T
-  defaultSortField?: keyof T
-  defaultSortDirection?: 'asc' | 'desc'
-  tableId?: string // For storing column visibility in localStorage
-  renderRowActions?: (row: T) => React.ReactNode
-  searchPlaceholder?: string
-  filterLabel?: string
-  columnsLabel?: string
-  onlyFuture?: boolean
-  pagination?: PaginationProps
-  isLoading?: boolean
-  onServerSort?: (field: string) => void
-  onServerSearch?: (term: string) => void
-  onServerFilter?: (field: string, values: string[]) => void
-  serverSideProcessing?: boolean
-  initialSearchTerm?: string
-  activeFilters?: Record<string, string[]>
-  setActiveFilters?: (filters: Record<string, string[]>) => void
-}
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -123,40 +74,40 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   useEffect(() => {
     // Load column visibility from localStorage
-   const loadColumnVisibility = () => {
-     const storedColumns = localStorage.getItem('columnSelected')
-     if (storedColumns) {
-       try {
-         const parsedColumns = JSON.parse(storedColumns)
-         const validColumns = columns.map((col) => String(col.key))
-         const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+    const loadColumnVisibility = () => {
+      const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
+      if (storedColumns) {
+        try {
+          const parsedColumns = JSON.parse(storedColumns)
+          const validColumns = columns.map((col) => String(col.key))
+          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
-         if (filteredColumns.length !== parsedColumns.length) {
-           localStorage.setItem('columnSelected', JSON.stringify(filteredColumns))
-         }
+          if (filteredColumns.length !== parsedColumns.length) {
+            localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
+          }
 
-         const newVisibility = Object.fromEntries(
-           columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
-         )
-         setColumnVisibility(newVisibility)
-       } catch (error) {
-         console.error('Error parsing stored columns:', error)
-         setDefaultColumnVisibility()
-       }
-     } else {
-       setDefaultColumnVisibility()
-     }
-   }
+          const newVisibility = Object.fromEntries(
+            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+          )
+          setColumnVisibility(newVisibility)
+        } catch (error) {
+          console.error('Error parsing stored columns:', error)
+          setDefaultColumnVisibility()
+        }
+      } else {
+        setDefaultColumnVisibility()
+      }
+    }
 
-   const setDefaultColumnVisibility = () => {
-     const newVisibility = Object.fromEntries(
-       columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
-     )
-     setColumnVisibility(newVisibility)
-     localStorage.setItem('columnSelected', JSON.stringify(defaultVisibleColumns))
-   }
+    const setDefaultColumnVisibility = () => {
+      const newVisibility = Object.fromEntries(
+        columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+      )
+      setColumnVisibility(newVisibility)
+      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
+    }
 
-   loadColumnVisibility()
+    loadColumnVisibility()
     // Filters:
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {

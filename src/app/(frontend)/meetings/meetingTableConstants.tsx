@@ -2,14 +2,13 @@
 
 import { BooleanIcon } from '@/components/ui/icons'
 import { formatDateTime } from '../helpers/utils'
-import { MeetingTableDataType } from '../types'
+import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { Column } from '@/app/(frontend)/components/data-table-dynamic'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
-  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber' },
+  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 50 },
   {
     key: 'stockType',
     header: 'סוג נייר',
@@ -30,10 +29,11 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'מק"מ', value: 'מק"מ' },
       { label: 'שטרי הון', value: 'שטרי הון' },
     ],
+    minWidth: 50,
   },
-  { key: 'stockName', header: 'שם נייר', type: 'string' },
-  { key: 'companyName', header: 'שם חברה', type: 'string' },
-  { key: 'stockSymbol', header: 'סימול', type: 'string' },
+  { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
+  { key: 'companyName', header: 'שם חברה', type: 'string', minWidth: 120 },
+  { key: 'stockSymbol', header: 'סימול', type: 'string', minWidth: 100 },
   {
     key: 'stockTradable',
     header: 'נייר ערך נסחר',
@@ -41,6 +41,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+    minWidth: 40,
   },
 
   {
@@ -49,6 +50,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
+    minWidth: 60,
   },
   {
     key: 'marketValue',
@@ -59,6 +61,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         row.marketValue / 1_000_000,
       ),
+    minWidth: 65,
   },
   {
     key: 'meetingType',
@@ -74,6 +77,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'תעודת סל', value: 'תעודת סל' },
       { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
     ],
+    minWidth: 50,
   },
   {
     key: 'meetingDate',
@@ -83,6 +87,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
+    minWidth: 120,
   },
   {
     key: 'holdingsLimit',
@@ -92,6 +97,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.holdingsLimit, true)
     },
+    minWidth: 120,
   },
   {
     key: 'proxyVotingDate',
@@ -101,8 +107,9 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.proxyVotingDate)
     },
+    minWidth: 120,
   },
-  { key: 'reference', header: 'אסמכתא', type: 'string' },
+  { key: 'reference', header: 'אסמכתא', type: 'string', minWidth: 120 },
   {
     key: 'meetingState',
     header: 'מצב',
@@ -118,9 +125,10 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     ],
     render: (row) =>
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
+    minWidth: 50,
   },
-  { key: 'location', header: 'מיקום', type: 'string' },
-  { key: 'comments', header: 'הערות', type: 'string' },
+  { key: 'location', header: 'מיקום', type: 'string', minWidth: 200 },
+  { key: 'comments', header: 'הערות', type: 'string', minWidth: 70 },
   {
     key: 'resultsConfirmationStatus',
     header: 'אימות תוצאות',
@@ -128,6 +136,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
+    minWidth: 40,
   },
   {
     key: 'electronicVotingEnabled',
@@ -136,6 +145,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
+    minWidth: 40,
   },
   {
     key: 'committeeInitiated',
@@ -144,6 +154,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
+    minWidth: 40,
   },
 ]
 
