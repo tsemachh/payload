@@ -258,7 +258,7 @@ export function DataTableServer<T extends Record<string, any>>({
           </div>
         )}
         <div className="rounded-md border cursor-default">
-          <div className="max-h-[calc(100vh-300px)] overflow-auto relative">
+          <div className="max-h-[calc(108vh-300px)] overflow-auto relative">
             <Table className=" w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
@@ -331,7 +331,7 @@ export function DataTableServer<T extends Record<string, any>>({
       </div>
 
       {pagination && (
-        <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
               סה&quot;כ {pagination.totalItems} פריטים
@@ -340,7 +340,7 @@ export function DataTableServer<T extends Record<string, any>>({
               <div className="flex items-center space-x-2 space-x-reverse">
                 <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
                 <select
-                  className="h-8 w-[70px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="h-8 w-[80px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   value={pageSize}
                   onChange={(e) => handlePageSizeChange(Number(e.target.value))}
                   disabled={isLoading}

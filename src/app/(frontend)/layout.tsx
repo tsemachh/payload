@@ -28,12 +28,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             disableTransitionOnChange
             themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
           >
-          <div className="flex flex-col h-screen">
-            <HeaderWithNav />
-            <main className="flex-1 py-6">{children}</main>
-          </div>
-          <Notifications />
-        </ThemeProvider>
+            <div className="flex flex-col h-screen">
+              <HeaderWithNav />
+              <main className="flex-1 py-4">{children}</main>
+            </div>
+            <Notifications />
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
