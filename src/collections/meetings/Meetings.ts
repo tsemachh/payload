@@ -10,6 +10,13 @@ const meetingLinkProps: IconLinkProps = {
   iconUrl: '/faviconMagna.ico',
   iconAltText: 'קישור למגנא',
 }
+const PropsManualLink: IconLinkProps = {
+  urlTemplate: '${value}',
+  iconUrl: '/grayCircleIcon.ico', // You'll need to create this icon
+  iconAltText: 'קישור ידני',
+}
+
+
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
 
@@ -110,6 +117,7 @@ export const Meetings: CollectionConfig = {
           index: true,
           maxLength: 20,
           admin: {
+            //שדה זה יופיע רק אם: origin: 'TASE' ,tradable:true
             components: {
               Cell: {
                 path: '/admincomponents/link/IconLinkCell',
@@ -123,12 +131,77 @@ export const Meetings: CollectionConfig = {
           },
         },
         {
+          name: 'meetingLink',
+          label: 'קישור לזימון',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'קישור מחושב אוטומטית למסמך הזימון',
+            hidden:true
+          },
+          hooks: {
+            beforeChange: [
+              async ({ data, req }) => {
+                // Check if we have magnaId
+                if (data) {
+                  if (data.magnaId) {
+                    return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                  }
+                  // Check if we have manual link
+                  else if (data.manualLink) {
+                    return data.manualLink;
+                  }
+                  // Check if we have document
+                  else if (data.document) {
+                    // Assuming your documents have a URL field or similar
+                    const documentURL = `${process.env.SERVER_URL}/api/documents/${data.document}`;
+                    return documentURL;
+                  }
+                }
+                return null;
+              }
+            ]}
+          },
+        {
+        name: 'manualLink',
+        label: 'קישור ידני',
+        type: 'text',
+        admin: {
+          condition: (data) => !data.magnaId,
+
+          // condition: async ({ data, siblingData }) => {
+          //   // Show only if there's no magnaId and we need to get the stock info
+          //   if (data.stock || siblingData.stock) {
+          //     const stockId = data.stock || siblingData.stock;
+          //     // Here you would check if the stock is traded or not
+          //     // This is a placeholder - replace with actual logic
+          //     const stock = await payload.findByID({
+          //       collection: 'stocks',
+          //       id: stockId
+          //     });
+          //     return !stock.isTraded; // Show manual link only for non-traded stocks
+          //   }
+          //   return false;
+          // },
+          components: {
+        Cell: {
+          path: '/admincomponents/link/IconLinkCell',
+          clientProps: meetingLinkProps,
+        },
+        Field: {
+          path: '/admincomponents/link/IconLinkTextField',
+          clientProps: meetingLinkProps,
+        },
+      },
+        },
+      },
+      {
           name: 'document',
           label: 'מסמך הזימון',//TODO: icon pdf
           type: 'upload',
           relationTo: 'document',
           admin: {
-            condition: (data) => !data.magnaId,
+            condition: (data) => !data.magnaId || !data.manualLink
           },
         },
         {
@@ -137,6 +210,8 @@ export const Meetings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
+          required: true,
+
         },
         {
           name: 'type',

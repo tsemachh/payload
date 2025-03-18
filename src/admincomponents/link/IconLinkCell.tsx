@@ -17,6 +17,10 @@ export type IconLinkCellProps = IconLinkProps & DefaultCellComponentProps
  */
 const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
   const { cellData, urlTemplate, iconUrl, iconAltText, visibilityConditions } = props
+  if(iconAltText=='קישור למגנא'){
+    //check if stockId -> go to fetch the all stock anf if is not tradeble or tasa : isVisible=false
+    //maby make the field- span longer to add url and write : add link
+  }
 
   const linkValue = urlTemplate.replace('${value}', cellData || '')
 
