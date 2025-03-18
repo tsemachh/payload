@@ -17,13 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Search,
-  Settings2,
-  ArrowUp,
-  ArrowDown,
-  X,
-} from 'lucide-react'
+import { Search, Settings2, ArrowUp, ArrowDown, X } from 'lucide-react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
 import { escapeRegExp } from '../helpers/utils'
@@ -91,7 +85,7 @@ export function DataTableServer<T extends Record<string, any>>({
     setCurrentPage(page)
     pagination?.onPageChange?.(page)
   }
-  
+
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
@@ -99,14 +93,14 @@ export function DataTableServer<T extends Record<string, any>>({
     key: (defaultSortField || columns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
-  
+
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
 
   // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
-    setSearchTerm(initialSearchTerm);
-  }, [initialSearchTerm]);
+    setSearchTerm(initialSearchTerm)
+  }, [initialSearchTerm])
 
   useEffect(() => {
     // Load column visibility from localStorage
@@ -135,13 +129,13 @@ export function DataTableServer<T extends Record<string, any>>({
         setDefaultVisibility()
       }
     }
-    
+
     const setDefaultVisibility = () => {
       setColumnVisibility(
         Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
       )
     }
-    
+
     loadColumnVisibility()
   }, [columns, tableId])
 
@@ -168,24 +162,26 @@ export function DataTableServer<T extends Record<string, any>>({
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
     // If server-side processing is enabled, skip client-side filtering and sorting
-      return [...data]
+    return [...data]
   }, [data, searchTerm, sortConfig, visibleColumns, columns])
 
   // Handle sort
-  const handleSort = useCallback((key: keyof T) => {
-    if (onServerSort) {
-      // Update the sort config UI
-      setSortConfig((current) => {
-        const newDirection = current.key === key 
-          ? (current.direction === 'asc' ? 'desc' : 'asc')
-          : 'asc';
-        return { key, direction: newDirection };
-      });
-      
-      // Use server-side sorting
-      onServerSort(key as string);
-    } 
-  }, [onServerSort])
+  const handleSort = useCallback(
+    (key: keyof T) => {
+      if (onServerSort) {
+        // Update the sort config UI
+        setSortConfig((current) => {
+          const newDirection =
+            current.key === key ? (current.direction === 'asc' ? 'desc' : 'asc') : 'asc'
+          return { key, direction: newDirection }
+        })
+
+        // Use server-side sorting
+        onServerSort(key as string)
+      }
+    },
+    [onServerSort],
+  )
 
   // Highlight search term in text
   const highlightText = useCallback((text: string, highlight: string) => {
@@ -230,9 +226,9 @@ export function DataTableServer<T extends Record<string, any>>({
             <X
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground cursor-pointer z-10"
               onClick={() => {
-                setSearchTerm('');
+                setSearchTerm('')
                 if (onServerSearch) {
-                  onServerSearch('');
+                  onServerSearch('')
                 }
               }}
             />
@@ -241,14 +237,14 @@ export function DataTableServer<T extends Record<string, any>>({
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => {
-              const newValue = e.target.value;
-              setSearchTerm(newValue);
+              const newValue = e.target.value
+              setSearchTerm(newValue)
               if (onServerSearch) {
                 // Use debounce for server-side search
                 const delayDebounceFn = setTimeout(() => {
-                  onServerSearch(newValue.trim());
-                }, 500);
-                return () => clearTimeout(delayDebounceFn);
+                  onServerSearch(newValue.trim())
+                }, 500)
+                return () => clearTimeout(delayDebounceFn)
               }
             }}
             className="pr-10 text-right"
@@ -308,14 +304,14 @@ export function DataTableServer<T extends Record<string, any>>({
                       }}
                     >
                       <div className="flex items-center justify-start">
-                        <span 
-                          className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`} 
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
                           {column.header}
                         </span>
-                        <span 
-                          className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
                           {getSortIcon(column.key)}
@@ -327,40 +323,40 @@ export function DataTableServer<T extends Record<string, any>>({
                 </TableRow>
               </TableHeader>
               <TableBody>
-              {filteredAndSortedData.map((row) => (
-                <TableRow key={uuidv4()} className="group hover:bg-primary/20">
-                  {visibleColumns.map((column) => (
-                    <TableCell
-                      key={`${String(row[idField])}-${String(column.key)}`}
-                      style={{
-                        direction: column.type === 'datetime' ? 'ltr' : 'rtl',
-                        placeItems: column.positionCenter ? 'center' : 'unset',
-                        textAlign: column.positionCenter ? 'center' : 'right',
-                        maxWidth: column.width ? `${column.width}px  !important` : '200px',
-                        width: column.width ? `${column.width}px  !important` : 'auto',
-                      }}
-                      className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
-                      ref={(el) => {
-                        if (!el) return
-                        el.setAttribute(
-                          'title',
-                          el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
-                        )
-                      }}
-                    >
-                      {column.render
-                        ? column.render(row)
-                        : highlightText(String(row[column.key] ?? ''), searchTerm)}
-                    </TableCell>
-                  ))}
-                  {renderRowActions && (
-                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                      {renderRowActions(row)}
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
+                {filteredAndSortedData.map((row) => (
+                  <TableRow key={uuidv4()} className="group hover:bg-primary/20">
+                    {visibleColumns.map((column) => (
+                      <TableCell
+                        key={`${String(row[idField])}-${String(column.key)}`}
+                        style={{
+                          direction: column.type === 'datetime' ? 'ltr' : 'rtl',
+                          placeItems: column.positionCenter ? 'center' : 'unset',
+                          textAlign: column.positionCenter ? 'center' : 'right',
+                          maxWidth: column.width ? `${column.width}px  !important` : '200px',
+                          width: column.width ? `${column.width}px  !important` : 'auto',
+                        }}
+                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                        ref={(el) => {
+                          if (!el) return
+                          el.setAttribute(
+                            'title',
+                            el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                          )
+                        }}
+                      >
+                        {column.render
+                          ? column.render(row)
+                          : highlightText(String(row[column.key] ?? ''), searchTerm)}
+                      </TableCell>
+                    ))}
+                    {renderRowActions && (
+                      <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                        {renderRowActions(row)}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
             </Table>
           </div>
         </div>
@@ -395,7 +391,7 @@ export function DataTableServer<T extends Record<string, any>>({
                   <span>טוען...</span>
                 </div>
               ) : (
-                `עמוד ${currentPage} מתוך ${pagination.totalPages}`
+                `עמוד ${currentPage} מתוך ${pagination.totalPages.toLocaleString()}`
               )}
             </div>
             <Button
