@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { escapeRegExp } from '../helpers/utils'
 import { v4 as uuidv4 } from 'uuid'
 import { DataTableProps } from '../types/meetings'
+import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -170,11 +171,7 @@ export function DataTableServer<T extends Record<string, any>>({
 
   // Get sort icon for column header
   const getSortIcon = (columnKey: keyof T) => {
-    if (isLoading && sortConfig.key === columnKey) {
-      return (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
-      )
-    } else if (sortConfig.key === columnKey) {
+    if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
         return <ArrowUp className="h-4 w-4" />
       } else if (sortConfig.direction === 'desc') {
@@ -252,7 +249,7 @@ export function DataTableServer<T extends Record<string, any>>({
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+              <LoadingSpinnerDiamond />
               <p className="text-sm text-muted-foreground">טוען נתונים...</p>
             </div>
           </div>
@@ -334,7 +331,7 @@ export function DataTableServer<T extends Record<string, any>>({
         <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
-              סה&quot;כ {pagination.totalItems} פריטים
+              סה&quot;כ {pagination.totalItems.toLocaleString()} פריטים
             </div>
             {pagination.pageSizeOptions && pagination.onPageSizeChange && (
               <div className="flex items-center space-x-2 space-x-reverse">
@@ -362,24 +359,10 @@ export function DataTableServer<T extends Record<string, any>>({
               disabled={currentPage === 1 || isLoading}
               className="min-w-[80px]"
             >
-              {isLoading ? (
-                <div className="flex items-center gap-1">
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
-                  <span>טוען...</span>
-                </div>
-              ) : (
-                'הקודם'
-              )}
+              {'הקודם'}
             </Button>
             <div className="text-sm font-medium min-w-[120px] text-center">
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-1">
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
-                  <span>טוען...</span>
-                </div>
-              ) : (
-                `עמוד ${currentPage} מתוך ${pagination.totalPages.toLocaleString()}`
-              )}
+              {`עמוד ${currentPage} מתוך ${pagination.totalPages}`}
             </div>
             <Button
               variant="outline"
@@ -388,14 +371,7 @@ export function DataTableServer<T extends Record<string, any>>({
               disabled={currentPage === pagination.totalPages || isLoading}
               className="min-w-[80px]"
             >
-              {isLoading ? (
-                <div className="flex items-center gap-1">
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
-                  <span>טוען...</span>
-                </div>
-              ) : (
-                'הבא'
-              )}
+              {'הבא'}
             </Button>
           </div>
         </div>
