@@ -154,6 +154,7 @@ export const Stocks: CollectionConfig = {
                   name: 'name',
                   label: 'שם נייר ערך',
                   type: 'text',
+                  index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {

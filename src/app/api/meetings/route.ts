@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NextRequest, NextResponse } from 'next/server'
 import { Meeting } from '@/payload-types'
+import { getDbFieldName } from '@/app/(frontend)/meetings/sortFieldMapping'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,33 +12,35 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(url.searchParams.get('pageSize') || '25')
     const sortField = url.searchParams.get('sortField') || 'meetingDate'
     const sortDirection = url.searchParams.get('sortDirection') || 'desc'
-    const search = url.searchParams.get('search') || ''
+    const searchTerm = (url.searchParams.get('search') || '').trim()
+    const dbSortField = getDbFieldName(sortField)
 
     // Initialize payload
     const payload = await getPayload({ config })
-    
-    // Build query
+
+    const searchClause = searchTerm
+      ? {
+        or: [
+          { meetingId: { contains: searchTerm } },
+//          { "stock.name:" :{ contains: searchTerm }  },
+          { "stock.stockId": { contains: searchTerm }  },
+          { "stock.longName": { contains: searchTerm }  },
+          { magnaId: { contains: searchTerm } },
+          { location: { contains: searchTerm } },
+        ]
+      }
+      : {};
+    const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
+
     const query: any = {
       collection: 'meetings',
       limit: pageSize,
       page: page,
-      sort: sortField ? `${sortDirection === 'asc' ? '' : '-'}${sortField}` : undefined,
+      sort: sort,
+      where: searchClause as any // Type assertion to bypass complex nested type issues
     }
-    
-    // Add search if provided
-    if (search) {
-      query.where = {
-        ...(query.where || {}),
-        $or: [
-          { meetingId: { like: search } },
-          { type: { like: search } },
-          { location: { like: search } },
-          { comments: { like: search } },
-          { magnaId: { like: search } },
-        ],
-      }
-    }
-    
+
+    console.log('Query',JSON.stringify(query))
     // Execute query
     const meetings = await payload.find(query)
     

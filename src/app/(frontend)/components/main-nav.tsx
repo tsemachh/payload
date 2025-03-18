@@ -32,7 +32,7 @@ export function MainNav() {
         )}
       >
         <History className="h-4 w-4 ml-2" />
-        כלל האסיפות
+           אסיפות עבר
       </Link>
       <Link
         href="/participations"

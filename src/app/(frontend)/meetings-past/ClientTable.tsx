@@ -14,10 +14,12 @@ export function MeetingsTablePastClient({
   initialData,
   initialTotalItems,
   initialTotalPages,
+  initialPageSize = 25,
 }: {
   initialData: MeetingTableDataType[]
   initialTotalItems: number
   initialTotalPages: number
+  initialPageSize?: number
 }) {
   const [data, setData] = useState<MeetingTableDataType[]>(initialData)
   const [totalItems, setTotalItems] = useState(initialTotalItems)
@@ -27,8 +29,7 @@ export function MeetingsTablePastClient({
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
-
-  const pageSize = 25
+  const [pageSize, setPageSize] = useState<number>(initialPageSize)
 
   // Fetch data with current filters, sort, and search
   const fetchData = async (page: number) => {
@@ -71,6 +72,11 @@ export function MeetingsTablePastClient({
     await fetchData(1) // Reset to first page on new search
   }
 
+  const handlePageSizeChange = async (newPageSize: number) => {
+    setPageSize(newPageSize)
+    await fetchData(1) // Reset to first page on page size change
+  }
+
 
 
 
@@ -89,6 +95,8 @@ export function MeetingsTablePastClient({
         totalPages,
         currentPage,
         onPageChange: handlePageChange,
+        onPageSizeChange: handlePageSizeChange,
+        pageSizeOptions: [10, 25, 50, 100, 500],
       }}
       isLoading={isLoading}
       onServerSort={handleSort}

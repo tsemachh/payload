@@ -48,6 +48,8 @@ export interface PaginationProps {
   totalPages: number
   currentPage?: number
   onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  pageSizeOptions?: number[]
 }
 
 // Data table props with generic type
@@ -85,13 +87,20 @@ export function DataTableServer<T extends Record<string, any>>({
   initialSearchTerm = '',
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
+  const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     pagination?.onPageChange?.(page)
   }
-  
+
+  // Handle page size change
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    pagination?.onPageSizeChange?.(newPageSize)
+  }
+
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
@@ -99,7 +108,7 @@ export function DataTableServer<T extends Record<string, any>>({
     key: (defaultSortField || columns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
-  
+
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
 
@@ -135,13 +144,13 @@ export function DataTableServer<T extends Record<string, any>>({
         setDefaultVisibility()
       }
     }
-    
+
     const setDefaultVisibility = () => {
       setColumnVisibility(
         Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
       )
     }
-    
+
     loadColumnVisibility()
   }, [columns, tableId])
 
@@ -181,7 +190,7 @@ export function DataTableServer<T extends Record<string, any>>({
           : 'asc';
         return { key, direction: newDirection };
       });
-      
+
       // Use server-side sorting
       onServerSort(key as string);
     } 
@@ -368,8 +377,27 @@ export function DataTableServer<T extends Record<string, any>>({
 
       {pagination && (
         <div className="flex items-center justify-between space-x-2 py-4">
-          <div className="flex-1 text-sm text-muted-foreground">
-            סה&quot;כ {pagination.totalItems} פריטים
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <div className="text-sm text-muted-foreground">
+              סה&quot;כ {pagination.totalItems} פריטים
+            </div>
+            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
+                <select
+                  className="h-8 w-[70px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  disabled={isLoading}
+                >
+                  {pagination.pageSizeOptions.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Button
