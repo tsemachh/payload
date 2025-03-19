@@ -295,14 +295,13 @@ export interface Meeting {
   meetingId?: string | null;
   stock: string | Stock;
   magnaId?: string | null;
+  type?: MeetingType;
   manualLink?: string | null;
   document?: (string | null) | Document;
   /**
    * קישור מחושב אוטומטית למסמך הזימון
    */
   meetingLink?: string | null;
-  magnaIdRequired?: boolean | null;
-  type?: MeetingType;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
@@ -784,11 +783,10 @@ export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   stock?: T;
   magnaId?: T;
+  type?: T;
   manualLink?: T;
   document?: T;
   meetingLink?: T;
-  magnaIdRequired?: T;
-  type?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;

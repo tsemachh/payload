@@ -91,23 +91,6 @@ export const Meetings: CollectionConfig = {
     drafts: true,
   },
   hooks: {
-    beforeChange: [
-      async ({ data, req }) => {
-        console.log("---- beforeChange");
-
-        if (data?.stock) {
-          const stock = await req.payload.findByID({
-            collection: 'stocks',
-            id: data.stock,
-          });
-          console.log(`--- stock data:`, stock);
-          data.magnaIdRequired = stock?.origin === 'TASE' && stock?.tradable === true
-          console.log(`---  magnaIdRequired:`, data.magnaIdRequired);
-        }
-
-        return data;
-      },
-    ],
     afterChange: [
       async ({ req, doc }) => {
         await updateCompaniesMeetingsOnMeetingChange(req, doc)
@@ -141,18 +124,7 @@ export const Meetings: CollectionConfig = {
           label: 'אסמכתא',
           type: 'text',
           index: true,
-         // virtual:true,
-          //maxLength: 20,
-          validate: (value:any, { data }:{data:any}) => {
-            if (data.magnaIdRequired && !value) {
-              console.log(`--- 111 data.magnaIdRequired:`, data.magnaIdRequired);
-              return 'חובה להזין אסמכתא כאשר נייר הערך נסחר בבורסה';
-            }
-            console.log(`--- 000 data.magnaIdRequired:`, data.magnaIdRequired);
-            return true;
-          },
           admin: {
-            condition: (data) => data.stock && data.magnaIdRequired,
             components: {
               Cell: {
                 path: '/admincomponents/link/IconLinkCell',
@@ -166,11 +138,31 @@ export const Meetings: CollectionConfig = {
           },
         },
         {
+          name: 'type',
+          label: 'סוג',
+          type: 'select',
+          interfaceName: 'MeetingType',
+          options: [
+            { label: 'שנתית', value: 'שנתית' },
+            { label: 'מיוחדת', value: 'מיוחדת' },
+            { label: 'אג"ח', value: 'אג"ח' },
+            { label: 'אופציה', value: 'אופציה' },
+            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+            { label: 'תעודת סל', value: 'תעודת סל' },
+            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
           name: 'manualLink',
           label: 'קישור ידני',
           type: 'text',
-         // virtual:true,
           admin: {
+            width: '37%',
             condition: (data) => data.stock && !data.magnaId, // יציג רק אם magnaId לא חובה
             components: {
               Cell: {
@@ -188,20 +180,20 @@ export const Meetings: CollectionConfig = {
           name: 'document',
           label: 'מסמך הזימון',
           type: 'upload',
-         // virtual:true,
           relationTo: 'documents',
           admin: {
+            width: '20%',
             condition: (data) => data.stock && !data.magnaId && !data.manualLink,
           },
         },
         {
           name: 'meetingLink',
-          label: 'קישור לזימון',
+          label: 'זימון לאסיפה',
           type: 'text',
           admin: {
+            width: '38%',
             readOnly: true,
             description: 'קישור מחושב אוטומטית למסמך הזימון',
-            hidden: true,
           },
           hooks: {
             afterRead: [
@@ -213,52 +205,16 @@ export const Meetings: CollectionConfig = {
                   return data.manualLink;
                 }
                 if (data?.document) {
-                    const document = await req.payload.findByID({
-                      collection: 'documents',
-                      id: data.document,
-                    });
-                  return `${process.env.SERVER_URL}/api/documents/file/${document.filename}`;
-
+                  const document = await req.payload.findByID({
+                    collection: 'documents',
+                    id: data.document,
+                  });
+                  return `${process.env.SERVER_URL}${document.url}`;
                 }
                 return null;
               },
             ],
           },
-        },
-        {
-          name: 'magnaIdRequired',
-          type: 'checkbox',
-          hidden: true,
-          // hooks: {
-          //   beforeChange:[
-          //     async ({ data, req }) => {
-          //     if (data?.stock) {
-          //       const stock = await req.payload.findByID({
-          //         collection: 'stocks',
-          //         id: data.stock,
-          //       });
-          //
-          //       return stock?.origin === 'TASE' && stock?.tradable === true;
-          //     }
-          //     return false;
-          //   },]
-          // },
-        },
-
-        {
-          name: 'type',
-          label: 'סוג',
-          type: 'select',
-          interfaceName: 'MeetingType',
-          options: [
-            { label: 'שנתית', value: 'שנתית' },
-            { label: 'מיוחדת', value: 'מיוחדת' },
-            { label: 'אג"ח', value: 'אג"ח' },
-            { label: 'אופציה', value: 'אופציה' },
-            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-            { label: 'תעודת סל', value: 'תעודת סל' },
-            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
-          ],
         },
       ],
     },
