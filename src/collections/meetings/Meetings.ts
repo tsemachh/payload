@@ -5,17 +5,11 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 
-const meetingLinkProps: IconLinkProps = {
-  urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
-  iconUrl: '/faviconMagna.ico',
-  iconAltText: 'קישור למגנא',
-}
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
   iconAltText: 'קישור ידני',
 }
-
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
@@ -75,6 +69,7 @@ export const Meetings: CollectionConfig = {
       'state'],
     defaultColumns: [
       'magnaId',
+      'invitationLink',
       'stock',
       'type',
       'holdingsLimit',
@@ -91,23 +86,6 @@ export const Meetings: CollectionConfig = {
     drafts: true,
   },
   hooks: {
-    beforeChange: [
-      async ({ data, req }) => {
-        console.log("---- beforeChange");
-
-        if (data?.stock) {
-          const stock = await req.payload.findByID({
-            collection: 'stocks',
-            id: data.stock,
-          });
-          console.log(`--- stock data:`, stock);
-          data.magnaIdRequired = stock?.origin === 'TASE' && stock?.tradable === true
-          console.log(`---  magnaIdRequired:`, data.magnaIdRequired);
-        }
-
-        return data;
-      },
-    ],
     afterChange: [
       async ({ req, doc }) => {
         await updateCompaniesMeetingsOnMeetingChange(req, doc)
@@ -135,116 +113,19 @@ export const Meetings: CollectionConfig = {
           relationTo: 'stocks',
           index: true,
           required: true,
+          admin: {
+            width: '30%',
+          },
         },
         {
           name: 'magnaId',
           label: 'אסמכתא',
           type: 'text',
           index: true,
-         // virtual:true,
-          //maxLength: 20,
-          validate: (value:any, { data }:{data:any}) => {
-            if (data.magnaIdRequired && !value) {
-              console.log(`--- 111 data.magnaIdRequired:`, data.magnaIdRequired);
-              return 'חובה להזין אסמכתא כאשר נייר הערך נסחר בבורסה';
-            }
-            console.log(`--- 000 data.magnaIdRequired:`, data.magnaIdRequired);
-            return true;
-          },
           admin: {
-            condition: (data) => data.stock && data.magnaIdRequired,
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: meetingLinkProps,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: meetingLinkProps,
-              },
-            },
+            width: '20%',
           },
         },
-        {
-          name: 'manualLink',
-          label: 'קישור ידני',
-          type: 'text',
-         // virtual:true,
-          admin: {
-            condition: (data) => data.stock && !data.magnaId, // יציג רק אם magnaId לא חובה
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: PropsManualLink,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: PropsManualLink,
-              },
-            },
-          },
-        },
-        {
-          name: 'document',
-          label: 'מסמך הזימון',
-          type: 'upload',
-         // virtual:true,
-          relationTo: 'documents',
-          admin: {
-            condition: (data) => data.stock && !data.magnaId && !data.manualLink,
-          },
-        },
-        {
-          name: 'meetingLink',
-          label: 'קישור לזימון',
-          type: 'text',
-          admin: {
-            readOnly: true,
-            description: 'קישור מחושב אוטומטית למסמך הזימון',
-            hidden: true,
-          },
-          hooks: {
-            afterRead: [
-              async ({ data ,req}) => {
-                if (data?.magnaId) {
-                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
-                }
-                if (data?.manualLink) {
-                  return data.manualLink;
-                }
-                if (data?.document) {
-                    const document = await req.payload.findByID({
-                      collection: 'documents',
-                      id: data.document,
-                    });
-                  return `${process.env.SERVER_URL}/api/documents/file/${document.filename}`;
-
-                }
-                return null;
-              },
-            ],
-          },
-        },
-        {
-          name: 'magnaIdRequired',
-          type: 'checkbox',
-          hidden: true,
-          // hooks: {
-          //   beforeChange:[
-          //     async ({ data, req }) => {
-          //     if (data?.stock) {
-          //       const stock = await req.payload.findByID({
-          //         collection: 'stocks',
-          //         id: data.stock,
-          //       });
-          //
-          //       return stock?.origin === 'TASE' && stock?.tradable === true;
-          //     }
-          //     return false;
-          //   },]
-          // },
-        },
-
         {
           name: 'type',
           label: 'סוג',
@@ -259,6 +140,61 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          admin: {
+            width: '15%',
+          },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'invitationDocument',
+          label: 'מסמך זימון',
+          type: 'upload',
+          relationTo: 'documents',
+          admin: {
+            width: '18%',
+          },
+        },
+        {
+          name: 'invitationLink',
+          label: 'קישור לזימון',
+          type: 'text',
+          admin: {
+            width: '40%',
+            components: {
+              Cell: {
+                path: '/admincomponents/link/IconLinkCell',
+                clientProps: PropsManualLink,
+              },
+              Field: {
+                path: '/admincomponents/link/IconLinkTextField',
+                clientProps: PropsManualLink,
+              },
+            },
+          },
+          hooks: {
+            afterRead: [
+              async ({ data ,req}) => {
+                if (data?.invitationDocument) {
+                  const document = await req.payload.findByID({
+                    collection: 'documents',
+                    id: data.invitationDocument,
+                  });
+                  return `${process.env.SERVER_URL}${document.url}`;
+                }
+               if (data?.magnaId && !data?.invitationLink) {
+                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                }
+                if (data?.invitationLink) {
+                  return data.invitationLink;
+                }
+                return null;
+              },
+            ],
+          },
         },
       ],
     },

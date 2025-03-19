@@ -34,7 +34,7 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
   }
   return (
     <span className="inline-flex items-center">
-      <DefaultCell {...props} />
+        {iconAltText !== 'קישור ידני' && <DefaultCell {...props} />}
       {isVisible && (
         <img
           src={iconUrl}
