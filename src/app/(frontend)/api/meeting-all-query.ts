@@ -2,7 +2,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NextRequest, NextResponse } from 'next/server'
 import { Meeting } from '@/payload-types'
-import { getDbFieldName } from '@/app/(frontend)/meetings/sortFieldMapping'
+import { getDbFieldName } from '@/app/(frontend)/meetings-future/sortFieldMapping'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,16 +20,16 @@ export async function GET(request: NextRequest) {
 
     const searchClause = searchTerm
       ? {
-        or: [
-          { meetingId: { contains: searchTerm } },
-//          { "stock.name:" :{ contains: searchTerm }  },
-          { "stock.stockId": { contains: searchTerm }  },
-          { "stock.longName": { contains: searchTerm }  },
-          { magnaId: { contains: searchTerm } },
-          { location: { contains: searchTerm } },
-        ]
-      }
-      : {};
+          or: [
+            { meetingId: { contains: searchTerm } },
+            //          { "stock.name:" :{ contains: searchTerm }  },
+            { 'stock.stockId': { contains: searchTerm } },
+            { 'stock.longName': { contains: searchTerm } },
+            { magnaId: { contains: searchTerm } },
+            { location: { contains: searchTerm } },
+          ],
+        }
+      : {}
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
 
     const query: any = {
@@ -37,20 +37,20 @@ export async function GET(request: NextRequest) {
       limit: pageSize,
       page: page,
       sort: sort,
-      where: searchClause as any // Type assertion to bypass complex nested type issues
+      where: searchClause as any, // Type assertion to bypass complex nested type issues
     }
 
-    console.log('Query',JSON.stringify(query))
+    console.log('Query', JSON.stringify(query))
     // Execute query
     const meetings = await payload.find(query)
-    
+
     // Process results
     const meetingData = await Promise.all(
       meetings.docs.map(async (_meeting) => {
-        const meeting:Meeting=_meeting as Meeting
+        const meeting: Meeting = _meeting as Meeting
         let stockPresent = null
         if (typeof meeting.stock === 'object') stockPresent = meeting.stock
-        
+
         // If stockNumber is undefined, log a message and skip this item
         if (!stockPresent?.stockId) {
           console.error(
@@ -58,13 +58,13 @@ export async function GET(request: NextRequest) {
           )
           return null
         }
-        
+
         let stocksVales = null
         if (meeting.holdingsLimit) {
           const stockIdToUse = stockPresent?.relatedStock
             ? (stockPresent?.relatedStock as { id: string }).id
             : stockPresent?.id
-            
+
           const result = await payload.find({
             collection: 'stock-values',
             where: {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           })
           stocksVales = result.docs.length > 0 ? result.docs[0] : null
         }
-        
+
         return {
           meetingId: meeting.meetingId,
           stockNumber: stockPresent?.stockId?.toString() || '-',
@@ -101,10 +101,10 @@ export async function GET(request: NextRequest) {
         }
       }),
     )
-    
+
     // Filter out null values
     const filteredData = meetingData.filter((item) => item !== null)
-    
+
     // Return response
     return NextResponse.json({
       data: filteredData,
@@ -113,9 +113,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in /api/meetings:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
