@@ -118,6 +118,9 @@ export const Meetings: CollectionConfig = {
           relationTo: 'stocks',
           index: true,
           required: true,
+          admin: {
+            width: '30%',
+          },
         },
         {
           name: 'magnaId',
@@ -151,6 +154,9 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          admin: {
+            width: '15%',
+          },
         },
       ],
     },
@@ -158,12 +164,20 @@ export const Meetings: CollectionConfig = {
       type: 'row',
       fields: [
         {
-          name: 'manualLink',
-          label: 'קישור ידני',
+          name: 'invitationDocument',
+          label: 'מסמך זימון',
+          type: 'upload',
+          relationTo: 'documents',
+          admin: {
+            width: '18%',
+          },
+        },
+        {
+          name: 'invitationLink',
+          label: 'קישור לזימון',
           type: 'text',
           admin: {
-            width: '37%',
-            condition: (data) => data.stock && !data.magnaId, // יציג רק אם magnaId לא חובה
+            width: '40%',
             components: {
               Cell: {
                 path: '/admincomponents/link/IconLinkCell',
@@ -174,26 +188,6 @@ export const Meetings: CollectionConfig = {
                 clientProps: PropsManualLink,
               },
             },
-          },
-        },
-        {
-          name: 'document',
-          label: 'מסמך הזימון',
-          type: 'upload',
-          relationTo: 'documents',
-          admin: {
-            width: '20%',
-            condition: (data) => data.stock && !data.magnaId && !data.manualLink,
-          },
-        },
-        {
-          name: 'meetingLink',
-          label: 'זימון לאסיפה',
-          type: 'text',
-          admin: {
-            width: '38%',
-            readOnly: true,
-            description: 'קישור מחושב אוטומטית למסמך הזימון',
           },
           hooks: {
             afterRead: [
