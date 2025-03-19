@@ -1,23 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  futureDateFilterOptions,
-  meetingColumns,
-  pastDateFilterOptions,
-  renderMeetingActions,
-} from '../meetings/meetingTableConstants'
-import { DataTableDynamic } from '@/components/data-table-dynamic'
-import { MeetingTableDataType } from '../types'
+import { useState } from 'react'
+import { meetingColumns, renderMeetingActions } from '../meetings/meetingTableConstants'
+import { DataTableServer } from '../components/data-table-server'
+import { MeetingTableDataType } from '../types/meetings'
 
 export function MeetingsTablePastClient({
   initialData,
   initialTotalItems,
   initialTotalPages,
+  initialPageSize = 25,
 }: {
   initialData: MeetingTableDataType[]
   initialTotalItems: number
   initialTotalPages: number
+  initialPageSize?: number
 }) {
   const [data, setData] = useState<MeetingTableDataType[]>(initialData)
   const [totalItems, setTotalItems] = useState(initialTotalItems)
@@ -27,17 +24,19 @@ export function MeetingsTablePastClient({
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [filters, setFilters] = useState<Record<string, string[]>>({})
-  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({})
-
-  const pageSize = 25
+  const [pageSize, setPageSize] = useState<number>(initialPageSize)
 
   // Fetch data with current filters, sort, and search
-  const fetchData = async (page: number) => {
+  const fetchData = async (page: number, term?: string, newPageSize?: number) => {
     setIsLoading(true)
     try {
-      const filtersParam = encodeURIComponent(JSON.stringify(filters))
-      const response = await fetch(`/api/meetings?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchTerm)}&filters=${filtersParam}`)
+      // Use the provided term if available, otherwise use the searchTerm state
+      const searchValue = term !== undefined ? term : searchTerm
+      // Use the provided pageSize if available, otherwise use the pageSize state
+      const pageSizeValue = newPageSize !== undefined ? newPageSize : pageSize
+      const response = await fetch(
+        `/api/meetings?page=${page}&pageSize=${pageSizeValue}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchValue)}`,
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }
@@ -60,52 +59,27 @@ export function MeetingsTablePastClient({
 
   const handleSort = async (field: string) => {
     // If clicking the same field, toggle direction, otherwise set to asc
-    const newDirection = field === sortField 
-      ? sortDirection === 'asc' ? 'desc' : 'asc'
-      : 'asc';
+    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
 
     setSortField(field)
     setSortDirection(newDirection)
     await fetchData(currentPage)
-
   }
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term)
-    await fetchData(1) // Reset to first page on new search
+    // Use the new term directly in the API call instead of relying on state update
+    await fetchData(1, term) // Reset to first page on new search
   }
 
-  const handleFilter = async (field: string, values: string[]) => {
-    const newFilters = { ...filters }
-
-    if (values.length === 0) {
-      // Remove filter if empty
-      delete newFilters[field]
-    } else {
-      // Update filter values
-      newFilters[field] = values
-    }
-
-    setFilters(newFilters)
-    await fetchData(1) // Reset to first page on filter change
+  const handlePageSizeChange = async (newPageSize: number) => {
+    setPageSize(newPageSize)
+    // Pass the new pageSize directly to fetchData to ensure it's used immediately
+    await fetchData(1, undefined, newPageSize) // Reset to first page on page size change
   }
-
-  // Initialize activeFilters with empty arrays for enum columns
-  useEffect(() => {
-    const initialActiveFilters = { ...activeFilters };
-
-    // For each column with type 'enum', initialize with empty array
-    meetingColumns.forEach(column => {
-      if (column.type === 'enum' && column.options) {
-        initialActiveFilters[column.key as string] = [];
-      }
-    });
-
-    setActiveFilters(initialActiveFilters);
-  }, []);
 
   return (
-    <DataTableDynamic
+    <DataTableServer
       data={data}
       columns={meetingColumns}
       idField="meetingId"
@@ -113,24 +87,20 @@ export function MeetingsTablePastClient({
       defaultSortDirection={sortDirection}
       tableId="meetings-table"
       renderRowActions={renderMeetingActions}
-      pastDateFilterOptions={pastDateFilterOptions}
-      futureDateFilterOptions={futureDateFilterOptions}
       pagination={{
         pageSize,
         totalItems,
         totalPages,
         currentPage,
         onPageChange: handlePageChange,
+        onPageSizeChange: handlePageSizeChange,
+        pageSizeOptions: [10, 25, 50, 100, 500],
       }}
       isLoading={isLoading}
       onServerSort={handleSort}
       onServerSearch={handleSearch}
-      onServerFilter={handleFilter}
-      serverSideProcessing={true}
       initialSearchTerm={searchTerm}
       searchPlaceholder="חיפוש בכל השדות..."
-      activeFilters={activeFilters}
-      setActiveFilters={setActiveFilters}
     />
   )
 }

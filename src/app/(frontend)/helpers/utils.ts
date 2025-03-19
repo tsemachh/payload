@@ -1,5 +1,5 @@
 import { isWithinInterval } from 'date-fns'
-import { DateFilterOption } from '../types'
+import { DateFilterOption } from '../types/meetings'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return '-'
@@ -37,4 +37,9 @@ export const isValidDate = (date: any): boolean => {
   if (!date) return false
   const d = new Date(date)
   return !isNaN(d.getTime())
+}
+
+export const calculateColumnWidths = (minWidth: number, columnCount: number): number => {
+  const screenWidth = window.innerWidth
+  return Math.max((screenWidth / columnCount) * (minWidth / 100), minWidth)
 }
