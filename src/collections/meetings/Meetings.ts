@@ -5,17 +5,11 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 
-const meetingLinkProps: IconLinkProps = {
-  urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
-  iconUrl: '/faviconMagna.ico',
-  iconAltText: 'קישור למגנא',
-}
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
   iconAltText: 'קישור ידני',
 }
-
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
@@ -128,16 +122,7 @@ export const Meetings: CollectionConfig = {
           type: 'text',
           index: true,
           admin: {
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: meetingLinkProps,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: meetingLinkProps,
-              },
-            },
+            width: '20%',
           },
         },
         {
@@ -192,18 +177,18 @@ export const Meetings: CollectionConfig = {
           hooks: {
             afterRead: [
               async ({ data ,req}) => {
-                if (data?.magnaId) {
-                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
-                }
-                if (data?.manualLink) {
-                  return data.manualLink;
-                }
                 if (data?.document) {
                   const document = await req.payload.findByID({
                     collection: 'documents',
                     id: data.document,
                   });
                   return `${process.env.SERVER_URL}${document.url}`;
+                }
+               if (data?.magnaId && !data?.invitationLink) {
+                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                }
+                if (data?.invitationLink) {
+                  return data.invitationLink;
                 }
                 return null;
               },
