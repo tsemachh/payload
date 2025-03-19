@@ -93,18 +93,16 @@ export const Meetings: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req }) => {
-        console.log("---- beforeChange מופעל עבור המסמך כולו");
+        console.log("---- beforeChange");
 
         if (data?.stock) {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: data.stock,
           });
-
           console.log(`--- stock data:`, stock);
-          //req.context?.required=true;
-          // נבדוק האם יש צורך באסמכתא
           data.magnaIdRequired = stock?.origin === 'TASE' && stock?.tradable === true
+          console.log(`---  magnaIdRequired:`, data.magnaIdRequired);
         }
 
         return data;
@@ -147,8 +145,10 @@ export const Meetings: CollectionConfig = {
           //maxLength: 20,
           validate: (value:any, { data }:{data:any}) => {
             if (data.magnaIdRequired && !value) {
-              return 'חובה להזין אסמכתא כאשר נייר הערך נסחר ב-TASE';
+              console.log(`--- 111 data.magnaIdRequired:`, data.magnaIdRequired);
+              return 'חובה להזין אסמכתא כאשר נייר הערך נסחר בבורסה';
             }
+            console.log(`--- 000 data.magnaIdRequired:`, data.magnaIdRequired);
             return true;
           },
           admin: {
@@ -171,7 +171,7 @@ export const Meetings: CollectionConfig = {
           type: 'text',
          // virtual:true,
           admin: {
-            condition: (data) => data.stock && !data.magnaIdRequired, // יציג רק אם magnaId לא חובה
+            condition: (data) => data.stock && !data.magnaId, // יציג רק אם magnaId לא חובה
             components: {
               Cell: {
                 path: '/admincomponents/link/IconLinkCell',
@@ -224,6 +224,25 @@ export const Meetings: CollectionConfig = {
               },
             ],
           },
+        },
+        {
+          name: 'magnaIdRequired',
+          type: 'checkbox',
+          hidden: true,
+          // hooks: {
+          //   beforeChange:[
+          //     async ({ data, req }) => {
+          //     if (data?.stock) {
+          //       const stock = await req.payload.findByID({
+          //         collection: 'stocks',
+          //         id: data.stock,
+          //       });
+          //
+          //       return stock?.origin === 'TASE' && stock?.tradable === true;
+          //     }
+          //     return false;
+          //   },]
+          // },
         },
 
         {
