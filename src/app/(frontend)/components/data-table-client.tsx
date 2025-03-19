@@ -33,7 +33,13 @@ import type React from 'react'
 import { cn } from '@/lib/utils'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
-import { calculateColumnWidths, escapeRegExp, isDateInRange, isDateOption, isValidDate } from '../helpers/utils'
+import {
+  calculateColumnWidths,
+  escapeRegExp,
+  isDateInRange,
+  isDateOption,
+  isValidDate,
+} from '../helpers/utils'
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -124,7 +130,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     columns.forEach((column) => {
       if (column.type === 'datetime' && column.filterable) {
         initialDateFilters[column.key as string] = {
-          past: column.key === 'meetingDate' ? '' : 'allPast',
+          past: 'allPast',
           future: 'allFuture',
           empty: true,
         }
@@ -455,7 +461,6 @@ export function DataTableStatic<T extends Record<string, any>>({
       } = {}
       columns.forEach((column) => {
         if (column.type === 'datetime' && column.filterable) {
-          console.log('datetime', column.key)
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
@@ -482,7 +487,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       columns.forEach((column) => {
         if (column.type === 'datetime' && column.filterable) {
           initialDateFilters[column.key as string] = {
-            past: column.key === 'meetingDate' ? '' : 'allPast',
+            past: 'allPast',
             future: 'allFuture',
             empty: true,
           }

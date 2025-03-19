@@ -3,18 +3,7 @@ import { MeetingsTableClient } from './ClientTable'
 
 export async function MeetingsTableFuture() {
   const onlyFuture = true
-  const {
-    data: futureMeetingTableData,
-    totalItems,
-    totalPages,
-  } = await fetchMeetingsForTable(1, 1000, onlyFuture)
+  const { data: futureMeetingTableData } = await fetchMeetingsForTable(1, 0, onlyFuture)
 
-  return (
-    <MeetingsTableClient
-      initialData={futureMeetingTableData}
-      initialTotalItems={totalItems}
-      initialTotalPages={totalPages}
-      onlyFuture={onlyFuture}
-    />
-  )
+  return <MeetingsTableClient initialData={futureMeetingTableData} onlyFuture={onlyFuture} />
 }
