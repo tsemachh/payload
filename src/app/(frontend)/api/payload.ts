@@ -5,7 +5,7 @@ import { MeetingTableDataType } from '../types/meetings'
 
 export async function fetchMeetingsForTable(
   page: number = 1,
-  pageSize: number = 25,
+  pageSize: number = 0,
   onlyFuture: boolean = false,
 ): Promise<{
   data: MeetingTableDataType[]
@@ -19,9 +19,13 @@ export async function fetchMeetingsForTable(
     page: page,
     where: onlyFuture
       ? {
-          $or: [
-            { meetingDate: { greater_than_equal: new Date().toISOString() } },
-            { meetingDate: { exists: false } },
+          or: [
+            {
+              meetingDate: { greater_than_equal: new Date() },
+            },
+            {
+              meetingDate: { exists: false },
+            },
           ],
         }
       : {},
