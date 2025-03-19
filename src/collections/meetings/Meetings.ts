@@ -9,6 +9,7 @@ const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
   iconAltText: 'קישור ידני',
+  iconOnly: true
 }
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
@@ -62,10 +63,6 @@ export const Meetings: CollectionConfig = {
     useAsTitle: 'meetingId',
     listSearchableFields: ['magnaId',
       'stock',
-      'type',
-      'holdingsLimit',
-      'proxyVotingDate',
-      'meetingDate',
       'state'],
     defaultColumns: [
       'magnaId',
@@ -118,15 +115,6 @@ export const Meetings: CollectionConfig = {
           },
         },
         {
-          name: 'magnaId',
-          label: 'אסמכתא',
-          type: 'text',
-          index: true,
-          admin: {
-            width: '20%',
-          },
-        },
-        {
           name: 'type',
           label: 'סוג',
           type: 'select',
@@ -150,12 +138,22 @@ export const Meetings: CollectionConfig = {
       type: 'row',
       fields: [
         {
+          name: 'magnaId',
+          label: 'אסמכתא',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '200px',
+          },
+        },
+        {
           name: 'invitationDocument',
           label: 'מסמך זימון',
           type: 'upload',
           relationTo: 'documents',
           admin: {
-            width: '18%',
+            className:"invitationDocument",
+            width: '200px',
           },
         },
         {
@@ -163,7 +161,7 @@ export const Meetings: CollectionConfig = {
           label: 'קישור לזימון',
           type: 'text',
           admin: {
-            width: '40%',
+            width: '600px',
             components: {
               Cell: {
                 path: '/admincomponents/link/IconLinkCell',

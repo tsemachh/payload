@@ -16,17 +16,13 @@ export type IconLinkCellProps = IconLinkProps & DefaultCellComponentProps
  * @returns React component
  */
 const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
-  const { cellData, urlTemplate, iconUrl, iconAltText, visibilityConditions } = props
-  if(iconAltText=='קישור למגנא'){
-    //check if stockId -> go to fetch the all stock anf if is not tradeble or tasa : isVisible=false
-    //maby make the field- span longer to add url and write : add link
-  }
+  const { cellData, urlTemplate, iconUrl, iconAltText, visibilityConditions ,iconOnly=false} = props
 
   const linkValue = urlTemplate.replace('${value}', cellData || '')
 
   // Check if all conditions in visibilityConditions are met
   // If no conditions are provided, default to visible
-  let isVisible = cellData ? true : false
+  let isVisible = !!cellData
   if (visibilityConditions && props.rowData) {
     isVisible = isVisible && Object.entries(visibilityConditions).every(([field, expectedValue]) => 
       props.rowData?.[field] === expectedValue
@@ -34,7 +30,7 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
   }
   return (
     <span className="inline-flex items-center">
-        {iconAltText !== 'קישור ידני' && <DefaultCell {...props} />}
+        {!iconOnly && <DefaultCell {...props} />}
       {isVisible && (
         <img
           src={iconUrl}

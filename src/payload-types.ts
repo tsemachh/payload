@@ -297,8 +297,8 @@ export interface Meeting {
   id: string;
   meetingId?: string | null;
   stock: string | Stock;
-  magnaId?: string | null;
   type?: MeetingType;
+  magnaId?: string | null;
   invitationDocument?: (string | null) | Document;
   invitationLink?: string | null;
   holdingsLimit?: string | null;
@@ -806,8 +806,8 @@ export interface StockValuesSelect<T extends boolean = true> {
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
   stock?: T;
-  magnaId?: T;
   type?: T;
+  magnaId?: T;
   invitationDocument?: T;
   invitationLink?: T;
   holdingsLimit?: T;
