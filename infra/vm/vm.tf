@@ -200,7 +200,7 @@ services:
   payload-app:
     image: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
     environment:
-      - DATABASE_URI=mongodb+srv://app:DuChQfEVyjQMiW6K@emda-dev-cluster.auybqem.mongodb.net/?retryWrites=true&w=majority&appName=emda-dev-cluster
+      - DATABASE_URI=mongodb+srv://app:DuChQfEVyjQMiW6K@emda-dev-cluster.auybqem.mongodb.net/
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
       - HOST=emda-dev.shefing.com
       - NEXT_PUBLIC_SERVER_URL=https://emda-dev.shefing.com

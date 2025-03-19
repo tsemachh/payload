@@ -7,6 +7,10 @@ export const StocksFeed: CollectionConfig = {
     plural: 'קבצי מניות',
     singular: 'קובץ מניות',
   },
+  admin: {
+    useAsTitle: 'filename',
+    group: 'ניהול',
+  },
   access: {
     read: () => true,
   },
