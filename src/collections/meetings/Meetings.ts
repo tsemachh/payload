@@ -177,10 +177,10 @@ export const Meetings: CollectionConfig = {
           hooks: {
             afterRead: [
               async ({ data ,req}) => {
-                if (data?.document) {
+                if (data?.invitationDocument) {
                   const document = await req.payload.findByID({
                     collection: 'documents',
-                    id: data.document,
+                    id: data.invitationDocument,
                   });
                   return `${process.env.SERVER_URL}${document.url}`;
                 }
