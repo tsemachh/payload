@@ -44,7 +44,7 @@ import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { DataTableProps, FacetedFilterItem, MeetingTableDataType } from '../types/meetings'
-import { defaultVisibleColumns, getDateRange } from '../meetings/meetingTableConstants'
+import { defaultVisibleColumns, getDateRange } from '../meetings-future/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
 export function DataTableStatic<T extends Record<string, any>>({

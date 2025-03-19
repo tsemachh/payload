@@ -1,4 +1,4 @@
-import { fetchMeetingsForTable } from '../api/payload'
+import { fetchMeetingsForTable } from '../api/meetings'
 import { MeetingsTableClient } from './ClientTable'
 
 export async function MeetingsTableFuture() {

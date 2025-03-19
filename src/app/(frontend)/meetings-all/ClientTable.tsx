@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { meetingColumns, renderMeetingActions } from '../meetings/meetingTableConstants'
+import { meetingColumns, renderMeetingActions } from '../meetings-future/meetingTableConstants'
 import { DataTableServer } from '../components/data-table-server'
 import { MeetingTableDataType } from '../types/meetings'
 
@@ -94,7 +94,7 @@ export function MeetingsTablePastClient({
         currentPage,
         onPageChange: handlePageChange,
         onPageSizeChange: handlePageSizeChange,
-        pageSizeOptions: [10, 25, 50, 100, 500],
+        pageSizeOptions: [10, 25, 50, 100, 500, 1000],
       }}
       isLoading={isLoading}
       onServerSort={handleSort}
