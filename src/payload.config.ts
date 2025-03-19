@@ -21,7 +21,6 @@ import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Holdings } from '@/collections/holdings/Holdings'
 import { Roles } from '@shefing/authorization'
-import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -57,7 +56,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Document, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

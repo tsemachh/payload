@@ -125,11 +125,13 @@ export const Companies: CollectionConfig = {
         condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
       },
     },
-    {
-      type:'join',
-      collection: 'meetings',
-      on: 'companies',
-      name: 'meetings'
-    }
+    /*    {
+          name: 'users',
+          label: 'משתמשים',
+          type: 'join',
+          collection: 'users',
+          on: 'firmId',
+          admin: { defaultColumns: [ 'name'] },
+        }*/
   ],
 }

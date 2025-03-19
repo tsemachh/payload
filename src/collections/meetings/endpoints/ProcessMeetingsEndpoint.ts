@@ -1,6 +1,6 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
-const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
+const ProcessMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     if (req === null) {
@@ -25,7 +25,7 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
 
     // Process found meetings
     if (scheduledPastMeetings.length > 0) {
-      await Promise.all(
+       await Promise.all(
         scheduledPastMeetings.map((meeting) =>
           req.payload.update({
             collection: 'meetings',
@@ -40,16 +40,19 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
       req.payload.logger.info(
         `Updated ${scheduledPastMeetings.length} meetings to 'completed' state. Processed IDs: ${scheduledPastMeetings.map((m) => m.id).join(', ')}`,
       )
-    } else {
-      req.payload.logger.info('No meetings to update during the scheduled process')
+
+      return Response.json({
+        success: true,
+        message: `Successfully processed ${scheduledPastMeetings.length} meetings`,
+        processedIds: scheduledPastMeetings.map((m) => m.id),
+      })
     }
 
+    req.payload.logger.info('No meetings to update during the scheduled process')
     return Response.json({
       success: true,
-      message: scheduledPastMeetings.length > 0 
-        ? `Successfully processed ${scheduledPastMeetings.length} meetings and updated users-meetings collection`
-        : 'No meetings required state update, but users-meetings collection was updated',
-      processedIds: scheduledPastMeetings.map((m) => m.id),
+      message: 'No meetings required processing',
+      processedIds: [],
     })
   } catch (error) {
     req.payload.logger.error(`Error processing meetings: ${JSON.stringify(error)}`)
@@ -64,4 +67,4 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
   }
 }
 
-export default ProcessMeetingStateEndpoint
+export default ProcessMeetingsEndpoint

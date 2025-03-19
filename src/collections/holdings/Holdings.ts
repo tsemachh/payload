@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { updateCompaniesMeetingsOnHoldingChange } from './hooks/updateCompaniesMeetings'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
@@ -11,13 +10,8 @@ export const Holdings: CollectionConfig = {
     useAsTitle: 'id',
     defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
   },
- hooks: {
-    afterChange: [
-      async ({ req, doc }) => {
-        if (req.context?.from != 'migration')
-          await updateCompaniesMeetingsOnHoldingChange(req, doc)
-      },
-    ],
+  versions: {
+    drafts: false,
   },
   fields: [
     {

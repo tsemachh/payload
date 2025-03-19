@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
-import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
@@ -19,7 +18,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],
-    listSearchableFields: [ 'symbol', 'stockId', 'name', 'longName'],
+    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin','tradable'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -203,7 +202,7 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
-//              _sanitized: true,
+              _sanitized: true,
               admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
             },
           ],
@@ -231,11 +230,6 @@ export const Stocks: CollectionConfig = {
       path: '/import-stocks',
       method: 'post',
       handler: ImportStocksEndPoint,
-    },
-    {
-      path: '/upload-stock-csv',
-      method: 'post',
-      handler: uploadStockCsvEndPoint,
     },
   ],
 }
