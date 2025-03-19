@@ -69,6 +69,7 @@ export const Meetings: CollectionConfig = {
       'state'],
     defaultColumns: [
       'magnaId',
+      'invitationLink',
       'stock',
       'type',
       'holdingsLimit',
