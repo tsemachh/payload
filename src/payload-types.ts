@@ -304,6 +304,7 @@ export interface Meeting {
    * קישור מחושב אוטומטית למסמך הזימון
    */
   meetingLink?: string | null;
+  magnaIdRequired?: boolean | null;
   type?: MeetingType;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
@@ -814,6 +815,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   manualLink?: T;
   document?: T;
   meetingLink?: T;
+  magnaIdRequired?: T;
   type?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
