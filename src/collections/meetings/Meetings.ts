@@ -181,7 +181,7 @@ export const Meetings: CollectionConfig = {
                     collection: 'documents',
                     id: data.invitationDocument,
                   });
-                  return `${process.env.SERVER_URL}${document.url}`;
+                  return `${document.url}`;
                 }
                if (data?.magnaId && !data?.invitationLink) {
                   return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
