@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+
+export { DataTableStatic as DataTable }
 import {
   Table,
   TableBody,

@@ -74,6 +74,7 @@ export type RolePermissions =
         | 'holdings'
         | 'stock-migration-mapping'
         | 'stocks-feed'
+        | 'holdings-feed'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -159,6 +160,7 @@ export interface Config {
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
     'stocks-feed': StocksFeed;
+    'holdings-feed': HoldingsFeed;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -192,6 +194,7 @@ export interface Config {
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
+    'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -528,6 +531,39 @@ export interface StocksFeed {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings-feed".
+ */
+export interface HoldingsFeed {
+  id: string;
+  valueDate: string;
+  comments?: string | null;
+  processingStatus?: ('pending' | 'completed' | 'failed') | null;
+  processingErrors?:
+    | {
+        error?: string | null;
+        stockId?: string | null;
+        accountId?: string | null;
+        quantity?: string | null;
+        lineNumber?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -709,6 +745,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stocks-feed';
         value: string | StocksFeed;
+      } | null)
+    | ({
+        relationTo: 'holdings-feed';
+        value: string | HoldingsFeed;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1005,6 +1045,38 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
  */
 export interface StocksFeedSelect<T extends boolean = true> {
   comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings-feed_select".
+ */
+export interface HoldingsFeedSelect<T extends boolean = true> {
+  valueDate?: T;
+  comments?: T;
+  processingStatus?: T;
+  processingErrors?:
+    | T
+    | {
+        error?: T;
+        stockId?: T;
+        accountId?: T;
+        quantity?: T;
+        lineNumber?: T;
+        id?: T;
+      };
   creator?: T;
   updator?: T;
   createdAt?: T;
