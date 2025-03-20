@@ -36,6 +36,7 @@ import { BooleanIcon } from './ui/icons'
 import {
   calculateColumnWidths,
   escapeRegExp,
+  formatDateTime,
   isDateInRange,
   isDateOption,
   isValidDate,
@@ -159,6 +160,28 @@ export function DataTableStatic<T extends Record<string, any>>({
     [tableId],
   )
 
+  // Function that extracts the displayed value of a field
+  const getDisplayValue = useCallback(
+    (item: T, columnKey: keyof T): string => {
+      const column = columns.find((col) => col.key === columnKey)
+      if (!column) return String(item[columnKey] || '')
+
+      // Handling date fields
+      if (column.type === 'datetime') {
+        return formatDateTime(item[columnKey] as string, columnKey === 'holdingsLimit')
+      }
+
+      // Handling the meeting state field
+      if (columnKey === 'meetingState' && item.meetingState) {
+        return (
+          meetingStateMap[item.meetingState as Exclude<MeetingState, null>] ||
+          String(item.meetingState)
+        )
+      }
+      return String(item[columnKey] || '')
+    },
+    [columns],
+  )
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
     let filteredItems = [...data]
@@ -224,8 +247,8 @@ export function DataTableStatic<T extends Record<string, any>>({
       const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
       filteredItems = filteredItems.filter((item) =>
         visibleColumns.some((column) => {
-          const value = item[column.key]
-          return typeof value === 'string' && searchRegex.test(value)
+          const displayValue = getDisplayValue(item, column.key)
+          return displayValue && searchRegex.test(displayValue)
         }),
       )
     }
@@ -254,7 +277,17 @@ export function DataTableStatic<T extends Record<string, any>>({
       })
     }
     return filteredItems
-  }, [data, filters, searchTerm, sortConfig, visibleColumns, dateFilters, columns])
+  }, [
+    data,
+    dateFilters,
+    filters,
+    searchTerm,
+    sortConfig.direction,
+    sortConfig.key,
+    columns,
+    visibleColumns,
+    getDisplayValue,
+  ])
 
   const getFilteredDataExcludingColumn = useCallback(
     (columnKey: string) => {
@@ -287,8 +320,8 @@ export function DataTableStatic<T extends Record<string, any>>({
         const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
         filteredItems = filteredItems.filter((item) =>
           visibleColumns.some((column) => {
-            const value = item[column.key]
-            return typeof value === 'string' && searchRegex.test(value)
+            const displayValue = getDisplayValue(item, column.key)
+            return displayValue && searchRegex.test(displayValue)
           }),
         )
       }
@@ -330,7 +363,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       })
       return filteredItems
     },
-    [columns, data, dateFilters, filters, searchTerm, visibleColumns],
+    [columns, data, dateFilters, filters, searchTerm, visibleColumns, getDisplayValue],
   )
 
   const getDateFilterCounts = useCallback(
@@ -499,7 +532,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   // Highlight search term in text
   const highlightText = useCallback((text: string, highlight: string) => {
-    if (!highlight.trim()) {
+    if (!highlight.trim() || !text) {
       return text
     }
     const regex = new RegExp(`(^|\\s)(${escapeRegExp(highlight.trim())})`, 'gi')
@@ -899,7 +932,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       >
                         {column.render
                           ? column.render(row)
-                          : highlightText(String(row[column.key] ?? ''), searchTerm)}
+                          : highlightText(getDisplayValue(row, column.key), searchTerm)}
                       </TableCell>
                     ))}
                     {renderRowActions && (
