@@ -67,7 +67,7 @@ export type RolePermissions =
         | 'meetings'
         | 'users'
         | 'roles'
-        | 'document'
+        | 'documents'
         | 'migration-faults'
         | 'companies'
         | 'accounts'
@@ -152,7 +152,7 @@ export interface Config {
     meetings: Meeting;
     users: User;
     roles: Role;
-    document: Document;
+    documents: Document;
     'migration-faults': MigrationFault;
     companies: Company;
     accounts: Account;
@@ -185,7 +185,7 @@ export interface Config {
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    document: DocumentSelect<false> | DocumentSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     companies: CompaniesSelect<false> | CompaniesSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
@@ -296,9 +296,11 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   meetingId?: string | null;
-  magnaId?: string | null;
-  stock?: (string | null) | Stock;
+  stock: string | Stock;
   type?: MeetingType;
+  magnaId?: string | null;
+  invitationDocument?: (string | null) | Document;
+  invitationLink?: string | null;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
@@ -316,6 +318,27 @@ export interface Meeting {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents".
+ */
+export interface Document {
+  id: string;
+  alt: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -452,27 +475,6 @@ export interface Role {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document".
- */
-export interface Document {
-  id: string;
-  alt: string;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -681,7 +683,7 @@ export interface PayloadLockedDocument {
         value: string | Role;
       } | null)
     | ({
-        relationTo: 'document';
+        relationTo: 'documents';
         value: string | Document;
       } | null)
     | ({
@@ -803,9 +805,11 @@ export interface StockValuesSelect<T extends boolean = true> {
  */
 export interface MeetingsSelect<T extends boolean = true> {
   meetingId?: T;
-  magnaId?: T;
   stock?: T;
   type?: T;
+  magnaId?: T;
+  invitationDocument?: T;
+  invitationLink?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
@@ -895,9 +899,9 @@ export interface RolePermissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document_select".
+ * via the `definition` "documents_select".
  */
-export interface DocumentSelect<T extends boolean = true> {
+export interface DocumentsSelect<T extends boolean = true> {
   alt?: T;
   creator?: T;
   updator?: T;

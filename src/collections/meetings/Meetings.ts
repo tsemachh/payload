@@ -5,11 +5,13 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 
-const meetingLinkProps: IconLinkProps = {
-  urlTemplate: 'https://www.magna.isa.gov.il/details?id=${value}&file=0',
-  iconUrl: '/faviconMagna.ico',
-  iconAltText: 'קישור למגנא',
+const PropsManualLink: IconLinkProps = {
+  urlTemplate: '${value}',
+  iconUrl: '/link.ico', // You'll need to create this icon
+  iconAltText: 'קישור ידני',
+  iconOnly: true
 }
+
 const validateMeetingState = (value: string | null | undefined, options: any) => {
   if (!value) return true
 
@@ -61,13 +63,10 @@ export const Meetings: CollectionConfig = {
     useAsTitle: 'meetingId',
     listSearchableFields: ['magnaId',
       'stock',
-      'type',
-      'holdingsLimit',
-      'proxyVotingDate',
-      'meetingDate',
       'state'],
     defaultColumns: [
       'magnaId',
+      'invitationLink',
       'stock',
       'type',
       'holdingsLimit',
@@ -89,6 +88,7 @@ export const Meetings: CollectionConfig = {
         await updateCompaniesMeetingsOnMeetingChange(req, doc)
       },
     ],
+
   },
   fields: [
     {
@@ -104,30 +104,15 @@ export const Meetings: CollectionConfig = {
 
         },
         {
-          name: 'magnaId',
-          label: 'אסמכתא',
-          type: 'text',
-          index: true,
-          maxLength: 20,
-          admin: {
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: meetingLinkProps,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: meetingLinkProps,
-              },
-            },
-          },
-        },
-        {
           name: 'stock',
           label: 'נייר ערך',
           type: 'relationship',
           relationTo: 'stocks',
           index: true,
+          required: true,
+          admin: {
+            width: '30%',
+          },
         },
         {
           name: 'type',
@@ -143,6 +128,71 @@ export const Meetings: CollectionConfig = {
             { label: 'תעודת סל', value: 'תעודת סל' },
             { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
           ],
+          admin: {
+            width: '15%',
+          },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'magnaId',
+          label: 'אסמכתא',
+          type: 'text',
+          index: true,
+          admin: {
+            width: '200px',
+          },
+        },
+        {
+          name: 'invitationDocument',
+          label: 'מסמך זימון',
+          type: 'upload',
+          relationTo: 'documents',
+          admin: {
+            className:"invitationDocument",
+            width: '200px',
+          },
+        },
+        {
+          name: 'invitationLink',
+          label: 'קישור לזימון',
+          type: 'text',
+          admin: {
+            width: '600px',
+            components: {
+              Cell: {
+                path: '/admincomponents/link/IconLinkCell',
+                clientProps: PropsManualLink,
+              },
+              Field: {
+                path: '/admincomponents/link/IconLinkTextField',
+                clientProps: PropsManualLink,
+              },
+            },
+          },
+          hooks: {
+            afterRead: [
+              async ({ data ,req}) => {
+                if (data?.invitationDocument) {
+                  const document = await req.payload.findByID({
+                    collection: 'documents',
+                    id: data.invitationDocument,
+                  });
+                  return `${document.url}`;
+                }
+               if (data?.magnaId && !data?.invitationLink) {
+                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                }
+                if (data?.invitationLink) {
+                  return data.invitationLink;
+                }
+                return null;
+              },
+            ],
+          },
         },
       ],
     },
