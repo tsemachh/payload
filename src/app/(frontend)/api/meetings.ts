@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
+import { headers as getHeaders } from 'next/headers.js'
 
 export async function fetchMeetingsForTable(
   page: number = 1,
@@ -13,18 +14,31 @@ export async function fetchMeetingsForTable(
   totalPages: number
 }> {
   const payload = await getPayload({ config })
+  const headers = await getHeaders()
+  const { user } = await payload.auth({ headers })
+
   const meetings = await payload.find({
     collection: 'meetings',
+    depth: 1,
     limit: pageSize,
     page: page,
     where: onlyFuture
       ? {
-          or: [
+          and: [
             {
-              meetingDate: { greater_than_equal: new Date() },
+              companies: {
+                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id), // בודק אם לפחות אחד מה-ID-ים נמצא בתוך מערך ה-companies
+              },
             },
             {
-              meetingDate: { exists: false },
+              or: [
+                {
+                  meetingDate: { greater_than_equal: new Date() },
+                },
+                {
+                  meetingDate: { exists: false },
+                },
+              ],
             },
           ],
         }
