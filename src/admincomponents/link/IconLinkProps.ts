@@ -11,5 +11,5 @@ export interface IconLinkProps {
   iconUrl: string
   iconAltText: string
   visibilityConditions?: Record<string, any>
-  iconOnly: boolean
+  iconOnly?: boolean
 }

@@ -8,7 +8,6 @@ const stockLinkProps: IconLinkProps = {
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
   visibilityConditions: { origin: 'TASE' ,tradable:true},
-  iconOnly: true
 }
 
 export const Stocks: CollectionConfig = {
