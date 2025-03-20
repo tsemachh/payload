@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       collection: 'meetings',
       limit: pageSize,
       page: page,
+      index: true,
       sort: sort,
       where: searchClause as any, // Type assertion to bypass complex nested type issues
     }
