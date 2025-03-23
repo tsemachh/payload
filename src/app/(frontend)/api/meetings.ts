@@ -22,27 +22,27 @@ export async function fetchMeetingsForTable(
     depth: 1,
     limit: pageSize,
     page: page,
-    where: onlyFuture
-      ? {
-          and: [
-            {
+    where: {
+      and: [
+        onlyFuture
+          ? {
               companies: {
-                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id), // בודק אם לפחות אחד מה-ID-ים נמצא בתוך מערך ה-companies
+                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
               },
+            }
+          : {},
+        {
+          or: [
+            {
+              meetingDate: { greater_than_equal: new Date() },
             },
             {
-              or: [
-                {
-                  meetingDate: { greater_than_equal: new Date() },
-                },
-                {
-                  meetingDate: { exists: false },
-                },
-              ],
+              meetingDate: { exists: false },
             },
           ],
-        }
-      : {},
+        },
+      ],
+    },
   })
 
   const meetingData: MeetingTableDataType[] = await (
