@@ -13,6 +13,7 @@ variable "push_members" {
     "user:philc@shefing.com",
     "user:tsemachh@shefing.com",
     "user:michalk@shefing.com" , 
-    "serviceAccount:terraform-sa@emda-dev.iam.gserviceaccount.com"
+    "serviceAccount:terraform-sa@emda-dev.iam.gserviceaccount.com",
+    "serviceAccount:payload-service-account@emda-dev.iam.gserviceaccount.com"
   ]
 }
