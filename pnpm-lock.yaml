@@ -120,8 +120,8 @@ importers:
         specifier: ^1.1.8
         version: 1.1.8(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@shefing/authorization':
-        specifier: ^1.0.5
-        version: 1.0.5
+        specifier: ^1.0.8
+        version: 1.0.9
       '@shefing/authors-info':
         specifier: ^1.0.3
         version: 1.0.3(@payloadcms/ui@3.28.1(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.1.5(@babel/core@7.26.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.28.1(graphql@16.10.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.28.1(graphql@16.10.0)(typescript@5.7.3))
@@ -2050,8 +2050,8 @@ packages:
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
-  '@shefing/authorization@1.0.5':
-    resolution: {integrity: sha512-I/GPaGWkXZNTnxAAoxqS/Cu1exVq+QZvhIvRUyyAPN8W0bOicVN2dEHgr+cMStgJmQlzlljG3qtRDvNLbTXb3g==}
+  '@shefing/authorization@1.0.9':
+    resolution: {integrity: sha512-Up/ypBSrz8Vfw+m62vRuCqvoZnYjin1KdJ6l8vZszFrs5eFTUliLNnc92U8LqiDVvmDxfllebVOTHFxIuguNmA==}
 
   '@shefing/authors-info@1.0.3':
     resolution: {integrity: sha512-+RR5rE8700rGTb7Y9oEnwobt9/jQxLUJC7IxoZzDaJaVPWaM3zhgQho2hK95NdLNyWsG7KFnDhDmi0myByzlXg==}
@@ -8553,7 +8553,7 @@ snapshots:
 
   '@scarf/scarf@1.4.0': {}
 
-  '@shefing/authorization@1.0.5': {}
+  '@shefing/authorization@1.0.9': {}
 
   '@shefing/authors-info@1.0.3(@payloadcms/ui@3.28.1(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.1.5(@babel/core@7.26.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.28.1(graphql@16.10.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.28.1(graphql@16.10.0)(typescript@5.7.3))':
     dependencies:
@@ -10515,7 +10515,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@1.21.7)))(eslint@9.21.0(jiti@1.21.7)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.21.0(jiti@1.21.7)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -10537,7 +10537,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.21.0(jiti@1.21.7)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@1.21.7)))(eslint@9.21.0(jiti@1.21.7))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.21.0(jiti@1.21.7))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3

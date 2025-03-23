@@ -52,7 +52,11 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   }
      return true
 }}
-
+const validateMeetingnvItationLink = (value: string | null | undefined, {siblingData}:{siblingData:any}) => {
+  if(siblingData.magnaId || siblingData.invitationDocument || value) return true
+    return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
+  }
+// @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -88,7 +92,6 @@ export const Meetings: CollectionConfig = {
         await updateCompaniesMeetingsOnMeetingChange(req, doc)
       },
     ],
-
   },
   fields: [
     {
@@ -173,6 +176,7 @@ export const Meetings: CollectionConfig = {
               },
             },
           },
+          validate: validateMeetingnvItationLink,
           hooks: {
             afterRead: [
               async ({ data ,req}) => {
@@ -306,7 +310,8 @@ export const Meetings: CollectionConfig = {
       relationTo: 'companies',
       hasMany: true,
       name: 'companies',
-      label: 'חברות'
+      label: 'חברות',
+      hidden:true
     }
   ],
   endpoints: [
