@@ -5,7 +5,7 @@ import { meetingColumns, renderMeetingActions } from '../meetings-future/meeting
 import { DataTableServer } from '@/components/data-table-server'
 import { MeetingTableDataType } from '../types/meetings'
 
-export function MeetingsTablePastClient() {
+export function MeetingsTableClient() {
   const [data, setData] = useState<MeetingTableDataType[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
