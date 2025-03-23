@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import LoadingSpinnerDiamond from '@/components/ui/loading-spinner-diamond'
-import { MeetingsTablePastClient } from './ClientTable'
+import { MeetingsTableClient } from './ClientTable'
 
 export default function MeetingPast() {
   return (
@@ -14,7 +14,7 @@ export default function MeetingPast() {
           </div>
         }
       >
-        <MeetingsTablePastClient />
+        <MeetingsTableClient />
       </Suspense>
     </div>
   )
