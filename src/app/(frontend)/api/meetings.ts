@@ -26,20 +26,20 @@ export async function fetchMeetingsForTable(
       and: [
         onlyFuture
           ? {
-              companies: {
-                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-              },
+              or: [
+                {
+                  meetingDate: { greater_than_equal: new Date() },
+                },
+                {
+                  meetingDate: { exists: false },
+                },
+              ],
             }
           : {},
         {
-          or: [
-            {
-              meetingDate: { greater_than_equal: new Date() },
-            },
-            {
-              meetingDate: { exists: false },
-            },
-          ],
+          companies: {
+            in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+          },
         },
       ],
     },
