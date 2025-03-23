@@ -41,7 +41,7 @@ export const Stocks: CollectionConfig = {
                 {
                   name: 'stockId',
                   type: 'text',
-                  label: 'מזהה',
+                  label: 'מספר נייר',
                   unique: true,
                   required: true,
                   index: true,
@@ -61,7 +61,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מזהה - שם',
+                  label: 'מספר נייר - שם',
                   type: 'text',
                   admin: { readOnly: true, hidden: true },
                   hooks: {
@@ -135,7 +135,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'active',
-                  label: 'מניה פעילה',
+                  label: 'נייר ערך פעיל',
                   type: 'checkbox',
                   index: true
                 },
