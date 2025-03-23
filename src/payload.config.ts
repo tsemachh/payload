@@ -95,6 +95,7 @@ export default buildConfig({
       collections: {
         documents: true,
       },
+      enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',
       options: {
         apiEndpoint: process.env.GCS_ENDPOINT,
