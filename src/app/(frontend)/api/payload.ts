@@ -4,14 +4,9 @@ import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
 import { headers as getHeaders } from 'next/headers.js'
 
-export async function fetchMeetingsForTable(
-  page: number = 1,
-  pageSize: number = 0,
-  onlyFuture: boolean = false,
-): Promise<{
+export async function fetchFutureMeetingsForTable(): Promise<{
   data: MeetingTableDataType[]
   totalItems: number
-  totalPages: number
 }> {
   const payload = await getPayload({ config })
   const headers = await getHeaders()
@@ -20,22 +15,19 @@ export async function fetchMeetingsForTable(
   const meetings = await payload.find({
     collection: 'meetings',
     depth: 1,
-    limit: pageSize,
-    page: page,
+    limit: 0,
     where: {
       and: [
-        onlyFuture
-          ? {
-              or: [
-                {
-                  meetingDate: { greater_than_equal: new Date() },
-                },
-                {
-                  meetingDate: { exists: false },
-                },
-              ],
-            }
-          : {},
+        {
+          or: [
+            {
+              meetingDate: { greater_than_equal: new Date() },
+            },
+            {
+              meetingDate: { exists: false },
+            },
+          ],
+        },
         {
           companies: {
             in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
@@ -106,6 +98,5 @@ export async function fetchMeetingsForTable(
   return {
     data: meetingData,
     totalItems: meetings.totalDocs,
-    totalPages: meetings.totalPages,
   }
 }
