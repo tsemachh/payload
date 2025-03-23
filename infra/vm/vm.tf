@@ -204,6 +204,9 @@ services:
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
       - HOST=emda-dev.shefing.com
       - NEXT_PUBLIC_SERVER_URL=https://emda-dev.shefing.com
+      - GCS_BUCKET=images
+      - GCS_PROJECT_ID=emda-dev
+      - GCS_ENDPOINT=https://storage.googleapis.com
     ports:
       - "3000:3000"
     restart: always 
