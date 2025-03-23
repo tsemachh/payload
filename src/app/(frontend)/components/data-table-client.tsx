@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import type React from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -20,16 +21,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  Filter,
+  FilterX,
   Search,
   Settings2,
-  ArrowUp,
-  ArrowDown,
-  Filter,
-  ChevronDown,
-  FilterX,
   X,
 } from 'lucide-react'
-import type React from 'react'
 import { cn } from '@/lib/utils'
 import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
@@ -119,10 +119,9 @@ export function DataTableStatic<T extends Record<string, any>>({
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
       if (column.filterable) {
-        const allOptions = Array.from(
+        initialFilters[String(column.key)] = Array.from(
           new Set(data.map((item) => String(item[column.key as keyof T]))),
         )
-        initialFilters[String(column.key)] = allOptions
       }
     })
     setFilters(initialFilters)
@@ -430,8 +429,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         const newFilters = { ...prev }
         if (value === 'all') {
           // Initialize all options as checked when resetting the filter
-          const allOptions = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
-          newFilters[key] = allOptions
+          newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
         } else if (Array.isArray(value)) {
           newFilters[key] = value
         }
@@ -506,10 +504,9 @@ export function DataTableStatic<T extends Record<string, any>>({
       const initialFilters: { [key: string]: any } = {}
       columns.forEach((column) => {
         if (column.filterable) {
-          const allOptions = Array.from(
+          initialFilters[String(column.key)] = Array.from(
             new Set(data.map((item) => String(item[column.key as keyof T]))),
           )
-          initialFilters[String(column.key)] = allOptions
         }
       })
       setFilters(initialFilters)
@@ -704,7 +701,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                   onSelect={(event) => event.preventDefault()}
                   dir="rtl"
                 >
-                  {typeof column.header === 'string' ? column.header : 'עמודה'}
+                  {column.header ? column.header : 'עמודה'}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>

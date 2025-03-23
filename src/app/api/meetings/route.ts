@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
       collection: 'meetings',
       limit: pageSize,
       page: page,
-      index: true,
       sort: sort,
       where: {
         and: [
@@ -63,7 +62,6 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    console.log('Query', JSON.stringify(query))
     // Execute query
     const meetings = await payload.find(query)
 

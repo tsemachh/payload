@@ -237,7 +237,7 @@ export function DataTableServer<T extends Record<string, any>>({
                   onSelect={(event) => event.preventDefault()}
                   dir="rtl"
                 >
-                  {typeof column.header === 'string' ? column.header : 'עמודה'}
+                  {column.header ? column.header : 'עמודה'}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>

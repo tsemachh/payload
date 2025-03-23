@@ -45,7 +45,7 @@ export async function fetchMeetingsForTable(
     },
   })
 
-  const meetingData: MeetingTableDataType[] = await (
+  const meetingData: MeetingTableDataType[] = (
     await Promise.all(
       meetings.docs.map(async (meeting) => {
         let stockPresent = null
@@ -62,7 +62,7 @@ export async function fetchMeetingsForTable(
         let stocksVales = null
         if (meeting.holdingsLimit) {
           const stockIdToUse = stockPresent?.relatedStock
-            ? (stockPresent.relatedStock as { id: string }).id
+            ? (stockPresent?.relatedStock as { id: string }).id
             : stockPresent?.id
 
           const result = await payload.find({

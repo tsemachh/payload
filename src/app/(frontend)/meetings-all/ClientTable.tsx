@@ -1,30 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { meetingColumns, renderMeetingActions } from '../meetings-future/meetingTableConstants'
-import { DataTableServer } from '../components/data-table-server'
+import { DataTableServer } from '@/components/data-table-server'
 import { MeetingTableDataType } from '../types/meetings'
 
 export function MeetingsTablePastClient({
-  initialData,
-  initialTotalItems,
-  initialTotalPages,
   initialPageSize = 25,
 }: {
-  initialData: MeetingTableDataType[]
-  initialTotalItems: number
-  initialTotalPages: number
   initialPageSize?: number
 }) {
-  const [data, setData] = useState<MeetingTableDataType[]>(initialData)
-  const [totalItems, setTotalItems] = useState(initialTotalItems)
-  const [totalPages, setTotalPages] = useState(initialTotalPages)
+  const [data, setData] = useState<MeetingTableDataType[]>([])
+  const [totalItems, setTotalItems] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [pageSize, setPageSize] = useState<number>(initialPageSize)
+
+  // Fetch initial data when component mounts
+  useEffect(() => {
+    fetchData(1)
+  }, [])
 
   // Fetch data with current filters, sort, and search
   const fetchData = async (page: number, term?: string, newPageSize?: number) => {
