@@ -10,6 +10,7 @@ export const Holdings: CollectionConfig = {
   admin: {
     useAsTitle: 'id',
     defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
+    group: 'אוספים משניים',
   },
  hooks: {
     afterChange: [
