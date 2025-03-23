@@ -1,6 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
-import {importExportPlugin} from '@payloadcms/plugin-import-export'
+import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
 import { addAccess } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -10,8 +10,8 @@ import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
 //Logging
-import logger from './lib/logger';
-
+import logger from './lib/logger'
+import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { Stocks } from './collections/stocks/Stocks'
@@ -69,7 +69,7 @@ export default buildConfig({
   }),
   logger,
   plugins: [
-  importExportPlugin({
+    importExportPlugin({
       collections: ['stocks','meetings','companies'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
@@ -90,6 +90,17 @@ export default buildConfig({
       excludedCollections: [], //array of collections names to exclude
       excludedGlobals: [], // array of globals names to exclude
       usernameField: 'name', //name field to use from Users collection, 'user' by default
+    }),
+    gcsStorage({
+      collections: {
+        documents: true,
+      },
+      enabled: !!process.env.GCS_BUCKET,
+      bucket: process.env.GCS_BUCKET || '',
+      options: {
+        apiEndpoint: process.env.GCS_ENDPOINT,
+        projectId: process.env.GCS_PROJECT_ID,
+      },
     }),
   ],
 })
