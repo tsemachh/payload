@@ -11,7 +11,7 @@ services:
       - HOST=0.0.0.0
       - DATABASE_URI=mongodb+srv://app:DuChQfEVyjQMiW6K@emda-dev-cluster.auybqem.mongodb.net/?retryWrites=true&w=majority&appName=emda-dev-cluster
       - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
-      - GCS_BUCKET=images
+      - GCS_BUCKET=emda-media
       - GCS_PROJECT_ID=emda-dev
       - GCS_ENDPOINT=https://storage.googleapis.com
       - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
