@@ -537,6 +537,7 @@ export interface HoldingsFeed {
   id: string;
   valueDate: string;
   comments?: string | null;
+  selectedCompanies?: (string | Company)[] | null;
   processingStatus?: ('pending' | 'completed' | 'failed') | null;
   processingErrors?:
     | {
@@ -1066,6 +1067,7 @@ export interface StocksFeedSelect<T extends boolean = true> {
 export interface HoldingsFeedSelect<T extends boolean = true> {
   valueDate?: T;
   comments?: T;
+  selectedCompanies?: T;
   processingStatus?: T;
   processingErrors?:
     | T

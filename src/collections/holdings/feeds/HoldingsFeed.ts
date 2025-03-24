@@ -38,6 +38,16 @@ export const HoldingsFeed: CollectionConfig = {
       label: 'הערות',
     },
     {
+      name: 'selectedCompanies',
+      label: 'חברות שנבחרו',
+      type: 'relationship',
+      hasMany: true,
+      relationTo: 'companies',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
       name: 'processingStatus',
       type: 'select',
       label: 'סטטוס עיבוד',

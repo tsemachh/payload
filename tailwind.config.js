@@ -11,6 +11,10 @@ const config = {
   ],
   theme: {
     extend: {
+      width: {
+        '1/10': '10%',
+        '3/10': '30%',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
