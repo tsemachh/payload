@@ -158,7 +158,7 @@ export async function getStockIdsByMappingType(payload: Payload, type: StockMapp
 }
 
 export async function upsertStockFromImport(
-  stockSequence: string | null,
+  stock: Stock | null,
   row: ImportStock,
   req: PayloadRequest,
   tradable: boolean,
@@ -179,21 +179,24 @@ export async function upsertStockFromImport(
     comments
   }
 
-  if (!stockSequence) {
+  if (!stock) {
     // Insert into Payload CMS
     const newStock = await req.payload.create({
       collection: 'stocks',
       data: stockData as Stock,
     })
-    stockSequence = newStock.id
+    return  newStock.id
   } else {
-    await req.payload.update({
-      collection: 'stocks',
-      id: stockSequence,
-      data: stockData as Stock,
-    })
-  }
-  return stockSequence
+    //Update the Stock only if name or longName have changed
+      if (stock.name != stockData.name || (stockData.longName && stock.longName != stockData.longName)){
+        await req.payload.update({
+          collection: 'stocks',
+          id: stock.id,
+          data: { name:stockData.name,longName:stockData.longName },
+        })
+      }
+      return stock.id
+    }
 }
 
 export async function upsertStockValueFromImport(

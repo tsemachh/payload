@@ -1,6 +1,6 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
-import { getSeqeunceStockId } from '@/utils/utils'
+import { getStockByStockId } from '@/utils/utils'
 
 import { upsertStockFromImport, upsertStockValueFromImport } from '@/utils/migrateUtils'
 
@@ -18,8 +18,8 @@ const ImportStocksEndPoint = async (req: PayloadRequest) => {
   console.log('Stocks', JSON.stringify(rows))
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
-    let stockSequence = await getSeqeunceStockId(req.payload, `${row.stockID}` as string)
-    stockSequence = await upsertStockFromImport(stockSequence, row, req, true)
+    const stock = await getStockByStockId(req.payload, `${row.stockID}` as string)
+    const stockSequence = await upsertStockFromImport(stock, row, req, true)
     await upsertStockValueFromImport(stockSequence, row, req)
   }
 

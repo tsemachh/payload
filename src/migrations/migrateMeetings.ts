@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId,  getSeqeunceStockId } from '@/utils/utils' // Then you can use sql.close() directly
+import { getSequenceMeetingId,  getSequenceStockId } from '@/utils/utils' // Then you can use sql.close() directly
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
@@ -97,7 +97,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         // console.log("Row",JSON.stringify(row, null, 2))
         row.stockID=`${row.stockID}`
         //Find stockId
-        const stockId = await getSeqeunceStockId(payload, row.stockID)
+        const stockId = await getSequenceStockId(payload, row.stockID)
         if (stockId === null){
           console.log("Stockid can't be found:",row.stockID)
           await logMigrationFault({
