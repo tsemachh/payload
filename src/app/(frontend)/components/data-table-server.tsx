@@ -237,7 +237,7 @@ export function DataTableServer<T extends Record<string, any>>({
                   onSelect={(event) => event.preventDefault()}
                   dir="rtl"
                 >
-                  {typeof column.header === 'string' ? column.header : 'עמודה'}
+                  {column.header ? column.header : 'עמודה'}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
@@ -336,7 +336,7 @@ export function DataTableServer<T extends Record<string, any>>({
         <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
-              סה&quot;כ {pagination.totalItems.toLocaleString()} פריטים
+              סה&quot;כ {pagination.totalItems?.toLocaleString()} פריטים.
             </div>
             {pagination.pageSizeOptions && pagination.onPageSizeChange && (
               <div className="flex items-center space-x-2 space-x-reverse">
