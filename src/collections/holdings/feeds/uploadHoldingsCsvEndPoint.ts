@@ -1,4 +1,5 @@
 import { PayloadRequest } from 'payload'
+import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -37,12 +38,12 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     const buffer = Buffer.concat(chunks)
-    
+
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
     let extension = 'csv'
     let mimetype = 'text/csv'
-    
+
     if (contentType?.includes('excel') || contentType?.includes('spreadsheetml')) {
       extension = 'xlsx'
       mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -81,6 +82,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       } as any,
       file: file,
     })
+
+    // Process the holdings feed synchronously
+    await processHoldingsFeedCsv(req, holdingsFeed)
 
     return Response.json({
       message: 'Successfully uploaded holdings file',

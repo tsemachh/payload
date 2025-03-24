@@ -16,9 +16,7 @@ export const HoldingsFeed: CollectionConfig = {
   },
   hooks: {
     afterChange: [
-      async ({ req, doc }) => {
-        await processHoldingsFeedCsv(req, doc)
-      },
+      // Processing is now done synchronously in the endpoint
     ],
   },
   fields: [
