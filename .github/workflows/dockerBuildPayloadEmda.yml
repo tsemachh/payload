@@ -102,7 +102,7 @@ jobs:
 
       # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
       - name: Tag and Push Docker image to GCR
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           # Tag the local image with the GCR tag
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}

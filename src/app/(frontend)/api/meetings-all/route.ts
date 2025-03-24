@@ -3,6 +3,7 @@ import config from '@/payload.config'
 import { NextRequest, NextResponse } from 'next/server'
 import { Meeting } from '@/payload-types'
 import { getDbFieldName } from '@/app/(frontend)/meetings-future/sortFieldMapping'
+import { headers as getHeaders } from 'next/headers.js'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,19 +18,9 @@ export async function GET(request: NextRequest) {
 
     // Initialize payload
     const payload = await getPayload({ config })
+    const headers = await getHeaders()
+    const { user } = await payload.auth({ headers })
 
-    const searchClause = searchTerm
-      ? {
-          or: [
-            { meetingId: { contains: searchTerm } },
-            //          { "stock.name:" :{ contains: searchTerm }  },
-            { 'stock.stockId': { contains: searchTerm } },
-            { 'stock.longName': { contains: searchTerm } },
-            { magnaId: { contains: searchTerm } },
-            { location: { contains: searchTerm } },
-          ],
-        }
-      : {}
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
 
     const query: any = {
@@ -37,10 +28,40 @@ export async function GET(request: NextRequest) {
       limit: pageSize,
       page: page,
       sort: sort,
-      where: searchClause as any, // Type assertion to bypass complex nested type issues
+      where: {
+        and: [
+          {
+            companies: {
+              in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id), // בודק אם לפחות אחד מה-ID-ים נמצא בתוך מערך ה-companies
+            },
+          },
+          searchTerm
+            ? {
+                or: [
+                  { meetingId: { contains: searchTerm } },
+                  { 'stock.stockId': { contains: searchTerm } },
+                  { 'stock.name:': { contains: searchTerm } },
+                  { 'stock.symbol:': { contains: searchTerm } },
+                  { 'stock.tradable': { contains: searchTerm } },
+                  { 'stock.marketValue': { contains: searchTerm } },
+                  { 'stock.registeredValue': { contains: searchTerm } },
+                  { 'stock.type': { contains: searchTerm } },
+                  { magnaId: { contains: searchTerm } },
+                  { type: { contains: searchTerm } },
+                  { meetingDate: { contains: searchTerm } },
+                  { reference: { contains: searchTerm } },
+                  { location: { contains: searchTerm } },
+                  { holdingsLimit: { contains: searchTerm } },
+                  { proxyVotingDate: { contains: searchTerm } },
+                  { meetingState: { contains: searchTerm } },
+                  { comments: { contains: searchTerm } },
+                ],
+              }
+            : {},
+        ],
+      },
     }
 
-    console.log('Query', JSON.stringify(query))
     // Execute query
     const meetings = await payload.find(query)
 

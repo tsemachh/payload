@@ -6,7 +6,7 @@ import {
   pastDateFilterOptions,
   renderMeetingActions,
 } from './meetingTableConstants'
-import { DataTableStatic } from '../components/data-table-client'
+import { DataTableStatic } from '@/components/data-table-client'
 import { MeetingTableDataType } from '../types/meetings'
 
 export function MeetingsTableClient({

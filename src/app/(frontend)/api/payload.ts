@@ -2,23 +2,23 @@ import { getPayload } from 'payload'
 import 'dotenv/config'
 import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
+import { headers as getHeaders } from 'next/headers.js'
 
-export async function fetchMeetingsForTable(
-  page: number = 1,
-  pageSize: number = 0,
-  onlyFuture: boolean = false,
-): Promise<{
+export async function fetchFutureMeetingsForTable(): Promise<{
   data: MeetingTableDataType[]
   totalItems: number
-  totalPages: number
 }> {
   const payload = await getPayload({ config })
+  const headers = await getHeaders()
+  const { user } = await payload.auth({ headers })
+
   const meetings = await payload.find({
     collection: 'meetings',
-    limit: pageSize,
-    page: page,
-    where: onlyFuture
-      ? {
+    depth: 1,
+    limit: 0,
+    where: {
+      and: [
+        {
           or: [
             {
               meetingDate: { greater_than_equal: new Date() },
@@ -27,11 +27,17 @@ export async function fetchMeetingsForTable(
               meetingDate: { exists: false },
             },
           ],
-        }
-      : {},
+        },
+        {
+          companies: {
+            in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+          },
+        },
+      ],
+    },
   })
 
-  const meetingData: MeetingTableDataType[] = await (
+  const meetingData: MeetingTableDataType[] = (
     await Promise.all(
       meetings.docs.map(async (meeting) => {
         let stockPresent = null
@@ -48,7 +54,7 @@ export async function fetchMeetingsForTable(
         let stocksVales = null
         if (meeting.holdingsLimit) {
           const stockIdToUse = stockPresent?.relatedStock
-            ? (stockPresent.relatedStock as { id: string }).id
+            ? (stockPresent?.relatedStock as { id: string }).id
             : stockPresent?.id
 
           const result = await payload.find({
@@ -92,6 +98,5 @@ export async function fetchMeetingsForTable(
   return {
     data: meetingData,
     totalItems: meetings.totalDocs,
-    totalPages: meetings.totalPages,
   }
 }

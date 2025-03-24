@@ -27,7 +27,19 @@ resource "google_project_iam_binding" "gcr_writer" {
   members = var.push_members
 }
 
-
+#GCS Bucket to store images
+resource "google_storage_bucket" "media" {
+  name          = "emda-media"
+  location      = "me-west1"
+  storage_class = "STANDARD"
+  versioning {
+    enabled = true
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+  
+}
 # Output the private repository URL
 output "gcr_repository_url" {
   value       = "me-west1-docker.pkg.dev/emda-dev/emda-gcr"
