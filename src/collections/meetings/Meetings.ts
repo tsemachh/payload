@@ -311,6 +311,7 @@ export const Meetings: CollectionConfig = {
       hasMany: true,
       name: 'companies',
       label: 'חברות',
+      index:true,
       hidden:true
     }
   ],
