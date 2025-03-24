@@ -2,7 +2,7 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Stock, StockOrigin } from '@/payload-types'
 import { getStockType } from '@/utils/migrateStockUtils'
-import { getSeqeunceStockId } from '../utils/utils'
+import { getCollectionDoc, getStockByStockId } from '@/utils/utils'
 import {
   getAllStocksInMeetings,
   getEmdaStockIds,
@@ -21,6 +21,7 @@ import {
   createStockValueFaultComment,
   logMigrationFault,
 } from '@/utils/migrationFaultUtils'
+import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -46,7 +47,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Connect to SQL Server
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
-
+    await seedStockMigrationMapping()
     const resultStocks = await getStocks(pool) //AllStocks
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
     const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
@@ -115,8 +116,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       if (shouldProcessStock) {
         try {
           let stockSequence: string | null | undefined = stockIdTOSequence.get(row.stockID)
-          if (!stockSequence) stockSequence = await getSeqeunceStockId(payload, row.stockID)
-          row.type = getStockType(row)
+          let stock:Stock | null;
+          if (!stockSequence) {
+            stock = await getStockByStockId(payload, row.stockID)
+          }else{
+            stock = await getCollectionDoc(req,"stocks",stockSequence)
+          }
+          row.type = getStockType(row.type)
 
           // Determine origin with clear priority
           let origin: StockOrigin = 'TASE'
@@ -139,7 +145,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const isActive = !(stockStatuses.isNotActive || (stockStatuses.hasActiveMeeting && !stockStatuses.isPredictaStock && !stockStatuses.isEmdaStock))
 
           stockSequence = await upsertStockFromImport(
-            stockSequence,
+            stock,
             row,
             req,
             isTradable,

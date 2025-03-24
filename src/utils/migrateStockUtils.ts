@@ -108,7 +108,24 @@ export const stockTypesMap: Map<string, StockType> = new Map([
   ['תעודות סל זרות בחו"ל -יורו', 'תעודות סל'],
 ])
 
-export function getStockType(row: StockRow): StockType {
-  const stocktype = (row.type || '').trim()
-  return stockTypesMap.get(stocktype) || 'אחר'
+export function getStockType(rowType: string): StockType {
+  return stockTypesMap.get((rowType || '').trim()) || 'אחר'
+}
+
+export function parseDate(dateStr:string) {
+  if (!/^\d{8}$/.test(dateStr)) throw new Error("Invalid date format");
+  const year = parseInt(dateStr.slice(0, 4));
+  const month = parseInt(dateStr.slice(4, 6));
+  const day = parseInt(dateStr.slice(6, 8));
+
+  const date = new Date(year, month - 1, day);
+
+  // Verify the date is valid
+  if (date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day) {
+    throw new Error("Invalid date");
+  }
+
+  return date;
 }

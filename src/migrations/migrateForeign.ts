@@ -1,14 +1,14 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { StockType } from '@/payload-types'
 import { upsertStockFromImport } from '@/utils/migrateUtils'
-import { getSeqeunceStockId } from '@/utils/utils'
+import { getSequenceStockId } from '@/utils/utils'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
+import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
     console.log('Starting foreign stocks migration process...')
-
     // Create a map of stockId -> isin
     const stockToIsinMap = new Map<string, string>()
     const foreignStocksData = await payload.find({
@@ -26,7 +26,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const doc = foreignStocksData.docs[i]
       stockToIsinMap.set(`${doc.stockId}`, doc.isin as string)
     }
-    console.log('Isin', stockToIsinMap.toString())
+    console.log('Isin', JSON.stringify(stockToIsinMap))
 
     const foreignStocks = await payload.find({
       collection: 'stocks',
@@ -52,7 +52,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
         // Check if a stock with this ISIN already exists
-        let newStockSequence = await getSeqeunceStockId(payload, isin)
+        let newStockSequence = await getSequenceStockId(payload, isin)
         if (!newStockSequence) {
           // Create or update the ISIN stock
           newStockSequence = await upsertStockFromImport(
