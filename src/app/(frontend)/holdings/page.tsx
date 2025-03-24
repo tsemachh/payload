@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { FileUpload } from '@/components/file-upload'
 import { ExportButton } from '../components/export-button'
-import { DataTable } from '../components/data-table-client'
+import { DataTableStatic as DataTable } from '../components/data-table-client'
 import { columns } from './columns'
 import { Holding } from './types'
 import { Button } from '../components/ui/button'
