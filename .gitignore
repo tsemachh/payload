@@ -53,3 +53,6 @@ next-env.d.ts
 /scripts/dump
 /scripts/dev/mongo/data
 
+/stocks-feed/*.csv
+/src/uploads/*.csv
+/src/uploads/*.json
