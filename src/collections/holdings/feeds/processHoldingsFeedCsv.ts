@@ -5,9 +5,9 @@ import { Account, Company, HoldingsFeed, Stock } from '@/payload-types'
 
 // Define column indices for files without headers
 // Assuming the columns are in a specific order: stockId, quantity, accountId
-const STOCK_ID_COL = 0;
-const QUANTITY_COL = 1;
-const ACCOUNT_ID_COL = 2;
+const STOCK_ID_COL = 0
+const QUANTITY_COL = 1
+const ACCOUNT_ID_COL = 2
 
 interface HoldingImport {
   stockId: string
@@ -62,19 +62,19 @@ const standardizeRows = (results: any[]): StandardizedRow[] => {
       standardizedRows.push({
         stockId: row[STOCK_ID_COL]?.toString() || '',
         quantity: parseFloat(row[QUANTITY_COL]?.toString() || '0'),
-        accountId: row[ACCOUNT_ID_COL]?.toString() || ''
-      });
+        accountId: row[ACCOUNT_ID_COL]?.toString() || '',
+      })
     } else {
       // For CSV files, row is an object with keys from the first row
       standardizedRows.push({
         stockId: row[STOCK_ID_COL.toString()]?.toString() || '',
         quantity: parseFloat(row[QUANTITY_COL.toString()]?.toString() || '0'),
-        accountId: row[ACCOUNT_ID_COL.toString()]?.toString() || ''
-      });
+        accountId: row[ACCOUNT_ID_COL.toString()]?.toString() || '',
+      })
     }
-  });
+  })
 
-  return standardizedRows;
+  return standardizedRows
 }
 
 /**
@@ -127,7 +127,7 @@ const validateRow = (
     error: errorMessage,
   }
 
-  return {  processedRecord }
+  return { processedRecord }
 }
 
 /**
@@ -136,15 +136,18 @@ const validateRow = (
  * @param selectedCompanies The selected companies
  * @returns Map of account numbers to account IDs
  */
-const preloadAccounts = async (req: PayloadRequest, selectedCompanies: string[]): Promise<Map<number, string>> => {
+const preloadAccounts = async (
+  req: PayloadRequest,
+  selectedCompanies: string[],
+): Promise<Map<number, string>> => {
   const companies = await req.payload.find({
     collection: 'companies',
     where: {
       id: {
-        in: selectedCompanies
-      }
+        in: selectedCompanies,
+      },
     },
-    depth: 1
+    depth: 1,
   })
 
   const accountMap: Map<number, string> = new Map()
@@ -164,20 +167,23 @@ const preloadAccounts = async (req: PayloadRequest, selectedCompanies: string[])
  * @param standardizedRows
  * @returns Map of stock IDs to stock documents
  */
-const preloadStocks = async (req: PayloadRequest, standardizedRows: StandardizedRow[]): Promise<Map<string, string>> => {
+const preloadStocks = async (
+  req: PayloadRequest,
+  standardizedRows: StandardizedRow[],
+): Promise<Map<string, string>> => {
   const feedStocks: string[] = standardizedRows
-    .map(row => row.stockId)
-    .filter(stockId => stockId !== '')
+    .map((row) => row.stockId)
+    .filter((stockId) => stockId !== '')
 
   const stockMap: Map<string, string> = new Map()
   const stocksResult = await req.payload.find({
     collection: 'stocks',
     where: {
       stockId: {
-        in: feedStocks
-      }
+        in: feedStocks,
+      },
     },
-    depth: 1
+    depth: 1,
   })
 
   stocksResult.docs.forEach((stock: Stock) => {
@@ -194,11 +200,15 @@ const preloadStocks = async (req: PayloadRequest, standardizedRows: Standardized
  * @param accounts
  * @returns Previous accounts and feed date
  */
-const collectPreviousFeedData = async (req: PayloadRequest, valueDate: string,accounts:number[]): Promise<{
-  previousAccounts: Set<string>;
-  previousFeedDate: string | null;
+const collectPreviousFeedData = async (
+  req: PayloadRequest,
+  valueDate: string,
+  accounts: number[],
+): Promise<{
+  previousAccounts: Set<string>
+  previousFeedDate: string | null
 }> => {
-  const previousFeedDate = await getPreviousFeedDate(req, valueDate,accounts)
+  const previousFeedDate = await getPreviousFeedDate(req, valueDate, accounts)
   const previousAccounts = new Set<string>()
 
   if (previousFeedDate) {
@@ -208,62 +218,22 @@ const collectPreviousFeedData = async (req: PayloadRequest, valueDate: string,ac
         valueDate: {
           equals: previousFeedDate,
         },
+        accountNumber: {
+          in: accounts,
+        },
       },
+      depth: 0,
       limit: 1000,
     })
 
-    previousHoldings.docs.forEach(holding => {
+    previousHoldings.docs.forEach((holding) => {
       if (holding.account) {
-        // @ts-ignore
-        previousAccounts.add(holding.account.toString())
+        previousAccounts.add(holding.account as string)
       }
     })
   }
 
   return { previousAccounts, previousFeedDate }
-}
-
-/**
- * Update records with validation results
- * @param processedRecords The processed records
- * @param invalidAccountIds Set of invalid account IDs
- * @param invalidStockIds Set of invalid stock IDs
- * @returns Updated errors array
- */
-const updateRecordsWithValidationResults = (
-  processedRecords: HoldingImport[],
-  invalidAccountIds: Set<string>,
-  invalidStockIds: Set<string>
-): any[] => {
-  const errors: any[] = []
-
-  processedRecords.forEach(record => {
-    if (record.status === 'success') {
-      if (invalidAccountIds.has(record.accountId)) {
-        record.status = 'error'
-        record.error = 'Unknown account ID'
-        errors.push({
-          lineNumber: record.lineNumber,
-          stockId: record.stockId,
-          accountId: record.accountId,
-          quantity: record.quantity.toString(),
-          error: 'Unknown account ID',
-        })
-      } else if (invalidStockIds.has(record.stockId)) {
-        record.status = 'error'
-        record.error = 'Unknown stock ID'
-        errors.push({
-          lineNumber: record.lineNumber,
-          stockId: record.stockId,
-          accountId: record.accountId,
-          quantity: record.quantity.toString(),
-          error: 'Unknown stock ID',
-        })
-      }
-    }
-  })
-
-  return errors
 }
 
 /**
@@ -284,15 +254,15 @@ const createHoldings = async (
   for (const record of processedRecords) {
     if (record.status === 'success') {
       try {
-          await req.payload.create({
-            collection: 'holdings',
-            data: {
-              account: accountMap.get(parseInt(record.accountId)) as string,
-              stock: stockMap.get(record.stockId) as string,
-              quantity: record.quantity,
-              valueDate,
-            },
-          })
+        await req.payload.create({
+          collection: 'holdings',
+          data: {
+            account: accountMap.get(parseInt(record.accountId)) as string,
+            stock: stockMap.get(record.stockId) as string,
+            quantity: record.quantity,
+            valueDate,
+          },
+        })
       } catch (error) {
         req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`)
       }
@@ -311,7 +281,7 @@ const updateDocumentStatus = async (
   req: PayloadRequest,
   docId: string,
   status: 'completed' | 'failed',
-  errors?: any[]
+  errors?: any[],
 ): Promise<void> => {
   const data: any = {
     processingStatus: status,
@@ -341,10 +311,10 @@ const checkFeedDataAnomalies = (
   previousAccounts: Set<string>,
   currentAccounts: Set<string>,
   previousFeedDate: string | null,
-  currentCount: number
+  currentCount: number,
 ): void => {
   // Check for missing accounts compared to previous feed
-  const missingAccounts = [...previousAccounts].filter(id => !currentAccounts.has(id))
+  const missingAccounts = [...previousAccounts].filter((id) => !currentAccounts.has(id))
 
   if (missingAccounts.length > 0) {
     req.payload.logger.warn(`Missing ${missingAccounts.length} accounts compared to previous feed`)
@@ -353,19 +323,17 @@ const checkFeedDataAnomalies = (
   // Check if the number of records is significantly different from previous feed
   if (previousFeedDate) {
     const previousCount = previousAccounts.size
-    const percentDifference = Math.abs(currentCount - previousCount) / previousCount * 100
+    const percentDifference = (Math.abs(currentCount - previousCount) / previousCount) * 100
 
     if (percentDifference > 5) {
-      req.payload.logger.warn(`Line count differs by more than 5% from previous feed: ${percentDifference.toFixed(2)}%`)
+      req.payload.logger.warn(
+        `Line count differs by more than 5% from previous feed: ${percentDifference.toFixed(2)}%`,
+      )
     }
   }
 }
 
-async function checkPreviousHoldings(
-  req: PayloadRequest,
-  valueDate: string,
-  accountIds: number[]
-) {
+async function checkPreviousHoldings(req: PayloadRequest, valueDate: string, accountIds: number[]) {
   // Check for existing holdings on the same date
   const existingHoldings = await req.payload.find({
     collection: 'holdings',
@@ -373,9 +341,9 @@ async function checkPreviousHoldings(
       valueDate: {
         equals: valueDate,
       },
-      accountNumber:{
-        in: accountIds
-      }
+      accountNumber: {
+        in: accountIds,
+      },
     },
   })
 
@@ -389,14 +357,17 @@ async function checkPreviousHoldings(
 
 /**
  * Process holdings feed CSV or XLSX file
- * 
+ *
  * Note: This function assumes that both CSV and XLSX files are without headers
  * and have columns in the following order:
  * Column 0: Stock ID
  * Column 1: Quantity
  * Column 2: Account ID
  */
-export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsFeed): Promise<void> => {
+export const processHoldingsFeedCsv = async (
+  req: PayloadRequest,
+  doc: HoldingsFeed,
+): Promise<void> => {
   try {
     // Initial validation
     // Get the file from the request
@@ -422,7 +393,9 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
     // File conversion to JSON
     const fileExt = file.name.split('.').pop()?.toLowerCase()
     if (fileExt !== 'csv' && fileExt !== 'xlsx' && fileExt !== 'xls') {
-      await updateDocumentStatus(req, doc.id, 'failed', [{ error: `Unsupported file format: ${fileExt}` }])
+      await updateDocumentStatus(req, doc.id, 'failed', [
+        { error: `Unsupported file format: ${fileExt}` },
+      ])
       return
     }
 
@@ -449,7 +422,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
 
     // Process each standardized row
     standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index,accountMap,stockMap)
+      const { processedRecord } = validateRow(row, index, accountMap, stockMap)
       processedRecords.push(processedRecord)
     })
 
@@ -464,40 +437,43 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
     }
 
     // Delete existing holdings for the date TODO pass also the meetings
-    await deleteExistingHoldings(req, valueDate,Array.from(accountMap.keys()))
+    await deleteExistingHoldings(req, valueDate, Array.from(accountMap.keys()))
 
     // Create holdings
-    await createHoldings(req, processedRecords, accountMap,stockMap, valueDate)
+    await createHoldings(req, processedRecords, accountMap, stockMap, valueDate)
 
     // Update the document status
     await updateDocumentStatus(req, doc.id, 'completed')
 
-    req.payload.logger.info(`Successfully processed ${processedRecords.length} holdings for date ${valueDate}`)
+    req.payload.logger.info(
+      `Successfully processed ${processedRecords.length} holdings for date ${valueDate}`,
+    )
   } catch (error) {
     req.payload.logger.error(`Error processing holdings feed: ${JSON.stringify(error)}`)
 
     // Update the document status
-    await updateDocumentStatus(
-      req,
-      doc.id,
-      'failed',
-      [{ error: `General processing error: ${error}` }]
-    )
+    await updateDocumentStatus(req, doc.id, 'failed', [
+      { error: `General processing error: ${error}` },
+    ])
   }
 }
 
 // Helper function to delete existing holdings for a date
-async function deleteExistingHoldings(req: PayloadRequest, valueDate: string, accounts: number[]): Promise<void> {
-   await req.payload.delete({
+async function deleteExistingHoldings(
+  req: PayloadRequest,
+  valueDate: string,
+  accounts: number[],
+): Promise<void> {
+  await req.payload.delete({
     collection: 'holdings',
     where: {
       valueDate: {
         equals: valueDate,
       },
-      accountNumber:{
-        in: accounts
-      }
-    }
+      accountNumber: {
+        in: accounts,
+      },
+    },
   })
 }
 
@@ -511,13 +487,14 @@ async function getPreviousFeedDate(
     collection: 'holdings',
     where: {
       valueDate: {
-        not_equals: currentDate,
+        less_than: currentDate,
       },
       accountNumber: {
         in: accounts,
       },
     },
     sort: '-valueDate',
+    depth: 0,
     limit: 1,
   })
 
