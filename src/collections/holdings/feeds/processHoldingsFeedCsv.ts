@@ -191,13 +191,14 @@ const preloadStocks = async (req: PayloadRequest, standardizedRows: Standardized
  * Collect previous feed data for comparison
  * @param req The payload request
  * @param valueDate The current value date
+ * @param accounts
  * @returns Previous accounts and feed date
  */
-const collectPreviousFeedData = async (req: PayloadRequest, valueDate: string): Promise<{
+const collectPreviousFeedData = async (req: PayloadRequest, valueDate: string,accounts:number[]): Promise<{
   previousAccounts: Set<string>;
   previousFeedDate: string | null;
 }> => {
-  const previousFeedDate = await getPreviousFeedDate(req, valueDate)
+  const previousFeedDate = await getPreviousFeedDate(req, valueDate,accounts)
   const previousAccounts = new Set<string>()
 
   if (previousFeedDate) {
@@ -412,7 +413,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
       return
     }
 
-    // Check user permissions
+    // Check user permissions //TODO check that companies are subset of user leaf companies
     if (!req.user) {
       await updateDocumentStatus(req, doc.id, 'failed', [{ error: 'User not authenticated' }])
       return
@@ -441,11 +442,10 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
     // Preload stocks
     const stockMap = await preloadStocks(req, standardizedRows)
 
-    //TODO consider if we need to warn in the output as well ?
-    await checkPreviousHoldings(req, valueDate, Array.from(accountMap.keys()))
-    // Collect previous feed data for comparison
-    const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate)
-
+    //TODO consider if we need to warn in the output as well ?//TODO Implement properly
+    //await checkPreviousHoldings(req, valueDate, Array.from(accountMap.keys()))
+    // Collect previous feed data for comparison //TODO Implement properly
+    //const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountMap.keys()))
 
     // Process each standardized row
     standardizedRows.forEach((row, index) => {
@@ -464,7 +464,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
     }
 
     // Delete existing holdings for the date TODO pass also the meetings
-    await deleteExistingHoldings(req, valueDate)
+    await deleteExistingHoldings(req, valueDate,Array.from(accountMap.keys()))
 
     // Create holdings
     await createHoldings(req, processedRecords, accountMap,stockMap, valueDate)
@@ -487,32 +487,34 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
 }
 
 // Helper function to delete existing holdings for a date
-async function deleteExistingHoldings(req: PayloadRequest, valueDate: string): Promise<void> {
-  const existingHoldings = await req.payload.find({
+async function deleteExistingHoldings(req: PayloadRequest, valueDate: string, accounts: number[]): Promise<void> {
+   await req.payload.delete({
     collection: 'holdings',
     where: {
       valueDate: {
         equals: valueDate,
       },
-    },
-    limit: 1000,
+      accountNumber:{
+        in: accounts
+      }
+    }
   })
-
-  for (const holding of existingHoldings.docs) {
-    await req.payload.delete({
-      collection: 'holdings',
-      id: holding.id,
-    })
-  }
 }
 
 // Helper function to get the date of the most recent holdings feed
-async function getPreviousFeedDate(req: PayloadRequest, currentDate: string): Promise<string | null> {
+async function getPreviousFeedDate(
+  req: PayloadRequest,
+  currentDate: string,
+  accounts: number[],
+): Promise<string | null> {
   const holdings = await req.payload.find({
     collection: 'holdings',
     where: {
       valueDate: {
         not_equals: currentDate,
+      },
+      accountNumber: {
+        in: accounts,
       },
     },
     sort: '-valueDate',
