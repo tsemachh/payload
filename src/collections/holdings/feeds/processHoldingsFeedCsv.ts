@@ -1,6 +1,7 @@
 import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
+import { Account, Company, HoldingsFeed, Stock } from '@/payload-types'
 
 interface HoldingImport {
   stockId: string
@@ -11,7 +12,16 @@ interface HoldingImport {
   error?: string
 }
 
-export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<void> => {
+/**
+ * Process holdings feed CSV or XLSX file
+ * 
+ * Note: This function assumes that both CSV and XLSX files are without headers
+ * and have columns in the following order:
+ * Column 0: Stock ID
+ * Column 1: Quantity
+ * Column 2: Account ID
+ */
+export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsFeed): Promise<void> => {
   try {
     // Get the file from the request
     const file = req.file
@@ -69,12 +79,14 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
     if (fileExt === 'csv') {
       const csvData = file.data.toString('utf8')
+      // Parse CSV without using generateHeaderNames which can cause errors
       results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
     } else if (fileExt === 'xlsx' || fileExt === 'xls') {
       const workbook = XLSX.read(file.data, { type: 'buffer' })
       const sheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[sheetName]
-      results = XLSX.utils.sheet_to_json(worksheet)
+      // Use header: 1 option to handle XLSX without headers
+      results = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
     } else {
       await req.payload.update({
         collection: 'holdings-feed' as any,
@@ -93,23 +105,16 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     const accountsToCheck: Set<string> = new Set()
     const stocksToCheck: Set<string> = new Set()
 
-    // Map column names to standardized names
-    const columnMapping: Record<string, string> = {}
-    const headerRow = results[0]
-    Object.keys(headerRow).forEach(key => {
-      if (key.toLowerCase().includes('stock') || key.toLowerCase().includes('נייר')) {
-        columnMapping[key] = 'stockId'
-      } else if (key.toLowerCase().includes('quan') || key.toLowerCase().includes('כמות')) {
-        columnMapping[key] = 'quantity'
-      } else if (key.toLowerCase().includes('account') || key.toLowerCase().includes('חשבון')) {
-        columnMapping[key] = 'accountId'
-      }
-    })
+    // Define column indices for files without headers
+    // Assuming the columns are in a specific order: stockId, quantity, accountId
+    const STOCK_ID_COL = 0;
+    const QUANTITY_COL = 1;
+    const ACCOUNT_ID_COL = 2;
 
     // Collect previous feed data for comparison
     const previousFeedDate = await getPreviousFeedDate(req, valueDate)
     const previousAccounts = new Set<string>()
-    
+
     if (previousFeedDate) {
       const previousHoldings = await req.payload.find({
         collection: 'holdings',
@@ -120,7 +125,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         },
         limit: 1000,
       })
-      
+
       previousHoldings.docs.forEach(holding => {
         if (holding.account) {
           // @ts-ignore
@@ -128,6 +133,41 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         }
       })
     }
+    //preload accounts
+    const companies= await req.payload.find({
+      collection: 'companies',
+      where:{
+        id:{
+          in: doc.selectedCompanies
+        }
+      },
+      depth: 1
+    })
+    const accountMap:Map<number,string>= new Map()
+    companies.docs.forEach((company:Company)=>{
+      const accounts=company?.accounts?.docs as Account[]
+      accounts.forEach((account)=>{
+        accountMap.set(account?.accountNumber,account?.id)
+      })
+    })
+
+    //TODO Standartize the JSON to be in standart format for CSV and Excer
+
+    //TODO get all StockIds from CSV and perform find to get all stocks
+    const feedStocks:string[]=[]//TODO get from the Typed JSON
+    const stockMap:Map<string,string>= new Map()
+    const stocksResult= await req.payload.find({
+      collection: 'stocks',
+      where:{
+        stockId:{
+          in: feedStocks
+        }
+      },
+      depth: 1
+    })
+    stocksResult.docs.forEach((stock:Stock)=>{
+      stockMap.set(stock?.stockId,stock?.id)
+    })
 
     // Process each row
     results.forEach((row, index) => {
@@ -135,14 +175,20 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       let stockId = ''
       let quantity = 0
       let accountId = ''
-      
-      // Extract values using the column mapping
-      Object.entries(row).forEach(([key, value]) => {
-        const mappedKey = columnMapping[key]
-        if (mappedKey === 'stockId') stockId = value as string
-        else if (mappedKey === 'quantity') quantity = parseFloat(value as string)
-        else if (mappedKey === 'accountId') accountId = value as string
-      })
+
+      // Extract values using column indices for files without headers
+      if (Array.isArray(row)) {
+        // For XLSX files with header: 1 option, row is an array
+        stockId = row[STOCK_ID_COL]?.toString() || '';
+        quantity = parseFloat(row[QUANTITY_COL]?.toString() || '0');
+        accountId = row[ACCOUNT_ID_COL]?.toString() || '';
+      } else {
+        // For CSV files, row is an object with keys from the first row
+        // We still use numeric indices to access the values
+        stockId = row[STOCK_ID_COL.toString()]?.toString() || '';
+        quantity = parseFloat(row[QUANTITY_COL.toString()]?.toString() || '0');
+        accountId = row[ACCOUNT_ID_COL.toString()]?.toString() || '';
+      }
 
       // Validate the record
       let isValid = true
@@ -284,12 +330,12 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           const account = accounts.docs.find(
             a => a.accountNumber.toString() === record.accountId.toString()
           )
-          
+
           // Find the stock document
           const stock = stocks.docs.find(
             s => s.stockId === record.stockId
           )
-          
+
           if (account && stock) {
             await req.payload.create({
               collection: 'holdings',
@@ -319,7 +365,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     req.payload.logger.info(`Successfully processed ${processedRecords.length} holdings for date ${valueDate}`)
   } catch (error) {
     req.payload.logger.error(`Error processing holdings feed: ${JSON.stringify(error)}`)
-    
+
     // Update the document status
     await req.payload.update({
       collection: 'holdings-feed' as any,
