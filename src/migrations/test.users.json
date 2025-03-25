@@ -1,0 +1,40 @@
+[
+  {
+    "name": "חנה",
+    "isAdmin": true,
+    "email": "channahk@shefing.com",
+    "password": "channahk@shefing.com"
+  },
+  {
+    "name": "אפרת שפריי",
+    "isAdmin": true,
+    "email": "efrats@shefing.com",
+    "password": "efrats@shefing.com"
+  },
+  {
+    "name": "tsemachh",
+    "isAdmin": true,
+    "email": "tsemachh@shefing.com",
+    "password": "tsemachh@shefing.com",
+    "apiKey": "4c98af69d188921911684f43e1f496d116dbeb9413050b07976b0d8bbdee49138baa6f078d586beade5c577fbda015a0b3a967ee",
+    "apiKeyIndex": "ef8a53ae546b30cea6727ad3f0ef37accb734c09",
+    "enableAPIKey": true
+  },
+  {
+    "name": "shaked",
+    "isAdmin": true,
+    "email": "shaked@emdaresearch.co.il",
+    "password": "shaked@emdaresearch.co.il",
+  },
+  {
+    "name": "mayab",
+    "isAdmin": true,
+    "email": "mayab@emdaresearch.co.il",
+    "password": "mayab@emdaresearch.co.il"
+  },
+  {
+    "name": "philc@shefing.com",
+    "isAdmin": true,
+    "email": "philc@shefing.com"
+  }
+]

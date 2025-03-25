@@ -4,7 +4,6 @@ import { upsertStockFromImport } from '@/utils/migrateUtils'
 import { getSequenceStockId } from '@/utils/utils'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
-import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
@@ -78,32 +77,35 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           id: originalStock.id,
           data: {
             relatedStock: newStockSequence,
-            tradable : false
+            tradable: false,
           },
         })
         // Update all stocks that had this stock as related to point to the new ISIN stock
-        const relatedStocks= await req.payload.find({
+        req.payload.update({
           collection: 'stocks',
+          data: {
+            tradable: false,
+            relatedStock: newStockSequence,
+          },
           where: {
             relatedStock: {
               equals: originalStock.id,
             },
-          }
+          },
         })
-        relatedStocks.docs.forEach((stock)=>{
-          req.payload.update({
-            collection: 'stocks',
-            id: stock.id,
-            data: {
-              tradable : false,
-              relatedStock: newStockSequence,
+        req.payload.update({
+          collection: 'meetings',
+          data: {
+            stock: newStockSequence,
+          },
+          where: {
+            stock: {
+              equals: originalStock.id,
             },
-          })
+          },
         })
-
         console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
-      } catch
-        (error) {
+      } catch (error) {
         await logMigrationFault({
           payload,
           type: 'stock',
@@ -114,8 +116,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     }
 
     console.log('Foreign stocks migration completed successfully')
-  } catch
-    (error) {
+  } catch (error) {
     console.error('Error during foreign stocks migration:', error)
     throw error
   }
