@@ -136,7 +136,6 @@ export type SupportedTimezones =
   | 'Asia/Singapore'
   | 'Asia/Tokyo'
   | 'Asia/Seoul'
-  | 'Australia/Brisbane'
   | 'Australia/Sydney'
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
@@ -550,6 +549,7 @@ export interface HoldingsFeed {
         id?: string | null;
       }[]
     | null;
+  accountsJson?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -574,7 +574,7 @@ export interface Export {
   format: 'csv' | 'json';
   limit?: number | null;
   sort?: string | null;
-  drafts?: ('yes' | 'no') | null;
+  drafts?: ('true' | 'false') | null;
   selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
   fields?: string[] | null;
   collectionSlug: string;
@@ -1080,6 +1080,7 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
         lineNumber?: T;
         id?: T;
       };
+  accountsJson?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1195,7 +1196,7 @@ export interface TaskCreateCollectionExport {
     format: 'csv' | 'json';
     limit?: number | null;
     sort?: string | null;
-    drafts?: ('yes' | 'no') | null;
+    drafts?: ('true' | 'false') | null;
     selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
     fields?: string[] | null;
     collectionSlug: string;

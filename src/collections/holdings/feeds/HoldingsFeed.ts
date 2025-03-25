@@ -96,6 +96,14 @@ export const HoldingsFeed: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'accountsJson',
+      type: 'text',
+      label: 'חשבונות בפיד (JSON)',
+      admin: {
+        readOnly: true,
+      },
+    },
   ],
   upload: true,
 }

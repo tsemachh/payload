@@ -276,12 +276,14 @@ const createHoldings = async (
  * @param docId The document ID
  * @param status The status to set
  * @param errors Optional errors to include
+ * @param accountsJson Optional JSON string of accounts
  */
 const updateDocumentStatus = async (
   req: PayloadRequest,
   docId: string,
   status: 'completed' | 'failed',
   errors?: any[],
+  accountsJson?: string,
 ): Promise<void> => {
   const data: any = {
     processingStatus: status,
@@ -289,6 +291,10 @@ const updateDocumentStatus = async (
 
   if (errors && errors.length > 0) {
     data.processingErrors = errors
+  }
+
+  if (accountsJson) {
+    data.accountsJson = accountsJson
   }
 
   await req.payload.update({
@@ -416,9 +422,9 @@ export const processHoldingsFeedCsv = async (
     const stockMap = await preloadStocks(req, standardizedRows)
 
     //TODO consider if we need to warn in the output as well ?//TODO Implement properly
-    //await checkPreviousHoldings(req, valueDate, Array.from(accountMap.keys()))
+    await checkPreviousHoldings(req, valueDate, Array.from(accountMap.keys()))
     // Collect previous feed data for comparison //TODO Implement properly
-    //const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountMap.keys()))
+    const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountMap.keys()))
 
     // Process each standardized row
     standardizedRows.forEach((row, index) => {
@@ -442,8 +448,24 @@ export const processHoldingsFeedCsv = async (
     // Create holdings
     await createHoldings(req, processedRecords, accountMap, stockMap, valueDate)
 
-    // Update the document status
-    await updateDocumentStatus(req, doc.id, 'completed')
+    // Collect all unique account IDs from the standardized rows
+    const uniqueAccountIds = Array.from(new Set(
+      standardizedRows
+        .map(row => Number(row.accountId))
+        .filter(accountId => !isNaN(accountId))
+    ))
+
+    // Convert the account IDs to a JSON string
+    const accountsJson = JSON.stringify(uniqueAccountIds)
+
+    // Get the previous feed's accounts JSON
+    const previousAccountsJson = await getPreviousFeedAccountsJson(req, valueDate,doc.selectedCompanies as string[])
+
+    // Compare the current feed's accounts with the previous feed's accounts
+    compareAccountsWithPreviousFeed(req, uniqueAccountIds, previousAccountsJson)
+
+    // Update the document status and store the accounts JSON
+    await updateDocumentStatus(req, doc.id, 'completed', undefined, accountsJson)
 
     req.payload.logger.info(
       `Successfully processed ${processedRecords.length} holdings for date ${valueDate}`,
@@ -503,4 +525,90 @@ async function getPreviousFeedDate(
   }
 
   return null
+}
+
+/**
+ * Get the accounts JSON from the most recent feed before the current one
+ * @param req The payload request
+ * @param currentDate The current feed date
+ * @param companies
+ * @returns The accounts JSON from the previous feed, or null if no previous feed exists
+ */
+async function getPreviousFeedAccountsJson(
+  req: PayloadRequest,
+  currentDate: string, companies: string[]
+): Promise<string | null> {
+  const previousFeed = await req.payload.find({
+    collection: 'holdings-feed',
+    where: {
+      valueDate: {
+        less_than: currentDate,
+      },
+      processingStatus: {
+        equals: 'completed',
+      },
+      companies:{
+        in: companies
+      }
+    },
+    sort: '-valueDate',
+    depth: 0,
+    limit: 1,
+  })
+
+  if (previousFeed.docs.length > 0 && previousFeed.docs[0].accountsJson) {
+    return previousFeed.docs[0].accountsJson as string
+  }
+
+  return null
+}
+
+/**
+ * Compare the current feed's accounts with the previous feed's accounts
+ * @param req The payload request
+ * @param currentAccounts The current feed's accounts
+ * @param previousAccountsJson The previous feed's accounts JSON
+ */
+function compareAccountsWithPreviousFeed(
+  req: PayloadRequest,
+  currentAccounts: number[],
+  previousAccountsJson: string | null,
+): void {
+  if (!previousAccountsJson) {
+    req.payload.logger.info('No previous feed found for comparison')
+    return
+  }
+
+  try {
+    const previousAccounts = JSON.parse(previousAccountsJson)
+
+    // Find accounts that are in the previous feed but not in the current feed
+    const missingAccounts = previousAccounts.filter(
+      (account: number) => !currentAccounts.includes(account)
+    )
+
+    // Find accounts that are in the current feed but not in the previous feed
+    const newAccounts = currentAccounts.filter(
+      (account: number) => !previousAccounts.includes(account)
+    )
+
+    if (missingAccounts.length > 0) {
+      req.payload.logger.warn(
+        `Missing ${missingAccounts.length} accounts compared to previous feed: ${JSON.stringify(missingAccounts)}`
+      )
+    }
+
+    if (newAccounts.length > 0) {
+      req.payload.logger.info(
+        `Found ${newAccounts.length} new accounts compared to previous feed: ${JSON.stringify(newAccounts)}`
+      )
+    }
+
+    // Log the total number of accounts in both feeds
+    req.payload.logger.info(
+      `Previous feed had ${previousAccounts.length} accounts, current feed has ${currentAccounts.length} accounts`
+    )
+  } catch (error) {
+    req.payload.logger.error(`Error comparing accounts with previous feed: ${JSON.stringify(error)}`)
+  }
 }
