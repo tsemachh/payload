@@ -151,10 +151,31 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
       })
     })
 
-    //TODO Standartize the JSON to be in standart format for CSV and Excer
+    // Standardize the JSON to be in standard format for both CSV and Excel
+    const standardizedRows: { stockId: string, quantity: number, accountId: string }[] = []
 
-    //TODO get all StockIds from CSV and perform find to get all stocks
-    const feedStocks:string[]=[]//TODO get from the Typed JSON
+    results.forEach((row) => {
+      if (Array.isArray(row)) {
+        // For XLSX files with header: 1 option, row is an array
+        standardizedRows.push({
+          stockId: row[STOCK_ID_COL]?.toString() || '',
+          quantity: parseFloat(row[QUANTITY_COL]?.toString() || '0'),
+          accountId: row[ACCOUNT_ID_COL]?.toString() || ''
+        });
+      } else {
+        // For CSV files, row is an object with keys from the first row
+        standardizedRows.push({
+          stockId: row[STOCK_ID_COL.toString()]?.toString() || '',
+          quantity: parseFloat(row[QUANTITY_COL.toString()]?.toString() || '0'),
+          accountId: row[ACCOUNT_ID_COL.toString()]?.toString() || ''
+        });
+      }
+    });
+
+    // Get all StockIds from the standardized data
+    const feedStocks: string[] = standardizedRows
+      .map(row => row.stockId)
+      .filter(stockId => stockId !== '')
     const stockMap:Map<string,string>= new Map()
     const stocksResult= await req.payload.find({
       collection: 'stocks',
@@ -169,26 +190,10 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: HoldingsF
       stockMap.set(stock?.stockId,stock?.id)
     })
 
-    // Process each row
-    results.forEach((row, index) => {
+    // Process each standardized row
+    standardizedRows.forEach((row, index) => {
       const lineNumber = index + 1
-      let stockId = ''
-      let quantity = 0
-      let accountId = ''
-
-      // Extract values using column indices for files without headers
-      if (Array.isArray(row)) {
-        // For XLSX files with header: 1 option, row is an array
-        stockId = row[STOCK_ID_COL]?.toString() || '';
-        quantity = parseFloat(row[QUANTITY_COL]?.toString() || '0');
-        accountId = row[ACCOUNT_ID_COL]?.toString() || '';
-      } else {
-        // For CSV files, row is an object with keys from the first row
-        // We still use numeric indices to access the values
-        stockId = row[STOCK_ID_COL.toString()]?.toString() || '';
-        quantity = parseFloat(row[QUANTITY_COL.toString()]?.toString() || '0');
-        accountId = row[ACCOUNT_ID_COL.toString()]?.toString() || '';
-      }
+      const { stockId, quantity, accountId } = row
 
       // Validate the record
       let isValid = true
