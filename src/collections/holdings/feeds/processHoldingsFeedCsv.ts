@@ -69,7 +69,7 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
     if (fileExt === 'csv') {
       const csvData = file.data.toString('utf8')
-      results = csvToJson.fieldDelimiter(',').parseSubArray('*', ',').csvStringToJson(csvData)
+      results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
     } else if (fileExt === 'xlsx' || fileExt === 'xls') {
       const workbook = XLSX.read(file.data, { type: 'buffer' })
       const sheetName = workbook.SheetNames[0]
@@ -82,28 +82,6 @@ export const processHoldingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         data: {
           processingStatus: 'failed',
           processingErrors: [{ error: `Unsupported file format: ${fileExt}` }],
-        },
-      })
-      return
-    }
-
-    // Validate column headers
-    const requiredHeaders = ['stockId', 'quantity', 'accountId'] // Hebrew headers will be mapped to these in the frontend
-    const missingHeaders = requiredHeaders.filter(header => 
-      !results[0] || !Object.keys(results[0]).some(key => 
-        key.toLowerCase() === header.toLowerCase() || 
-        (key.toLowerCase() === 'stockid' && header === 'stockId') ||
-        (key.toLowerCase() === 'accountid' && header === 'accountId')
-      )
-    )
-
-    if (missingHeaders.length > 0) {
-      await req.payload.update({
-        collection: 'holdings-feed' as any,
-        id: doc.id,
-        data: {
-          processingStatus: 'failed',
-          processingErrors: [{ error: `Missing required columns: ${missingHeaders.join(', ')}` }],
         },
       })
       return
