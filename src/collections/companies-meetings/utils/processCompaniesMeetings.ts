@@ -95,7 +95,6 @@ export const processCompaniesMeetings = async (
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10; // Process 10 meetings at a time
-    const promises: Promise<void>[] = []
 
     // Process meetings in batches
     for (let i = 0; i < meetings.length; i += batchSize) {
