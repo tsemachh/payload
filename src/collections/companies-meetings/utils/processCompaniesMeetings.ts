@@ -8,7 +8,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
   let isDirty: boolean = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
   // Check if the company has holdings for this meeting's stock on the holdingsLimit date
-  const { docs: holdings } = await req.payload.find({
+  let { docs: holdings } = await req.payload.find({
     collection: 'holdings',
     where: {
       and: [
@@ -20,6 +20,25 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
     limit: 1000,
     depth: 1,
   })
+
+  // If no holdings found for the holdingsLimit date, get the most recent holdings reported
+  if (holdings.length === 0 && new Date(meeting.holdingsLimit as string) > new Date()) {
+    req.payload.logger.info(`No holdings found for meeting ${meeting.id} on ${meeting.holdingsLimit}, getting most recent holdings`)
+    const { docs: recentHoldings } = await req.payload.find({
+      collection: 'holdings',
+      where: {
+        and: [
+          { stock: { in: stockIds } },
+          { valueDate: { less_than: meeting.holdingsLimit } },
+          { quantity: { greater_than: 1 } },
+        ],
+      },
+      limit: 1000,
+      depth: 1,
+      sort: '-valueDate', // Sort by valueDate in descending order to get the most recent
+    })
+    holdings = recentHoldings
+  }
   for (let i = 0; i < holdings.length; i++) {
     const holding = holdings[i]
     const account: Account = holding.account as Account

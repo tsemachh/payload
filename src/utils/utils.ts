@@ -12,7 +12,12 @@ export async function getStockIds(stock: Stock) {
   return stockIds
 }
 
-export async function getSeqeunceStockId(payload: BasePayload, stockID: string | null | undefined) {
+export async function getSequenceStockId(payload: BasePayload, stockID: string | null | undefined) {
+  const stock= await getStockByStockId(payload,stockID)
+  return (stock?stock.id:null)
+}
+
+export async function getStockByStockId(payload: BasePayload, stockID: string | null | undefined) {
   if (stockID === null) return null
 
   let id = null
@@ -26,7 +31,7 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: string |
         stockId: { equals: stockID },
       },
     })
-    if (stock.docs.length > 0) id = stock.docs[0].id
+    if (stock.docs.length > 0) id = stock.docs[0]
   } catch (error) {
     console.error(error)
   }

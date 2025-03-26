@@ -17,7 +17,7 @@ export const Stocks: CollectionConfig = {
     singular: 'נייר ערך',
   },
   admin: {
-    useAsTitle: 'fullName',
+    useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],
     listSearchableFields: [ 'symbol', 'stockId', 'name', 'longName'],
     pagination: {

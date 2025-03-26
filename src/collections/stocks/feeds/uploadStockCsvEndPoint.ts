@@ -2,7 +2,7 @@ import { PayloadRequest } from 'payload'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
   try {
-debugger
+
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
