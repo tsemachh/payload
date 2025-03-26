@@ -76,6 +76,7 @@ export const Accounts: CollectionConfig = {
       type: 'join',
       collection: 'accounts',
       on: 'parentAccount',
+      defaultLimit: 0,
       admin: {
         defaultColumns: ['accountNumber', 'name'],
         condition: (data) => data.isCentralAccount

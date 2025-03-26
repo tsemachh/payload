@@ -94,6 +94,7 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       } as any,
       file: file,
     })
+    holdingsFeed.selectedCompanies=selectedCompanies
     req.file=file
     // Process the holdings feed synchronously
     await processHoldingsFeedCsv(req, holdingsFeed)
