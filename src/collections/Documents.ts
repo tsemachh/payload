@@ -6,6 +6,7 @@ export const Documents: CollectionConfig = {
     plural: 'מסמכים',
     singular: 'מסמך',
   },
+  enableQueryPresets: true,
   access: {
     read: () => true,
   },

@@ -66,6 +66,7 @@ export const Meetings: CollectionConfig = {
     plural: 'אסיפות',
     singular: 'אסיפה',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'meetingId',
     listSearchableFields: ['magnaId',

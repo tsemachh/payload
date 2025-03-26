@@ -29,6 +29,7 @@ export const Users: CollectionConfig = {
     plural: 'משתמשים',
     singular: 'משתמש',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'email',
     group: 'ניהול',
