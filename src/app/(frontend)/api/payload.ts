@@ -52,7 +52,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           return null
         }
 
-        let stocksVales: StockValue | null
+        let stocksVales: StockValue | null = null
         let holdingsArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
@@ -122,7 +122,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           electronicVotingEnabled: !!meeting.electronicVotingEnabled,
           resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
           committeeInitiated: !!meeting.committeeInitiated,
-        }
+        } as MeetingTableDataType
       }),
     )
   ).filter((item): item is MeetingTableDataType => item !== null)
