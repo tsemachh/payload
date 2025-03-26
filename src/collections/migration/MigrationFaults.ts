@@ -19,6 +19,7 @@ const MigrationFaults: CollectionConfig= {
       index:true
     }
   ],
+  enableQueryPresets: true,
   admin: {
     group:"מיגרציה",
     useAsTitle: 'typeId',
