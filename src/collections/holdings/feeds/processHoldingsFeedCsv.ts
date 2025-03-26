@@ -255,22 +255,47 @@ const createHoldings = async (
   stockMap: Map<string, string>,
   valueDate: string,
 ): Promise<void> => {
+  // Aggregate records with the same accountId and stockId
+  const aggregatedRecords = new Map<string, { account: string, stock: string, quantity: number }>();
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
-      try {
-        await req.payload.create({
-          collection: 'holdings',
-          data: {
-            account: accountMap.get(parseInt(record.accountId)) as string,
-            stock: stockMap.get(record.stockId) as string,
-            quantity: record.quantity,
-            valueDate,
-          },
-        })
-      } catch (error) {
-        req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`)
+      const accountId = parseInt(record.accountId);
+      const account = accountMap.get(accountId) as string;
+      const stock = stockMap.get(record.stockId) as string;
+
+      // Create a unique key for each account-stock combination
+      const key = `${account}-${stock}`;
+
+      if (aggregatedRecords.has(key)) {
+        // If this combination already exists, add to the quantity
+        const existingRecord = aggregatedRecords.get(key)!;
+        existingRecord.quantity += record.quantity;
+      } else {
+        // Otherwise, create a new entry
+        aggregatedRecords.set(key, {
+          account,
+          stock,
+          quantity: record.quantity
+        });
       }
+    }
+  }
+
+  // Create holdings from the aggregated records
+  for (const [_, record] of aggregatedRecords) {
+    try {
+      await req.payload.create({
+        collection: 'holdings',
+        data: {
+          account: record.account,
+          stock: record.stock,
+          quantity: record.quantity,
+          valueDate,
+        },
+      })
+    } catch (error) {
+      req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`)
     }
   }
 }
