@@ -961,18 +961,13 @@ export function DataTableStatic<T extends Record<string, any>>({
                             textAlign: column.positionCenter ? 'center' : 'right',
                           }}
                           className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
-                          // ref={(el) => {
-                          //   if (!el) return
-                          //   el.setAttribute(
-                          //     'title',
-                          //     el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
-                          //   )
-                          // }}
-                          title={(() => {
-                            const text = row[column.key]?.toString() || ''
-                            const isTextTruncated = text && text.length > 0
-                            return isTextTruncated ? text : ''
-                          })()}
+                          ref={(el) => {
+                            if (!el) return
+                            el.setAttribute(
+                              'title',
+                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                            )
+                          }}
                         >
                           {column.key === 'accounts'
                             ? renderAccountsCell(row)

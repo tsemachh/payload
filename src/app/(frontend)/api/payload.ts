@@ -76,7 +76,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             where: {
               and: [
                 { stock: { equals: stockIdToUse } },
-                { valueDate: { equals: meeting.holdingsLimit } }, //update
+                { valueDate: { equals: meeting.holdingsLimit } }, //TODO: update
                 {
                   'account.company': {
                     in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
