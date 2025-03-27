@@ -473,7 +473,7 @@ export const processHoldingsFeedCsv = async (
         }*/
 
     // Delete existing holdings for the date TODO pass also the meetings
-    await deleteExistingHoldings(req, valueDate, Array.from(accountMap.keys()))
+ //   await deleteExistingHoldings(req, valueDate, Array.from(accountMap.keys()))
 
     // Create holdings
     await createHoldings(req, processedRecords, accountMap, stockMap, valueDate)
@@ -491,14 +491,14 @@ export const processHoldingsFeedCsv = async (
     const accountsJson = JSON.stringify(uniqueAccountIds)
 
     // Get the previous feed's accounts JSON
-    const previousAccountsJson = await getPreviousFeedAccountsJson(
-      req,
-      valueDate,
-      doc.selectedCompanies as string[],
-    )
+      // const previousAccountsJson = await getPreviousFeedAccountsJson(
+     // req,
+    //  valueDate,
+    //  doc.selectedCompanies as string[],
+    //)
 
     // Compare the current feed's accounts with the previous feed's accounts
-    compareAccountsWithPreviousFeed(req, uniqueAccountIds, previousAccountsJson)
+      // compareAccountsWithPreviousFeed(req, uniqueAccountIds, previousAccountsJson)
 
     // Update the document status and store the accounts JSON
     await updateDocumentStatus(req, doc.id, 'completed', undefined, accountsJson)
