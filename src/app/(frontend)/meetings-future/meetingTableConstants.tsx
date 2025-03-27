@@ -119,9 +119,10 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'אחזקה (%)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.accounts?.reduce((acc, obj) => acc + obj.percentageHolding, 0),
-      ),
+      new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(row.accounts?.reduce((acc, obj) => acc + obj.percentageHolding, 0)),
     minWidth: 100,
   },
   {

@@ -1004,12 +1004,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                                     className="py-2 px-3 whitespace-nowrap"
                                     style={{ textAlign: 'right' }}
                                   >
-                                    {
-                                      (() => {
-                                        const value = account[column.key as keyof HoldingTableDate];
-                                        return value instanceof Date ? value.toLocaleDateString() : value;
-                                      })()
-                                    }
+                                    {(() => {
+                                      const value = account[column.key as keyof HoldingTableDate]
+                                      return value
+                                    })()}
                                   </TableCell>
                                 )
                               } else {

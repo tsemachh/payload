@@ -10,7 +10,7 @@ export type MeetingTableDataType = {
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
   marketValue: number //שווי שוק
-  registeredValue: number //ערך נקוב
+  registeredValue: number // הון רשום
   percentageHolding: number //אחוז אחזקות
   holdingValueInMillions: number //שווי אחזקה במיליונים
   meetingType: string //סוג האסיפה
@@ -35,7 +35,6 @@ export type DateFilterOption = {
 export type HoldingTableDate = {
   holdingsCompanyName: string
   quantity: number
-  valueDate: string | Date
   percentageHolding: number
   holdingValueInMillions: number
   registeredValue: number
