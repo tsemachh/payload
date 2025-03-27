@@ -65,7 +65,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             depth: 1,
             where: {
               stockId: { equals: stockIdToUse },
-              valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() }, //need it?
+              valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() },
             },
             limit: 0,
           })
