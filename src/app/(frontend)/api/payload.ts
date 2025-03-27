@@ -94,9 +94,9 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               depth: 1,
               where: {
                 stockId: { equals: stockIdToUse },
-                valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() }, //need it?
               },
-              limit: 0,
+              sort: '-valueDate',
+              limit: 1,
             })
             stocksVales = resuStockValues.length > 0 ? resuStockValues[0] : null
             const { docs: latestDateDocs } = await payload.find({
