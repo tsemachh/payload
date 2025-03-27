@@ -53,6 +53,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
         }
 
         let stocksVales: StockValue | null = null
+        let resuHoldings
         let holdingsArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
@@ -69,45 +70,69 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             limit: 0,
           })
           stocksVales = resuStockValues.length > 0 ? resuStockValues[0] : null
-
-          const { docs: resuHoldings } = await payload.find({
-            collection: 'holdings',
-            depth: 1,
-            where: {
-              and: [
-                { stock: { equals: stockIdToUse } },
-                { valueDate: { equals: meeting.holdingsLimit } }, //TODO: update
-                {
-                  'account.company': {
-                    in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+          if (stocksVales != null) {
+            const { docs: holdingsLimitDateDocs } = await payload.find({
+              collection: 'holdings',
+              depth: 1,
+              where: {
+                and: [
+                  { stock: { equals: stockIdToUse } },
+                  { valueDate: { equals: meeting.holdingsLimit } },
+                  {
+                    'account.company': {
+                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                    },
                   },
-                },
-              ],
-            },
-            limit: 0,
-          })
-          if (stocksVales?.closingRate != null) {
-            holdingsArray =
-              resuHoldings.length > 0
-                ? resuHoldings.map(({ account, quantity }) => {
-                    const holdingsCompanyName =
-                      typeof account === 'object' ? account.name : 'Unknown Account'
-                    const percentageHolding = stocksVales?.registeredValue
-                      ? parseFloat(((quantity / stocksVales.registeredValue) * 100).toFixed(2))
-                      : 0
-                    const holdingValueInMillions = Math.round(
-                      (quantity * (stocksVales?.closingRate ?? 0)) / 100000000,
-                    )
-                    return {
-                      holdingsCompanyName,
-                      quantity,
-                      percentageHolding,
-                      holdingValueInMillions,
-                      registeredValue: 1111,
-                    }
-                  })
-                : null
+                ],
+              },
+              limit: 0,
+            })
+            resuHoldings = holdingsLimitDateDocs
+          } else {
+            const { docs: resuStockValues } = await payload.find({
+              collection: 'stock-values',
+              depth: 1,
+              where: {
+                stockId: { equals: stockIdToUse },
+                valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() }, //need it?
+              },
+              limit: 0,
+            })
+            stocksVales = resuStockValues.length > 0 ? resuStockValues[0] : null
+            const { docs: latestDateDocs } = await payload.find({
+              collection: 'holdings',
+              where: {
+                and: [
+                  { stock: { equals: stockIdToUse } },
+                  {
+                    'account.company': {
+                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                    },
+                  },
+                ],
+              },
+              sort: '-valueDate',
+              limit: 1,
+            })
+            resuHoldings = latestDateDocs
           }
+
+          holdingsArray = resuHoldings.map(({ account, quantity }) => {
+            const holdingsCompanyName =
+              typeof account === 'object' ? account.name : 'Unknown Account'
+            const percentageHolding = stocksVales?.registeredValue
+              ? parseFloat(((quantity / stocksVales.registeredValue) * 100).toFixed(2))
+              : 0
+            const holdingValueInMillions = Math.round(
+              (quantity * (stocksVales?.closingRate ?? 0)) / 100000000,
+            )
+            return {
+              holdingsCompanyName,
+              percentageHolding,
+              holdingValueInMillions,
+              nominalValue: Number(quantity),
+            }
+          })
         }
 
         return {
@@ -120,13 +145,18 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           companyName: stockPresent?.longName || '-',
           stockTradable: stockPresent?.tradable || false,
           marketValue: stocksVales?.marketValue || 0,
-          registeredValue: stocksVales?.registeredValue || 0,
           meetingType: meeting.type || '-',
           meetingDate: meeting.meetingDate || '-',
           reference: meeting.magnaId || '-',
           location: meeting.location || '-',
           holdingsLimit: meeting.holdingsLimit || '-',
           proxyVotingDate: meeting.proxyVotingDate || '-',
+          nominalValue: holdingsArray?.reduce((acc, obj) => acc + obj.nominalValue, 0),
+          percentageHolding: holdingsArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0),
+          holdingValueInMillions: holdingsArray?.reduce(
+            (acc, obj) => acc + obj.holdingValueInMillions,
+            0,
+          ),
           meetingState: meeting.state || null,
           meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
           comments: meeting.comments || '-',

@@ -991,7 +991,6 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                             {/* Map through visible columns and show relevant account data */}
                             {visibleColumns.slice(1).map((column, columnIndex) => {
-                              // Skip the first column (accounts)
                               if (column.key in account) {
                                 return (
                                   <TableCell
@@ -1001,7 +1000,9 @@ export function DataTableStatic<T extends Record<string, any>>({
                                   >
                                     {(() => {
                                       const value = account[column.key as keyof HoldingTableDate]
-                                      return value
+                                      return typeof value === 'number'
+                                        ? new Intl.NumberFormat('he-IL').format(value)
+                                        : value
                                     })()}
                                   </TableCell>
                                 )

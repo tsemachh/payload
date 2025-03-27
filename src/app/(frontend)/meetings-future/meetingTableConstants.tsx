@@ -107,11 +107,11 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 130,
   },
   {
-    key: 'registeredValue',
+    key: 'nominalValue',
     header: 'ערך נקוב',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue),
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.nominalValue),
     minWidth: 90,
   },
   {
@@ -122,7 +122,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       new Intl.NumberFormat('he-IL', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(row.accounts?.reduce((acc, obj) => acc + obj.percentageHolding, 0)),
+      }).format(row.percentageHolding),
     minWidth: 100,
   },
   {
@@ -131,7 +131,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.accounts?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0),
+        row.holdingValueInMillions,
       ),
     minWidth: 90,
   },
@@ -162,7 +162,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
-    minWidth: 40,
+    minWidth: 50,
   },
   {
     key: 'electronicVotingEnabled',
@@ -171,7 +171,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
-    minWidth: 40,
+    minWidth: 50,
   },
   {
     key: 'committeeInitiated',
@@ -180,7 +180,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
-    minWidth: 40,
+    minWidth: 50,
   },
 ]
 
@@ -190,7 +190,7 @@ export const defaultVisibleColumns = [
   'stockType',
   'stockName',
   'marketValue',
-  'registeredValue',
+  'nominalValue',
   'percentageHolding',
   'holdingValueInMillions',
   'meetingType',
