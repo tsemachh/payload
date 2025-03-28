@@ -150,17 +150,30 @@ const preloadAccounts = async (
     depth: 1,
   })
 
-  const accountMap: Map<number, string> = new Map()
+// ---- Adding logs to track company accounts processing ----
+  const accountMap: Map<number, string> = new Map();
+  console.log('Processing companies:', companies.docs.length);
+
   companies.docs.forEach((company: Company) => {
-    const accounts = company?.accounts?.docs as Account[]
+    console.log('Processing company:', company.id, 'Accounts:', company?.accounts?.docs?.length ?? 0);
+    const accounts = company?.accounts?.docs as Account[];
+
     accounts.forEach((account) => {
-      accountMap.set(account?.accountNumber, account?.id)
+      console.log('Processing account:', account?.accountNumber, 'ID:', account?.id);
+      accountMap.set(account?.accountNumber, account?.id);
+
+      if (!account?.accounts?.docs || account?.accounts?.docs.length === 0) {
+        console.log('No sub-accounts found for account:', account?.accountNumber);
+      }
+
       account?.accounts?.docs?.forEach((value) => {
-        const subAccount: Account = value as Account
-        accountMap.set(subAccount.accountNumber, account?.id)
-      })
-    })
-  })
+        const subAccount: Account = value as Account;
+        console.log('Processing sub-account:', subAccount.accountNumber, 'Parent Account ID:', account?.id);
+        accountMap.set(subAccount.accountNumber, account?.id);
+      });
+    });
+  });
+
 
   return accountMap
 }
@@ -191,6 +204,7 @@ const preloadStocks = async (
   })
 
   stocksResult.docs.forEach((stock: Stock) => {
+
       stockMap.set(stock?.stockId, stock?.relatedStock ? stock.relatedStock as string: stock?.id )
   })
 
