@@ -150,7 +150,6 @@ const preloadAccounts = async (
     depth: 1,
   })
 
-// ---- Adding logs to track company accounts processing ----
   const accountMap: Map<number, string> = new Map();
   console.log('Processing companies:', companies.docs.length);
 
@@ -204,9 +203,19 @@ const preloadStocks = async (
   })
 
   stocksResult.docs.forEach((stock: Stock) => {
+    console.log("Processing stock:", stock);
 
-      stockMap.set(stock?.stockId, stock?.relatedStock ? stock.relatedStock as string: stock?.id )
-  })
+    // Ensure related.docs exists and check if it's not empty
+    const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0;
+    const stockKey = stock?.stockId;
+    const stockValue = stock?.relatedStock && hasRelatedDocs ? stock.relatedStock as string : stock?.id;
+
+    console.log(`Setting stockMap[${stockKey}] = ${stockValue}`);
+
+    stockMap.set(stockKey, stockValue);
+  });
+
+  console.log("Final stockMap:", Array.from(stockMap.entries()));
 
   return stockMap
 }
