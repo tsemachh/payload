@@ -10,7 +10,7 @@ export type MeetingTableDataType = {
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
   marketValue: number //שווי שוק
-  nominalValue: number // הון רשום
+  nominalValue: number // ערך נקוב
   percentageHolding: number //אחוז אחזקות
   holdingValueInMillions: number //שווי אחזקה במיליונים
   meetingType: string //סוג האסיפה

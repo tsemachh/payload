@@ -4,6 +4,7 @@ import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
 import { headers as getHeaders } from 'next/headers.js'
 import { StockValue } from '@/payload-types'
+import { calculateHoldingValues } from '@/utils/utils'
 
 export async function fetchFutureMeetingsForTable(): Promise<{
   data: MeetingTableDataType[]
@@ -51,86 +52,73 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           )
           return null
         }
-
-        let stocksVales: StockValue | null = null
-        let resuHoldings
+        let stockValues: StockValue | null = null
         let holdingsArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
-
-        if (meeting.holdingsLimit) {
+        // Finding Date: holdingsLimit date or the closest date before it.
+        const { docs } = await payload.find({
+          collection: 'holdings',
+          depth: 0,
+          where: {
+            and: [
+              { stock: { equals: stockIdToUse } },
+              { valueDate: { less_than_equal: meeting.holdingsLimit } },
+              {
+                'account.company': {
+                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                },
+              },
+            ],
+          },
+          sort: '-valueDate',
+          limit: 1,
+        })
+        const nearestHoldingsLimitDate = docs.length > 0 ? docs[0].valueDate : null
+        if (!nearestHoldingsLimitDate) {
+          console.log(' --- Error! nearestHoldingsLimitDate not find for stockId', stockIdToUse)
+        } else {
+          // Finding stockValues:
           const { docs: resuStockValues } = await payload.find({
             collection: 'stock-values',
             depth: 1,
             where: {
               stockId: { equals: stockIdToUse },
-              valueDate: { equals: new Date(meeting.holdingsLimit).toISOString() },
+              valueDate: { equals: new Date(nearestHoldingsLimitDate).toISOString() },
             },
             limit: 0,
           })
-          stocksVales = resuStockValues.length > 0 ? resuStockValues[0] : null
-          if (stocksVales != null) {
-            const { docs: holdingsLimitDateDocs } = await payload.find({
-              collection: 'holdings',
-              depth: 1,
-              where: {
-                and: [
-                  { stock: { equals: stockIdToUse } },
-                  { valueDate: { equals: meeting.holdingsLimit } },
-                  {
-                    'account.company': {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                    },
-                  },
-                ],
-              },
-              limit: 0,
-            })
-            resuHoldings = holdingsLimitDateDocs
-          } else {
-            const { docs: resuStockValues } = await payload.find({
-              collection: 'stock-values',
-              depth: 1,
-              where: {
-                stockId: { equals: stockIdToUse },
-              },
-              sort: '-valueDate',
-              limit: 1,
-            })
-            stocksVales = resuStockValues.length > 0 ? resuStockValues[0] : null
-            const { docs: latestDateDocs } = await payload.find({
-              collection: 'holdings',
-              where: {
-                and: [
-                  { stock: { equals: stockIdToUse } },
-                  {
-                    'account.company': {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                    },
-                  },
-                ],
-              },
-              sort: '-valueDate',
-              limit: 1,
-            })
-            resuHoldings = latestDateDocs
-          }
+          stockValues = resuStockValues.length > 0 ? resuStockValues[0] : null
 
+          // Finding holdings:
+          const { docs: holdingsLimitDateDocs } = await payload.find({
+            collection: 'holdings',
+            depth: 1,
+            where: {
+              and: [
+                { stock: { equals: stockIdToUse } },
+                { valueDate: { equals: nearestHoldingsLimitDate } },
+                {
+                  'account.company': {
+                    in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                  },
+                },
+              ],
+            },
+            limit: 0,
+          })
+          const resuHoldings = holdingsLimitDateDocs
+
+          // Implementation of holdings values
           holdingsArray = resuHoldings.map(({ account, quantity }) => {
-            const holdingsCompanyName =
-              typeof account === 'object' ? account.name : 'Unknown Account'
-            const percentageHolding = stocksVales?.registeredValue
-              ? parseFloat(((quantity / stocksVales.registeredValue) * 100).toFixed(2))
-              : 0
-            const holdingValueInMillions = Math.round(
-              (quantity * (stocksVales?.closingRate ?? 0)) / 100000000,
-            )
+            const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
+              calculateHoldingValues(account, quantity, stockValues)
             return {
               holdingsCompanyName,
               percentageHolding,
               holdingValueInMillions,
-              nominalValue: Number(quantity),
+              nominalValue,
             }
           })
         }
@@ -144,7 +132,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           stockName: stockPresent?.name || '-',
           companyName: stockPresent?.longName || '-',
           stockTradable: stockPresent?.tradable || false,
-          marketValue: stocksVales?.marketValue || 0,
+          marketValue: stockValues?.marketValue || 0,
           meetingType: meeting.type || '-',
           meetingDate: meeting.meetingDate || '-',
           reference: meeting.magnaId || '-',
