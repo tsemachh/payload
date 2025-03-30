@@ -36,6 +36,7 @@ import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
 import {
   calculateColumnWidths,
+  calculatePrecedingColumnsWidth,
   escapeRegExp,
   formatDateTime,
   isDateInRange,
@@ -46,6 +47,7 @@ import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import {
+  Column,
   DataTableProps,
   FacetedFilterItem,
   HoldingTableDate,
@@ -1014,7 +1016,15 @@ export function DataTableStatic<T extends Record<string, any>>({
                                   >
                                     {columnIndex === 0 && (
                                       <div className="relative h-40px">
-                                        <span className="absolute right-[-10px] top-1/2 -translate-y-1/2 font-medium ">
+                                        <span
+                                          className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
+                                          style={{
+                                            maxWidth: calculatePrecedingColumnsWidth(
+                                              visibleColumns as unknown as Column<MeetingTableDataType>[],
+                                              account,
+                                            ),
+                                          }}
+                                        >
                                           {account.holdingsCompanyName}
                                         </span>
                                       </div>

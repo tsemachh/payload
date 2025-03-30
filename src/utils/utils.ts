@@ -1,7 +1,5 @@
 import { BasePayload, TypeWithID } from 'payload'
-import type { Account, Stock } from '@/payload-types'
-import { Column, HoldingTableDate, MeetingTableDataType } from '@/app/(frontend)/types/meetings'
-import { StockValue } from '@/payload-types'
+import type { Stock } from '@/payload-types'
 
 export async function getStockIds(stock: Stock) {
   const stockIds: string[] = []
@@ -98,42 +96,4 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
   return typeof item == 'string' ? item : item.id
-}
-export const determineCompanyNameMaxWidth = (
-  columns: Column<MeetingTableDataType>[],
-  account: HoldingTableDate,
-) => {
-  const firstValueColumnIndex = columns.findIndex((col) => col.key in account)
-
-  if (firstValueColumnIndex === -1) {
-    return '100%'
-  }
-
-  const maxWidth = (firstValueColumnIndex - 0.5) * 100 // מספר העמודות עד לעמודה עם הערך כפול רוחב משוער
-  console.log('firstValueColumnIndex', firstValueColumnIndex)
-
-  return `${maxWidth}px`
-}
-
-export const calculateHoldingValues = (
-  account: Account | string,
-  quantity: number,
-  stockValues: StockValue | null,
-) => {
-  const holdingsCompanyName = typeof account === 'object' ? account.name : 'Unknown Account'
-
-  const percentageHolding = stockValues?.registeredValue
-    ? parseFloat(((quantity / stockValues.registeredValue) * 100).toFixed(2))
-    : 0
-
-  const holdingValueInMillions = stockValues?.closingRate
-    ? Math.round((quantity * stockValues.closingRate) / 100000000)
-    : 0
-
-  return {
-    holdingsCompanyName,
-    percentageHolding,
-    holdingValueInMillions,
-    nominalValue: Number(quantity),
-  }
 }
