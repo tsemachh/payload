@@ -564,7 +564,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const renderAccountsCell = useCallback(
     (row: T) => {
       return (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-end w-[40px]">
           <Button
             variant="ghost"
             size="sm"
@@ -766,7 +766,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length)}px`,
+                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length, column.width)}px`,
                         }}
                       >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
