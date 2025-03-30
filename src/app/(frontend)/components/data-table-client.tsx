@@ -1,6 +1,6 @@
 'use client'
 
-import type React from 'react'
+import React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Table,
@@ -24,6 +24,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ChevronLeft,
   Filter,
   FilterX,
   Search,
@@ -35,6 +36,7 @@ import { isWithinInterval } from 'date-fns'
 import { BooleanIcon } from './ui/icons'
 import {
   calculateColumnWidths,
+  calculatePrecedingColumnsWidth,
   escapeRegExp,
   formatDateTime,
   isDateInRange,
@@ -44,7 +46,13 @@ import {
 import { Checkbox } from './ui/checkbox'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import { DataTableProps, FacetedFilterItem, MeetingTableDataType } from '../types/meetings'
+import {
+  Column,
+  DataTableProps,
+  FacetedFilterItem,
+  HoldingTableDate,
+  MeetingTableDataType,
+} from '../types/meetings'
 import { defaultVisibleColumns, getDateRange } from '../meetings-future/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -71,6 +79,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     direction: defaultSortDirection,
   })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
   const [isFilterActive, setIsFilterActive] = useState(false)
@@ -158,6 +167,13 @@ export function DataTableStatic<T extends Record<string, any>>({
     },
     [tableId],
   )
+
+  const toggleRowExpansion = useCallback((meetingId: number) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [meetingId]: !prev[meetingId],
+    }))
+  }, [])
 
   // Function that extracts the displayed value of a field
   const getDisplayValue = useCallback(
@@ -544,6 +560,33 @@ export function DataTableStatic<T extends Record<string, any>>({
     )
   }, [])
 
+  // Function to render the accounts cell with toggle button
+  const renderAccountsCell = useCallback(
+    (row: T) => {
+      return (
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0 h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleRowExpansion(row.meetingId)
+            }}
+          >
+            {expandedRows[row.meetingId] ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+          <span>{row.accounts?.length || 0}</span>
+        </div>
+      )
+    },
+    [expandedRows, toggleRowExpansion],
+  )
+
   // Get sort icon for column header
   const getSortIcon = (columnKey: keyof T) => {
     if (sortConfig.key === columnKey) {
@@ -909,35 +952,95 @@ export function DataTableStatic<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={uuidv4()} className="group hover:bg-primary/20">
-                    {visibleColumns.map((column) => (
-                      <TableCell
-                        key={`${String(row[idField])}-${String(column.key)}`}
-                        style={{
-                          direction: column.type === 'datetime' ? 'ltr' : 'rtl',
-                          placeItems: column.positionCenter ? 'center' : 'unset',
-                          textAlign: column.positionCenter ? 'center' : 'right',
-                        }}
-                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
-                        ref={(el) => {
-                          if (!el) return
-                          el.setAttribute(
-                            'title',
-                            el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
-                          )
-                        }}
-                      >
-                        {column.render
-                          ? column.render(row)
-                          : highlightText(getDisplayValue(row, column.key), searchTerm)}
-                      </TableCell>
-                    ))}
-                    {renderRowActions && (
-                      <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                        {renderRowActions(row)}
-                      </TableCell>
+                  <React.Fragment key={row.meetingId}>
+                    <TableRow key={uuidv4()} className="group hover:bg-primary/20">
+                      {visibleColumns.map((column) => (
+                        <TableCell
+                          key={`${String(row[idField])}-${String(column.key)}`}
+                          style={{
+                            direction: column.type === 'datetime' ? 'ltr' : 'rtl',
+                            placeItems: column.positionCenter ? 'center' : 'unset',
+                            textAlign: column.positionCenter ? 'center' : 'right',
+                          }}
+                          className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
+                          ref={(el) => {
+                            if (!el) return
+                            el.setAttribute(
+                              'title',
+                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                            )
+                          }}
+                        >
+                          {column.key === 'accounts'
+                            ? renderAccountsCell(row)
+                            : column.render
+                              ? column.render(row)
+                              : highlightText(getDisplayValue(row, column.key), searchTerm)}
+                        </TableCell>
+                      ))}
+                      {renderRowActions && (
+                        <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                          {renderRowActions(row)}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    {expandedRows[row.meetingId] && row.accounts && row.accounts.length > 0 && (
+                      <>
+                        {row.accounts.map((account: HoldingTableDate) => (
+                          <TableRow key={`account-${uuidv4()}`} className="bg-muted/30 border-t-0">
+                            {/* Empty cell for accounts column */}
+                            <TableCell className="py-2 px-3"></TableCell>
+
+                            {/* Map through visible columns and show relevant account data */}
+                            {visibleColumns.slice(1).map((column, columnIndex) => {
+                              if (column.key in account) {
+                                return (
+                                  <TableCell
+                                    key={`account-${uuidv4()}-${String(column.key)}`}
+                                    className="py-2 px-3 whitespace-nowrap"
+                                    style={{ textAlign: 'right' }}
+                                  >
+                                    {(() => {
+                                      const value = account[column.key as keyof HoldingTableDate]
+                                      return typeof value === 'number'
+                                        ? new Intl.NumberFormat('he-IL').format(value)
+                                        : value
+                                    })()}
+                                  </TableCell>
+                                )
+                              } else {
+                                return (
+                                  <TableCell
+                                    key={`account-${uuidv4()}-${String(column.key)}`}
+                                    className="py-2 px-3 whitespace-nowrap"
+                                  >
+                                    {columnIndex === 0 && (
+                                      <div className="relative h-40px">
+                                        <span
+                                          className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
+                                          style={{
+                                            maxWidth: calculatePrecedingColumnsWidth(
+                                              visibleColumns as unknown as Column<MeetingTableDataType>[],
+                                              account,
+                                            ),
+                                          }}
+                                        >
+                                          {account.holdingsCompanyName}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                )
+                              }
+                            })}
+
+                            {/* Empty cell for the sticky column */}
+                            <TableCell className="p-0 w-0"></TableCell>
+                          </TableRow>
+                        ))}
+                      </>
                     )}
-                  </TableRow>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>

@@ -8,6 +8,13 @@ import { meetingStateMap } from '../helpers/maps'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
+  {
+    key: 'accounts',
+    header: 'חשבונות',
+    type: 'string',
+    sortKey: 'accounts',
+    minWidth: 50,
+  },
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {
     key: 'stockType',
@@ -43,15 +50,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => <BooleanIcon iconType={row.stockTradable} />,
     minWidth: 40,
   },
-
-  {
-    key: 'registeredValue',
-    header: 'ערך נקוב',
-    type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.registeredValue / 1),
-    minWidth: 90,
-  },
   {
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
@@ -80,13 +78,13 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'meetingDate',
-    header: 'מועד האסיפה',
+    header: 'מועד אסיפה',
     type: 'datetime',
     filterable: true,
     render: (row) => {
       return formatDateTime(row.meetingDate)
     },
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     key: 'holdingsLimit',
@@ -106,7 +104,36 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return formatDateTime(row.proxyVotingDate)
     },
-    minWidth: 120,
+    minWidth: 130,
+  },
+  {
+    key: 'nominalValue',
+    header: 'ערך נקוב',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.nominalValue),
+    minWidth: 90,
+  },
+  {
+    key: 'percentageHolding',
+    header: 'אחזקה (%)',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(row.percentageHolding),
+    minWidth: 100,
+  },
+  {
+    key: 'holdingValueInMillions',
+    header: 'שווי אחזקה (מיליוני)',
+    type: 'number',
+    render: (row) =>
+      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
+        row.holdingValueInMillions,
+      ),
+    minWidth: 90,
   },
   { key: 'reference', header: 'אסמכתא', type: 'string', minWidth: 120 },
   {
@@ -127,7 +154,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
   { key: 'location', header: 'מיקום', type: 'string', minWidth: 200 },
-  { key: 'comments', header: 'הערות', type: 'string', minWidth: 70 },
+  { key: 'comments', header: 'הערות', type: 'string', minWidth: 120 },
   {
     key: 'resultsConfirmationStatus',
     header: 'אימות תוצאות',
@@ -135,7 +162,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
-    minWidth: 40,
+    minWidth: 50,
   },
   {
     key: 'electronicVotingEnabled',
@@ -144,7 +171,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
-    minWidth: 40,
+    minWidth: 50,
   },
   {
     key: 'committeeInitiated',
@@ -153,16 +180,19 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
-    minWidth: 40,
+    minWidth: 50,
   },
 ]
 
 export const defaultVisibleColumns = [
+  'accounts',
   'stockNumber',
   'stockType',
   'stockName',
   'marketValue',
-  'registeredValue',
+  'nominalValue',
+  'percentageHolding',
+  'holdingValueInMillions',
   'meetingType',
   'meetingDate',
   'holdingsLimit',

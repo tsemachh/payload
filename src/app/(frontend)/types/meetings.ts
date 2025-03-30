@@ -2,6 +2,7 @@ import { MeetingState } from '@/payload-types'
 
 export type MeetingTableDataType = {
   meetingId: string
+  accounts: HoldingTableDate[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
@@ -9,7 +10,9 @@ export type MeetingTableDataType = {
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
   marketValue: number //שווי שוק
-  registeredValue: number //ערך נקוב
+  nominalValue: number // ערך נקוב
+  percentageHolding: number //אחוז אחזקות
+  holdingValueInMillions: number //שווי אחזקה במיליונים
   meetingType: string //סוג האסיפה
   meetingDate: string //מועד האסיפה
   reference: string
@@ -27,6 +30,13 @@ export type MeetingTableDataType = {
 export type DateFilterOption = {
   value: string
   label: string
+}
+
+export type HoldingTableDate = {
+  holdingsCompanyName: string
+  percentageHolding: number
+  holdingValueInMillions: number
+  nominalValue: number
 }
 
 // Base column type for all tables
