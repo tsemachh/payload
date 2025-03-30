@@ -40,7 +40,14 @@ export const isValidDate = (date: any): boolean => {
   return !isNaN(d.getTime())
 }
 
-export const calculateColumnWidths = (minWidth: number, columnCount: number): number => {
+export const calculateColumnWidths = (
+  minWidth: number,
+  columnCount: number,
+  width?: number,
+): number => {
+  if (width) {
+    return width
+  }
   const screenWidth = window.innerWidth
   return Math.max((screenWidth / columnCount) * (minWidth / 100), minWidth)
 }

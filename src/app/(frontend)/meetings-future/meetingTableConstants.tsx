@@ -13,7 +13,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'חשבונות',
     type: 'string',
     sortKey: 'accounts',
-    minWidth: 50,
+    minWidth: 40,
+    width: 40,
   },
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {
