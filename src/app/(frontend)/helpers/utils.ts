@@ -1,5 +1,5 @@
 import { isWithinInterval } from 'date-fns'
-import { Column, DateFilterOption, HoldingTableDate, MeetingTableDataType } from '../types/meetings'
+import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import { Account, StockValue } from '@/payload-types'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
@@ -54,9 +54,9 @@ export const calculateColumnWidths = (
 
 export const calculatePrecedingColumnsWidth = (
   columns: Column<MeetingTableDataType>[],
-  account: HoldingTableDate,
+  company: CompanyTableDate,
 ) => {
-  const firstValueColumnIndex = columns.findIndex((col) => col.key in account)
+  const firstValueColumnIndex = columns.findIndex((col) => col.key in company)
   if (firstValueColumnIndex === -1) return '100%'
 
   const columnCount = columns.length
@@ -88,6 +88,6 @@ export const calculateHoldingValues = (
     holdingsCompanyName,
     percentageHolding,
     holdingValueInMillions,
-    nominalValue: Number(quantity),
+    nominalValue: Math.round(quantity),
   }
 }

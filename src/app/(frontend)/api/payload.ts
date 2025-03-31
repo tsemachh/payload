@@ -53,7 +53,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           return null
         }
         let stockValues: StockValue | null = null
-        let holdingsArray = null
+        let companiesArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
@@ -112,7 +112,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           const resuHoldings = holdingsLimitDateDocs
 
           // Implementation of holdings values
-          holdingsArray = resuHoldings.map(({ account, quantity }) => {
+          companiesArray = resuHoldings.map(({ account, quantity }) => {
             const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
               calculateHoldingValues(account, quantity, stockValues)
             return {
@@ -126,7 +126,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
 
         return {
           meetingId: meeting.meetingId,
-          accounts: holdingsArray,
+          companies: companiesArray,
           stockNumber: stockPresent?.stockId?.toString() || '-',
           stockType: stockPresent?.type || '-',
           stockSymbol: stockPresent?.symbol || '-',
@@ -140,9 +140,9 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           location: meeting.location || '-',
           holdingsLimit: meeting.holdingsLimit || '-',
           proxyVotingDate: meeting.proxyVotingDate || '-',
-          nominalValue: holdingsArray?.reduce((acc, obj) => acc + obj.nominalValue, 0),
-          percentageHolding: holdingsArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0),
-          holdingValueInMillions: holdingsArray?.reduce(
+          nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0),
+          percentageHolding: companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0),
+          holdingValueInMillions: companiesArray?.reduce(
             (acc, obj) => acc + obj.holdingValueInMillions,
             0,
           ),

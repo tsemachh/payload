@@ -50,7 +50,7 @@ import {
   Column,
   DataTableProps,
   FacetedFilterItem,
-  HoldingTableDate,
+  CompanyTableDate,
   MeetingTableDataType,
 } from '../types/meetings'
 import { defaultVisibleColumns, getDateRange } from '../meetings-future/meetingTableConstants'
@@ -560,13 +560,13 @@ export function DataTableStatic<T extends Record<string, any>>({
     )
   }, [])
 
-  // Function to render the accounts cell with toggle button
-  const renderAccountsCell = useCallback(
+  // Function to render the companies cell with toggle button
+  const renderCompaniesCell = useCallback(
     (row: T) => {
       return (
-        <div className="flex items-center justify-end w-[40px]">
+        <div className="flex items-center justify-end w-[20px] p-0 m-0">
           <Button
-            variant="ghost"
+            variant="icon"
             size="sm"
             className="p-0 h-6 w-6"
             onClick={(e) => {
@@ -580,7 +580,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               <ChevronLeft className="h-4 w-4" />
             )}
           </Button>
-          <span>{row.accounts?.length || 0}</span>
+          <span className="mr-1">{row.companies?.length || 0}</span>
         </div>
       )
     },
@@ -964,15 +964,20 @@ export function DataTableStatic<T extends Record<string, any>>({
                           }}
                           className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
                           ref={(el) => {
-                            if (!el) return
+                            if (
+                              !el ||
+                              column.key == 'companies' ||
+                              typeof row[column.key] == 'object'
+                            )
+                              return
                             el.setAttribute(
                               'title',
                               el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
                             )
                           }}
                         >
-                          {column.key === 'accounts'
-                            ? renderAccountsCell(row)
+                          {column.key === 'companies'
+                            ? renderCompaniesCell(row)
                             : column.render
                               ? column.render(row)
                               : highlightText(getDisplayValue(row, column.key), searchTerm)}
@@ -984,24 +989,27 @@ export function DataTableStatic<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
-                    {expandedRows[row.meetingId] && row.accounts && row.accounts.length > 0 && (
+                    {expandedRows[row.meetingId] && row.companies && row.companies.length > 0 && (
                       <>
-                        {row.accounts.map((account: HoldingTableDate) => (
-                          <TableRow key={`account-${uuidv4()}`} className="bg-muted/30 border-t-0">
-                            {/* Empty cell for accounts column */}
+                        {row.companies.map((company: CompanyTableDate) => (
+                          <TableRow
+                            key={`company-${uuidv4()}`}
+                            className="bg-muted/50 border-t-0 hover:bg-primary/20"
+                          >
+                            {/* Empty cell for companies column */}
                             <TableCell className="py-2 px-3"></TableCell>
 
-                            {/* Map through visible columns and show relevant account data */}
+                            {/* Map through visible columns and show relevant company data */}
                             {visibleColumns.slice(1).map((column, columnIndex) => {
-                              if (column.key in account) {
+                              if (column.key in company) {
                                 return (
                                   <TableCell
-                                    key={`account-${uuidv4()}-${String(column.key)}`}
+                                    key={`company-${uuidv4()}-${String(column.key)}`}
                                     className="py-2 px-3 whitespace-nowrap"
                                     style={{ textAlign: 'right' }}
                                   >
                                     {(() => {
-                                      const value = account[column.key as keyof HoldingTableDate]
+                                      const value = company[column.key as keyof CompanyTableDate]
                                       return typeof value === 'number'
                                         ? new Intl.NumberFormat('he-IL').format(value)
                                         : value
@@ -1011,7 +1019,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                               } else {
                                 return (
                                   <TableCell
-                                    key={`account-${uuidv4()}-${String(column.key)}`}
+                                    key={`company-${uuidv4()}-${String(column.key)}`}
                                     className="py-2 px-3 whitespace-nowrap"
                                   >
                                     {columnIndex === 0 && (
@@ -1021,11 +1029,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           style={{
                                             maxWidth: calculatePrecedingColumnsWidth(
                                               visibleColumns as unknown as Column<MeetingTableDataType>[],
-                                              account,
+                                              company,
                                             ),
                                           }}
                                         >
-                                          {account.holdingsCompanyName}
+                                          {company.holdingsCompanyName}
                                         </span>
                                       </div>
                                     )}
@@ -1034,8 +1042,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                               }
                             })}
 
-                            {/* Empty cell for the sticky column */}
-                            <TableCell className="p-0 w-0"></TableCell>
+                            {renderRowActions && (
+                              <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                {renderRowActions(row)}
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </>
