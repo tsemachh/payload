@@ -9,12 +9,12 @@ import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
-    key: 'accounts',
-    header: 'חשבונות',
+    key: 'companies',
+    header: 'חברות',
     type: 'string',
-    sortKey: 'accounts',
-    minWidth: 40,
-    width: 40,
+    sortKey: 'companies',
+    minWidth: 50,
+    width: 50,
   },
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {
@@ -186,7 +186,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
 ]
 
 export const defaultVisibleColumns = [
-  'accounts',
+  'companies',
   'stockNumber',
   'stockType',
   'stockName',
