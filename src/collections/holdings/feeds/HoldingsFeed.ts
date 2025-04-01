@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
 
 export const HoldingsFeed: CollectionConfig = {
   slug: 'holdings-feed',
@@ -70,29 +69,41 @@ export const HoldingsFeed: CollectionConfig = {
       },
       fields: [
         {
-          name: 'error',
-          type: 'text',
-          label: 'שגיאה',
-        },
-        {
-          name: 'stockId',
-          type: 'text',
-          label: 'מזהה נייר ערך',
-        },
-        {
-          name: 'accountId',
-          type: 'text',
-          label: 'מזהה חשבון',
-        },
-        {
-          name: 'quantity',
-          type: 'text',
-          label: 'כמות',
-        },
-        {
-          name: 'lineNumber',
-          type: 'number',
-          label: 'מספר שורה',
+          type: 'group',
+          name: 'line',
+          interfaceName: 'HoldingFeedLine',
+          fields: [
+            {
+              name: 'error',
+              type: 'text',
+              label: 'שגיאה',
+            },
+            {
+              name: 'stockId',
+              type: 'text',
+              label: 'מזהה נייר ערך',
+            },
+            {
+              name: 'accountId',
+              type: 'text',
+              label: 'מזהה חשבון',
+            },
+            {
+              name: 'quantity',
+              type: 'number',
+              label: 'כמות',
+            },
+            {
+              name: 'lineNumber',
+              type: 'number',
+              label: 'מספר שורה',
+            },
+            {
+              name: 'status',
+              type: 'select',
+              options: ['error','success']
+            }
+          ],
         },
       ],
     },

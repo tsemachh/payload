@@ -1,22 +1,13 @@
 import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
-import { Account, Company, HoldingsFeed, Stock } from '@/payload-types'
+import { Account, Company, HoldingsFeed, Stock ,HoldingFeedLine} from '@/payload-types'
 
 // Define column indices for files without headers
 // Assuming the columns are in a specific order: stockId, quantity, accountId
 const STOCK_ID_COL = 0
 const QUANTITY_COL = 1
 const ACCOUNT_ID_COL = 2
-
-interface HoldingImport {
-  stockId: string
-  quantity: number
-  accountId: string
-  lineNumber: number
-  status: 'success' | 'error'
-  error?: string
-}
 
 interface StandardizedRow {
   stockId: string
@@ -91,7 +82,7 @@ const validateRow = (
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
 ): {
-  processedRecord: HoldingImport
+  processedRecord: HoldingFeedLine
 } => {
   const { stockId, quantity, accountId } = row
   const lineNumber = index + 1
@@ -118,7 +109,7 @@ const validateRow = (
     errorMessage = 'Unknown account ID'
   }
 
-  const processedRecord: HoldingImport = {
+  const processedRecord: HoldingFeedLine = {
     stockId,
     quantity,
     accountId,
@@ -273,7 +264,7 @@ const collectPreviousFeedData = async (
  */
 const createHoldings = async (
   req: PayloadRequest,
-  processedRecords: HoldingImport[],
+  processedRecords: HoldingFeedLine[],
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
   valueDate: string,
@@ -283,9 +274,9 @@ const createHoldings = async (
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
-      const accountId = parseInt(record.accountId);
+      const accountId = parseInt(record.accountId as string);
       const account = accountMap.get(accountId) as string;
-      const stock = stockMap.get(record.stockId) as string;
+      const stock = stockMap.get(record.stockId as string) as string;
 
       // Create a unique key for each account-stock combination
       const key = `${account}-${stock}`;
@@ -293,13 +284,13 @@ const createHoldings = async (
       if (aggregatedRecords.has(key)) {
         // If this combination already exists, add to the quantity
         const existingRecord = aggregatedRecords.get(key)!;
-        existingRecord.quantity += record.quantity;
+        existingRecord.quantity += record.quantity as number;
       } else {
         // Otherwise, create a new entry
         aggregatedRecords.set(key, {
           account,
           stock,
-          quantity: record.quantity
+          quantity: record.quantity as number
         });
       }
     }
@@ -462,7 +453,7 @@ export const processHoldingsFeedCsv = async (
     const results = parseFileContent(file)
 
     // Process records
-    const processedRecords: HoldingImport[] = []
+    const processedRecords: HoldingFeedLine[] = []
     const errors: any[] = []
 
     // Preload accounts

@@ -119,7 +119,6 @@ export function HoldingsFeed() {
         } else {
           // If no warnings, poll for processing status
           setIsProcessing(true)
-          pollProcessingStatus(result.holdingsFeed.id)
         }
       } else {
         setIsSuccess(false)
@@ -142,48 +141,6 @@ export function HoldingsFeed() {
     }
   }
 
-  const pollProcessingStatus = async (id: string) => {
-    /*    try {
-
-          const response = await fetch(`/api/holdings-feed/${id}`)
-          const result = await response.json()
-
-
-          if (response.ok) {
-            if (result.processingStatus === 'pending') {
-              // Continue polling
-              setTimeout(() => pollProcessingStatus(id), 1000)
-            } else if (result.processingStatus === 'completed') {
-              setIsSuccess(true)
-              setIsProcessing(false)
-              toast({
-                title: 'הצלחה',
-                description: 'קובץ האחזקות נקלט בהצלחה',
-              })
-            } else {
-              // Failed
-              setIsSuccess(false)
-              setIsProcessing(false)
-              if (result.processingErrors && result.processingErrors.length > 0) {
-                setErrors(result.processingErrors)
-              }
-            }
-          } else {
-            setIsSuccess(false)
-            setIsProcessing(false)
-            toast({
-              title: 'שגיאה בבדיקת סטטוס עיבוד',
-              description: result.error || 'אירעה שגיאה בבדיקת סטטוס עיבוד',
-              variant: 'destructive',
-            })
-          }
-        } catch (error) {
-          setIsSuccess(false)
-          setIsProcessing(false)
-          console.error('Error polling processing status:', error)
-        }
-        */
-  }
 
   const handleConfirmWarning = () => {
     setShowWarningDialog(false)
@@ -199,8 +156,6 @@ export function HoldingsFeed() {
           message: `הקובץ יחליף ${warningInfo.existingHoldingsCount} אחזקות קיימות לתאריך ${date ? format(date, 'dd/MM/yyyy') : ''}`,
         }
       ])
-
-      pollProcessingStatus(feedId)
     }
   }
 

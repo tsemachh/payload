@@ -544,11 +544,7 @@ export interface HoldingsFeed {
   processingStatus?: ('pending' | 'completed' | 'failed') | null;
   processingErrors?:
     | {
-        error?: string | null;
-        stockId?: string | null;
-        accountId?: string | null;
-        quantity?: string | null;
-        lineNumber?: number | null;
+        line?: HoldingFeedLine;
         id?: string | null;
       }[]
     | null;
@@ -566,6 +562,18 @@ export interface HoldingsFeed {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingFeedLine".
+ */
+export interface HoldingFeedLine {
+  error?: string | null;
+  stockId?: string | null;
+  accountId?: string | null;
+  quantity?: number | null;
+  lineNumber?: number | null;
+  status?: ('error' | 'success') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1128,11 +1136,7 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
   processingErrors?:
     | T
     | {
-        error?: T;
-        stockId?: T;
-        accountId?: T;
-        quantity?: T;
-        lineNumber?: T;
+        line?: T | HoldingFeedLineSelect<T>;
         id?: T;
       };
   accountsJson?: T;
@@ -1149,6 +1153,18 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingFeedLine_select".
+ */
+export interface HoldingFeedLineSelect<T extends boolean = true> {
+  error?: T;
+  stockId?: T;
+  accountId?: T;
+  quantity?: T;
+  lineNumber?: T;
+  status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
