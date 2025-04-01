@@ -1,4 +1,4 @@
-import { BasePayload,  TypeWithID } from 'payload'
+import { BasePayload, TypeWithID } from 'payload'
 import type { Stock } from '@/payload-types'
 
 export async function getStockIds(stock: Stock) {
@@ -13,8 +13,8 @@ export async function getStockIds(stock: Stock) {
 }
 
 export async function getSequenceStockId(payload: BasePayload, stockID: string | null | undefined) {
-  const stock= await getStockByStockId(payload,stockID)
-  return (stock?stock.id:null)
+  const stock = await getStockByStockId(payload, stockID)
+  return stock ? stock.id : null
 }
 
 export async function getStockByStockId(payload: BasePayload, stockID: string | null | undefined) {
@@ -40,7 +40,7 @@ export async function getStockByStockId(payload: BasePayload, stockID: string | 
 
 export async function getSequenceStockValueId(
   payload: BasePayload,
-  stockSequence:string,
+  stockSequence: string,
   valueDate: string,
 ) {
   if (stockSequence === null) return null
@@ -53,7 +53,7 @@ export async function getSequenceStockValueId(
       limit: 1,
       depth: 0,
       where: {
-        stockId: { equals: stockSequence},
+        stockId: { equals: stockSequence },
         valueDate: { equals: new Date(valueDate).toISOString() },
       },
     })
@@ -87,13 +87,13 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
     return await req.payload.findByID({
       collection: collectionType,
       id: id,
-    });
+    })
   } catch (error) {
-    console.error(`Error finding document in collection ${collectionType}:`, error);
-    throw error;
+    console.error(`Error finding document in collection ${collectionType}:`, error)
+    throw error
   }
-};
+}
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
-  return (typeof item == "string" ? item : item.id)
+  return typeof item == 'string' ? item : item.id
 }

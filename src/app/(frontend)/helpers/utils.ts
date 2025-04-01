@@ -1,5 +1,6 @@
 import { isWithinInterval } from 'date-fns'
-import { DateFilterOption } from '../types/meetings'
+import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import { Account, StockValue } from '@/payload-types'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return '-'
@@ -39,7 +40,54 @@ export const isValidDate = (date: any): boolean => {
   return !isNaN(d.getTime())
 }
 
-export const calculateColumnWidths = (minWidth: number, columnCount: number): number => {
+export const calculateColumnWidths = (
+  minWidth: number,
+  columnCount: number,
+  width?: number,
+): number => {
+  if (width) {
+    return width
+  }
   const screenWidth = window.innerWidth
   return Math.max((screenWidth / columnCount) * (minWidth / 100), minWidth)
+}
+
+export const calculatePrecedingColumnsWidth = (
+  columns: Column<MeetingTableDataType>[],
+  company: CompanyTableDate,
+) => {
+  const firstValueColumnIndex = columns.findIndex((col) => col.key in company)
+  if (firstValueColumnIndex === -1) return '100%'
+
+  const columnCount = columns.length
+  let totalWidth = 0
+  for (let i = 1; i < firstValueColumnIndex; i++) {
+    const minWidth = columns[i]?.minWidth ?? 100 // אם אין minWidth, משתמשים ב-100 ברירת מחדל
+    const columnWidth = calculateColumnWidths(minWidth, columnCount)
+    totalWidth += columnWidth
+  }
+  return `${totalWidth}px`
+}
+
+export const calculateHoldingValues = (
+  account: Account | string,
+  quantity: number,
+  stockValues: StockValue | null,
+) => {
+  const holdingsCompanyName = typeof account === 'object' ? account.name : 'Unknown Account'
+
+  const percentageHolding = stockValues?.registeredValue
+    ? parseFloat(((quantity / stockValues.registeredValue) * 100).toFixed(2))
+    : 0
+
+  const holdingValueInMillions = stockValues?.closingRate
+    ? Math.round((quantity * stockValues.closingRate) / 100000000)
+    : 0
+
+  return {
+    holdingsCompanyName,
+    percentageHolding,
+    holdingValueInMillions,
+    nominalValue: Math.round(quantity),
+  }
 }

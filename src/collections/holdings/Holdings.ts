@@ -8,6 +8,7 @@ export const Holdings: CollectionConfig = {
     plural: 'אחזקות',
     singular: 'אחזקה',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'id',
     defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
