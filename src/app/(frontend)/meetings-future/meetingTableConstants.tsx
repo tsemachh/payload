@@ -109,7 +109,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'nominalValue',
-    header: 'ערך נקוב',
+    header: 'ערך נקוב ליום קובע',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.nominalValue),
