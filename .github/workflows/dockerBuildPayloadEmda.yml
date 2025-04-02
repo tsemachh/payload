@@ -107,8 +107,8 @@ jobs:
           # Tag the local image with the GCR tag
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
           # Push the tagged image to GCR
-          docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-          if grep -q "pushed" docker-push-output.txt; then
+      # Push to GCR and capture exit code
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}; then
             echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
           else
             echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
