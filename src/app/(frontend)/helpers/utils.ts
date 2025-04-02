@@ -57,7 +57,7 @@ export const calculatePrecedingColumnsWidth = (
   company: CompanyTableDate,
 ) => {
   const firstValueColumnIndex = columns.findIndex((col) => col.key in company)
-  if (firstValueColumnIndex === -1) return '100%'
+  if (firstValueColumnIndex === -1) return '500px'
 
   const columnCount = columns.length
   let totalWidth = 0

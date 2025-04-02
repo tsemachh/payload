@@ -962,7 +962,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             placeItems: column.positionCenter ? 'center' : 'unset',
                             textAlign: column.positionCenter ? 'center' : 'right',
                           }}
-                          className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
+                          className="truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis"
                           ref={(el) => {
                             if (
                               !el ||
@@ -970,9 +970,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                               typeof row[column.key] == 'object'
                             )
                               return
+                            const isEllipsisActive = el.offsetWidth < el.scrollWidth
                             el.setAttribute(
                               'title',
-                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                              isEllipsisActive ? String(row[column.key]) : '',
                             )
                           }}
                         >
