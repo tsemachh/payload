@@ -80,18 +80,6 @@ export const Accounts: CollectionConfig = {
         defaultColumns: ['accountNumber', 'name'],
         condition: (data) => data.isCentralAccount
       }
-    },
-    {
-      name: 'holdings',
-      label: 'אחזקות',
-      type: 'join',
-      collection: 'holdings',
-      on: 'account',
-      admin: {
-        defaultColumns: ['stock', 'quantity', 'date1'],
-        condition: (data) => data.isCentralAccount
-
-      }
-    },
+    }
   ],
 }

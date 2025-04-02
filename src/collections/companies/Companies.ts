@@ -1,4 +1,22 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig ,CollectionBeforeChangeHook} from 'payload'
+
+const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data ,operation,req}) => {
+    if (operation == "create"){
+      if (!data.companyId){
+        const response= await req.payload.find({
+          collection: "companies",
+          sort: "-companyId",
+          select: {
+            companyId: true,
+          },
+          limit: 1
+        })
+        data.companyId= response?.docs[0].companyId as number + 10
+      }
+    }
+    return data
+ }
+
 
 export const Companies: CollectionConfig = {
   slug: 'companies',
@@ -27,7 +45,14 @@ export const Companies: CollectionConfig = {
           label: 'מספר חברה',
           type: 'number',
           index: true,
-          admin: { hidden: true },
+          admin: { hidden: false },
+        },
+        {
+          name: 'legacyCompanyId',
+          label: 'מספר חברה מקורי בפרדיקטה',
+          type: 'number',
+          index: true,
+          admin: { hidden: false },
         },
         {
           name: 'order',
@@ -54,9 +79,10 @@ export const Companies: CollectionConfig = {
           collection: 'companies',
           on: 'subCompanies',
           defaultLimit: 1,
+          maxDepth: 2,
           admin:{
             allowCreate: false,
-            defaultColumns:["name","subCompanies","parentCompany"],
+            defaultColumns:["name","subCompanies","parentCompany","companyId"],
             description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם'
           }
         },
@@ -117,12 +143,13 @@ export const Companies: CollectionConfig = {
       name: 'accounts',
       label: 'חשבונות',
       type: 'join',
+      defaultLimit:0,
       collection: 'accounts',
       on: 'company',
       where: { isCentralAccount: { equals: true } },
       admin: {
         defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
-        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
+//        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
       },
     },
     {
@@ -132,4 +159,7 @@ export const Companies: CollectionConfig = {
       name: 'meetings'
     }
   ],
+  hooks: {
+    beforeChange: [beforeChangeCompanyId]
+  }
 }

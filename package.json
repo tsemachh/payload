@@ -14,6 +14,7 @@
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "migrate": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" payload migrate ",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "reinstall": "rm -rf node_modules .next && rm -rf .next && rm -rf pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install"
   },
