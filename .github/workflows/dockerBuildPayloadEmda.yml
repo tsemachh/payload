@@ -113,7 +113,8 @@ jobs:
           else
             echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
           fi
-
+      - name: Print NEW_IMAGE_PUSHED Value
+        run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
       - name: Notify Slack - Deployment Completed
         if: ${{ success() && env.NEW_IMAGE_PUSHED == 'true' }}
         uses: rtCamp/action-slack-notify@v2
