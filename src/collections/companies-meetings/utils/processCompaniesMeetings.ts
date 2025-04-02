@@ -17,7 +17,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
         { quantity: { greater_than: 0 } },
       ],
     },
-    limit: 1000,
+    limit: 0,
     depth: 1,
   })
 
@@ -41,8 +41,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
   }
   for (let i = 0; i < holdings.length; i++) {
     const holding = holdings[i]
-    const account: Account = holding.account as Account
-    const companyId: string = getIdOfRelationField(account.company) as string
+    const companyId: string = getIdOfRelationField(holding.company) as string
     if (!companies.includes(companyId)) {// Avoid duplicate companyIds
       companies.push(companyId)
       isDirty = true
@@ -95,7 +94,6 @@ export const processCompaniesMeetings = async (
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10; // Process 10 meetings at a time
-    const promises: Promise<void>[] = []
 
     // Process meetings in batches
     for (let i = 0; i < meetings.length; i += batchSize) {
