@@ -16,6 +16,7 @@ export const Stocks: CollectionConfig = {
     plural: 'ניירות ערך',
     singular: 'נייר ערך',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],

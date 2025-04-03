@@ -24,6 +24,7 @@ export const Companies: CollectionConfig = {
     plural: 'חברות',
     singular: 'חברה',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'name',
     defaultColumns: [

@@ -35,7 +35,7 @@ export default buildConfig({
     supportedLanguages: { he, en },
   },
   admin: {
-    dateFormat:"HH:mm dd/MM/yyyy",
+    dateFormat: 'HH:mm dd/MM/yyyy',
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
@@ -57,7 +57,20 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed],
+  collections: [
+    Stocks,
+    StockValues,
+    Meetings,
+    Users,
+    Roles,
+    Documents,
+    MigrationFaults,
+    Companies,
+    Accounts,
+    Holdings,
+    StockMigrationMapping,
+    StocksFeed,
+  ],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -70,10 +83,10 @@ export default buildConfig({
   logger,
   plugins: [
     importExportPlugin({
-      collections: ['stocks','meetings','companies'],
+      collections: ['stocks', 'meetings', 'companies'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
-        collection.labels = {plural:'יצוא קבצים',singular:'יצוא קובץ'}
+        collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
       },

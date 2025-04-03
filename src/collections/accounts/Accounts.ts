@@ -6,6 +6,7 @@ export const Accounts: CollectionConfig = {
     plural: 'חשבונות',
     singular: 'חשבון',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'accountNumber',
     defaultColumns: ['name', 'accountNumber', 'company'],
