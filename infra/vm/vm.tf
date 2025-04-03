@@ -246,6 +246,14 @@ IMAGE="me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image"
 TAG="latest"
 COMPOSE_FILE="/payload/docker-compose.yml"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"
+GITHUB_REPO="shefing/emda"
+GITHUB_TOKEN=$GITHUB_TOKEN
+LAST_PR=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+  "https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=1" | jq -r '.[0]')
+PR_TITLE=$(echo "${LAST_PR}" | jq -r '.title')
+PR_MERGED_BY=$(echo "${LAST_PR}" | jq -r '.user.login')
+PR_URL=$(echo "${LAST_PR}" | jq -r '.html_url')
+DEPLOYMENT_URL="https://emda-dev.shefing.com"
 # Authenticate with GCR
 sudo gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 
@@ -268,7 +276,7 @@ if [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image updated."
   # Send Slack notification about the change
   curl -X POST -H 'Content-type: application/json' --data "{
-    \"text\": \"New Docker image deployed!\nImage: ${IMAGE}\nTag: ${TAG}\nTime: $(date +'%Y-%m-%d %H:%M:%S')\"
+    \"text\": \"New Docker image deployed!\n*Image:* ${IMAGE}\n*Tag:* ${TAG}\n*PR:* <${PR_URL}|${PR_TITLE}>\n*Deployed by:* ${PR_MERGED_BY}\n*Environment URL:* ${DEPLOYMENT_URL}\"
   }" $SLACK_WEBHOOK_URL
 else
   echo "No changes detected."
