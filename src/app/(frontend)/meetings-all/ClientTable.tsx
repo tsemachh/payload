@@ -11,7 +11,7 @@ export function MeetingsTableClient() {
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [sortField, setSortField] = useState<string>('stockNumber')
+  const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [pageSize, setPageSize] = useState<number>(25)
