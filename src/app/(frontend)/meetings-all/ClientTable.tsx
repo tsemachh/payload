@@ -11,7 +11,7 @@ export function MeetingsTableClient() {
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [sortField, setSortField] = useState<string>('meetingDate')
+  const [sortField, setSortField] = useState<string>('stockNumber')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [pageSize, setPageSize] = useState<number>(25)
@@ -20,6 +20,14 @@ export function MeetingsTableClient() {
   useEffect(() => {
     fetchData(1)
   }, [])
+  useEffect(() => {
+  // Call fetchData only when sortField or sortDirection changes
+  const fetchSortedData = async () => {
+    await fetchData(currentPage)
+  }
+
+  fetchSortedData()
+}, [sortField, sortDirection])
 
   // Fetch data with current filters, sort, and search
   const fetchData = async (page: number, term?: string, newPageSize?: number) => {
@@ -58,7 +66,6 @@ export function MeetingsTableClient() {
 
     setSortField(field)
     setSortDirection(newDirection)
-    await fetchData(currentPage)
   }
 
   const handleSearch = async (term: string) => {
