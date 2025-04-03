@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         and: [
           {
             companies: {
-              in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id), // בודק אם לפחות אחד מה-ID-ים נמצא בתוך מערך ה-companies
+              in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
             },
           },
           searchTerm
@@ -40,19 +40,19 @@ export async function GET(request: NextRequest) {
                 or: [
                   { meetingId: { contains: searchTerm } },
                   { 'stock.stockId': { contains: searchTerm } },
-                  { 'stock.name:': { contains: searchTerm } },
-                  { 'stock.symbol:': { contains: searchTerm } },
-                  { 'stock.tradable': { contains: searchTerm } },
-                  { 'stock.marketValue': { contains: searchTerm } },
+                  { 'stock.name': { contains: searchTerm } },
+                  { 'stock.symbol': { contains: searchTerm } },
+                  // { 'stock.tradable': { contains: searchTerm } },
+                  // { 'stock.marketValue': { contains: searchTerm } },
                   { 'stock.type': { contains: searchTerm } },
                   { magnaId: { contains: searchTerm } },
                   { type: { contains: searchTerm } },
-                  { meetingDate: { contains: searchTerm } },
-                  { reference: { contains: searchTerm } },
+                  // { meetingDate: { contains: searchTerm } },
+                  // { reference: { contains: searchTerm } },
                   { location: { contains: searchTerm } },
-                  { holdingsLimit: { contains: searchTerm } },
-                  { proxyVotingDate: { contains: searchTerm } },
-                  { meetingState: { contains: searchTerm } },
+                  // { holdingsLimit: { contains: searchTerm } },
+                  // { proxyVotingDate: { contains: searchTerm } },
+                  // { meetingState: { contains: searchTerm } },
                   { comments: { contains: searchTerm } },
                 ],
               }
