@@ -247,7 +247,7 @@ TAG="latest"
 COMPOSE_FILE="/payload/docker-compose.yml"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"
 GITHUB_REPO="shefing/emda"
-GITHUB_TOKEN=$GITHUB_TOKEN
+GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN)
 LAST_PR=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
   "https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=1" | jq -r '.[0]')
 PR_TITLE=$(echo "${LAST_PR}" | jq -r '.title')
