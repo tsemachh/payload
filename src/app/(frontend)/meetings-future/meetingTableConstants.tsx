@@ -37,7 +37,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'מק"מ', value: 'מק"מ' },
       { label: 'שטרי הון', value: 'שטרי הון' },
     ],
-    minWidth: 50,
+    minWidth: 60,
   },
   { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
   { key: 'companyName', header: 'שם חברה', type: 'string', minWidth: 120 },
