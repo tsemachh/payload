@@ -15,7 +15,8 @@ services:
       - GCS_PROJECT_ID=emda-dev
       - GCS_ENDPOINT=https://storage.googleapis.com
       - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
-      - LOGTAIL_SOURCE_TOKEN=${LOGTAIL_SOURCE_TOKEN}
+      - LOGTAIL_SOURCE_TOKEN=process.env.LOGTAIL_SOURCE_TOKEN
+
     volumes:
       - node_modules:/app/node_modules
 volumes:
