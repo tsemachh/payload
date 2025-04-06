@@ -207,6 +207,7 @@ services:
       - GCS_BUCKET=emda-media
       - GCS_PROJECT_ID=emda-dev
       - GCS_ENDPOINT=https://storage.googleapis.com
+      - LOGTAIL_SOURCE_TOKEN=B5p5aFX1cPDdGdzaKHFu1Vss
     ports:
       - "3000:3000"
     restart: always 
