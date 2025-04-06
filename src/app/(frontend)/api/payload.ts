@@ -57,7 +57,6 @@ export async function fetchFutureMeetingsForTable(): Promise<{
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
-        // !!! Warning! The query is only valid for cases where holdings are entered for all companies on the same date.
         // Finding Date: holdingsLimit date or the closest date before it.
         const { docs } = await payload.find({
           collection: 'holdings',
