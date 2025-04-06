@@ -24,6 +24,7 @@ import { calculateColumnWidths, calculatePrecedingColumnsWidth, escapeRegExp } f
 import { v4 as uuidv4 } from 'uuid'
 import { Column, CompanyTableDate, DataTableProps, MeetingTableDataType } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
+import { unSortAbleColumnsOnServer } from '../meetings-future/meetingTableConstants'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -138,6 +139,7 @@ export function DataTableServer<T extends Record<string, any>>({
   // Handle sort
   const handleSort = useCallback(
     (key: keyof T) => {
+      if (unSortAbleColumnsOnServer.includes(key as string)) return
       if (onServerSort) {
         // Update the sort config UI
         setSortConfig((current) => {

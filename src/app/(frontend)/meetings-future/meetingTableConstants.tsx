@@ -203,6 +203,13 @@ export const defaultVisibleColumns = [
   'committeeInitiated',
 ]
 
+export const unSortAbleColumnsOnServer = [
+  'marketValue',
+  'nominalValue',
+  'percentageHolding',
+  'holdingValueInMillions',
+]
+
 export const renderMeetingActions = (row: MeetingTableDataType) => {
   if (!row.meetingInviteUrl) return null
 
