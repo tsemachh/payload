@@ -300,15 +300,11 @@ export function DataTableServer<T extends Record<string, any>>({
                     <TableHead
                       key={String(column.key)}
                       className={cn('text-right overflow-hidden text-ellipsis')}
-                      style={{
-                        maxWidth: column.width ? `${column.width}px  !important` : '200px',
-                        width: column.width ? `${column.width}px  !important` : 'auto',
-                      }}
                     >
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length)}px`,
+                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length, column.width)}px`,
                         }}
                       >
                         <span
@@ -341,8 +337,6 @@ export function DataTableServer<T extends Record<string, any>>({
                             direction: column.type === 'datetime' ? 'ltr' : 'rtl',
                             placeItems: column.positionCenter ? 'center' : 'unset',
                             textAlign: column.positionCenter ? 'center' : 'right',
-                            maxWidth: column.width ? `${column.width}px  !important` : '200px',
-                            width: column.width ? `${column.width}px  !important` : 'auto',
                           }}
                           className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
                           ref={(el) => {
