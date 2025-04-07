@@ -39,6 +39,13 @@ export async function fetchFutureMeetingsForTable(): Promise<{
     },
   })
 
+  console.log(
+    'user?.leafCompanies?.map((e) => typeof e ===)',
+    user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+  )
+  console.log('user', user)
+  console.log('meetings', meetings)
+
   const meetingData: MeetingTableDataType[] = (
     await Promise.all(
       meetings.docs.map(async (meeting) => {
@@ -57,7 +64,6 @@ export async function fetchFutureMeetingsForTable(): Promise<{
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
-        // !!! Warning! The query is only valid for cases where holdings are entered for all companies on the same date.
         // Finding Date: holdingsLimit date or the closest date before it.
         const { docs } = await payload.find({
           collection: 'holdings',
@@ -112,9 +118,9 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           const resuHoldings = holdingsLimitDateDocs
 
           // Implementation of holdings values
-          companiesArray = resuHoldings.map(({ account, quantity }) => {
+          companiesArray = resuHoldings.map(({ company, quantity }) => {
             const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
-              calculateHoldingValues(account, quantity, stockValues)
+              calculateHoldingValues(company, quantity, stockValues)
             return {
               holdingsCompanyName,
               percentageHolding,
@@ -123,6 +129,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             }
           })
         }
+        console.log('')
 
         return {
           meetingId: meeting.meetingId,

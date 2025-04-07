@@ -1,6 +1,6 @@
 import { isWithinInterval } from 'date-fns'
 import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
-import { Account, StockValue } from '@/payload-types'
+import { Company, StockValue } from '@/payload-types'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return '-'
@@ -70,12 +70,12 @@ export const calculatePrecedingColumnsWidth = (
 }
 
 export const calculateHoldingValues = (
-  account: Account | string,
+  // account: Account | string, //TODO: add holdingsCompanyName
+  company: Company  | string,
   quantity: number,
   stockValues: StockValue | null,
 ) => {
-  const holdingsCompanyName = typeof account === 'object' ? account.name : 'Unknown Account'
-
+  const holdingsCompanyName = typeof company === 'object' ? company.name : 'Unknown Account'
   const percentageHolding = stockValues?.registeredValue
     ? parseFloat(((quantity / stockValues.registeredValue) * 100).toFixed(2))
     : 0

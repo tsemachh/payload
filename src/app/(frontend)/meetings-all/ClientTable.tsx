@@ -36,6 +36,8 @@ export function MeetingsTableClient() {
         throw new Error('Failed to fetch data')
       }
       const result = await response.json()
+      console.log('!!!!!!result', result)
+
       setData(result.data)
       setTotalItems(result.totalItems)
       setTotalPages(result.totalPages)
