@@ -28,7 +28,7 @@ export async function getStocks(pool: sql.ConnectionPool) {
       FROM [dbEmda].[dbo].[stocks]
       ORDER BY stockID
   `)
-  console.log(`Retrieved ${resultStocks.recordset.length} records from SQL Server`)
+  console.log(`getStocks - Retrieved ${resultStocks.recordset.length} records from SQL Server`)
   return resultStocks
 }
 

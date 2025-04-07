@@ -66,6 +66,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
       for (const row of subAccounts.recordset) {
         try {
+          if (row.accountIdNew == row.accountIdOld){
+            payload.create({
+              collection: 'migration-faults',
+              data: {
+                type: 'account',
+                comments: `duplicate accountNumber`,
+                row: JSON.stringify(row)
+              }
+            })
+            continue
+          }
           // Find the firm
           const companyResult = await payload.find({
             collection: 'companies',
