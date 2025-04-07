@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
           return null
         }
 
- let stockValues: StockValue | null = null
+        let stockValues: StockValue | null = null
         let companiesArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
@@ -92,10 +92,9 @@ export async function GET(request: NextRequest) {
           depth: 0,
           where: {
             and: [
-              { stock: { equals: stockIdToUse } },
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
               {
-                'account.company': {
+                company: {
                   in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                 },
               },
@@ -114,7 +113,7 @@ export async function GET(request: NextRequest) {
             depth: 1,
             where: {
               stockId: { equals: stockIdToUse },
-              valueDate: { equals: new Date(nearestHoldingsLimitDate).toISOString() },
+              valueDate: { equals: new Date(nearestHoldingsLimitDate) },
             },
             limit: 0,
           })
@@ -127,9 +126,9 @@ export async function GET(request: NextRequest) {
             where: {
               and: [
                 { stock: { equals: stockIdToUse } },
-                { valueDate: { equals: nearestHoldingsLimitDate } },
+                { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
                 {
-                  'account.company': {
+                  company: {
                     in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                   },
                 },
@@ -140,9 +139,9 @@ export async function GET(request: NextRequest) {
           const resuHoldings = holdingsLimitDateDocs
 
           // Implementation of holdings values
-          companiesArray = resuHoldings.map(({ account, quantity }) => {
+          companiesArray = resuHoldings.map(({ company, quantity }) => {
             const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
-              calculateHoldingValues(account, quantity, stockValues)
+              calculateHoldingValues(company, quantity, stockValues)
             return {
               holdingsCompanyName,
               percentageHolding,

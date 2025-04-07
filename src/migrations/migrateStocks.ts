@@ -76,7 +76,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       // Check stock status from migration mapping
       const relatedStock = relationStocks.get(row.stockID)
       const isRootStock = rootRelatedStocks.has(row.stockID)
-
       // Consolidate all stock statuses in one place
       const stockStatuses = {
         // Basic statuses from mapping
@@ -247,13 +246,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const stockSequence = stockIdTOSequence.get(row.stockID)
         const isPredictaStock = predictaStocks.has(row.stockID)
         const isRootForeignStock = rootRelatedStocks.has(row.stockID) && !isPredictaStock
-
-        if (!stockSequence || (!isPredictaStock && !isRootForeignStock)) {
+        const isEmdaStock= emdaStocks.has(row.stockID)
+        if (!stockSequence || (!isPredictaStock && !isEmdaStock && !isRootForeignStock)) {
           await logMigrationFault({
             payload,
             type: 'stock-value',
             typeId: row.stockID,
-            comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock}`,
+            comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
             row,
           })
           continue

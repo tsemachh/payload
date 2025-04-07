@@ -178,7 +178,6 @@ export interface Config {
     };
     accounts: {
       accounts: 'accounts';
-      holdings: 'holdings';
     };
   };
   collectionsSelect: {
@@ -350,6 +349,7 @@ export interface Document {
 export interface Company {
   id: string;
   companyId?: number | null;
+  legacyCompanyId?: number | null;
   order?: number | null;
   name: string;
   active?: boolean | null;
@@ -399,26 +399,6 @@ export interface Account {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  holdings?: {
-    docs?: (string | Holding)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  account: string | Account;
-  stock: string | Stock;
-  quantity: number;
-  valueDate: string;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -489,6 +469,21 @@ export interface MigrationFault {
   typeId?: string | null;
   row?: string | null;
   comments?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  company: string | Company;
+  valueDate: string;
+  stock: string | Stock;
+  quantity: number;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -992,6 +987,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  */
 export interface CompaniesSelect<T extends boolean = true> {
   companyId?: T;
+  legacyCompanyId?: T;
   order?: T;
   name?: T;
   active?: T;
@@ -1021,7 +1017,6 @@ export interface AccountsSelect<T extends boolean = true> {
   isCentralAccount?: T;
   parentAccount?: T;
   accounts?: T;
-  holdings?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1032,10 +1027,10 @@ export interface AccountsSelect<T extends boolean = true> {
  * via the `definition` "holdings_select".
  */
 export interface HoldingsSelect<T extends boolean = true> {
-  account?: T;
+  company?: T;
+  valueDate?: T;
   stock?: T;
   quantity?: T;
-  valueDate?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

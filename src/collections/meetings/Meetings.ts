@@ -4,6 +4,7 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
+import { Meeting } from '@/payload-types'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -25,40 +26,40 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
     return 'יש לספק מועד אסיפה'
   }
   if (meetingDate) {
-     switch (value) {
-    case 'completed':
-      if (meetingDate > currentDate) {
-        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
-      }
-      break
+    switch (value) {
+      case 'completed':
+        if (meetingDate > currentDate) {
+          return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
+        }
+        break
 
-    case 'postponed':
-      if (meetingDate < currentDate) {
-        return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
-      }
-      break
+      case 'postponed':
+        if (meetingDate < currentDate) {
+          return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
+        }
+        break
 
-    case 'scheduled':
-      if (meetingDate < currentDate) {
-        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
-      }
-      break
+      case 'scheduled':
+        if (meetingDate < currentDate) {
+          return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+        }
+        break
 
-    case 'ongoing':
-      if (meetingDate < currentDate) {
-        return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
-      }
-      break
-  }
-     return true
+      case 'ongoing':
+        if (meetingDate < currentDate) {
+          return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
+        }
+        break
+    }
+    return true
 }}
 const validateMeetingnvItationLink = (value: string | null | undefined, {siblingData}:{siblingData:any}) => {
   return true;
-/*//TODO Check if in conversion we can fix the meetings without the magnaId then bring it back
+  /*//TODO Check if in conversion we can fix the meetings without the magnaId then bring it back
   if(siblingData.magnaId || siblingData.invitationDocument || value) return true
     return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
 */
-  }
+}
 // @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
@@ -90,234 +91,259 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
-  hooks: {
-    afterChange: [
-      async ({ req, doc }) => {
-        await updateCompaniesMeetingsOnMeetingChange(req, doc)
-      },
-    ],
-  },
   fields: [
     {
-      type: 'row',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'meetingId',
-          label: 'מספר אסיפה',
-          type: 'text',
-          unique: true,
-          index: true,
-          admin: { hidden: true },
+          label: 'Content',
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'meetingId',
+                  label: 'מספר אסיפה',
+                  type: 'text',
+                  unique: true,
+                  index: true,
+                  admin: { hidden: true },
 
-        },
-        {
-          name: 'stock',
-          label: 'נייר ערך',
-          type: 'relationship',
-          relationTo: 'stocks',
-          index: true,
-          required: true,
-          admin: {
-            width: '30%',
-          },
-        },
-        {
-          name: 'type',
-          label: 'סוג',
-          type: 'select',
-          interfaceName: 'MeetingType',
-          options: [
-            { label: 'שנתית', value: 'שנתית' },
-            { label: 'מיוחדת', value: 'מיוחדת' },
-            { label: 'אג"ח', value: 'אג"ח' },
-            { label: 'אופציה', value: 'אופציה' },
-            { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-            { label: 'תעודת סל', value: 'תעודת סל' },
-            { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
-          ],
-          admin: {
-            width: '15%',
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'magnaId',
-          label: 'אסמכתא',
-          type: 'text',
-          index: true,
-          admin: {
-            width: '200px',
-          },
-        },
-        {
-          name: 'invitationDocument',
-          label: 'מסמך זימון',
-          type: 'upload',
-          relationTo: 'documents',
-          admin: {
-            className:"invitationDocument",
-            width: '200px',
-          },
-        },
-        {
-          name: 'invitationLink',
-          label: 'קישור לזימון',
-          type: 'text',
-          admin: {
-            width: '600px',
-            components: {
-              Cell: {
-                path: '/admincomponents/link/IconLinkCell',
-                clientProps: PropsManualLink,
-              },
-              Field: {
-                path: '/admincomponents/link/IconLinkTextField',
-                clientProps: PropsManualLink,
-              },
+                },
+                {
+                  name: 'stock',
+                  label: 'נייר ערך',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  index: true,
+                  required: true,
+                  admin: {
+                    width: '30%',
+                  },
+                  hooks: {
+                    afterChange: [
+                       async ({ req, siblingData,  data  }) => {
+                        if (req.context?.from !== 'process' && siblingData?.id) {
+                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
+                        }
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'type',
+                  label: 'סוג',
+                  type: 'select',
+                  interfaceName: 'MeetingType',
+                  options: [
+                    { label: 'שנתית', value: 'שנתית' },
+                    { label: 'מיוחדת', value: 'מיוחדת' },
+                    { label: 'אג"ח', value: 'אג"ח' },
+                    { label: 'אופציה', value: 'אופציה' },
+                    { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+                    { label: 'תעודת סל', value: 'תעודת סל' },
+                    { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
+                  ],
+                  admin: {
+                    width: '15%',
+                  },
+                },
+              ],
             },
-          },
-          //validate: validateMeetingnvItationLink,
-          hooks: {
-            afterRead: [
-              async ({ data ,req}) => {
-                if (data?.invitationDocument) {
-                  const document = await req.payload.findByID({
-                    collection: 'documents',
-                    id: data.invitationDocument,
-                  });
-                  return `${document.url}`;
-                }
-               if (data?.magnaId && !data?.invitationLink) {
-                  return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
-                }
-                if (data?.invitationLink) {
-                  return data.invitationLink;
-                }
-                return null;
-              },
-            ],
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'holdingsLimit',
-          label: 'מועד קובע',
-          type: 'date',
-          admin: {
-            date: {
-              displayFormat: 'dd/MM/yyyy',
-              pickerAppearance: 'default',
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'magnaId',
+                  label: 'אסמכתא',
+                  type: 'text',
+                  index: true,
+                  admin: {
+                    width: '200px',
+                  },
+                },
+                {
+                  name: 'invitationDocument',
+                  label: 'מסמך זימון',
+                  type: 'upload',
+                  relationTo: 'documents',
+                  admin: {
+                    className: 'invitationDocument',
+                    width: '200px',
+                  },
+                },
+                {
+                  name: 'invitationLink',
+                  label: 'קישור לזימון',
+                  type: 'text',
+                  admin: {
+                    width: '600px',
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/link/IconLinkCell',
+                        clientProps: PropsManualLink,
+                      },
+                      Field: {
+                        path: '/admincomponents/link/IconLinkTextField',
+                        clientProps: PropsManualLink,
+                      },
+                    },
+                  },
+                  //validate: validateMeetingnvItationLink,
+                  hooks: {
+                    afterRead: [
+                      async ({ data, req }) => {
+                        if (data?.invitationDocument) {
+                          const document = await req.payload.findByID({
+                            collection: 'documents',
+                            id: data.invitationDocument,
+                          });
+                          return `${document.url}`;
+                        }
+                        if (data?.magnaId && !data?.invitationLink) {
+                          return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                        }
+                        if (data?.invitationLink) {
+                          return data.invitationLink;
+                        }
+                        return null;
+                      },
+                    ],
+                  },
+                },
+              ],
             },
-          },
-        },
-        {
-          name: 'proxyVotingDate',
-          label: 'מועד מסירת ההצבעות',
-          type: 'date',
-          index: true,
-          admin: {
-            date: {
-              displayFormat: 'HH:mm dd/MM/yyyy',
-              pickerAppearance: 'dayAndTime',
-            },
-          },
-        },
-        {
-          name: 'meetingDate',
-          label: 'מועד האסיפה',
-          type: 'date',
-          admin: {
-            date: {
-              displayFormat: 'HH:mm dd/MM/yyyy',
-              pickerAppearance: 'dayAndTime',
-            },
-          },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'holdingsLimit',
+                  label: 'מועד קובע',
+                  type: 'date',
+                  admin: {
+                    date: {
+                      displayFormat: 'dd/MM/yyyy',
+                      pickerAppearance: 'default',
+                    },
+                  },
+                  hooks: {
+                    afterChange: [
+                      async ({ req, siblingData,  data  }) => {
+                        if (req.context?.from !== 'process' && siblingData?.id) {
+                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
+                        }
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'proxyVotingDate',
+                  label: 'מועד מסירת ההצבעות',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
+                },
+                {
+                  name: 'meetingDate',
+                  label: 'מועד האסיפה',
+                  type: 'date',
+                  admin: {
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
 
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'location',
-          label: 'כתובת',
-          type: 'text',
-        },
-        {
-          name: 'state',
-          label: 'מצב',
-          type: 'select',
-          hooks: {
-            beforeChange: [
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'location',
+                  label: 'כתובת',
+                  type: 'text',
+                },
+                {
+                  name: 'state',
+                  label: 'מצב',
+                  type: 'select',
+                  hooks: {
+                    beforeChange: [
               ({ siblingData,value }) => {
-                if (value === 'on-hold') {
+                        if (value === 'on-hold') {
                   siblingData.meetingDate =null
-                }
-                return value
+                        }
+                        return value
               }
-            ],
-          },
-          interfaceName: 'MeetingState',
-          // @ts-expect-error
-          validate: validateMeetingState,
-          options: [
-            { label: 'מתוכננת', value: 'scheduled' },
-            { label: 'התקיימה', value: 'completed' },
-            { label: 'נדחית', value: 'postponed' },
-            { label: 'נדחית ללא מועד', value: 'on-hold' },
-            { label: 'נמשכת', value: 'ongoing' },
-            { label: 'בוטלה', value: 'cancelled' },
+                    ],
+                  },
+                  interfaceName: 'MeetingState',
+                  // @ts-expect-error
+                  validate: validateMeetingState,
+                  options: [
+                    { label: 'מתוכננת', value: 'scheduled' },
+                    { label: 'התקיימה', value: 'completed' },
+                    { label: 'נדחית', value: 'postponed' },
+                    { label: 'נדחית ללא מועד', value: 'on-hold' },
+                    { label: 'נמשכת', value: 'ongoing' },
+                    { label: 'בוטלה', value: 'cancelled' },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'comments',
+              label: 'הערות',
+              type: 'textarea',
+
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'resultsConfirmationStatus',
+                  label: 'אימות תוצאות',
+                  type: 'checkbox',
+                  admin: {
+                    condition: (siblingData) => siblingData.state === 'completed',
+                  },
+                },
+                {
+                  name: 'electronicVotingEnabled',
+                  label: 'האם מופיעה במערכת האלק׳?',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'committeeInitiated',
+                  label: 'האם פיננסי דורש ועדה?',
+                  type: 'checkbox',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'חברות',
+          fields: [
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
+            },
           ],
         },
       ],
     },
-    {
-      name: 'comments',
-      label: 'הערות',
-      type: 'textarea',
-
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'resultsConfirmationStatus',
-          label: 'אימות תוצאות',
-          type: 'checkbox',
-          admin: {
-            condition: (siblingData) => siblingData.state === 'completed',
-          },
-        },
-        {
-          name: 'electronicVotingEnabled',
-          label: 'האם מופיעה במערכת האלק׳?',
-          type: 'checkbox',
-        },
-        {
-          name: 'committeeInitiated',
-          label: 'האם פיננסי דורש ועדה?',
-          type: 'checkbox',
-        },
-      ],
-    },
-    {
-      type:'relationship',
-      relationTo: 'companies',
-      hasMany: true,
-      name: 'companies',
-      label: 'חברות',
-      index:true,
-      hidden:true
-    }
   ],
   endpoints: [
     {

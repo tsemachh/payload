@@ -13,11 +13,10 @@ export const Holdings: CollectionConfig = {
     defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
     group: 'אוספים משניים',
   },
- hooks: {
+  hooks: {
     afterChange: [
       async ({ req, doc }) => {
-        if (req.context?.from != 'migration')
-          await updateCompaniesMeetingsOnHoldingChange(req, doc)
+        if (req.context?.from != 'migration') await updateCompaniesMeetingsOnHoldingChange(req, doc)
       },
     ],
   },
@@ -26,31 +25,12 @@ export const Holdings: CollectionConfig = {
       type: 'row',
       fields: [
         {
-          name: 'account',
-          label: 'חשבון',
+          name: 'company',
+          label: 'חברה',
           type: 'relationship',
-          relationTo: 'accounts',
+          relationTo: 'companies',
           required: true,
           index: true,
-        },
-        {
-          name: 'stock',
-          label: 'נייר ערך',
-          type: 'relationship',
-          relationTo: 'stocks',
-          required: true,
-          index: true,
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'quantity',
-          label: 'כמות',
-          type: 'number',
-          required: true,
         },
         {
           name: 'valueDate',
@@ -64,6 +44,25 @@ export const Holdings: CollectionConfig = {
               pickerAppearance: 'default',
             },
           },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'stock',
+          label: 'נייר ערך',
+          type: 'relationship',
+          relationTo: 'stocks',
+          required: true,
+          index: true,
+        },
+        {
+          name: 'quantity',
+          label: 'כמות',
+          type: 'number',
+          required: true,
         },
       ],
     },
