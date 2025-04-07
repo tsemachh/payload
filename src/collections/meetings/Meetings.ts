@@ -93,7 +93,7 @@ export const Meetings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc }) => {
-        await updateCompaniesMeetingsOnMeetingChange(req, doc)
+        if (req.context?.from != 'process')  await updateCompaniesMeetingsOnMeetingChange(req, doc)
       },
     ],
   },
@@ -316,7 +316,6 @@ export const Meetings: CollectionConfig = {
       name: 'companies',
       label: 'חברות',
       index:true,
-      hidden:true
     }
   ],
   endpoints: [

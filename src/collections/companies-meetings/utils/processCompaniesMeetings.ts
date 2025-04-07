@@ -1,18 +1,8 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, Where } from 'payload'
 import type { Meeting } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 
-async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<void> {
-  const { docs } = await req.payload.find({
-    collection: 'companies',
-    depth: 0,
-    limit: 0,
-    where: {
-      or: [{ subCompanies: { equals: [] } }, { subCompanies: { exists: false } }],
-    },
-  })
-  const companies = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
-  console.log("------------companies.length", companies.length)
+async function processMeeting(meeting: Meeting, req: PayloadRequest,companies:string[]): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
 
@@ -26,7 +16,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
         where: {
           and: [
             { valueDate: { less_than_equal: meeting.holdingsLimit } },
-            { 'company': { equals: company } },
+            { company: { equals: company } },
           ],
         },
         sort: '-valueDate',
@@ -48,7 +38,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
           and: [
             { stock: { equals: meeting.stock } },
             { valueDate: { equals: new Date(nearestHoldingsLimitDate)} },
-            { 'company': { equals: company } },
+            { company: { equals: company } },
           ],
         },
         limit: 0,
@@ -61,16 +51,18 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
   const flattenedHoldings = holdings.flat()
 
   // Check and update companies list
-  const newCompanies: string[] = []
+  const newCompaniesSet = new Set<string>()
 
   for (let i = 0; i < flattenedHoldings.length; i++) {
     const holding = flattenedHoldings[i]
     const companyId: string = getIdOfRelationField(holding.company) as string
-    if (!newCompanies.includes(companyId)) {
-      newCompanies.push(companyId)
+    if (!newCompaniesSet.has(companyId)) {
+      newCompaniesSet.add(companyId)
       isDirty = true
     }
   }
+
+  const newCompanies = Array.from(newCompaniesSet)
 
   // Update meeting if necessary
   if (isDirty) {
@@ -81,6 +73,10 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'process' }
+      },
       data: {
         companies: [...newCompanies], // Add the new companies to the existing list
       },
@@ -104,14 +100,9 @@ export const processCompaniesMeetings = async (
 ): Promise<void> => {
   try {
     req.payload.logger.info('Starting to load companies')
-    let where = {}
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
-    if (meetingIds) {
-      where = { id: { in: meetingIds } }
-    } else {
-      where = {}
-    }
+    const where = meetingIds ? { id: { in: meetingIds } } : {} as Where
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
       limit: 20000,
@@ -120,6 +111,17 @@ export const processCompaniesMeetings = async (
       sort: '-holdingsLimit',
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)
+
+    const { docs } = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      limit: 0,
+      where: {
+        or: [{ subCompanies: { equals: [] } }, { subCompanies: { exists: false } }],
+      },
+    })
+    const companies = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+    console.log("------------companies.length", companies.length)
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
@@ -141,9 +143,17 @@ export const processCompaniesMeetings = async (
           continue
         }
         console.log('meeting started', meeting.id)
-        const promise = processMeeting(meeting, req).then(() => {
-          console.log('meeting finished', meeting.id)
-        })
+        const promise = processMeeting(meeting, req,companies)
+          .then(() => {
+            console.log('meeting finished', meeting.id)
+          })
+          .catch((error) => {
+            req.payload.logger.error(
+              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              error
+            )
+            // Don't rethrow the error to allow other meetings to be processed
+          })
         batchPromises.push(promise)
       }
 
