@@ -28,7 +28,6 @@ export interface ProcessingWarning {
 
 interface ProcessingResultsProps {
   isSuccess: boolean
-  isProcessing: boolean
   errors: ProcessingError[]
   warnings: ProcessingWarning[]
   className?: string
@@ -36,26 +35,11 @@ interface ProcessingResultsProps {
 
 export function ProcessingResults({ 
   isSuccess,
-  isProcessing,
-  errors, 
+  errors,
   warnings, 
   className 
 }: ProcessingResultsProps) {
-  
-  if (isProcessing) {
-    return (
-      <div className={className}>
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>מעבד נתונים</AlertTitle>
-          <AlertDescription>
-            אנא המתן בזמן שהמערכת מעבדת את קובץ האחזקות...
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-  
+
   if (isSuccess && errors.length === 0 && warnings.length === 0) {
     return (
       <div className={className}>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { HoldingsFeed } from './components/HoldingsFeed'
+import { HoldingsFeedView } from './components/HoldingsFeedView'
 import { HoldingsView } from './components/HoldingsView'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 
@@ -22,7 +22,7 @@ export default function Holdings() {
         </TabsList>
         
         <TabsContent value="feed" className="mt-6">
-          <HoldingsFeed />
+          <HoldingsFeedView />
         </TabsContent>
         
         <TabsContent value="view" className="mt-6">
