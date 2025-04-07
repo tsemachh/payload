@@ -125,13 +125,13 @@ export function HoldingsFeedView() {
         // Process and display any processing errors from the feed
         if (feed.processingErrors && feed.processingErrors.length > 0) {
           const processedErrors: ProcessingError[] = feed.processingErrors
-            .filter(error => error.line)
+            .filter(error => error.line && error.line.error != null)
             .map(error => ({
               lineNumber: error.line?.lineNumber || undefined,
               stockId: error.line?.stockId || undefined,
               accountId: error.line?.accountId || undefined,
               quantity: error.line?.quantity?.toString() || undefined,
-              error: error.line?.error || 'Unknown error'
+              error: error.line?.error || ''
             }));
           setErrors(processedErrors);
         }

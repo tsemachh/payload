@@ -78,6 +78,7 @@ export const Accounts: CollectionConfig = {
       collection: 'accounts',
       on: 'parentAccount',
       defaultLimit: 0,
+      maxDepth: 2,
       admin: {
         defaultColumns: ['accountNumber', 'name'],
         condition: (data) => data.isCentralAccount

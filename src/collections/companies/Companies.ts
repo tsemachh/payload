@@ -145,6 +145,7 @@ export const Companies: CollectionConfig = {
       label: 'חשבונות',
       type: 'join',
       defaultLimit:0,
+      maxDepth:2,
       collection: 'accounts',
       on: 'company',
       where: { isCentralAccount: { equals: true } },

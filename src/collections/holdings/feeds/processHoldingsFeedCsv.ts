@@ -89,7 +89,7 @@ const validateRow = (
 
   // Validate the record
   let isValid = true
-  let errorMessage = ''
+  let errorMessage = null
 
   // Check required fields
   if (!stockId) {
@@ -127,7 +127,7 @@ const validateRow = (
  * @param selectedCompanies The selected companies
  * @returns Map of account numbers to account IDs
  */
-const preloadAccounts = async (
+const preloadAccountsToCompanyMap = async (
   req: PayloadRequest,
   selectedCompanies: string[],
 ): Promise<Map<number, string>> => {
@@ -138,10 +138,10 @@ const preloadAccounts = async (
         in: selectedCompanies,
       },
     },
-    depth: 1,
+    depth: 2,
   })
 
-  const accountMap: Map<number, string> = new Map();
+  const accountToCompanyMap: Map<number, string> = new Map();
   console.log('Processing companies:', companies.docs.length);
 
   companies.docs.forEach((company: Company) => {
@@ -150,7 +150,7 @@ const preloadAccounts = async (
 
     accounts.forEach((account) => {
       console.log('Processing account:', account?.accountNumber, 'ID:', account?.id);
-      accountMap.set(account?.accountNumber, account?.id);
+      accountToCompanyMap.set(account?.accountNumber, company?.id);
 
       if (!account?.accounts?.docs || account?.accounts?.docs.length === 0) {
         console.log('No sub-accounts found for account:', account?.accountNumber);
@@ -158,17 +158,15 @@ const preloadAccounts = async (
 
 
       account?.accounts?.docs?.forEach((subAccount) => {
-        console.log('Processing sub-account:', subAccount, 'Parent Account ID:', account?.id);
-        // @ts-ignore
-        //TODO type error
-        accountMap.set(subAccount, account?.id);
+        const subAcc=subAccount as Account
+        accountToCompanyMap.set(subAcc.accountNumber, company?.id);
       });
 
     });
   });
+  console.log("Final accountToCompanyMap:", Array.from(accountToCompanyMap.entries()));
 
-
-  return accountMap
+  return accountToCompanyMap
 }
 
 /**
@@ -197,15 +195,10 @@ const preloadStocks = async (
   })
 
   stocksResult.docs.forEach((stock: Stock) => {
-    console.log("Processing stock:", stock);
-
     // Ensure related.docs exists and check if it's not empty
     const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0;
     const stockKey = stock?.stockId;
     const stockValue = stock?.relatedStock && hasRelatedDocs ? stock.relatedStock as string : stock?.id;
-
-    console.log(`Setting stockMap[${stockKey}] = ${stockValue}`);
-
     stockMap.set(stockKey, stockValue);
   });
 
@@ -248,8 +241,8 @@ const collectPreviousFeedData = async (
     })
 
     previousHoldings.docs.forEach((holding) => {
-      if (holding.account) {
-        previousAccounts.add(holding.account as string)
+      if (holding.company) {
+        previousAccounts.add(holding.company as string)
       }
     })
   }
@@ -261,28 +254,28 @@ const collectPreviousFeedData = async (
  * Create holdings from processed records
  * @param req The payload request
  * @param processedRecords The processed records
- * @param accountMap
+ * @param accountToCompanyMap
  * @param stockMap
  * @param valueDate The value date
  */
 const createHoldings = async (
   req: PayloadRequest,
   processedRecords: HoldingFeedLine[],
-  accountMap: Map<number, string>,
+  accountToCompanyMap: Map<number, string>,
   stockMap: Map<string, string>,
   valueDate: string,
 ): Promise<void> => {
   // Aggregate records with the same accountId and stockId
-  const aggregatedRecords = new Map<string, { account: string, stock: string, quantity: number }>();
+  const aggregatedRecords = new Map<string, { company: string, stock: string, quantity: number }>();
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
       const accountId = parseInt(record.accountId as string);
-      const account = accountMap.get(accountId) as string;
+      const company = accountToCompanyMap.get(accountId) as string;
       const stock = stockMap.get(record.stockId as string) as string;
 
       // Create a unique key for each account-stock combination
-      const key = `${account}-${stock}`;
+      const key = `${company}-${stock}`;
 
       if (aggregatedRecords.has(key)) {
         // If this combination already exists, add to the quantity
@@ -291,7 +284,7 @@ const createHoldings = async (
       } else {
         // Otherwise, create a new entry
         aggregatedRecords.set(key, {
-          account,
+          company,
           stock,
           quantity: record.quantity as number
         });
@@ -305,7 +298,7 @@ const createHoldings = async (
       await req.payload.create({
         collection: 'holdings',
         data: {
-          account: record.account,
+          company: record.company,
           stock: record.stock,
           quantity: record.quantity,
           valueDate,
@@ -460,7 +453,7 @@ export const processHoldingsFeedCsv = async (
     const errors: any[] = []
 
     // Preload accounts
-    const accountMap = await preloadAccounts(req, doc.selectedCompanies as string[])
+    const accountToCompanyMap = await preloadAccountsToCompanyMap(req, doc.selectedCompanies as string[])
 
     // Standardize the JSON to be in standard format for both CSV and Excel
     const standardizedRows = standardizeRows(results)
@@ -469,16 +462,18 @@ export const processHoldingsFeedCsv = async (
     const stockMap = await preloadStocks(req, standardizedRows)
 
     //TODO consider if we need to warn in the output as well ?//TODO Implement properly
-    //    await checkPreviousHoldings(req, valueDate, Array.from(accountMap.keys()))
+    //    await checkPreviousHoldings(req, valueDate, Array.from(accountToCompanyMap.keys()))
     // Collect previous feed data for comparison //TODO Implement properly
-    //    const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountMap.keys()))
+    //    const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountToCompanyMap.keys()))
 
     // Process each standardized row
     standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index, accountMap, stockMap)
+      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
       processedRecords.push(processedRecord)
     })
-
+    doc.processingErrors=processedRecords.map((item)=> {
+      return { line: item as HoldingFeedLine }
+    })
     // Check for feed data anomalies //TODO Reimplement
     //checkFeedDataAnomalies(req, previousAccounts, currentAccounts, previousFeedDate, results.length)
 
@@ -490,10 +485,10 @@ export const processHoldingsFeedCsv = async (
         }*/
 
     // Delete existing holdings for the date TODO pass also the meetings
- //   await deleteExistingHoldings(req, valueDate, Array.from(accountMap.keys()))
+ //   await deleteExistingHoldings(req, valueDate, Array.from(accountToCompanyMap.keys()))
 
     // Create holdings
-    await createHoldings(req, processedRecords, accountMap, stockMap, valueDate)
+    await createHoldings(req, processedRecords, accountToCompanyMap, stockMap, valueDate)
 
     // Collect all unique account IDs from the standardized rows
     const uniqueAccountIds = Array.from(
@@ -531,6 +526,11 @@ export const processHoldingsFeedCsv = async (
       { error: `General processing error: ${error}` },
     ])
   }
+  await req.payload.update({
+    collection: 'holdings-feed' as any,
+    id: doc.id as string,
+    data:doc,
+  })
 }
 
 // Helper function to delete existing holdings for a date
