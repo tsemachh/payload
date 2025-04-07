@@ -4,6 +4,7 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
+import { Meeting } from '@/payload-types'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -90,13 +91,6 @@ export const Meetings: CollectionConfig = {
   versions: {
     drafts: true,
   },
-  hooks: {
-    afterChange: [
-      async ({ req, doc }) => {
-        if (req.context?.from != 'process')  await updateCompaniesMeetingsOnMeetingChange(req, doc)
-      },
-    ],
-  },
   fields: [
     {
       type: 'tabs',
@@ -128,13 +122,9 @@ export const Meetings: CollectionConfig = {
                   },
                   hooks: {
                     afterChange: [
-                      async ({ req, siblingData }) => {
+                       async ({ req, siblingData,  data  }) => {
                         if (req.context?.from !== 'process' && siblingData?.id) {
-                          const fullMeeting = await req.payload.findByID({
-                            collection: 'meetings',
-                            id: siblingData.id,
-                          })
-                          await updateCompaniesMeetingsOnMeetingChange(req, fullMeeting)
+                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
                         }
                       },
                     ],
@@ -235,6 +225,15 @@ export const Meetings: CollectionConfig = {
                       displayFormat: 'dd/MM/yyyy',
                       pickerAppearance: 'default',
                     },
+                  },
+                  hooks: {
+                    afterChange: [
+                      async ({ req, siblingData,  data  }) => {
+                        if (req.context?.from !== 'process' && siblingData?.id) {
+                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
+                        }
+                      },
+                    ],
                   },
                 },
                 {

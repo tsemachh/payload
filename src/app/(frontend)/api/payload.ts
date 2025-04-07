@@ -39,13 +39,6 @@ export async function fetchFutureMeetingsForTable(): Promise<{
     },
   })
 
-  console.log(
-    'user?.leafCompanies?.map((e) => typeof e ===)',
-    user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-  )
-  console.log('user', user)
-  console.log('meetings', meetings)
-
   const meetingData: MeetingTableDataType[] = (
     await Promise.all(
       meetings.docs.map(async (meeting) => {
@@ -129,7 +122,6 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             }
           })
         }
-        console.log('')
 
         return {
           meetingId: meeting.meetingId,
