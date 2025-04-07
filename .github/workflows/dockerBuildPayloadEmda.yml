@@ -119,7 +119,7 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: '*New Deployment to Production Completed! *Deployed by:* ${{ github.actor }} *Tag:* ${{ env.TAG }}'
+          SLACK_MESSAGE: 'New Docker image deployed to GCR!'
       # Step 11: Reset VM - moved to cron job
       # - name: Reset GCP VM
       #   run: |

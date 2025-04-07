@@ -207,6 +207,7 @@ services:
       - GCS_BUCKET=emda-media
       - GCS_PROJECT_ID=emda-dev
       - GCS_ENDPOINT=https://storage.googleapis.com
+      - LOGTAIL_SOURCE_TOKEN=B5p5aFX1cPDdGdzaKHFu1Vss
     ports:
       - "3000:3000"
     restart: always 
@@ -245,7 +246,9 @@ cat > /payload/docker-image-updater.sh << 'EOF'
 IMAGE="me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image"
 TAG="latest"
 COMPOSE_FILE="/payload/docker-compose.yml"
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"
 
+DEPLOYMENT_URL="https://emda-dev.shefing.com"
 # Authenticate with GCR
 sudo gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 
@@ -266,6 +269,10 @@ if [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
   sudo docker-compose -f "${COMPOSE_FILE}" up -d --force-recreate
   sudo docker image prune -a --force
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image updated."
+  # Send Slack notification about the change
+  curl -X POST -H 'Content-type: application/json' --data "{
+    \"text\": \"New Docker image deployed!\n*Image:* ${IMAGE}\n*Tag:* ${TAG}\n*Environment URL:* ${DEPLOYMENT_URL}\"
+  }" $SLACK_WEBHOOK_URL
 else
   echo "No changes detected."
 fi

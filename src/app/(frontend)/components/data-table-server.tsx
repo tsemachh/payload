@@ -17,13 +17,14 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Settings2, ArrowUp, ArrowDown, X } from 'lucide-react'
-import type React from 'react'
+import { Search, Settings2, ArrowUp, ArrowDown, X, ChevronDown, ChevronLeft } from 'lucide-react'
+import React from 'react'
 import { cn } from '@/lib/utils'
-import { calculateColumnWidths, escapeRegExp } from '../helpers/utils'
+import { calculateColumnWidths, calculatePrecedingColumnsWidth, escapeRegExp } from '../helpers/utils'
 import { v4 as uuidv4 } from 'uuid'
-import { DataTableProps } from '../types/meetings'
+import { Column, CompanyTableDate, DataTableProps, MeetingTableDataType } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
+import { unSortAbleColumnsOnServer } from '../meetings-future/meetingTableConstants'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -43,26 +44,7 @@ export function DataTableServer<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    pagination?.onPageChange?.(page)
-  }
-
-  // Handle page size change
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize)
-    pagination?.onPageSizeChange?.(newPageSize)
-  }
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof T
-    direction: 'asc' | 'desc'
-  }>({
-    key: (defaultSortField || columns[0].key) as keyof T,
-    direction: defaultSortDirection,
-  })
-
+  const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<number, boolean>>({})
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
 
@@ -108,6 +90,26 @@ export function DataTableServer<T extends Record<string, any>>({
     loadColumnVisibility()
   }, [columns, tableId])
 
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    pagination?.onPageChange?.(page)
+  }
+
+  // Handle page size change
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    pagination?.onPageSizeChange?.(newPageSize)
+  }
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof T
+    direction: 'asc' | 'desc'
+  }>({
+    key: (defaultSortField || columns[0].key) as keyof T,
+    direction: defaultSortDirection,
+  })
+
+
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[column.key as string])
@@ -137,6 +139,7 @@ export function DataTableServer<T extends Record<string, any>>({
   // Handle sort
   const handleSort = useCallback(
     (key: keyof T) => {
+      if (unSortAbleColumnsOnServer.includes(key as string)) return
       if (onServerSort) {
         // Update the sort config UI
         setSortConfig((current) => {
@@ -150,6 +153,40 @@ export function DataTableServer<T extends Record<string, any>>({
       }
     },
     [onServerSort],
+  )
+
+  const toggleRowExpansion = useCallback((meetingId: number) => {
+    setCompaniesExpandedRows((prev) => ({
+      ...prev,
+      [meetingId]: !prev[meetingId],
+    }))
+  }, [])
+
+  // Function to render the companies cell with toggle button
+  const renderCompaniesCell = useCallback(
+    (row: T) => {
+      return (
+        <div className="flex items-center justify-end w-[20px] p-0 m-0">
+          <Button
+            variant="icon"
+            size="sm"
+            className="p-0 h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleRowExpansion(row.meetingId)
+            }}
+          >
+            {companiesExpandedRows[row.meetingId] ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+          <span className="mr-1">{row.companies?.length || 0}</span>
+        </div>
+      )
+    },
+    [companiesExpandedRows, toggleRowExpansion],
   )
 
   // Highlight search term in text
@@ -263,15 +300,11 @@ export function DataTableServer<T extends Record<string, any>>({
                     <TableHead
                       key={String(column.key)}
                       className={cn('text-right overflow-hidden text-ellipsis')}
-                      style={{
-                        maxWidth: column.width ? `${column.width}px  !important` : '200px',
-                        width: column.width ? `${column.width}px  !important` : 'auto',
-                      }}
                     >
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length)}px`,
+                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length, column.width)}px`,
                         }}
                       >
                         <span
@@ -294,37 +327,107 @@ export function DataTableServer<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <TableRow key={uuidv4()} className="group hover:bg-primary/20">
-                    {visibleColumns.map((column) => (
-                      <TableCell
-                        key={`${String(row[idField])}-${String(column.key)}`}
-                        style={{
-                          direction: column.type === 'datetime' ? 'ltr' : 'rtl',
-                          placeItems: column.positionCenter ? 'center' : 'unset',
-                          textAlign: column.positionCenter ? 'center' : 'right',
-                          maxWidth: column.width ? `${column.width}px  !important` : '200px',
-                          width: column.width ? `${column.width}px  !important` : 'auto',
-                        }}
-                        className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
-                        ref={(el) => {
-                          if (!el) return
-                          el.setAttribute(
-                            'title',
-                            el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
-                          )
-                        }}
-                      >
-                        {column.render
-                          ? column.render(row)
-                          : highlightText(String(row[column.key] ?? ''), searchTerm)}
-                      </TableCell>
-                    ))}
-                    {renderRowActions && (
-                      <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                        {renderRowActions(row)}
-                      </TableCell>
+                  <React.Fragment key={row.meetingId}>
+
+                    <TableRow key={uuidv4()} className="group hover:bg-primary/20">
+                      {visibleColumns.map((column) => (
+                        <TableCell
+                          key={`${String(row[idField])}-${String(column.key)}`}
+                          style={{
+                            direction: column.type === 'datetime' ? 'ltr' : 'rtl',
+                            placeItems: column.positionCenter ? 'center' : 'unset',
+                            textAlign: column.positionCenter ? 'center' : 'right',
+                          }}
+                          className={`truncate py-2 px-3 whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis`}
+                          ref={(el) => {
+                            if (
+                              !el ||
+                              column.key == 'companies' ||
+                              typeof row[column.key] == 'object'
+                            )
+                              return
+                            el.setAttribute(
+                              'title',
+                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                            )
+                          }}
+                        >
+                          {column.key === 'companies'
+                            ? renderCompaniesCell(row)
+                            : column.render
+                              ? column.render(row)
+                              : highlightText(String(row[column.key] ?? ''), searchTerm)}
+                        </TableCell>
+                      ))}
+                      {renderRowActions && (
+                        <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                          {renderRowActions(row)}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    {companiesExpandedRows[row.meetingId] && row.companies && row.companies.length > 0 && (
+                      <>
+                        {row.companies.map((company: CompanyTableDate) => (
+                          <TableRow
+                            key={`company-${uuidv4()}`}
+                            className="bg-muted/50 border-t-0 hover:bg-primary/20"
+                          >
+                            {/* Empty cell for companies column */}
+                            <TableCell className="py-2 px-3"></TableCell>
+
+                            {/* Map through visible columns and show relevant company data */}
+                            {visibleColumns.slice(1).map((column, columnIndex) => {
+                              if (column.key in company) {
+                                return (
+                                  <TableCell
+                                    key={`company-${uuidv4()}-${String(column.key)}`}
+                                    className="py-2 px-3 whitespace-nowrap"
+                                    style={{ textAlign: 'right' }}
+                                  >
+                                    {(() => {
+                                      const value = company[column.key as keyof CompanyTableDate]
+                                      return typeof value === 'number'
+                                        ? new Intl.NumberFormat('he-IL').format(value)
+                                        : value
+                                    })()}
+                                  </TableCell>
+                                )
+                              } else {
+                                return (
+                                  <TableCell
+                                    key={`company-${uuidv4()}-${String(column.key)}`}
+                                    className="py-2 px-3 whitespace-nowrap"
+                                  >
+                                    {columnIndex === 0 && (
+                                      <div className="relative h-40px">
+                                        <span
+                                          className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
+                                          style={{
+                                            maxWidth: calculatePrecedingColumnsWidth(
+                                              visibleColumns as unknown as Column<MeetingTableDataType>[],
+                                              company,
+                                            ),
+                                          }}
+                                        >
+                                          {company.holdingsCompanyName}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                )
+                              }
+                            })}
+
+                            {renderRowActions && (
+                              <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                {renderRowActions(row)}
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </>
                     )}
-                  </TableRow>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
