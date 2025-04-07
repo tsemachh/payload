@@ -2,7 +2,11 @@ import { PayloadRequest, Where } from 'payload'
 import type { Meeting } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 
-async function processMeeting(meeting: Meeting, req: PayloadRequest,companies:string[]): Promise<void> {
+async function processMeeting(
+  meeting: Meeting,
+  req: PayloadRequest,
+  companies: string[],
+): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
 
@@ -25,10 +29,8 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest,companies:st
 
       const nearestHoldingsLimitDate = holdingsDocs.length > 0 ? holdingsDocs[0].valueDate : null
       if (!nearestHoldingsLimitDate) {
-        // console.log(' --- Error! nearestHoldingsLimitDate not found for company:', company)
         return [] // No holdings found
       }
-      // console.log("-----------nearestHoldingsLimitDate", nearestHoldingsLimitDate)
 
       // Get the holdings matching the nearest holdings date
       const { docs: holdingsLimitDateDocs } = await req.payload.find({
@@ -37,7 +39,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest,companies:st
         where: {
           and: [
             { stock: { equals: meeting.stock } },
-            { valueDate: { equals: new Date(nearestHoldingsLimitDate)} },
+            { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
             { company: { equals: company } },
           ],
         },
@@ -75,7 +77,7 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest,companies:st
       id: meeting.id,
       req: {
         ...req,
-        context: { ...req.context, from: 'process' }
+        context: { ...req.context, from: 'process' },
       },
       data: {
         companies: [...newCompanies], // Add the new companies to the existing list
@@ -102,7 +104,7 @@ export const processCompaniesMeetings = async (
     req.payload.logger.info('Starting to load companies')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
-    const where = meetingIds ? { id: { in: meetingIds } } : {} as Where
+    const where = meetingIds ? { id: { in: meetingIds } } : ({} as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
       limit: 20000,
@@ -121,7 +123,6 @@ export const processCompaniesMeetings = async (
       },
     })
     const companies = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
-    console.log("------------companies.length", companies.length)
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
@@ -143,14 +144,14 @@ export const processCompaniesMeetings = async (
           continue
         }
         console.log('meeting started', meeting.id)
-        const promise = processMeeting(meeting, req,companies)
+        const promise = processMeeting(meeting, req, companies)
           .then(() => {
             console.log('meeting finished', meeting.id)
           })
           .catch((error) => {
             req.payload.logger.error(
               `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              error
+              error,
             )
             // Don't rethrow the error to allow other meetings to be processed
           })
