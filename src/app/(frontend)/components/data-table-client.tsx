@@ -79,7 +79,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     direction: defaultSortDirection,
   })
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
-  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
+  const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<number, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
   const [isFilterActive, setIsFilterActive] = useState(false)
@@ -169,7 +169,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   )
 
   const toggleRowExpansion = useCallback((meetingId: number) => {
-    setExpandedRows((prev) => ({
+    setCompaniesExpandedRows((prev) => ({
       ...prev,
       [meetingId]: !prev[meetingId],
     }))
@@ -574,7 +574,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               toggleRowExpansion(row.meetingId)
             }}
           >
-            {expandedRows[row.meetingId] ? (
+            {companiesExpandedRows[row.meetingId] ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
               <ChevronLeft className="h-4 w-4" />
@@ -584,7 +584,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         </div>
       )
     },
-    [expandedRows, toggleRowExpansion],
+    [companiesExpandedRows, toggleRowExpansion],
   )
 
   // Get sort icon for column header
@@ -962,7 +962,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             placeItems: column.positionCenter ? 'center' : 'unset',
                             textAlign: column.positionCenter ? 'center' : 'right',
                           }}
-                          className={`truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis`}
+                          className="truncate py-2 px-3 whitespace-nowrap max-w-[20px] overflow-hidden text-ellipsis"
                           ref={(el) => {
                             if (
                               !el ||
@@ -970,9 +970,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                               typeof row[column.key] == 'object'
                             )
                               return
+                            const isEllipsisActive = el.offsetWidth < el.scrollWidth
                             el.setAttribute(
                               'title',
-                              el.scrollWidth > el.clientWidth ? String(row[column.key]) : '',
+                              isEllipsisActive ? String(row[column.key]) : '',
                             )
                           }}
                         >
@@ -989,7 +990,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
-                    {expandedRows[row.meetingId] && row.companies && row.companies.length > 0 && (
+                    {companiesExpandedRows[row.meetingId] && row.companies && row.companies.length > 0 && (
                       <>
                         {row.companies.map((company: CompanyTableDate) => (
                           <TableRow

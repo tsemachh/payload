@@ -37,7 +37,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       { label: 'מק"מ', value: 'מק"מ' },
       { label: 'שטרי הון', value: 'שטרי הון' },
     ],
-    minWidth: 50,
+    minWidth: 60,
   },
   { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
   { key: 'companyName', header: 'שם חברה', type: 'string', minWidth: 120 },
@@ -109,7 +109,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'nominalValue',
-    header: 'ערך נקוב',
+    header: 'ערך נקוב ליום קובע',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.nominalValue),
@@ -201,6 +201,13 @@ export const defaultVisibleColumns = [
   'comments',
   'electronicVotingEnabled',
   'committeeInitiated',
+]
+
+export const unSortAbleColumnsOnServer = [
+  'marketValue',
+  'nominalValue',
+  'percentageHolding',
+  'holdingValueInMillions',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

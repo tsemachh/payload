@@ -107,8 +107,19 @@ jobs:
           # Tag the local image with the GCR tag
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
           # Push the tagged image to GCR
-          docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}; then
+            echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
+          else
+            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+          fi
+      - name: Print NEW_IMAGE_PUSHED Value
+        run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
+      - name: Notify Slack - Deployment Completed
+        if: ${{ success() && env.NEW_IMAGE_PUSHED == 'true' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: 'New Docker image deployed to GCR!'
       # Step 11: Reset VM - moved to cron job
       # - name: Reset GCP VM
       #   run: |

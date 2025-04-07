@@ -20,6 +20,14 @@ export function MeetingsTableClient() {
   useEffect(() => {
     fetchData(1)
   }, [])
+  useEffect(() => {
+  // Call fetchData only when sortField or sortDirection changes
+  const fetchSortedData = async () => {
+    await fetchData(currentPage)
+  }
+
+  fetchSortedData()
+}, [sortField, sortDirection])
 
   // Fetch data with current filters, sort, and search
   const fetchData = async (page: number, term?: string, newPageSize?: number) => {
@@ -58,7 +66,6 @@ export function MeetingsTableClient() {
 
     setSortField(field)
     setSortDirection(newDirection)
-    await fetchData(currentPage)
   }
 
   const handleSearch = async (term: string) => {

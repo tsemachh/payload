@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
 //Logging
-import logger from './lib/logger'
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
@@ -26,6 +25,7 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
+import { logtailTransport } from './lib/logger'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 const filename = fileURLToPath(import.meta.url)
@@ -68,7 +68,18 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  logger,
+  logger: {
+    destination: logtailTransport({
+      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
+      options: {
+        endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
+      },
+    }),
+    options: {
+      level: 'info',
+    },
+  },
+
   plugins: [
     importExportPlugin({
       collections: ['stocks', 'meetings', 'companies'],
@@ -81,16 +92,15 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
-    // storage-adapter-placeholder
     addAccess({
-      rolesCollection: 'roles', // name of the collection defining the roles
-      permissionsField: 'permissions', // name of the field within the role collection
-      excludedCollections: [], // enable to exclude some collections from permission control
+      rolesCollection: 'roles',
+      permissionsField: 'permissions',
+      excludedCollections: [],
     }),
     addAuthorsFields({
-      excludedCollections: [], //array of collections names to exclude
-      excludedGlobals: [], // array of globals names to exclude
-      usernameField: 'name', //name field to use from Users collection, 'user' by default
+      excludedCollections: [],
+      excludedGlobals: [],
+      usernameField: 'name',
     }),
     gcsStorage({
       collections: {

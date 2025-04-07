@@ -1,39 +1,58 @@
-import pino from 'pino';
-import logtailTransport from '@logtail/pino';
-import os from 'os';
+import { Transform } from 'stream'
+import { Logtail } from '@logtail/node'
+import { Context, LogLevel, ILogtailOptions, StackContextHint } from '@logtail/types'
+import { getLogLevel } from './helpers'
 
-// Initialize username
-let username;
-try {
-  username = os.userInfo().username;
-} catch (error) {
-  username = process.env.USER || process.env.USERNAME || 'unknown';
+export interface IPinoLogtailOptions {
+  sourceToken: string
+  options: Partial<ILogtailOptions>
 }
 
-// Initialize basic logger
-const logger = pino({
-  base: {
-    user: username,
-    hostname: os.hostname(),
-    env: process.env.NODE_ENV || 'development',
-  },
-  level: 'info'
-});
+const stackContextHint = {
+  fileName: 'node_modules/pino',
+  methodNames: ['log', 'fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'],
+  required: true,
+}
 
-// Configure logtail transport separately if needed
-if (typeof logtailTransport == 'function')
-  if (process.env.LOGTAIL_SOURCE_TOKEN) {
-    logtailTransport({
-      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN,
-      options: {
-        endpoint: process.env.LOGTAIL_ENDPOINT || 'https://s1214463.eu-nbg-2.betterstackdata.com'
+export function logtailTransport(options: IPinoLogtailOptions) {
+  const logtail = new Logtail(options.sourceToken, options.options)
+  const write = async (obj: any) => {
+    const object = JSON.parse(obj)
+    const meta: Context = {}
+
+    if (typeof object.time === 'string' || object.time) {
+      const time = new Date(object.time)
+      if (!isNaN(time.valueOf())) {
+        meta.dt = time
       }
-    }).then(transport => {
-      // Transport will be configured externally
-      console.log('Logtail transport configured');
-    }).catch(err => {
-      console.error('Failed to configure Logtail transport:', err);
-    });
+    }
+
+    Object.keys(object)
+      .filter((key) => ['time', 'msg', 'message', 'level', 'v'].indexOf(key) < 0)
+      .forEach((key) => (meta[key] = object[key]))
+    const msg = object.msg
+    if (object.msg !== undefined && object.message !== undefined) {
+      meta['message_field'] = object.message
+    }
+
+    let level: LogLevel
+    try {
+      level = getLogLevel(object.level)
+    } catch (_) {
+      console.error('Error while mapping log level.')
+      return
+    }
+
+    logtail.log(msg, level, meta, stackContextHint as StackContextHint)
+    await logtail.flush()
   }
 
-export default logger;
+  const stream = new Transform({
+    objectMode: true,
+    transform(chunk, encoding, callback) {
+      write(chunk).then(() => callback())
+    },
+  })
+
+  return stream
+}
