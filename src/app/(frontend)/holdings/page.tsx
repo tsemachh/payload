@@ -10,9 +10,7 @@ export default function Holdings() {
   
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">החזקות</h1>
-      
-      <Tabs 
+      <Tabs
         defaultValue="feed" 
         onValueChange={setActiveTab}
         className="w-full"

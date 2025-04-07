@@ -72,28 +72,17 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Check for existing holdings on the specified date
-    const existingHoldings = await req.payload.find({
-      collection: 'holdings',
-      where: {
-        valueDate: {
-          equals: valueDate,
-        },
-      },
-    })
-
     // Create a new HoldingsFeed document
     const holdingsFeed = await req.payload.create({
       collection: 'holdings-feed' as any,
       data: {
         valueDate,
-        comments: existingHoldings.docs.length > 0 
-          ? `Warning: Replacing ${existingHoldings.docs.length} existing holdings for this date`
-          : "",
+        comments: "",
         selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
       } as any,
       file: file,
     })
+    //Make sure selectedCompanies are IDs
     holdingsFeed.selectedCompanies=selectedCompanies
     req.file=file
     // Process the holdings feed synchronously
@@ -103,8 +92,8 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       message: 'Successfully uploaded holdings file',
       holdingsFeed,
       warnings: {
-        existingHoldings: existingHoldings.docs.length > 0,
-        existingHoldingsCount: existingHoldings.docs.length,
+        /*existingHoldings: existingHoldings.docs.length > 0,
+        existingHoldingsCount: existingHoldings.docs.length,*/
       },
     })
   } catch (error) {
