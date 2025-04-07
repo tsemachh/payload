@@ -95,7 +95,10 @@
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-scoped-preflight": "^3.4.10",
     "vaul": "^1.1.2",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "@logtail/node": "^0.5.2",
+    "@logtail/types": "^0.5.2",
+    "pino-abstract-transport": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
