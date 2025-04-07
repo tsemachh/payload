@@ -82,7 +82,7 @@ export default buildConfig({
   }),
   logger: {
     destination: logtailTransport({
-      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || '',
+      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
       options: {
         endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
       },
