@@ -210,7 +210,7 @@ export function HoldingsFeedView() {
           disabled={!date || !file || isUploading || selectedCompanies.length === 0}
           className="px-8"
         >
-          {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+          {isUploading ? 'מעלה...' : 'הזן'}
         </Button>
       </div>
 

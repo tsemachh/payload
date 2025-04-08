@@ -166,6 +166,8 @@ const preloadAccountsToCompanyMap = async (
   });
   console.log("Final accountToCompanyMap:", Array.from(accountToCompanyMap.entries()));
 
+
+
   return accountToCompanyMap
 }
 
