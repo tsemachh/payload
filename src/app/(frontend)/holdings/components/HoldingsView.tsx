@@ -93,7 +93,7 @@ export function HoldingsView() {
   return (
       <div className="space-y-6">
         <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-          <div className="w-full md:w-3/12">
+          <div className="w-full md:w-3/12 md:pr-4"> {/* Added right padding */}
             <label className="text-sm font-medium mb-2 block">חברות</label>
             <CompanySelector
                 companies={companies}
@@ -112,7 +112,7 @@ export function HoldingsView() {
             />
           </div>
 
-          <div className="w-full md:w-auto self-end"> {/* Aligned with the DateSelector input */}
+          <div className="w-full md:w-auto md:self-center">
             <Button
                 onClick={fetchHoldings}
                 disabled={!date || selectedCompanies.length === 0 || isLoading}
@@ -123,7 +123,7 @@ export function HoldingsView() {
           </div>
         </div>
 
-        <div className="flex justify-between items-center mt-8">
+        <div className="flex justify-between items-center mt-8 pr-4">
           <div className="flex items-center space-x-4 space-x-reverse">
             <h2 className="text-xl font-semibold">טבלת אחזקות</h2>
             {holdings.length > 0 && (
@@ -137,14 +137,7 @@ export function HoldingsView() {
 
         {holdings.length > 0 ? (
             <DataTable
-                columns={columns.map(col => {
-                  // Make company column half width and other columns quarter width
-                  if (col.accessorKey === 'company') {
-                    return {...col, meta: {...(col.meta || {}), width: '50%'}}
-                  } else {
-                    return {...col, meta: {...(col.meta || {}), width: '25%'}}
-                  }
-                })}
+                columns={modifiedColumns}
                 data={holdings}
                 idField="id"
                 defaultSortField="lastUpdated"
