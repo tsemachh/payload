@@ -119,6 +119,7 @@ export const Users: CollectionConfig = {
               const leafRecurseCompanies= await getLeafCompanies(company.companyId,req)
               leafCompanies=leafCompanies.concat(leafRecurseCompanies)
             }
+            leafCompanies = Array.from(new Set(leafCompanies))
             return leafCompanies
           },
         ],
