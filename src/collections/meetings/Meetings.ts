@@ -96,7 +96,7 @@ export const Meetings: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'Content',
+          label: 'תןכן',
           fields: [
             {
               type: 'row',
