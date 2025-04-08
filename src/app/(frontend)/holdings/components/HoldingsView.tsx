@@ -90,10 +90,19 @@ export function HoldingsView() {
     }
   }
 
+  // Define modifiedColumns - add this code to fix the error
+  const modifiedColumns = columns.map(column => {
+    if (column.accessorKey === 'company') {
+      return {...column, meta: { width: "120px" }}
+    } else {
+      return {...column, meta: { width: "60px" }}
+    }
+  })
+
   return (
       <div className="space-y-6">
-        <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-          <div className="w-full md:w-3/12 md:pr-4"> {/* Added right padding */}
+        <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-3 md:space-x-reverse">
+          <div className="w-full md:w-3/12 md:pr-4">
             <label className="text-sm font-medium mb-2 block">חברות</label>
             <CompanySelector
                 companies={companies}
@@ -125,7 +134,7 @@ export function HoldingsView() {
 
         <div className="flex justify-between items-center mt-8 pr-4">
           <div className="flex items-center space-x-4 space-x-reverse">
-            <h2 className="text-xl font-semibold">טבלת אחזקות</h2>
+            <h2 className="d">טבלת אחזקות</h2>
             {holdings.length > 0 && (
                 <ExportButton
                     data={holdings}
@@ -136,20 +145,22 @@ export function HoldingsView() {
         </div>
 
         {holdings.length > 0 ? (
-            <DataTable
-                columns={modifiedColumns}
-                data={holdings}
-                idField="id"
-                defaultSortField="lastUpdated"
-                defaultSortDirection="desc"
-                tableId="holdings-view-table"
-                pastDateFilterOptions={[
-                  { value: 'allPast', label: 'כל האחזקות הקודמות' },
-                ]}
-                futureDateFilterOptions={[
-                  { value: 'allFuture', label: 'כל האחזקות העתידיות' },
-                ]}
-            />
+            <div className="max-w-4xl"> {/* Added container with max width to constrain table width */}
+              <DataTable
+                  columns={modifiedColumns}
+                  data={holdings}
+                  idField="id"
+                  defaultSortField="lastUpdated"
+                  defaultSortDirection="desc"
+                  tableId="holdings-view-table"
+                  pastDateFilterOptions={[
+                    { value: 'allPast', label: 'כל האחזקות הקודמות' },
+                  ]}
+                  futureDateFilterOptions={[
+                    { value: 'allFuture', label: 'כל האחזקות העתידיות' },
+                  ]}
+              />
+            </div>
         ) : (
             <div className="text-center py-10 text-gray-500 border rounded-md">
               {isLoading ? 'טוען נתונים...' : 'לא נמצאו נתונים עבור הבחירה הנוכחית'}
