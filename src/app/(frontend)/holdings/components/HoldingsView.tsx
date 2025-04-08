@@ -90,14 +90,6 @@ export function HoldingsView() {
     }
   }
 
-  // Define modifiedColumns - add this code to fix the error
-  const modifiedColumns = columns.map(column => {
-    if (column.accessorKey === 'company') {
-      return {...column, meta: { width: "120px" }}
-    } else {
-      return {...column, meta: { width: "60px" }}
-    }
-  })
 
   return (
       <div className="space-y-6">
@@ -145,9 +137,9 @@ export function HoldingsView() {
         </div>
 
         {holdings.length > 0 ? (
-            <div className="max-w-4xl"> {/* Added container with max width to constrain table width */}
+            <div> {/* Added container with max width to constrain table width */}
               <DataTable
-                  columns={modifiedColumns}
+                  columns={columns}
                   data={holdings}
                   idField="id"
                   defaultSortField="lastUpdated"
