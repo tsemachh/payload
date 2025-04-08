@@ -70,12 +70,12 @@ export function ProcessingResults({
                   <Table className="w-full text-right border-collapse bg-white">
                     <TableHeader className="bg-red-100 sticky top-0 z-10 text-right">
                       <TableRow>
-                        <TableHead className="text-red-700 border px-3 py-2">שורה</TableHead>
-                        <TableHead className="text-red-700 border px-3 py-2">נייר ערך</TableHead>
-                        <TableHead className="text-red-700 border px-3 py-2">חשבון</TableHead>
-                        <TableHead className="text-red-700 border px-3 py-2">כמות</TableHead>
-                        <TableHead className="text-red-700 border px-3 py-2">שגיאה</TableHead>
-                        <TableHead className="text-red-700 border px-3 py-2">פעולה</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">שורה</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">נייר ערך</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">חשבון</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">כמות</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">שגיאה</TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">פעולה</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
