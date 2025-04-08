@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Meeting, StockValue } from '@/payload-types'
 import { getDbFieldName } from '@/app/(frontend)/meetings-future/sortFieldMapping'
 import { headers as getHeaders } from 'next/headers.js'
-import { calculateHoldingValues } from '../../helpers/utils'
+import { calculateHoldingValues } from '../../helpers/utils-data-table'
 import { MeetingTableDataType } from '../../types/meetings'
 
 export async function GET(request: NextRequest) {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     // Execute query
     const meetings = await payload.find(query)
-
+    
     // Process results
     const meetingData = await Promise.all(
       meetings.docs.map(async (_meeting) => {
