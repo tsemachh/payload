@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
-import { Company, CompanySelector } from './CompanySelector'
+import { TreeNode, CompanyTreeSelector } from './CompanySelector'
 import { DateSelector } from './DateSelector'
 import { FileUploader } from './FileUploader'
 import { ProcessingError, ProcessingResults, ProcessingWarning } from './ProcessingResults'
@@ -21,10 +21,11 @@ import {
 } from '@/components/ui/alert-dialog'
 import { AlertCircle } from 'lucide-react'
 import { HoldingsFeed } from '@/payload-types'
+import { transformCompaniesToTree } from '../../helpers/utils-holdings'
 
 export function HoldingsFeedView() {
   const { user } = useAuth()
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<TreeNode[]>([])
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => {
     // Load selected companies from localStorage on component mount
     if (typeof window !== 'undefined') {
@@ -52,16 +53,9 @@ export function HoldingsFeedView() {
   // Extract companies from user
   useEffect(() => {
     if (user?.companies) {
-      const userCompanies = user.companies
-        .map((company) => {
-          // Handle company as either a string ID or an object with an ID
-          return typeof company.companyId === 'string'
-            ? { id: company.companyId, name: company.companyId }
-            : { id: company.companyId?.id || '', name: company.companyId?.name || '' }
-        })
-        .filter((company) => company.id !== '')
-
-      setCompanies(userCompanies)
+      // Transform the flat company structure into a hierarchical tree
+      const transformedCompanies = transformCompaniesToTree(user.companies)
+      setCompanies(transformedCompanies)
     }
   }, [user])
 
@@ -181,7 +175,7 @@ export function HoldingsFeedView() {
       <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
         <div className="w-full md:w-3/10">
           <label className="text-sm font-medium mb-2 block">חברות</label>
-          <CompanySelector
+          <CompanyTreeSelector
             companies={companies}
             selectedCompanies={selectedCompanies}
             onSelectionChange={setSelectedCompanies}

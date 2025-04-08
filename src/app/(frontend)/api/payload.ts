@@ -4,7 +4,7 @@ import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
 import { headers as getHeaders } from 'next/headers.js'
 import { StockValue } from '@/payload-types'
-import { calculateHoldingValues } from '../helpers/utils'
+import { calculateHoldingValues } from '../helpers/utils-data-table'
 
 export async function fetchFutureMeetingsForTable(): Promise<{
   data: MeetingTableDataType[]
@@ -65,7 +65,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             and: [
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
               {
-                'company': {
+                company: {
                   in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                 },
               },
@@ -84,7 +84,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             depth: 1,
             where: {
               stockId: { equals: stockIdToUse },
-              valueDate: { equals: new Date(nearestHoldingsLimitDate)},
+              valueDate: { equals: new Date(nearestHoldingsLimitDate) },
             },
             limit: 0,
           })
@@ -99,7 +99,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 { stock: { equals: stockIdToUse } },
                 { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
                 {
-                  'company': {
+                  company: {
                     in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                   },
                 },
