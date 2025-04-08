@@ -1,53 +1,42 @@
 "use client"
 
-import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
+import { Holding } from "./types"
 
-export type Holding = {
-  id: number
-  company: string
-  stockNumber: string
-  quantity: number
-  lastUpdated: string
-}
+import { Column } from '../types/meetings'
 
-export const columns: ColumnDef<Holding>[] = [
+export const columns: Column<Holding>[] = [
   {
-    accessorKey: 'company',
+    key: 'company',
     header: 'חברה',
+    type: 'string',
+    minWidth: 150,
+    filterable: true,
   },
   {
-    accessorKey: 'stockNumber',
+    key: 'stockNumber',
     header: 'מספר נייר ערך',
+    type: 'string',
+    minWidth: 120,
+    filterable: true,
   },
   {
-    accessorKey: 'quantity',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          כמות
-          <ArrowUpDown className="mr-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    key: 'quantity',
+    header: 'כמות',
+    type: 'number',
+    minWidth: 100,
+    filterable: false,
+    render: (row) => (
+      <span className="text-right">{row.quantity.toLocaleString()}</span>
+    ),
   },
   {
-    accessorKey: 'lastUpdated',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          עדכון אחרון
-          <ArrowUpDown className="mr-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    key: 'lastUpdated',
+    header: 'עדכון אחרון',
+    type: 'datetime',
+    minWidth: 150,
+    filterable: true,
   },
 ]
 

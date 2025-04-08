@@ -1,51 +1,34 @@
 'use client'
 
-// import { useState } from 'react'
-// import { FileUpload } from '@/components/file-upload'
-// import { ExportButton } from '@/components/export-button'
-
-// const mockData = [
-//   {
-//     id: 1,
-//     company: 'חברה פ',
-//     stockNumber: '1234567',
-//     quantity: 1000,
-//     lastUpdated: '2025-02-10',
-//   },
-//   {
-//     id: 2,
-//     company: 'חברה ק',
-//     stockNumber: '7654321',
-//     quantity: 500,
-//     lastUpdated: '2025-02-09',
-//   },
-//   {
-//     id: 3,
-//     company: 'חברה ר',
-//     stockNumber: '9876543',
-//     quantity: 750,
-//     lastUpdated: '2025-02-08',
-//   },
-// ]
+import { useState } from 'react'
+import { HoldingsFeedView } from './components/HoldingsFeedView'
+import { HoldingsView } from './components/HoldingsView'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 
 export default function Holdings() {
-  // const [holdings, setHoldings] = useState(mockData)
-
-  // const handleFileUpload = (data: any[]) => {
-  //   // In a real application, you would process the data and update your database
-  //   // setHoldings([...holdings, ...data])
-  // }
-
+  const [activeTab, setActiveTab] = useState('feed')
+  
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">החזקות</h1>
-      <div className="flex justify-between items-center">
-        {/* <FileUpload onUploadAction={handleFileUpload} />
-        <ExportButton data={holdings} filename="holdings" /> */}
-      </div>
-      {/*
-      <DataTable columns={columns} data={holdings} />
-*/}
+    <div className="space-y-6">
+      <Tabs
+        defaultValue="feed" 
+        onValueChange={setActiveTab}
+        className="w-full"
+        dir="rtl"
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="view">צפייה באחזקות</TabsTrigger>
+          <TabsTrigger value="feed">הזנת אחזקות</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="feed" className="mt-6">
+          <HoldingsFeedView />
+        </TabsContent>
+        
+        <TabsContent value="view" className="mt-6">
+          <HoldingsView />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

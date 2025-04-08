@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { updateCompaniesMeetingsOnHoldingChange } from './hooks/updateCompaniesMeetings'
+import uploadHoldingsCsvEndPoint from './feeds/uploadHoldingsCsvEndPoint'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
@@ -65,6 +66,13 @@ export const Holdings: CollectionConfig = {
           required: true,
         },
       ],
+    },
+  ],
+  endpoints: [
+    {
+      path: '/upload-holdings-csv',
+      method: 'post',
+      handler: uploadHoldingsCsvEndPoint,
     },
   ],
 }
