@@ -177,74 +177,75 @@ export function HoldingsFeedView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-        <div className="w-full md:w-3/10">
-          <label className="text-sm font-medium mb-2 block">חברות</label>
-          <CompanySelector
-            companies={companies}
-            selectedCompanies={selectedCompanies}
-            onSelectionChange={setSelectedCompanies}
-            className="w-full"
-          />
+      <div className="space-y-6">
+        <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
+          <div className="w-full md:w-3/10 md:mr-4">  {/* רווח מימין לחברות */}
+            <label className="text-sm font-medium mb-2 block">חברות</label>
+            <CompanySelector
+                companies={companies}
+                selectedCompanies={selectedCompanies}
+                onSelectionChange={setSelectedCompanies}
+                className="w-full"
+            />
+          </div>
+
+          <div className="w-full md:w-1/10 md:mr-4">  {/* רווח מימין לתאריך ערך */}
+            <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
+            <DateSelector date={date} onDateChange={setDate} className="w-full" />
+          </div>
+
+          <div className="w-full md:flex-1 md:mr-4">  {/* רווח מימין לקובץ אחזקות */}
+            <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
+            <FileUploader
+                onFileChange={setFile}
+                disabled={isUploading}
+                className="w-full"
+            />
+          </div>
+
+          <div className="w-full md:w-auto">  {/* הכפתור בהמשך השורה */}
+            <Button
+                onClick={handleSubmit}
+                disabled={!date || !file || isUploading || selectedCompanies.length === 0}
+                className="px-8"
+            >
+              {isUploading ? 'מעלה...' : 'הזן'}
+            </Button>
+          </div>
         </div>
 
-        <div className="w-full md:w-1/10">
-          <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
-          <DateSelector date={date} onDateChange={setDate} className="w-full" />
-        </div>
+        <ProcessingResults
+            isSuccess={isSuccess}
+            errors={errors}
+            warnings={warnings}
+            className="mt-8"
+        />
 
-        <div className="w-full md:flex-1">
-          <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
-          <FileUploader
-            onFileChange={setFile}
-            disabled={isUploading}
-            className="w-full"
-          />
-        </div>
+        <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center">
+                <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
+                התראה
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {warningInfo.existingHoldings && (
+                    <p className="mb-2">
+                      נמצאו {warningInfo.existingHoldingsCount} אחזקות קיימות לתאריך{' '}
+                      {date ? format(date, 'dd/MM/yyyy') : ''}. העלאת הקובץ החדש תחליף את האחזקות
+                      הקיימות.
+                    </p>
+                )}
+                <p>האם להמשיך?</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelWarning}>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmWarning}>המשך</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSubmit}
-          disabled={!date || !file || isUploading || selectedCompanies.length === 0}
-          className="px-8"
-        >
-          {isUploading ? 'מעלה...' : 'הזן'}
-        </Button>
-      </div>
-
-      <ProcessingResults
-        isSuccess={isSuccess}
-        errors={errors}
-        warnings={warnings}
-        className="mt-8"
-      />
-
-      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center">
-              <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
-              התראה
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {warningInfo.existingHoldings && (
-                <p className="mb-2">
-                  נמצאו {warningInfo.existingHoldingsCount} אחזקות קיימות לתאריך{' '}
-                  {date ? format(date, 'dd/MM/yyyy') : ''}. העלאת הקובץ החדש תחליף את האחזקות
-                  הקיימות.
-                </p>
-              )}
-              <p>האם להמשיך?</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelWarning}>ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmWarning}>המשך</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
   )
+
 }
