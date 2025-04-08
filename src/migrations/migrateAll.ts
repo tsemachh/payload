@@ -92,7 +92,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
 
-
+    // 9. Process Meeting companies
+    //TODO
 
     console.log('migrateAll process completed successfully!')
   } catch (error) {

@@ -1,5 +1,4 @@
 import { PayloadRequest } from 'payload'
-import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { getStockByStockId } from '@/utils/utils'
 import { upsertStockFromImport, upsertStockValueFromImport } from '@/utils/migrateUtils'
 import csvToJson from 'convert-csv-to-json'

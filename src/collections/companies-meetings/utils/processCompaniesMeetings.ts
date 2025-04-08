@@ -1,59 +1,86 @@
-import { PayloadRequest } from 'payload'
-import type { Account, Meeting, Stock } from '@/payload-types'
-import { getIdOfRelationField, getStockIds } from '@/utils/utils'
+import { PayloadRequest, Where } from 'payload'
+import type { Meeting } from '@/payload-types'
+import { getIdOfRelationField } from '@/utils/utils'
 
-async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<void> {
-  const stockIds: string[] = await getStockIds(meeting.stock as Stock)
-  const companies = meeting?.companies?.map(getIdOfRelationField) as string[] || []
-  let isDirty: boolean = false
+async function processMeeting(
+  meeting: Meeting,
+  req: PayloadRequest,
+  companies: string[],
+): Promise<void> {
+  let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
-  // Check if the company has holdings for this meeting's stock on the holdingsLimit date
-  let { docs: holdings } = await req.payload.find({
-    collection: 'holdings',
-    where: {
-      and: [
-        { stock: { in: stockIds } },
-        { valueDate: { equals: meeting.holdingsLimit } },
-        { quantity: { greater_than: 0 } },
-      ],
-    },
-    limit: 0,
-    depth: 1,
-  })
 
-  // If no holdings found for the holdingsLimit date, get the most recent holdings reported
-  if (holdings.length === 0 && new Date(meeting.holdingsLimit as string) > new Date()) {
-    req.payload.logger.info(`No holdings found for meeting ${meeting.id} on ${meeting.holdingsLimit}, getting most recent holdings`)
-    const { docs: recentHoldings } = await req.payload.find({
-      collection: 'holdings',
-      where: {
-        and: [
-          { stock: { in: stockIds } },
-          { valueDate: { less_than: meeting.holdingsLimit } },
-          { quantity: { greater_than: 1 } },
-        ],
-      },
-      limit: 1000,
-      depth: 1,
-      sort: '-valueDate', // Sort by valueDate in descending order to get the most recent
-    })
-    holdings = recentHoldings
-  }
-  for (let i = 0; i < holdings.length; i++) {
-    const holding = holdings[i]
+  // Get holdings for each company
+  const holdings = await Promise.all(
+    companies.map(async (company) => {
+      // Get the nearest holdings date
+      const { docs: holdingsDocs } = await req.payload.find({
+        collection: 'holdings',
+        depth: 0,
+        where: {
+          and: [
+            { valueDate: { less_than_equal: meeting.holdingsLimit } },
+            { company: { equals: company } },
+          ],
+        },
+        sort: '-valueDate',
+        limit: 1,
+      })
+
+      const nearestHoldingsLimitDate = holdingsDocs.length > 0 ? holdingsDocs[0].valueDate : null
+      if (!nearestHoldingsLimitDate) {
+        return [] // No holdings found
+      }
+
+      // Get the holdings matching the nearest holdings date
+      const { docs: holdingsLimitDateDocs } = await req.payload.find({
+        collection: 'holdings',
+        depth: 0,
+        where: {
+          and: [
+            { stock: { equals: meeting.stock } },
+            { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
+            { company: { equals: company } },
+          ],
+        },
+        limit: 0,
+      })
+
+      return holdingsLimitDateDocs
+    }),
+  )
+
+  const flattenedHoldings = holdings.flat()
+
+  // Check and update companies list
+  const newCompaniesSet = new Set<string>()
+
+  for (let i = 0; i < flattenedHoldings.length; i++) {
+    const holding = flattenedHoldings[i]
     const companyId: string = getIdOfRelationField(holding.company) as string
-    if (!companies.includes(companyId)) {// Avoid duplicate companyIds
-      companies.push(companyId)
+    if (!newCompaniesSet.has(companyId)) {
+      newCompaniesSet.add(companyId)
       isDirty = true
     }
   }
+
+  const newCompanies = Array.from(newCompaniesSet)
+
+  // Update meeting if necessary
   if (isDirty) {
-    req.payload.logger.info('Successfully processed companies-meeting:' + meeting.id + ' with companies:' + companies.toString())
+    req.payload.logger.info(
+      `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
+    )
+
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'process' },
+      },
       data: {
-        companies,
+        companies: [...newCompanies], // Add the new companies to the existing list
       },
     })
   }
@@ -72,17 +99,12 @@ async function processMeeting(meeting: Meeting, req: PayloadRequest): Promise<vo
 export const processCompaniesMeetings = async (
   req: PayloadRequest,
   meetingIds?: string[],
-  ): Promise<void> => {
+): Promise<void> => {
   try {
     req.payload.logger.info('Starting to load companies')
-    let where = {}
- // Get all meetings or specific meetings if meetingIds is provided
+    // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
-    if (meetingIds) {
-      where = { id: { in: meetingIds } }
-    } else {
-      where = {}
-    }
+    const where = meetingIds ? { id: { in: meetingIds } } : ({} as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
       limit: 20000,
@@ -92,15 +114,27 @@ export const processCompaniesMeetings = async (
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
+    const { docs } = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      limit: 0,
+      where: {
+        or: [{ subCompanies: { equals: [] } }, { subCompanies: { exists: false } }],
+      },
+    })
+    const companies = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+
     // Process meetings in batches to avoid MongoDB session issues
-    const batchSize = 10; // Process 10 meetings at a time
+    const batchSize = 10 // Process 10 meetings at a time
 
     // Process meetings in batches
     for (let i = 0; i < meetings.length; i += batchSize) {
       const batchPromises: Promise<void>[] = []
       const batchEnd = Math.min(i + batchSize, meetings.length)
 
-      req.payload.logger.info(`Processing batch ${i/batchSize + 1} (meetings ${i+1}-${batchEnd} of ${meetings.length})`)
+      req.payload.logger.info(
+        `Processing batch ${i / batchSize + 1} (meetings ${i + 1}-${batchEnd} of ${meetings.length})`,
+      )
 
       // Create promises for this batch
       for (let j = i; j < batchEnd; j++) {
@@ -109,21 +143,33 @@ export const processCompaniesMeetings = async (
         if (!meeting.stock || !meeting.holdingsLimit) {
           continue
         }
-        const promise = processMeeting(meeting, req).then(() => {
-          console.log('meeting finished', meeting.id)
-        })
+        console.log('meeting started', meeting.id)
+        const promise = processMeeting(meeting, req, companies)
+          .then(() => {
+            console.log('meeting finished', meeting.id)
+          })
+          .catch((error) => {
+            req.payload.logger.error(
+              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              error,
+            )
+            // Don't rethrow the error to allow other meetings to be processed
+          })
         batchPromises.push(promise)
       }
 
       // Wait for this batch to complete before moving to the next
       await Promise.all(batchPromises)
-      req.payload.logger.info(`Completed batch ${i/batchSize + 1}`)
+      req.payload.logger.info(`Completed batch ${i / batchSize + 1}`)
     }
 
     req.payload.logger.info('End of process: All meetings have been processed')
-  }//@ts-ignore
-  catch (error: Error) {
-    req.payload.logger.error(`Error processing companies-meetings: ${error.message} `, error)
+  } catch (error: unknown) {
+    //@ts-ignore
+    req.payload.logger.error(
+      `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error,
+    )
     throw error
   }
 }
