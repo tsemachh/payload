@@ -179,7 +179,7 @@ export function HoldingsFeedView() {
   return (
       <div className="space-y-6">
         <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-          <div className="w-full md:w-3/10 md:mr-4">  {/* רווח מימין לחברות */}
+          <div className="w-full md:w-3/12">  {/* Adjusted width for companies */}
             <label className="text-sm font-medium mb-2 block">חברות</label>
             <CompanySelector
                 companies={companies}
@@ -189,12 +189,12 @@ export function HoldingsFeedView() {
             />
           </div>
 
-          <div className="w-full md:w-1/10 md:mr-4">  {/* רווח מימין לתאריך ערך */}
+          <div className="w-full md:w-2/12">  {/* Made date narrower */}
             <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
             <DateSelector date={date} onDateChange={setDate} className="w-full" />
           </div>
 
-          <div className="w-full md:flex-1 md:mr-4">  {/* רווח מימין לקובץ אחזקות */}
+          <div className="w-full md:w-4/12">  {/* Made file uploader narrower */}
             <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
             <FileUploader
                 onFileChange={setFile}
@@ -203,7 +203,7 @@ export function HoldingsFeedView() {
             />
           </div>
 
-          <div className="w-full md:w-auto">  {/* הכפתור בהמשך השורה */}
+          <div className="w-full md:w-auto mb-1"> {/* self-end aligns with inputs, mb-1 for fine adjustment */}
             <Button
                 onClick={handleSubmit}
                 disabled={!date || !file || isUploading || selectedCompanies.length === 0}
@@ -247,5 +247,4 @@ export function HoldingsFeedView() {
         </AlertDialog>
       </div>
   )
-
-}
+  }
