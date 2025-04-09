@@ -88,11 +88,12 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     holdingsFeed.selectedCompanies=selectedCompanies
     req.file=file
     // Process the holdings feed synchronously
-    const result:FeedValidationResult | undefined=await processHoldingsFeedCsv(req, holdingsFeed, isValidationOnly)
-    if (result != null)
+    const feedResult:FeedValidationResult | undefined=await processHoldingsFeedCsv(req, holdingsFeed, isValidationOnly)
+    if (feedResult != null)
       return Response.json({
         message: isValidationOnly ? 'Successfully validated holdings file' : 'Successfully uploaded holdings file',
-        result,
+        holdingsFeed: holdingsFeed,
+        feedResult,
         isValidationOnly
       })
     else
