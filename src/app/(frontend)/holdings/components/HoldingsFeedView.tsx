@@ -36,10 +36,12 @@ export function HoldingsFeedView() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<ProcessingError[]>([])
   const [warnings, setWarnings] = useState<ProcessingWarning[]>([])
   const [showWarningDialog, setShowWarningDialog] = useState(false)
+  const [validatedFeed, setValidatedFeed] = useState<HoldingsFeed | null>(null)
   const [warningInfo, setWarningInfo] = useState<{
     existingHoldings: boolean
     existingHoldingsCount: number
@@ -48,6 +50,7 @@ export function HoldingsFeedView() {
     existingHoldingsCount: 0,
   })
   const [feedId, setFeedId] = useState<string>('')
+  const [showConfirmButtons, setShowConfirmButtons] = useState(false)
 
   // Extract companies from user
   useEffect(() => {
@@ -72,6 +75,7 @@ export function HoldingsFeedView() {
     }
   }, [selectedCompanies])
 
+  // First step: validate the file without saving
   const handleSubmit = async () => {
     if (!date) {
       toast({
@@ -100,16 +104,18 @@ export function HoldingsFeedView() {
       return
     }
 
-    setIsUploading(true)
+    setIsValidating(true)
     setErrors([])
     setWarnings([])
+    setShowConfirmButtons(false)
+    setValidatedFeed(null)
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
 
-      // Upload file with company selection
+      // Validate file without saving (validateOnly=true)
       const response = await fetch(
-        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}`,
+        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,
         {
           method: 'POST',
           body: file,
@@ -119,8 +125,9 @@ export function HoldingsFeedView() {
       const result = await response.json()
 
       if (response.ok) {
-        setIsSuccess(true)
-        const feed:HoldingsFeed= result.holdingsFeed
+        const feed: HoldingsFeed = result.holdingsFeed
+        setValidatedFeed(feed)
+        setFeedId(feed.id)
 
         // Process and display any processing errors from the feed
         if (feed.processingErrors && feed.processingErrors.length > 0) {
@@ -135,26 +142,147 @@ export function HoldingsFeedView() {
             }));
           setErrors(processedErrors);
         }
+
+        // Check for fatal errors
+        const hasFatalErrors = feed.processingErrors?.some(
+          error => error.feed?.type === 'emptyFile' || error.feed?.type === 'wrongColumnFormat'
+        );
+
+        if (hasFatalErrors) {
+          setIsSuccess(false);
+          // Don't show confirm buttons for fatal errors
+        } else {
+          // Show confirm buttons for warnings and record-level errors
+          setShowConfirmButtons(true);
+          setIsSuccess(true);
+        }
+
+        // Process warnings
+        const feedWarnings: ProcessingWarning[] = [];
+
+        // Check for duplicate feed warning
+        if (feed.processingErrors?.some(error => error.feed?.type === 'duplicateFeedForDate')) {
+          const duplicateError = feed.processingErrors.find(error => error.feed?.type === 'duplicateFeedForDate');
+          feedWarnings.push({
+            type: 'existingHoldings',
+            message: duplicateError?.feed?.message || 'כבר קיימת הזנה לתאריך זה',
+            count: duplicateError?.feed?.count,
+          });
+        }
+
+        // Check for unknown accounts warning
+        if (feed.processingErrors?.some(error => error.feed?.type === 'unknownAccounts')) {
+          const unknownAccountsError = feed.processingErrors.find(error => error.feed?.type === 'unknownAccounts');
+          feedWarnings.push({
+            type: 'missingAccounts',
+            message: unknownAccountsError?.feed?.message || 'חשבונות לא מוכרים',
+            details: unknownAccountsError?.feed?.details?.map(d => d.detail) || [],
+            count: unknownAccountsError?.feed?.count,
+          });
+        }
+
+        // Check for line count difference warning
+        if (feed.processingErrors?.some(error => error.feed?.type === 'lineCountDifference')) {
+          const lineCountError = feed.processingErrors.find(error => error.feed?.type === 'lineCountDifference');
+          feedWarnings.push({
+            type: 'lineCountDifference',
+            message: lineCountError?.feed?.message || 'פער של מעל 5% בכמות השורות',
+            details: lineCountError?.feed?.details?.map(d => d.detail) || [],
+          });
+        }
+
+        // Check for missing accounts warning
+        if (feed.processingErrors?.some(error => error.feed?.type === 'missingAccounts')) {
+          const missingAccountsError = feed.processingErrors.find(error => error.feed?.type === 'missingAccounts');
+          feedWarnings.push({
+            type: 'missingAccounts',
+            message: missingAccountsError?.feed?.message || 'חשבונות חסרים בהשוואה להזנה קודמת',
+            details: missingAccountsError?.feed?.details?.map(d => d.detail) || [],
+            count: missingAccountsError?.feed?.count,
+          });
+        }
+
+        setWarnings(feedWarnings);
       } else {
         setIsSuccess(false)
         toast({
-          title: 'שגיאה בהעלאת הקובץ',
-          description: result.error || 'אירעה שגיאה בהעלאת הקובץ',
+          title: 'שגיאה בבדיקת הקובץ',
+          description: result.error || 'אירעה שגיאה בבדיקת הקובץ',
           variant: 'destructive',
         })
       }
     } catch (error) {
       setIsSuccess(false)
-      console.error('Error uploading file:', error)
+      console.error('Error validating file:', error)
       toast({
-        title: 'שגיאה בהעלאת הקובץ',
-        description: 'אירעה שגיאה בהעלאת הקובץ',
+        title: 'שגיאה בבדיקת הקובץ',
+        description: 'אירעה שגיאה בבדיקת הקובץ',
         variant: 'destructive',
       })
     } finally {
-      setIsUploading(false)
+      setIsValidating(false)
     }
   }
+
+  // Second step: save the validated file
+  const handleSaveConfirmed = async () => {
+    if (!validatedFeed || !date || !file) {
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+
+      // Save the file (validateOnly=false)
+      const response = await fetch(
+        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=false`,
+        {
+          method: 'POST',
+          body: file,
+        },
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setIsSuccess(true);
+        setShowConfirmButtons(false);
+        toast({
+          title: 'הצלחה',
+          description: 'קובץ האחזקות נשמר בהצלחה',
+          variant: 'default',
+        });
+      } else {
+        setIsSuccess(false);
+        toast({
+          title: 'שגיאה בשמירת הקובץ',
+          description: result.error || 'אירעה שגיאה בשמירת הקובץ',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setIsSuccess(false);
+      console.error('Error saving file:', error);
+      toast({
+        title: 'שגיאה בשמירת הקובץ',
+        description: 'אירעה שגיאה בשמירת הקובץ',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Cancel the upload
+  const handleCancel = () => {
+    setShowConfirmButtons(false);
+    setValidatedFeed(null);
+    setErrors([]);
+    setWarnings([]);
+    setFile(null);
+  };
 
   const handleConfirmWarning = () => {
     setShowWarningDialog(false)
@@ -177,48 +305,52 @@ export function HoldingsFeedView() {
   }
 
   return (
-      <div className="space-y-6">
-        <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-          <div className="w-full md:w-3/12">  {/* Adjusted width for companies */}
+ <div className="pr-4 space-y-6 text-right">
+      <div className="flex flex-col space-y-4 md:flex-row md:space-y-0">
+        <div className="md:w-2/12 md:pl-2">
             <label className="text-sm font-medium mb-2 block">חברות</label>
             <CompanySelector
                 companies={companies}
                 selectedCompanies={selectedCompanies}
                 onSelectionChange={setSelectedCompanies}
-                className="w-full"
+                className="h-10 text-right"
             />
           </div>
 
-          <div className="w-full md:w-2/12">  {/* Made date narrower */}
-            <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
-            <DateSelector date={date} onDateChange={setDate} className="w-full" />
+          <div className="md:w-2/12 md:pl-2">
+          <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
+            <DateSelector date={date} onDateChange={setDate} className="h-10 text-right" />
           </div>
 
-          <div className="w-full md:w-4/12">  {/* Made file uploader narrower */}
-            <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
+         <div className="md:w-4/12 md:pl-2">
+          <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
             <FileUploader
                 onFileChange={setFile}
                 disabled={isUploading}
-                className="w-full"
+                className="h-10 text-right"
             />
           </div>
 
-          <div className="w-full md:w-auto mb-1"> {/* self-end aligns with inputs, mb-1 for fine adjustment */}
+        <div className=" md:w-auto flex items-end">
             <Button
                 onClick={handleSubmit}
                 disabled={!date || !file || isUploading || selectedCompanies.length === 0}
-                className="px-8"
+            className="h-10 w-full md:w-auto px-8"
             >
               {isUploading ? 'מעלה...' : 'הזן'}
             </Button>
-          </div>
         </div>
-
+      </div>
         <ProcessingResults
             isSuccess={isSuccess}
             errors={errors}
             warnings={warnings}
             className="mt-8"
+            showConfirmButtons={showConfirmButtons}
+            onConfirm={handleSaveConfirmed}
+            onCancel={handleCancel}
+            isValidating={isValidating}
+            isUploading={isUploading}
         />
 
         <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>

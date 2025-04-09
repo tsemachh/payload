@@ -1,13 +1,237 @@
 import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
-import { Account, Company, HoldingsFeed, Stock ,HoldingFeedLine} from '@/payload-types'
+import { Account, Company, HoldingsFeed, Stock, HoldingFeedLine } from '@/payload-types'
+
+// Define validation types
+export interface FeedValidationResult {
+  isValid: boolean;
+  fatalErrors: FeedFatalError[];
+  warnings: FeedWarning[];
+  recordErrors: HoldingFeedLine[];
+  validRecords: HoldingFeedLine[];
+}
+
+export interface FeedFatalError {
+  type: 'emptyFile' | 'wrongColumnFormat' | 'other';
+  message: string;
+  details?: string[];
+}
+
+export interface FeedWarning {
+  type: 'duplicateFeedForDate' | 'unknownAccounts' | 'lineCountDifference' | 'missingAccounts' | 'other';
+  message: string;
+  details?: string[];
+  count?: number;
+}
 
 // Define column indices for files without headers
 // Assuming the columns are in a specific order: stockId, quantity, accountId
 const STOCK_ID_COL = 0
 const QUANTITY_COL = 1
 const ACCOUNT_ID_COL = 2
+
+/**
+ * Validate the whole feed for fatal errors
+ * @param file The file to validate
+ * @param results The parsed file content
+ * @returns Array of fatal errors
+ */
+const validateWholeFeed = (file: { name: string; data: Buffer }, results: Array<any>): FeedFatalError[] => {
+  const fatalErrors: FeedFatalError[] = []
+
+  // Check if file is empty
+  if (!results || results.length === 0) {
+    fatalErrors.push({
+      type: 'emptyFile',
+      message: 'הקובץ שהוזן ריק - הזנתו לא התקבלה',
+    })
+    return fatalErrors
+  }
+
+  // Check column format
+  let hasWrongFormat = false
+  const formatDetails: string[] = []
+
+  // Check if the first row has the expected columns
+  const firstRow = results[0]
+
+  if (Array.isArray(firstRow)) {
+    // For XLSX files
+    if (firstRow.length !== 3) {
+      hasWrongFormat = true
+      formatDetails.push(`מספר עמודות שגוי: ${firstRow.length} במקום 3`)
+    }
+  } else {
+    // For CSV files
+    const keys = Object.keys(firstRow)
+    if (keys.length !== 3) {
+      hasWrongFormat = true
+      formatDetails.push(`מספר עמודות שגוי: ${keys.length} במקום 3`)
+    }
+  }
+
+  // Check data types in the first few rows
+  for (let i = 0; i < Math.min(results.length, 5); i++) {
+    const row = results[i]
+    let stockId: string | number | undefined
+    let quantity: string | number | undefined
+    let accountId: string | number | undefined
+
+    if (Array.isArray(row)) {
+      stockId = row[STOCK_ID_COL]
+      quantity = row[QUANTITY_COL]
+      accountId = row[ACCOUNT_ID_COL]
+    } else {
+      stockId = row[STOCK_ID_COL.toString()]
+      quantity = row[QUANTITY_COL.toString()]
+      accountId = row[ACCOUNT_ID_COL.toString()]
+    }
+
+    // Check data types
+    if (quantity !== undefined && isNaN(Number(quantity))) {
+      hasWrongFormat = true
+      formatDetails.push(`שורה ${i + 1}: כמות אינה מספר: ${quantity}`)
+    }
+
+    if (stockId !== undefined && typeof stockId !== 'string' && typeof stockId !== 'number') {
+      hasWrongFormat = true
+      formatDetails.push(`שורה ${i + 1}: מזהה נייר ערך אינו מחרוזת: ${stockId}`)
+    }
+
+    if (accountId !== undefined && isNaN(Number(accountId))) {
+      hasWrongFormat = true
+      formatDetails.push(`שורה ${i + 1}: מזהה חשבון אינו מחרוזת: ${accountId}`)
+    }
+  }
+
+  if (hasWrongFormat) {
+    fatalErrors.push({
+      type: 'wrongColumnFormat',
+      message: 'פורמט הקובץ שהוזן שגוי - הזנתו לא התקבלה',
+      details: formatDetails,
+    })
+  }
+
+  return fatalErrors
+}
+
+/**
+ * Check for warnings in the feed
+ * @param req The payload request
+ * @param valueDate The value date
+ * @param accountIds The account IDs in the feed
+ * @param standardizedRows The standardized rows
+ * @param accountToCompanyMap Map of account numbers to company IDs
+ * @param selectedCompanies
+ * @returns Array of warnings
+ */
+const checkFeedWarnings = async (
+  req: PayloadRequest,
+  valueDate: string,
+  accountIds: number[],
+  standardizedRows: StandardizedRow[],
+  accountToCompanyMap: Map<number, string>,
+  selectedCompanies: string [],
+): Promise<FeedWarning[]> => {
+  const warnings: FeedWarning[] = []
+
+  // Check for duplicate feed for date
+  const existingHoldings = await req.payload.find({
+    collection: 'holdings-feed',
+    where: {
+      valueDate: {
+        equals: valueDate,
+      },
+      companies: {
+        equals: selectedCompanies as string[],
+      },
+    },
+  })
+//TDDO when inserting new feed delete the feed with exact date and companies
+  if (existingHoldings.docs.length > 0) {
+    warnings.push({
+      type: 'duplicateFeedForDate',
+      message: `כבר קיימת הזנה לתאריך ${valueDate}`,
+      count: existingHoldings.docs.length,
+    })
+  }
+
+  // Check for unknown accounts
+  const unknownAccounts: string[] = []
+  standardizedRows.forEach((row) => {
+    const accountId = Number(row.accountId)
+    if (!isNaN(accountId) && !accountToCompanyMap.has(accountId)) {
+      if (!unknownAccounts.includes(row.accountId)) {
+        unknownAccounts.push(row.accountId)
+      }
+    }
+  })
+
+  if (unknownAccounts.length > 0) {
+    warnings.push({
+      type: 'unknownAccounts',
+      message: 'חשבונות לא מוכרים',
+      details: unknownAccounts,
+      count: unknownAccounts.length,
+    })
+  }
+
+  const currentAccounts = new Set<string>()
+  standardizedRows.forEach((row) => {
+    if (row.accountId) {
+      currentAccounts.add(row.accountId)
+    }
+  })
+
+  // Check for line count difference compared to previous feed
+  const previousFeedDate = await getPreviousFeedDate(req, valueDate, accountIds)
+  if (previousFeedDate) {
+    const previousHoldings = await req.payload.find({
+      collection: 'holdings',
+      where: {
+        valueDate: {
+          equals: previousFeedDate,
+        },
+        companies: {
+          equals: selectedCompanies as string[],
+        },
+      },
+      limit:1,
+      depth:0
+    })
+    let prevHolding : HoldingsFeed | null = null
+    if (previousHoldings?.docs?.length == 1)
+        prevHolding= previousHoldings.docs[0] as HoldingsFeed
+    if (prevHolding != null){
+      const previousCount = prevHolding.processingErrors?.length || 0
+      const currentCount = standardizedRows.length
+      const percentDifference =
+        previousCount > 0 ? (Math.abs(currentCount - previousCount) / previousCount) * 100 : 0
+
+      if (percentDifference > 5) {
+        warnings.push({
+          type: 'lineCountDifference',
+          message: `פער של מעל 5% בכמות השורות (${percentDifference.toFixed(2)}%)`,
+          details: [`הזנה קודמת: ${previousCount} שורות`, `הזנה נוכחית: ${currentCount} שורות`],
+        })
+      }
+
+      const previousAccounts = JSON.parse(prevHolding.accountsJson as string)
+      const missingAccounts = [...previousAccounts].filter((account) => !currentAccounts.has(account))
+      if (missingAccounts.length > 0) {
+        warnings.push({
+          type: 'missingAccounts',
+          message: 'חשבונות חסרים בהשוואה להזנה קודמת',
+          details: missingAccounts,
+          count: missingAccounts.length,
+        })
+      }
+    }
+  }
+
+  return warnings
+}
 
 interface StandardizedRow {
   stockId: string
@@ -138,6 +362,7 @@ const preloadAccountsToCompanyMap = async (
         in: selectedCompanies,
       },
     },
+    limit: 0,
     depth: 2,
   })
 
@@ -156,7 +381,6 @@ const preloadAccountsToCompanyMap = async (
         console.log('No sub-accounts found for account:', account?.accountNumber);
       }
 
-
       account?.accounts?.docs?.forEach((subAccount) => {
         const subAcc=subAccount as Account
         accountToCompanyMap.set(subAcc.accountNumber, company?.id);
@@ -165,9 +389,7 @@ const preloadAccountsToCompanyMap = async (
     });
   });
   console.log("Final accountToCompanyMap:", Array.from(accountToCompanyMap.entries()));
-
-
-
+  
   return accountToCompanyMap
 }
 
@@ -415,44 +637,79 @@ async function checkPreviousHoldings(req: PayloadRequest, valueDate: string, acc
 export const processHoldingsFeedCsv = async (
   req: PayloadRequest,
   doc: HoldingsFeed,
-): Promise<void> => {
+  validateOnly: boolean = false,
+): Promise<FeedValidationResult | undefined> => {
   try {
+    // Initialize validation result
+    const validationResult: FeedValidationResult = {
+      isValid: true,
+      fatalErrors: [],
+      warnings: [],
+      recordErrors: [],
+      validRecords: [],
+    };
+
     // Initial validation
     // Get the file from the request
     const file = req.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      return
+      validationResult.isValid = false;
+      validationResult.fatalErrors.push({
+        type: 'other',
+        message: 'No file found in request',
+      });
+      await updateDocumentStatus(req, doc.id, 'failed', [{ error: 'No file found in request' }])
+      return validationResult
     }
 
     // Get the value date from the document
     const valueDate = doc.valueDate
     if (!valueDate) {
+      validationResult.isValid = false;
+      validationResult.fatalErrors.push({
+        type: 'other',
+        message: 'Missing value date',
+      });
       await updateDocumentStatus(req, doc.id, 'failed', [{ error: 'Missing value date' }])
-      return
+      return validationResult
     }
 
     // Check user permissions //TODO check that companies are subset of user leaf companies
     if (!req.user) {
+      validationResult.isValid = false;
+      validationResult.fatalErrors.push({
+        type: 'other',
+        message: 'User not authenticated',
+      });
       await updateDocumentStatus(req, doc.id, 'failed', [{ error: 'User not authenticated' }])
-      return
+      return validationResult
     }
 
     // File conversion to JSON
     const fileExt = file.name.split('.').pop()?.toLowerCase()
     if (fileExt !== 'csv' && fileExt !== 'xlsx' && fileExt !== 'xls') {
+      validationResult.isValid = false;
+      validationResult.fatalErrors.push({
+        type: 'other',
+        message: `Unsupported file format: ${fileExt}`,
+      });
       await updateDocumentStatus(req, doc.id, 'failed', [
         { error: `Unsupported file format: ${fileExt}` },
       ])
-      return
+      return validationResult
     }
 
     // Parse the file content
     const results = parseFileContent(file)
 
-    // Process records
-    const processedRecords: HoldingFeedLine[] = []
-    const errors: any[] = []
+    // Validate the whole feed
+    const fatalErrors = validateWholeFeed(file, results)
+    if (fatalErrors.length > 0) {
+      validationResult.isValid = false;
+      validationResult.fatalErrors = fatalErrors;
+      return validationResult
+    }
 
     // Preload accounts
     const accountToCompanyMap = await preloadAccountsToCompanyMap(req, doc.selectedCompanies as string[])
@@ -463,35 +720,6 @@ export const processHoldingsFeedCsv = async (
     // Preload stocks
     const stockMap = await preloadStocks(req, standardizedRows)
 
-    //TODO consider if we need to warn in the output as well ?//TODO Implement properly
-    //    await checkPreviousHoldings(req, valueDate, Array.from(accountToCompanyMap.keys()))
-    // Collect previous feed data for comparison //TODO Implement properly
-    //    const { previousAccounts, previousFeedDate } = await collectPreviousFeedData(req, valueDate, Array.from(accountToCompanyMap.keys()))
-
-    // Process each standardized row
-    standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
-      processedRecords.push(processedRecord)
-    })
-    doc.processingErrors=processedRecords.map((item)=> {
-      return { line: item as HoldingFeedLine }
-    })
-    // Check for feed data anomalies //TODO Reimplement
-    //checkFeedDataAnomalies(req, previousAccounts, currentAccounts, previousFeedDate, results.length)
-
-    // If there are errors, update the document with the errors
-    //TODO not sure it's needed if there are errors we insert what's valid
-    /*    if (errors.length > 0) {
-          await updateDocumentStatus(req, doc.id, 'failed', errors)
-          return
-        }*/
-
-    // Delete existing holdings for the date TODO pass also the meetings
- //   await deleteExistingHoldings(req, valueDate, Array.from(accountToCompanyMap.keys()))
-
-    // Create holdings
-    await createHoldings(req, processedRecords, accountToCompanyMap, stockMap, valueDate)
-
     // Collect all unique account IDs from the standardized rows
     const uniqueAccountIds = Array.from(
       new Set(
@@ -501,18 +729,66 @@ export const processHoldingsFeedCsv = async (
       ),
     )
 
+    // Check for warnings
+    const warnings = await checkFeedWarnings(
+      req,
+      valueDate,
+      uniqueAccountIds,
+      standardizedRows,
+      accountToCompanyMap,
+      doc.selectedCompanies as string[]
+    )
+    validationResult.warnings = warnings;
+
+    // Process each standardized row
+    const processedRecords: HoldingFeedLine[] = []
+    standardizedRows.forEach((row, index) => {
+      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
+      processedRecords.push(processedRecord)
+
+      if (processedRecord.status === 'error') {
+        validationResult.recordErrors.push(processedRecord);
+      } else {
+        validationResult.validRecords.push(processedRecord);
+      }
+    })
+
+    // Store validation results in the document
+    const lineErrors = processedRecords.map((item) => {
+      return { line: item as HoldingFeedLine }
+    });
+
+    // Combine line errors and feed errors
+    doc.processingErrors = [...lineErrors,]
+
     // Convert the account IDs to a JSON string
     const accountsJson = JSON.stringify(uniqueAccountIds)
 
-    // Get the previous feed's accounts JSON
-      // const previousAccountsJson = await getPreviousFeedAccountsJson(
-     // req,
-    //  valueDate,
-    //  doc.selectedCompanies as string[],
-    //)
+    // If this is a validation-only request, update the document and return
+    if (validateOnly) {
+      await updateDocumentStatus(req, doc.id, 'completed', undefined, accountsJson)
 
-    // Compare the current feed's accounts with the previous feed's accounts
-      // compareAccountsWithPreviousFeed(req, uniqueAccountIds, previousAccountsJson)
+      req.payload.logger.info(
+        `Successfully validated ${processedRecords.length} holdings for date ${valueDate}`,
+      )
+
+      await req.payload.update({
+        collection: 'holdings-feed' as any,
+        id: doc.id as string,
+        data: doc,
+      })
+
+      return validationResult
+    }
+
+    // If we're here, this is a save request
+    // Delete existing holdings for the date if they exist
+    if (warnings.some(w => w.type === 'duplicateFeedForDate')) {
+      await deleteExistingHoldings(req, valueDate, uniqueAccountIds)
+    }
+
+    // Create holdings
+    await createHoldings(req, processedRecords, accountToCompanyMap, stockMap, valueDate)
 
     // Update the document status and store the accounts JSON
     await updateDocumentStatus(req, doc.id, 'completed', undefined, accountsJson)
@@ -520,6 +796,14 @@ export const processHoldingsFeedCsv = async (
     req.payload.logger.info(
       `Successfully processed ${processedRecords.length} holdings for date ${valueDate}`,
     )
+
+    await req.payload.update({
+      collection: 'holdings-feed' as any,
+      id: doc.id as string,
+      data: doc,
+    })
+
+    return validationResult
   } catch (error) {
     req.payload.logger.error(`Error processing holdings feed: ${JSON.stringify(error)}`)
 
@@ -527,12 +811,13 @@ export const processHoldingsFeedCsv = async (
     await updateDocumentStatus(req, doc.id, 'failed', [
       { error: `General processing error: ${error}` },
     ])
+
+    await req.payload.update({
+      collection: 'holdings-feed' as any,
+      id: doc.id as string,
+      data: doc,
+    })
   }
-  await req.payload.update({
-    collection: 'holdings-feed' as any,
-    id: doc.id as string,
-    data:doc,
-  })
 }
 
 // Helper function to delete existing holdings for a date
