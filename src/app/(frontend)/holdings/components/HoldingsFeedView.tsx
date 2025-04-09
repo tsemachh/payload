@@ -126,27 +126,24 @@ export function HoldingsFeedView() {
 
       if (response.ok) {
         const feed: HoldingsFeed = result.holdingsFeed
+        const feedResult = result.feedResult
         setValidatedFeed(feed)
         setFeedId(feed.id)
 
-        // Process and display any processing errors from the feed
-        if (feed.processingErrors && feed.processingErrors.length > 0) {
-          const processedErrors: ProcessingError[] = feed.processingErrors
-            .filter(error => error.line && error.line.error != null)
-            .map(error => ({
-              lineNumber: error.line?.lineNumber || undefined,
-              stockId: error.line?.stockId || undefined,
-              accountId: error.line?.accountId || undefined,
-              quantity: error.line?.quantity?.toString() || undefined,
-              error: error.line?.error || ''
-            }));
+        // Process and display record errors from feedResult
+        if (feedResult.recordErrors && feedResult.recordErrors.length > 0) {
+          const processedErrors: ProcessingError[] = feedResult.recordErrors.map(error => ({
+            lineNumber: error.lineNumber || undefined,
+            stockId: error.stockId || undefined,
+            accountId: error.accountId || undefined,
+            quantity: error.quantity?.toString() || undefined,
+            error: error.error || ''
+          }));
           setErrors(processedErrors);
         }
 
         // Check for fatal errors
-        const hasFatalErrors = feed.processingErrors?.some(
-          error => error.feed?.type === 'emptyFile' || error.feed?.type === 'wrongColumnFormat'
-        );
+        const hasFatalErrors = feedResult.fatalErrors && feedResult.fatalErrors.length > 0;
 
         if (hasFatalErrors) {
           setIsSuccess(false);
@@ -160,45 +157,48 @@ export function HoldingsFeedView() {
         // Process warnings
         const feedWarnings: ProcessingWarning[] = [];
 
-        // Check for duplicate feed warning
-        if (feed.processingErrors?.some(error => error.feed?.type === 'duplicateFeedForDate')) {
-          const duplicateError = feed.processingErrors.find(error => error.feed?.type === 'duplicateFeedForDate');
-          feedWarnings.push({
-            type: 'existingHoldings',
-            message: duplicateError?.feed?.message || 'כבר קיימת הזנה לתאריך זה',
-            count: duplicateError?.feed?.count,
-          });
-        }
-
-        // Check for unknown accounts warning
-        if (feed.processingErrors?.some(error => error.feed?.type === 'unknownAccounts')) {
-          const unknownAccountsError = feed.processingErrors.find(error => error.feed?.type === 'unknownAccounts');
-          feedWarnings.push({
-            type: 'missingAccounts',
-            message: unknownAccountsError?.feed?.message || 'חשבונות לא מוכרים',
-            details: unknownAccountsError?.feed?.details?.map(d => d.detail) || [],
-            count: unknownAccountsError?.feed?.count,
-          });
-        }
-
-        // Check for line count difference warning
-        if (feed.processingErrors?.some(error => error.feed?.type === 'lineCountDifference')) {
-          const lineCountError = feed.processingErrors.find(error => error.feed?.type === 'lineCountDifference');
-          feedWarnings.push({
-            type: 'lineCountDifference',
-            message: lineCountError?.feed?.message || 'פער של מעל 5% בכמות השורות',
-            details: lineCountError?.feed?.details?.map(d => d.detail) || [],
-          });
-        }
-
-        // Check for missing accounts warning
-        if (feed.processingErrors?.some(error => error.feed?.type === 'missingAccounts')) {
-          const missingAccountsError = feed.processingErrors.find(error => error.feed?.type === 'missingAccounts');
-          feedWarnings.push({
-            type: 'missingAccounts',
-            message: missingAccountsError?.feed?.message || 'חשבונות חסרים בהשוואה להזנה קודמת',
-            details: missingAccountsError?.feed?.details?.map(d => d.detail) || [],
-            count: missingAccountsError?.feed?.count,
+        // Process all warnings from feedResult
+        if (feedResult.warnings && feedResult.warnings.length > 0) {
+          feedResult.warnings.forEach(warning => {
+            switch (warning.type) {
+              case 'duplicateFeedForDate':
+                feedWarnings.push({
+                  type: 'existingHoldings',
+                  message: warning.message || 'כבר קיימת הזנה לתאריך זה',
+                  count: warning.count,
+                });
+                break;
+              case 'unknownAccounts':
+                feedWarnings.push({
+                  type: 'missingAccounts',
+                  message: warning.message || 'חשבונות לא מוכרים',
+                  details: warning.details || [],
+                  count: warning.count,
+                });
+                break;
+              case 'lineCountDifference':
+                feedWarnings.push({
+                  type: 'lineCountDifference',
+                  message: warning.message || 'פער של מעל 5% בכמות השורות',
+                  details: warning.details || [],
+                });
+                break;
+              case 'missingAccounts':
+                feedWarnings.push({
+                  type: 'missingAccounts',
+                  message: warning.message || 'חשבונות חסרים בהשוואה להזנה קודמת',
+                  details: warning.details || [],
+                  count: warning.count,
+                });
+                break;
+              default:
+                feedWarnings.push({
+                  type: 'missingAccounts',
+                  message: warning.message || 'אזהרה',
+                  details: warning.details || [],
+                  count: warning.count,
+                });
+            }
           });
         }
 
