@@ -1,6 +1,6 @@
 import sql from 'mssql'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
-import { Stock, StockValue, StockOrigin } from '@/payload-types'
+import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
@@ -12,8 +12,8 @@ export async function getSqlConnection(): Promise<sql.ConnectionPool> {
     database: 'dbEmda',
     server: '10.0.0.9',
     options: {
-      encrypt: true
-    }
+      encrypt: true,
+    },
   })
   return pool
 }
@@ -57,15 +57,51 @@ export async function getPredictaStockIds(pool: sql.ConnectionPool) {
   return getStockIdsByUpdateId(pool, await getLatestStockPredictaLogId(pool))
 }
 
+export async function getHistoryPredictaStockIds(pool: sql.ConnectionPool) {
+  return getStockIdsByUpdateIds(pool, await getAllStockPredictaLogId(pool))
+}
+
 export async function getEmdaStockIds(pool: sql.ConnectionPool) {
   return getStockIdsByUpdateId(pool, await getLatestStockEmdaLogId(pool))
 }
 
-export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateId: string) {
-  const resultStockIds = await pool.request().query(`
+export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdateIds: string[]) {
+  // Handle empty array case
+  if (logUpdateIds.length === 0) {
+    return new Set<string>()
+  }
+
+  const request = pool.request()
+
+  // Create parameterized query with multiple parameters
+  const paramNames = logUpdateIds.map((_, i) => `@logUpdateId${i}`)
+  const inClause = `(${paramNames.join(',')})`
+
+  // Add parameters to the request
+  logUpdateIds.forEach((id, i) => {
+    request.input(`logUpdateId${i}`, sql.VarChar, id)
+  })
+
+  const resultStockIds = await request.query(`
       SELECT distinct [stockID]
       FROM [dbEmda].[dbo].[stocks] stocks
-      WHERE stocks.logUpdateID = ${logUpdateId}
+      WHERE stocks.logUpdateID in ${inClause}
+  `)
+
+  console.log(`Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
+  const stocks: Set<string> = new Set()
+  for (const row of resultStockIds.recordset) {
+    stocks.add(`${row.stockID}`)
+  }
+  return stocks
+}
+export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateId: string) {
+  const request = pool.request()
+  request.input('logUpdateId', sql.VarChar, logUpdateId)
+  const resultStockIds = await request.query(`
+      SELECT distinct [stockID]
+      FROM [dbEmda].[dbo].[stocks] stocks
+      WHERE stocks.logUpdateID = @logUpdateId
   `)
 
   console.log(`Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
@@ -87,14 +123,13 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
     const id1 = `${row.Id1}`
     const id2 = `${row.Id2}`
 
-    if (!stocks.has(id2))
-      stocks.set(id2, id1)
+    if (!stocks.has(id2)) stocks.set(id2, id1)
     else {
       await logMigrationFault({
         payload,
         type: 'stock-relation',
         typeId: id2,
-        row:JSON.stringify(row,null,2),
+        row: JSON.stringify(row, null, 2),
         comments: `Multiple relation: ${id2} has already relation to ${stocks.get(id2)}, so ${id2}->${id1} will not be inserted`,
       })
     }
@@ -103,16 +138,32 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
 }
 
 export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, userId: number) {
-  const res = await pool.request().query(`
+  const request = pool.request()
+  request.input('userId', sql.Int, userId)
+  const res = await request.query(`
       SELECT TOP(1)[id]
       FROM [dbEmda].[dbo].[stockupdatelog]
-      WHERE userID = ${userId}
+      WHERE userID = @userId
       ORDER BY id DESC    `)
   if (res.recordset.length === 0) {
-    throw new Error('No records found for userID = 0')
+    throw new Error(`No records found for userID = ${userId}`)
   }
   const id = res.recordset[0].id
   return id
+}
+
+export async function getAllStockLogIdByUserId(pool: sql.ConnectionPool, userId: number) {
+  const request = pool.request()
+  request.input('userId', sql.Int, userId)
+  const res = await request.query(`
+      SELECT [id]
+      FROM [dbEmda].[dbo].[stockupdatelog]
+      WHERE userID = @userId
+      ORDER BY id DESC    `)
+  if (res.recordset.length === 0) {
+    throw new Error(`No records found for userID = ${userId}`)
+  }
+  return res.recordset.map((record) => record.id)
 }
 
 export async function getLatestStockEmdaLogId(pool: sql.ConnectionPool) {
@@ -121,6 +172,14 @@ export async function getLatestStockEmdaLogId(pool: sql.ConnectionPool) {
 
 export async function getLatestStockPredictaLogId(pool: sql.ConnectionPool) {
   return getLatestStockLogIdByUserId(pool, 0)
+}
+
+export async function getAllStockEmdaLogId(pool: sql.ConnectionPool) {
+  return getAllStockLogIdByUserId(pool, 61)
+}
+
+export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
+  return getAllStockLogIdByUserId(pool, 0)
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
@@ -136,25 +195,30 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 
 export function ImportedRowToStock(row: ImportStock) {}
 
-export type StockMappingType = 'NotActive' | 'NonTradable' | 'Private' | 'Foreign';
+export type StockMappingType = 'NotActive' | 'NonTradable' | 'Private' | 'Foreign'
 
-export async function getStockIdsByMappingType(payload: Payload, type: StockMappingType): Promise<Set<string>> {
+export async function getStockIdsByMappingType(
+  payload: Payload,
+  type: StockMappingType,
+): Promise<Set<string>> {
   const result = await payload.find({
     collection: 'stock-migration-mapping',
     where: {
       type: {
-        equals: type
-      }
+        equals: type,
+      },
     },
     limit: 1000,
-  });
+  })
 
-  console.log(`Retrieved ${result.docs.length} ${type.toLowerCase()} stocks from stock migration mapping`);
-  const stocks: Set<string> = new Set();
+  console.log(
+    `Retrieved ${result.docs.length} ${type.toLowerCase()} stocks from stock migration mapping`,
+  )
+  const stocks: Set<string> = new Set()
   for (const doc of result.docs) {
-    stocks.add(`${doc.stockId}`);
+    stocks.add(`${doc.stockId}`)
   }
-  return stocks;
+  return stocks
 }
 
 export async function upsertStockFromImport(
@@ -162,13 +226,12 @@ export async function upsertStockFromImport(
   row: ImportStock,
   req: PayloadRequest,
   tradable: boolean,
-  origin: StockOrigin  = "TASE",
+  origin: StockOrigin = 'TASE',
   active: boolean | null = true,
-  comments:string =""
+  comments: string = '',
 ) {
-
   const stockData: Partial<Stock> = {
-    active : active,
+    active: active,
     stockId: `${row.stockID}`,
     name: row.name || null,
     symbol: row.symbol || null,
@@ -176,7 +239,7 @@ export async function upsertStockFromImport(
     longName: row.longName || null,
     tradable: tradable as boolean | null,
     origin: origin,
-    comments
+    comments,
   }
 
   if (!stock) {
@@ -185,18 +248,21 @@ export async function upsertStockFromImport(
       collection: 'stocks',
       data: stockData as Stock,
     })
-    return  newStock.id
+    return newStock.id
   } else {
     //Update the Stock only if name or longName have changed
-      if (stock.name != stockData.name || (stockData.longName && stock.longName != stockData.longName)){
-        await req.payload.update({
-          collection: 'stocks',
-          id: stock.id,
-          data: { name:stockData.name,longName:stockData.longName },
-        })
-      }
-      return stock.id
+    if (
+      stock.name != stockData.name ||
+      (stockData.longName && stock.longName != stockData.longName)
+    ) {
+      await req.payload.update({
+        collection: 'stocks',
+        id: stock.id,
+        data: { name: stockData.name, longName: stockData.longName },
+      })
     }
+    return stock.id
+  }
 }
 
 export async function upsertStockValueFromImport(
@@ -215,14 +281,14 @@ export async function upsertStockValueFromImport(
   const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-    req.payload.update({
+    await req.payload.update({
       collection: 'stock-values',
       id: valueId,
       data: stockValue as StockValue,
     })
   } else {
     // Insert into Payload CMS
-    req.payload.create({
+    await req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
     })
