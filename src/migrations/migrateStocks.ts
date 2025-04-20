@@ -5,7 +5,7 @@ import { getStockType } from '@/utils/migrateStockUtils'
 import { getCollectionDoc, getStockByStockId } from '@/utils/utils'
 import {
   getAllStocksInMeetings,
-  getEmdaStockIds,
+  getEmdaStockIds, getHistoryPredictaStockIds,
   getPredictaStockIds,
   getStockIdsByMappingType,
   getStockRelations,
@@ -50,6 +50,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await seedStockMigrationMapping()
     const resultStocks = await getStocks(pool) //AllStocks
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
+    const predictaHistoryStocks: Set<string> = await getHistoryPredictaStockIds(pool) //Bursa stocks
     const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
     const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
     const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
