@@ -177,6 +177,7 @@ export interface Config {
       parentCompany: 'companies';
       accounts: 'accounts';
       meetings: 'meetings';
+      holdings: 'holdings';
     };
     accounts: {
       accounts: 'accounts';
@@ -381,6 +382,11 @@ export interface Company {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  holdings?: {
+    docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -402,6 +408,21 @@ export interface Account {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  company: string | Company;
+  valueDate: string;
+  stock: string | Stock;
+  quantity: number;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -472,21 +493,6 @@ export interface MigrationFault {
   typeId?: string | null;
   row?: string | null;
   comments?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  company: string | Company;
-  valueDate: string;
-  stock: string | Stock;
-  quantity: number;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1051,6 +1057,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   setResearchAsDefaultTrusteeship?: T;
   accounts?: T;
   meetings?: T;
+  holdings?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
