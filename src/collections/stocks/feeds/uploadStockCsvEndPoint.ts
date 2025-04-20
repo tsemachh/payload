@@ -55,7 +55,12 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     })
   } catch (error) {
     console.error('Error uploading CSV file:', error)
-    return Response.json({ error: 'Error uploading CSV file' }, { status: 500 })
+    // Provide more detailed error information for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ 
+      error: 'Error uploading CSV file', 
+      details: errorMessage 
+    }, { status: 500 })
   }
 }
 
