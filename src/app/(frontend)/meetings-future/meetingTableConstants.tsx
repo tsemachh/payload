@@ -1,7 +1,7 @@
 'use client'
 
 import { BooleanIcon } from '@/components/ui/icons'
-import { formatDateTime } from '../helpers/utils'
+import { formatDateTime } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'

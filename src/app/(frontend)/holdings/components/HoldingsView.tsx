@@ -5,16 +5,17 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
-import { Company, CompanySelector } from './CompanySelector'
+import { TreeNode, CompanyTreeSelector } from './CompanySelector'
 import { DateSelector } from './DateSelector'
-import { DataTableStatic as DataTable  } from '../../components/data-table-client'
+import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from '../columns'
 import { Holding } from '../types'
 import { ExportButton } from '../../components/export-button'
+import { transformCompaniesToTree } from '../../helpers/utils-holdings'
 
 export function HoldingsView() {
   const { user } = useAuth()
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<TreeNode[]>([])
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [holdings, setHoldings] = useState<Holding[]>([])
@@ -23,16 +24,9 @@ export function HoldingsView() {
   // Extract companies from user
   useEffect(() => {
     if (user?.companies) {
-      const userCompanies = user.companies.map(company => {
-        // Handle company as either a string ID or an object with an ID
-        const companyObj = typeof company.companyId === 'string'
-            ? { id: company.companyId, name: company.companyId }
-            : { id: company.companyId?.id || '', name: company.companyId?.name || '' }
-
-        return companyObj
-      }).filter(company => company.id !== '')
-
-      setCompanies(userCompanies)
+      // Transform the flat company structure into a hierarchical tree
+      const transformedCompanies = transformCompaniesToTree(user.companies)
+      setCompanies(transformedCompanies)
     }
   }, [user])
 
@@ -65,11 +59,11 @@ export function HoldingsView() {
 
       if (response.ok) {
         setHoldings(data.docs.map((holding: any) => ({
-          id: holding.id,
-          company: holding.stock?.longName || 'N/A',
-          stockNumber: holding.stock?.stockId || 'N/A',
-          quantity: holding.quantity,
-          lastUpdated: holding.updatedAt,
+            id: holding.id,
+            company: holding.stock?.longName || 'N/A',
+            stockNumber: holding.stock?.stockId || 'N/A',
+            quantity: holding.quantity,
+            lastUpdated: holding.updatedAt,
         })))
       } else {
         toast({
@@ -90,19 +84,18 @@ export function HoldingsView() {
     }
   }
 
-
   return (
-      <div className="space-y-6">
-        <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-3 md:space-x-reverse">
-          <div className="w-full md:w-3/12 md:pr-4">
-            <label className="text-sm font-medium mb-2 block">חברות</label>
-            <CompanySelector
-                companies={companies}
-                selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
-                className="w-full"
-            />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
+        <div className="w-full md:w-3/12 md:pr-4">
+          <label className="text-sm font-medium mb-2 block">חברות</label>
+          <CompanyTreeSelector
+            companies={companies}
+            selectedCompanies={selectedCompanies}
+            onSelectionChange={setSelectedCompanies}
+            className="w-full"
+          />
+        </div>
 
           <div className="w-full md:w-2/12">
             <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
