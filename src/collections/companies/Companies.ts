@@ -159,7 +159,14 @@ export const Companies: CollectionConfig = {
       collection: 'meetings',
       on: 'companies',
       name: 'meetings'
+    },
+    {
+      type:'join',
+      collection: 'holdings',
+      on: 'company',
+      name: 'holdings',
     }
+
   ],
   hooks: {
     beforeChange: [beforeChangeCompanyId]

@@ -15,9 +15,9 @@ export const StocksFeed: CollectionConfig = {
     read: () => true,
   },
   hooks: {
-    afterChange: [
-      async ({ req, doc }) => {
-        await processStocksFeedCsv(req, doc)
+    beforeChange: [
+      async ({ req, data  }) => {
+        await processStocksFeedCsv(req, data)
       },
     ],
   },
