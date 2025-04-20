@@ -6,9 +6,8 @@ import { getStockType, parseDate } from '@/utils/migrateStockUtils'
 import iconv from 'iconv-lite'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { StocksFeed, StockType } from '@/payload-types'
-export const processStocksFeedCsv = async (req: PayloadRequest, data:Partial<any>): Promise<void> => {
+export const processStocksFeedCsv = async (req: PayloadRequest, data:StocksFeed): Promise<void> => {
   try {
-    const doc=data as StocksFeed
     // The file is at req.file as specified in the issue description
     const file = req.file
 
@@ -48,16 +47,28 @@ export const processStocksFeedCsv = async (req: PayloadRequest, data:Partial<any
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
     let stocksCreated=0
+    let processedRows=0
     // Process each row
     for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
-      const stock = await getStockByStockId(req.payload, `${row.stockID}` as string)
-      if (stock == null) stocksCreated++
-      const stockSequence = await upsertStockFromImport(stock, row, req, true)
-      await upsertStockValueFromImport(stockSequence, row, req)
+      try {
+        const row = rows[i]
+        const stock = await getStockByStockId(req.payload, `${row.stockID}` as string)
+        if (stock == null) stocksCreated++
+        const stockSequence = await upsertStockFromImport(stock, row, req, true)
+        await upsertStockValueFromImport(stockSequence, row, req)
+        processedRows++
+      } catch (rowError) {
+        req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`)
+        // Continue with the next row
+      }
     }
-    doc.comments = `processed ${rows.length} stocks , ${stocksCreated} stocks created`
-    req.payload.logger.info(`Successfully processed ${rows.length} rows from CSV file: ${file.name}`)
+    data.comments = `processed ${processedRows} stocks out of ${rows.length}, ${stocksCreated} stocks created`
+    req.payload.logger.info(`Successfully processed ${processedRows} out of ${rows.length} rows from CSV file: ${file.name}`)
+    req.payload.update({
+      collection:'stocks-feed',
+      id:data.id,
+      data,
+    })
   } catch (error) {
     req.payload.logger.error(`Error processing stock feed CSV: ${JSON.stringify(error)}`)
   }
