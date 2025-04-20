@@ -48,88 +48,149 @@ export function CompanyTreeSelector({
     setIsClient(true)
   }, [])
 
-    // Get all descendant IDs for a node
-    const getAllDescendantIds = (node: TreeNode): string[] => {
-      let result: string[] = []
-      if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => {
-          result.push(child.id)
-          result = result.concat(getAllDescendantIds(child))
-        })
+  // Get all descendant IDs for a node
+  const getAllDescendantIds = (node: TreeNode): string[] => {
+    let result: string[] = []
+    if (node.children && node.children.length > 0) {
+      node.children.forEach((child) => {
+        result.push(child.id)
+        result = result.concat(getAllDescendantIds(child))
+      })
+    }
+    return result
+  }
+
+  // Recursively check node selection state
+  const getNodeSelectionState = (node: TreeNode): 'checked' | 'unchecked' | 'indeterminate' => {
+    // If the node has no children, just check if it's selected
+    if (!node.children || node.children.length === 0) {
+      return selectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
+    }
+
+    // Check children states
+    const childStates = node.children.map((child) => {
+      return {
+        id: child.id,
+        state: getNodeSelectionState(child),
       }
-      return result
-    }
-  
-    // Check if all children of a node are selected
-    const areAllChildrenSelected = (node: TreeNode): boolean => {
-      if (!node.children || node.children.length === 0) return false
-  
-      return node.children.every((child) => {
-        const childDescendantIds = getAllDescendantIds(child)
-        const allIds = [child.id, ...childDescendantIds]
-        return allIds.every((id) => selectedCompanies.includes(id))
-      })
-    }
-  
-    // Check if some but not all children of a node are selected
-    const areSomeChildrenSelected = (node: TreeNode): boolean => {
-      if (!node.children || node.children.length === 0) return false
-  
-      const hasSelectedChild = node.children.some((child) => {
-        const childDescendantIds = getAllDescendantIds(child)
-        const allIds = [child.id, ...childDescendantIds]
-        return allIds.some((id) => selectedCompanies.includes(id))
-      })
-  
-      return hasSelectedChild && !areAllChildrenSelected(node)
-    }
+    })
 
-  const handleSelect = (companyId: string) => {
-    const isSelected = selectedCompanies.includes(companyId)
+    const allChildrenChecked = childStates.every((child) => child.state === 'checked')
+    const anyChildChecked = childStates.some(
+      (child) => child.state === 'checked' || child.state === 'indeterminate',
+    )
 
-    // Find the node and all its descendants
-    const findNodeAndDescendants = (nodes: TreeNode[], id: string): string[] => {
+    // If the node itself is selected but not all children are selected, it should be indeterminate
+    if (selectedCompanies.includes(node.id) && !allChildrenChecked) {
+      return 'indeterminate'
+    } else if (allChildrenChecked) {
+      return 'checked'
+    } else if (anyChildChecked) {
+      return 'indeterminate'
+    } else {
+      return 'unchecked'
+    }
+  }
+
+  const handleSelect = (companyId: string, forceState?: boolean) => {
+    // Find the node in the tree
+    const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
       for (const node of nodes) {
         if (node.id === id) {
-          // Found the node, collect all descendants
-          const descendants: string[] = [node.id]
-          if (node.children && node.children.length > 0) {
-            node.children.forEach((child) => {
-              descendants.push(...findNodeAndDescendants(node.children || [], child.id))
-            })
-          }
-          return descendants
-        } else if (node.children && node.children.length > 0) {
-          // Check children
-          const result = findNodeAndDescendants(node.children, id)
-          if (result.length > 0) {
-            return result
-          }
+          return node
+        }
+        if (node.children && node.children.length > 0) {
+          const foundInChildren = findNode(node.children, id)
+          if (foundInChildren) return foundInChildren
         }
       }
-      return []
+      return null
     }
 
-    const nodeAndDescendants = findNodeAndDescendants(companies, companyId)
+    const node = findNode(companies, companyId)
+    if (!node) return
 
-    if (isSelected) {
-      // Deselect this node and all its descendants
-      onSelectionChange(selectedCompanies.filter((id) => !nodeAndDescendants.includes(id)))
-    } else {
-      // Select this node and all its descendants
-      const newSelection = [...selectedCompanies]
-      nodeAndDescendants.forEach((id) => {
+    const currentState = getNodeSelectionState(node)
+    const newState = forceState !== undefined ? forceState : currentState !== 'checked'
+
+    let newSelection = [...selectedCompanies]
+
+    // Get all descendants of this node
+    const descendants = getAllDescendantIds(node)
+
+    if (newState) {
+      // Add this node and all descendants to selection
+      if (!newSelection.includes(companyId)) {
+        newSelection.push(companyId)
+      }
+
+      descendants.forEach((id) => {
         if (!newSelection.includes(id)) {
           newSelection.push(id)
         }
       })
-      onSelectionChange(newSelection)
+    } else {
+      // Remove this node and all descendants from selection
+      newSelection = newSelection.filter((id) => id !== companyId && !descendants.includes(id))
     }
+    onSelectionChange(newSelection)
+  }
+
+  const handleChildSelect = (childId: string, checked: boolean) => {
+    // Find the child node and its parent
+    const findNodeAndParent = (
+      nodes: TreeNode[],
+      id: string,
+      parent: TreeNode | null = null,
+    ): { node: TreeNode | null; parent: TreeNode | null } => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          return { node, parent }
+        }
+        if (node.children && node.children.length > 0) {
+          const result = findNodeAndParent(node.children, id, node)
+          if (result.node) return result
+        }
+      }
+      return { node: null, parent: null }
+    }
+
+    const { node, parent } = findNodeAndParent(companies, childId)
+    if (!node) return
+
+    let newSelection = [...selectedCompanies]
+
+    if (checked) {
+      // Add this child to selection
+      if (!newSelection.includes(childId)) {
+        newSelection.push(childId)
+      }
+
+      // If all siblings are now selected, select the parent too
+      if (parent && parent.children) {
+        const allSiblingsSelected = parent.children.every(
+          (sibling) => sibling.id === childId || newSelection.includes(sibling.id),
+        )
+
+        if (allSiblingsSelected && !newSelection.includes(parent.id)) {
+          newSelection.push(parent.id)
+        }
+      }
+    } else {
+      // Remove this child from selection
+      newSelection = newSelection.filter((id) => id !== childId)
+
+      // If parent was selected, put it in indeterminate state by removing it from selection
+      if (parent && newSelection.includes(parent.id)) {
+        newSelection = newSelection.filter((id) => id !== parent.id)
+      }
+    }
+    onSelectionChange(newSelection)
   }
 
   const handleRemoveCompany = (companyId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    onSelectionChange(selectedCompanies.filter((id) => id !== companyId))
+    handleChildSelect(companyId, false)
   }
 
   const toggleExpand = (nodeId: string, e: React.MouseEvent) => {
@@ -204,59 +265,66 @@ export function CompanyTreeSelector({
   // Recursive component to render tree nodes
   const TreeItems = ({ nodes, level = 0 }: { nodes: TreeNode[]; level?: number }) => {
     return nodes.map((node) => {
-      const isSelected = selectedCompanies.includes(node.id)
-      const allChildrenSelected = areAllChildrenSelected(node)
-      const someChildrenSelected = areSomeChildrenSelected(node)
-
-      // If all children are selected, the parent should be selected too
-      const checkboxState = allChildrenSelected || isSelected ? true : false
+      const selectionState = getNodeSelectionState(node)
+      const isLeafNode = !node.children || node.children.length === 0
 
       return (
-      <div key={node.id + uuidv4()} className="w-full">
-        <CommandItem
-          value={`${node.id}-${node.name}`}
-          onSelect={() => handleSelect(node.id)}
-          className="flex items-center justify-between w-full"
-          style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
-        >
-          <div className="flex items-center" onClick={(e) => toggleExpand(node.id, e)}>
-            {node.children && node.children.length > 0 ? (
-              expandedNodes.includes(node.id) ? (
-                <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+        <div key={node.id + uuidv4()} className="w-full">
+          <CommandItem
+            value={`${node.id}-${node.name}`}
+            onSelect={() =>
+              isLeafNode
+                ? handleChildSelect(node.id, selectionState !== 'checked')
+                : handleSelect(node.id)
+            }
+            className="flex items-center justify-between w-full"
+            style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
+          >
+            <div className="flex items-center" onClick={(e) => toggleExpand(node.id, e)}>
+              {node.children && node.children.length > 0 ? (
+                expandedNodes.includes(node.id) ? (
+                  <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+                ) : (
+                  <ChevronLeft className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+                )
               ) : (
-                <ChevronLeft className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
-              )
-            ) : (
-              <div className="w-5" />
-            )}
-            <div className="relative mr-3 h-3.5 w-3.5">
-              <Checkbox
-                id={`checkbox-${node.id}`}
-                checked={checkboxState}
-                data-state={
-                  someChildrenSelected && !isSelected ? "indeterminate" : checkboxState ? "checked" : "unchecked"
-                }                onCheckedChange={() => handleSelect(node.id)}
-                className={cn(
-                  "h-3.5 w-3.5 rounded-[3px] border-gray-400 [&>span]:scale-75",
-                  someChildrenSelected && !isSelected && "data-[state=indeterminate]:bg-primary/50",
-                )}                aria-label={`Select ${node.name}`}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              />
+                <div className="w-5" />
+              )}
+              <div className="relative mr-3 h-3.5 w-3.5">
+                <Checkbox
+                  id={`checkbox-${node.id}`}
+                  checked={selectionState === 'checked'}
+                  data-state={selectionState}
+                  onCheckedChange={(checked) => {
+                    if (isLeafNode) {
+                      handleChildSelect(node.id, checked === true)
+                    } else {
+                      handleSelect(node.id)
+                    }
+                  }}
+                  className={cn(
+                    'h-3.5 w-3.5 rounded-[3px] border-gray-400 [&>span]:scale-75',
+                    selectionState === 'indeterminate' && 'data-[state=indeterminate]:bg-gray-400',
+                  )}
+                  aria-label={`Select ${node.name}`}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                />
+              </div>
+              <span className="truncate mr-1">{node.name}</span>
             </div>
-            <span className="truncate mr-1">{node.name}</span>
-          </div>
-        </CommandItem>
+          </CommandItem>
 
-        {node.children && node.children.length > 0 && expandedNodes.includes(node.id) && (
-          <TreeItems nodes={node.children} level={level + 1} />
-        )}
-      </div>
-    )})
+          {node.children && node.children.length > 0 && expandedNodes.includes(node.id) && (
+            <TreeItems nodes={node.children} level={level + 1} />
+          )}
+        </div>
+      )
+    })
   }
 
   // Calculate the height of the dropdown based on the number of items
