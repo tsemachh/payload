@@ -15,7 +15,6 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 export interface TreeNode {
@@ -219,11 +218,6 @@ export function CompanyTreeSelector({
     onSelectionChange(leafNodesOnly)
   }
 
-  const handleRemoveCompany = (companyId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    handleChildSelect(companyId, false)
-  }
-
   const toggleExpand = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setExpandedNodes((prev) =>
@@ -241,8 +235,6 @@ export function CompanyTreeSelector({
       return acc
     }, [])
   }
-
-  const flatCompanies = flattenTree(companies)
 
   // Filter tree based on search query
   const filterTree = (nodes: TreeNode[], query: string): TreeNode[] => {
@@ -416,29 +408,6 @@ export function CompanyTreeSelector({
           </PopoverContent>
         </Popover>
       </div>
-
-      {isClient && internalSelectedCompanies.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {internalSelectedCompanies.map((id) => {
-            const company = flatCompanies.find((c) => c.id === id)
-            // Only show badges for leaf nodes (nodes without children)
-            if (company && (!company.children || company.children.length === 0)) {
-              return (
-                <Badge key={id} variant="secondary" className="px-3 py-1">
-                  {company.name}
-                  <button
-                    className="mr-2 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => handleRemoveCompany(id, e)}
-                  >
-                    ×
-                  </button>
-                </Badge>
-              )
-            }
-            return null
-          })}
-        </div>
-      )}
 
       <style jsx global>{`
         .checkbox-custom[data-state='indeterminate']::after {
