@@ -10,7 +10,7 @@ import { DateSelector } from './DateSelector'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from '../columns'
 import { Holding } from '../types'
-import { ExportButton } from '../../components/export-button'
+import { ExportButton } from '@/components/export-button'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
 
 export function HoldingsView() {

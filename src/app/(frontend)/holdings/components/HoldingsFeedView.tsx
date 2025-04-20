@@ -108,7 +108,7 @@ export function HoldingsFeedView() {
 
       // Upload file with company selection
       const response = await fetch(
-        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}`,
+        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,
         {
           method: 'POST',
           body: file,
@@ -116,13 +116,14 @@ export function HoldingsFeedView() {
       )
 
       const result = await response.json()
+      setIsValidating(false)
 
       if (response.ok) {
-        setIsSuccess(true)
+        setIsSuccess(result.feedResult.isValid)
         const feed:HoldingsFeed= result.holdingsFeed
-        const feedResult = result.feedResult
         setValidatedFeed(feed)
         setFeedId(feed.id)
+        setShowConfirmButtons(true)
 
         // Process and display any processing errors from the feed
         if (feed.processingErrors && feed.processingErrors.length > 0) {
@@ -239,7 +240,7 @@ export function HoldingsFeedView() {
   }
 
   return (
- <div className="pr-4 space-y-6 text-right">
+ <div className="pr-4 text-right">
       <div className="flex flex-col space-y-4 md:flex-row md:space-y-0">
         <div className="md:w-2/12 md:pl-2">
             <label className="text-sm font-medium mb-2 block">חברות</label>
@@ -279,7 +280,7 @@ export function HoldingsFeedView() {
             isSuccess={isSuccess}
             errors={errors}
             warnings={warnings}
-            className="mt-8"
+            className="mt-16"
             showConfirmButtons={showConfirmButtons}
             onConfirm={handleSaveConfirmed}
             onCancel={handleCancel}

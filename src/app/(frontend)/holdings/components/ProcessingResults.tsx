@@ -48,12 +48,11 @@ export function ProcessingResults({
   onConfirm,
   onCancel,
   isValidating = false,
-  isUploading = false
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('invalid');
 
   // Show loading state
-  if (isValidating || isUploading) {
+  if (isValidating) {
     return (
       <div className={className}>
         <Alert className="bg-blue-50 border-blue-200">

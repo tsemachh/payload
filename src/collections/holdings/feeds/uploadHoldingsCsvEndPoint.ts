@@ -1,6 +1,6 @@
 import { PayloadRequest } from 'payload'
 import { FeedValidationResult, processHoldingsFeedCsv } from './processHoldingsFeedCsv'
-import { Exception } from 'sass'
+import { HoldingsFeed } from '@/payload-types'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -75,17 +75,12 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     // Create a new HoldingsFeed document
-    const holdingsFeed = await req.payload.create({
-      collection: 'holdings-feed' as any,
-      data: {
+    const holdingsFeed = {
         valueDate,
         comments: "",
         selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
-      } as any,
-      file: file,
-    })
+      }  as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
-    holdingsFeed.selectedCompanies=selectedCompanies
     req.file=file
     // Process the holdings feed synchronously
     const feedResult:FeedValidationResult | undefined=await processHoldingsFeedCsv(req, holdingsFeed, isValidationOnly)
