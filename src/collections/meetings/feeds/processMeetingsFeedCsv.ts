@@ -21,6 +21,13 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
     // Parse the CSV file using csvToJson as specified in the issue description
     const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
+    results.forEach(item => {
+      Object.keys(item).forEach(key => {
+        if (typeof item[key] === 'string') {
+          item[key] = item[key].trim();
+        }
+      });
+    });
     const valueDate= parseDate(results[0].security_id)
     // Convert JSON data to ImportStock format
     results.shift()
