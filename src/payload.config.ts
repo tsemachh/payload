@@ -1,4 +1,4 @@
-import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { Args, mongooseAdapter } from '@payloadcms/db-mongodb';
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
@@ -30,6 +30,15 @@ import { logtailTransport } from './lib/logger'
 mongoose.set('debug', true);*/
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const dbArgs: Args = {
+  url: process.env.DATABASE_URI || '',
+};
+
+
+if (process.env.MONGO_USE_TX !== 'true') {
+  dbArgs.transactionOptions = false;
+}
 
 export default buildConfig({
   i18n: {
@@ -65,9 +74,7 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: mongooseAdapter({
-    url: process.env.DATABASE_URI || '',
-  }),
+  db: mongooseAdapter(dbArgs as Args),
   logger: {
     destination: logtailTransport({
       sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',

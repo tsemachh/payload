@@ -46,7 +46,8 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     const stocksFeed = await req.payload.create({
       data:{comments:""},
       collection: 'stocks-feed',
-      file: file
+      file: file,
+      req
     })
 
     return Response.json({
