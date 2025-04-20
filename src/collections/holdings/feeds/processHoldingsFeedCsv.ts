@@ -5,7 +5,6 @@ import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payloa
 
 // Define validation types
 export interface FeedValidationResult {
-  isValid: boolean
   fatalErrors: FeedFatalError[]
   warnings: FeedWarning[]
   recordErrors: HoldingFeedLine[]
@@ -493,7 +492,6 @@ export const processHoldingsFeedCsv = async (
   try {
     // Initialize validation result
     const validationResult: FeedValidationResult = {
-      isValid: true,
       fatalErrors: [],
       warnings: [],
       recordErrors: [],
@@ -505,7 +503,6 @@ export const processHoldingsFeedCsv = async (
     const file = req.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      validationResult.isValid = false
       validationResult.fatalErrors.push({
         type: 'other',
         message: 'No file found in request',
@@ -516,7 +513,6 @@ export const processHoldingsFeedCsv = async (
     // Get the value date from the document
     const valueDate = doc.valueDate
     if (!valueDate) {
-      validationResult.isValid = false
       validationResult.fatalErrors.push({
         type: 'other',
         message: 'Missing value date',
@@ -526,7 +522,6 @@ export const processHoldingsFeedCsv = async (
 
     // Check user permissions //TODO check that companies are subset of user leaf companies
     if (!req.user) {
-      validationResult.isValid = false
       validationResult.fatalErrors.push({
         type: 'other',
         message: 'User not authenticated',
@@ -537,7 +532,6 @@ export const processHoldingsFeedCsv = async (
     // File conversion to JSON
     const fileExt = file.name.split('.').pop()?.toLowerCase()
     if (fileExt !== 'csv' && fileExt !== 'xlsx' && fileExt !== 'xls') {
-      validationResult.isValid = false
       validationResult.fatalErrors.push({
         type: 'other',
         message: `Unsupported file format: ${fileExt}`,
@@ -551,7 +545,6 @@ export const processHoldingsFeedCsv = async (
     // Validate the whole feed
     const fatalErrors = validateWholeFeed(results)
     if (fatalErrors.length > 0) {
-      validationResult.isValid = false
       validationResult.fatalErrors = fatalErrors
       return validationResult
     }

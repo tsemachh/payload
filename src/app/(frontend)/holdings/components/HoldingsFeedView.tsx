@@ -20,8 +20,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { AlertCircle } from 'lucide-react'
-import { HoldingsFeed } from '@/payload-types'
+import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
+import { FeedFatalError, FeedValidationResult, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
 
 export function HoldingsFeedView() {
   const { user } = useAuth()
@@ -39,18 +40,10 @@ export function HoldingsFeedView() {
   const [isUploading, setIsUploading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [errors, setErrors] = useState<ProcessingError[]>([])
-  const [warnings, setWarnings] = useState<ProcessingWarning[]>([])
+  const [fatals, setFatals] = useState<FeedFatalError[]>([])
+  const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
+  const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [showWarningDialog, setShowWarningDialog] = useState(false)
-  const [validatedFeed, setValidatedFeed] = useState<HoldingsFeed | null>(null)
-  const [warningInfo, setWarningInfo] = useState<{
-    existingHoldings: boolean
-    existingHoldingsCount: number
-  }>({
-    existingHoldings: false,
-    existingHoldingsCount: 0,
-  })
-  const [feedId, setFeedId] = useState<string>('')
   const [showConfirmButtons, setShowConfirmButtons] = useState(false)
 
   // Extract companies from user
@@ -79,15 +72,6 @@ export function HoldingsFeedView() {
       return
     }
 
-    if (!file) {
-      toast({
-        title: 'שגיאה',
-        description: 'נא להעלות קובץ',
-        variant: 'destructive',
-      })
-      return
-    }
-
     if (selectedCompanies.length === 0) {
       toast({
         title: 'שגיאה',
@@ -98,10 +82,11 @@ export function HoldingsFeedView() {
     }
 
     setIsValidating(true)
-    setErrors([])
-    setWarnings([])
     setShowConfirmButtons(false)
-    setValidatedFeed(null)
+
+    setRecordErrors([])
+    setFatals([])
+    setWarnings([])
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
@@ -119,25 +104,13 @@ export function HoldingsFeedView() {
       setIsValidating(false)
 
       if (response.ok) {
-        setIsSuccess(result.feedResult.isValid)
-        const feed:HoldingsFeed= result.holdingsFeed
-        setValidatedFeed(feed)
-        setFeedId(feed.id)
-        setShowConfirmButtons(true)
+        const feedResults:FeedValidationResult= result.feedResult
+        setFatals(feedResults.fatalErrors)
+        setWarnings(feedResults.warnings)
+        setRecordErrors((feedResults.recordErrors))
 
-        // Process and display any processing errors from the feed
-        if (feed.processingErrors && feed.processingErrors.length > 0) {
-          const processedErrors: ProcessingError[] = feed.processingErrors
-            .filter(error => error.line && error.line.error != null)
-            .map(error => ({
-              lineNumber: error.line?.lineNumber || undefined,
-              stockId: error.line?.stockId || undefined,
-              accountId: error.line?.accountId || undefined,
-              quantity: error.line?.quantity?.toString() || undefined,
-              error: error.line?.error || ''
-            }));
-          setErrors(processedErrors);
-        }
+        if (feedResults.fatalErrors.length == 0)
+          setShowConfirmButtons(true)
       } else {
         setIsSuccess(false)
         toast({
@@ -161,7 +134,7 @@ export function HoldingsFeedView() {
 
   // Second step: save the validated file
   const handleSaveConfirmed = async () => {
-    if (!validatedFeed || !date || !file) {
+    if (!date || !file) {
       return;
     }
 
@@ -213,25 +186,13 @@ export function HoldingsFeedView() {
   // Cancel the upload
   const handleCancel = () => {
     setShowConfirmButtons(false);
-    setValidatedFeed(null);
-    setErrors([]);
+    setRecordErrors([]);
     setWarnings([]);
     setFile(null);
   };
 
   const handleConfirmWarning = () => {
     setShowWarningDialog(false)
-
-    if (feedId) {
-      // Add warning about replacing existing holdings
-      setWarnings([
-        ...warnings,
-        {
-          type: 'existingHoldings',
-          message: `הקובץ יחליף ${warningInfo.existingHoldingsCount} אחזקות קיימות לתאריך ${date ? format(date, 'dd/MM/yyyy') : ''}`,
-        },
-      ])
-    }
   }
 
   const handleCancelWarning = () => {
@@ -278,8 +239,9 @@ export function HoldingsFeedView() {
       </div>
         <ProcessingResults
             isSuccess={isSuccess}
-            errors={errors}
+            recordErrors={recordErrors}
             warnings={warnings}
+            fatals={fatals}
             className="mt-16"
             showConfirmButtons={showConfirmButtons}
             onConfirm={handleSaveConfirmed}
@@ -287,31 +249,6 @@ export function HoldingsFeedView() {
             isValidating={isValidating}
             isUploading={isUploading}
         />
-
-        <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center">
-                <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
-                התראה
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {warningInfo.existingHoldings && (
-                    <p className="mb-2">
-                      נמצאו {warningInfo.existingHoldingsCount} אחזקות קיימות לתאריך{' '}
-                      {date ? format(date, 'dd/MM/yyyy') : ''}. העלאת הקובץ החדש תחליף את האחזקות
-                      הקיימות.
-                    </p>
-                )}
-                <p>האם להמשיך?</p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleCancelWarning}>ביטול</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmWarning}>המשך</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
   )
   }

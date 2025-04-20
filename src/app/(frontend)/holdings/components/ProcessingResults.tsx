@@ -11,6 +11,8 @@ import {
   TableRow 
 } from '@/components/ui/table'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { HoldingFeedLine } from '@/payload-types'
+import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
 
 export interface ProcessingError {
   lineNumber?: number
@@ -29,8 +31,9 @@ export interface ProcessingWarning {
 
 interface ProcessingResultsProps {
   isSuccess: boolean
-  errors: ProcessingError[]
-  warnings: ProcessingWarning[]
+  recordErrors: HoldingFeedLine[]
+  warnings: FeedWarning[]
+  fatals: FeedFatalError[]
   className?: string
   showConfirmButtons?: boolean
   onConfirm?: () => void
@@ -41,8 +44,9 @@ interface ProcessingResultsProps {
 
 export function ProcessingResults({ 
   isSuccess,
-  errors,
-  warnings, 
+  recordErrors,
+  warnings,
+  fatals,
   className,
   showConfirmButtons = false,
   onConfirm,
@@ -67,7 +71,7 @@ export function ProcessingResults({
   }
 
   // Show success state with no errors or warnings
-  if (isSuccess && errors.length === 0 && warnings.length === 0 && !showConfirmButtons) {
+  if (isSuccess && recordErrors.length === 0 && warnings.length === 0 && fatals.length === 0 && !showConfirmButtons) {
     return (
       <div className={className}>
         <Alert className="bg-green-50 border-green-200">
@@ -84,6 +88,36 @@ export function ProcessingResults({
   return (
     <div className={className} dir="rtl">
       {/* Warnings Section */}
+      {fatals.length > 0 && (
+        <div className="mb-6">
+          <Alert className="bg-yellow-50 border-yellow-200 mb-4 max-w-3xl mx-auto">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTitle className="text-yellow-700">שים לב</AlertTitle>
+            <AlertDescription className="text-yellow-600">
+              נמצאו {fatals.length} אזהרות. אנא שים לב לשגיאות הבאות:
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-2 max-w-4xl mx-auto">
+            {fatals.map((warning, index) => (
+              <Alert key={index} className="bg-yellow-50 border-yellow-200">
+                <AlertDescription className="text-yellow-700">
+                  {warning.type}
+                  {warning.message}
+                  {warning.details && warning.details.length > 0 && (
+                    <ul className="mt-2 list-disc list-inside">
+                      {warning.details.map((detail, idx) => (
+                        <li key={idx} className="text-yellow-600">{detail}</li>
+                      ))}
+                    </ul>
+                  )}
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        </div>
+      )}
+
       {warnings.length > 0 && (
         <div className="mb-6">
           <Alert className="bg-yellow-50 border-yellow-200 mb-4 max-w-3xl mx-auto">
@@ -98,6 +132,7 @@ export function ProcessingResults({
             {warnings.map((warning, index) => (
               <Alert key={index} className="bg-yellow-50 border-yellow-200">
                 <AlertDescription className="text-yellow-700">
+                  {warning.type}
                   {warning.message}
                   {warning.count && <span> ({warning.count})</span>}
 
@@ -126,7 +161,7 @@ export function ProcessingResults({
             }`}
             onClick={() => setActiveTab('invalid')}
           >
-            שגויים {errors.length > 0 && `(${errors.length})`}
+            שגויים {recordErrors.length > 0 && `(${recordErrors.length})`}
           </button>
           <button
             className={`px-4 py-2 font-medium ${
@@ -142,7 +177,7 @@ export function ProcessingResults({
       </div>
 
       {/* Invalid Records Table */}
-      {activeTab === 'invalid' && errors.length > 0 && (
+      {activeTab === 'invalid' && recordErrors.length > 0 && (
         <div className="mb-6">
           <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-red-200 shadow-sm">
             <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
@@ -157,7 +192,7 @@ export function ProcessingResults({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {errors.map((error, index) => (
+                  {recordErrors.map((error, index) => (
                     <TableRow key={index}>
                       <TableCell className="border px-3 py-2">{error.lineNumber || 'N/A'}</TableCell>
                       <TableCell className="border px-3 py-2">{error.stockId || 'N/A'}</TableCell>
