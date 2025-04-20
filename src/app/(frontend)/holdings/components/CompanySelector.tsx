@@ -4,7 +4,6 @@ import type React from 'react'
 
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronLeft, ChevronsUpDown } from 'lucide-react'
-import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -42,11 +41,18 @@ export function CompanyTreeSelector({
   const [isClient, setIsClient] = useState(false)
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [internalSelectedCompanies, setInternalSelectedCompanies] =
+    useState<string[]>(selectedCompanies)
 
   // Set isClient to true after component mounts
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Update internal selection when prop changes
+  useEffect(() => {
+    setInternalSelectedCompanies(selectedCompanies)
+  }, [selectedCompanies])
 
   // Get all descendant IDs for a node
   const getAllDescendantIds = (node: TreeNode): string[] => {
@@ -60,11 +66,38 @@ export function CompanyTreeSelector({
     return result
   }
 
+  // Check if a node is a leaf node (no children)
+  const isLeafNode = (node: TreeNode | null): boolean => {
+    return !node?.children || node.children.length === 0
+  }
+
+  // Find a node by ID
+  const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === id) {
+        return node
+      }
+      if (node.children && node.children.length > 0) {
+        const foundInChildren = findNode(node.children, id)
+        if (foundInChildren) return foundInChildren
+      }
+    }
+    return null
+  }
+
+  // Get all leaf node IDs from a selection
+  const getLeafNodesOnly = (selection: string[]): string[] => {
+    return selection.filter((id) => {
+      const node = findNode(companies, id)
+      return isLeafNode(node)
+    })
+  }
+
   // Recursively check node selection state
   const getNodeSelectionState = (node: TreeNode): 'checked' | 'unchecked' | 'indeterminate' => {
     // If the node has no children, just check if it's selected
     if (!node.children || node.children.length === 0) {
-      return selectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
+      return internalSelectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
     }
 
     // Check children states
@@ -81,7 +114,7 @@ export function CompanyTreeSelector({
     )
 
     // If the node itself is selected but not all children are selected, it should be indeterminate
-    if (selectedCompanies.includes(node.id) && !allChildrenChecked) {
+    if (internalSelectedCompanies.includes(node.id) && !allChildrenChecked) {
       return 'indeterminate'
     } else if (allChildrenChecked) {
       return 'checked'
@@ -93,27 +126,13 @@ export function CompanyTreeSelector({
   }
 
   const handleSelect = (companyId: string, forceState?: boolean) => {
-    // Find the node in the tree
-    const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
-      for (const node of nodes) {
-        if (node.id === id) {
-          return node
-        }
-        if (node.children && node.children.length > 0) {
-          const foundInChildren = findNode(node.children, id)
-          if (foundInChildren) return foundInChildren
-        }
-      }
-      return null
-    }
-
     const node = findNode(companies, companyId)
     if (!node) return
 
     const currentState = getNodeSelectionState(node)
     const newState = forceState !== undefined ? forceState : currentState !== 'checked'
 
-    let newSelection = [...selectedCompanies]
+    let newSelection = [...internalSelectedCompanies]
 
     // Get all descendants of this node
     const descendants = getAllDescendantIds(node)
@@ -133,7 +152,13 @@ export function CompanyTreeSelector({
       // Remove this node and all descendants from selection
       newSelection = newSelection.filter((id) => id !== companyId && !descendants.includes(id))
     }
-    onSelectionChange(newSelection)
+
+    setInternalSelectedCompanies(newSelection)
+
+    // Only pass leaf nodes to the parent component
+    const leafNodesOnly = getLeafNodesOnly(newSelection)
+    console.log('leafNodesOnly', leafNodesOnly)
+    onSelectionChange(leafNodesOnly)
   }
 
   const handleChildSelect = (childId: string, checked: boolean) => {
@@ -158,7 +183,7 @@ export function CompanyTreeSelector({
     const { node, parent } = findNodeAndParent(companies, childId)
     if (!node) return
 
-    let newSelection = [...selectedCompanies]
+    let newSelection = [...internalSelectedCompanies]
 
     if (checked) {
       // Add this child to selection
@@ -185,7 +210,13 @@ export function CompanyTreeSelector({
         newSelection = newSelection.filter((id) => id !== parent.id)
       }
     }
-    onSelectionChange(newSelection)
+
+    setInternalSelectedCompanies(newSelection)
+
+    // Only pass leaf nodes to the parent component
+    const leafNodesOnly = getLeafNodesOnly(newSelection)
+    console.log('leafNodesOnly', leafNodesOnly)
+    onSelectionChange(leafNodesOnly)
   }
 
   const handleRemoveCompany = (companyId: string, e: React.MouseEvent) => {
@@ -264,16 +295,16 @@ export function CompanyTreeSelector({
 
   // Recursive component to render tree nodes
   const TreeItems = ({ nodes, level = 0 }: { nodes: TreeNode[]; level?: number }) => {
-    return nodes.map((node) => {
+    return nodes.map((node, index) => {
       const selectionState = getNodeSelectionState(node)
-      const isLeafNode = !node.children || node.children.length === 0
+      const isNodeLeaf = isLeafNode(node)
 
       return (
-        <div key={node.id + uuidv4()} className="w-full">
+        <div key={`${node.id}-${index}-${level}`} className="w-full">
           <CommandItem
             value={`${node.id}-${node.name}`}
             onSelect={() =>
-              isLeafNode
+              isNodeLeaf
                 ? handleChildSelect(node.id, selectionState !== 'checked')
                 : handleSelect(node.id)
             }
@@ -296,7 +327,7 @@ export function CompanyTreeSelector({
                   checked={selectionState === 'checked'}
                   data-state={selectionState}
                   onCheckedChange={(checked) => {
-                    if (isLeafNode) {
+                    if (isNodeLeaf) {
                       handleChildSelect(node.id, checked === true)
                     } else {
                       handleSelect(node.id)
@@ -335,6 +366,14 @@ export function CompanyTreeSelector({
     return estimatedHeight
   }
 
+  // Count selected leaf nodes
+  const countSelectedLeafNodes = () => {
+    return internalSelectedCompanies.filter((id) => {
+      const node = findNode(companies, id)
+      return isLeafNode(node)
+    }).length
+  }
+
   return (
     <div className={className} dir="rtl">
       <div className="relative">
@@ -347,14 +386,9 @@ export function CompanyTreeSelector({
               className="min-w-[200px] h-10 justify-between"
             >
               <span className="truncate">
-                {!isClient || selectedCompanies.length === 0
+                {!isClient || internalSelectedCompanies.length === 0
                   ? 'בחר חברות'
-                  : `${
-                      selectedCompanies.filter((id) => {
-                        const company = flatCompanies.find((c) => c.id === id)
-                        return company && (!company.children || company.children.length === 0)
-                      }).length
-                    } חברות עלה נבחרו`}
+                  : `${countSelectedLeafNodes()} חברות עלה נבחרו`}
               </span>
               <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -383,9 +417,9 @@ export function CompanyTreeSelector({
         </Popover>
       </div>
 
-      {isClient && selectedCompanies.length > 0 && (
+      {isClient && internalSelectedCompanies.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {selectedCompanies.map((id) => {
+          {internalSelectedCompanies.map((id) => {
             const company = flatCompanies.find((c) => c.id === id)
             // Only show badges for leaf nodes (nodes without children)
             if (company && (!company.children || company.children.length === 0)) {
@@ -405,6 +439,20 @@ export function CompanyTreeSelector({
           })}
         </div>
       )}
+
+      <style jsx global>{`
+        .checkbox-custom[data-state='indeterminate']::after {
+          content: '';
+          display: block;
+          width: 8px;
+          height: 2px;
+          background-color: white;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+      `}</style>
     </div>
   )
 }
