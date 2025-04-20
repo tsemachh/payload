@@ -247,6 +247,7 @@ export async function upsertStockFromImport(
     const newStock = await req.payload.create({
       collection: 'stocks',
       data: stockData as Stock,
+      req
     })
     return newStock.id
   } else {
@@ -259,6 +260,7 @@ export async function upsertStockFromImport(
         collection: 'stocks',
         id: stock.id,
         data: { name: stockData.name, longName: stockData.longName },
+        req
       })
     }
     return stock.id
@@ -281,16 +283,18 @@ export async function upsertStockValueFromImport(
   const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-    await req.payload.update({
+     await req.payload.update({
       collection: 'stock-values',
       id: valueId,
       data: stockValue as StockValue,
+      req
     })
   } else {
     // Insert into Payload CMS
-    await req.payload.create({
+     await req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
+      req
     })
   }
 }

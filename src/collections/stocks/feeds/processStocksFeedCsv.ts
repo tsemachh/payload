@@ -58,7 +58,7 @@ export const processStocksFeedCsv = async (req: PayloadRequest, data:StocksFeed)
         await upsertStockValueFromImport(stockSequence, row, req)
         processedRows++
       } catch (rowError) {
-        req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`)
+        req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`,rowError)
         // Continue with the next row
       }
     }
