@@ -5,14 +5,6 @@ import type React from 'react'
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 
 export interface TreeNode {
@@ -271,23 +263,24 @@ export function CompanyTreeSelector({
 
       return (
         <div key={`${node.id}-${index}-${level}`} className="w-full">
-          <CommandItem
-            value={`${node.id}-${node.name}`}
-            onSelect={() =>
+          <div
+            className="flex items-center justify-between w-full px-2 py-1.5 hover:bg-gray-100 rounded-sm cursor-pointer"
+            onClick={() =>
               isNodeLeaf
                 ? handleChildSelect(node.id, selectionState !== 'checked')
                 : handleSelect(node.id)
             }
-            className="flex items-center justify-between w-full"
             style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
           >
-            <div className="flex items-center" onClick={(e) => toggleExpand(node.id, e)}>
+            <div className="flex items-center">
               {node.children && node.children.length > 0 ? (
-                expandedNodes.includes(node.id) ? (
-                  <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
-                ) : (
-                  <ChevronLeft className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
-                )
+                <div onClick={(e) => toggleExpand(node.id, e)}>
+                  {expandedNodes.includes(node.id) ? (
+                    <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+                  ) : (
+                    <ChevronLeft className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+                  )}
+                </div>
               ) : (
                 <div className="w-5" />
               )}
@@ -318,7 +311,7 @@ export function CompanyTreeSelector({
               </div>
               <span className="truncate mr-1">{node.name}</span>
             </div>
-          </CommandItem>
+          </div>
 
           {node.children && node.children.length > 0 && expandedNodes.includes(node.id) && (
             <TreeItems nodes={node.children} level={level + 1} />
@@ -331,19 +324,22 @@ export function CompanyTreeSelector({
   return (
     <div className={className} dir="rtl">
       <div className="relative border rounded-md p-2">
-        <Command className="w-full" dir="rtl">
-          <CommandInput
+        <div className="mb-2">
+          <input
+            type="text"
             placeholder="חפש חברה..."
             value={searchQuery}
-            onValueChange={setSearchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-7 px-2 text-sm border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
-          <CommandList className="w-full">
-            <CommandEmpty>לא נמצאו חברות.</CommandEmpty>
-            <CommandGroup className="max-h-[300px] overflow-auto w-full">
-              <TreeItems nodes={filteredCompanies} />
-            </CommandGroup>
-          </CommandList>
-        </Command>
+        </div>
+        <div className="max-h-[300px] overflow-auto w-full">
+          {filteredCompanies.length > 0 ? (
+            <TreeItems nodes={filteredCompanies} />
+          ) : (
+            <div className="py-6 text-center text-sm text-gray-500">לא נמצאו חברות.</div>
+          )}
+        </div>
       </div>
 
       <style jsx global>{`

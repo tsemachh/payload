@@ -28,6 +28,12 @@ export function HoldingsView() {
       const transformedCompanies = transformCompaniesToTree(user.companies)
       setCompanies(transformedCompanies)
     }
+    if (user?.leafCompanies) {
+      const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
+        typeof company === 'string' ? company : company.id,
+      )
+      setSelectedCompanies(tmpSelectedCompanies)
+    }
   }, [user])
 
   const fetchHoldings = async () => {

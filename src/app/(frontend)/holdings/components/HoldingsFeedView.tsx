@@ -57,6 +57,12 @@ export function HoldingsFeedView() {
       const transformedCompanies = transformCompaniesToTree(user.companies)
       setCompanies(transformedCompanies)
     }
+    if (user?.leafCompanies) {
+      const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
+        typeof company === 'string' ? company : company.id,
+      )
+      setSelectedCompanies(tmpSelectedCompanies)
+    }
   }, [user])
 
   // Save selected companies to localStorage whenever they change
