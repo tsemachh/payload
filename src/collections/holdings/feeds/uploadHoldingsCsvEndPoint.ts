@@ -1,5 +1,6 @@
 import { PayloadRequest } from 'payload'
-import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
+import { FeedValidationResult, processHoldingsFeedCsv } from './processHoldingsFeedCsv'
+import { HoldingsFeed } from '@/payload-types'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -11,11 +12,12 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     // Get parameters from the request
-    const { valueDate, companies } = req.query
+    const { valueDate, companies, validateOnly } = req.query
+    const isValidationOnly = validateOnly === 'true'
     if (!valueDate) {
       return Response.json({ error: 'Value date is required' }, { status: 400 })
     }
-    
+
     // Optional companies parameter as JSON string of company IDs
     let selectedCompanies: string[] = []
     if (companies) {
@@ -36,7 +38,7 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
 
     // Convert the ReadableStream to a Buffer using the ReadableStream API
     const reader = stream.getReader()
-    const chunks = []
+    const chunks: Uint8Array[] = []
 
     try {
       while (true) {
@@ -73,29 +75,21 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     // Create a new HoldingsFeed document
-    const holdingsFeed = await req.payload.create({
-      collection: 'holdings-feed' as any,
-      data: {
+    const holdingsFeed = {
         valueDate,
         comments: "",
         selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
-      } as any,
-      file: file,
-    })
+      }  as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
-    holdingsFeed.selectedCompanies=selectedCompanies
     req.file=file
     // Process the holdings feed synchronously
-    await processHoldingsFeedCsv(req, holdingsFeed)
-
-    return Response.json({
-      message: 'Successfully uploaded holdings file',
-      holdingsFeed,
-      warnings: {
-        /*existingHoldings: existingHoldings.docs.length > 0,
-        existingHoldingsCount: existingHoldings.docs.length,*/
-      },
-    })
+    const feedResult:FeedValidationResult | undefined=await processHoldingsFeedCsv(req, holdingsFeed, isValidationOnly)
+    if (feedResult != null)
+      return Response.json({
+        feedResult
+      })
+    else
+      return Response.json({ error: 'Error procesing  holdings file' }, { status: 500 })
   } catch (error) {
     console.error('Error uploading holdings file:', error)
     return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
