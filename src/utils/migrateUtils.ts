@@ -256,7 +256,7 @@ export async function upsertStockFromImport(
       stock.name != stockData.name ||
       (stockData.longName && stock.longName != stockData.longName)
     ) {
-      await req.payload.update({
+       req.payload.update({
         collection: 'stocks',
         id: stock.id,
         data: { name: stockData.name, longName: stockData.longName },
@@ -283,7 +283,7 @@ export async function upsertStockValueFromImport(
   const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-     await req.payload.update({
+      req.payload.update({
       collection: 'stock-values',
       id: valueId,
       data: stockValue as StockValue,
@@ -291,10 +291,37 @@ export async function upsertStockValueFromImport(
     })
   } else {
     // Insert into Payload CMS
-     await req.payload.create({
+      req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
       req
     })
   }
+}
+
+/**
+ * Creates a map of stocks with stockId as the key and the stock object as the value
+ * @param req PayloadRequest object
+ * @param origin Origin of the stocks to fetch (default: "TASE")
+ * @returns Map of stocks with stockId as the key and the stock object as the value
+ */
+export async function createStocksMap(
+  req: PayloadRequest,
+  origin: StockOrigin = 'TASE'
+): Promise<Map<string, Stock>> {
+  const stockMap: Map<string, Stock> = new Map()
+  const stocksResult = await req.payload.find({
+    collection: 'stocks',
+    where: {
+      origin: { equals: origin }
+    },
+    depth: 0,
+    limit: 0,
+    req
+  })
+  stocksResult.docs.forEach((stock: Stock) => {
+    const stockKey = stock?.stockId
+    stockMap.set(stockKey, stock)
+  })
+  return stockMap
 }
