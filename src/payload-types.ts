@@ -74,6 +74,7 @@ export type RolePermissions =
         | 'holdings'
         | 'stock-migration-mapping'
         | 'stocks-feed'
+        | 'meetings-feed'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -160,6 +161,7 @@ export interface Config {
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
     'stocks-feed': StocksFeed;
+    'meetings-feed': MeetingsFeed;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -194,6 +196,7 @@ export interface Config {
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
+    'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -553,49 +556,6 @@ export interface MeetingsFeed {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings-feed".
- */
-export interface HoldingsFeed {
-  id: string;
-  valueDate: string;
-  comments?: string | null;
-  selectedCompanies?: (string | Company)[] | null;
-  processingStatus?: ('pending' | 'completed' | 'failed') | null;
-  processingErrors?:
-    | {
-        line?: HoldingFeedLine;
-        id?: string | null;
-      }[]
-    | null;
-  accountsJson?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingFeedLine".
- */
-export interface HoldingFeedLine {
-  error?: string | null;
-  stockId?: string | null;
-  accountId?: string | null;
-  quantity?: number | null;
-  lineNumber?: number | null;
-  status?: ('error' | 'success') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -781,10 +741,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'meetings-feed';
         value: string | MeetingsFeed;
-      } | null)
-    | ({
-        relationTo: 'holdings-feed';
-        value: string | HoldingsFeed;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1167,48 +1123,6 @@ export interface MeetingsFeedSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings-feed_select".
- */
-export interface HoldingsFeedSelect<T extends boolean = true> {
-  valueDate?: T;
-  comments?: T;
-  selectedCompanies?: T;
-  processingStatus?: T;
-  processingErrors?:
-    | T
-    | {
-        line?: T | HoldingFeedLineSelect<T>;
-        id?: T;
-      };
-  accountsJson?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingFeedLine_select".
- */
-export interface HoldingFeedLineSelect<T extends boolean = true> {
-  error?: T;
-  stockId?: T;
-  accountId?: T;
-  quantity?: T;
-  lineNumber?: T;
-  status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
