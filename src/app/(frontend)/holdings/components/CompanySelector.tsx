@@ -34,6 +34,24 @@ export function CompanyTreeSelector({
   const [shouldScroll, setShouldScroll] = useState(false)
   const [filteredCompanies, setFilteredCompanies] = useState<TreeNode[]>(companies)
 
+  // Add a new function to collect all node IDs that have children
+  const getAllParentNodeIds = useCallback((nodes: TreeNode[]): string[] => {
+    let result: string[] = []
+    nodes.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        result.push(node.id)
+        result = result.concat(getAllParentNodeIds(node.children))
+      }
+    })
+    return result
+  }, [])
+
+  // Add a new useEffect to expand all nodes by default when companies change
+  useEffect(() => {
+    const allParentIds = getAllParentNodeIds(companies)
+    setExpandedNodes(allParentIds)
+  }, [companies, getAllParentNodeIds])
+
   // Update internal selection when prop changes
   useEffect(() => {
     setInternalSelectedCompanies(selectedCompanies)
