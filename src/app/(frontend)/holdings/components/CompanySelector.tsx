@@ -2,7 +2,7 @@
 
 import type React from 'react'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
@@ -30,11 +30,43 @@ export function CompanyTreeSelector({
   const [searchQuery, setSearchQuery] = useState('')
   const [internalSelectedCompanies, setInternalSelectedCompanies] =
     useState<string[]>(selectedCompanies)
+  const treeContainerRef = useRef<HTMLDivElement>(null)
+  const [shouldScroll, setShouldScroll] = useState(false)
+  const [filteredCompanies, setFilteredCompanies] = useState<TreeNode[]>(companies)
 
   // Update internal selection when prop changes
   useEffect(() => {
     setInternalSelectedCompanies(selectedCompanies)
   }, [selectedCompanies])
+
+  // Check if tree content exceeds viewport and enable scrolling if needed
+  useEffect(() => {
+    if (!treeContainerRef.current) return
+
+    const checkSize = () => {
+      const container = treeContainerRef.current
+      if (!container) return
+
+      const containerRect = container.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const containerBottom = containerRect.top + container.scrollHeight
+
+      // If the bottom of the container would go beyond viewport, enable scrolling
+      if (containerBottom > viewportHeight - 20) {
+        // 20px buffer
+        setShouldScroll(true)
+      } else {
+        setShouldScroll(false)
+      }
+    }
+
+    // Check initially and whenever content might change
+    checkSize()
+
+    // Also check on window resize
+    window.addEventListener('resize', checkSize)
+    return () => window.removeEventListener('resize', checkSize)
+  }, [filteredCompanies, expandedNodes])
 
   // Get all descendant IDs for a node
   const getAllDescendantIds = (node: TreeNode): string[] => {
@@ -207,26 +239,30 @@ export function CompanyTreeSelector({
   }
 
   // Filter tree based on search query
-  const filterTree = (nodes: TreeNode[], query: string): TreeNode[] => {
-    if (!query) return nodes
+ const filterTree = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
+  if (!query) return nodes
 
-    return nodes
-      .map((node) => {
-        const matchesQuery = node.name.toLowerCase().includes(query.toLowerCase())
-        const filteredChildren = node.children ? filterTree(node.children, query) : []
+  return nodes
+    .map((node) => {
+      const matchesQuery = node.name.toLowerCase().includes(query.toLowerCase())
+      const filteredChildren = node.children ? filterTree(node.children, query) : []
 
-        if (matchesQuery || filteredChildren.length > 0) {
-          return {
-            ...node,
-            children: filteredChildren.length > 0 ? filteredChildren : node.children,
-          }
+      if (matchesQuery || filteredChildren.length > 0) {
+        return {
+          ...node,
+          children: filteredChildren.length > 0 ? filteredChildren : node.children,
         }
-        return null
-      })
-      .filter(Boolean) as TreeNode[]
-  }
+      }
+      return null
+    })
+    .filter(Boolean) as TreeNode[]
+}, [])
 
-  const filteredCompanies = filterTree(companies, searchQuery)
+
+  useEffect(() => {
+    const newFilteredCompanies = filterTree(companies, searchQuery)
+    setFilteredCompanies(newFilteredCompanies)
+  }, [searchQuery, companies, filterTree])
 
   // Auto-expand parent nodes when searching
   useEffect(() => {
@@ -333,7 +369,10 @@ export function CompanyTreeSelector({
             className="w-full h-7 px-2 text-sm border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
         </div>
-        <div className="max-h-[300px] overflow-auto w-full">
+        <div
+          ref={treeContainerRef}
+          className={cn('w-full', shouldScroll ? 'max-h-[calc(100vh-150px)] overflow-auto' : '')}
+        >
           {filteredCompanies.length > 0 ? (
             <TreeItems nodes={filteredCompanies} />
           ) : (
