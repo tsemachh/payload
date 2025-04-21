@@ -34,6 +34,24 @@ export function CompanyTreeSelector({
   const [shouldScroll, setShouldScroll] = useState(false)
   const [filteredCompanies, setFilteredCompanies] = useState<TreeNode[]>(companies)
 
+  // Add a new function to collect all node IDs that have children
+  const getAllParentNodeIds = useCallback((nodes: TreeNode[]): string[] => {
+    let result: string[] = []
+    nodes.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        result.push(node.id)
+        result = result.concat(getAllParentNodeIds(node.children))
+      }
+    })
+    return result
+  }, [])
+
+  // Add a new useEffect to expand all nodes by default when companies change
+  useEffect(() => {
+    const allParentIds = getAllParentNodeIds(companies)
+    setExpandedNodes(allParentIds)
+  }, [companies, getAllParentNodeIds])
+
   // Update internal selection when prop changes
   useEffect(() => {
     setInternalSelectedCompanies(selectedCompanies)
@@ -307,7 +325,7 @@ export function CompanyTreeSelector({
             }
             style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
           >
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0">
               {node.children && node.children.length > 0 ? (
                 <div onClick={(e) => toggleExpand(node.id, e)}>
                   {expandedNodes.includes(node.id) ? (
@@ -344,7 +362,9 @@ export function CompanyTreeSelector({
                   }}
                 />
               </div>
-              <span className="truncate mr-1">{node.name}</span>
+              <div className="flex-1 overflow-hidden">
+                <span className="truncate mr-1 block">{node.name}</span>
+              </div>
             </div>
           </div>
 
