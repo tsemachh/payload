@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+
 import { AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { 
   Table, 
@@ -91,31 +92,28 @@ export function ProcessingResults({
     <div className={className} dir="rtl">
       {/* Warnings Section */}
       {fatals.length > 0 && (
-        <div className="mb-6">
-          <Alert className="bg-yellow-50 border-yellow-200 mb-4 max-w-3xl mx-auto">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            <AlertTitle className="text-yellow-700">שים לב</AlertTitle>
-            <AlertDescription className="text-yellow-600">
-              נמצאו {fatals.length} אזהרות. אנא שים לב לשגיאות הבאות:
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-2 max-w-4xl mx-auto">
-            {fatals.map((warning, index) => (
-              <Alert key={index} className="bg-yellow-50 border-yellow-200">
-                <AlertDescription className="text-yellow-700">
-                  {warning.type}
-                  {warning.message}
-                  {warning.details && warning.details.length > 0 && (
-                    <ul className="mt-2 list-disc list-inside">
-                      {warning.details.map((detail, idx) => (
-                        <li key={idx} className="text-yellow-600">{detail}</li>
-                      ))}
-                    </ul>
-                  )}
-                </AlertDescription>
-              </Alert>
-            ))}
+        <div className="mb-6" dir="rtl">
+          <div className="bg-red-100 border border-red-300 rounded-2xl px-4 py-3 mb-4 max-w-3xl mx-auto shadow-md flex items-start gap-3">
+            <XCircle className="h-5 w-5 text-red-700 mt-1" />
+            <div>
+              <AlertTitle className="text-red-900 font-bold text-lg">
+                הקובץ שהוזן שגוי — הזנתו לא התקבלה!
+              </AlertTitle>
+              <AlertDescription className="text-red-800 text-sm space-y-3 mt-1">
+                {fatals.map((warning, index) => (
+                  <div key={index}>
+                    {warning.message}
+                    {warning.details && warning.details.length > 0 && (
+                      <ul className="mt-2 list-disc list-inside">
+                        {warning.details.map((detail, idx) => (
+                          <li key={idx} className="text-red-700">{detail}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </AlertDescription>
+            </div>
           </div>
         </div>
       )}
@@ -127,30 +125,31 @@ export function ProcessingResults({
             <AlertTitle className="text-yellow-700">שים לב</AlertTitle>
             <AlertDescription className="text-yellow-600">
               נמצאו {warnings.length} אזהרות. אנא שים לב לאזהרות הבאות:
+
+              <ul className="mt-4 space-y-2 list-disc list-inside">
+                {warnings.map((warning, index) => (
+                  <li key={index}>
+              <span className="text-yellow-700">
+                {warning.type && <strong>{warning.type}: </strong>}
+                {warning.message}
+                {warning.count && <span> ({warning.count})</span>}
+              </span>
+
+                    {warning.details && warning.details.length > 0 && (
+                      <ul className="mt-1 list-disc list-inside ml-4">
+                        {warning.details.map((detail, idx) => (
+                          <li key={idx} className="text-yellow-600">{detail}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </AlertDescription>
           </Alert>
-
-          <div className="space-y-2 max-w-4xl mx-auto">
-            {warnings.map((warning, index) => (
-              <Alert key={index} className="bg-yellow-50 border-yellow-200">
-                <AlertDescription className="text-yellow-700">
-                  {warning.type}
-                  {warning.message}
-                  {warning.count && <span> ({warning.count})</span>}
-
-                  {warning.details && warning.details.length > 0 && (
-                    <ul className="mt-2 list-disc list-inside">
-                      {warning.details.map((detail, idx) => (
-                        <li key={idx} className="text-yellow-600">{detail}</li>
-                      ))}
-                    </ul>
-                  )}
-                </AlertDescription>
-              </Alert>
-            ))}
-          </div>
         </div>
       )}
+
 
       {/* Tabs for Valid and Invalid Records */}
       <div className="mb-4">

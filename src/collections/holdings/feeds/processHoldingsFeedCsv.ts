@@ -47,7 +47,7 @@ const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
   if (!results || results.length === 0) {
     fatalErrors.push({
       type: 'emptyFile',
-      message: 'הקובץ שהוזן ריק - הזנתו לא התקבלה',
+      message: 'הקובץ שהוזן ריק',
     })
     return fatalErrors
   }
@@ -111,7 +111,7 @@ const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
   if (hasWrongFormat) {
     fatalErrors.push({
       type: 'wrongColumnFormat',
-      message: 'פורמט הקובץ שהוזן שגוי - הזנתו לא התקבלה',
+      message: 'פורמט הקובץ שהוזן שגוי',
       details: formatDetails,
     })
   }
