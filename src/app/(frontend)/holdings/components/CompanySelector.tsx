@@ -3,8 +3,7 @@
 import type React from 'react'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronLeft, ChevronsUpDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Command,
@@ -14,7 +13,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 export interface TreeNode {
@@ -36,17 +34,10 @@ export function CompanyTreeSelector({
   onSelectionChange,
   className,
 }: CompanyTreeSelectorProps) {
-  const [open, setOpen] = useState(false)
-  const [isClient, setIsClient] = useState(false)
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [internalSelectedCompanies, setInternalSelectedCompanies] =
     useState<string[]>(selectedCompanies)
-
-  // Set isClient to true after component mounts
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   // Update internal selection when prop changes
   useEffect(() => {
@@ -156,7 +147,6 @@ export function CompanyTreeSelector({
 
     // Only pass leaf nodes to the parent component
     const leafNodesOnly = getLeafNodesOnly(newSelection)
-    console.log('leafNodesOnly', leafNodesOnly)
     onSelectionChange(leafNodesOnly)
   }
 
@@ -214,7 +204,6 @@ export function CompanyTreeSelector({
 
     // Only pass leaf nodes to the parent component
     const leafNodesOnly = getLeafNodesOnly(newSelection)
-    console.log('leafNodesOnly', leafNodesOnly)
     onSelectionChange(leafNodesOnly)
   }
 
@@ -223,17 +212,6 @@ export function CompanyTreeSelector({
     setExpandedNodes((prev) =>
       prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId],
     )
-  }
-
-  // Flatten tree for search and display of selected items
-  const flattenTree = (nodes: TreeNode[]): TreeNode[] => {
-    return nodes.reduce<TreeNode[]>((acc, node) => {
-      acc.push(node)
-      if (node.children && node.children.length > 0) {
-        acc.push(...flattenTree(node.children))
-      }
-      return acc
-    }, [])
   }
 
   // Filter tree based on search query
@@ -350,63 +328,22 @@ export function CompanyTreeSelector({
     })
   }
 
-  // Calculate the height of the dropdown based on the number of items
-  const getDropdownHeight = () => {
-    const baseHeight = 300 // Default max height
-    const itemCount = flattenTree(filteredCompanies).length
-    const estimatedHeight = Math.min(itemCount * 36 + 50, baseHeight) // 36px per item + padding
-    return estimatedHeight
-  }
-
-  // Count selected leaf nodes
-  const countSelectedLeafNodes = () => {
-    return internalSelectedCompanies.filter((id) => {
-      const node = findNode(companies, id)
-      return isLeafNode(node)
-    }).length
-  }
-
   return (
     <div className={className} dir="rtl">
-      <div className="relative">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="min-w-[200px] h-10 justify-between"
-            >
-              <span className="truncate">
-                {!isClient || internalSelectedCompanies.length === 0
-                  ? 'בחר חברות'
-                  : `${countSelectedLeafNodes()} חברות עלה נבחרו`}
-              </span>
-              <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-auto p-0 z-50"
-            align="start"
-            side="bottom"
-            style={{ maxHeight: `${getDropdownHeight()}px` }}
-            sideOffset={5}
-          >
-            <Command className="w-full" dir="rtl">
-              <CommandInput
-                placeholder="חפש חברה..."
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-              />
-              <CommandList className="w-full">
-                <CommandEmpty>לא נמצאו חברות.</CommandEmpty>
-                <CommandGroup className="max-h-[300px] overflow-auto w-full">
-                  <TreeItems nodes={filteredCompanies} />
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+      <div className="relative border rounded-md p-2">
+        <Command className="w-full" dir="rtl">
+          <CommandInput
+            placeholder="חפש חברה..."
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
+          <CommandList className="w-full">
+            <CommandEmpty>לא נמצאו חברות.</CommandEmpty>
+            <CommandGroup className="max-h-[300px] overflow-auto w-full">
+              <TreeItems nodes={filteredCompanies} />
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </div>
 
       <style jsx global>{`
