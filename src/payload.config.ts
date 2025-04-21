@@ -25,7 +25,7 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
-import { logtailTransport } from './lib/logger'
+import { logger } from './lib/logger'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 const filename = fileURLToPath(import.meta.url)
@@ -75,18 +75,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: mongooseAdapter(dbArgs as Args),
-  logger: {
-    destination: logtailTransport({
-      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
-      options: {
-        endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
-      },
-    }),
-    options: {
-      level: 'info',
-    },
-  },
-
+  logger: logger,
   plugins: [
     importExportPlugin({
       collections: ['stocks', 'meetings', 'companies'],
