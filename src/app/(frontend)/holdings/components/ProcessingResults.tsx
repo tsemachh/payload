@@ -31,6 +31,7 @@ export interface ProcessingWarning {
 
 interface ProcessingResultsProps {
   isSuccess: boolean
+  validRecords:HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
@@ -44,6 +45,7 @@ interface ProcessingResultsProps {
 
 export function ProcessingResults({ 
   isSuccess,
+  validRecords,
   recordErrors,
   warnings,
   fatals,
@@ -218,6 +220,32 @@ export function ProcessingResults({
               הרשומות התקינות יישמרו במערכת אם תאשר את ההזנה.
             </AlertDescription>
           </Alert>
+          <div className="mb-6">
+            <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
+              <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
+                <Table className="w-full text-right border-collapse bg-white">
+                  <TableHeader className="bg-green-50 sticky top-0 z-10 text-right">
+                    <TableRow>
+                      <TableHead className="text-right text-green-700 border px-3 py-2">שורה</TableHead>
+                      <TableHead className="text-right text-green-700 border px-3 py-2">נייר ערך</TableHead>
+                      <TableHead className="text-right text-green-700 border px-3 py-2">חשבון</TableHead>
+                      <TableHead className="text-right text-green-700 border px-3 py-2">כמות</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {validRecords.map((record, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="border px-3 py-2">{record.lineNumber || 'N/A'}</TableCell>
+                        <TableCell className="border px-3 py-2">{record.stockId || 'N/A'}</TableCell>
+                        <TableCell className="border px-3 py-2">{record.accountId || 'N/A'}</TableCell>
+                        <TableCell className="border px-3 py-2">{record.quantity || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

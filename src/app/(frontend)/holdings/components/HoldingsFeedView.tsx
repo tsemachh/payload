@@ -42,6 +42,7 @@ export function HoldingsFeedView() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
+  const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [showWarningDialog, setShowWarningDialog] = useState(false)
   const [showConfirmButtons, setShowConfirmButtons] = useState(false)
@@ -84,6 +85,7 @@ export function HoldingsFeedView() {
     setIsValidating(true)
     setShowConfirmButtons(false)
 
+    setvalidRecords([])
     setRecordErrors([])
     setFatals([])
     setWarnings([])
@@ -105,6 +107,7 @@ export function HoldingsFeedView() {
 
       if (response.ok) {
         const feedResults:FeedValidationResult= result.feedResult
+        setvalidRecords(feedResults.validRecords)
         setFatals(feedResults.fatalErrors)
         setWarnings(feedResults.warnings)
         setRecordErrors((feedResults.recordErrors))
@@ -239,6 +242,7 @@ export function HoldingsFeedView() {
       </div>
         <ProcessingResults
             isSuccess={isSuccess}
+            validRecords={validRecords}
             recordErrors={recordErrors}
             warnings={warnings}
             fatals={fatals}
