@@ -39,6 +39,7 @@ interface ProcessingResultsProps {
   className?: string
   showConfirmButtons?: boolean
   onConfirm?: () => void
+  onContinue?: () => void
   onCancel?: () => void
   isValidating?: boolean
   isUploading?: boolean
@@ -53,11 +54,18 @@ export function ProcessingResults({
   className,
   showConfirmButtons = false,
   onConfirm,
+  onContinue,
   onCancel,
   isValidating = false,
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('invalid');
+  const [isFinalized, setIsFinalized] = useState(false);
 
+  const handleFinalConfirm = () => {
+    if (onConfirm) {
+      onConfirm();
+    }    setIsFinalized(true);
+  };
   // Show loading state
   if (isValidating) {
     return (
@@ -74,7 +82,7 @@ export function ProcessingResults({
   }
 
   // Show success state with no errors or warnings
-  if (isSuccess && recordErrors.length === 0 && warnings.length === 0 && fatals.length === 0 && !showConfirmButtons) {
+  if (isFinalized && isSuccess && fatals.length === 0 && !showConfirmButtons) {
     return (
       <div className={className}>
         <Alert className="bg-green-50 border-green-200">
@@ -215,6 +223,20 @@ export function ProcessingResults({
             <AlertDescription className="text-green-600">
               הרשומות התקינות יישמרו במערכת אם תאשר את ההזנה.
             </AlertDescription>
+            {/*<div className="flex justify-end space-x-4 mt-6">*/}
+            {/*  <button*/}
+            {/*    onClick={onCancel}*/}
+            {/*    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md border border-gray-300"*/}
+            {/*  >*/}
+            {/*    לבטל*/}
+            {/*  </button>*/}
+            {/*  <button*/}
+            {/*    onClick={onContinue}*/}
+            {/*    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"*/}
+            {/*  >*/}
+            {/*    להמשיך*/}
+            {/*  </button>*/}
+            {/*</div>*/}
           </Alert>
           <div className="mb-6">
             <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
@@ -255,7 +277,7 @@ export function ProcessingResults({
             לבטל
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleFinalConfirm}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
           >
             לשמור
