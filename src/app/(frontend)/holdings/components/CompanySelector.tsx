@@ -239,25 +239,24 @@ export function CompanyTreeSelector({
   }
 
   // Filter tree based on search query
- const filterTree = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
-  if (!query) return nodes
+  const filterTree = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
+    if (!query) return nodes
 
-  return nodes
-    .map((node) => {
-      const matchesQuery = node.name.toLowerCase().includes(query.toLowerCase())
-      const filteredChildren = node.children ? filterTree(node.children, query) : []
+    return nodes
+      .map((node) => {
+        const matchesQuery = node.name.toLowerCase().includes(query.toLowerCase())
+        const filteredChildren = node.children ? filterTree(node.children, query) : []
 
-      if (matchesQuery || filteredChildren.length > 0) {
-        return {
-          ...node,
-          children: filteredChildren.length > 0 ? filteredChildren : node.children,
+        if (matchesQuery || filteredChildren.length > 0) {
+          return {
+            ...node,
+            children: filteredChildren.length > 0 ? filteredChildren : node.children,
+          }
         }
-      }
-      return null
-    })
-    .filter(Boolean) as TreeNode[]
-}, [])
-
+        return null
+      })
+      .filter(Boolean) as TreeNode[]
+  }, [])
 
   useEffect(() => {
     const newFilteredCompanies = filterTree(companies, searchQuery)
@@ -366,7 +365,7 @@ export function CompanyTreeSelector({
             placeholder="חפש חברה..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-7 px-2 text-sm border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+            className="w-full h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
         </div>
         <div
