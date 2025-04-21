@@ -1,10 +1,9 @@
-import type { CollectionConfig } from 'payload'
+import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
-import { Meeting } from '@/payload-types'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -70,9 +69,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId',
-      'stock',
-      'state'],
+    listSearchableFields: ['magnaId', 'stock', 'state'],
     defaultColumns: [
       'magnaId',
       'invitationLink',
@@ -96,7 +93,7 @@ export const Meetings: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תןכן',
+          label: 'תוכן',
           fields: [
             {
               type: 'row',
@@ -108,7 +105,6 @@ export const Meetings: CollectionConfig = {
                   unique: true,
                   index: true,
                   admin: { hidden: true },
-
                 },
                 {
                   name: 'stock',
@@ -119,15 +115,6 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '30%',
-                  },
-                  hooks: {
-                    afterChange: [
-                       async ({ req, siblingData,  data  }) => {
-                        if (req.context?.from !== 'process' && siblingData?.id) {
-                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
-                        }
-                      },
-                    ],
                   },
                 },
                 {
@@ -226,15 +213,6 @@ export const Meetings: CollectionConfig = {
                       pickerAppearance: 'default',
                     },
                   },
-                  hooks: {
-                    afterChange: [
-                      async ({ req, siblingData,  data  }) => {
-                        if (req.context?.from !== 'process' && siblingData?.id) {
-                          await updateCompaniesMeetingsOnMeetingChange(req, data as Meeting)
-                        }
-                      },
-                    ],
-                  },
                 },
                 {
                   name: 'proxyVotingDate',
@@ -258,7 +236,6 @@ export const Meetings: CollectionConfig = {
                       pickerAppearance: 'dayAndTime',
                     },
                   },
-
                 },
               ],
             },
@@ -276,12 +253,12 @@ export const Meetings: CollectionConfig = {
                   type: 'select',
                   hooks: {
                     beforeChange: [
-              ({ siblingData,value }) => {
+                      ({ siblingData, value }) => {
                         if (value === 'on-hold') {
-                  siblingData.meetingDate =null
+                          siblingData.meetingDate = null
                         }
                         return value
-              }
+                      },
                     ],
                   },
                   interfaceName: 'MeetingState',
@@ -302,7 +279,6 @@ export const Meetings: CollectionConfig = {
               name: 'comments',
               label: 'הערות',
               type: 'textarea',
-
             },
             {
               type: 'row',
@@ -345,6 +321,21 @@ export const Meetings: CollectionConfig = {
       ],
     },
   ],
+  hooks: {
+    afterChange: [
+      async ({ req, doc, previousDoc }) => {
+        const holdingsLimitChanged =
+          previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
+        const stockChanged = previousDoc?.stock !== doc?.stock
+
+        if (holdingsLimitChanged || stockChanged) {
+          if (req.context?.from !== 'process') {
+            await updateCompaniesMeetingsOnMeetingChange(req, doc)
+          }
+        }
+      },
+    ],
+  },
   endpoints: [
     {
       path: '/process-meetings',
