@@ -125,26 +125,23 @@ export function ProcessingResults({
             <AlertTitle className="text-yellow-700">שים לב</AlertTitle>
             <AlertDescription className="text-yellow-600">
               נמצאו {warnings.length} אזהרות. אנא שים לב לאזהרות הבאות:
-
               <ul className="mt-4 space-y-2 list-disc list-inside">
                 {warnings.map((warning, index) => (
-                  <li key={index}>
-              <span className="text-yellow-700">
-                {warning.type && <strong>{warning.type}: </strong>}
-                {warning.message}
-                {warning.count && <span> ({warning.count})</span>}
-              </span>
+                  <li key={index} className="text-yellow-700">
+                    {warning.message}
+                    {warning.count && <span> ({warning.count})</span>}
 
                     {warning.details && warning.details.length > 0 && (
-                      <ul className="mt-1 list-disc list-inside ml-4">
+                      <ul className="mt-2 list-disc list-inside ps-6 text-yellow-600">
                         {warning.details.map((detail, idx) => (
-                          <li key={idx} className="text-yellow-600">{detail}</li>
+                          <li key={idx} className="text-sm">{detail}</li>
                         ))}
                       </ul>
                     )}
                   </li>
                 ))}
               </ul>
+
             </AlertDescription>
           </Alert>
         </div>
