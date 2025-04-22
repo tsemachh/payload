@@ -390,7 +390,7 @@ export function CompanyTreeSelector({
         </div>
         <div
           ref={treeContainerRef}
-          className={cn('w-full', shouldScroll ? 'max-h-[calc(100vh-150px)] overflow-auto' : '')}
+          className={cn('w-full', shouldScroll ? 'max-h-[calc(100vh-350px)] overflow-auto' : '')}
         >
           {filteredCompanies.length > 0 ? (
             <TreeItems nodes={filteredCompanies} />

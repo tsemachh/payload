@@ -92,9 +92,9 @@ export function HoldingsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:space-x-6 md:space-x-reverse">
-        <div className="w-full md:w-3/10">
-          <label className="text-sm font-medium mb-2 block">חברות</label>
+      <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+        <div>
+          <label className="text-base font-semibold mb-2 block">חברות</label>
           <CompanyTreeSelector
             companies={companies}
             selectedCompanies={selectedCompanies}
@@ -103,24 +103,24 @@ export function HoldingsView() {
           />
         </div>
 
-        <div className="w-full md:w-1/10">
-          <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
-          <DateSelector 
-            date={date}
-            onDateChange={setDate}
-            className="w-full"
-          />
+        <div>
+          <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+          <DateSelector date={date} onDateChange={setDate} className="w-full" />
         </div>
+      </div>
 
-        <div className="w-full md:flex-1 flex items-end">
-          <Button
-            onClick={fetchHoldings}
-            disabled={!date || selectedCompanies.length === 0 || isLoading}
-            className="mb-[22px]"
-          >
-            {isLoading ? 'טוען...' : 'טען אחזקות'}
-          </Button>
-        </div>
+      <div className="flex justify-center mt-6">
+        <Button
+          onClick={!date || selectedCompanies.length === 0 || isLoading ? () => {} : fetchHoldings}
+          className="px-40"
+          style={
+            !date || selectedCompanies.length === 0 || isLoading
+              ? { cursor: 'not-allowed', opacity: 0.5 }
+              : {}
+          }
+        >
+          {isLoading ? 'טוען...' : 'טען אחזקות'}
+        </Button>
       </div>
 
       <div className="flex justify-between items-center mt-8">
