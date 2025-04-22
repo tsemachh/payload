@@ -199,18 +199,40 @@ const checkFeedWarnings = async (
       })
     }
 
-    const currentAccounts = new Set<string>(accountIds.map((id) => id.toString()))
-    const previousAccounts = JSON.parse(previousFeed.accountsJson as string)
+    const currentAccounts = new Set<string>(accountIds.map((id) => id.toString()));
 
-    const missingAccounts = [...previousAccounts].filter((account) => !currentAccounts.has(account))
+    const previousAccountsArray = (JSON.parse(previousFeed.accountsJson as string) as number[]).map(String);
+    const previousAccounts = new Set<string>(previousAccountsArray);
+
+// חשבונות שהיו קודם ועכשיו חסרים
+    const missingAccounts = previousAccountsArray.filter(
+      (account) => !currentAccounts.has(account)
+    );
+
+// חשבונות שעכשיו קיימים אבל לא היו קודם
+    const extraAccounts = [...currentAccounts].filter(
+      (account) => !previousAccounts.has(account)
+    );
+
+// אזהרות
     if (missingAccounts.length > 0) {
       warnings.push({
         type: 'missingAccounts',
         message: 'חשבונות חסרים בהשוואה להזנה קודמת',
         details: missingAccounts,
         count: missingAccounts.length,
-      })
+      });
     }
+
+    if (extraAccounts.length > 0) {
+      warnings.push({
+        type: 'missingAccounts',
+        message: 'נמצאו חשבונות חדשים שלא הופיעו בהזנה הקודמת',
+        details: extraAccounts,
+        count: extraAccounts.length,
+      });
+    }
+
   }
 
   return warnings
@@ -544,7 +566,7 @@ export const processHoldingsFeedCsv = async (
     }
 
     // Parse the file content
-    const results = parseFileContent(file)
+    const results = parseFileContent(file).filter(row => row.length > 0);
 
     // Validate the whole feed
     const fatalErrors = validateWholeFeed(results)
