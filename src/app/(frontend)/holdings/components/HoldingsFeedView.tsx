@@ -40,7 +40,7 @@ export function HoldingsFeedView() {
     }
     return []
   })
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [date, setDate] = useState<Date | undefined>()
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
@@ -85,6 +85,15 @@ export function HoldingsFeedView() {
       return
     }
 
+    if (date && (date.getDay() === 5 || date.getDay() === 6)) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לבחור תאריך שהוא יום שישי או שבת',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (selectedCompanies.length === 0) {
       toast({
         title: 'שגיאה',
@@ -118,14 +127,13 @@ export function HoldingsFeedView() {
       setIsValidating(false)
 
       if (response.ok) {
-        const feedResults:FeedValidationResult= result.feedResult
+        const feedResults: FeedValidationResult = result.feedResult
         setvalidRecords(feedResults.validRecords)
         setFatals(feedResults.fatalErrors)
         setWarnings(feedResults.warnings)
-        setRecordErrors((feedResults.recordErrors))
+        setRecordErrors(feedResults.recordErrors)
 
-        if (feedResults.fatalErrors.length == 0)
-          setShowConfirmButtons(true)
+        if (feedResults.fatalErrors.length == 0) setShowConfirmButtons(true)
       } else {
         setIsSuccess(false)
         toast({
@@ -150,13 +158,13 @@ export function HoldingsFeedView() {
   // Second step: save the validated file
   const handleSaveConfirmed = async () => {
     if (!date || !file) {
-      return;
+      return
     }
 
-    setIsUploading(true);
+    setIsUploading(true)
 
     try {
-      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formattedDate = format(date, 'yyyy-MM-dd')
 
       // Save the file (validateOnly=false)
       const response = await fetch(
@@ -165,46 +173,46 @@ export function HoldingsFeedView() {
           method: 'POST',
           body: file,
         },
-      );
+      )
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (response.ok) {
-        setIsSuccess(true);
-        setShowConfirmButtons(false);
+        setIsSuccess(true)
+        setShowConfirmButtons(false)
         toast({
           title: 'הצלחה',
           description: 'קובץ האחזקות נשמר בהצלחה',
           variant: 'default',
-        });
+        })
       } else {
-        setIsSuccess(false);
+        setIsSuccess(false)
         toast({
           title: 'שגיאה בשמירת הקובץ',
           description: result.error || 'אירעה שגיאה בשמירת הקובץ',
           variant: 'destructive',
-        });
+        })
       }
     } catch (error) {
-      setIsSuccess(false);
-      console.error('Error saving file:', error);
+      setIsSuccess(false)
+      console.error('Error saving file:', error)
       toast({
         title: 'שגיאה בשמירת הקובץ',
         description: 'אירעה שגיאה בשמירת הקובץ',
         variant: 'destructive',
-      });
+      })
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   // Cancel the upload
   const handleCancel = () => {
-    setShowConfirmButtons(false);
-    setRecordErrors([]);
-    setWarnings([]);
-    setFile(null);
-  };
+    setShowConfirmButtons(false)
+    setRecordErrors([])
+    setWarnings([])
+    setFile(null)
+  }
 
   const handleConfirmWarning = () => {
     setShowWarningDialog(false)
@@ -231,7 +239,15 @@ export function HoldingsFeedView() {
 
         <div className="">
           <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-          <DateSelector date={date} onDateChange={setDate} className="w-full" />
+          <DateSelector
+            date={date}
+            onDateChange={setDate}
+            className="w-full"
+            filterDate={(date) => {
+              const day = date.getDay()
+              return day == 5 || day == 6
+            }}
+          />
         </div>
 
         <div className="">
