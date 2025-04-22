@@ -145,7 +145,7 @@ const checkFeedWarnings = async (
     where: {
       valueDate: { equals: new Date(valueDate).toISOString() },
       selectedCompanies: {
-        equals: selectedCompanies as string[],
+        equals: selectedCompanies.toString(),
       },
     },
   })
@@ -651,9 +651,7 @@ async function deleteExistingHoldings(
   await req.payload.delete({
     collection: 'holdings',
     where: {
-      valueDate: {
-        equals: valueDate,
-      },
+      valueDate: { equals: new Date(valueDate).toISOString() },
       company: {
         in: companies,
       },
@@ -667,7 +665,7 @@ async function deleteExistingHoldings(
         equals: valueDate,
       },
       selectedCompanies: {
-        equals: companies,
+        equals: companies.toString(),
       },
     },
   })
@@ -684,7 +682,7 @@ async function getPreviousFeed(
     where: {
       valueDate: { less_than: new Date(currentDate).toISOString() },
       selectedCompanies: {
-        equals: selectedCompanies,
+        equals: selectedCompanies.toString(),
       },
     },
     sort: '-valueDate',

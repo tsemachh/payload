@@ -26,8 +26,8 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
-/*import mongoose from 'mongoose';
-mongoose.set('debug', true);*/
+import mongoose from 'mongoose';
+mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
