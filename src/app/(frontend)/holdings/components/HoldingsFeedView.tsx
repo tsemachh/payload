@@ -22,11 +22,16 @@ import {
 import { AlertCircle } from 'lucide-react'
 import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
-import { FeedFatalError, FeedValidationResult, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
+import {
+  FeedFatalError,
+  FeedValidationResult,
+  FeedWarning,
+} from '@/collections/holdings/feeds/processHoldingsFeedCsv'
 
 export function HoldingsFeedView() {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<TreeNode[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => {
     // Load selected companies from localStorage on component mount
     if (typeof window !== 'undefined') {
@@ -53,6 +58,7 @@ export function HoldingsFeedView() {
       // Transform the flat company structure into a hierarchical tree
       const transformedCompanies = transformCompaniesToTree(user.companies)
       setCompanies(transformedCompanies)
+      setIsLoading(false)
     }
     if (user?.leafCompanies) {
       const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
@@ -219,6 +225,7 @@ export function HoldingsFeedView() {
             selectedCompanies={selectedCompanies}
             onSelectionChange={setSelectedCompanies}
             className="w-full"
+            isLoading={isLoading}
           />
         </div>
 
@@ -250,19 +257,19 @@ export function HoldingsFeedView() {
           {isUploading ? 'מעלה...' : 'הזן אחזקות'}
         </Button>
       </div>
-        <ProcessingResults
-            isSuccess={isSuccess}
-            validRecords={validRecords}
-            recordErrors={recordErrors}
-            warnings={warnings}
-            fatals={fatals}
-            className="mt-16"
-            showConfirmButtons={showConfirmButtons}
-            onConfirm={handleSaveConfirmed}
-            onCancel={handleCancel}
-            isValidating={isValidating}
-            isUploading={isUploading}
-        />
-      </div>
+      <ProcessingResults
+        isSuccess={isSuccess}
+        validRecords={validRecords}
+        recordErrors={recordErrors}
+        warnings={warnings}
+        fatals={fatals}
+        className="mt-16"
+        showConfirmButtons={showConfirmButtons}
+        onConfirm={handleSaveConfirmed}
+        onCancel={handleCancel}
+        isValidating={isValidating}
+        isUploading={isUploading}
+      />
+    </div>
   )
-  }
+}
