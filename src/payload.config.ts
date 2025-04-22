@@ -25,6 +25,7 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
+import { logger } from './lib/logger'
 import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
@@ -67,7 +68,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed,MeetingsFeed],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed,HoldingsFeed,MeetingsFeed],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -75,18 +76,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: mongooseAdapter(dbArgs as Args),
-  logger: {
-    destination: logtailTransport({
-      sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
-      options: {
-        endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
-      },
-    }),
-    options: {
-      level: 'info',
-    },
-  },
-
+  logger: logger,
   plugins: [
     importExportPlugin({
       collections: ['stocks', 'meetings', 'companies'],

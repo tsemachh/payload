@@ -357,7 +357,7 @@ resource "google_compute_backend_service" "payload_backend" {
   port_name = "http"  
 
   session_affinity = "NONE"
-  timeout_sec      = 30
+  timeout_sec      = 600  # Increased from 30 to 600 seconds to handle longer-running requests
 
 }
 
