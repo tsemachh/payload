@@ -143,14 +143,15 @@ const checkFeedWarnings = async (
   const existingHoldings = await req.payload.find({
     collection: 'holdings-feed',
     where: {
-      valueDate: {
-        equals: valueDate,
-      },
+      valueDate: { equals: new Date(valueDate).toISOString() },
       selectedCompanies: {
         equals: selectedCompanies as string[],
       },
     },
   })
+  console.log("-----selectedCompanies",selectedCompanies)
+
+  console.log("-----existingHoldings",existingHoldings)
   if (existingHoldings.docs.length > 0) {
     warnings.push({
       type: 'duplicateFeedForDate',
@@ -158,6 +159,7 @@ const checkFeedWarnings = async (
       count: existingHoldings.docs.length,
     })
   }
+  console.log("-----existingHoldings")
 
   // Check for unknown accounts
   const unknownAccounts: string[] = []
@@ -169,6 +171,7 @@ const checkFeedWarnings = async (
       }
     }
   })
+  console.log("-----unknownAccounts",unknownAccounts)
 
   if (unknownAccounts.length > 0) {
     warnings.push({
@@ -182,7 +185,7 @@ const checkFeedWarnings = async (
   // Check for line count difference compared to previous feed
   const previousFeed = await getPreviousFeed(req, valueDate, selectedCompanies)
   if (previousFeed) {
-    const previousCount = previousFeed.processingErrors?.length || 0
+    const previousCount = previousFeed.processingResults?.length || 0
     const currentCount = standardizedRows.length
     const percentDifference =
       previousCount > 0 ? (Math.abs(currentCount - previousCount) / previousCount) * 100 : 0
@@ -600,7 +603,7 @@ export const processHoldingsFeedCsv = async (
     })
 
     // Combine line errors and feed errors
-    doc.processingErrors = [...lineErrors]
+    doc.processingResults = [...lineErrors]
     doc.accountsJson = JSON.stringify(uniqueAccountIds)
 
     // If this is a validation-only request, update the document and return
@@ -679,9 +682,7 @@ async function getPreviousFeed(
   const holdings = await req.payload.find({
     collection: 'holdings-feed',
     where: {
-      valueDate: {
-        less_than: currentDate,
-      },
+      valueDate: { less_than: new Date(currentDate).toISOString() },
       selectedCompanies: {
         equals: selectedCompanies,
       },
@@ -690,7 +691,7 @@ async function getPreviousFeed(
     depth: 0,
     limit: 1,
   })
-
+  console.log("-----prev holdings",holdings)
   if (holdings.docs.length > 0) {
     return holdings.docs[0]
   }

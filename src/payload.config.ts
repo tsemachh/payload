@@ -27,6 +27,7 @@ import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
+import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 /*import mongoose from 'mongoose';
 mongoose.set('debug', true);*/
 const filename = fileURLToPath(import.meta.url)
@@ -68,7 +69,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed, HoldingsFeed, SilencedStocks],
+  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed,HoldingsFeed,MeetingsFeed,SilencedStocks],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

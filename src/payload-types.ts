@@ -76,6 +76,7 @@ export type RolePermissions =
         | 'stocks-feed'
         | 'holdings-feed'
         | 'silenced-stocks'
+        | 'meetings-feed'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -163,6 +164,7 @@ export interface Config {
     'stock-migration-mapping': StockMigrationMapping;
     'stocks-feed': StocksFeed;
     'holdings-feed': HoldingsFeed;
+    'meetings-feed': MeetingsFeed;
     'silenced-stocks': SilencedStock;
     exports: Export;
     'payload-jobs': PayloadJob;
@@ -199,7 +201,6 @@ export interface Config {
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
     'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
-    'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -546,7 +547,7 @@ export interface HoldingsFeed {
   comments?: string | null;
   selectedCompanies?: (string | Company)[] | null;
   processingStatus?: ('pending' | 'completed' | 'failed') | null;
-  processingErrors?:
+  processingResults?:
     | {
         line?: HoldingFeedLine;
         id?: string | null;
@@ -578,19 +579,6 @@ export interface HoldingFeedLine {
   quantity?: number | null;
   lineNumber?: number | null;
   status?: ('error' | 'success') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "silenced-stocks".
- */
-export interface SilencedStock {
-  id: string;
-  stockId: string;
-  companies?: (string | Company)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -779,10 +767,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'holdings-feed';
         value: string | HoldingsFeed;
-      } | null)
-    | ({
-        relationTo: 'silenced-stocks';
-        value: string | SilencedStock;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1155,7 +1139,7 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
   comments?: T;
   selectedCompanies?: T;
   processingStatus?: T;
-  processingErrors?:
+  processingResults?:
     | T
     | {
         line?: T | HoldingFeedLineSelect<T>;
@@ -1187,18 +1171,6 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
   quantity?: T;
   lineNumber?: T;
   status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "silenced-stocks_select".
- */
-export interface SilencedStocksSelect<T extends boolean = true> {
-  stockId?: T;
-  companies?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
