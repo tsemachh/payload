@@ -242,20 +242,6 @@ export function ProcessingResults({
             <AlertDescription className="text-green-600">
               הרשומות התקינות יישמרו במערכת אם תאשר את ההזנה.
             </AlertDescription>
-            {/*<div className="flex justify-end space-x-4 mt-6">*/}
-            {/*  <button*/}
-            {/*    onClick={onCancel}*/}
-            {/*    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md border border-gray-300"*/}
-            {/*  >*/}
-            {/*    לבטל*/}
-            {/*  </button>*/}
-            {/*  <button*/}
-            {/*    onClick={onContinue}*/}
-            {/*    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"*/}
-            {/*  >*/}
-            {/*    להמשיך*/}
-            {/*  </button>*/}
-            {/*</div>*/}
           </Alert>
           <div className="mb-6">
             <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
