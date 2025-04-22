@@ -36,23 +36,24 @@ export async function getStockValues(pool: sql.ConnectionPool) {
   // Query the last 30 days of data
   console.log('Executing SQL query for last 30 days of stock data...')
   const resultStockValues = await pool.request().query(`
-        SELECT stockID,
-               name,
-               symbol,
-               type,
-               closingRate,
-               marketValue,
-               registeredValue,
-               valueDate,
-               logUpdateID,
-               longName
-        FROM [dbEmda].[dbo].[stocks]
-        WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
-        ORDER BY valueDate ASC;
-    `)
+      SELECT stockID,
+             name,
+             symbol,
+             type,
+             closingRate,
+             marketValue,
+             registeredValue,
+             valueDate,
+             logUpdateID,
+             longName
+      FROM [dbEmda].[dbo].[stocks]
+      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
+      ORDER BY valueDate ASC;
+  `)
   console.log(`Retrieved ${resultStockValues.recordset.length} records from SQL Server`)
   return resultStockValues
 }
+
 export async function getPredictaStockIds(pool: sql.ConnectionPool) {
   return getStockIdsByUpdateId(pool, await getLatestStockPredictaLogId(pool))
 }
@@ -95,6 +96,7 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
   }
   return stocks
 }
+
 export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateId: string) {
   const request = pool.request()
   request.input('logUpdateId', sql.VarChar, logUpdateId)
@@ -111,6 +113,7 @@ export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateI
   }
   return stocks
 }
+
 export async function getStockRelations(pool: sql.ConnectionPool, payload: Payload) {
   const stockRelationResult = await pool.request().query(`
       SELECT [Id1], [Id2]
@@ -141,7 +144,7 @@ export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, user
   const request = pool.request()
   request.input('userId', sql.Int, userId)
   const res = await request.query(`
-      SELECT TOP(1)[id]
+      SELECT TOP (1) [id]
       FROM [dbEmda].[dbo].[stockupdatelog]
       WHERE userID = @userId
       ORDER BY id DESC    `)
@@ -247,6 +250,7 @@ export async function upsertStockFromImport(
     const newStock = await req.payload.create({
       collection: 'stocks',
       data: stockData as Stock,
+      req,
     })
     return newStock.id
   } else {
@@ -255,10 +259,11 @@ export async function upsertStockFromImport(
       stock.name != stockData.name ||
       (stockData.longName && stock.longName != stockData.longName)
     ) {
-      await req.payload.update({
+      req.payload.update({
         collection: 'stocks',
         id: stock.id,
         data: { name: stockData.name, longName: stockData.longName },
+        req,
       })
     }
     return stock.id
@@ -281,16 +286,46 @@ export async function upsertStockValueFromImport(
   const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-    await req.payload.update({
+    req.payload.update({
       collection: 'stock-values',
       id: valueId,
       data: stockValue as StockValue,
+      req,
     })
   } else {
     // Insert into Payload CMS
-    await req.payload.create({
+    req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
+      req,
     })
   }
+}
+
+/**
+ * Creates a map of stocks with stockId as the key and the stock object as the value
+ * @param req PayloadRequest object
+ * @param origin Origin of the stocks to fetch (default: "TASE")
+ * @returns Map of stocks with stockId as the key and the stock object as the value
+ */
+export async function createStocksMap(
+  req: PayloadRequest,
+  origin: StockOrigin = 'TASE',
+): Promise<Map<string, Stock>> {
+  const stockMap: Map<string, Stock> = new Map()
+  const stocksResult = await req.payload.find({
+    collection: 'stocks',
+    where: {
+      origin: { equals: origin },
+      tradable: { equals: true },
+    },
+    depth: 0,
+    limit: 0,
+    req,
+  })
+  stocksResult.docs.forEach((stock: Stock) => {
+    const stockKey = stock?.stockId
+    stockMap.set(stockKey, stock)
+  })
+  return stockMap
 }
