@@ -1,7 +1,9 @@
 import { Transform } from 'stream'
 import { Logtail } from '@logtail/node'
-import { Context, LogLevel, ILogtailOptions, StackContextHint } from '@logtail/types'
+import { Context, ILogtailOptions, LogLevel, StackContextHint } from '@logtail/types'
 import { getLogLevel } from './helpers'
+import os from 'os'
+import { pino } from 'pino'
 
 export interface IPinoLogtailOptions {
   sourceToken: string
@@ -14,7 +16,13 @@ const stackContextHint = {
   required: true,
 }
 
-export function logtailTransport(options: IPinoLogtailOptions) {
+export function logtailTransport() {
+  const options:IPinoLogtailOptions ={
+    sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
+    options: {
+      endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
+    },
+  }
   const logtail = new Logtail(options.sourceToken, options.options)
   const write = async (obj: any) => {
     const object = JSON.parse(obj)
@@ -47,12 +55,36 @@ export function logtailTransport(options: IPinoLogtailOptions) {
     await logtail.flush()
   }
 
-  const stream = new Transform({
+  return new Transform({
     objectMode: true,
     transform(chunk, encoding, callback) {
       write(chunk).then(() => callback())
     },
   })
-
-  return stream
 }
+
+export function createPinoBaseConfig() {
+  let username
+  try {
+    username = os.userInfo().username
+  } catch (error) {
+    username = process.env.USER || process.env.USERNAME || 'unknown'
+  }
+
+  return {
+    base: {
+      user: username,
+      hostname: os.hostname(), // Adds the computer name to every log
+      env: process.env.NODE_ENV || 'development', // Optionally include NODE_ENV
+    },
+    level: process.env.LOG_LEVEL || 'debug',
+  }
+}
+
+// Create and export the logger instance
+const baseConfig = createPinoBaseConfig()
+const streams = [
+  {level: 'info', stream: logtailTransport()},
+  {level: 'info', stream: process.stdout},
+]
+export const logger =pino(baseConfig, pino.multistream(streams))

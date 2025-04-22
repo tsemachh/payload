@@ -61,9 +61,9 @@ export const HoldingsFeed: CollectionConfig = {
       defaultValue: 'pending',
     },
     {
-      name: 'processingErrors',
+      name: 'processingResults',
       type: 'array',
-      label: 'שגיאות עיבוד',
+      label: 'תוצאות עיבוד',
       admin: {
         readOnly: true,
       },
@@ -101,10 +101,10 @@ export const HoldingsFeed: CollectionConfig = {
             {
               name: 'status',
               type: 'select',
-              options: ['error','success']
-            }
+              options: ['error', 'success'],
+            },
           ],
-        },
+        }
       ],
     },
     {

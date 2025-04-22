@@ -12,6 +12,7 @@ export const columns: Column<Holding>[] = [
     header: 'חברה',
     type: 'string',
     minWidth: 150,
+    width:350,
     filterable: true,
   },
   {
@@ -19,6 +20,7 @@ export const columns: Column<Holding>[] = [
     header: 'מספר נייר ערך',
     type: 'string',
     minWidth: 120,
+    width:100,
     filterable: true,
   },
   {
@@ -26,6 +28,7 @@ export const columns: Column<Holding>[] = [
     header: 'כמות',
     type: 'number',
     minWidth: 100,
+    width:100,
     filterable: false,
     render: (row) => (
       <span className="text-right">{row.quantity.toLocaleString()}</span>
@@ -36,6 +39,7 @@ export const columns: Column<Holding>[] = [
     header: 'עדכון אחרון',
     type: 'datetime',
     minWidth: 150,
+    width:200,
     filterable: true,
   },
 ]

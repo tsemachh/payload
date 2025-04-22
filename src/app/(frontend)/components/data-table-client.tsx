@@ -952,7 +952,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <React.Fragment key={row.meetingId}>
+                  <React.Fragment key={row.meetingId+uuidv4()}>
                     <TableRow key={uuidv4()} className="group hover:bg-primary/20">
                       {visibleColumns.map((column) => (
                         <TableCell
