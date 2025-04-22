@@ -543,7 +543,7 @@ export interface HoldingsFeed {
   comments?: string | null;
   selectedCompanies?: (string | Company)[] | null;
   processingStatus?: ('pending' | 'completed' | 'failed') | null;
-  processingErrors?:
+  processingResults?:
     | {
         line?: HoldingFeedLine;
         id?: string | null;
@@ -1135,7 +1135,7 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
   comments?: T;
   selectedCompanies?: T;
   processingStatus?: T;
-  processingErrors?:
+  processingResults?:
     | T
     | {
         line?: T | HoldingFeedLineSelect<T>;
