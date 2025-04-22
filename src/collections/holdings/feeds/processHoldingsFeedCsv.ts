@@ -145,10 +145,11 @@ const checkFeedWarnings = async (
     where: {
       valueDate: { equals: new Date(valueDate).toISOString() },
       selectedCompanies: {
-        equals: selectedCompanies.toString(),
+        contains: selectedCompanies
       },
     },
   })
+  debugger
   console.log("-----selectedCompanies",selectedCompanies)
 
   console.log("-----existingHoldings",existingHoldings)
@@ -665,7 +666,7 @@ async function deleteExistingHoldings(
         equals: valueDate,
       },
       selectedCompanies: {
-        equals: companies.toString(),
+        contains: companies,
       },
     },
   })
@@ -682,7 +683,7 @@ async function getPreviousFeed(
     where: {
       valueDate: { less_than: new Date(currentDate).toISOString() },
       selectedCompanies: {
-        equals: selectedCompanies.toString(),
+        contains: selectedCompanies,
       },
     },
     sort: '-valueDate',
