@@ -4,7 +4,6 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
-import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 
 const PropsManualLink: IconLinkProps = {

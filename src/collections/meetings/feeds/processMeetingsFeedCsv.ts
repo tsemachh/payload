@@ -2,7 +2,9 @@ import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import iconv from 'iconv-lite'
 import { getSequenceStockId } from '@/utils/utils'
+import { parseDateString } from '@/utils/dateUtils'
 import { MeetingState, MeetingType } from '@/payload-types'
+
 export const meetingTypesMap: Map<string, MeetingType> = new Map([
   ['אסיפה מיוחדת', 'מיוחדת'],
   ['אסיפה שנתית', 'שנתית'],
@@ -38,46 +40,26 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
     // Read the file content
     const csvData = iconv.decode(file.data, 'windows-1255')
-    const results = csvToJson.fieldDelimiter('').csvStringToJson(csvData)
-    results.forEach((item) => {
-      Object.keys(item).forEach((key) => {
-        if (typeof item[key] === 'string') {
-          item[key] = item[key].trim()
+
+    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
+    const rows: any[] = results.map((data) => {
+      try {
+        return {
+          type: getMeetingType(data.MeetingType || '') as MeetingType,
+          magnaId: data.ProofId || '',
+          stock: data.stockID || '',
+          meetingDate: data.mdate != '' ? parseDateString(data.mdate) : null,
+          holdingsLimit: data.sdate != '' ? parseDateString(data.sdate) : null,
+          location: data.location || '',
+          state: getMeetingState(data.state || '') as MeetingState,
+          _status: 'draft',
         }
-      })
+      }catch (e) {
+          //TODO Aggeragte Error and report at the end
+      }
     })
-    // Convert JSON data  format
-    results.shift()
-    results.shift()
-    results.pop()
-    const key = Object.keys(results[0])[0]
-    const headers = results[0][key].split('\t')
-    const dataObjects = results.slice(1).map((row) => {
-      const values = row[key].split('\t')
-      const obj: { [key: string]: string } = {}
-      headers.forEach((field: any, i: any) => {
-        obj[field] = values[i]?.trim() || ''
-      })
-      return obj
-    })
-    const requiredFields = ['ProofId', 'mdate', 'sdate', 'stockID', 'location', 'MeetingType']
-    const missingColumns = requiredFields.filter((field) => !headers.includes(field))
-    if (missingColumns.length > 0) {
-      req.payload.logger.error(
-        `שגיאה: קובץ ה-CSV חסר את העמודות הקריטיות הבאות: ${missingColumns.join(', ')}`,
-      )
-      return
-    }
-    const rows: any[] = dataObjects.map((data) => ({
-      type: getMeetingType(data.MeetingType || '') as MeetingType,
-      magnaId: data.ProofId || '',
-      stock: data.stockID || '',
-      meetingDate: data.mdate || '',
-      holdingsLimit: data.sdate || '',
-      location: data.location || '',
-      state: getMeetingState(data.state || '') as MeetingState,
-      _status: 'draft',
-    }))
+    debugger
+
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
     // Process each row
@@ -88,10 +70,10 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         const stockId = await getSequenceStockId(req.payload, row.stock)
         if (stockId === null) {
           console.log("Stockid can't be found:", row.stockID)
+          //TODO Aggeragte Error and report at the end
+          continue
         }
         row.stock = stockId
-        // const meetingDate = new Date(row.meetingDate)
-        // row.meetingDate = meetingDate
         await req.payload.create({
           collection: 'meetings',
           data: row,
