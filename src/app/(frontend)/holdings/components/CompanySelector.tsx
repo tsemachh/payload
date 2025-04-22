@@ -3,7 +3,7 @@
 import type React from 'react'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronDown, ChevronLeft } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Loader2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +18,7 @@ interface CompanyTreeSelectorProps {
   selectedCompanies: string[]
   onSelectionChange: (selected: string[]) => void
   className?: string
+  isLoading?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -25,6 +26,7 @@ export function CompanyTreeSelector({
   selectedCompanies,
   onSelectionChange,
   className,
+  isLoading = false,
 }: CompanyTreeSelectorProps) {
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -386,13 +388,18 @@ export function CompanyTreeSelector({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+            disabled={isLoading}
           />
         </div>
         <div
           ref={treeContainerRef}
           className={cn('w-full', shouldScroll ? 'max-h-[calc(100vh-350px)] overflow-auto' : '')}
         >
-          {filteredCompanies.length > 0 ? (
+          {isLoading ? (
+            <div className="py-8 flex justify-center items-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredCompanies.length > 0 ? (
             <TreeItems nodes={filteredCompanies} />
           ) : (
             <div className="py-6 text-center text-sm text-gray-500">לא נמצאו חברות.</div>
