@@ -7,7 +7,12 @@ async function getLeafCompanies(company:Company|string,req:PayloadRequest):Promi
   let leafCompanies:string[]=[]
   let theCompany:Company
   if (typeof company === "string"){
-    theCompany=await getCollectionDoc(req,"companies",company)as Company
+    try {
+      theCompany=await getCollectionDoc(req,"companies",company)as Company
+    }catch (e) {
+      console.log("Error in getting company",e)
+      return []
+    }
   }else {
     theCompany = company as Company
   }

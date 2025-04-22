@@ -87,14 +87,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateAccountCompaniesToCompanies({ payload, req })
     console.log('=== Account Companies To Companies Migration Completed ===\n')
 
-    // 8. Migrate Holdings
+    // 11. Migrate Holdings
     console.log('\n=== Starting Holdings Migration ===')
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
 
-    // 9. Process Meeting companies
+    // 12. Process Meeting companies
     //TODO
 
+    //  13. Process silenced stocks - match them to companies
+    //TODO
     console.log('migrateAll process completed successfully!')
   } catch (error) {
     console.error('Error during migrateAll process:', error)
