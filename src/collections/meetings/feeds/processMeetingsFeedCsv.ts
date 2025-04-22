@@ -2,7 +2,7 @@ import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import iconv from 'iconv-lite'
 import { getSequenceStockId } from '@/utils/utils'
-import { MeetingType } from '@/payload-types'
+import { MeetingState, MeetingType } from '@/payload-types'
 export const meetingTypesMap: Map<string, MeetingType> = new Map([
   ['אסיפה מיוחדת', 'מיוחדת'],
   ['אסיפה שנתית', 'שנתית'],
@@ -15,7 +15,18 @@ export const meetingTypesMap: Map<string, MeetingType> = new Map([
 export function getMeetingType(rowType: string): MeetingType {
   return meetingTypesMap.get((rowType || '').trim()) || 'מיוחדת'
 }
+export const meetingStateMap: Map<string, MeetingState> = new Map([
+  ['מתוכננת', 'scheduled'],
+  ['התקיימה', 'completed'],
+  ['נדחית', 'postponed'],
+  ['נדחית ללא מועד', 'on-hold'],
+  ['נמשכת', 'ongoing'],
+  ['בוטלה', 'cancelled'],
+])
 
+export function getMeetingState(stateLabel: string): MeetingState {
+  return meetingStateMap.get((stateLabel || '').trim()) || 'scheduled'
+}
 export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<void> => {
   try {
     // The file is at req.file as specified in the issue description
@@ -27,8 +38,6 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
     // Read the file content
     const csvData = iconv.decode(file.data, 'windows-1255')
-    //const csvData = file.data.toString('utf8')
-    // Parse the CSV file using csvToJson as specified in the issue description
     const results = csvToJson.fieldDelimiter('').csvStringToJson(csvData)
     results.forEach((item) => {
       Object.keys(item).forEach((key) => {
@@ -37,9 +46,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         }
       })
     })
-    // const valueDate = parseDate(results[0].security_id)
-    // console.log('valueDate:', valueDate)
-    // Convert JSON data to ImportStock format
+    // Convert JSON data  format
     results.shift()
     results.shift()
     results.pop()
@@ -53,7 +60,14 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       })
       return obj
     })
-
+    const requiredFields = ['ProofId', 'mdate', 'sdate', 'stockID', 'location', 'MeetingType']
+    const missingColumns = requiredFields.filter((field) => !headers.includes(field))
+    if (missingColumns.length > 0) {
+      req.payload.logger.error(
+        `שגיאה: קובץ ה-CSV חסר את העמודות הקריטיות הבאות: ${missingColumns.join(', ')}`,
+      )
+      return
+    }
     const rows: any[] = dataObjects.map((data) => ({
       type: getMeetingType(data.MeetingType || '') as MeetingType,
       magnaId: data.ProofId || '',
@@ -61,6 +75,8 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       meetingDate: data.mdate || '',
       holdingsLimit: data.sdate || '',
       location: data.location || '',
+      state: getMeetingState(data.state || '') as MeetingState,
+      _status: 'draft',
     }))
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
@@ -74,8 +90,8 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           console.log("Stockid can't be found:", row.stockID)
         }
         row.stock = stockId
-        const meetingDate = new Date(row.meetingDate)
-        row.meetingDate = meetingDate
+        // const meetingDate = new Date(row.meetingDate)
+        // row.meetingDate = meetingDate
         await req.payload.create({
           collection: 'meetings',
           data: row,
