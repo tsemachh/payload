@@ -7,6 +7,9 @@ import { DayPicker } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
+import { he } from "date-fns/locale"
+import { format } from "date-fns"
+
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
 function Calendar({
@@ -18,6 +21,11 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      locale={he}
+      formatters={{
+        formatCaption: (date) => format(date, "LLLL yyyy", { locale: he }),
+        formatWeekdayName: (date) => format(date, "EEEEEE", { locale: he }),
+      }}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
