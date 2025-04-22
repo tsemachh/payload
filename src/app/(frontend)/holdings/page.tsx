@@ -17,8 +17,8 @@ export default function Holdings() {
         dir="rtl"
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="view">צפייה באחזקות</TabsTrigger>
           <TabsTrigger value="feed">הזנת אחזקות</TabsTrigger>
+          <TabsTrigger value="view">צפייה באחזקות</TabsTrigger>
         </TabsList>
         
         <TabsContent value="feed" className="mt-6">

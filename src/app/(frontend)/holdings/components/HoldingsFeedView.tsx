@@ -210,41 +210,45 @@ export function HoldingsFeedView() {
   }
 
   return (
- <div className="pr-4 text-right">
-      <div className="flex flex-col space-y-4 md:flex-row md:space-y-0">
-        <div className="md:w-2/12 md:pl-2">
-            <label className="text-sm font-medium mb-2 block">חברות</label>
-            <CompanyTreeSelector
-                companies={companies}
-                selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
-                className="h-10 text-right"
-            />
-          </div>
-
-          <div className="md:w-2/12 md:pl-2">
-          <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
-            <DateSelector date={date} onDateChange={setDate} className="h-10 text-right" />
-          </div>
-
-         <div className="md:w-4/12 md:pl-2">
-          <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
-            <FileUploader
-                onFileChange={setFile}
-                disabled={isUploading}
-                className="h-10 text-right"
-            />
-          </div>
-
-        <div className=" md:w-auto flex items-end">
-            <Button
-                onClick={handleSubmit}
-                disabled={!date || !file || isUploading || selectedCompanies.length === 0}
-            className="h-10 w-full md:w-auto px-8"
-            >
-              {isUploading ? 'מעלה...' : 'הזן'}
-            </Button>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+        <div>
+          <label className="text-base font-semibold mb-2 block">חברות</label>
+          <CompanyTreeSelector
+            companies={companies}
+            selectedCompanies={selectedCompanies}
+            onSelectionChange={setSelectedCompanies}
+            className="w-full"
+          />
         </div>
+
+        <div className="">
+          <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+          <DateSelector date={date} onDateChange={setDate} className="w-full" />
+        </div>
+
+        <div className="">
+          <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
+          <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
+        </div>
+      </div>
+
+      <div className="flex justify-center mt-6">
+        <Button
+          onClick={
+            !date || !file || isUploading || selectedCompanies.length === 0
+              ? () => {}
+              : handleSubmit
+          }
+          className="px-40"
+          style={
+            !date || !file || isUploading || selectedCompanies.length === 0
+              ? { cursor: 'not-allowed', opacity: 0.5 }
+              : {}
+          }
+        >
+          {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+        </Button>
       </div>
         <ProcessingResults
             isSuccess={isSuccess}
