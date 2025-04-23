@@ -36,7 +36,7 @@ const getMissingColumns = (rows: any[], fields: string[]): string[] => {
 const getMissingFieldsInRow = (row: any, fields: string[]): string[] => {
   return fields.filter((field) => !row[field])
 }
-const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location']
+const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
 export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
   const errors: string[] = []
   try {
@@ -83,6 +83,14 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           )
           break
         }
+        const missingFields = getMissingFieldsInRow(row, requiredFields)
+
+        if (missingFields.length > 0) {
+          errors.push(
+            `Meeting with magnaId ${row.magnaId} is missing required fields: ${missingFields.join(', ')}`,
+          )
+          continue
+        }
         const stockId = await getSequenceStockId(req.payload, row.stock)
         if (stockId === null) {
           errors.push(
@@ -98,25 +106,17 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           continue
         }
         row.stock = stockId
-        const missingFields = getMissingFieldsInRow(row, requiredFields)
-
-        if (missingFields.length > 0) {
-          errors.push(
-            `Meeting with magnaId ${row.magnaId} is missing required fields: ${missingFields.join(', ')}`,
-          )
-          continue
-        }
         const existingMeeting = await req.payload.find({
           collection: 'meetings',
           where: {
-            stock: {
-              equals: stockId,
+            magnaId: {
+              equals: row.magnaId,
             },
           },
           limit: 1,
         })
-        if (existingMeeting.docs.length > 0) {
-          const meetingId = existingMeeting.docs[0].id
+        if (existingMeeting?.docs.length > 0) {
+          const meetingId = existingMeeting?.docs[0].id
           try {
             await req.payload.update({
               collection: 'meetings',
@@ -124,9 +124,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
               data: row,
             })
           } catch (e: any) {
-            errors.push(
-              `Error updating meeting with stockId ${row.magnaId}, ID ${meetingId}: ${e.message}`,
-            )
+            errors.push(`Error updating meeting with stockId ${row.magnaId}: ${e.message}`)
           }
         } else {
           try {
