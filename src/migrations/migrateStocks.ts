@@ -152,7 +152,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Determine origin with clear priority
           let origin: StockOrigin = 'TASE'
           if (stockStatuses.isPrivate) origin = 'Private'
-          else if (stockStatuses.isNonTradable) origin = 'Deleted'
           else if (stockStatuses.isForeign) origin = 'Foreign'
 
           // Determine tradable status:

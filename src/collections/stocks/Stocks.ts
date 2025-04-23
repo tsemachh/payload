@@ -109,7 +109,6 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
-                    { label: 'מחוקה', value: 'Deleted' },
                     { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
