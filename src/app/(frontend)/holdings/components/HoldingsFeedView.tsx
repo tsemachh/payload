@@ -8,19 +8,8 @@ import { useAuth } from '@/providers/auth-provider'
 import { TreeNode, CompanyTreeSelector } from './CompanySelector'
 import { DateSelector } from './DateSelector'
 import { FileUploader } from './FileUploader'
-import { ProcessingError, ProcessingResults, ProcessingWarning } from './ProcessingResults'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { AlertCircle } from 'lucide-react'
-import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
+import { ProcessingResults } from './ProcessingResults'
+import { HoldingFeedLine } from '@/payload-types'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
 import {
   FeedFatalError,
@@ -49,8 +38,8 @@ export function HoldingsFeedView() {
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
   const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
-  const [showWarningDialog, setShowWarningDialog] = useState(false)
   const [showConfirmButtons, setShowConfirmButtons] = useState(false)
+  const [editForm, setEditForm] = useState(true)
 
   // Extract companies from user
   useEffect(() => {
@@ -105,6 +94,7 @@ export function HoldingsFeedView() {
 
     setIsValidating(true)
     setShowConfirmButtons(false)
+    setEditForm(false)
 
     setvalidRecords([])
     setRecordErrors([])
@@ -209,83 +199,88 @@ export function HoldingsFeedView() {
   // Cancel the upload
   const handleCancel = () => {
     setShowConfirmButtons(false)
+    setEditForm(true)
     setRecordErrors([])
     setWarnings([])
     setFile(null)
   }
 
-  const handleConfirmWarning = () => {
-    setShowWarningDialog(false)
-  }
-
-  const handleCancelWarning = () => {
-    setShowWarningDialog(false)
-    setFile(null)
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
-        <div>
-          <label className="text-base font-semibold mb-2 block">חברות</label>
-          <CompanyTreeSelector
-            companies={companies}
-            selectedCompanies={selectedCompanies}
-            onSelectionChange={setSelectedCompanies}
-            className="w-full"
-            isLoading={isLoading}
+      {editForm ? (
+        <>
+          <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+            <div>
+              <label className="text-base font-semibold mb-2 block">חברות</label>
+              <CompanyTreeSelector
+                companies={companies}
+                selectedCompanies={selectedCompanies}
+                onSelectionChange={setSelectedCompanies}
+                className="w-full"
+                isLoading={isLoading}
+              />
+            </div>
+
+            <div className="">
+              <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+              <DateSelector
+                date={date}
+                onDateChange={setDate}
+                className="w-full"
+                filterDate={(date) => {
+                  const day = date.getDay()
+                  return day == 5 || day == 6
+                }}
+              />
+            </div>
+
+            <div className="">
+              <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
+              <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
+            </div>
+          </div>
+
+          <div className="flex justify-center mt-6">
+            <Button
+              onClick={
+                !date || !file || isUploading || selectedCompanies.length === 0
+                  ? () => {}
+                  : handleSubmit
+              }
+              className="px-40"
+              style={
+                !date || !file || isUploading || selectedCompanies.length === 0
+                  ? { cursor: 'not-allowed', opacity: 0.5 }
+                  : {}
+              }
+            >
+              {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {date && file && (
+            <h2 className="text-xl font-bold text-center">
+              אחזקות מקובץ <bdi className="inline-block ltr-dir">{file.name}</bdi> לתאריך{' '}
+              {format(date, 'dd/MM/yyyy')}
+            </h2>
+          )}
+          <ProcessingResults
+            isSuccess={isSuccess}
+            validRecords={validRecords}
+            recordErrors={recordErrors}
+            warnings={warnings}
+            fatals={fatals}
+            className="mt-16"
+            showConfirmButtons={showConfirmButtons}
+            onConfirm={handleSaveConfirmed}
+            onCancel={handleCancel}
+            isValidating={isValidating}
+            isUploading={isUploading}
           />
-        </div>
-
-        <div className="">
-          <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-          <DateSelector
-            date={date}
-            onDateChange={setDate}
-            className="w-full"
-            filterDate={(date) => {
-              const day = date.getDay()
-              return day == 5 || day == 6
-            }}
-          />
-        </div>
-
-        <div className="">
-          <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
-          <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
-        </div>
-      </div>
-
-      <div className="flex justify-center mt-6">
-        <Button
-          onClick={
-            !date || !file || isUploading || selectedCompanies.length === 0
-              ? () => {}
-              : handleSubmit
-          }
-          className="px-40"
-          style={
-            !date || !file || isUploading || selectedCompanies.length === 0
-              ? { cursor: 'not-allowed', opacity: 0.5 }
-              : {}
-          }
-        >
-          {isUploading ? 'מעלה...' : 'הזן אחזקות'}
-        </Button>
-      </div>
-      <ProcessingResults
-        isSuccess={isSuccess}
-        validRecords={validRecords}
-        recordErrors={recordErrors}
-        warnings={warnings}
-        fatals={fatals}
-        className="mt-16"
-        showConfirmButtons={showConfirmButtons}
-        onConfirm={handleSaveConfirmed}
-        onCancel={handleCancel}
-        isValidating={isValidating}
-        isUploading={isUploading}
-      />
+        </>
+      )}
     </div>
   )
 }
