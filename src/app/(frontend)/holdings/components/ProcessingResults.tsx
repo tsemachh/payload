@@ -21,9 +21,9 @@ import {
 } from '@/components/ui/dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { HoldingFeedLine } from '@/payload-types'
-import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import { Button } from '../../components/ui/button'
+import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 
 export interface ProcessingError {
   lineNumber?: number

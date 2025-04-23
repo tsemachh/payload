@@ -4,8 +4,9 @@ import { Stock, StockOrigin } from '@/payload-types'
 import { getStockType } from '@/utils/migrateStockUtils'
 import { getCollectionDoc, getStockByStockId } from '@/utils/utils'
 import {
+  getAllStocksInLatestMeetings,
   getAllStocksInMeetings,
-  getEmdaStockIds, getHistoryPredictaStockIds,
+  getEmdaStockIds,
   getPredictaStockIds,
   getStockIdsByMappingType,
   getStockRelations,
@@ -22,6 +23,7 @@ import {
   logMigrationFault,
 } from '@/utils/migrationFaultUtils'
 import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
+import { PayloadRequest } from 'payload'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -37,6 +39,30 @@ const sqlConfig: sql.config = {
   requestTimeout: 120000, // Increase timeout globally to 120 seconds
 }
 
+async function insertSilenceStocks(stockId:string,req:PayloadRequest) {
+  try {
+    // Check if a silenced stock with this stockId already exists
+    const existingSilencedStock = await req.payload.find({
+      collection: 'silenced-stocks',
+      limit: 1,
+      where: {
+        stockId: { equals: stockId },
+      },
+    })
+
+    // Only create if it doesn't exist
+    if (existingSilencedStock.docs.length === 0) {
+      await req.payload.create({
+        collection: 'silenced-stocks',
+        data: { stockId },
+        req,
+      })
+    }
+  }catch(e){
+    console.error(`Error in silence stock ${stockId}`,e)
+  }
+}
+
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
@@ -50,11 +76,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await seedStockMigrationMapping()
     const resultStocks = await getStocks(pool) //AllStocks
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
-    const predictaHistoryStocks: Set<string> = await getHistoryPredictaStockIds(pool) //Bursa stocks
+    //const predictaHistoryStocks: Set<string> = await getHistoryPredictaStockIds(pool) //Bursa stocks including history
     const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
     const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
     const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
+    const stocksInLatestMeeting: Set<string> = await getAllStocksInLatestMeetings(pool)
     const resultStockValues = await getStockValues(pool) //TODO need to take only 7 years back of stocks
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
@@ -71,7 +98,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       getStockIdsByMappingType(payload, 'Foreign'),
     ])
 
-    console.log("notative",JSON.stringify(notActiveStocks))
     for (const row of resultStocks.recordset) {
       row.stockID = `${row.stockID}`
       // Check stock status from migration mapping
@@ -90,11 +116,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
         // Meeting status
         hasActiveMeeting: stocksInMeeting.has(row.stockID),
-
+        hasLatestMeeting: stocksInLatestMeeting.has(row.stockID),
         // Relationship statuses
         hasTradableRelation: !!(relatedStock && predictaStocks.has(relatedStock)),
         hasForeignRelation: !!(relatedStock && foreignStocks.has(relatedStock)),
-
         // Root statuses
         isRootStock: isRootStock,
         isRootEmda: isRootStock && emdaStocks.has(row.stockID),
@@ -127,7 +152,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Determine origin with clear priority
           let origin: StockOrigin = 'TASE'
           if (stockStatuses.isPrivate) origin = 'Private'
-          else if (stockStatuses.isNonTradable) origin = 'Deleted'
           else if (stockStatuses.isForeign) origin = 'Foreign'
 
           // Determine tradable status:
@@ -136,14 +160,34 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // - Foreign stocks are tradable unless they are non-tradable or private
           const isTradable =
             stockStatuses.isPredictaStock ||
+            stockStatuses.isPrivate ||
             stockStatuses.isRootStock ||
+            stockStatuses.isNonTradable ||
             stockStatuses.isForeign
 
+          let comments= JSON.stringify(stockStatuses)
           // Determine active status:
           // - Not active stocks are never active
           // - Stocks with meetings are not active unless they are Predicta or EMDA stocks
-          const isActive = !(stockStatuses.isNotActive || (stockStatuses.hasActiveMeeting && !stockStatuses.isPredictaStock && !stockStatuses.isEmdaStock))
-
+          let isActive = !(stockStatuses.isNotActive || (stockStatuses.hasActiveMeeting && !stockStatuses.isPredictaStock && !stockStatuses.isEmdaStock))
+          if (!isTradable && !relatedStock){
+            if (!stockStatuses.hasActiveMeeting){
+              //Move stock to Silenced stocks
+              await insertSilenceStocks(row.stockID,req)
+              successCount++
+              continue
+            }else{
+              //Check if no meeting since January 1st, 2024 and set as inactive
+              if (stock && !stockStatuses.hasLatestMeeting){
+                isActive = false
+              }else{
+                if (stock){                 //Others, that has meetings in 2024, put in a collections stocks for review and ask Shaked to check
+                  isActive = true
+                  comments += 'Shaked , please review'
+                }
+              }
+            }
+          }
           stockSequence = await upsertStockFromImport(
             stock,
             row,
@@ -151,7 +195,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             isTradable,
             origin,
             isActive,
-            JSON.stringify(stockStatuses)
+            comments
           )
           stockIdTOSequence.set(row.stockID, stockSequence)
 

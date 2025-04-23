@@ -41,6 +41,7 @@ export const HoldingsFeed: CollectionConfig = {
       label: 'חברות שנבחרו',
       type: 'relationship',
       hasMany: true,
+      index: true,
       relationTo: 'companies',
       admin: {
         readOnly: true,

@@ -72,6 +72,14 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
     return new Set<string>()
   }
 
+  // Validate each logUpdateId in the array
+  for (let i = 0; i < logUpdateIds.length; i++) {
+    const id = logUpdateIds[i];
+    if (!id || typeof id !== 'string') {
+      throw new Error(`Invalid logUpdateId at index ${i}: ${id}. Expected a non-empty string.`)
+    }
+  }
+
   const request = pool.request()
 
   // Create parameterized query with multiple parameters
@@ -89,7 +97,7 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
       WHERE stocks.logUpdateID in ${inClause}
   `)
 
-  console.log(`Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
+  console.log(`getStockIdsByUpdateIds- Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
   const stocks: Set<string> = new Set()
   for (const row of resultStockIds.recordset) {
     stocks.add(`${row.stockID}`)
@@ -98,6 +106,10 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
 }
 
 export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateId: string) {
+  if (!logUpdateId || typeof logUpdateId !== 'string') {
+    throw new Error(`Invalid logUpdateId: ${logUpdateId}. Expected a non-empty string.`)
+  }
+
   const request = pool.request()
   request.input('logUpdateId', sql.VarChar, logUpdateId)
   const resultStockIds = await request.query(`
@@ -106,7 +118,7 @@ export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateI
       WHERE stocks.logUpdateID = @logUpdateId
   `)
 
-  console.log(`Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
+  console.log(`getStockIdsByUpdateId Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
   const stocks: Set<string> = new Set()
   for (const row of resultStockIds.recordset) {
     stocks.add(`${row.stockID}`)
@@ -140,7 +152,7 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
   return stocks
 }
 
-export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, userId: number) {
+export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, userId: number): Promise<string> {
   const request = pool.request()
   request.input('userId', sql.Int, userId)
   const res = await request.query(`
@@ -152,10 +164,17 @@ export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, user
     throw new Error(`No records found for userID = ${userId}`)
   }
   const id = res.recordset[0].id
-  return id
+
+  // Ensure the id is a valid string
+  if (id === null || id === undefined) {
+    throw new Error(`Invalid id returned for userID = ${userId}. ID cannot be null or undefined.`)
+  }
+
+  // Convert to string if it's not already
+  return `${id}`
 }
 
-export async function getAllStockLogIdByUserId(pool: sql.ConnectionPool, userId: number) {
+export async function getAllStockLogIdByUserId(pool: sql.ConnectionPool, userId: number): Promise<string[]> {
   const request = pool.request()
   request.input('userId', sql.Int, userId)
   const res = await request.query(`
@@ -166,7 +185,12 @@ export async function getAllStockLogIdByUserId(pool: sql.ConnectionPool, userId:
   if (res.recordset.length === 0) {
     throw new Error(`No records found for userID = ${userId}`)
   }
-  return res.recordset.map((record) => record.id)
+
+  // Map each record.id to a string, filtering out any null or undefined values
+  return res.recordset
+    .map((record) => record.id)
+    .filter((id) => id !== null && id !== undefined)
+    .map((id) => `${id}`)
 }
 
 export async function getLatestStockEmdaLogId(pool: sql.ConnectionPool) {
@@ -196,6 +220,16 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
   return stocks
 }
 
+export async function getAllStocksInLatestMeetings(pool: sql.ConnectionPool) {
+  const res = await pool.request().query(`
+      SELECT distinct [stockID]
+      FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '2024-01-01'  `)
+  const stocks: Set<string> = new Set()
+  for (const row of res.recordset) {
+    stocks.add(`${row.stockID}`)
+  }
+  return stocks
+}
 export function ImportedRowToStock(row: ImportStock) {}
 
 export type StockMappingType = 'NotActive' | 'NonTradable' | 'Private' | 'Foreign'
@@ -242,7 +276,7 @@ export async function upsertStockFromImport(
     longName: row.longName || null,
     tradable: tradable as boolean | null,
     origin: origin,
-    comments,
+    comments: comments
   }
 
   if (!stock) {

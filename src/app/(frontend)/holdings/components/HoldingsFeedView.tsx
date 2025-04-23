@@ -11,11 +11,7 @@ import { FileUploader } from './FileUploader'
 import { ProcessingResults } from './ProcessingResults'
 import { HoldingFeedLine } from '@/payload-types'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
-import {
-  FeedFatalError,
-  FeedValidationResult,
-  FeedWarning,
-} from '@/collections/holdings/feeds/processHoldingsFeedCsv'
+import { FeedFatalError, FeedValidationResult, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 
 export function HoldingsFeedView() {
   const { user } = useAuth()

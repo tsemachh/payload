@@ -1,0 +1,206 @@
+import { PayloadRequest } from 'payload'
+import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
+import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
+
+export async function getPreviousFeed(
+  req: PayloadRequest,
+  currentDate: string,
+  selectedCompanies: string[],
+): Promise<HoldingsFeed | null> {
+  const holdings = await req.payload.find({
+    collection: 'holdings-feed',
+    where: {
+      valueDate: { less_than: new Date(currentDate).toISOString() },
+      selectedCompanies: {
+        contains: selectedCompanies,
+      },
+    },
+    sort: '-valueDate',
+    depth: 0,
+    limit: 1,
+  })
+  console.log('-----prev holdings', holdings)
+  if (holdings.docs.length > 0) {
+    return holdings.docs[0]
+  }
+
+  return null
+}
+
+// Helper function to delete existing holdings for a date
+export async function deleteExistingHoldings(
+  req: PayloadRequest,
+  valueDate: string,
+  companies: string[],
+): Promise<void> {
+  await req.payload.delete({
+    collection: 'holdings',
+    where: {
+      valueDate: { equals: new Date(valueDate).toISOString() },
+      company: {
+        in: companies,
+      },
+    },
+  })
+
+  await req.payload.delete({
+    collection: 'holdings-feed',
+    where: {
+      valueDate: {
+        equals: valueDate,
+      },
+      selectedCompanies: {
+        contains: companies,
+      },
+    },
+  })
+}
+
+/**
+ * Preload accounts from companies
+ * @param req The payload request
+ * @param selectedCompanies The selected companies
+ * @returns Map of account numbers to account IDs
+ */
+export const preloadAccountsToCompanyMap = async (
+  req: PayloadRequest,
+  selectedCompanies: string[],
+): Promise<Map<number, string>> => {
+  const companies = await req.payload.find({
+    collection: 'companies',
+    where: {
+      id: {
+        in: selectedCompanies,
+      },
+    },
+    limit: 0,
+    depth: 2,
+  })
+
+  const accountToCompanyMap: Map<number, string> = new Map()
+  console.log('Processing companies:', companies.docs.length)
+
+  companies.docs.forEach((company: Company) => {
+    console.log(
+      'Processing company:',
+      company.id,
+      'Accounts:',
+      company?.accounts?.docs?.length ?? 0,
+    )
+    const accounts = company?.accounts?.docs as Account[]
+
+    accounts.forEach((account) => {
+      console.log('Processing account:', account?.accountNumber, 'ID:', account?.id)
+      accountToCompanyMap.set(account?.accountNumber, company?.id)
+
+      if (!account?.accounts?.docs || account?.accounts?.docs.length === 0) {
+        console.log('No sub-accounts found for account:', account?.accountNumber)
+      }
+
+      account?.accounts?.docs?.forEach((subAccount) => {
+        const subAcc = subAccount as Account
+        accountToCompanyMap.set(subAcc.accountNumber, company?.id)
+      })
+    })
+  })
+  console.log('Final accountToCompanyMap:', Array.from(accountToCompanyMap.entries()))
+
+  return accountToCompanyMap
+}
+/**
+ * Preload stocks from stock IDs
+ * @param req The payload request
+ * @param standardizedRows
+ * @returns Map of stock IDs to stock documents
+ */
+export const preloadStocks = async (
+  req: PayloadRequest,
+  standardizedRows: StandardizedRow[],
+): Promise<Map<string, string>> => {
+  const feedStocks: string[] = standardizedRows
+    .map((row) => row.stockId)
+    .filter((stockId) => stockId !== '')
+
+  const stockMap: Map<string, string> = new Map()
+  const stocksResult = await req.payload.find({
+    collection: 'stocks',
+    where: {
+      stockId: {
+        in: feedStocks,
+      },
+    },
+    depth: 0,
+  })
+
+  stocksResult.docs.forEach((stock: Stock) => {
+    // Ensure related.docs exists and check if it's not empty
+    const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
+    const stockKey = stock?.stockId
+    const stockValue =
+      stock?.relatedStock && hasRelatedDocs ? (stock.relatedStock as string) : stock?.id
+    stockMap.set(stockKey, stockValue)
+  })
+
+  console.log('Final stockMap:', Array.from(stockMap.entries()))
+
+  return stockMap
+}
+/**
+ * Create holdings from processed records
+ * @param req The payload request
+ * @param processedRecords The processed records
+ * @param accountToCompanyMap
+ * @param stockMap
+ * @param valueDate The value date
+ */
+export const createHoldings = async (
+  req: PayloadRequest,
+  processedRecords: HoldingFeedLine[],
+  accountToCompanyMap: Map<number, string>,
+  stockMap: Map<string, string>,
+  valueDate: string,
+): Promise<void> => {
+  // Aggregate records with the same accountId and stockId
+  const aggregatedRecords = new Map<string, { company: string; stock: string; quantity: number }>()
+
+  for (const record of processedRecords) {
+    if (record.status === 'success') {
+      const accountId = parseInt(record.accountId as string)
+      const company = accountToCompanyMap.get(accountId) as string
+      const stock = stockMap.get(record.stockId as string) as string
+
+      // Create a unique key for each account-stock combination
+      const key = `${company}-${stock}`
+
+      if (aggregatedRecords.has(key)) {
+        // If this combination already exists, add to the quantity
+        const existingRecord = aggregatedRecords.get(key)!
+        existingRecord.quantity += record.quantity as number
+      } else {
+        // Otherwise, create a new entry
+        aggregatedRecords.set(key, {
+          company,
+          stock,
+          quantity: record.quantity as number,
+        })
+      }
+    }
+  }
+
+  // Create holdings from the aggregated records
+  for (const [_, record] of aggregatedRecords) {
+    try {
+      await req.payload.create({
+        collection: 'holdings',
+        data: {
+          company: record.company,
+          stock: record.stock,
+          quantity: record.quantity,
+          valueDate,
+        },
+      })
+    } catch (error) {
+      req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`)
+    }
+  }
+}
