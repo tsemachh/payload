@@ -240,16 +240,16 @@ export const validateRow = (
     errorMessage = 'Missing stock ID'
   } else if (isNaN(quantity) || quantity < 1) {
     isValid = false
-    errorMessage = 'Invalid quantity: must be a positive number >= 1'
+    errorMessage = 'ערך נקוב לא תקין'
   } else if (!accountId) {
     isValid = false
     errorMessage = 'Missing account ID'
   } else if (!stockMap.has(stockId)) {
     isValid = false
-    errorMessage = 'Unknown stock ID'
+    errorMessage = 'נייר ערך לא מוכר'
   } else if (!accountMap.has(Number(accountId))) {
     isValid = false
-    errorMessage = 'Unknown account ID'
+    errorMessage = 'מספר חשבון לא מוכר'
   }
 
   const processedRecord: HoldingFeedLine = {
