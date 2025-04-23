@@ -41,7 +41,8 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
   const errors: string[] = []
   try {
     // The file is at req.file as specified in the issue description
-    const file = req.file
+
+    const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
       return []
