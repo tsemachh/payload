@@ -102,7 +102,7 @@ export function HoldingsFeedView() {
 
       // Upload file with company selection
       const response = await fetch(
-        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,
+        `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,
         {
           method: 'POST',
           body: file,
@@ -154,7 +154,7 @@ export function HoldingsFeedView() {
 
       // Save the file (validateOnly=false)
       const response = await fetch(
-        `/api/holdings/upload-holdings-csv?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=false`,
+        `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=false`,
         {
           method: 'POST',
           body: file,
