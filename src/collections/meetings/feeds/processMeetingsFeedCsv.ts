@@ -1,7 +1,7 @@
 import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import iconv from 'iconv-lite'
-import { getSequenceStockId } from '@/utils/utils'
+import { getSequenceStockId, getStockByStockId } from '@/utils/utils'
 import { parseDateString } from '@/utils/dateUtils'
 import { MeetingState, MeetingType } from '@/payload-types'
 
@@ -29,13 +29,24 @@ export const meetingStateMap: Map<string, MeetingState> = new Map([
 export function getMeetingState(stateLabel: string): MeetingState {
   return meetingStateMap.get((stateLabel || '').trim()) || 'scheduled'
 }
-export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<void> => {
+const getMissingColumns = (rows: any[], fields: string[]): string[] => {
+  return fields.filter((field) => rows.every((row) => !row[field]))
+}
+
+const getMissingFieldsInRow = (row: any, fields: string[]): string[] => {
+  return fields.filter((field) => !row[field])
+}
+const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
+export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
+  const errors: string[] = []
   try {
     // The file is at req.file as specified in the issue description
-    const file = req.file
+
+    const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      return
+      errors.push('No file found in request')
+      return errors
     }
 
     // Read the file content
@@ -54,11 +65,10 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           state: getMeetingState(data.state || '') as MeetingState,
           _status: 'draft',
         }
-      }catch (e) {
-          //TODO Aggeragte Error and report at the end
+      } catch (e: any) {
+        errors.push(`Error processing row: ${JSON.stringify(data)} - ${e.message}`)
       }
     })
-
 
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
@@ -67,25 +77,89 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       const row = rows[i]
       try {
         console.log('Row:', row)
+        const missingColumns = getMissingColumns(rows, requiredFields)
+        if (missingColumns.length > 0) {
+          errors.push(
+            `CSV is missing required columns: ${missingColumns.join(', ')} (empty in all rows)`,
+          )
+          break
+        }
+        const missingFields = getMissingFieldsInRow(row, requiredFields)
+
+        if (missingFields.length > 0) {
+          errors.push(
+            `Meeting with magnaId ${row.magnaId} is missing required fields: ${missingFields.join(', ')}`,
+          )
+          continue
+        }
         const stockId = await getSequenceStockId(req.payload, row.stock)
         if (stockId === null) {
-          console.log("Stockid can't be found:", row.stockID)
-          //TODO Aggeragte Error and report at the end
+          errors.push(
+            `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that can't be found and will not be imported — this meeting will NOT be created`,
+          )
+          continue
+        }
+        const stockData = await getStockByStockId(req.payload, row.stock)
+        if (!stockData?.active) {
+          errors.push(
+            `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that is not active and will not be imported — this meeting will NOT be created`,
+          )
           continue
         }
         row.stock = stockId
-        await req.payload.create({
+        const existingMeeting = await req.payload.find({
           collection: 'meetings',
-          data: row,
+          where: {
+            magnaId: {
+              equals: row.magnaId,
+            },
+          },
+          limit: 1,
         })
+        if (existingMeeting?.docs.length > 0) {
+          const meetingId = existingMeeting?.docs[0].id
+          try {
+            await req.payload.update({
+              collection: 'meetings',
+              id: meetingId,
+              data: row,
+            })
+          } catch (e: any) {
+            errors.push(`Error updating meeting with stockId ${row.magnaId}: ${e.message}`)
+          }
+        } else {
+          try {
+            await req.payload.create({
+              collection: 'meetings',
+              data: row,
+            })
+          } catch (e: any) {
+            errors.push(`Error creating meeting with stockId ${row.magnaId}: ${e.message}`)
+          }
+        }
       } catch (error) {
-        console.error('Error creating meeting:', error)
+        errors.push(`Error processing row ${i}: ${JSON.stringify(row)} - ${error}`)
       }
     }
     req.payload.logger.info(
       `Successfully processed ${rows.length} rows from CSV file: ${file.name}`,
     )
+    if (errors.length > 0) {
+      console.error(`\nFinished with ${errors.length} errors:`)
+      errors.forEach((err, idx) => {
+        console.error(`${idx + 1}. ${err}`)
+      })
+    }
+    return errors
   } catch (error) {
-    req.payload.logger.error(`Error processing stock feed CSV: ${JSON.stringify(error)}`)
+    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+    errors.push(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+    if (errors.length > 0) {
+      console.error(`\nFinished with ${errors.length} errors:`)
+      errors.forEach((err, idx) => {
+        console.error(`${idx + 1}. ${err}`)
+      })
+    }
+    return errors
   }
 }

@@ -6,18 +6,18 @@ import { Holding } from "./types"
 
 import { Column } from '../types/meetings'
 
-export const columns: Column<Holding>[] = [
-  {
-    key: 'company',
-    header: 'חברה',
-    type: 'string',
-    minWidth: 150,
-    width:350,
-    filterable: true,
-  },
+export const columns: Column<any>[] = [
   {
     key: 'stockNumber',
     header: 'מספר נייר ערך',
+    type: 'string',
+    minWidth: 120,
+    width:100,
+    filterable: true,
+  },
+  {
+    key: 'stockName',
+    header: 'שם נייר ערך',
     type: 'string',
     minWidth: 120,
     width:100,
@@ -35,12 +35,11 @@ export const columns: Column<Holding>[] = [
     ),
   },
   {
-    key: 'lastUpdated',
-    header: 'עדכון אחרון',
-    type: 'datetime',
+    key: 'company',
+    header: 'חברה',
+    type: 'string',
     minWidth: 150,
-    width:200,
+    width:350,
     filterable: true,
   },
 ]
-
