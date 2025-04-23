@@ -237,13 +237,13 @@ export const validateRow = (
   // Check required fields
   if (!stockId) {
     isValid = false
-    errorMessage = 'Missing stock ID'
+    errorMessage = 'מסםר נייר חסר'
   } else if (isNaN(quantity) || quantity < 1) {
     isValid = false
     errorMessage = 'ערך נקוב לא תקין'
   } else if (!accountId) {
     isValid = false
-    errorMessage = 'Missing account ID'
+    errorMessage = 'מספר חשבון חסר'
   } else if (!stockMap.has(stockId)) {
     isValid = false
     errorMessage = 'נייר ערך לא מוכר'
