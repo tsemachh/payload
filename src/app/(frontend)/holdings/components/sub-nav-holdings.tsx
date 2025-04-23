@@ -25,7 +25,7 @@ export function HoldingsNav() {
               key={item.value}
               href={item.path}
               className={cn(
-                'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+                'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-2 py-1 rounded-md',
                 isActive
                   ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
                   : 'text-muted-foreground hover:bg-muted',
