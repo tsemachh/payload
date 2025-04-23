@@ -67,7 +67,7 @@ export function ProcessingResults({
   onCancel,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('invalid')
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('valid')
   const [isFinalized, setIsFinalized] = useState(false)
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
