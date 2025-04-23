@@ -70,7 +70,7 @@ export const Holdings: CollectionConfig = {
   ],
   endpoints: [
     {
-      path: '/upload-holdings-csv',
+      path: '/upload-holdings',
       method: 'post',
       handler: uploadHoldingsCsvEndPoint,
     },
