@@ -77,6 +77,7 @@ export type RolePermissions =
         | 'holdings-feed'
         | 'meetings-feed'
         | 'silenced-stocks'
+        | 'votes'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -166,6 +167,7 @@ export interface Config {
     'holdings-feed': HoldingsFeed;
     'meetings-feed': MeetingsFeed;
     'silenced-stocks': SilencedStock;
+    votes: Vote;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -203,6 +205,7 @@ export interface Config {
     'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
     'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
+    votes: VotesSelect<false> | VotesSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -323,6 +326,17 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   companies?: (string | Company)[] | null;
+  agenda?:
+    | {
+        text: string;
+        topicType: 'reporting' | 'decision';
+        majorityType?: ('regular' | 'privileged') | null;
+        otherMajority?: string | null;
+        isRemovedFromAgenda?: boolean | null;
+        readyForReport?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -618,6 +632,26 @@ export interface SilencedStock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        votingOptions?: ('for' | 'against' | 'avoid' | 'no-obligation' | 'not-participating')[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -813,6 +847,10 @@ export interface PayloadLockedDocument {
         value: string | SilencedStock;
       } | null)
     | ({
+        relationTo: 'votes';
+        value: string | Vote;
+      } | null)
+    | ({
         relationTo: 'exports';
         value: string | Export;
       } | null)
@@ -910,7 +948,8 @@ export interface PayloadQueryPreset {
     | 'migration-faults'
     | 'companies'
     | 'accounts'
-    | 'holdings';
+    | 'holdings'
+    | 'votes';
   updatedAt: string;
   createdAt: string;
 }
@@ -974,6 +1013,17 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   companies?: T;
+  agenda?:
+    | T
+    | {
+        text?: T;
+        topicType?: T;
+        majorityType?: T;
+        otherMajority?: T;
+        isRemovedFromAgenda?: T;
+        readyForReport?: T;
+        id?: T;
+      };
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1243,6 +1293,25 @@ export interface MeetingsFeedSelect<T extends boolean = true> {
 export interface SilencedStocksSelect<T extends boolean = true> {
   stockId?: T;
   companies?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes_select".
+ */
+export interface VotesSelect<T extends boolean = true> {
+  meeting?: T;
+  companies?: T;
+  votes?:
+    | T
+    | {
+        topicIndex?: T;
+        votingOptions?: T;
+        id?: T;
+      };
   creator?: T;
   updator?: T;
   createdAt?: T;
