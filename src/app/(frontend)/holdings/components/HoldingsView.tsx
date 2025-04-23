@@ -97,13 +97,15 @@ export function HoldingsView() {
       const data = await response.json()
 
       if (response.ok) {
-        setHoldings(data.docs.map((holding: any) => ({
+        setHoldings(
+          data.docs.map((holding: any) => ({
             id: holding.id,
             company: holding.company?.name || 'N/A',
             stockNumber: holding.stock?.stockId || 'N/A',
             quantity: holding.quantity,
-           // valueDate: holding.valueDate,
-        })))
+            lastUpdated: holding.updatedAt,
+          })),
+        )
       } else {
         toast({
           title: 'שגיאה בטעינת נתונים',
@@ -138,7 +140,15 @@ export function HoldingsView() {
 
         <div>
           <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-          <DateSelector date={date} onDateChange={setDate} className="w-full" />
+          <DateSelector
+            date={date}
+            onDateChange={setDate}
+            className="w-full"
+            filterDate={(date) => {
+              const day = date.getDay()
+              return day == 5 || day == 6
+            }}
+          />
         </div>
       </div>
 
@@ -156,40 +166,38 @@ export function HoldingsView() {
         </Button>
       </div>
 
-        <div className="flex justify-between items-center mt-8 pr-4">
-          <div className="flex items-center space-x-4 space-x-reverse">
-            <h2 className="d">טבלת אחזקות</h2>
-            {holdings.length > 0 && (
-                <ExportButton
-                    data={holdings}
-                    filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
-                />
-            )}
-          </div>
+      <div className="flex justify-between items-center mt-8 pr-4">
+        <div className="flex items-center space-x-4 space-x-reverse">
+          <h2 className="d">טבלת אחזקות</h2>
+          {holdings.length > 0 && (
+            <ExportButton
+              data={holdings}
+              filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
+            />
+          )}
         </div>
-
-        {holdings.length > 0 ? (
-            <div> {/* Added container with max width to constrain table width */}
-              <DataTable
-                  columns={columns}
-                  data={holdings}
-                  idField="id"
-                  defaultSortField="lastUpdated"
-                  defaultSortDirection="desc"
-                  tableId="holdings-view-table"
-                  pastDateFilterOptions={[
-                    { value: 'allPast', label: 'כל האחזקות הקודמות' },
-                  ]}
-                  futureDateFilterOptions={[
-                    { value: 'allFuture', label: 'כל האחזקות העתידיות' },
-                  ]}
-              />
-            </div>
-        ) : (
-            <div className="text-center py-10 text-gray-500 border rounded-md">
-              {isLoading ? 'טוען נתונים...' : 'לא נמצאו נתונים עבור הבחירה הנוכחית'}
-            </div>
-        )}
       </div>
+
+      {holdings.length > 0 ? (
+        <div>
+          {' '}
+          {/* Added container with max width to constrain table width */}
+          <DataTable
+            columns={columns}
+            data={holdings}
+            idField="id"
+            defaultSortField="lastUpdated"
+            defaultSortDirection="desc"
+            tableId="holdings-view-table"
+            pastDateFilterOptions={[{ value: 'allPast', label: 'כל האחזקות הקודמות' }]}
+            futureDateFilterOptions={[{ value: 'allFuture', label: 'כל האחזקות העתידיות' }]}
+          />
+        </div>
+      ) : (
+        <div className="text-center py-10 text-gray-500 border rounded-md">
+          {isLoading ? 'טוען נתונים...' : 'לא נמצאו נתונים עבור הבחירה הנוכחית'}
+        </div>
+      )}
+    </div>
   )
 }

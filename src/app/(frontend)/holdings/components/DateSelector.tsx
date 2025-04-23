@@ -11,9 +11,10 @@ interface DateSelectorProps {
   date: Date | undefined
   onDateChange: (date: Date | undefined) => void
   className?: string
+  filterDate?: (date: Date) => boolean
 }
 
-export function DateSelector({ date, onDateChange, className }: DateSelectorProps) {
+export function DateSelector({ date, onDateChange, className, filterDate }: DateSelectorProps) {
   return (
     <div className={className}>
       <Popover>
@@ -21,8 +22,8 @@ export function DateSelector({ date, onDateChange, className }: DateSelectorProp
           <Button
             variant="outline"
             className={cn(
-              "min-w-[240px] justify-start text-right font-normal",
-              !date && "text-muted-foreground"
+              'min-w-[240px] justify-start text-right font-normal',
+              !date && 'text-muted-foreground',
             )}
           >
             <CalendarIcon className="ml-2 h-4 w-4" />
@@ -35,6 +36,7 @@ export function DateSelector({ date, onDateChange, className }: DateSelectorProp
             selected={date}
             onSelect={onDateChange}
             initialFocus
+            disabled={filterDate}
           />
         </PopoverContent>
       </Popover>

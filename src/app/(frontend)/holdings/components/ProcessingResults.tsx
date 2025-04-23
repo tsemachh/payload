@@ -1,18 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { HoldingFeedLine } from '@/payload-types'
+import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
+import { Button } from '../../components/ui/button'
 import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 
 export interface ProcessingError {
@@ -32,7 +42,7 @@ export interface ProcessingWarning {
 
 interface ProcessingResultsProps {
   isSuccess: boolean
-  validRecords:HoldingFeedLine[]
+  validRecords: HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
@@ -45,7 +55,7 @@ interface ProcessingResultsProps {
   isUploading?: boolean
 }
 
-export function ProcessingResults({ 
+export function ProcessingResults({
   isSuccess,
   validRecords,
   recordErrors,
@@ -57,31 +67,47 @@ export function ProcessingResults({
   onCancel,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('invalid');
-  const [isFinalized, setIsFinalized] = useState(false);
-  const [shouldContinue, setShouldContinue] = useState(false);
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('valid')
+  const [isFinalized, setIsFinalized] = useState(false)
+  const [shouldContinue, setShouldContinue] = useState(false)
+  const [showWarningDialog, setShowWarningDialog] = useState(false)
+
+  useEffect(() => {
+    // Show warning dialog when warnings are present
+    if (warnings.length > 0) {
+      setShowWarningDialog(true)
+    }
+  }, [warnings])
 
   const handleFinalConfirm = () => {
     if (onConfirm) {
-      onConfirm();
-    }    setIsFinalized(true);
+      onConfirm()
+    }
+    setIsFinalized(true)
     setTimeout(() => {
-      setIsFinalized(false);
-    }, 1000);
-  };
+      setIsFinalized(false)
+    }, 1000)
+  }
+
+  const handleContinueWarning = () => {
+    setShowWarningDialog(false)
+    setShouldContinue(true)
+  }
+
+  const handleCancelWarning = () => {
+    setShowWarningDialog(false)
+    if (onCancel) {
+      onCancel()
+    }
+  }
+
   // Show loading state
   if (isValidating) {
     return (
-      <div className={className}>
-        <Alert className="bg-blue-50 border-blue-200">
-          <AlertCircle className="h-4 w-4 text-blue-500" />
-          <AlertTitle className="text-blue-700">{isValidating ? 'בודק...' : 'מעלה...'}</AlertTitle>
-          <AlertDescription className="text-blue-600">
-            {isValidating ? 'בודק את קובץ האחזקות, אנא המתן.' : 'מעלה את קובץ האחזקות, אנא המתן.'}
-          </AlertDescription>
-        </Alert>
+      <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+        <LoadingSpinnerDiamond />
       </div>
-    );
+    )
   }
 
   // Show success state with no errors or warnings
@@ -96,11 +122,50 @@ export function ProcessingResults({
           </AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   return (
     <div className={className} dir="rtl">
+      {/* Warnings Dialog */}
+      <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <DialogContent className="max-w-3xl" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-red-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-red-600 m-0">אזהרה</DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            <p className="text-base font-medium mb-4">נמצאו מספר אזהרות בקובץ האחזקות:</p>
+
+            <ul className="space-y-3">
+              {warnings.map((warning, index) => (
+                <li key={index} className="text-gray-800">
+                  <span className="font-medium">{warning.message.replace(/$$\d+$$/g, '')}</span>
+
+                  {warning.details && warning.details.length > 0 && (
+                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
+                      {warning.details.map((detail, idx) => (
+                        <li key={idx} className="text-sm">
+                          {detail}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <DialogFooter className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={handleCancelWarning}>
+              ביטול
+            </Button>
+            <Button onClick={handleContinueWarning}>המשך</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Warnings Section */}
       {fatals.length > 0 && (
         <div className="mb-6" dir="rtl">
@@ -117,7 +182,9 @@ export function ProcessingResults({
                     {warning.details && warning.details.length > 0 && (
                       <ul className="mt-2 list-disc list-inside">
                         {warning.details.map((detail, idx) => (
-                          <li key={idx} className="text-red-700">{detail}</li>
+                          <li key={idx} className="text-red-700">
+                            {detail}
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -129,170 +196,147 @@ export function ProcessingResults({
         </div>
       )}
 
-      {warnings.length > 0 && (
-        <div className="mb-6">
-          <Alert className="bg-yellow-50 border-yellow-200 mb-4 max-w-3xl mx-auto">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            <AlertTitle className="text-yellow-700">שים לב</AlertTitle>
-            <AlertDescription className="text-yellow-600">
-              נמצאו {warnings.length} אזהרות. אנא שים לב לאזהרות הבאות:
-              <ul className="mt-4 space-y-2 list-disc list-inside">
-                {warnings.map((warning, index) => (
-                  <li key={index} className="text-yellow-700">
-                    {warning.message}
-                    {warning.count && Number(warning.count) > 1 && <span> ({warning.count})</span>}
-
-                    {warning.details && warning.details.length > 0 && (
-                      <ul className="mt-2 list-disc list-inside ps-6 text-yellow-600">
-                        {warning.details.map((detail, idx) => (
-                          <li key={idx} className="text-sm">{detail}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
-
-            </AlertDescription>
-            <div className="flex justify-end space-x-4 mt-6">
-              <button
-                onClick={onCancel}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md border border-gray-300"
-              >
-                לבטל
-              </button>
-              <button
-                onClick={() => setShouldContinue(true)}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-              >
-                להמשיך
-              </button>
-            </div>
-          </Alert>
-        </div>
-      )}
-
       {fatals.length === 0 && (shouldContinue || warnings.length === 0) && (
         <>
-
-      {/* Tabs for Valid and Invalid Records */}
-      <div className="mb-4">
-        <div className="flex border-b">
-          <button
-            className={`px-4 py-2 font-medium ${
-              activeTab === 'invalid'
-                ? 'border-b-2 border-red-500 text-red-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('invalid')}
-          >
-            שגויים {recordErrors.length > 0 && `(${recordErrors.length})`}
-          </button>
-          <button
-            className={`px-4 py-2 font-medium ${
-              activeTab === 'valid'
-                ? 'border-b-2 border-green-500 text-green-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('valid')}
-          >
-            תקינים
-          </button>
-        </div>
-      </div>
-
-      {/* Invalid Records Table */}
-      {activeTab === 'invalid' && recordErrors.length > 0 && (
-        <div className="mb-6">
-          <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-red-200 shadow-sm">
-            <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
-              <Table className="w-full text-right border-collapse bg-white">
-                <TableHeader className="bg-red-100 sticky top-0 z-10 text-right">
-                  <TableRow>
-                    <TableHead className="text-right text-red-700 border px-3 py-2">שורה</TableHead>
-                    <TableHead className="text-right text-red-700 border px-3 py-2">נייר ערך</TableHead>
-                    <TableHead className="text-right text-red-700 border px-3 py-2">חשבון</TableHead>
-                    <TableHead className="text-right text-red-700 border px-3 py-2">כמות</TableHead>
-                    <TableHead className="text-right text-red-700 border px-3 py-2">שגיאה</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recordErrors.map((error, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="border px-3 py-2">{error.lineNumber || 'N/A'}</TableCell>
-                      <TableCell className="border px-3 py-2">{error.stockId || 'N/A'}</TableCell>
-                      <TableCell className="border px-3 py-2">{error.accountId || 'N/A'}</TableCell>
-                      <TableCell className="border px-3 py-2">{error.quantity || 'N/A'}</TableCell>
-                      <TableCell className="border px-3 py-2 text-red-600">{error.error}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          {/* Tabs for Valid and Invalid Records */}
+          <div className="mb-4">
+            <div className="flex border-b">
+              <button
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'valid'
+                    ? 'border-b-2 border-green-500 text-green-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('valid')}
+              >
+                אחזקות שנקלטו
+              </button>
+              <button
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'invalid'
+                    ? 'border-b-2 border-red-500 text-red-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('invalid')}
+              >
+                שגויים {recordErrors.length > 0 && `(${recordErrors.length})`}
+              </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Valid Records Message */}
-      {activeTab === 'valid' && (
-        <div className="mb-6">
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertTitle className="text-green-700">רשומות תקינות</AlertTitle>
-            <AlertDescription className="text-green-600">
-              הרשומות התקינות יישמרו במערכת אם תאשר את ההזנה.
-            </AlertDescription>
-          </Alert>
-          <div className="mb-6">
-            <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
-              <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
-                <Table className="w-full text-right border-collapse bg-white">
-                  <TableHeader className="bg-green-50 sticky top-0 z-10 text-right">
-                    <TableRow>
-                      <TableHead className="text-right text-green-700 border px-3 py-2">שורה</TableHead>
-                      <TableHead className="text-right text-green-700 border px-3 py-2">נייר ערך</TableHead>
-                      <TableHead className="text-right text-green-700 border px-3 py-2">חשבון</TableHead>
-                      <TableHead className="text-right text-green-700 border px-3 py-2">כמות</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {validRecords.map((record, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="border px-3 py-2">{record.lineNumber || 'N/A'}</TableCell>
-                        <TableCell className="border px-3 py-2">{record.stockId || 'N/A'}</TableCell>
-                        <TableCell className="border px-3 py-2">{record.accountId || 'N/A'}</TableCell>
-                        <TableCell className="border px-3 py-2">{record.quantity || 'N/A'}</TableCell>
+          {/* Invalid Records Table */}
+          {activeTab === 'invalid' && recordErrors.length > 0 && (
+            <div className="mb-6">
+              <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-red-200 shadow-sm">
+                <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
+                  <Table className="w-full text-right border-collapse bg-white">
+                    <TableHeader className="bg-red-100 sticky top-0 z-10 text-right">
+                      <TableRow>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">
+                          שורה
+                        </TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">
+                          נייר ערך
+                        </TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">
+                          חשבון
+                        </TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">
+                          כמות
+                        </TableHead>
+                        <TableHead className="text-right text-red-700 border px-3 py-2">
+                          שגיאה
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {recordErrors.map((error, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="border px-3 py-2">
+                            {error.lineNumber || 'N/A'}
+                          </TableCell>
+                          <TableCell className="border px-3 py-2">
+                            {error.stockId || 'N/A'}
+                          </TableCell>
+                          <TableCell className="border px-3 py-2">
+                            {error.accountId || 'N/A'}
+                          </TableCell>
+                          <TableCell className="border px-3 py-2">
+                            {error.quantity || 'N/A'}
+                          </TableCell>
+                          <TableCell className="border px-3 py-2 text-red-600">
+                            {error.error}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Confirm/Cancel Buttons */}
-      {showConfirmButtons && (
-        <div className="flex justify-end space-x-4 mt-6">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md border border-gray-300"
-          >
-            לבטל
-          </button>
-          <button
-            onClick={handleFinalConfirm}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-          >
-            לשמור
-          </button>
-        </div>
-      )}
+          {/* Valid Records Message */}
+          {activeTab === 'valid' && (
+            <div className="mb-6">
+              <div className="mb-6">
+                <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
+                  <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
+                    <Table className="w-full text-right border-collapse bg-white">
+                      <TableHeader className="bg-green-50 sticky top-0 z-10 text-right">
+                        <TableRow>
+                          <TableHead className="text-right text-green-700 border px-3 py-2">
+                            שורה
+                          </TableHead>
+                          <TableHead className="text-right text-green-700 border px-3 py-2">
+                            נייר ערך
+                          </TableHead>
+                          <TableHead className="text-right text-green-700 border px-3 py-2">
+                            חשבון
+                          </TableHead>
+                          <TableHead className="text-right text-green-700 border px-3 py-2">
+                            כמות
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {validRecords.map((record, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="border px-3 py-2">
+                              {record.lineNumber || 'N/A'}
+                            </TableCell>
+                            <TableCell className="border px-3 py-2">
+                              {record.stockId || 'N/A'}
+                            </TableCell>
+                            <TableCell className="border px-3 py-2">
+                              {record.accountId || 'N/A'}
+                            </TableCell>
+                            <TableCell className="border px-3 py-2">
+                              {record.quantity || 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Confirm/Cancel Buttons */}
+          {showConfirmButtons && (
+            <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
+              <Button variant="secondary" onClick={onCancel} className="font-medium">
+                ביטול
+              </Button>
+              <Button onClick={handleFinalConfirm} className="font-medium">
+                שמירת האחזקות שנקלטו
+              </Button>
+            </div>
+          )}
         </>
       )}
-
     </div>
-  );
-};
+  )
+}
