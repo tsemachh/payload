@@ -1,6 +1,8 @@
 import { PayloadRequest } from 'payload'
-import { FeedValidationResult, processHoldingsFeedCsv } from './processHoldingsFeedCsv'
+import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
 import { HoldingsFeed } from '@/payload-types'
+import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
+import { getBufferFromStream } from '@/utils/dataUtils'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -31,27 +33,11 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
 
     // Get the ReadableStream from the request body
     const stream = req.body
-
     if (!stream) {
-      return Response.json({ error: "No stream provided" }, { status: 400 })
+      return Response.json({ error: 'No stream provided' }, { status: 400 })
     }
 
-    // Convert the ReadableStream to a Buffer using the ReadableStream API
-    const reader = stream.getReader()
-    const chunks: Uint8Array[] = []
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        chunks.push(value)
-      }
-    } finally {
-      reader.releaseLock()
-    }
-
-    const buffer = Buffer.concat(chunks)
-
+    const buffer = await getBufferFromStream(stream)
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
     let extension = 'csv'
@@ -76,20 +62,23 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
 
     // Create a new HoldingsFeed document
     const holdingsFeed = {
-        valueDate,
-        comments: "",
-        selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
-      }  as Partial<HoldingsFeed>
+      valueDate,
+      comments: '',
+      selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
+    } as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
-    req.file=file
+    req.file = file
     // Process the holdings feed synchronously
-    const feedResult:FeedValidationResult | undefined=await processHoldingsFeedCsv(req, holdingsFeed, isValidationOnly)
+    const feedResult: FeedValidationResult | undefined = await processHoldingsFeedCsv(
+      req,
+      holdingsFeed,
+      isValidationOnly,
+    )
     if (feedResult != null)
       return Response.json({
-        feedResult
+        feedResult,
       })
-    else
-      return Response.json({ error: 'Error procesing  holdings file' }, { status: 500 })
+    else return Response.json({ error: 'Error procesing  holdings file' }, { status: 500 })
   } catch (error) {
     console.error('Error uploading holdings file:', error)
     return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
