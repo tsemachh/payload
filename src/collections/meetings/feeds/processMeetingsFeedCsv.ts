@@ -45,7 +45,8 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      return []
+      errors.push('No file found in request')
+      return errors
     }
 
     // Read the file content
@@ -151,13 +152,14 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     }
     return errors
   } catch (error) {
+    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+    errors.push(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
     if (errors.length > 0) {
       console.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
         console.error(`${idx + 1}. ${err}`)
       })
     }
-    req.payload.logger.error(`Error processing stock feed CSV: ${JSON.stringify(error)}`)
     return errors
   }
 }

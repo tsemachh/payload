@@ -1,5 +1,6 @@
 import { PayloadRequest } from 'payload'
 import { processMeetingsFeedCsv } from './processMeetingsFeedCsv'
+import { format } from 'date-fns'
 
 const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -31,10 +32,13 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     const buffer = Buffer.concat(chunks)
+    const now = new Date()
+    const formattedDate = format(now, 'dd-MM-yyyy')
+    const fileName = `upload_${formattedDate}.csv`
     // Create a file object from the buffer
     const file = {
       data: buffer,
-      name: 'upload.csv',
+      name: fileName,
       size: buffer.length,
       mimetype: 'text/csv',
     }
