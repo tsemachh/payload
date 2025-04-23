@@ -22,11 +22,12 @@ import {
 import { AlertCircle } from 'lucide-react'
 import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
-import { FeedFatalError, FeedValidationResult, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
+import { FeedFatalError, FeedValidationResult, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 
 export function HoldingsFeedView() {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<TreeNode[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => {
     // Load selected companies from localStorage on component mount
     if (typeof window !== 'undefined') {
@@ -53,6 +54,7 @@ export function HoldingsFeedView() {
       // Transform the flat company structure into a hierarchical tree
       const transformedCompanies = transformCompaniesToTree(user.companies)
       setCompanies(transformedCompanies)
+      setIsLoading(false)
     }
     if (user?.leafCompanies) {
       const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
@@ -210,55 +212,60 @@ export function HoldingsFeedView() {
   }
 
   return (
- <div className="pr-4 text-right">
-      <div className="flex flex-col space-y-4 md:flex-row md:space-y-0">
-        <div className="md:w-2/12 md:pl-2">
-            <label className="text-sm font-medium mb-2 block">חברות</label>
-            <CompanyTreeSelector
-                companies={companies}
-                selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
-                className="h-10 text-right"
-            />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+        <div>
+          <label className="text-base font-semibold mb-2 block">חברות</label>
+          <CompanyTreeSelector
+            companies={companies}
+            selectedCompanies={selectedCompanies}
+            onSelectionChange={setSelectedCompanies}
+            className="w-full"
+            isLoading={isLoading}
+          />
+        </div>
 
-          <div className="md:w-2/12 md:pl-2">
-          <label className="text-sm font-medium mb-2 block">תאריך ערך</label>
-            <DateSelector date={date} onDateChange={setDate} className="h-10 text-right" />
-          </div>
+        <div className="">
+          <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+          <DateSelector date={date} onDateChange={setDate} className="w-full" />
+        </div>
 
-         <div className="md:w-4/12 md:pl-2">
-          <label className="text-sm font-medium mb-2 block">קובץ אחזקות</label>
-            <FileUploader
-                onFileChange={setFile}
-                disabled={isUploading}
-                className="h-10 text-right"
-            />
-          </div>
-
-        <div className=" md:w-auto flex items-end">
-            <Button
-                onClick={handleSubmit}
-                disabled={!date || !file || isUploading || selectedCompanies.length === 0}
-            className="h-10 w-full md:w-auto px-8"
-            >
-              {isUploading ? 'מעלה...' : 'הזן'}
-            </Button>
+        <div className="">
+          <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
+          <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
         </div>
       </div>
-        <ProcessingResults
-            isSuccess={isSuccess}
-            validRecords={validRecords}
-            recordErrors={recordErrors}
-            warnings={warnings}
-            fatals={fatals}
-            className="mt-16"
-            showConfirmButtons={showConfirmButtons}
-            onConfirm={handleSaveConfirmed}
-            onCancel={handleCancel}
-            isValidating={isValidating}
-            isUploading={isUploading}
-        />
+
+      <div className="flex justify-center mt-6">
+        <Button
+          onClick={
+            !date || !file || isUploading || selectedCompanies.length === 0
+              ? () => {}
+              : handleSubmit
+          }
+          className="px-40"
+          style={
+            !date || !file || isUploading || selectedCompanies.length === 0
+              ? { cursor: 'not-allowed', opacity: 0.5 }
+              : {}
+          }
+        >
+          {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+        </Button>
       </div>
+      <ProcessingResults
+        isSuccess={isSuccess}
+        validRecords={validRecords}
+        recordErrors={recordErrors}
+        warnings={warnings}
+        fatals={fatals}
+        className="mt-16"
+        showConfirmButtons={showConfirmButtons}
+        onConfirm={handleSaveConfirmed}
+        onCancel={handleCancel}
+        isValidating={isValidating}
+        isUploading={isUploading}
+      />
+    </div>
   )
-  }
+}

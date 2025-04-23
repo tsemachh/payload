@@ -22,7 +22,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
 
     console.log(`Found ${companiesResult.docs.length} companies with accounts`)
-    debugger
+
     let processedCompanies = 0
     let processedAccounts = 0
     let errorCount = 0

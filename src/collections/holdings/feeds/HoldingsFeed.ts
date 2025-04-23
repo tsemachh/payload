@@ -41,6 +41,7 @@ export const HoldingsFeed: CollectionConfig = {
       label: 'חברות שנבחרו',
       type: 'relationship',
       hasMany: true,
+      index: true,
       relationTo: 'companies',
       admin: {
         readOnly: true,
@@ -61,9 +62,9 @@ export const HoldingsFeed: CollectionConfig = {
       defaultValue: 'pending',
     },
     {
-      name: 'processingErrors',
+      name: 'processingResults',
       type: 'array',
-      label: 'שגיאות עיבוד',
+      label: 'תוצאות עיבוד',
       admin: {
         readOnly: true,
       },
