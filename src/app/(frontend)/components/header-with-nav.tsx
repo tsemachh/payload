@@ -4,9 +4,12 @@ import { useAuth } from '@/providers/auth-provider'
 import { MainNav } from './main-nav'
 import { ThemeChooser } from '@/components/theme-chooser'
 import { UserNav } from './user-nav'
+import { usePathname } from 'next/navigation'
+import { HoldingsNav } from '../holdings/components/sub-nav-holdings'
 
 export function HeaderWithNav() {
   const auth = useAuth()
+  const pathname = usePathname()
 
   // Log the auth object to debug
   console.log('Auth object:', auth)
@@ -39,6 +42,9 @@ export function HeaderWithNav() {
           <ThemeChooser />
           <UserNav />
         </div>
+      </div>
+      <div className="flex h-8 items-center justify-between px-4">
+        {pathname.startsWith('/holdings') && <HoldingsNav />}
       </div>
     </header>
   )
