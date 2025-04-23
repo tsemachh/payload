@@ -43,9 +43,11 @@ export function HeaderWithNav() {
           <UserNav />
         </div>
       </div>
-      <div className="flex h-8 items-center justify-between px-4">
-        {pathname.startsWith('/holdings') && <HoldingsNav />}
-      </div>
+      {pathname.startsWith('/holdings') && (
+        <div className="flex h-8 items-center justify-between px-4">
+          <HoldingsNav />
+        </div>
+      )}
     </header>
   )
 }
