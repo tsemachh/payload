@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { HoldingFeedLine } from '@/payload-types'
-import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/processHoldingsFeedCsv'
+import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 
 export interface ProcessingError {
   lineNumber?: number
@@ -140,7 +140,7 @@ export function ProcessingResults({
                 {warnings.map((warning, index) => (
                   <li key={index} className="text-yellow-700">
                     {warning.message}
-                    {warning.count && <span> ({warning.count})</span>}
+                    {warning.count && Number(warning.count) > 1 && <span> ({warning.count})</span>}
 
                     {warning.details && warning.details.length > 0 && (
                       <ul className="mt-2 list-disc list-inside ps-6 text-yellow-600">

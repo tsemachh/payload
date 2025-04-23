@@ -69,7 +69,7 @@ export function HoldingsView() {
             company: holding.stock?.longName || 'N/A',
             stockNumber: holding.stock?.stockId || 'N/A',
             quantity: holding.quantity,
-            lastUpdated: holding.updatedAt,
+           // valueDate: holding.valueDate,
         })))
       } else {
         toast({
