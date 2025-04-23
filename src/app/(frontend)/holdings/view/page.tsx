@@ -12,6 +12,8 @@ import { ExportButton } from '@/components/export-button'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
 import { CompanyTreeSelector, TreeNode } from '../components/CompanySelector'
 import { DateSelector } from '../components/DateSelector'
+import { stringify } from 'qs-esm'
+import type { Where } from 'payload'
 
 export default function HoldingsView() {
   const { user } = useAuth()
@@ -20,6 +22,38 @@ export default function HoldingsView() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+
+
+
+  const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
+    const query: Where = {
+      and: [
+        {
+          valueDate: {
+            equals: formattedDate,
+          },
+        },
+        {
+          company: {
+            in: selectedCompanies,
+          },
+        },
+      ],
+    }
+
+    const stringifiedQuery = stringify(
+      {
+        where: query,
+      },
+      { addQueryPrefix: true },
+    )
+
+    const response = await fetch(`/api/holdings${stringifiedQuery}`)
+    return response
+  }
+
+
 
   // Extract companies from user
   useEffect(() => {
@@ -59,17 +93,14 @@ export default function HoldingsView() {
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
-      const companiesParam = selectedCompanies.join(',')
-      const response = await fetch(
-        `/api/holdings?date=${formattedDate}&companies=${companiesParam}`,
-      )
+      const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
       const data = await response.json()
 
       if (response.ok) {
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
-            company: holding.stock?.longName || 'N/A',
+            company: holding.company?.name || 'N/A',
             stockNumber: holding.stock?.stockId || 'N/A',
             quantity: holding.quantity,
             lastUpdated: holding.updatedAt,
