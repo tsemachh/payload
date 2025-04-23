@@ -149,7 +149,7 @@ const checkFeedWarnings = async (
       },
     },
   })
-  debugger
+
   console.log("-----selectedCompanies",selectedCompanies)
 
   console.log("-----existingHoldings",existingHoldings)
@@ -525,7 +525,7 @@ export const processHoldingsFeedCsv = async (
     }
     // Initial validation
     // Get the file from the request
-    debugger
+
     const file = req.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)

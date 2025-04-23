@@ -58,7 +58,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           //TODO Aggeragte Error and report at the end
       }
     })
-    debugger
+
 
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
