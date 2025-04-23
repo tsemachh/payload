@@ -31,7 +31,7 @@ export type StockType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "StockOrigin".
  */
-export type StockOrigin = 'TASE' | 'Foreign' | 'Deleted' | 'Private';
+export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
