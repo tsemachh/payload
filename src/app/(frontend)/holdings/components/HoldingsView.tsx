@@ -99,7 +99,7 @@ export function HoldingsView() {
       if (response.ok) {
         setHoldings(data.docs.map((holding: any) => ({
             id: holding.id,
-            company: holding.stock?.longName || 'N/A',
+            company: holding.company?.name || 'N/A',
             stockNumber: holding.stock?.stockId || 'N/A',
             quantity: holding.quantity,
            // valueDate: holding.valueDate,
