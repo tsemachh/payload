@@ -5,17 +5,17 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
-import { TreeNode, CompanyTreeSelector } from './CompanySelector'
-import { DateSelector } from './DateSelector'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from '../columns'
 import { Holding } from '../types'
 import { ExportButton } from '@/components/export-button'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
+import { CompanyTreeSelector, TreeNode } from '../components/CompanySelector'
+import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
 
-export function HoldingsView() {
+export default function HoldingsView() {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<TreeNode[]>([])
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])

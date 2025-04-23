@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -14,7 +14,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
