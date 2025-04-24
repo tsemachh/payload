@@ -393,6 +393,51 @@ export const Meetings: CollectionConfig = {
                     },
                   ]
                 },
+                {
+                  type: 'row',
+                  fields:[
+                    {
+                      name: 'vpercent',
+                      label: 'אחוז הצבעה',
+                      type: 'number',
+                      admin: {
+                        step: 0.01,
+                        condition: (_,siblingData) => siblingData.topicType === 'decision',
+                      },
+                    },
+                    {
+                      name: 'vPercentSpecial',
+                      label: 'אחוז הצבעה מיוחד',
+                      type: 'number',
+                      admin: {
+                        step: 0.01,
+                        condition: (_,siblingData) => siblingData.topicType === 'decision',
+                      },
+                    },
+                  ]
+                },
+                {
+                  name: 'recommendation',
+                  label: 'תוצאת ההצבעה',
+                  type: 'text',
+                  admin: {
+                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                  },
+                },
+                {
+                  name: 'result',
+                  label: 'תוצאה',
+                  type: 'select',
+                  options: [
+                    { label: '---', value: '0' },
+                    { label: 'בעד', value: '1' },
+                    { label: 'נגד', value: '2' },
+                    { label: 'דיון', value: '3' },
+                  ],
+                  admin: {
+                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                  },
+                },
               ],
             },
           ],

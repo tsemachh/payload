@@ -81,7 +81,7 @@ export default buildConfig({
   logger: logger,
   plugins: [
     importExportPlugin({
-      collections: ['stocks', 'meetings', 'companies', 'votes'],
+      collections: ['stocks', 'meetings', 'companies'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }

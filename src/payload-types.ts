@@ -89,7 +89,7 @@ export type RolePermissions =
  * via the `definition` "MigrationType".
  */
 export type MigrationType =
-  | ('holding' | 'user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting')
+  | ('holding' | 'user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting' | 'meetingAgenda')
   | null;
 /**
  * Supported timezones in IANA format.
@@ -334,6 +334,10 @@ export interface Meeting {
         otherMajority?: string | null;
         isRemovedFromAgenda?: boolean | null;
         readyForReport?: boolean | null;
+        vpercent?: number | null;
+        vPercentSpecial?: number | null;
+        recommendation?: string | null;
+        result?: ('0' | '1' | '2' | '3') | null;
         id?: string | null;
       }[]
     | null;
@@ -1022,6 +1026,10 @@ export interface MeetingsSelect<T extends boolean = true> {
         otherMajority?: T;
         isRemovedFromAgenda?: T;
         readyForReport?: T;
+        vpercent?: T;
+        vPercentSpecial?: T;
+        recommendation?: T;
+        result?: T;
         id?: T;
       };
   creator?: T;
