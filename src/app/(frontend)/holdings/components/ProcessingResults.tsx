@@ -23,6 +23,7 @@ import { HoldingFeedLine } from '@/payload-types'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import { Button } from '../../components/ui/button'
 import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
+import { RecordsTable } from './RecordsTable'
 
 export interface ProcessingError {
   lineNumber?: number
@@ -208,7 +209,7 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('valid')}
               >
-                ֿ תקינים {validRecords.length > 0 && `(${validRecords.length})`}ֿ{' '}
+                אחזקות שנקלטו {validRecords.length > 0 && `(${validRecords.length})`}
               </button>
               <button
                 className={`px-4 py-2 font-medium ${
@@ -225,103 +226,11 @@ export function ProcessingResults({
 
           {/* Invalid Records Table */}
           {activeTab === 'invalid' && recordErrors.length > 0 && (
-            <div className="mb-6">
-              <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-red-200 shadow-sm">
-                <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
-                  <Table className="w-full text-right border-collapse bg-white">
-                    <TableHeader className="bg-red-100 sticky top-0 z-10 text-right">
-                      <TableRow>
-                        <TableHead className="text-right text-red-700 border px-3 py-2">
-                          שורה
-                        </TableHead>
-                        <TableHead className="text-right text-red-700 border px-3 py-2">
-                          נייר ערך
-                        </TableHead>
-                        <TableHead className="text-right text-red-700 border px-3 py-2">
-                          חשבון
-                        </TableHead>
-                        <TableHead className="text-right text-red-700 border px-3 py-2">
-                          כמות
-                        </TableHead>
-                        <TableHead className="text-right text-red-700 border px-3 py-2">
-                          שגיאה
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recordErrors.map((error, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="border px-3 py-2">
-                            {error.lineNumber || 'N/A'}
-                          </TableCell>
-                          <TableCell className="border px-3 py-2">
-                            {error.stockId || 'N/A'}
-                          </TableCell>
-                          <TableCell className="border px-3 py-2">
-                            {error.accountId || 'N/A'}
-                          </TableCell>
-                          <TableCell className="border px-3 py-2">
-                            {error.quantity || 'N/A'}
-                          </TableCell>
-                          <TableCell className="border px-3 py-2 text-red-600">
-                            {error.error}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
+            <RecordsTable records={recordErrors} invalid={true}/>
           )}
 
           {/* Valid Records Message */}
-          {activeTab === 'valid' && (
-            <div className="mb-6">
-              <div className="mb-6">
-                <div className="max-w-6xl mx-auto bg-white p-2 rounded-lg border border-green-200 shadow-sm">
-                  <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-md">
-                    <Table className="w-full text-right border-collapse bg-white">
-                      <TableHeader className="bg-green-50 sticky top-0 z-10 text-right">
-                        <TableRow>
-                          <TableHead className="text-right text-green-700 border px-3 py-2">
-                            שורה
-                          </TableHead>
-                          <TableHead className="text-right text-green-700 border px-3 py-2">
-                            נייר ערך
-                          </TableHead>
-                          <TableHead className="text-right text-green-700 border px-3 py-2">
-                            חשבון
-                          </TableHead>
-                          <TableHead className="text-right text-green-700 border px-3 py-2">
-                            כמות
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {validRecords.map((record, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="border px-3 py-2">
-                              {record.lineNumber || 'N/A'}
-                            </TableCell>
-                            <TableCell className="border px-3 py-2">
-                              {record.stockId || 'N/A'}
-                            </TableCell>
-                            <TableCell className="border px-3 py-2">
-                              {record.accountId || 'N/A'}
-                            </TableCell>
-                            <TableCell className="border px-3 py-2">
-                              {record.quantity || 'N/A'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'valid' && <RecordsTable records={validRecords} />}
 
           {/* Confirm/Cancel Buttons */}
           {showConfirmButtons && (

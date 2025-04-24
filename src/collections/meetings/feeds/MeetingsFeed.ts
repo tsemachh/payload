@@ -14,6 +14,13 @@ export const MeetingsFeed: CollectionConfig = {
   access: {
     read: () => true,
   },
+  hooks: {
+    afterChange: [
+      async ({ req, doc }) => {
+        await processMeetingsFeedCsv(req, doc)
+      },
+    ],
+  },
   fields: [
     {
       name: 'comments',

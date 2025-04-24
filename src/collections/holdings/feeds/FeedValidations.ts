@@ -234,19 +234,19 @@ export const validateRow = (
   // Check required fields
   if (!stockId) {
     isValid = false
-    errorMessage = 'מסםר נייר חסר'
+    errorMessage = 'Missing stock ID'
   } else if (isNaN(quantity) || quantity < 1) {
     isValid = false
-    errorMessage = 'ערך נקוב לא תקין'
+    errorMessage = 'Invalid quantity: must be a positive number >= 1'
   } else if (!accountId) {
     isValid = false
-    errorMessage = 'מספר חשבון חסר'
+    errorMessage = 'Missing account ID'
   } else if (!stockMap.has(stockId)) {
     isValid = false
-    errorMessage = 'נייר ערך לא מוכר'
+    errorMessage = 'Unknown stock ID'
   } else if (!accountMap.has(Number(accountId))) {
     isValid = false
-    errorMessage = 'מספר חשבון לא מוכר'
+    errorMessage = 'Unknown account ID'
   }
 
   const processedRecord: HoldingFeedLine = {

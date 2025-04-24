@@ -6,18 +6,10 @@ import { Holding } from "./types"
 
 import { Column } from '../types/meetings'
 
-export const columns: Column<any>[] = [
+export const columns: Column<Holding>[] = [
   {
     key: 'stockNumber',
     header: 'מספר נייר ערך',
-    type: 'string',
-    minWidth: 120,
-    width:100,
-    filterable: true,
-  },
-  {
-    key: 'stockName',
-    header: 'שם נייר ערך',
     type: 'string',
     minWidth: 120,
     width:100,
@@ -43,3 +35,4 @@ export const columns: Column<any>[] = [
     filterable: true,
   },
 ]
+

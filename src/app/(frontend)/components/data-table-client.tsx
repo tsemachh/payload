@@ -53,7 +53,7 @@ import {
   CompanyTableDate,
   MeetingTableDataType,
 } from '../types/meetings'
-import { defaultVisibleColumns, getDateRange } from '../meetings-future/meetingTableConstants'
+import { getDateRange } from '../meetings-future/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
 export function DataTableStatic<T extends Record<string, any>>({
@@ -67,8 +67,10 @@ export function DataTableStatic<T extends Record<string, any>>({
   tableId = 'default-table',
   renderRowActions,
   searchPlaceholder = 'חיפוש כללי...',
+  filterOption = true,
   filterLabel = 'סינון',
   columnsLabel = 'עמודות',
+  defaultVisibleColumns = columns.map(column => column.key),
   onlyFuture = false,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
@@ -711,19 +713,21 @@ export function DataTableStatic<T extends Record<string, any>>({
           />
         </div>
         <div className="flex space-x-2 space-x-reverse">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => resetFilters()}
-            className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
-          >
-            {isFilterActive ? `הסר ${filterLabel}` : filterLabel}
-            {isFilterActive ? (
-              <FilterX className="h-4 w-4 mr-2" />
-            ) : (
-              <Filter className="h-4 w-4 mr-2" />
-            )}
-          </Button>
+          {filterOption && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => resetFilters()}
+              className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
+            >
+              {isFilterActive ? `הסר ${filterLabel}` : filterLabel}
+              {isFilterActive ? (
+                <FilterX className="h-4 w-4 mr-2" />
+              ) : (
+                <Filter className="h-4 w-4 mr-2" />
+              )}
+            </Button>
+          )}
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -952,7 +956,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <React.Fragment key={row.meetingId+uuidv4()}>
+                  <React.Fragment key={row.meetingId + uuidv4()}>
                     <TableRow key={uuidv4()} className="group hover:bg-primary/20">
                       {visibleColumns.map((column) => (
                         <TableCell

@@ -56,7 +56,7 @@ export function FileUploader({ onFileChange, className, disabled = false }: File
       >
         <span className="flex items-center">
           <UploadCloud className="ml-2 h-4 w-4" />
-          <span className="truncate" dir="auto">
+          <span className="truncate" dir={'ltr'}>
             {fileName || 'העלאת קובץ'}
           </span>     
         </span>

@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  defaultVisibleColumns,
   futureDateFilterOptions,
   meetingColumns,
   pastDateFilterOptions,
@@ -30,6 +31,7 @@ export function MeetingsTableClient({
       futureDateFilterOptions={futureDateFilterOptions}
       onlyFuture={onlyFuture}
       searchPlaceholder="חיפוש בכל השדות..."
+      defaultVisibleColumns={defaultVisibleColumns}
     />
   )
 }

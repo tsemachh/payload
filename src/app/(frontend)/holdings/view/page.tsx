@@ -100,10 +100,10 @@ export default function HoldingsView() {
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
-            stockNumber: holding.stock?.stockId || 'N/A',
-            stockName:holding.stock?.name || 'N/A',
-            quantity: holding.quantity || 'N/A',
             company: holding.company?.name || 'N/A',
+            stockNumber: holding.stock?.stockId || 'N/A',
+            quantity: holding.quantity,
+            lastUpdated: holding.updatedAt,
           })),
         )
       } else {
@@ -180,7 +180,6 @@ export default function HoldingsView() {
 
       {holdings.length > 0 ? (
         <div>
-          {' '}
           {/* Added container with max width to constrain table width */}
           <DataTable
             columns={columns}

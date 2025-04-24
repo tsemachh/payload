@@ -41,7 +41,7 @@ export type CompanyTableDate = {
 
 // Base column type for all tables
 export interface Column<T> {
-  key: keyof T
+  key: string
   header: string
   type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
   filterable?: boolean
@@ -83,8 +83,10 @@ export interface DataTableProps<T extends Record<string, any>> {
   tableId?: string // For storing column visibility in localStorage
   renderRowActions?: (row: T) => React.ReactNode
   searchPlaceholder?: string
+  filterOption?: boolean
   filterLabel?: string
   columnsLabel?: string
+  defaultVisibleColumns?: string[]
   onlyFuture?: boolean
   pagination?: PaginationProps
   isLoading?: boolean

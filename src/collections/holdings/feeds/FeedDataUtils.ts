@@ -130,7 +130,6 @@ export const preloadStocks = async (
       },
     },
     depth: 0,
-    limit:0,
   })
 
   stocksResult.docs.forEach((stock: Stock) => {
