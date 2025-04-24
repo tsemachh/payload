@@ -209,7 +209,7 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('valid')}
               >
-                אחזקות שנקלטו {validRecords.length > 0 && `(${validRecords.length})`}
+                תקינות {validRecords.length > 0 && `(${validRecords.length})`}
               </button>
               <button
                 className={`px-4 py-2 font-medium ${
@@ -219,14 +219,14 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('invalid')}
               >
-                שגויים {recordErrors.length > 0 && `(${recordErrors.length})`}
+                שגוייות {recordErrors.length > 0 && `(${recordErrors.length})`}
               </button>
             </div>
           </div>
 
           {/* Invalid Records Table */}
           {activeTab === 'invalid' && recordErrors.length > 0 && (
-            <RecordsTable records={recordErrors} invalid={true}/>
+            <RecordsTable records={recordErrors} invalid={true} />
           )}
 
           {/* Valid Records Message */}
