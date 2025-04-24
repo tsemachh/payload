@@ -136,7 +136,7 @@ export function ProcessingResults({
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-base font-medium mb-4">נמצאו מספר אזהרות בקובץ האחזקות:</p>
+            <p className="text-base font-medium mb-4">נמצאו מספר בעיות בקובץ האחזקות:</p>
 
             <ul className="space-y-3">
               {warnings.map((warning, index) => (
@@ -239,7 +239,7 @@ export function ProcessingResults({
                 ביטול
               </Button>
               <Button onClick={handleFinalConfirm} className="font-medium">
-                שמירת האחזקות שנקלטו
+                שמירת האחזקות תקינות
               </Button>
             </div>
           )}
