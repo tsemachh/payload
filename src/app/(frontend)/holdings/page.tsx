@@ -261,9 +261,12 @@ export default function HoldingsFeedView() {
       ) : (
         <>
           {date && file && (
-            <h2 className="text-xl font-bold text-center">
-              אחזקות מקובץ <bdi className="inline-block ltr-dir">{file.name}</bdi> לתאריך{' '}
-              {format(date, 'dd/MM/yyyy')}
+            <h2 className="text-xl text-center">
+              אחזקות מקובץ{' '}
+              <bdi className="inline-block font-mono" dir={'ltr'}>
+                {file.name}
+              </bdi>{' '}
+              לתאריך {format(date, 'dd/MM/yyyy')}
             </h2>
           )}
           {!isSuccess && (
