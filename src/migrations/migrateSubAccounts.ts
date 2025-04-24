@@ -84,7 +84,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               companyId: {
                 equals: row.firmId
               }
-            }
+            },
+            limit: 1
           })
 
           if (companyResult.docs.length === 0) {
@@ -119,7 +120,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                 }
               ]
-            }
+            },
+            limit: 0
           })
 
           if (parentAccountResult.docs.length === 0) {
@@ -163,7 +165,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                 }
               ]
-            }
+            },
+            limit: 0
           })
 
           if (existingAccount.docs.length > 0) {

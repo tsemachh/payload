@@ -41,6 +41,7 @@ export const updateCompaniesMeetingsOnHoldingChange = async (
           { holdingsLimit: { equals: holding.valueDate } },
         ],
       },
+      limit: 0,
     })
 
     if (meetings.length === 0) {
