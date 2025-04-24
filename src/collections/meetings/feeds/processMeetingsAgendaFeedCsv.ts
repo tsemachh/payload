@@ -74,6 +74,7 @@ export const processMeetingsAgendaFeedCsv = async (
               equals: magnaId,
             },
           },
+          limit: 1,
         })
 
         if (existingMeetings.docs.length === 0) {
