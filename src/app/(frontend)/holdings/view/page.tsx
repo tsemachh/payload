@@ -45,6 +45,7 @@ export default function HoldingsView() {
     const stringifiedQuery = stringify(
       {
         where: query,
+        limit: 0,
       },
       { addQueryPrefix: true },
     )
