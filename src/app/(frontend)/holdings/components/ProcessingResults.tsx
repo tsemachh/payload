@@ -135,7 +135,7 @@ export function ProcessingResults({
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-base font-medium mb-4">נמצאו מספר אזהרות בקובץ האחזקות:</p>
+            <p className="text-base font-medium mb-4">נמצאו מספר בעיות בקובץ האחזקות:</p>
 
             <ul className="space-y-3">
               {warnings.map((warning, index) => (
@@ -208,8 +208,8 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('valid')}
               >
-ֿ                תקינים {validRecords.length > 0 && `(${validRecords.length})`}
-ֿ              </button>
+                ֿ תקינים {validRecords.length > 0 && `(${validRecords.length})`}ֿ{' '}
+              </button>
               <button
                 className={`px-4 py-2 font-medium ${
                   activeTab === 'invalid'

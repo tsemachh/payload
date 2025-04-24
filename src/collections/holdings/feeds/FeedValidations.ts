@@ -130,7 +130,7 @@ export const checkFeedWarnings = async (
   if (existingHoldings.docs.length > 0) {
     warnings.push({
       type: 'duplicateFeedForDate',
-      message: `כבר קיימת הזנה לתאריך ${valueDate}`,
+      message: ` בוצעה בעבר הזנה לתאריך ${valueDate}`,
       count: existingHoldings.docs.length,
     })
   }
@@ -168,27 +168,25 @@ export const checkFeedWarnings = async (
     if (percentDifference > 5) {
       warnings.push({
         type: 'lineCountDifference',
-        message: `פער של מעל 5% בכמות השורות (${percentDifference.toFixed(2)}%)`,
+        message: `חריגה בכמות הרשומות בהשוואה להזנה קודמת`,
         details: [`הזנה קודמת: ${previousCount} שורות`, `הזנה נוכחית: ${currentCount} שורות`],
       })
     }
 
     const currentAccounts = new Set<string>(accountIds.map((id) => id.toString()))
 
-    const previousAccountsArray = (JSON.parse(previousFeed.accountsJson as string) as number[]).map(String)
+    const previousAccountsArray = (JSON.parse(previousFeed.accountsJson as string) as number[]).map(
+      String,
+    )
     const previousAccounts = new Set<string>(previousAccountsArray)
 
-// חשבונות שהיו קודם ועכשיו חסרים
-    const missingAccounts = previousAccountsArray.filter(
-      (account) => !currentAccounts.has(account),
-    )
+    // חשבונות שהיו קודם ועכשיו חסרים
+    const missingAccounts = previousAccountsArray.filter((account) => !currentAccounts.has(account))
 
-// חשבונות שעכשיו קיימים אבל לא היו קודם
-    const extraAccounts = [...currentAccounts].filter(
-      (account) => !previousAccounts.has(account),
-    )
+    // חשבונות שעכשיו קיימים אבל לא היו קודם
+    const extraAccounts = [...currentAccounts].filter((account) => !previousAccounts.has(account))
 
-// אזהרות
+    // אזהרות
     if (missingAccounts.length > 0) {
       warnings.push({
         type: 'missingAccounts',
@@ -206,7 +204,6 @@ export const checkFeedWarnings = async (
         count: extraAccounts.length,
       })
     }
-
   }
 
   return warnings
