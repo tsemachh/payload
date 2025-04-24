@@ -14,7 +14,7 @@ export function HoldingsNav() {
   const pathname = usePathname()
 
   return (
-    <div className="flex justify-start pb-[15px]" dir="rtl">
+    <div className="flex justify-start pb-[15px] pr-8" dir="rtl">
       <nav className="grid grid-cols-2 gap-4">
         {navItems.map((item) => {
           const Icon = item.icon
