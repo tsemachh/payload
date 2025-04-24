@@ -208,8 +208,8 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('valid')}
               >
-                אחזקות שנקלטו
-              </button>
+ֿ                תקינים {validRecords.length > 0 && `(${validRecords.length})`}
+ֿ              </button>
               <button
                 className={`px-4 py-2 font-medium ${
                   activeTab === 'invalid'
@@ -330,7 +330,7 @@ export function ProcessingResults({
                 ביטול
               </Button>
               <Button onClick={handleFinalConfirm} className="font-medium">
-                שמירת האחזקות שנקלטו
+                שמירת האחזקות תקינות
               </Button>
             </div>
           )}
