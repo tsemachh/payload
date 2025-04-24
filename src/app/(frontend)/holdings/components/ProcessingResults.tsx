@@ -2,15 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { XCircle, AlertTriangle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -18,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { HoldingFeedLine } from '@/payload-types'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import { Button } from '../../components/ui/button'
@@ -42,12 +34,12 @@ export interface ProcessingWarning {
 
 interface ProcessingResultsProps {
   isSuccess: boolean
+  setIsSuccess: (v: boolean) => void
   validRecords: HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
   className?: string
-  showConfirmButtons?: boolean
   onConfirm?: () => void
   onContinue?: () => void
   onCancel?: () => void
@@ -57,18 +49,17 @@ interface ProcessingResultsProps {
 
 export function ProcessingResults({
   isSuccess,
+  setIsSuccess,
   validRecords,
   recordErrors,
   warnings,
   fatals,
   className,
-  showConfirmButtons = false,
   onConfirm,
   onCancel,
   isValidating = false,
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('valid')
-  const [isFinalized, setIsFinalized] = useState(false)
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
@@ -81,12 +72,9 @@ export function ProcessingResults({
 
   const handleFinalConfirm = () => {
     if (onConfirm) {
+      setIsSuccess(true)
       onConfirm()
     }
-    setIsFinalized(true)
-    setTimeout(() => {
-      setIsFinalized(false)
-    }, 1000)
   }
 
   const handleContinueWarning = () => {
@@ -106,21 +94,15 @@ export function ProcessingResults({
     return (
       <div className="flex flex-col h-[500px] items-center pt-[100px] ">
         <LoadingSpinnerDiamond />
+        <p className="text-center">מעבד נתונים...</p>
       </div>
     )
   }
-
-  // Show success state with no errors or warnings
-  if (isFinalized) {
+  if (isSuccess) {
     return (
-      <div className={className}>
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle className="h-4 w-4 text-green-500" />
-          <AlertTitle className="text-green-700">הצלחה</AlertTitle>
-          <AlertDescription className="text-green-600">
-            קובץ האחזקות נקלט בהצלחה במערכת.
-          </AlertDescription>
-        </Alert>
+      <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+        <LoadingSpinnerDiamond />
+        <p className="text-center">שומר נתונים...</p>
       </div>
     )
   }
@@ -226,23 +208,21 @@ export function ProcessingResults({
 
           {/* Invalid Records Table */}
           {activeTab === 'invalid' && recordErrors.length > 0 && (
-            <RecordsTable records={recordErrors} invalid={true}/>
+            <RecordsTable records={recordErrors} invalid={true} />
           )}
 
           {/* Valid Records Message */}
           {activeTab === 'valid' && <RecordsTable records={validRecords} />}
 
           {/* Confirm/Cancel Buttons */}
-          {showConfirmButtons && (
-            <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
-              <Button variant="secondary" onClick={onCancel} className="font-medium">
-                ביטול
-              </Button>
-              <Button onClick={handleFinalConfirm} className="font-medium">
-                שמירת האחזקות תקינות
-              </Button>
-            </div>
-          )}
+          <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
+            <Button variant="secondary" onClick={onCancel} className="font-medium">
+              ביטול
+            </Button>
+            <Button onClick={handleFinalConfirm} className="font-medium">
+              שמירת האחזקות תקינות
+            </Button>
+          </div>
         </>
       )}
     </div>

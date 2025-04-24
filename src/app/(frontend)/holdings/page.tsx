@@ -16,6 +16,15 @@ import { transformCompaniesToTree } from '../helpers/utils-holdings'
 import { DateSelector } from './components/DateSelector'
 import { FileUploader } from './components/FileUploader'
 import { ProcessingResults } from './components/ProcessingResults'
+import { useRouter } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog'
+import { AlertTriangle } from 'lucide-react'
 
 export default function HoldingsFeedView() {
   const { user } = useAuth()
@@ -38,8 +47,9 @@ export default function HoldingsFeedView() {
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
   const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
-  const [showConfirmButtons, setShowConfirmButtons] = useState(false)
   const [editForm, setEditForm] = useState(true)
+  const [saveError, setSaveError] = useState(false)
+  const router = useRouter()
 
   // Extract companies from user
   useEffect(() => {
@@ -93,7 +103,6 @@ export default function HoldingsFeedView() {
     }
 
     setIsValidating(true)
-    setShowConfirmButtons(false)
     setEditForm(false)
 
     setvalidRecords([])
@@ -122,10 +131,7 @@ export default function HoldingsFeedView() {
         setFatals(feedResults.fatalErrors)
         setWarnings(feedResults.warnings)
         setRecordErrors(feedResults.recordErrors)
-
-        if (feedResults.fatalErrors.length == 0) setShowConfirmButtons(true)
       } else {
-        setIsSuccess(false)
         toast({
           title: 'שגיאה בהעלאת הקובץ',
           description: result.error || 'אירעה שגיאה בהעלאת הקובץ',
@@ -133,7 +139,6 @@ export default function HoldingsFeedView() {
         })
       }
     } catch (error) {
-      setIsSuccess(false)
       console.error('Error uploading file:', error)
       toast({
         title: 'שגיאה בהעלאת הקובץ',
@@ -150,47 +155,31 @@ export default function HoldingsFeedView() {
     if (!date || !file) {
       return
     }
-
     setIsUploading(true)
-
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
-
+      const formattedCompanies = encodeURIComponent(JSON.stringify(selectedCompanies))
       // Save the file (validateOnly=false)
       const response = await fetch(
-        `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=false`,
+        `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${formattedCompanies}&validateOnly=false`,
         {
           method: 'POST',
           body: file,
         },
       )
-
       const result = await response.json()
-
-      if (response.ok) {
-        setIsSuccess(true)
-        setShowConfirmButtons(false)
-        toast({
-          title: 'הצלחה',
-          description: 'קובץ האחזקות נשמר בהצלחה',
-          variant: 'default',
-        })
+      if (response.ok) {        
+        const payload = {
+          date: date.toISOString(),
+          selectedCompanies,
+        }
+        const encoded = btoa(JSON.stringify(payload))
+        router.push(`/holdings/view?data=${encodeURIComponent(encoded)}`)
       } else {
-        setIsSuccess(false)
-        toast({
-          title: 'שגיאה בשמירת הקובץ',
-          description: result.error || 'אירעה שגיאה בשמירת הקובץ',
-          variant: 'destructive',
-        })
+        setSaveError(true)
       }
     } catch (error) {
-      setIsSuccess(false)
-      console.error('Error saving file:', error)
-      toast({
-        title: 'שגיאה בשמירת הקובץ',
-        description: 'אירעה שגיאה בשמירת הקובץ',
-        variant: 'destructive',
-      })
+      setSaveError(true)
     } finally {
       setIsUploading(false)
     }
@@ -198,7 +187,6 @@ export default function HoldingsFeedView() {
 
   // Cancel the upload
   const handleCancel = () => {
-    setShowConfirmButtons(false)
     setEditForm(true)
     setRecordErrors([])
     setWarnings([])
@@ -269,21 +257,38 @@ export default function HoldingsFeedView() {
               לתאריך {format(date, 'dd/MM/yyyy')}
             </h2>
           )}
-          {!isSuccess && (
-            <ProcessingResults
-              isSuccess={isSuccess}
-              validRecords={validRecords}
-              recordErrors={recordErrors}
-              warnings={warnings}
-              fatals={fatals}
-              className="mt-16"
-              showConfirmButtons={showConfirmButtons}
-              onConfirm={handleSaveConfirmed}
-              onCancel={handleCancel}
-              isValidating={isValidating}
-              isUploading={isUploading}
-            />
-          )}
+          <ProcessingResults
+            isSuccess={isSuccess}
+            setIsSuccess={setIsSuccess}
+            validRecords={validRecords}
+            recordErrors={recordErrors}
+            warnings={warnings}
+            fatals={fatals}
+            className="mt-16"
+            onConfirm={handleSaveConfirmed}
+            onCancel={handleCancel}
+            isValidating={isValidating}
+            isUploading={isUploading}
+          />
+          <Dialog open={saveError}>
+            <DialogContent className="max-w-md" dir="rtl">
+              <DialogHeader className="flex flex-row items-center gap-3">
+                <AlertTriangle className="h-8 w-8 text-red-500 flex-shrink-0" />
+                <DialogTitle className="text-xl text-red-600 m-0">שגיאה בשמירת הקובץ</DialogTitle>
+              </DialogHeader>
+
+              <DialogFooter className="flex justify-end gap-3 mt-6">
+                <Button
+                  onClick={() => {
+                    setSaveError(false)
+                    setEditForm(true)
+                  }}
+                >
+                  אישור
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

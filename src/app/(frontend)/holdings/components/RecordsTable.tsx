@@ -77,10 +77,7 @@ export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: bool
     : defaultVisibleValidgColumns
 
   return (
-    <div
-      className="mx-auto overflow-auto"
-      style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}
-    >
+    <div style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}>
       <DataTableStatic
         data={dataWithIds}
         columns={columns}
