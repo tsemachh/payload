@@ -1,18 +1,21 @@
-"use client"
-
-import { Button } from "@/components/ui/button"
-import { ArrowUpDown } from "lucide-react"
-import { Holding } from "./types"
-
+'use client'
 import { Column } from '../types/meetings'
 
-export const columns: Column<Holding>[] = [
+export const columns: Column<any>[] = [
   {
     key: 'stockNumber',
     header: 'מספר נייר ערך',
     type: 'string',
     minWidth: 120,
-    width:100,
+    width: 100,
+    filterable: true,
+  },
+  {
+    key: 'stockName',
+    header: 'שם נייר ערך',
+    type: 'string',
+    minWidth: 120,
+    width: 100,
     filterable: true,
   },
   {
@@ -20,19 +23,16 @@ export const columns: Column<Holding>[] = [
     header: 'כמות',
     type: 'number',
     minWidth: 100,
-    width:100,
+    width: 100,
     filterable: false,
-    render: (row) => (
-      <span className="text-right">{row.quantity.toLocaleString()}</span>
-    ),
+    render: (row) => <span className="text-right">{row.quantity.toLocaleString()}</span>,
   },
   {
     key: 'company',
     header: 'חברה',
     type: 'string',
     minWidth: 150,
-    width:350,
+    width: 350,
     filterable: true,
   },
 ]
-

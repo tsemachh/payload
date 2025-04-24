@@ -23,9 +23,6 @@ export default function HoldingsView() {
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-
-
-
   const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
     const query: Where = {
       and: [
@@ -53,8 +50,6 @@ export default function HoldingsView() {
     const response = await fetch(`/api/holdings${stringifiedQuery}`)
     return response
   }
-
-
 
   // Extract companies from user
   useEffect(() => {
@@ -101,10 +96,10 @@ export default function HoldingsView() {
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
-            company: holding.company?.name || 'N/A',
             stockNumber: holding.stock?.stockId || 'N/A',
-            quantity: holding.quantity,
-            lastUpdated: holding.updatedAt,
+            stockName: holding.stock?.name || 'N/A',
+            quantity: holding.quantity || 'N/A',
+            company: holding.company?.name || 'N/A',
           })),
         )
       } else {
