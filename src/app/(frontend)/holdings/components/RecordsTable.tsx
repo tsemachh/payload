@@ -5,17 +5,16 @@ import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
 
-// הגדרת הטיפוס עבור הרשומות
 interface RecordType {
   lineNumber: string | number
   stockId: string | number
   accountId: string | number
   quantity: string | number
-  id?: string | number // מזהה ייחודי לכל רשומה
+  error: string
+  id?: string | number
 }
 
-// הגדרת העמודות בטבלה
-const recordColumns: Column<RecordType>[] = [
+const holdingColumns: Column<RecordType>[] = [
   {
     key: 'lineNumber',
     header: 'שורה',
@@ -26,7 +25,6 @@ const recordColumns: Column<RecordType>[] = [
     key: 'stockId',
     header: 'נייר ערך',
     type: 'string',
-    filterable: true,
     minWidth: 70,
   },
   {
@@ -47,34 +45,51 @@ const recordColumns: Column<RecordType>[] = [
       ),
   },
 ]
+const invalidColumnsAdditional: Column<RecordType>[] = [
+  {
+    key: 'error',
+    header: 'שגיאה',
+    type: 'string',
+    minWidth: 150,
+    filterable: true,
+  },
+]
 
-// רשימת העמודות שיוצגו כברירת מחדל
-const defaultVisibleRecordColumns = ['lineNumber', 'stockId', 'accountId', 'quantity']
+const defaultVisibleValidgColumns = ['lineNumber', 'stockId', 'accountId', 'quantity']
+const defaultVisibleInvalidColumnsA = [...defaultVisibleValidgColumns, 'error']
 
-export const RecordsTable: React.FC<{ records: HoldingFeedLine[] }> = ({ records }) => {
-  const dataWithIds: RecordType[] = records.map((record, index) => ({
+export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean }> = ({
+  records,
+  invalid,
+}) => {
+  const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
-    lineNumber: record.lineNumber ?? 'N/A',
-    stockId: record.stockId ?? 'N/A',
-    accountId: record.accountId ?? 'N/A',
-    quantity: record.quantity ?? 'N/A',
+    lineNumber: holding.lineNumber ?? 'N/A',
+    stockId: holding.stockId ?? 'N/A',
+    accountId: holding.accountId ?? 'N/A',
+    quantity: holding.quantity ?? 'N/A',
+    error: holding.error ?? ' ',
   }))
-  console.log('dataWithIds', dataWithIds)
+
+  const columns = invalid ? [...holdingColumns, ...invalidColumnsAdditional] : holdingColumns
+  const defaultVisibleColumns = invalid
+    ? defaultVisibleInvalidColumnsA
+    : defaultVisibleValidgColumns
 
   return (
-    <div className="mb-6">
-      <div className="max-w-6xl mx-auto">
-        <DataTableStatic
-          data={dataWithIds}
-          columns={recordColumns}
-          idField="id"
-          defaultSortField="lineNumber"
-          defaultSortDirection="asc"
-          tableId="records-table"
-          filterOption={false}
-          defaultVisibleColumns={defaultVisibleRecordColumns}
-        />
-      </div>
+    <div
+      className="mx-auto overflow-auto"
+      style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}
+    >
+      <DataTableStatic
+        data={dataWithIds}
+        columns={columns}
+        idField="id"
+        defaultSortField="lineNumber"
+        defaultSortDirection="asc"
+        tableId={invalid ? 'holdings-table-invalid' : 'holdings-table'}
+        defaultVisibleColumns={defaultVisibleColumns}
+      />
     </div>
   )
 }
