@@ -151,7 +151,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 companyId: {
                   equals: firm.firmID.toString()
                 }
-              }
+              },
+              limit: 1
             })
 
             if (!existingCompany.docs.length) {
@@ -190,7 +191,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             email: {
               equals: userProfile.UserName.toLowerCase().trim()
             }
-          }
+          },
+          limit: 1
         })
 
         // Prepare userAuth data with all required fields

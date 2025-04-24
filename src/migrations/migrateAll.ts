@@ -164,7 +164,8 @@ async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): Promise
             email: {
               equals: userData.email
             }
-          }
+          },
+          limit: 1
         })
 
         if (existingUser.docs.length > 0) {

@@ -95,7 +95,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             companyId: {
               equals: row.firmId
             }
-          }
+          },
+          limit: 1
         })
 
         if (existingCompany.docs.length > 0) {

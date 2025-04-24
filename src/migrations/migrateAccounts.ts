@@ -60,6 +60,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               equals: row.firmId,
             },
           },
+          limit: 1,
         })
 
         if (companyResult.docs.length === 0) {
@@ -91,6 +92,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               equals: companyId,
             },
           },
+          limit: 0,
         })
 
         const accountData: Partial<Account> = {

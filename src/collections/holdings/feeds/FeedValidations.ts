@@ -122,6 +122,7 @@ export const checkFeedWarnings = async (
         contains: selectedCompanies,
       },
     },
+    limit: 0,
   })
 
   console.log('-----selectedCompanies', selectedCompanies)
