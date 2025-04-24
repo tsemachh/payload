@@ -63,6 +63,32 @@ export async function getSequenceStockValueId(
   }
   return id
 }
+export async function getMeetingIdToSequenceMap(payload: BasePayload) {
+  const seqMap:Map<string,string> = new Map<string,string>()
+  try {
+    const data = await payload.find({
+      collection: 'meetings',
+      limit: 0,
+      depth: 0,
+      select: {
+        meetingId: true,
+        id: true
+      },
+      where:{
+        meetingId:{
+          not_equals:null
+        }
+      }
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc)=>seqMap.set(doc.meetingId as string,doc.id))
+    }
+  } catch (error) {
+    console.error("Error in query",error)
+    throw error
+  }
+  return seqMap
+}
 
 export async function getSequenceMeetingId(payload: BasePayload, meetingId: string | null) {
   if (meetingId === null) return null

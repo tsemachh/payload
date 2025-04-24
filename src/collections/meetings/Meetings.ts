@@ -70,7 +70,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId', 'stock', 'state'],
+    listSearchableFields: ['magnaId', 'stock', 'invitationLink','meetingId'],
     defaultColumns: [
       'magnaId',
       'invitationLink',
@@ -164,6 +164,7 @@ export const Meetings: CollectionConfig = {
                   name: 'invitationLink',
                   label: 'קישור לזימון',
                   type: 'text',
+                  index: true,
                   admin: {
                     width: '600px',
                     components: {
@@ -418,7 +419,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'recommendation',
-                  label: 'תוצאת ההצבעה',
+                  label: 'המלצה',
                   type: 'text',
                   admin: {
                     condition: (_,siblingData) => siblingData.topicType === 'decision',
@@ -453,7 +454,7 @@ export const Meetings: CollectionConfig = {
         const stockChanged = previousDoc?.stock !== doc?.stock
 
         if (holdingsLimitChanged || stockChanged) {
-          if (req.context?.from !== 'process') {
+          if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
