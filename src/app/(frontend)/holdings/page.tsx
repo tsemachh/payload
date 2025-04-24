@@ -266,19 +266,21 @@ export default function HoldingsFeedView() {
               {format(date, 'dd/MM/yyyy')}
             </h2>
           )}
-          <ProcessingResults
-            isSuccess={isSuccess}
-            validRecords={validRecords}
-            recordErrors={recordErrors}
-            warnings={warnings}
-            fatals={fatals}
-            className="mt-16"
-            showConfirmButtons={showConfirmButtons}
-            onConfirm={handleSaveConfirmed}
-            onCancel={handleCancel}
-            isValidating={isValidating}
-            isUploading={isUploading}
-          />
+          {!isSuccess && (
+            <ProcessingResults
+              isSuccess={isSuccess}
+              validRecords={validRecords}
+              recordErrors={recordErrors}
+              warnings={warnings}
+              fatals={fatals}
+              className="mt-16"
+              showConfirmButtons={showConfirmButtons}
+              onConfirm={handleSaveConfirmed}
+              onCancel={handleCancel}
+              isValidating={isValidating}
+              isUploading={isUploading}
+            />
+          )}
         </>
       )}
     </div>

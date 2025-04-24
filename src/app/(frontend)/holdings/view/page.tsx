@@ -180,7 +180,6 @@ export default function HoldingsView() {
 
       {holdings.length > 0 ? (
         <div>
-          {' '}
           {/* Added container with max width to constrain table width */}
           <DataTable
             columns={columns}
