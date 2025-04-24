@@ -27,8 +27,6 @@ export function getMajorityType(label: string): 'regular' | 'privileged' {
   }
   return 'regular'
 }
-
-const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
