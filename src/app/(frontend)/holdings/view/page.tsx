@@ -14,6 +14,7 @@ import { CompanyTreeSelector, TreeNode } from '../components/CompanySelector'
 import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
+import { useSearchParams } from 'next/navigation'
 
 export default function HoldingsView() {
   const { user } = useAuth()
@@ -22,6 +23,29 @@ export default function HoldingsView() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  const searchParams = useSearchParams()
+  const encoded = searchParams.get('data')
+
+  // Fetch initial data when component mounts
+  useEffect(() => {
+    if (encoded) {
+      try {
+        const decoded = JSON.parse(atob(encoded))
+        setDate(decoded.date)
+        setSelectedCompanies(decoded.selectedCompanies)
+        fetchHoldings()
+      } catch (e) {
+        console.error('Invalid data', e)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedCompanies.length > 0) {
+      fetchHoldings()
+    }
+  }, [date, selectedCompanies])
 
   const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
     const query: Where = {
@@ -58,7 +82,7 @@ export default function HoldingsView() {
       const transformedCompanies = transformCompaniesToTree(user.companies)
       setCompanies(transformedCompanies)
     }
-    if (user?.leafCompanies) {
+    if (user?.leafCompanies && selectedCompanies.length == 0) {
       const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
         typeof company === 'string' ? company : company.id,
       )
