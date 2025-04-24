@@ -94,7 +94,7 @@ async function processCompany(
             equals: company.name,
           },
         },
-        limit: 0,
+        limit: 1,
       })
 
       if (existingCompany.docs.length > 0) {

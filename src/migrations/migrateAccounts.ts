@@ -60,7 +60,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               equals: row.firmId,
             },
           },
-          limit: 0,
+          limit: 1,
         })
 
         if (companyResult.docs.length === 0) {
