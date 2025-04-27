@@ -69,8 +69,9 @@ export function DataTableStatic<T extends Record<string, any>>({
   searchPlaceholder = 'חיפוש כללי...',
   filterOption = true,
   filterLabel = 'סינון',
+  columnsOption = true,
   columnsLabel = 'עמודות',
-  defaultVisibleColumns = columns.map(column => column.key),
+  defaultVisibleColumns = columns.map((column) => column.key),
   onlyFuture = false,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
@@ -728,31 +729,33 @@ export function DataTableStatic<T extends Record<string, any>>({
               )}
             </Button>
           )}
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex justify-between items-center w-40"
-              >
-                <span>{columnsLabel}</span>
-                <Settings2 className="h-4 w-4 mr-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {columns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={String(column.key)}
-                  checked={columnVisibility[String(column.key)]}
-                  onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                  onSelect={(event) => event.preventDefault()}
-                  dir="rtl"
+          {columnsOption && (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex justify-between items-center w-40"
                 >
-                  {column.header ? column.header : 'עמודה'}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <span>{columnsLabel}</span>
+                  <Settings2 className="h-4 w-4 mr-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {columns.map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={String(column.key)}
+                    checked={columnVisibility[String(column.key)]}
+                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                    onSelect={(event) => event.preventDefault()}
+                    dir="rtl"
+                  >
+                    {column.header ? column.header : 'עמודה'}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

@@ -85,6 +85,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   searchPlaceholder?: string
   filterOption?: boolean
   filterLabel?: string
+  columnsOption?: boolean
   columnsLabel?: string
   defaultVisibleColumns?: string[]
   onlyFuture?: boolean
