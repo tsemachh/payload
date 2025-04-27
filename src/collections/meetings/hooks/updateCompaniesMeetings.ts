@@ -2,6 +2,8 @@ import { PayloadRequest } from 'payload'
 import { processCompaniesMeetings } from '../../companies-meetings/utils/processCompaniesMeetings'
 import type { Meeting } from '@/payload-types'
 import { FieldHook } from 'payload'
+import Holidays from 'date-holidays'
+
 /**
  * Update companies-meetings collection when a meeting is created or updated
  * This function processes the companies-meetings collection for the specific meeting
@@ -28,6 +30,18 @@ export const updateCompaniesMeetingsOnMeetingChange = async (
     )
   }
 }
+const hd = new Holidays('IL')
+const isHolidayOrShabbat = (date: Date): boolean => {
+  const holidays = hd.getHolidays(date.getFullYear())
+  const isShabbat = date.getDay() === 5 || date.getDay() === 6
+  const holiday = holidays.find((holiday) => {
+    const holidayDate = new Date(holiday.start).toISOString().split('T')[0]
+    const inputDate = date.toISOString().split('T')[0]
+    return holidayDate === inputDate && holiday.type === 'public'
+  })
+  return holiday !== undefined || isShabbat
+}
+
 const getWorkingDateBefore = (date: Date, workingDaysBefore: number, hour: number): Date => {
   const result = new Date(date)
   result.setHours(hour, 0, 0, 0)
@@ -35,8 +49,7 @@ const getWorkingDateBefore = (date: Date, workingDaysBefore: number, hour: numbe
   let daysLeft = workingDaysBefore
   while (daysLeft > 0) {
     result.setDate(result.getDate() - 1)
-    const day = result.getDay()
-    if (day !== 5 && day !== 6) {
+    if (!isHolidayOrShabbat(result)) {
       daysLeft--
     }
   }
@@ -61,7 +74,7 @@ const getTwoHoursBeforeWithinWorkingHours = (date: Date): Date => {
   if (result.getHours() < WORK_DAY_START_HOUR) {
     const diffMinutes = WORK_DAY_START_HOUR * 60 - (result.getHours() * 60 + result.getMinutes())
     result.setDate(result.getDate() - 1)
-    while ([5, 6].includes(result.getDay())) {
+    while (isHolidayOrShabbat(result)) {
       result.setDate(result.getDate() - 1)
     }
     const endOfWork = new Date(result)
