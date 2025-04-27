@@ -36,6 +36,20 @@ const getMissingColumns = (rows: any[], fields: string[]): string[] => {
 const getMissingFieldsInRow = (row: any, fields: string[]): string[] => {
   return fields.filter((field) => !row[field])
 }
+export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
+  const result = await payload.find({
+    collection: 'meetings',
+    where: {
+      magnaId: {
+        equals: magnaId,
+      },
+    },
+    limit: 1,
+  })
+
+  return result
+}
+
 const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
 export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
   const errors: string[] = []
@@ -109,15 +123,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         }
         row.stock = stockId
         if (row.ProofIdPrev) {
-          const prevMeeting = await req.payload.find({
-            collection: 'meetings',
-            where: {
-              magnaId: {
-                equals: row.ProofIdPrev,
-              },
-            },
-            limit: 1,
-          })
+          const prevMeeting = await findMeetingByMagnaId(req.payload, row.ProofIdPrev)
           if (prevMeeting && prevMeeting.docs.length > 0) {
             const { magnaId, ...dataToUpdate } = row
             dataToUpdate.magnaId = row.ProofIdPrev
@@ -145,15 +151,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           }
         }
 
-        const existingMeeting = await req.payload.find({
-          collection: 'meetings',
-          where: {
-            magnaId: {
-              equals: row.magnaId,
-            },
-          },
-          limit: 1,
-        })
+        const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
         if (existingMeeting?.docs.length > 0) {
           const meetingId = existingMeeting?.docs[0].id
           try {
