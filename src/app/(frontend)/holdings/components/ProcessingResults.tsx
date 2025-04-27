@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { HoldingFeedLine } from '@/payload-types'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import { Button } from '../../components/ui/button'
@@ -126,15 +125,15 @@ export function ProcessingResults({
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
                   <span className="font-medium">{warning.message.replace(/$$\d+$$/g, '')}</span>
-
                   {warning.details && warning.details.length > 0 && (
-                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
+                    <div className="mt-2 pr-6 text-gray-700 text-sm">
                       {warning.details.map((detail, idx) => (
-                        <li key={idx} className="text-sm">
+                        <span key={idx}>
                           {detail}
-                        </li>
+                          {idx !== warning.details!.length - 1 && ', '}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </li>
               ))}
@@ -151,34 +150,40 @@ export function ProcessingResults({
       </Dialog>
 
       {/* Warnings Section */}
-      {fatals.length > 0 && (
-        <div className="mb-6" dir="rtl">
-          <div className="bg-red-100 border border-red-300 rounded-2xl px-4 py-3 mb-4 max-w-3xl mx-auto shadow-md flex items-start gap-3">
-            <XCircle className="h-5 w-5 text-red-700 mt-1" />
-            <div>
-              <AlertTitle className="text-red-900 font-bold text-lg">
-                הקובץ שהוזן שגוי — הזנתו לא התקבלה!
-              </AlertTitle>
-              <AlertDescription className="text-red-800 text-sm space-y-3 mt-1">
-                {fatals.map((warning, index) => (
-                  <div key={index}>
-                    {warning.message}
-                    {warning.details && warning.details.length > 0 && (
-                      <ul className="mt-2 list-disc list-inside">
-                        {warning.details.map((detail, idx) => (
-                          <li key={idx} className="text-red-700">
-                            {detail}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </AlertDescription>
-            </div>
+      <Dialog open={fatals.length > 0} onOpenChange={handleCancelWarning}>
+        <DialogContent className="max-w-3xl" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <XCircle className="h-8 w-8 text-red-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-red-600 m-0">
+              הקובץ שהוזן שגוי — ההזנה לא התקבלה!
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            <ul className="space-y-3">
+              {fatals.map((error, index) => (
+                <li key={index} className="text-gray-800">
+                  <span className="font-medium">{error.message}</span>
+
+                  {error.details && error.details.length > 0 && (
+                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
+                      {error.details.map((detail, idx) => (
+                        <li key={idx} className="text-sm">
+                          {detail}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+
+          <DialogFooter className="flex justify-end gap-3 mt-6">
+            <Button onClick={handleCancelWarning}>חזרה</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {fatals.length === 0 && (shouldContinue || warnings.length === 0) && (
         <>
@@ -203,7 +208,7 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('invalid')}
               >
-                שגוייות {recordErrors.length > 0 && `(${recordErrors.length})`}
+                שגויות {recordErrors.length > 0 && `(${recordErrors.length})`}
               </button>
             </div>
           </div>
@@ -222,7 +227,7 @@ export function ProcessingResults({
               ביטול
             </Button>
             <Button onClick={handleFinalConfirm} className="font-medium">
-              שמירת האחזקות תקינות
+              שמירת האחזקות התקינות
             </Button>
           </div>
         </>

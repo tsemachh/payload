@@ -101,10 +101,8 @@ export default function HoldingsFeedView() {
       })
       return
     }
-
-    setIsValidating(true)
     setEditForm(false)
-
+    setIsValidating(true)
     setvalidRecords([])
     setRecordErrors([])
     setFatals([])
@@ -167,8 +165,7 @@ export default function HoldingsFeedView() {
           body: file,
         },
       )
-      const result = await response.json()
-      if (response.ok) {        
+      if (response.ok) {
         const payload = {
           date: date.toISOString(),
           selectedCompanies,

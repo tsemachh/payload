@@ -1,5 +1,5 @@
 'use client'
-import { Column } from '../types/meetings'
+import { Column } from '../../types/meetings'
 
 export const columns: Column<any>[] = [
   {
@@ -8,7 +8,6 @@ export const columns: Column<any>[] = [
     type: 'string',
     minWidth: 120,
     width: 100,
-    filterable: true,
   },
   {
     key: 'stockName',
@@ -16,7 +15,6 @@ export const columns: Column<any>[] = [
     type: 'string',
     minWidth: 120,
     width: 100,
-    filterable: true,
   },
   {
     key: 'quantity',
@@ -24,7 +22,6 @@ export const columns: Column<any>[] = [
     type: 'number',
     minWidth: 100,
     width: 100,
-    filterable: false,
     render: (row) => <span className="text-right">{row.quantity.toLocaleString()}</span>,
   },
   {
@@ -33,6 +30,5 @@ export const columns: Column<any>[] = [
     type: 'string',
     minWidth: 150,
     width: 350,
-    filterable: true,
   },
 ]

@@ -9,10 +9,8 @@ import { up as migrateSubAccounts } from './migrateSubAccounts'
 import { up as migrateHoldings } from './migrateHoldings'
 import { up as migrateParentCompanies } from './migrateParentCompanies'
 import { up as migrateAccountCompaniesToCompanies } from './migrateAccountCompaniesToCompanies'
-import fs from 'fs'
-import path from 'path'
+import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCompanies'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
-import { fileURLToPath } from 'url'
 
 /**
  * Migrates all collections in the following order:
@@ -26,6 +24,7 @@ import { fileURLToPath } from 'url'
  * 8. Holdings
  * 9. Parent Companies
  * 10. Account Companies To Companies
+ * 11. Silenced Stocks Companies
  * 
  * For users migration, it also creates users from test.users.json after migrating users.
  */
@@ -96,7 +95,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     //TODO
 
     //  13. Process silenced stocks - match them to companies
-    //TODO
+    console.log('\n=== Starting Silenced Stocks Companies Migration ===')
+    await migrateSilencedStocksCompanies({ payload, req })
+    console.log('=== Silenced Stocks Companies Migration Completed ===\n')
     console.log('migrateAll process completed successfully!')
   } catch (error) {
     console.error('Error during migrateAll process:', error)

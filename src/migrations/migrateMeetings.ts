@@ -74,14 +74,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[sdate]
              ,[proxyStatementDate]
              ,[stockID]
-             ,[memourl]
-             ,[link2]
              ,[location]
              ,[mtype]
              ,[comments]
              ,[ResultConfirm]
              ,[ElectronicVoting]
-             ,[mIdConnection]
              ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings];
     `)
