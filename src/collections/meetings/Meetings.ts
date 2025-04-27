@@ -3,12 +3,10 @@ import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
-import {
-  calculateHoldingDateHook,
-  updateCompaniesMeetingsOnMeetingChange,
-} from './hooks/updateCompaniesMeetings'
+import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
+import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
