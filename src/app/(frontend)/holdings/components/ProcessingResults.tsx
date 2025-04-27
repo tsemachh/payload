@@ -123,15 +123,15 @@ export function ProcessingResults({
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
                   <span className="font-medium">{warning.message.replace(/$$\d+$$/g, '')}</span>
-
                   {warning.details && warning.details.length > 0 && (
-                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
+                    <div className="mt-2 pr-6 text-gray-700 text-sm">
                       {warning.details.map((detail, idx) => (
-                        <li key={idx} className="text-sm">
+                        <span key={idx}>
                           {detail}
-                        </li>
+                          {idx !== warning.details!.length - 1 && ', '}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </li>
               ))}
