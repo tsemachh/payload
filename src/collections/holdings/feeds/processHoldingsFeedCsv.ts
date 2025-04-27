@@ -32,6 +32,7 @@ export const processHoldingsFeedCsv = async (
       warnings: [],
       recordErrors: [],
       validRecords: [],
+      silencedRecords: [],
     }
     // Initial validation
     // Get the file from the request
@@ -128,9 +129,11 @@ export const processHoldingsFeedCsv = async (
 
       if (processedRecord.status === 'error') {
         validationResult.recordErrors.push(processedRecord)
-      } else {
-        validationResult.validRecords.push(processedRecord)
       }
+      else if (processedRecord.status === 'success') {
+        validationResult.validRecords.push(processedRecord)
+      } else
+      validationResult.silencedRecords.push(processedRecord)
     }
 
     // Store validation results in the document

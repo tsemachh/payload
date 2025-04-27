@@ -67,8 +67,6 @@ const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] 
   },
 ]
 
-const defaultVisibleValidgColumns = ['lineNumber', 'stockId', 'quantity']
-const defaultVisibleInvalidColumnsA = [...defaultVisibleValidgColumns, 'error']
 
 export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean;companies:string[] }> = ({
   records,

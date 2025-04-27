@@ -6,6 +6,7 @@ export interface FeedValidationResult {
   warnings: FeedWarning[]
   recordErrors: HoldingFeedLine[]
   validRecords: HoldingFeedLine[]
+  silencedRecords:HoldingFeedLine[]
 }
 
 export interface FeedFatalError {

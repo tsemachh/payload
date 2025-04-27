@@ -102,7 +102,7 @@ export const HoldingsFeed: CollectionConfig = {
             {
               name: 'status',
               type: 'select',
-              options: ['error', 'success'],
+              options: ['error', 'success','silence'],
             },
           ],
         }

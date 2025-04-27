@@ -231,29 +231,29 @@ export const validateRow = async (
   const lineNumber = index + 1;
 
 
-  // Validate the record
-  let isValid = true
-  let errorMessage = null
+  let status: 'success' | 'error' | 'silence' = 'success';
+  let errorMessage: string | null = null;
 
-  // Check required fields
+// Check required fields
   if (!stockId) {
-    isValid = false
-    errorMessage = 'מסםר נייר חסר'
+    status = 'error';
+    errorMessage = 'מספר נייר חסר';
   } else if (isNaN(quantity) || quantity < 1) {
-    isValid = false
-    errorMessage = 'ערך נקוב לא תקין'
+    status = 'error';
+    errorMessage = 'ערך נקוב לא תקין';
   } else if (!accountId) {
-    isValid = false
-    errorMessage = 'מספר חשבון חסר'
-  } else   if(
-    !stockMap.has(stockId) && // לא מכיר את הנייר
-    !silencedStockIds.some(((id) => id === stockId)) // ולא מושתק    isValid = false
-  ) {
-    isValid = false
-    errorMessage = 'נייר ערך לא מוכר'
+    status = 'error';
+    errorMessage = 'מספר חשבון חסר';
+  } else if (!stockMap.has(stockId)) {
+    if (silencedStockIds.includes(stockId)) {
+      status = 'silence';
+    } else {
+      status = 'error';
+      errorMessage = 'נייר ערך לא מוכר';
+    }
   } else if (!accountMap.has(Number(accountId))) {
-    isValid = false
-    errorMessage = 'מספר חשבון לא מוכר'
+    status = 'error';
+    errorMessage = 'מספר חשבון לא מוכר';
   }
 
   const processedRecord: HoldingFeedLine = {
@@ -261,9 +261,10 @@ export const validateRow = async (
     quantity,
     accountId,
     lineNumber,
-    status: isValid ? 'success' : 'error',
+    status,
     error: errorMessage,
-  }
+  };
+
 
   return { processedRecord }
 }
