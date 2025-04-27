@@ -42,13 +42,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         SELECT a.[id]
              , a.[mid]
              , a.[topic]
-             , a.[rec]
              , a.[result]
              , a.[vpercent]
              , a.[vPercentSpecial]
              , a.[vtype]
              , a.[dealChanged]
-             , a.[agIdConnection]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
                  LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]

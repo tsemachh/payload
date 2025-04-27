@@ -8,7 +8,7 @@ export const SilencedStocks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: ['stockId', 'company'],
+    defaultColumns: ['stockId', 'companies'],
     listSearchableFields: ['stockId'],
     group: 'אוספים משניים',
     pagination: {

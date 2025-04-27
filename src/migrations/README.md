@@ -7,3 +7,4 @@ Migrations order:
 - Accounts
 - Sub Accounts
 - Holdings
+- Silenced Stocks Companies
