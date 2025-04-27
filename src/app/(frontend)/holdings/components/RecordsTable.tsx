@@ -72,9 +72,6 @@ export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: bool
   }))
 
   const columns = invalid ? [...holdingColumns, ...invalidColumnsAdditional] : holdingColumns
-  const defaultVisibleColumns = invalid
-    ? defaultVisibleInvalidColumnsA
-    : defaultVisibleValidgColumns
 
   return (
     <div style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}>
@@ -85,7 +82,7 @@ export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: bool
         defaultSortField="lineNumber"
         defaultSortDirection="asc"
         tableId={invalid ? 'holdings-table-invalid' : 'holdings-table'}
-        defaultVisibleColumns={defaultVisibleColumns}
+        columnsOption={false}
       />
     </div>
   )
