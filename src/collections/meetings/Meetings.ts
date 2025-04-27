@@ -6,6 +6,7 @@ import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
+import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -74,7 +75,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId', 'stock', 'invitationLink','meetingId'],
+    listSearchableFields: ['magnaId', 'stock', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'magnaId',
       'invitationLink',
@@ -230,6 +231,9 @@ export const Meetings: CollectionConfig = {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
                     },
+                  },
+                  hooks: {
+                    beforeChange: [calculateHoldingDateHook],
                   },
                 },
                 {
@@ -405,14 +409,14 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   type: 'row',
-                  fields:[
+                  fields: [
                     {
                       name: 'vpercent',
                       label: 'אחוז הצבעה',
                       type: 'number',
                       admin: {
                         step: 0.01,
-                        condition: (_,siblingData) => siblingData.topicType === 'decision',
+                        condition: (_, siblingData) => siblingData.topicType === 'decision',
                       },
                     },
                     {
@@ -421,17 +425,17 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                       admin: {
                         step: 0.01,
-                        condition: (_,siblingData) => siblingData.topicType === 'decision',
+                        condition: (_, siblingData) => siblingData.topicType === 'decision',
                       },
                     },
-                  ]
+                  ],
                 },
                 {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'text',
                   admin: {
-                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                    condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
                 {
@@ -445,7 +449,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'דיון', value: '3' },
                   ],
                   admin: {
-                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                    condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
               ],

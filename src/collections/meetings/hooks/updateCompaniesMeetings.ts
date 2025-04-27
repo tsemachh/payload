@@ -5,13 +5,13 @@ import type { Meeting } from '@/payload-types'
 /**
  * Update companies-meetings collection when a meeting is created or updated
  * This function processes the companies-meetings collection for the specific meeting
- * 
+ *
  * @param req PayloadRequest object
  * @param meeting The meeting that was created or updated
  */
 export const updateCompaniesMeetingsOnMeetingChange = async (
   req: PayloadRequest,
-  meeting: Meeting
+  meeting: Meeting,
 ): Promise<void> => {
   try {
     if (!meeting.stock || !meeting.holdingsLimit) {
@@ -23,6 +23,8 @@ export const updateCompaniesMeetingsOnMeetingChange = async (
 
     req.payload.logger.info(`Updated companies-meetings for meeting ${meeting.id}`)
   } catch (error) {
-    req.payload.logger.error(`Error updating companies-meetings for meeting: ${JSON.stringify(error)}`)
+    req.payload.logger.error(
+      `Error updating companies-meetings for meeting: ${JSON.stringify(error)}`,
+    )
   }
 }
