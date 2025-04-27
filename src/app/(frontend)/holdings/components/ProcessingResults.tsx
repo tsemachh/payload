@@ -206,7 +206,7 @@ export function ProcessingResults({
                 }`}
                 onClick={() => setActiveTab('invalid')}
               >
-                שגוייות {recordErrors.length > 0 && `(${recordErrors.length})`}
+                שגויות {recordErrors.length > 0 && `(${recordErrors.length})`}
               </button>
             </div>
           </div>
@@ -225,7 +225,7 @@ export function ProcessingResults({
               ביטול
             </Button>
             <Button onClick={handleFinalConfirm} className="font-medium">
-              שמירת האחזקות תקינות
+              שמירת האחזקות התקינות
             </Button>
           </div>
         </>

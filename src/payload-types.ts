@@ -89,7 +89,18 @@ export type RolePermissions =
  * via the `definition` "MigrationType".
  */
 export type MigrationType =
-  | ('holding' | 'user' | 'account' | 'stock' | 'stock-value' | 'stock-relation' | 'meeting' | 'meetingAgenda')
+  | (
+      | 'holding'
+      | 'user'
+      | 'account'
+      | 'stock'
+      | 'stock-value'
+      | 'stock-relation'
+      | 'meeting'
+      | 'meetingAgenda'
+      | 'vote'
+      | 'silenced-stock'
+    )
   | null;
 /**
  * Supported timezones in IANA format.
@@ -178,6 +189,9 @@ export interface Config {
   collectionsJoins: {
     stocks: {
       relations: 'stocks';
+    };
+    meetings: {
+      votes: 'votes';
     };
     companies: {
       parentCompany: 'companies';
@@ -310,9 +324,9 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
-  meetingId?: string | null;
   stock: string | Stock;
   type?: MeetingType;
+  meetingId?: string | null;
   magnaId?: string | null;
   invitationDocument?: (string | null) | Document;
   invitationLink?: string | null;
@@ -341,6 +355,11 @@ export interface Meeting {
         id?: string | null;
       }[]
     | null;
+  votes?: {
+    docs?: (string | Vote)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -447,6 +466,46 @@ export interface Holding {
   valueDate: string;
   stock: string | Stock;
   quantity: number;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        voteDecision?:
+          | (
+              | 'בעד'
+              | 'נגד'
+              | 'נמנע'
+              | 'אין חובת השתתפות'
+              | 'לא משתתף'
+              | 'דיון'
+              | 'הוסר מסדר היום'
+              | 'ללא הצבעה'
+              | 'נמכרה אחזקה'
+              | 'הצבעות סותרות'
+            )
+          | null;
+        committee?: boolean | null;
+        conflict?: boolean | null;
+        relatedParty?: boolean | null;
+        personalInterest?: boolean | null;
+        professionalFactor?: string | null;
+        comment?: string | null;
+        clientComment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -629,26 +688,6 @@ export interface SilencedStock {
   id: string;
   stockId: string;
   companies?: (string | Company)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  companies: (string | Company)[];
-  votes?:
-    | {
-        topicIndex: number;
-        votingOptions?: ('for' | 'against' | 'avoid' | 'no-obligation' | 'not-participating')[] | null;
-        id?: string | null;
-      }[]
-    | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1001,9 +1040,9 @@ export interface StockValuesSelect<T extends boolean = true> {
  * via the `definition` "meetings_select".
  */
 export interface MeetingsSelect<T extends boolean = true> {
-  meetingId?: T;
   stock?: T;
   type?: T;
+  meetingId?: T;
   magnaId?: T;
   invitationDocument?: T;
   invitationLink?: T;
@@ -1032,6 +1071,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         result?: T;
         id?: T;
       };
+  votes?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1317,7 +1357,14 @@ export interface VotesSelect<T extends boolean = true> {
     | T
     | {
         topicIndex?: T;
-        votingOptions?: T;
+        voteDecision?: T;
+        committee?: T;
+        conflict?: T;
+        relatedParty?: T;
+        personalInterest?: T;
+        professionalFactor?: T;
+        comment?: T;
+        clientComment?: T;
         id?: T;
       };
   creator?: T;

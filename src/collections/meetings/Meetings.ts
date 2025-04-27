@@ -105,14 +105,6 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
-                  name: 'meetingId',
-                  label: 'מספר אסיפה',
-                  type: 'text',
-                  unique: true,
-                  index: true,
-                  admin: { hidden: true },
-                },
-                {
                   name: 'stock',
                   label: 'נייר ערך',
                   type: 'relationship',
@@ -140,6 +132,14 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: '15%',
                   },
+                },
+                {
+                  name: 'meetingId',
+                  label: 'מספר אסיפה',
+                  type: 'text',
+                  unique: true,
+                  index: true,
+                  admin: { width: "100px" },
                 },
               ],
             },
@@ -454,6 +454,22 @@ export const Meetings: CollectionConfig = {
                 },
               ],
             },
+          ],
+        },
+        {
+          label: 'הצבעות',
+          fields: [
+            {
+              name: 'votes',
+              label: 'הצבעות',
+              type: 'join',
+              collection: 'votes',
+              on: 'meeting',
+              defaultLimit: 0,
+              admin:{
+                defaultColumns:['companies','votes']
+              }
+            }
           ],
         },
       ],
