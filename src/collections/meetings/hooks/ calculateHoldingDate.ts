@@ -5,8 +5,8 @@ const hd = new Holidays('IL')
 const isHolidayOrShabbat = (date: Date): boolean => {
   const holidays = hd.getHolidays(date.getFullYear())
   const isShabbat = date.getDay() === 5 || date.getDay() === 6
-  const holiday = holidays.find((holiday) => {
-    const holidayDate = new Date(holiday.start).toISOString().split('T')[0]
+    const holiday = holidays.find((holiday) => {
+    const holidayDate = new Date(holiday.date).toISOString().split('T')[0]
     const inputDate = date.toISOString().split('T')[0]
     return holidayDate === inputDate && holiday.type === 'public'
   })
