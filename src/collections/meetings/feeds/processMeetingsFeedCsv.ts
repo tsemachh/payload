@@ -63,6 +63,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           holdingsLimit: data.sdate != '' ? parseDateString(data.sdate) : null,
           location: data.location || '',
           state: getMeetingState(data.state || '') as MeetingState,
+          ProofIdPrev: data.ProofIdPrev || '',
           _status: 'draft',
         }
       } catch (e: any) {
@@ -107,6 +108,43 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           continue
         }
         row.stock = stockId
+        if (row.ProofIdPrev) {
+          const prevMeeting = await req.payload.find({
+            collection: 'meetings',
+            where: {
+              magnaId: {
+                equals: row.ProofIdPrev,
+              },
+            },
+            limit: 1,
+          })
+          if (prevMeeting && prevMeeting.docs.length > 0) {
+            const { magnaId, ...dataToUpdate } = row
+            dataToUpdate.magnaId = row.ProofIdPrev
+            delete dataToUpdate.ProofIdPrev
+            const prevMeetingId = prevMeeting.docs[0].id
+            try {
+              await req.payload.update({
+                collection: 'meetings',
+                id: prevMeetingId,
+                data: dataToUpdate,
+                context: { ...req.context, from: 'migration' },
+              })
+              req.payload.logger.info(
+                `Successfully updated meeting with ProofIdPrev ${row.ProofIdPrev}`,
+              )
+            } catch (e: any) {
+              errors.push(
+                `Error updating meeting with ProofIdPrev ${row.ProofIdPrev}: ${e.message}`,
+              )
+              req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.ProofIdPrev}`)
+            }
+          } else {
+            errors.push(`No meeting found for ProofIdPrev ${row.ProofIdPrev}, cannot update`)
+            req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.ProofIdPrev}`)
+          }
+        }
+
         const existingMeeting = await req.payload.find({
           collection: 'meetings',
           where: {
@@ -123,6 +161,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
               collection: 'meetings',
               id: meetingId,
               data: row,
+              context: { ...req.context, from: 'migration' },
             })
           } catch (e: any) {
             errors.push(`Error updating meeting with stockId ${row.magnaId}: ${e.message}`)
