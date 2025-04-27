@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
-import { columns } from '../columns'
+import { columns } from './columns'
 import { Holding } from '../types'
 import { ExportButton } from '@/components/export-button'
 import { transformCompaniesToTree } from '../../helpers/utils-holdings'
@@ -15,14 +15,23 @@ import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
 import { useSearchParams } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 
 export default function HoldingsView() {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<TreeNode[]>([])
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [date, setDate] = useState<Date | undefined>()
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [editForm, setEditForm] = useState(true)
 
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
@@ -34,7 +43,7 @@ export default function HoldingsView() {
         const decoded = JSON.parse(atob(encoded))
         setDate(decoded.date)
         setSelectedCompanies(decoded.selectedCompanies)
-        fetchHoldings()
+        setEditForm(false)
       } catch (e) {
         console.error('Invalid data', e)
       }
@@ -42,7 +51,7 @@ export default function HoldingsView() {
   }, [])
 
   useEffect(() => {
-    if (selectedCompanies.length > 0) {
+    if (!editForm && selectedCompanies.length > 0) {
       fetchHoldings()
     }
   }, [date, selectedCompanies])
@@ -108,7 +117,7 @@ export default function HoldingsView() {
       })
       return
     }
-
+    setEditForm(false)
     setIsLoading(true)
 
     try {
@@ -147,75 +156,96 @@ export default function HoldingsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
-        <div>
-          <label className="text-base font-semibold mb-2 block">חברות</label>
-          <CompanyTreeSelector
-            companies={companies}
-            selectedCompanies={selectedCompanies}
-            onSelectionChange={setSelectedCompanies}
-            className="w-full"
-          />
-        </div>
+      {editForm ? (
+        <>
+          <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+            <div>
+              <label className="text-base font-semibold mb-2 block">חברות</label>
+              <CompanyTreeSelector
+                companies={companies}
+                selectedCompanies={selectedCompanies}
+                onSelectionChange={setSelectedCompanies}
+                className="w-full"
+              />
+            </div>
 
-        <div>
-          <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-          <DateSelector
-            date={date}
-            onDateChange={setDate}
-            className="w-full"
-            filterDate={(date) => {
-              const day = date.getDay()
-              return day == 5 || day == 6
-            }}
-          />
-        </div>
-      </div>
+            <div>
+              <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+              <DateSelector
+                date={date}
+                onDateChange={setDate}
+                className="w-full"
+                filterDate={(date) => {
+                  const day = date.getDay()
+                  return day == 5 || day == 6
+                }}
+              />
+            </div>
+          </div>
 
-      <div className="flex justify-center mt-6">
-        <Button
-          onClick={!date || selectedCompanies.length === 0 || isLoading ? () => {} : fetchHoldings}
-          className="px-40"
-          style={
-            !date || selectedCompanies.length === 0 || isLoading
-              ? { cursor: 'not-allowed', opacity: 0.5 }
-              : {}
-          }
-        >
-          {isLoading ? 'טוען...' : 'טען אחזקות'}
-        </Button>
-      </div>
-
-      <div className="flex justify-between items-center mt-8 pr-4">
-        <div className="flex items-center space-x-4 space-x-reverse">
-          <h2 className="d">טבלת אחזקות</h2>
-          {holdings.length > 0 && (
-            <ExportButton
-              data={holdings}
-              filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
-            />
-          )}
-        </div>
-      </div>
-
-      {holdings.length > 0 ? (
-        <div>
-          {/* Added container with max width to constrain table width */}
-          <DataTable
-            columns={columns}
-            data={holdings}
-            idField="id"
-            defaultSortField="lastUpdated"
-            defaultSortDirection="desc"
-            tableId="holdings-view-table"
-            pastDateFilterOptions={[{ value: 'allPast', label: 'כל האחזקות הקודמות' }]}
-            futureDateFilterOptions={[{ value: 'allFuture', label: 'כל האחזקות העתידיות' }]}
-          />
-        </div>
+          <div className="flex justify-center mt-6">
+            <Button
+              onClick={
+                !date || selectedCompanies.length === 0 || isLoading ? () => {} : fetchHoldings
+              }
+              className="px-40"
+              style={
+                !date || selectedCompanies.length === 0 || isLoading
+                  ? { cursor: 'not-allowed', opacity: 0.5 }
+                  : {}
+              }
+            >
+              {isLoading ? 'טוען...' : 'טען אחזקות'}
+            </Button>
+          </div>
+        </>
       ) : (
-        <div className="text-center py-10 text-gray-500 border rounded-md">
-          {isLoading ? 'טוען נתונים...' : 'לא נמצאו נתונים עבור הבחירה הנוכחית'}
-        </div>
+        <>
+          {date && (
+            <h2 className="text-xl text-center">אחזקות לתאריך {format(date, 'dd/MM/yyyy')}</h2>
+          )}
+
+          {holdings.length > 0 ? (
+            <div>
+              <DataTable
+                columns={columns}
+                data={holdings}
+                idField="id"
+                defaultSortField="lastUpdated"
+                defaultSortDirection="desc"
+                tableId="holdings-view-table"
+                filterOption={false}
+              />
+              <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
+                <div className="flex items-center space-x-4 space-x-reverse">
+                  {holdings.length > 0 && (
+                    <ExportButton
+                      data={holdings}
+                      filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
+                    />
+                  )}
+                  <Button onClick={() => setEditForm(true)}>חזרה לעריכת חברות ותאריך</Button>
+                </div>
+              </div>
+            </div>
+          ) : isLoading ? (
+            <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+              <LoadingSpinnerDiamond />
+              <p className="text-center">מייבא נתונים...</p>
+            </div>
+          ) : (
+            <Dialog open={!editForm} onOpenChange={() => setEditForm(true)}>
+              <DialogContent className="sm:max-w-md" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="text-center">אין נתונים</DialogTitle>
+                  <DialogDescription className="text-center">
+                    לא נמצאו נתונים עבור הבחירה הנוכחית
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+          )}
+        </>
       )}
     </div>
   )
