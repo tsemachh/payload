@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 interface DateSelectorProps {
   date: Date | undefined
@@ -15,9 +16,15 @@ interface DateSelectorProps {
 }
 
 export function DateSelector({ date, onDateChange, className, filterDate }: DateSelectorProps) {
+  const [open, setOpen] = useState(false)
+
+  const handleSelect = (selectedDate: Date | undefined) => {
+    onDateChange(selectedDate)
+    setOpen(false)
+  }
   return (
     <div className={className}>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -34,7 +41,7 @@ export function DateSelector({ date, onDateChange, className, filterDate }: Date
           <Calendar
             mode="single"
             selected={date}
-            onSelect={onDateChange}
+            onSelect={handleSelect}
             initialFocus
             disabled={filterDate}
           />
