@@ -8,6 +8,7 @@ import {
   deleteExistingHoldings,
   preloadAccountsToCompanyMap,
   preloadStocks,
+  fetchAllSilencedStocks,
 } from '@/collections/holdings/feeds/FeedDataUtils'
 
 /**
@@ -118,8 +119,11 @@ export const processHoldingsFeedCsv = async (
 
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
+    const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
+    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);  // סגור את הסוגריים כאן
+
     for (const [index, row] of standardizedRows.entries()) {
-      const { processedRecord } = await validateRow(req, row, index, accountToCompanyMap, stockMap)
+      const { processedRecord } = await validateRow(row, index, accountToCompanyMap, stockMap, silencedStockIds)
       processedRecords.push(processedRecord)
 
       if (processedRecord.status === 'error') {

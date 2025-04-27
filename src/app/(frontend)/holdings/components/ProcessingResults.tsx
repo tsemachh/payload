@@ -39,6 +39,7 @@ interface ProcessingResultsProps {
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
+  companies:string[]
   className?: string
   onConfirm?: () => void
   onContinue?: () => void
@@ -54,6 +55,7 @@ export function ProcessingResults({
   recordErrors,
   warnings,
   fatals,
+  companies,
   className,
   onConfirm,
   onCancel,
@@ -208,11 +210,11 @@ export function ProcessingResults({
 
           {/* Invalid Records Table */}
           {activeTab === 'invalid' && recordErrors.length > 0 && (
-            <RecordsTable records={recordErrors} invalid={true} />
+            <RecordsTable records={recordErrors} invalid={true} companies={companies}/>
           )}
 
           {/* Valid Records Message */}
-          {activeTab === 'valid' && <RecordsTable records={validRecords} />}
+          {activeTab === 'valid' && <RecordsTable records={validRecords} companies={companies}/>}
 
           {/* Confirm/Cancel Buttons */}
           <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">

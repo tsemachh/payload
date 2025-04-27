@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
+import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock , SilencedStock} from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export async function getPreviousFeed(
@@ -56,6 +56,24 @@ export async function deleteExistingHoldings(
   })
 }
 
+export const fetchAllSilencedStocks = async (req: PayloadRequest, companies: string[],
+): Promise<SilencedStock[]> => {
+  try {
+    const result = await req.payload.find({
+      collection: 'silenced-stocks',
+      where: {
+        companies: {
+          contains: companies,
+        },
+      },
+      limit: 0,
+    });
+    return result.docs;
+  } catch (error) {
+    console.error('שגיאה בקריאה לניירות מושתקים:', error);
+    return [];
+  }
+};
 /**
  * Preload accounts from companies
  * @param req The payload request

@@ -264,6 +264,7 @@ export default function HoldingsFeedView() {
             recordErrors={recordErrors}
             warnings={warnings}
             fatals={fatals}
+            companies={selectedCompanies}
             className="mt-16"
             onConfirm={handleSaveConfirmed}
             onCancel={handleCancel}

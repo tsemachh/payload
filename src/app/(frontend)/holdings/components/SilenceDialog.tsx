@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button'
 
 interface SilenceDialogProps {
   stockId: string | number
-  lineNumber: string | number
   onSuccess?: () => void
+  companies: string[]
 }
 
-export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, lineNumber, onSuccess }) => {
+export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess,companies }) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
@@ -23,9 +23,8 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, lineNumbe
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ stockId, lineNumber }),
+        body: JSON.stringify({ stockId ,companies}),
       })
-
       if (response.ok) {
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
         onSuccess?.()
