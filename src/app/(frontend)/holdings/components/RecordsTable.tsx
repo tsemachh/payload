@@ -4,6 +4,7 @@ import React from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
+import { SilenceDialog } from './SilenceDialog'
 
 interface RecordType {
   lineNumber: string | number
@@ -54,44 +55,14 @@ const invalidColumnsAdditional: Column<RecordType>[] = [
     minWidth: 150,
     filterable: true,
     render: (row) => {
-      const handleSilence = async () => {
-        try {
-          await fetch('/api/silenced-stocks', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              stockId: row.stockId,
-              lineNumber: row.lineNumber,
-            }),
-          });
-          alert('הנייר הוסף לניירות מושתקים בהצלחה!');
-        } catch (error) {
-          console.error('שגיאה בהשתקה', error);
-          alert('נכשל להשתיק את השגיאה.');
-        }
-      };
-
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>{row.error}</span>
           {row.error === 'נייר ערך לא מוכר' && (
-            <button
-              onClick={handleSilence}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'blue',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              השתק
-            </button>
+            <SilenceDialog stockId={row.stockId} lineNumber={row.lineNumber} />
           )}
         </div>
-      );
+      )
     },
   },
 ];
