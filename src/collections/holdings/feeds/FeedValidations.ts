@@ -9,6 +9,7 @@ import {
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
+import payload from 'payload';
 
 /**
  * Validate the whole feed for fatal errors
@@ -209,24 +210,54 @@ export const checkFeedWarnings = async (
 
   return warnings
 }
+
+
+interface SilencedStock {
+  stockId: string;
+  // הוסף שדות נוספים אם יש צורך
+}
+
+const fetchSilencedStock = async (stockId: string, req:any): Promise<SilencedStock[]> => {
+  try {
+    const result = await req.payload.find({
+      collection: 'silenced-stocks',
+      where: {
+        stockId: {
+          equals: stockId,
+        },
+      },
+      limit: 0,
+    });
+    return result.docs;  // מחזיר את הרשומות שנמצאו
+  } catch (error) {
+    console.error('שגיאה בקריאה לניירות מושתקים:', error);
+    console.log('שגיאה בקריאה לניירות מושתקים:', error);
+    return [];  // מחזיר מערך ריק במקרה של שגיאה
+  }
+};
+
 /**
  * Validate a single row
+ * @param req The payload request
  * @param row The row to validate
  * @param index The index of the row
  * @param accountMap
  * @param stockMap
  * @returns Validation result
  */
-export const validateRow = (
+export const validateRow = async (
+  req: PayloadRequest,
   row: StandardizedRow,
   index: number,
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
-): {
+): Promise<{
   processedRecord: HoldingFeedLine
-} => {
-  const { stockId, quantity, accountId } = row
-  const lineNumber = index + 1
+}> => {
+  const { stockId, quantity, accountId } = row;
+  const lineNumber = index + 1;
+  const silencedStocksResult = await fetchSilencedStock(stockId,req);
+
 
   // Validate the record
   let isValid = true
@@ -242,7 +273,7 @@ export const validateRow = (
   } else if (!accountId) {
     isValid = false
     errorMessage = 'מספר חשבון חסר'
-  } else if (!stockMap.has(stockId)) {
+  } else   if (!stockMap.has(stockId) && silencedStocksResult.length === 0) {
     isValid = false
     errorMessage = 'נייר ערך לא מוכר'
   } else if (!accountMap.has(Number(accountId))) {

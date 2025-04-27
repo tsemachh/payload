@@ -118,8 +118,8 @@ export const processHoldingsFeedCsv = async (
 
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
-    standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
+    for (const [index, row] of standardizedRows.entries()) {
+      const { processedRecord } = await validateRow(req, row, index, accountToCompanyMap, stockMap)
       processedRecords.push(processedRecord)
 
       if (processedRecord.status === 'error') {
@@ -127,7 +127,7 @@ export const processHoldingsFeedCsv = async (
       } else {
         validationResult.validRecords.push(processedRecord)
       }
-    })
+    }
 
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {

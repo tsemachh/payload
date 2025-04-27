@@ -45,6 +45,7 @@ const holdingColumns: Column<RecordType>[] = [
       ),
   },
 ]
+//silenced-stocks
 const invalidColumnsAdditional: Column<RecordType>[] = [
   {
     key: 'error',
@@ -52,8 +53,49 @@ const invalidColumnsAdditional: Column<RecordType>[] = [
     type: 'string',
     minWidth: 150,
     filterable: true,
+    render: (row) => {
+      const handleSilence = async () => {
+        try {
+          await fetch('/api/silenced-stocks', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              stockId: row.stockId,
+              lineNumber: row.lineNumber,
+            }),
+          });
+          alert('הנייר הוסף לניירות מושתקים בהצלחה!');
+        } catch (error) {
+          console.error('שגיאה בהשתקה', error);
+          alert('נכשל להשתיק את השגיאה.');
+        }
+      };
+
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{row.error}</span>
+          {row.error === 'נייר ערך לא מוכר' && (
+            <button
+              onClick={handleSilence}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'blue',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              השתק
+            </button>
+          )}
+        </div>
+      );
+    },
   },
-]
+];
+
 
 const defaultVisibleValidgColumns = ['lineNumber', 'stockId', 'quantity']
 const defaultVisibleInvalidColumnsA = [...defaultVisibleValidgColumns, 'error']
