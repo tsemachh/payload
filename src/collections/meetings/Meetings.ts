@@ -347,6 +347,11 @@ export const Meetings: CollectionConfig = {
                   required: true,
                 },
                 {
+                  name: 'shortText',
+                  label: 'נושא מקוצר',
+                  type: 'text',
+                },
+                {
                   type: 'row',
                   fields: [
                     {
@@ -386,6 +391,33 @@ export const Meetings: CollectionConfig = {
                         },
                       },
                     },
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'vpercent',
+                          label: 'אחוז הצבעה',
+                          type: 'number',
+                          admin: {
+                            step: 0.01,
+                            condition: (_, siblingData) =>
+                              siblingData.topicType === 'decision' &&
+                              siblingData.majorityType === 'regular',
+                          },
+                        },
+                        {
+                          name: 'vPercentSpecial',
+                          label: 'אחוז הצבעה מיוחד',
+                          type: 'number',
+                          admin: {
+                            step: 0.01,
+                            condition: (_, siblingData) =>
+                              siblingData.topicType === 'decision' &&
+                              siblingData.majorityType === 'privileged',
+                          },
+                        },
+                      ],
+                    },
                   ],
                 },
                 {
@@ -407,29 +439,7 @@ export const Meetings: CollectionConfig = {
                     },
                   ],
                 },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'vpercent',
-                      label: 'אחוז הצבעה',
-                      type: 'number',
-                      admin: {
-                        step: 0.01,
-                        condition: (_, siblingData) => siblingData.topicType === 'decision',
-                      },
-                    },
-                    {
-                      name: 'vPercentSpecial',
-                      label: 'אחוז הצבעה מיוחד',
-                      type: 'number',
-                      admin: {
-                        step: 0.01,
-                        condition: (_, siblingData) => siblingData.topicType === 'decision',
-                      },
-                    },
-                  ],
-                },
+
                 {
                   name: 'recommendation',
                   label: 'המלצה',

@@ -5,7 +5,7 @@ const hd = new Holidays('IL')
 const isHolidayOrShabbat = (date: Date): boolean => {
   const holidays = hd.getHolidays(date.getFullYear())
   const isShabbat = date.getDay() === 5 || date.getDay() === 6
-    const holiday = holidays.find((holiday) => {
+  const holiday = holidays.find((holiday) => {
     const holidayDate = new Date(holiday.date).toISOString().split('T')[0]
     const inputDate = date.toISOString().split('T')[0]
     return holidayDate === inputDate && holiday.type === 'public'
@@ -59,6 +59,9 @@ const getTwoHoursBeforeWithinWorkingHours = (date: Date): Date => {
 }
 
 export const calculateHoldingDateHook: FieldHook = ({ data, value }) => {
+  if (data?.holdingsLimit) {
+    return value
+  }
   if (data?.meetingDate) {
     const meetingDate = new Date(data?.meetingDate)
     if (data?.type === 'אג"ח') {
