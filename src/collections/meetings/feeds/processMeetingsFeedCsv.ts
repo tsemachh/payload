@@ -77,7 +77,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           holdingsLimit: data.sdate != '' ? parseDateString(data.sdate) : null,
           location: data.location || '',
           state: getMeetingState(data.state || '') as MeetingState,
-          ProofIdPrev: data.ProofIdPrev || '',
+          proofIdPrev: data.ProofIdPrev || '',
           _status: 'draft',
         }
       } catch (e: any) {
@@ -122,12 +122,12 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           continue
         }
         row.stock = stockId
-        if (row.ProofIdPrev) {
-          const prevMeeting = await findMeetingByMagnaId(req.payload, row.ProofIdPrev)
+        if (row.proofIdPrev) {
+          const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
           if (prevMeeting && prevMeeting.docs.length > 0) {
             const { magnaId, ...dataToUpdate } = row
-            dataToUpdate.magnaId = row.ProofIdPrev
-            delete dataToUpdate.ProofIdPrev
+            dataToUpdate.magnaId = row.proofIdPrev
+            delete dataToUpdate.proofIdPrev
             const prevMeetingId = prevMeeting.docs[0].id
             try {
               await req.payload.update({
@@ -137,17 +137,17 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                 context: { ...req.context, from: 'migration' },
               })
               req.payload.logger.info(
-                `Successfully updated meeting with ProofIdPrev ${row.ProofIdPrev}`,
+                `Successfully updated meeting with ProofIdPrev ${row.proofIdPrev}`,
               )
             } catch (e: any) {
               errors.push(
-                `Error updating meeting with ProofIdPrev ${row.ProofIdPrev}: ${e.message}`,
+                `Error updating meeting with ProofIdPrev ${row.proofIdPrev}: ${e.message}`,
               )
-              req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.ProofIdPrev}`)
+              req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.proofIdPrev}`)
             }
           } else {
-            errors.push(`No meeting found for ProofIdPrev ${row.ProofIdPrev}, cannot update`)
-            req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.ProofIdPrev}`)
+            errors.push(`No meeting found for ProofIdPrev ${row.proofIdPrev}, cannot update`)
+            req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.proofIdPrev}`)
           }
         }
 
