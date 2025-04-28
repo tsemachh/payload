@@ -63,7 +63,7 @@ export const fetchAllSilencedStocks = async (req: PayloadRequest, companies: str
       collection: 'silenced-stocks',
       where: {
         companies: {
-          contains: companies,
+          all: companies,
         },
       },
       limit: 0,
