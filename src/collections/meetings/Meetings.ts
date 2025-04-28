@@ -347,6 +347,11 @@ export const Meetings: CollectionConfig = {
                   required: true,
                 },
                 {
+                  name: 'shortSubject',
+                  label: 'נושא מקוצר',
+                  type: 'text',
+                },
+                {
                   type: 'row',
                   fields: [
                     {
