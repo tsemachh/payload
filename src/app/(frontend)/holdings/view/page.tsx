@@ -19,10 +19,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
+import { AlertTriangle } from 'lucide-react'
 
 export default function HoldingsView() {
   const { user } = useAuth()
@@ -234,14 +236,28 @@ export default function HoldingsView() {
               <p className="text-center">מייבא נתונים...</p>
             </div>
           ) : (
-            <Dialog open={!editForm} onOpenChange={() => setEditForm(true)}>
-              <DialogContent className="sm:max-w-md" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle className="text-center">אין נתונים</DialogTitle>
-                  <DialogDescription className="text-center">
-                    לא נמצאו נתונים עבור הבחירה הנוכחית
-                  </DialogDescription>
+            <Dialog open={!editForm}>
+              <DialogContent className="max-w-md" dir="rtl">
+                <DialogHeader className="flex flex-row items-center gap-3">
+                  <AlertTriangle className="h-8 w-8 text-red-500 flex-shrink-0" />
+                  <DialogTitle className="text-xl text-red-600 m-0">אין נתונים</DialogTitle>
                 </DialogHeader>
+                <div className="mt-4">
+                  <p className="text-base font-medium">
+                    {date
+                      ? `לא נמצאו נתונים לתאריך ${format(date, 'dd/MM/yyyy')}. `
+                      : 'לא נמצאו נתונים עבור הבחירה הנוכחית.'}
+                  </p>
+                </div>
+                <DialogFooter className="flex justify-end gap-3 mt-6">
+                  <Button
+                    onClick={() => {
+                      setEditForm(true)
+                    }}
+                  >
+                    חזרה
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           )}
