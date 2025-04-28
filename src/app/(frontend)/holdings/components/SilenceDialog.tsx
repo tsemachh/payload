@@ -32,6 +32,10 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess
       setResultMessage('נכשל להשתיק את השגיאה.')
     } finally {
       setLoading(false)
+
+      setTimeout(() => {
+        handleClose()
+      }, 2000)
     }
   }
 
