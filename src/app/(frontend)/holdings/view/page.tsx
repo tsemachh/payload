@@ -220,6 +220,7 @@ export default function HoldingsView() {
                 defaultSortDirection="desc"
                 tableId="holdings-view-table"
                 filterOption={false}
+                tableHeightOffset={400}
               />
               <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
                 <div className="flex items-center space-x-4 space-x-reverse">
