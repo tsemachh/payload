@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import upsertSilencedStocksEndPoint from '@/collections/silenced-stocks/upsertSilencedStocksEndPoint'
 
 export const SilencedStocks: CollectionConfig = {
   slug: 'silenced-stocks',
@@ -32,6 +33,13 @@ export const SilencedStocks: CollectionConfig = {
       hasMany: true,
       relationTo: 'companies',
       index: true,
+    },
+  ],
+  endpoints: [
+    {
+      path: '/upsert',
+      method: 'post',
+      handler: upsertSilencedStocksEndPoint,
     },
   ],
 }

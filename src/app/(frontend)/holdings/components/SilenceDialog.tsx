@@ -18,12 +18,8 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess
   const handleSilence = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/silenced-stocks', {
+      const response = await fetch(`/api/silenced-stocks/upsert?stockId=${stockId}&companies=${companies}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stockId ,companies}),
       })
       if (response.ok) {
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
