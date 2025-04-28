@@ -231,7 +231,7 @@ export const validateRow = async (
   const lineNumber = index + 1;
 
 
-  let status: 'success' | 'error' | 'silence' = 'success';
+  let status: 'success' | 'error' | 'silenced' = 'success';
   let errorMessage: string | null = null;
 
 // Check required fields
@@ -246,7 +246,7 @@ export const validateRow = async (
     errorMessage = 'מספר חשבון חסר';
   } else if (!stockMap.has(stockId)) {
     if (silencedStockIds.includes(stockId)) {
-      status = 'silence';
+      status = 'silenced';
     } else {
       status = 'error';
       errorMessage = 'נייר ערך לא מוכר';

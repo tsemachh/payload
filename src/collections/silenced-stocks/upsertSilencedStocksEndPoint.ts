@@ -1,13 +1,11 @@
 import { PayloadRequest } from 'payload'
 
-// פונקציה לבדוק הרשאות
 const checkUserAuthorization = (req: PayloadRequest) => {
   if (!req?.user) {
     return Response.json({ error: 'forbidden' }, { status: 403 })
   }
 }
 
-// פונקציה לבדוק תקינות הערכים ב-query
 const validateQueryParams = (stockId: string, companiesArray: string[]) => {
   if (typeof stockId !== 'string' || !stockId) {
     return Response.json({ error: 'Missing or invalid stockId' }, { status: 400 })
@@ -17,7 +15,6 @@ const validateQueryParams = (stockId: string, companiesArray: string[]) => {
   }
 }
 
-// פונקציה למציאת המניה
 const findExistingStock = async (req: PayloadRequest, stockId: string) => {
   const existingStock = await req.payload.find({
     collection: 'silenced-stocks',
@@ -25,10 +22,10 @@ const findExistingStock = async (req: PayloadRequest, stockId: string) => {
     depth: 0,
     limit: 1,
   })
+  if (existingStock.docs.length===0 )return null
   return existingStock.docs[0]
 }
 
-// פונקציה לעדכון מניה קיימת
 const updateSilencedStock = async (req: PayloadRequest, stockId: string, companies: string[], existingStock: any) => {
   return await req.payload.update({
     collection: 'silenced-stocks',
@@ -39,7 +36,6 @@ const updateSilencedStock = async (req: PayloadRequest, stockId: string, compani
   })
 }
 
-// פונקציה ליצירת מניה חדשה
 const createSilencedStock = async (req: PayloadRequest, stockId: string, companies: string[]) => {
   return await req.payload.create({
     collection: 'silenced-stocks',
@@ -47,24 +43,19 @@ const createSilencedStock = async (req: PayloadRequest, stockId: string, compani
   })
 }
 
-// הפונקציה המרכזית
 const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
   try {
-    // בדיקת הרשאות
     const authError = checkUserAuthorization(req)
     if (authError) return authError
 
     const { stockId, companies } = req.query as { stockId: string; companies: string }
     const companiesArray = companies.split(',');
     console.log(companiesArray);
-    // בדיקת תקינות הערכים
     const queryParamError = validateQueryParams(stockId, companiesArray)
     if (queryParamError) return queryParamError
 
-    // מציאת מניה קיימת
     const existingStock = await findExistingStock(req, stockId)
 
-    // אם המניה קיימת, עדכון; אחרת, יצירת מניה חדשה
     let result
     if (existingStock) {
       result = await updateSilencedStock(req, stockId, companiesArray, existingStock)

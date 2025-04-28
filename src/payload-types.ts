@@ -658,7 +658,7 @@ export interface HoldingFeedLine {
   accountId?: string | null;
   quantity?: number | null;
   lineNumber?: number | null;
-  status?: ('error' | 'success' | 'silence') | null;
+  status?: ('error' | 'success' | 'silenced') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
