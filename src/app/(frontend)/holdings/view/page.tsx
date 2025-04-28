@@ -187,6 +187,9 @@ export default function HoldingsView() {
 
           <div className="flex justify-center mt-6">
             <Button
+              variant={
+                !date || selectedCompanies.length === 0 || isLoading ? 'default' : 'defaultHover'
+              }
               onClick={
                 !date || selectedCompanies.length === 0 || isLoading ? () => {} : fetchHoldings
               }

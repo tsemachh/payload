@@ -227,6 +227,11 @@ export default function HoldingsFeedView() {
 
           <div className="flex justify-center mt-6">
             <Button
+              variant={
+                !date || !file || isUploading || selectedCompanies.length === 0
+                  ? 'default'
+                  : 'defaultHover'
+              }
               onClick={
                 !date || !file || isUploading || selectedCompanies.length === 0
                   ? () => {}
