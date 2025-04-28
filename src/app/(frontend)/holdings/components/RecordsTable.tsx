@@ -51,7 +51,7 @@ const holdingColumns: Column<RecordType>[] = [
   },
 ]
 
-const invalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
+const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
@@ -86,7 +86,7 @@ export const RecordsTable: React.FC<{
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid ? [...holdingColumns, ...invalidColumnsAdditional] : holdingColumns
+  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
   const tableWidth = columns.reduce((sum, column) => {
     return sum + (column.width || column.minWidth) + 25
   }, 0)
