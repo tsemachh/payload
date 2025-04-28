@@ -329,7 +329,7 @@ export interface Meeting {
   agenda?:
     | {
         text: string;
-        shortSubject?: string | null;
+        shortText?: string | null;
         topicType: 'reporting' | 'decision';
         majorityType?: ('regular' | 'privileged') | null;
         otherMajority?: string | null;
@@ -1022,7 +1022,7 @@ export interface MeetingsSelect<T extends boolean = true> {
     | T
     | {
         text?: T;
-        shortSubject?: T;
+        shortText?: T;
         topicType?: T;
         majorityType?: T;
         otherMajority?: T;
