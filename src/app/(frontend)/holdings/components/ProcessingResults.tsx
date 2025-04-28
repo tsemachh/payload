@@ -131,7 +131,7 @@ export function ProcessingResults({
                       warning.details.map((detail, idx) => (
                         <span key={idx} className="text-gray-800 text-sm">
                           {detail}
-                          {idx !== warning.details!.length - 1 && ', '}
+                          {idx !== warning.details!.length - 1 ? ', ' : '.'}
                         </span>
                       ))}
                   </div>
@@ -163,17 +163,19 @@ export function ProcessingResults({
             <ul className="space-y-3">
               {fatals.map((error, index) => (
                 <li key={index} className="text-gray-800">
-                  <span className="font-medium">{error.message}</span>
-
-                  {error.details && error.details.length > 0 && (
-                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
-                      {error.details.map((detail, idx) => (
-                        <li key={idx} className="text-sm">
+                  <div className="pr-6">
+                    <span className="font-medium text-black text-base">
+                      {error.message.replace(/\$\$\d+\$\$/g, '')}
+                      {error.details && error.details.length > 0 && ':'}{' '}
+                    </span>
+                    {error.details &&
+                      error.details.map((detail, idx) => (
+                        <span key={idx} className="text-gray-800 text-sm">
                           {detail}
-                        </li>
+                          {idx !== error.details!.length - 1 ? ', ' : '.'}
+                        </span>
                       ))}
-                    </ul>
-                  )}
+                  </div>
                 </li>
               ))}
             </ul>
