@@ -4,6 +4,7 @@ import React from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
+import { SilenceDialog } from './SilenceDialog'
 
 interface RecordType {
   lineNumber: string | number
@@ -45,22 +46,32 @@ const holdingColumns: Column<RecordType>[] = [
       ),
   },
 ]
-const invalidColumnsAdditional: Column<RecordType>[] = [
+//silenced-stocks
+const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
     type: 'string',
     minWidth: 150,
     filterable: true,
+    render: (row) => {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{row.error}</span>
+          {row.error === 'נייר ערך לא מוכר' && (
+            <SilenceDialog stockId={row.stockId} companies={companies} />
+          )}
+        </div>
+      )
+    },
   },
 ]
 
-const defaultVisibleValidgColumns = ['lineNumber', 'stockId', 'quantity']
-const defaultVisibleInvalidColumnsA = [...defaultVisibleValidgColumns, 'error']
 
-export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean }> = ({
+export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean;companies:string[] }> = ({
   records,
   invalid,
+  companies
 }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
@@ -71,7 +82,8 @@ export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: bool
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid ? [...holdingColumns, ...invalidColumnsAdditional] : holdingColumns
+  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
+
 
   return (
     <div style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}>

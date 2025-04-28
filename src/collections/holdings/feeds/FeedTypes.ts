@@ -6,6 +6,7 @@ export interface FeedValidationResult {
   warnings: FeedWarning[]
   recordErrors: HoldingFeedLine[]
   validRecords: HoldingFeedLine[]
+  silencedRecords:HoldingFeedLine[]
 }
 
 export interface FeedFatalError {
@@ -26,8 +27,6 @@ export interface FeedWarning {
   count?: number
 }
 
-// Define column indices for files without headers
-// Assuming the columns are in a specific order: stockId, quantity, accountId
 export const STOCK_ID_COL = 0
 export const QUANTITY_COL = 1
 export const ACCOUNT_ID_COL = 2

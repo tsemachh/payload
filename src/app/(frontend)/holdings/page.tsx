@@ -45,6 +45,7 @@ export default function HoldingsFeedView() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
+  const [silencedRecords, setSilencedRecords] = useState<HoldingFeedLine[]>([])
   const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
@@ -104,6 +105,7 @@ export default function HoldingsFeedView() {
     setEditForm(false)
     setIsValidating(true)
     setvalidRecords([])
+    setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
     setWarnings([])
@@ -129,6 +131,7 @@ export default function HoldingsFeedView() {
         setFatals(feedResults.fatalErrors)
         setWarnings(feedResults.warnings)
         setRecordErrors(feedResults.recordErrors)
+        setSilencedRecords(feedResults.silencedRecords)
       } else {
         toast({
           title: 'שגיאה בהעלאת הקובץ',
@@ -186,6 +189,7 @@ export default function HoldingsFeedView() {
   const handleCancel = () => {
     setEditForm(true)
     setRecordErrors([])
+    setSilencedRecords([])
     setWarnings([])
     setFile(null)
   }
@@ -258,9 +262,11 @@ export default function HoldingsFeedView() {
             isSuccess={isSuccess}
             setIsSuccess={setIsSuccess}
             validRecords={validRecords}
+            silencedRecords={silencedRecords}
             recordErrors={recordErrors}
             warnings={warnings}
             fatals={fatals}
+            companies={selectedCompanies}
             className="mt-16"
             onConfirm={handleSaveConfirmed}
             onCancel={handleCancel}
