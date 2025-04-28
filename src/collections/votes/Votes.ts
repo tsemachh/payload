@@ -53,52 +53,111 @@ export const Votes: CollectionConfig = {
       },
       fields: [
         {
-          name: 'topicIndex',
-          label: 'מספר נושא',
-          type: 'number',
-          required: true,
+          type: 'row',
+          fields:[
+            {
+              name: 'topicIndex',
+              label: 'מספר נושא',
+              type: 'number',
+              required: true,
+              admin:{width:'100px'}
+            },
+            {
+              name: 'voteDecision',
+              label: 'הצבעה',
+              type: 'select',
+              options: [
+                { label: 'בעד', value: 'בעד' },
+                { label: 'נגד', value: 'נגד' },
+                { label: 'נמנע', value: 'נמנע' },
+                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
+                { label: 'לא משתתף', value: 'לא משתתף' },
+                { label: 'דיון', value: 'דיון' },
+                { label: 'הוסר מסדר היום', value: 'הוסר מסדר היום' },
+                { label: 'ללא הצבעה', value: 'ללא הצבעה' },
+                { label: 'נמכרה אחזקה', value: 'נמכרה אחזקה' },
+                { label: 'הצבעות סותרות', value: 'הצבעות סותרות' },
+              ],
+            },
+          ]
         },
         {
-          name: 'votingOptions',
-          label: 'אפשרויות הצבעה',
-          type: 'select',
-          hasMany: true,
-          options: [
-            { label: 'בעד', value: 'for' },
-            { label: 'נגד', value: 'against' },
-            { label: 'נמנע', value: 'avoid' },
-            { label: 'אין חובת השתתפות', value: 'no-obligation' },
-            { label: 'לא משתתף', value: 'not-participating' },
-          ],
+          type:'row',
+          fields:[
+            {
+              name: 'committee',
+              label: 'ועדה',
+              type: 'checkbox',
+            },
+            {
+              name: 'conflict',
+              label: 'ניגוד עניינים',
+              type: 'checkbox',
+            },
+            {
+              name: 'relatedParty',
+              label: 'צד קשור',
+              type: 'checkbox',
+            },
+            {
+              name: 'personalInterest',
+              label: 'עניין אישי',
+              type: 'checkbox',
+            },
+          ]
+        },
+        {
+          name: 'professionalFactor',
+          label: 'גורם מקצועי',
+          type: 'text',
+        },
+        {
+          name: 'comment',
+          label: 'הערה',
+          type: 'textarea',
+        },
+        {
+          name: 'clientComment',
+          label: 'הערת לקוח',
+          type: 'textarea',
         },
       ],
     },
   ],
   hooks: {
-    beforeChange: [
+/*    beforeChange: [
       async ({ data, req }) => {
         // If meeting is provided, fetch its agenda to populate the votes array
+
         if (data.meeting) {
           try {
             const meeting = await req.payload.findByID({
               collection: 'meetings',
               id: data.meeting,
             });
-            
+
             // If meeting has agenda, create a vote entry for each topic
             if (meeting.agenda && Array.isArray(meeting.agenda)) {
               data.votes = meeting.agenda.map((topic, index) => ({
                 topicIndex: index + 1,
-                votingOptions: [],
+                voteDecision: null,
+                comment: '',
+                clientComment: '',
+                committee: false,
+                conflict: false,
+                relatedParty: false,
+                personalInterest: false,
+                professionalFactor: '',
               }));
             }
           } catch (error) {
             console.error('Error fetching meeting agenda:', error);
           }
+
         }
-        
+
         return data;
       },
-    ],
+    ],*/
   },
 }

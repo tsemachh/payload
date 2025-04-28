@@ -75,6 +75,7 @@ async function processCompany(
             equals: company.companyId,
           },
         },
+        limit: 1,
       })
 
       if (existingCompany.docs.length > 0) {
@@ -93,6 +94,7 @@ async function processCompany(
             equals: company.name,
           },
         },
+        limit: 1,
       })
 
       if (existingCompany.docs.length > 0) {

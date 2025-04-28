@@ -74,14 +74,85 @@ export async function getMeetingIdToSequenceMap(payload: BasePayload) {
         meetingId: true,
         id: true
       },
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc)=>seqMap.set(doc.meetingId as string,doc.id))
+    }
+  } catch (error) {
+    console.error("Error in query",error)
+    throw error
+  }
+  return seqMap
+}
+
+export async function getCompanyIdToSequenceMap(payload: BasePayload) {
+  const seqMap:Map<string,string> = new Map<string,string>()
+  try {
+    const data = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      select: {
+        companyId: true,
+        id: true,
+      },
       where:{
-        meetingId:{
+        companyId:{
           not_equals:null
         }
       }
     })
     if (data.docs.length > 0) {
-      data.docs.forEach((doc)=>seqMap.set(doc.meetingId as string,doc.id))
+      data.docs.forEach((doc)=>seqMap.set(`${doc.companyId}` as string,doc.id as string))
+    }
+  } catch (error) {
+    console.error("Error in query",error)
+    throw error
+  }
+  return seqMap
+}
+
+export async function getStockIdToSequenceMap(payload: BasePayload) {
+  const seqMap:Map<string,string> = new Map<string,string>()
+  try {
+    const data = await payload.find({
+      collection: 'stocks',
+      limit: 0,
+      depth: 0,
+      select: {
+        stockId: true,
+        id: true,
+      }
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc)=>seqMap.set(`${doc.stockId}` as string,doc.id as string))
+    }
+  } catch (error) {
+    console.error("Error in query",error)
+    throw error
+  }
+  return seqMap
+}
+export async function getCompanyIdToChildCompanies(payload: BasePayload) {
+  const seqMap:Map<string,string[]> = new Map<string,string[]>()
+  try {
+    const data = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      select: {
+        companyId: true,
+        id: true,
+        subCompanies:true
+      },
+      where:{
+        companyId:{
+          not_equals:null
+        }
+      }
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc)=>seqMap.set(`${doc.companyId}` as string,doc.subCompanies as string[]))
     }
   } catch (error) {
     console.error("Error in query",error)

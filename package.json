@@ -68,6 +68,7 @@
     "cmdk": "^1.0.4",
     "convert-csv-to-json": "^2.50.0",
     "date-fns": "^4.1.0",
+    "date-holidays": "^3.24.2",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.5.2",
     "framer-motion": "^12.4.7",

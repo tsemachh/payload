@@ -8,6 +8,7 @@ import {
   deleteExistingHoldings,
   preloadAccountsToCompanyMap,
   preloadStocks,
+  fetchAllSilencedStocks,
 } from '@/collections/holdings/feeds/FeedDataUtils'
 
 /**
@@ -31,6 +32,7 @@ export const processHoldingsFeedCsv = async (
       warnings: [],
       recordErrors: [],
       validRecords: [],
+      silencedRecords: [],
     }
     // Initial validation
     // Get the file from the request
@@ -118,16 +120,23 @@ export const processHoldingsFeedCsv = async (
 
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
-    standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
+    const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
+    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);  // סגור את הסוגריים כאן
+
+    for (const [index, row] of standardizedRows.entries()) {
+      const { processedRecord } = await validateRow(row, index, accountToCompanyMap, stockMap, silencedStockIds)
       processedRecords.push(processedRecord)
 
       if (processedRecord.status === 'error') {
         validationResult.recordErrors.push(processedRecord)
-      } else {
-        validationResult.validRecords.push(processedRecord)
       }
-    })
+      else if (processedRecord.status === 'success') {
+        validationResult.validRecords.push(processedRecord)
+      } else
+      validationResult.silencedRecords.push(processedRecord)
+    }
+    console.log("-----validationResult.silencedRecords",validationResult.silencedRecords)
+    console.log("-----validationResult.validRecords",validationResult.validRecords)
 
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {

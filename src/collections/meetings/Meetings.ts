@@ -5,12 +5,14 @@ import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompanies
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
+import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
+import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
   iconAltText: 'קישור ידני',
-  iconOnly: true
+  iconOnly: true,
 }
 
 const validateMeetingState = (value: string | null | undefined, options: any) => {
@@ -19,8 +21,7 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
-  if (value == "on-hold" && !meetingDate)
-    return true
+  if (value == 'on-hold' && !meetingDate) return true
 
   if (!meetingDate) {
     return 'יש לספק מועד אסיפה'
@@ -52,9 +53,13 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
         break
     }
     return true
-}}
-const validateMeetingnvItationLink = (value: string | null | undefined, {siblingData}:{siblingData:any}) => {
-  return true;
+  }
+}
+const validateMeetingnvItationLink = (
+  value: string | null | undefined,
+  { siblingData }: { siblingData: any },
+) => {
+  return true
   /*//TODO Check if in conversion we can fix the meetings without the magnaId then bring it back
   if(siblingData.magnaId || siblingData.invitationDocument || value) return true
     return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
@@ -70,7 +75,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId', 'stock', 'invitationLink','meetingId'],
+    listSearchableFields: ['magnaId', 'stock', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'magnaId',
       'invitationLink',
@@ -100,14 +105,6 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
-                  name: 'meetingId',
-                  label: 'מספר אסיפה',
-                  type: 'text',
-                  unique: true,
-                  index: true,
-                  admin: { hidden: true },
-                },
-                {
                   name: 'stock',
                   label: 'נייר ערך',
                   type: 'relationship',
@@ -135,6 +132,14 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: '15%',
                   },
+                },
+                {
+                  name: 'meetingId',
+                  label: 'מספר אסיפה',
+                  type: 'text',
+                  unique: true,
+                  index: true,
+                  admin: { width: "100px" },
                 },
               ],
             },
@@ -186,16 +191,16 @@ export const Meetings: CollectionConfig = {
                           const document = await req.payload.findByID({
                             collection: 'documents',
                             id: data.invitationDocument,
-                          });
-                          return `${document.url}`;
+                          })
+                          return `${document.url}`
                         }
                         if (data?.magnaId && !data?.invitationLink) {
-                          return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`;
+                          return `https://www.magna.isa.gov.il/details?id=${data.magnaId}&file=0`
                         }
                         if (data?.invitationLink) {
-                          return data.invitationLink;
+                          return data.invitationLink
                         }
-                        return null;
+                        return null
                       },
                     ],
                   },
@@ -226,6 +231,9 @@ export const Meetings: CollectionConfig = {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
                     },
+                  },
+                  hooks: {
+                    beforeChange: [calculateHoldingDateHook],
                   },
                 },
                 {
@@ -308,19 +316,6 @@ export const Meetings: CollectionConfig = {
           ],
         },
         {
-          label: 'חברות',
-          fields: [
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-            },
-          ],
-        },
-        {
           label: 'סדר יום',
           fields: [
             {
@@ -339,8 +334,13 @@ export const Meetings: CollectionConfig = {
                   required: true,
                 },
                 {
-                  type: "row",
-                  fields:[
+                  name: 'shortText',
+                  label: 'נושא מקוצר',
+                  type: 'text',
+                },
+                {
+                  type: 'row',
+                  fields: [
                     {
                       name: 'topicType',
                       label: 'סוג נושא',
@@ -360,69 +360,70 @@ export const Meetings: CollectionConfig = {
                         { label: 'רוב מיוחד', value: 'privileged' },
                       ],
                       admin: {
-                        condition: (_,siblingData) => {
+                        condition: (_, siblingData) => {
                           return siblingData.topicType === 'decision'
-                        },                      },
+                        },
+                      },
                     },
                     {
                       name: 'otherMajority',
                       label: 'רוב אחר',
                       type: 'text',
                       admin: {
-                        condition: (_,siblingData) => {
-                          return siblingData.majorityType === 'privileged' && siblingData.topicType === 'decision';
+                        condition: (_, siblingData) => {
+                          return (
+                            siblingData.majorityType === 'privileged' &&
+                            siblingData.topicType === 'decision'
+                          )
                         },
                       },
                     },
-                  ]
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'vpercent',
+                          label: 'אחוז הצבעה',
+                          type: 'number',
+                          admin: {
+                            step: 0.01,
+                            condition: (_, siblingData) =>
+                              siblingData.topicType === 'decision' &&
+                              siblingData.majorityType === 'regular',
+                          },
+                        },
+                        {
+                          name: 'vPercentSpecial',
+                          label: 'אחוז הצבעה מיוחד',
+                          type: 'number',
+                          admin: {
+                            step: 0.01,
+                            condition: (_, siblingData) =>
+                              siblingData.topicType === 'decision' &&
+                              siblingData.majorityType === 'privileged',
+                          },
+                        },
+                      ],
+                    },
+                  ],
                 },
                 {
                   type: 'row',
-                  fields:[
+                  fields: [
                     {
                       name: 'isRemovedFromAgenda',
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
                     },
-                    {
-                      name: 'readyForReport',
-                      label: 'מוכן לדיווח',
-                      type: 'checkbox',
-                      admin: {
-                        condition: (_,siblingData) => siblingData.topicType === 'reporting' && !siblingData.isRemovedFromAgenda,
-                      },
-                    },
-                  ]
+                  ],
                 },
-                {
-                  type: 'row',
-                  fields:[
-                    {
-                      name: 'vpercent',
-                      label: 'אחוז הצבעה',
-                      type: 'number',
-                      admin: {
-                        step: 0.01,
-                        condition: (_,siblingData) => siblingData.topicType === 'decision',
-                      },
-                    },
-                    {
-                      name: 'vPercentSpecial',
-                      label: 'אחוז הצבעה מיוחד',
-                      type: 'number',
-                      admin: {
-                        step: 0.01,
-                        condition: (_,siblingData) => siblingData.topicType === 'decision',
-                      },
-                    },
-                  ]
-                },
+
                 {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'text',
                   admin: {
-                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                    condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
                 {
@@ -436,10 +437,39 @@ export const Meetings: CollectionConfig = {
                     { label: 'דיון', value: '3' },
                   ],
                   admin: {
-                    condition: (_,siblingData) => siblingData.topicType === 'decision',
+                    condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
               ],
+            },
+          ],
+        },
+        {
+          label: 'הצבעות',
+          fields: [
+            {
+              name: 'votes',
+              label: 'הצבעות',
+              type: 'join',
+              collection: 'votes',
+              on: 'meeting',
+              defaultLimit: 0,
+              admin:{
+                defaultColumns:['companies','votes']
+              }
+            }
+          ],
+        },
+        {
+          label: 'חברות',
+          fields: [
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
             },
           ],
         },
@@ -476,6 +506,11 @@ export const Meetings: CollectionConfig = {
       path: '/upload-meetings-csv',
       method: 'post',
       handler: uploadMeetingsCsvEndPoint,
+    },
+    {
+      path: '/upload-meetings-agenda',
+      method: 'post',
+      handler: uploadMeetingsAgendaEndPoint,
     },
   ],
 }

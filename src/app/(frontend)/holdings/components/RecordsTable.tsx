@@ -4,6 +4,7 @@ import React from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
+import { SilenceDialog } from './SilenceDialog'
 
 interface RecordType {
   lineNumber: string | number
@@ -49,7 +50,8 @@ const holdingColumns: Column<RecordType>[] = [
       ),
   },
 ]
-const invalidColumnsAdditional: Column<RecordType>[] = [
+
+const invalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
@@ -57,13 +59,24 @@ const invalidColumnsAdditional: Column<RecordType>[] = [
     width: 200,
     minWidth: 200,
     filterable: true,
+    render: (row) => {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{row.error}</span>
+          {row.error === 'נייר ערך לא מוכר' && (
+            <SilenceDialog stockId={row.stockId} companies={companies} />
+          )}
+        </div>
+      )
+    },
   },
 ]
 
-export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean }> = ({
-  records,
-  invalid,
-}) => {
+export const RecordsTable: React.FC<{
+  records: HoldingFeedLine[]
+  invalid?: boolean
+  companies: string[]
+}> = ({ records, invalid, companies }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',

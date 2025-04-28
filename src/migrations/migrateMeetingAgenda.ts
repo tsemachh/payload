@@ -42,13 +42,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         SELECT a.[id]
              , a.[mid]
              , a.[topic]
-             , a.[rec]
              , a.[result]
              , a.[vpercent]
              , a.[vPercentSpecial]
              , a.[vtype]
              , a.[dealChanged]
-             , a.[agIdConnection]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
                  LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
@@ -132,8 +130,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 recommendation: item.recommendation,
                 // Add default values for required fields that might not be in the source data
                 isRemovedFromAgenda: item.originalResult === 4, // Set to true if original result is 4 (הוסר מסדר היום)
-                // readyForReport is only for reporting type topics, now used when topicType is reporting
-                ...(item.topicType === 'reporting' ? { readyForReport: false } : {}),
               })),
             }
 
