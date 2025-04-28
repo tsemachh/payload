@@ -17,7 +17,6 @@ export function MeetingsTableClient({
   initialData: MeetingTableDataType[]
   onlyFuture?: boolean
 }) {
-
   return (
     <DataTableStatic
       data={initialData}
@@ -32,6 +31,7 @@ export function MeetingsTableClient({
       onlyFuture={onlyFuture}
       searchPlaceholder="חיפוש בכל השדות..."
       defaultVisibleColumns={defaultVisibleColumns}
+      tableHeightOffset={200}
     />
   )
 }
