@@ -47,7 +47,7 @@ export async function getStockValues(pool: sql.ConnectionPool) {
              logUpdateID,
              longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -30, GETDATE())
+      WHERE [valueDate] >= DATEADD(DAY, -90, GETDATE())
       ORDER BY valueDate ASC;
   `)
   console.log(`Retrieved ${resultStockValues.recordset.length} records from SQL Server`)
@@ -278,29 +278,38 @@ export async function upsertStockFromImport(
     origin: origin,
     comments: comments
   }
-
-  if (!stock) {
-    // Insert into Payload CMS
-    const newStock = await req.payload.create({
-      collection: 'stocks',
-      data: stockData as Stock,
-      req,
-    })
-    return newStock.id
-  } else {
-    //Update the Stock only if name or longName have changed
-    if (
-      stock.name != stockData.name ||
-      (stockData.longName && stock.longName != stockData.longName)
-    ) {
-      req.payload.update({
+  try {
+    if (!stock) {
+      // Insert into Payload CMS
+      const newStock = await req.payload.create({
         collection: 'stocks',
-        id: stock.id,
-        data: { name: stockData.name, longName: stockData.longName },
+        data: stockData as Stock,
         req,
       })
+      return newStock.id
+    } else {
+      //Update the Stock only if name or longName have changed
+      if (
+        stock.name != stockData.name ||
+        stock.active != stockData.active ||
+        (stockData.longName && stock.longName != stockData.longName)
+      ) {
+        await req.payload.update({
+          collection: 'stocks',
+          id: stock.id,
+          data: { name: stockData.name, longName: stockData.longName },
+          req,
+        })
+      }
+      return stock.id
     }
-    return stock.id
+  }
+  catch(error:any){
+    console.error(
+      `Error processing stock ${stockData?.stockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error,
+    )
+    // Don't rethrow the error to allow other stocks to be processed
   }
 }
 

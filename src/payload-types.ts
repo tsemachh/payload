@@ -340,7 +340,6 @@ export interface Meeting {
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
-  companies?: (string | Company)[] | null;
   agenda?:
     | {
         text: string;
@@ -351,7 +350,6 @@ export interface Meeting {
         vpercent?: number | null;
         vPercentSpecial?: number | null;
         isRemovedFromAgenda?: boolean | null;
-        readyForReport?: boolean | null;
         recommendation?: string | null;
         result?: ('0' | '1' | '2' | '3') | null;
         id?: string | null;
@@ -362,6 +360,7 @@ export interface Meeting {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  companies?: (string | Company)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -390,6 +389,46 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        voteDecision?:
+          | (
+              | 'בעד'
+              | 'נגד'
+              | 'נמנע'
+              | 'אין חובת השתתפות'
+              | 'לא משתתף'
+              | 'דיון'
+              | 'הוסר מסדר היום'
+              | 'ללא הצבעה'
+              | 'נמכרה אחזקה'
+              | 'הצבעות סותרות'
+            )
+          | null;
+        committee?: boolean | null;
+        conflict?: boolean | null;
+        relatedParty?: boolean | null;
+        personalInterest?: boolean | null;
+        professionalFactor?: string | null;
+        comment?: string | null;
+        clientComment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -468,46 +507,6 @@ export interface Holding {
   valueDate: string;
   stock: string | Stock;
   quantity: number;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  companies: (string | Company)[];
-  votes?:
-    | {
-        topicIndex: number;
-        voteDecision?:
-          | (
-              | 'בעד'
-              | 'נגד'
-              | 'נמנע'
-              | 'אין חובת השתתפות'
-              | 'לא משתתף'
-              | 'דיון'
-              | 'הוסר מסדר היום'
-              | 'ללא הצבעה'
-              | 'נמכרה אחזקה'
-              | 'הצבעות סותרות'
-            )
-          | null;
-        committee?: boolean | null;
-        conflict?: boolean | null;
-        relatedParty?: boolean | null;
-        personalInterest?: boolean | null;
-        professionalFactor?: string | null;
-        comment?: string | null;
-        clientComment?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1057,7 +1056,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
-  companies?: T;
   agenda?:
     | T
     | {
@@ -1069,12 +1067,12 @@ export interface MeetingsSelect<T extends boolean = true> {
         vpercent?: T;
         vPercentSpecial?: T;
         isRemovedFromAgenda?: T;
-        readyForReport?: T;
         recommendation?: T;
         result?: T;
         id?: T;
       };
   votes?: T;
+  companies?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;

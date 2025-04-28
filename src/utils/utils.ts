@@ -111,6 +111,28 @@ export async function getCompanyIdToSequenceMap(payload: BasePayload) {
   }
   return seqMap
 }
+
+export async function getStockIdToSequenceMap(payload: BasePayload) {
+  const seqMap:Map<string,string> = new Map<string,string>()
+  try {
+    const data = await payload.find({
+      collection: 'stocks',
+      limit: 0,
+      depth: 0,
+      select: {
+        stockId: true,
+        id: true,
+      }
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc)=>seqMap.set(`${doc.stockId}` as string,doc.id as string))
+    }
+  } catch (error) {
+    console.error("Error in query",error)
+    throw error
+  }
+  return seqMap
+}
 export async function getCompanyIdToChildCompanies(payload: BasePayload) {
   const seqMap:Map<string,string[]> = new Map<string,string[]>()
   try {
