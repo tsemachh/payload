@@ -1,4 +1,4 @@
-import { Args, mongooseAdapter } from '@payloadcms/db-mongodb';
+import { Args, mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
@@ -36,11 +36,10 @@ const dirname = path.dirname(filename)
 
 const dbArgs: Args = {
   url: process.env.DATABASE_URI || '',
-};
-
+}
 
 if (process.env.MONGO_USE_TX !== 'true') {
-  dbArgs.transactionOptions = false;
+  dbArgs.transactionOptions = false
 }
 
 export default buildConfig({
@@ -69,8 +68,33 @@ export default buildConfig({
         },
       ],
     },
+    timezones: {
+      supportedTimezones: ({ defaultTimezones }) => [
+        ...defaultTimezones,
+        { label: '(GMT+3) Israel Standard Time', value: 'Asia/Jerusalem' },
+      ],
+      defaultTimezone: 'Asia/Jerusalem',
+    },
   },
-  collections: [Stocks, StockValues, Meetings, Users, Roles, Documents, MigrationFaults, Companies, Accounts, Holdings, StockMigrationMapping, StocksFeed,HoldingsFeed,MeetingsFeed,SilencedStocks,Votes],
+
+  collections: [
+    Stocks,
+    StockValues,
+    Meetings,
+    Users,
+    Roles,
+    Documents,
+    MigrationFaults,
+    Companies,
+    Accounts,
+    Holdings,
+    StockMigrationMapping,
+    StocksFeed,
+    HoldingsFeed,
+    MeetingsFeed,
+    SilencedStocks,
+    Votes,
+  ],
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

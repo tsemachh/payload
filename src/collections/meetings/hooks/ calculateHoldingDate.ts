@@ -59,7 +59,7 @@ const getTwoHoursBeforeWithinWorkingHours = (date: Date): Date => {
 }
 
 export const calculateHoldingDateHook: FieldHook = ({ data, value }) => {
-  if (data?.holdingsLimit) {
+  if (data?.proxyVotingDate) {
     return value
   }
   if (data?.meetingDate) {
