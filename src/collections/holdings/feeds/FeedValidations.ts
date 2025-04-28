@@ -128,9 +128,10 @@ export const checkFeedWarnings = async (
 
   console.log('-----existingHoldings', existingHoldings)
   if (existingHoldings.docs.length > 0) {
+    const formattedDate = valueDate.split('-').reverse().join('/');
     warnings.push({
       type: 'duplicateFeedForDate',
-      message: ` בוצעה בעבר הזנה לתאריך ${valueDate}`,
+      message: `בוצעה בעבר הזנה לתאריך ${formattedDate}`,
       count: existingHoldings.docs.length,
     })
   }

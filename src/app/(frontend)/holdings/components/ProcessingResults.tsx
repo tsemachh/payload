@@ -122,17 +122,19 @@ export function ProcessingResults({
             <ul className="space-y-3">
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
-                  <span className="font-medium">{warning.message.replace(/$$\d+$$/g, '')}</span>
-                  {warning.details && warning.details.length > 0 && (
-                    <div className="mt-2 pr-6 text-gray-700 text-sm">
-                      {warning.details.map((detail, idx) => (
-                        <span key={idx}>
+                  <div className="pr-6">
+                    <span className="font-medium text-black text-base">
+                      {warning.message.replace(/\$\$\d+\$\$/g, '')}
+                      {warning.details && warning.details.length > 0 && ':'}{' '}
+                    </span>
+                    {warning.details &&
+                      warning.details.map((detail, idx) => (
+                        <span key={idx} className="text-gray-800 text-sm">
                           {detail}
                           {idx !== warning.details!.length - 1 && ', '}
                         </span>
                       ))}
-                    </div>
-                  )}
+                  </div>
                 </li>
               ))}
             </ul>

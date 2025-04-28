@@ -246,13 +246,13 @@ export default function HoldingsFeedView() {
       ) : (
         <>
           {date && file && (
-            <h2 className="text-xl text-center">
+            <h4 className="text-xl text-center">
               אחזקות מקובץ{' '}
               <bdi className="inline-block font-mono" dir={'ltr'}>
                 {file.name}
               </bdi>{' '}
               לתאריך {format(date, 'dd/MM/yyyy')}
-            </h2>
+            </h4>
           )}
           <ProcessingResults
             isSuccess={isSuccess}

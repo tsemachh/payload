@@ -202,7 +202,7 @@ export default function HoldingsView() {
       ) : (
         <>
           {date && (
-            <h2 className="text-xl text-center">אחזקות לתאריך {format(date, 'dd/MM/yyyy')}</h2>
+            <h4 className="text-xl text-center">אחזקות לתאריך {format(date, 'dd/MM/yyyy')}</h4>
           )}
 
           {holdings.length > 0 ? (
