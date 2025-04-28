@@ -69,7 +69,11 @@ export default buildConfig({
       ],
     },
     timezones: {
-      defaultTimezone: 'Europe/Athens',
+      supportedTimezones: ({ defaultTimezones }) => [
+        ...defaultTimezones,
+        { label: '(GMT+3) Israel Standard Time', value: 'Asia/Jerusalem' },
+      ],
+      defaultTimezone: 'Asia/Jerusalem',
     },
   },
 
