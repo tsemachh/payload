@@ -45,11 +45,13 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess
       <Button
         variant="outline"
         size="sm"
-        className="bg-transparent text-inherit border border-inherit hover:bg-muted transition-colors"
+        className="bg-transparent text-dark border border-inherit hover:bg-muted hover:text-dark transition-colors"
         onClick={() => setOpen(true)}
       >
-        השתק
+        להשתיק
       </Button>
+
+
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
