@@ -135,6 +135,8 @@ export const processHoldingsFeedCsv = async (
       } else
       validationResult.silencedRecords.push(processedRecord)
     }
+    console.log("-----validationResult.silencedRecords",validationResult.silencedRecords)
+    console.log("-----validationResult.validRecords",validationResult.validRecords)
 
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {
