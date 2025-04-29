@@ -33,7 +33,7 @@ export default function HoldingsView() {
   const [date, setDate] = useState<Date | undefined>()
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [editForm, setEditForm] = useState(true)
+  const [isError, setIsError] = useState('')
 
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
@@ -45,7 +45,6 @@ export default function HoldingsView() {
         const decoded = JSON.parse(atob(encoded))
         setDate(decoded.date)
         setSelectedCompanies(decoded.selectedCompanies)
-        setEditForm(false)
       } catch (e) {
         console.error('Invalid data', e)
       }
@@ -53,7 +52,7 @@ export default function HoldingsView() {
   }, [])
 
   useEffect(() => {
-    if (!editForm && selectedCompanies.length > 0) {
+    if (date && selectedCompanies.length > 0) {
       fetchHoldings()
     }
   }, [date, selectedCompanies])
@@ -103,23 +102,14 @@ export default function HoldingsView() {
 
   const fetchHoldings = async () => {
     if (!date) {
-      toast({
-        title: 'שגיאה',
-        description: 'נא לבחור תאריך',
-        variant: 'destructive',
-      })
+      setIsError('תאריך לא נבחר.')
       return
     }
 
     if (selectedCompanies.length === 0) {
-      toast({
-        title: 'שגיאה',
-        description: 'נא לבחור לפחות חברה אחת',
-        variant: 'destructive',
-      })
+      setIsError('חברות לא נבחרו.')
       return
     }
-    setEditForm(false)
     setIsLoading(true)
 
     try {
@@ -128,6 +118,7 @@ export default function HoldingsView() {
       const data = await response.json()
 
       if (response.ok) {
+        if (!data.docs.length) setIsError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
@@ -138,79 +129,52 @@ export default function HoldingsView() {
           })),
         )
       } else {
-        toast({
-          title: 'שגיאה בטעינת נתונים',
-          description: data.error || 'אירעה שגיאה בטעינת הנתונים',
-          variant: 'destructive',
-        })
+        setIsError('שגיאת נתונים.')
       }
     } catch (error) {
       console.error('Error fetching holdings:', error)
-      toast({
-        title: 'שגיאה בטעינת נתונים',
-        description: 'אירעה שגיאה בטעינת הנתונים',
-        variant: 'destructive',
-      })
+      setIsError('שגיאה בטעינת הנתונים.')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      {editForm ? (
-        <>
-          <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
-            <div>
-              <label className="text-base font-semibold mb-2 block">חברות</label>
-              <CompanyTreeSelector
-                companies={companies}
-                selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-              <DateSelector
-                date={date}
-                onDateChange={setDate}
-                className="w-full"
-                filterDate={(date) => {
-                  const day = date.getDay()
-                  return day == 5 || day == 6
-                }}
-              />
-            </div>
+    <div className=" flex flex-col md:flex-row gap-6 px-4 pt-1">
+      <div className="w-full md:w-1/2">
+        <div className="flex flex-col gap-6 px-4 pt-10 md:px-10">
+          <div>
+            <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
+            <DateSelector
+              date={date}
+              onDateChange={setDate}
+              className="w-full"
+              filterDate={(date) => {
+                const day = date.getDay()
+                return day == 5 || day == 6
+              }}
+            />
           </div>
-
-          <div className="flex justify-center mt-6">
-            <Button
-              variant={
-                !date || selectedCompanies.length === 0 || isLoading ? 'default' : 'defaultHover'
-              }
-              onClick={
-                !date || selectedCompanies.length === 0 || isLoading ? () => {} : fetchHoldings
-              }
-              className="px-40"
-              style={
-                !date || selectedCompanies.length === 0 || isLoading
-                  ? { cursor: 'not-allowed', opacity: 0.5 }
-                  : {}
-              }
-            >
-              {isLoading ? 'טוען...' : 'טען אחזקות'}
-            </Button>
+          <div>
+            <label className="text-base font-semibold mb-2 block">חברות</label>
+            <CompanyTreeSelector
+              companies={companies}
+              selectedCompanies={selectedCompanies}
+              onSelectionChange={setSelectedCompanies}
+              className="w-full"
+            />
           </div>
-        </>
-      ) : (
-        <>
-          {date && (
-            <h4 className="text-xl text-center">אחזקות לתאריך {format(date, 'dd/MM/yyyy')}</h4>
-          )}
-
-          {holdings.length > 0 ? (
+        </div>
+      </div>
+      <div className="w-full md:w-1/2">
+        {}
+        {isLoading ? (
+          <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+            <LoadingSpinnerDiamond />
+            <p className="text-center">מייבא נתונים...</p>
+          </div>
+        ) : (
+          holdings.length > 0 && (
             <div>
               <DataTable
                 columns={columns}
@@ -230,43 +194,34 @@ export default function HoldingsView() {
                       filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
                     />
                   )}
-                  <Button onClick={() => setEditForm(true)}>חזרה לעריכת חברות ותאריך</Button>
+                  <Button onClick={() => {}}>חזרה לעריכת חברות ותאריך</Button>
                 </div>
               </div>
             </div>
-          ) : isLoading ? (
-            <div className="flex flex-col h-[500px] items-center pt-[100px] ">
-              <LoadingSpinnerDiamond />
-              <p className="text-center">מייבא נתונים...</p>
+          )
+        )}
+        <Dialog open={isError != ''}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader className="flex flex-row items-center gap-3">
+              <AlertTriangle className="h-8 w-8 text-red-500 flex-shrink-0" />
+              <DialogTitle className="text-xl text-red-600 m-0">אין נתונים</DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <p className="text-base font-medium">{isError}</p>
             </div>
-          ) : (
-            <Dialog open={!editForm}>
-              <DialogContent className="max-w-md" dir="rtl">
-                <DialogHeader className="flex flex-row items-center gap-3">
-                  <AlertTriangle className="h-8 w-8 text-red-500 flex-shrink-0" />
-                  <DialogTitle className="text-xl text-red-600 m-0">אין נתונים</DialogTitle>
-                </DialogHeader>
-                <div className="mt-4">
-                  <p className="text-base font-medium">
-                    {date
-                      ? `לא נמצאו נתונים לתאריך ${format(date, 'dd/MM/yyyy')}. `
-                      : 'לא נמצאו נתונים עבור הבחירה הנוכחית.'}
-                  </p>
-                </div>
-                <DialogFooter className="flex justify-end gap-3 mt-6">
-                  <Button
-                    onClick={() => {
-                      setEditForm(true)
-                    }}
-                  >
-                    חזרה
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </>
-      )}
+            <DialogFooter className="flex justify-end gap-3 mt-6">
+              <Button
+                onClick={() => {
+                  setIsError('')
+                  setDate(undefined)
+                }}
+              >
+                חזרה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }
