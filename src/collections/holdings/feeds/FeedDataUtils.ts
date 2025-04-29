@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
+import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock , SilencedStock} from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export async function getPreviousFeed(
@@ -56,6 +56,26 @@ export async function deleteExistingHoldings(
   })
 }
 
+export const fetchAllSilencedStocks = async (
+  req: PayloadRequest,
+  companies: string[],
+): Promise<SilencedStock[]> => {
+  try {
+    const result = await req.payload.find({
+      collection: 'silenced-stocks',
+      where: {
+        companies: {
+          all: companies,
+        },
+      },
+      limit: 0,
+    })
+    return result.docs;
+  } catch (error) {
+    console.error('שגיאה בקריאה לניירות מושתקים:', error);
+    return [];
+  }
+};
 /**
  * Preload accounts from companies
  * @param req The payload request
@@ -116,12 +136,14 @@ export const preloadAccountsToCompanyMap = async (
 export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
-): Promise<Map<string, string>> => {
+): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string> }> => {
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
     .filter((stockId) => stockId !== '')
 
-  const stockMap: Map<string, string> = new Map()
+  const stockIdMap: Map<string, string> = new Map()
+  const stockNameMap: Map<string, string> = new Map()
+
   const stocksResult = await req.payload.find({
     collection: 'stocks',
     where: {
@@ -129,7 +151,7 @@ export const preloadStocks = async (
         in: feedStocks,
       },
     },
-    depth: 0,
+    depth: 1,
     limit: 0,
   })
 
@@ -138,13 +160,21 @@ export const preloadStocks = async (
     const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
     const stockKey = stock?.stockId
     const stockValue =
-      stock?.relatedStock && hasRelatedDocs ? (stock.relatedStock as string) : stock?.id
-    stockMap.set(stockKey, stockValue)
+      stock?.relatedStock && hasRelatedDocs
+        ? ((stock.relatedStock as Stock).id as string)
+        : stock?.id
+    const stockName =
+      stock?.relatedStock && hasRelatedDocs
+        ? ((stock.relatedStock as Stock).fullName as string)
+        : stock?.name
+
+    stockIdMap.set(stockKey, stockValue)
+    stockNameMap.set(stockKey, stockName as string)
   })
 
-  console.log('Final stockMap:', Array.from(stockMap.entries()))
+  console.log('Final stockMap:', Array.from(stockIdMap.entries()))
 
-  return stockMap
+  return { stockIdMap, stockNameMap }
 }
 /**
  * Create holdings from processed records

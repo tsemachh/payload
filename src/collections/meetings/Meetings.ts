@@ -322,19 +322,6 @@ export const Meetings: CollectionConfig = {
           ],
         },
         {
-          label: 'חברות',
-          fields: [
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-            },
-          ],
-        },
-        {
           label: 'סדר יום',
           fields: [
             {
@@ -434,15 +421,6 @@ export const Meetings: CollectionConfig = {
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
                     },
-                    {
-                      name: 'readyForReport',
-                      label: 'מוכן לדיווח',
-                      type: 'checkbox',
-                      admin: {
-                        condition: (_, siblingData) =>
-                          siblingData.topicType === 'reporting' && !siblingData.isRemovedFromAgenda,
-                      },
-                    },
                   ],
                 },
 
@@ -485,6 +463,19 @@ export const Meetings: CollectionConfig = {
               admin: {
                 defaultColumns: ['companies', 'votes'],
               },
+            },
+          ],
+        },
+        {
+          label: 'חברות',
+          fields: [
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
             },
           ],
         },

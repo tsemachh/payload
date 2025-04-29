@@ -71,7 +71,8 @@ export const processStocksFeedCsv = async (req: PayloadRequest, data:StocksFeed)
           const stock = stockMap.get(`${row.stockID}` as string)
           if (stock == null) stocksCreated++
           const stockSequence = await upsertStockFromImport(stock || null, row, req, true)
-          await upsertStockValueFromImport(stockSequence, row, req);
+          if (stockSequence)
+            await upsertStockValueFromImport(stockSequence, row, req);
           //const valueEndTime = Date.now();
           //const valueProcessingTime = valueEndTime - valueStartTime;
           //console.log(`Stock value for record ${i+1}/${rows.length} (ID: ${row.stockID}) processed in ${valueProcessingTime}ms`);

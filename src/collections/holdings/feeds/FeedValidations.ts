@@ -9,6 +9,9 @@ import {
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
+export type HoldingFeedLineWithName = HoldingFeedLine & {
+  stockName?: string | null;
+};
 
 /**
  * Validate the whole feed for fatal errors
@@ -129,9 +132,10 @@ export const checkFeedWarnings = async (
 
   console.log('-----existingHoldings', existingHoldings)
   if (existingHoldings.docs.length > 0) {
+    const formattedDate = valueDate.split('-').reverse().join('/');
     warnings.push({
       type: 'duplicateFeedForDate',
-      message: ` בוצעה בעבר הזנה לתאריך ${valueDate}`,
+      message: `בוצעה בעבר הזנה לתאריך ${formattedDate}`,
       count: existingHoldings.docs.length,
     })
   }
@@ -209,55 +213,65 @@ export const checkFeedWarnings = async (
 
   return warnings
 }
+
 /**
  * Validate a single row
  * @param row The row to validate
  * @param index The index of the row
  * @param accountMap
  * @param stockMap
+ * @param silencedStockIds
  * @returns Validation result
  */
-export const validateRow = (
+export const validateRow = async (
   row: StandardizedRow,
   index: number,
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
-): {
-  processedRecord: HoldingFeedLine
-} => {
+  stockNameMap: Map<string, string>,
+  silencedStockIds: string[],
+): Promise<{
+  processedRecord: HoldingFeedLineWithName
+}> => {
   const { stockId, quantity, accountId } = row
+  const stockName = stockNameMap.get(stockId)
   const lineNumber = index + 1
 
-  // Validate the record
-  let isValid = true
-  let errorMessage = null
+  let status: 'success' | 'error' | 'silenced' = 'success'
+  let errorMessage: string | null = null
 
   // Check required fields
   if (!stockId) {
-    isValid = false
-    errorMessage = 'מסםר נייר חסר'
+    status = 'error';
+    errorMessage = 'מספר נייר חסר';
   } else if (isNaN(quantity) || quantity < 1) {
-    isValid = false
-    errorMessage = 'ערך נקוב לא תקין'
+    status = 'error';
+    errorMessage = 'ערך נקוב לא תקין';
   } else if (!accountId) {
-    isValid = false
-    errorMessage = 'מספר חשבון חסר'
+    status = 'error';
+    errorMessage = 'מספר חשבון חסר';
   } else if (!stockMap.has(stockId)) {
-    isValid = false
-    errorMessage = 'נייר ערך לא מוכר'
+    if (silencedStockIds.includes(stockId)) {
+      status = 'silenced';
+    } else {
+      status = 'error';
+      errorMessage = 'נייר ערך לא מוכר';
+    }
   } else if (!accountMap.has(Number(accountId))) {
-    isValid = false
-    errorMessage = 'מספר חשבון לא מוכר'
+    status = 'error';
+    errorMessage = 'מספר חשבון לא מוכר';
   }
 
-  const processedRecord: HoldingFeedLine = {
+  const processedRecord: HoldingFeedLineWithName = {
     stockId,
+    stockName,
     quantity,
     accountId,
     lineNumber,
-    status: isValid ? 'success' : 'error',
+    status,
     error: errorMessage,
-  }
+  };
+  
 
   return { processedRecord }
 }

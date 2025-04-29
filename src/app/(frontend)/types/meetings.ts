@@ -98,4 +98,5 @@ export interface DataTableProps<T extends Record<string, any>> {
   initialSearchTerm?: string
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
+  tableHeightOffset?: number
 }

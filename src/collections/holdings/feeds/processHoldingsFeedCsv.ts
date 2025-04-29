@@ -8,6 +8,7 @@ import {
   deleteExistingHoldings,
   preloadAccountsToCompanyMap,
   preloadStocks,
+  fetchAllSilencedStocks,
 } from '@/collections/holdings/feeds/FeedDataUtils'
 
 /**
@@ -31,6 +32,7 @@ export const processHoldingsFeedCsv = async (
       warnings: [],
       recordErrors: [],
       validRecords: [],
+      silencedRecords: [],
     }
     // Initial validation
     // Get the file from the request
@@ -75,7 +77,7 @@ export const processHoldingsFeedCsv = async (
     }
 
     // Parse the file content
-    const results = parseFileContent(file).filter(row => row.length > 0);
+    const results = parseFileContent(file).filter((row) => row.length > 0);
 
     // Validate the whole feed
     const fatalErrors = validateWholeFeed(results)
@@ -94,7 +96,7 @@ export const processHoldingsFeedCsv = async (
     const standardizedRows = standardizeRows(results)
 
     // Preload stocks
-    const stockMap = await preloadStocks(req, standardizedRows)
+    const { stockIdMap: stockMap, stockNameMap } = await preloadStocks(req, standardizedRows)
 
     // Collect all unique account IDs from the standardized rows
     const uniqueAccountIds = Array.from(
@@ -118,16 +120,29 @@ export const processHoldingsFeedCsv = async (
 
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
-    standardizedRows.forEach((row, index) => {
-      const { processedRecord } = validateRow(row, index, accountToCompanyMap, stockMap)
+    const allSilencedStocks = await fetchAllSilencedStocks(req, doc.selectedCompanies as string[]);
+    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId); // סגור את הסוגריים כאן
+
+    for (const [index, row] of standardizedRows.entries()) {
+      const { processedRecord } = await validateRow(
+        row,
+        index,
+        accountToCompanyMap,
+        stockMap,
+        stockNameMap,
+        silencedStockIds,
+      )
+
       processedRecords.push(processedRecord)
 
       if (processedRecord.status === 'error') {
         validationResult.recordErrors.push(processedRecord)
-      } else {
+      } else if (processedRecord.status === 'success') {
         validationResult.validRecords.push(processedRecord)
-      }
-    })
+      } else validationResult.silencedRecords.push(processedRecord)
+    }
+    console.log('-----validationResult.silencedRecords', validationResult.silencedRecords)
+    console.log('-----validationResult.validRecords', validationResult.validRecords)
 
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {
@@ -157,7 +172,7 @@ export const processHoldingsFeedCsv = async (
     await req.payload.create({
       collection: 'holdings-feed',
       data: doc as HoldingsFeed,
-      file: file
+      file: file,
     })
 
     // Create holdings
@@ -173,4 +188,3 @@ export const processHoldingsFeedCsv = async (
     throw error
   }
 }
-
