@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { updateCompaniesMeetingsOnHoldingChange } from './hooks/updateCompaniesMeetings'
 import uploadHoldingsCsvEndPoint from './feeds/uploadHoldingsCsvEndPoint'
-
+import refreshEndPoint from './feeds/refreshEndPoint'
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
@@ -73,6 +73,11 @@ export const Holdings: CollectionConfig = {
       path: '/upload-holdings',
       method: 'post',
       handler: uploadHoldingsCsvEndPoint,
+    },
+    {
+      path: '/refresh',
+      method: 'post',
+      handler: refreshEndPoint,
     },
   ],
 }

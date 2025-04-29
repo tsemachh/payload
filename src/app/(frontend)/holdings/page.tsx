@@ -150,7 +150,55 @@ export default function HoldingsFeedView() {
       setIsUploading(false)
     }
   }
+  const handleRefresh = async (records:any[]) => {
 
+    setEditForm(true)
+    setIsValidating(true)
+    setvalidRecords([])
+    setSilencedRecords([])
+    setRecordErrors([])
+    setFatals([])
+    setWarnings([])
+//map st
+    try {
+      const formattedCompanies = encodeURIComponent(JSON.stringify(selectedCompanies))
+      const response = await fetch(
+        `/api/holdings/refresh?companies=${formattedCompanies}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(records),
+        },
+      )
+      const result = await response.json()
+      setIsValidating(false)
+      if (response.ok) {
+        const feedResults: FeedValidationResult = result.feedResult
+        setvalidRecords(feedResults.validRecords)
+        setFatals(feedResults.fatalErrors)
+        setWarnings(feedResults.warnings)
+        setRecordErrors(feedResults.recordErrors)
+        setSilencedRecords(feedResults.silencedRecords)
+      } else {
+        toast({
+          title: 'עדכון טבלאות נכשל',
+          description: result.error || 'עדכון טבלאות נכשל',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: 'שגיאה בעדכון טבלאות',
+        description: 'אירעה שגיאה בעדכון טבלאות',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
   // Second step: save the validated file
   const handleSaveConfirmed = async () => {
     if (!date || !file) {
@@ -275,6 +323,7 @@ export default function HoldingsFeedView() {
             className="mt-16"
             onConfirm={handleSaveConfirmed}
             onCancel={handleCancel}
+            onRefresh={handleRefresh}
             isValidating={isValidating}
             isUploading={isUploading}
           />
