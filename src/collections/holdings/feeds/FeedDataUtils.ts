@@ -134,12 +134,14 @@ export const preloadAccountsToCompanyMap = async (
 export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
-): Promise<Map<string, string>> => {
+): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string> }> => {
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
     .filter((stockId) => stockId !== '')
 
-  const stockMap: Map<string, string> = new Map()
+  const stockIdMap: Map<string, string> = new Map()
+  const stockNameMap: Map<string, string> = new Map()
+
   const stocksResult = await req.payload.find({
     collection: 'stocks',
     where: {
@@ -147,7 +149,7 @@ export const preloadStocks = async (
         in: feedStocks,
       },
     },
-    depth: 0,
+    depth: 1,
     limit: 0,
   })
 
@@ -156,13 +158,17 @@ export const preloadStocks = async (
     const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
     const stockKey = stock?.stockId
     const stockValue =
-      stock?.relatedStock && hasRelatedDocs ? (stock.relatedStock as string) : stock?.id
-    stockMap.set(stockKey, stockValue)
+      stock?.relatedStock && hasRelatedDocs ? ((stock.relatedStock as Stock).id as string) : stock?.id
+    const stockName =
+      stock?.relatedStock && hasRelatedDocs ? ((stock.relatedStock as Stock).name as string) : stock?.name
+
+    stockIdMap.set(stockKey, stockValue)
+    stockNameMap.set(stockKey,stockName as string)
   })
 
-  console.log('Final stockMap:', Array.from(stockMap.entries()))
+  console.log('Final stockMap:', Array.from(stockIdMap.entries()))
 
-  return stockMap
+  return {stockIdMap,stockNameMap}
 }
 /**
  * Create holdings from processed records

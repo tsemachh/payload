@@ -96,7 +96,7 @@ export const processHoldingsFeedCsv = async (
     const standardizedRows = standardizeRows(results)
 
     // Preload stocks
-    const stockMap = await preloadStocks(req, standardizedRows)
+    const {stockIdMap:stockMap,stockNameMap} = await preloadStocks(req, standardizedRows)
 
     // Collect all unique account IDs from the standardized rows
     const uniqueAccountIds = Array.from(
