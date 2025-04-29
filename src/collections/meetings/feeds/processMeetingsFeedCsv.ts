@@ -136,9 +136,6 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                 data: dataToUpdate,
                 context: { ...req.context, from: 'migration' },
               })
-              req.payload.logger.info(
-                `Successfully updated meeting with ProofIdPrev ${row.proofIdPrev}`,
-              )
             } catch (e: any) {
               errors.push(
                 `Error updating meeting with ProofIdPrev ${row.proofIdPrev}: ${e.message}`,
@@ -169,6 +166,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
             await req.payload.create({
               collection: 'meetings',
               data: row,
+              context: { ...req.context, from: 'migration' },
             })
           } catch (e: any) {
             errors.push(`Error creating meeting with stockId ${row.magnaId}: ${e.message}`)

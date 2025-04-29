@@ -139,7 +139,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: "100px" },
+                  admin: { width: '100px' },
                 },
               ],
             },
@@ -186,7 +186,10 @@ export const Meetings: CollectionConfig = {
                   //validate: validateMeetingnvItationLink,
                   hooks: {
                     afterRead: [
-                      async ({ data, req }) => {
+                      async ({ data, req, context }) => {
+                        if (context.from === 'migration') {
+                          return null
+                        }
                         if (data?.invitationDocument) {
                           const document = await req.payload.findByID({
                             collection: 'documents',
@@ -263,7 +266,10 @@ export const Meetings: CollectionConfig = {
                   type: 'select',
                   hooks: {
                     beforeChange: [
-                      ({ siblingData, value }) => {
+                      ({ siblingData, value, context }) => {
+                        if (context.from === 'migration') {
+                          return value
+                        }
                         if (value === 'on-hold') {
                           siblingData.meetingDate = null
                         }
@@ -476,10 +482,10 @@ export const Meetings: CollectionConfig = {
               collection: 'votes',
               on: 'meeting',
               defaultLimit: 0,
-              admin:{
-                defaultColumns:['companies','votes']
-              }
-            }
+              admin: {
+                defaultColumns: ['companies', 'votes'],
+              },
+            },
           ],
         },
       ],
@@ -488,6 +494,9 @@ export const Meetings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc, previousDoc }) => {
+        if (req.context?.from === 'migration') {
+          return
+        }
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
         const stockChanged = previousDoc?.stock !== doc?.stock
