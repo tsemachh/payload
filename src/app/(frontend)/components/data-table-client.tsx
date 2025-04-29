@@ -73,7 +73,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   columnsLabel = 'עמודות',
   defaultVisibleColumns = columns.map((column) => column.key),
   onlyFuture = false,
-  tableHeightOffset = 200
+  tableHeightOffset = 200,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -93,41 +93,45 @@ export function DataTableStatic<T extends Record<string, any>>({
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
   useEffect(() => {
-    // Load column visibility from localStorage
-    const loadColumnVisibility = () => {
-      const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
-      if (storedColumns) {
-        try {
-          const parsedColumns = JSON.parse(storedColumns)
-          const validColumns = columns.map((col) => String(col.key))
-          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+    if (columnsOption) {
+      // Load column visibility from localStorage
+      const loadColumnVisibility = () => {
+        const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
+        if (storedColumns) {
+          try {
+            const parsedColumns = JSON.parse(storedColumns)
+            const validColumns = columns.map((col) => String(col.key))
+            const filteredColumns = parsedColumns.filter((col: string) =>
+              validColumns.includes(col),
+            )
 
-          if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
+            if (filteredColumns.length !== parsedColumns.length) {
+              localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
+            }
+
+            const newVisibility = Object.fromEntries(
+              columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+            )
+            setColumnVisibility(newVisibility)
+          } catch (error) {
+            console.error('Error parsing stored columns:', error)
+            setDefaultColumnVisibility()
           }
-
-          const newVisibility = Object.fromEntries(
-            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
-          )
-          setColumnVisibility(newVisibility)
-        } catch (error) {
-          console.error('Error parsing stored columns:', error)
+        } else {
           setDefaultColumnVisibility()
         }
-      } else {
-        setDefaultColumnVisibility()
       }
-    }
 
-    const setDefaultColumnVisibility = () => {
-      const newVisibility = Object.fromEntries(
-        columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
-      )
-      setColumnVisibility(newVisibility)
-      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
-    }
+      const setDefaultColumnVisibility = () => {
+        const newVisibility = Object.fromEntries(
+          columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+        )
+        setColumnVisibility(newVisibility)
+        localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
+      }
 
-    loadColumnVisibility()
+      loadColumnVisibility()
+    }
     // Filters:
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
@@ -154,6 +158,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
+    if (!columnsOption) return columns
     return columns.filter((column) => columnVisibility[column.key as string])
   }, [columns, columnVisibility])
 
