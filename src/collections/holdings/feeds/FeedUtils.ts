@@ -27,8 +27,6 @@ export const parseFileContent = (file: any): any[] => {
     // Use header: 1 option to handle XLSX without headers
     results = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
   }
-  console.log('!!!!!results 222', results)
-
   return results
 }
 /**
@@ -38,7 +36,6 @@ export const parseFileContent = (file: any): any[] => {
  */
 export const standardizeRows = (results: any[]): StandardizedRow[] => {
   const standardizedRows: StandardizedRow[] = []
-  console.log('!!!!results', results)
 
   results.forEach((row) => {
     if (Array.isArray(row)) {

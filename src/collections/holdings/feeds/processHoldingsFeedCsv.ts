@@ -126,7 +126,6 @@ export const processHoldingsFeedCsv = async (
     const processedRecords: HoldingFeedLine[] = []
     const allSilencedStocks = await fetchAllSilencedStocks(req, doc.selectedCompanies as string[])
     const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId) // סגור את הסוגריים כאן
-    console.log("!!!!!standardizedRows", standardizedRows);
 
     for (const [index, row] of standardizedRows.entries()) {
       const { processedRecord } = await validateRow(
@@ -137,7 +136,6 @@ export const processHoldingsFeedCsv = async (
         stockNameMap,
         silencedStockIds,
       )
-      console.log('!!!!processedRecord', processedRecord)
 
       processedRecords.push(processedRecord)
 
