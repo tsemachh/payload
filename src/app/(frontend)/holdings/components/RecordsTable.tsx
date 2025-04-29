@@ -3,8 +3,8 @@
 import React from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
-import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
+import { HoldingFeedLineWithName } from '@/collections/holdings/feeds/FeedValidations'
 
 interface RecordType {
   lineNumber: string | number
@@ -13,6 +13,7 @@ interface RecordType {
   quantity: string | number
   error: string
   id?: string | number
+  stockName: string
 }
 
 const holdingColumns: Column<RecordType>[] = [
@@ -23,10 +24,11 @@ const holdingColumns: Column<RecordType>[] = [
     minWidth: 70,
   },
   {
-    key: 'stockId',
+    key: 'stockName',
     header: 'נייר ערך',
     type: 'string',
-    minWidth: 70,
+    minWidth: 90,
+    render: (row) => `${row.stockId ?? 'N/A'} - ${row.stockName ?? 'N/A'}`,
   },
   {
     key: 'accountId',
@@ -67,23 +69,24 @@ const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] 
   },
 ]
 
-
-export const RecordsTable: React.FC<{ records: HoldingFeedLine[]; invalid?: boolean;companies:string[] }> = ({
-  records,
-  invalid,
-  companies
-}) => {
+export const RecordsTable: React.FC<{
+  records: HoldingFeedLineWithName[]
+  invalid?: boolean
+  companies: string[]
+}> = ({ records, invalid, companies }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
     stockId: holding.stockId ?? 'N/A',
+    stockName: holding.stockName ?? 'N/A',
     accountId: holding.accountId ?? 'N/A',
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
-
+  const columns = invalid
+    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)]
+    : holdingColumns
 
   return (
     <div style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}>

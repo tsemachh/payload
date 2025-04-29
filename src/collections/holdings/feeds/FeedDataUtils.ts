@@ -1,5 +1,12 @@
 import { PayloadRequest } from 'payload'
-import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock , SilencedStock} from '@/payload-types'
+import {
+  Account,
+  Company,
+  HoldingFeedLine,
+  HoldingsFeed,
+  Stock,
+  SilencedStock,
+} from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export async function getPreviousFeed(
@@ -56,7 +63,9 @@ export async function deleteExistingHoldings(
   })
 }
 
-export const fetchAllSilencedStocks = async (req: PayloadRequest, companies: string[],
+export const fetchAllSilencedStocks = async (
+  req: PayloadRequest,
+  companies: string[],
 ): Promise<SilencedStock[]> => {
   try {
     const result = await req.payload.find({
@@ -67,13 +76,13 @@ export const fetchAllSilencedStocks = async (req: PayloadRequest, companies: str
         },
       },
       limit: 0,
-    });
-    return result.docs;
+    })
+    return result.docs
   } catch (error) {
-    console.error('שגיאה בקריאה לניירות מושתקים:', error);
-    return [];
+    console.error('שגיאה בקריאה לניירות מושתקים:', error)
+    return []
   }
-};
+}
 /**
  * Preload accounts from companies
  * @param req The payload request
@@ -158,17 +167,21 @@ export const preloadStocks = async (
     const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
     const stockKey = stock?.stockId
     const stockValue =
-      stock?.relatedStock && hasRelatedDocs ? ((stock.relatedStock as Stock).id as string) : stock?.id
+      stock?.relatedStock && hasRelatedDocs
+        ? ((stock.relatedStock as Stock).id as string)
+        : stock?.id
     const stockName =
-      stock?.relatedStock && hasRelatedDocs ? ((stock.relatedStock as Stock).name as string) : stock?.name
+      stock?.relatedStock && hasRelatedDocs
+        ? ((stock.relatedStock as Stock).fullName as string)
+        : stock?.name
 
     stockIdMap.set(stockKey, stockValue)
-    stockNameMap.set(stockKey,stockName as string)
+    stockNameMap.set(stockKey, stockName as string)
   })
 
   console.log('Final stockMap:', Array.from(stockIdMap.entries()))
 
-  return {stockIdMap,stockNameMap}
+  return { stockIdMap, stockNameMap }
 }
 /**
  * Create holdings from processed records
