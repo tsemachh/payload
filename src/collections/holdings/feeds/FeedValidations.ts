@@ -9,6 +9,10 @@ import {
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
+export type HoldingFeedLineWithName = HoldingFeedLine & {
+  stockName?: string | null;
+};
+
 /**
  * Validate the whole feed for fatal errors
  * @param results The parsed file content
@@ -224,18 +228,19 @@ export const validateRow = async (
   index: number,
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
+  stockNameMap: Map<string, string>,
   silencedStockIds: string[],
 ): Promise<{
-  processedRecord: HoldingFeedLine
+  processedRecord: HoldingFeedLineWithName
 }> => {
-  const { stockId, quantity, accountId } = row;
-  const lineNumber = index + 1;
+  const { stockId, quantity, accountId } = row
+  const stockName = stockNameMap.get(stockId)
+  const lineNumber = index + 1
 
+  let status: 'success' | 'error' | 'silenced' = 'success'
+  let errorMessage: string | null = null
 
-  let status: 'success' | 'error' | 'silenced' = 'success';
-  let errorMessage: string | null = null;
-
-// Check required fields
+  // Check required fields
   if (!stockId) {
     status = 'error';
     errorMessage = 'מספר נייר חסר';
@@ -257,15 +262,16 @@ export const validateRow = async (
     errorMessage = 'מספר חשבון לא מוכר';
   }
 
-  const processedRecord: HoldingFeedLine = {
+  const processedRecord: HoldingFeedLineWithName = {
     stockId,
+    stockName,
     quantity,
     accountId,
     lineNumber,
     status,
     error: errorMessage,
   };
-
+  
 
   return { processedRecord }
 }
