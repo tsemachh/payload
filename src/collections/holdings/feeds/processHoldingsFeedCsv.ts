@@ -1,11 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
-import {
-  checkFeedWarnings,
-  validateRow,
-  validateWholeFeed,
-} from '@/collections/holdings/feeds/FeedValidations'
+import { checkFeedWarnings, validateRow, validateWholeFeed } from '@/collections/holdings/feeds/FeedValidations'
 import { parseFileContent, standardizeRows } from '@/collections/holdings/feeds/FeedUtils'
 import {
   createHoldings,
@@ -81,7 +77,7 @@ export const processHoldingsFeedCsv = async (
     }
 
     // Parse the file content
-    const results = parseFileContent(file).filter((row) => row.length > 0)
+    const results = parseFileContent(file).filter((row) => row.length > 0);
 
     // Validate the whole feed
     const fatalErrors = validateWholeFeed(results)
@@ -124,8 +120,8 @@ export const processHoldingsFeedCsv = async (
 
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
-    const allSilencedStocks = await fetchAllSilencedStocks(req, doc.selectedCompanies as string[])
-    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId) // סגור את הסוגריים כאן
+    const allSilencedStocks = await fetchAllSilencedStocks(req, doc.selectedCompanies as string[]);
+    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId); // סגור את הסוגריים כאן
 
     for (const [index, row] of standardizedRows.entries()) {
       const { processedRecord } = await validateRow(

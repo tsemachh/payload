@@ -1,9 +1,4 @@
-import {
-  ACCOUNT_ID_COL,
-  QUANTITY_COL,
-  StandardizedRow,
-  STOCK_ID_COL,
-} from '@/collections/holdings/feeds/FeedTypes'
+import { ACCOUNT_ID_COL, QUANTITY_COL, StandardizedRow, STOCK_ID_COL } from '@/collections/holdings/feeds/FeedTypes'
 import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
 
@@ -27,6 +22,7 @@ export const parseFileContent = (file: any): any[] => {
     // Use header: 1 option to handle XLSX without headers
     results = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
   }
+  
   return results
 }
 /**
