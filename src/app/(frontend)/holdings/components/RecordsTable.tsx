@@ -21,7 +21,8 @@ const holdingColumns: Column<RecordType>[] = [
     key: 'lineNumber',
     header: 'שורה',
     type: 'string',
-    minWidth: 70,
+    minWidth: 50,
+    width: 50,
   },
   {
     key: 'stockName',
@@ -35,26 +36,29 @@ const holdingColumns: Column<RecordType>[] = [
     header: 'חשבון',
     type: 'string',
     filterable: true,
-    minWidth: 70,
+    minWidth: 100,
+    width: 100,
   },
   {
     key: 'quantity',
     header: 'כמות',
     type: 'number',
-    minWidth: 70,
+    width: 100,
+    minWidth: 100,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         Number(row.quantity) || 0,
       ),
   },
 ]
-//silenced-stocks
+
 const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
     type: 'string',
-    minWidth: 150,
+    width: 200,
+    minWidth: 200,
     filterable: true,
     render: (row) => {
       return (
@@ -84,12 +88,21 @@ export const RecordsTable: React.FC<{
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid
-    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)]
-    : holdingColumns
+  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
+  const tableWidth = columns.reduce((sum, column) => {
+    return sum + (column.width || column.minWidth) + 25
+  }, 0)
 
   return (
-    <div style={{ maxHeight: `${window.innerHeight - 300}px`, overflowY: 'auto' }}>
+    <div
+      style={{
+        maxHeight: `${window.innerHeight - 300}px`,
+        minWidth: tableWidth + 80 + 'px',
+        maxWidth: tableWidth + 80 + columns.length * 40 + 'px',
+        width: '100%',
+        margin: '0 auto',
+      }}
+    >
       <DataTableStatic
         data={dataWithIds}
         columns={columns}
@@ -98,6 +111,7 @@ export const RecordsTable: React.FC<{
         defaultSortDirection="asc"
         tableId={invalid ? 'holdings-table-invalid' : 'holdings-table'}
         columnsOption={false}
+        tableHeightOffset={400}
       />
     </div>
   )

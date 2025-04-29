@@ -73,6 +73,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   columnsLabel = 'עמודות',
   defaultVisibleColumns = columns.map((column) => column.key),
   onlyFuture = false,
+  tableHeightOffset = 200
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -761,7 +762,12 @@ export function DataTableStatic<T extends Record<string, any>>({
 
       <div className="bg-background">
         <div className="rounded-md border cursor-default">
-          <div className="max-h-[calc(100vh-200px)] overflow-auto relative">
+          <div
+            className="overflow-auto relative"
+            style={{
+              maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
+            }}
+          >
             <Table className="table-auto w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
