@@ -50,7 +50,7 @@ export function MainNav() {
         href="/holdings"
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
-          pathname === '/holdings'
+          pathname === '/holdings' || pathname === '/holdings/view'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
         )}
