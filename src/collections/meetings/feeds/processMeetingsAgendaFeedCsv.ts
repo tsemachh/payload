@@ -102,10 +102,7 @@ export const processMeetingsAgendaFeedCsv = async (
     }
 
     await promisePool.waitForAll()
-
     req.payload.logger.info(`Finished processing file: ${file.name}`)
-    await promisePool.waitForAll()
-    req.payload.logger.info(`Successfully processed rows from CSV file: ${file.name}`)
     if (errors.length > 0) {
       console.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
