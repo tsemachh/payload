@@ -186,10 +186,7 @@ export const Meetings: CollectionConfig = {
                   //validate: validateMeetingnvItationLink,
                   hooks: {
                     afterRead: [
-                      async ({ data, req, context }) => {
-                        if (context.from === 'migration') {
-                          return null
-                        }
+                      async ({ data, req }) => {
                         if (data?.invitationDocument) {
                           const document = await req.payload.findByID({
                             collection: 'documents',
@@ -266,10 +263,7 @@ export const Meetings: CollectionConfig = {
                   type: 'select',
                   hooks: {
                     beforeChange: [
-                      ({ siblingData, value, context }) => {
-                        if (context.from === 'migration') {
-                          return value
-                        }
+                      ({ siblingData, value }) => {
                         if (value === 'on-hold') {
                           siblingData.meetingDate = null
                         }
@@ -485,9 +479,6 @@ export const Meetings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc, previousDoc }) => {
-        if (req.context?.from === 'migration') {
-          return
-        }
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
         const stockChanged = previousDoc?.stock !== doc?.stock
