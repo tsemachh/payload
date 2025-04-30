@@ -53,7 +53,7 @@ import {
   CompanyTableDate,
   MeetingTableDataType,
 } from '../types/meetings'
-import { getDateRange } from '../meetings-future/meetingTableConstants'
+import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 
 export function DataTableStatic<T extends Record<string, any>>({
