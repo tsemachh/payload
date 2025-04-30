@@ -53,8 +53,6 @@ const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'loca
 export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
   const errors: string[] = []
   try {
-    // The file is at req.file as specified in the issue description
-
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
@@ -96,9 +94,32 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     }
 
     // Create a promise pool with 20 concurrent threads
+    const stockIds = [...new Set(rows.map((row) => row.stock))]
+    const stocks = await req.payload.find({
+      collection: 'stocks',
+      select: {
+        id: true,
+        active: true,
+        stockId: true,
+      },
+      where: {
+        stockId: {
+          in: stockIds,
+        },
+      },
+      limit: 0,
+    })
     const promisePool = new PromisePool(20)
     const promises = []
 
+    const stockIdMap = new Map()
+
+    for (const stock of stocks.docs) {
+      stockIdMap.set(stock.stockId, {
+        id: stock.id,
+        active: stock.active,
+      })
+    }
     // Process each row in parallel using the promise pool
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
@@ -116,16 +137,13 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
               )
               return
             }
-
-            const stockId = await getSequenceStockId(req.payload, row.stock)
-            if (stockId === null) {
+            const stockData = stockIdMap.get(row.stock)
+            if (stockData === null || stockData === undefined) {
               errors.push(
                 `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that can't be found and will not be imported — this meeting will NOT be created`,
               )
               return
             }
-
-            const stockData = await getStockByStockId(req.payload, row.stock)
             if (!stockData?.active) {
               errors.push(
                 `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that is not active and will not be imported — this meeting will NOT be created`,
@@ -133,7 +151,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
               return
             }
 
-            row.stock = stockId
+            row.stock = stockData
 
             if (row.proofIdPrev) {
               const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
