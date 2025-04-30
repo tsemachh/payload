@@ -41,7 +41,7 @@ export const processMeetingsAgendaFeedCsv = async (
     }
 
     const csvData = iconv.decode(file.data, 'windows-1255')
-    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData).slice(0, 100)
+    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
 
     const rowsByMagnaId = new Map<string, any[]>()
 
