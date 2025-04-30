@@ -36,10 +36,3 @@ export interface StandardizedRow {
   quantity?: number
   accountId?: string
 }
-export const emptyValidationResult: FeedValidationResult = {
-  fatalErrors: [],
-  warnings: [],
-  recordErrors: [],
-  validRecords: [],
-  silencedRecords: [],
-};

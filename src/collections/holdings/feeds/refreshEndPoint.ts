@@ -1,6 +1,7 @@
 
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { processValidationData } from './FeedValidationService';
+import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes';
 
 
 const refreshEndPoint = async (req: PayloadRequest) => {
@@ -46,7 +47,17 @@ const refreshEndPoint = async (req: PayloadRequest) => {
   }
 
   console.log("-----@@@selectedCompanies", selectedCompanies);
-  const validationResult = await processValidationData(req, selectedCompanies, recordsArray);
+
+
+  const validationResult: FeedValidationResult = {
+    fatalErrors: [],
+    warnings: [],
+    recordErrors: [],
+    validRecords: [],
+    silencedRecords: [],
+  }
+
+  await processValidationData(req, selectedCompanies, recordsArray,validationResult);
 
 
   console.log("-----@@@validationResult.silencedRecords", validationResult.silencedRecords);

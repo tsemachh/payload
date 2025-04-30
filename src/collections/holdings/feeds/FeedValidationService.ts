@@ -7,20 +7,15 @@ import { validateRow } from '@/collections/holdings/feeds/FeedValidations';
 import { PayloadRequest } from 'payload';
 import { FeedValidationResult, StandardizedRow } from '@/collections/holdings/feeds/FeedTypes';
 
-// קבוע שמכיל את הערכים ההתחלתיים
-export const emptyValidationResult: FeedValidationResult = {
-  fatalErrors: [],
-  warnings: [],
-  recordErrors: [],
-  validRecords: [],
-  silencedRecords: [],
-};
+
 
 // הפונקציה שתבצע את כל התהליך
 export async function processValidationData(
   req: PayloadRequest,
   selectedCompanies: string[],
-  rows: StandardizedRow[]
+  rows: StandardizedRow[],
+  validationResult: FeedValidationResult
+
 ): Promise<FeedValidationResult> {
   // טעינת הנתונים
   const accountToCompanyMap = await preloadAccountsToCompanyMap(req, selectedCompanies);
@@ -28,8 +23,7 @@ export async function processValidationData(
   const allSilencedStocks = await fetchAllSilencedStocks(req, selectedCompanies);
   const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);
 
-  // יצירת אובייקט תוצאה להתחלת תהליך האימות
-  const validationResult = emptyValidationResult;
+
 
   // ריצה על כל השורות ולולאת אימות
   for (const [index, row] of rows.entries()) {
