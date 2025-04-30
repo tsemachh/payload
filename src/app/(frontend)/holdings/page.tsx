@@ -25,6 +25,8 @@ import {
   DialogTitle,
 } from '../components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
+import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
+
 
 export default function HoldingsFeedView() {
   const { user } = useAuth()
@@ -150,26 +152,29 @@ export default function HoldingsFeedView() {
       setIsUploading(false)
     }
   }
-  const handleRefresh = async (records:any[]) => {
-
-    setEditForm(true)
-    setIsValidating(true)
+  const handleRefresh = async (records:HoldingFeedLine[]) => {
     setvalidRecords([])
     setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
     setWarnings([])
-//map st
+
+    const standardizedRecords = records.map(record => ({
+      stockId: record.stockId,
+      quantity: record.quantity,
+      accountId: record.accountId,
+    })) as StandardizedRow[]
+
+
     try {
-      const formattedCompanies = encodeURIComponent(JSON.stringify(selectedCompanies))
       const response = await fetch(
-        `/api/holdings/refresh?companies=${formattedCompanies}`,
+        `/api/holdings/refresh?companies=${selectedCompanies}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(records),
+          body: JSON.stringify(standardizedRecords),
         },
       )
       const result = await response.json()

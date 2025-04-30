@@ -30,6 +30,7 @@ interface ProcessingResultsProps {
   onConfirm?: () => void
   onContinue?: () => void
   onCancel?: () => void
+  onRefresh?: (records: HoldingFeedLine[])=>void
   isValidating?: boolean
   isUploading?: boolean
 }
@@ -46,6 +47,7 @@ export function ProcessingResults({
   className,
   onConfirm,
   onCancel,
+  onRefresh,
   isValidating = false,
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid');
@@ -217,7 +219,7 @@ export function ProcessingResults({
 
           {/* Records Table Display */}
           {activeTab === 'invalid' && (recordErrors?.length ?? 0) > 0 && (
-          <RecordsTable records={recordErrors} invalid={true} companies={companies} />
+          <RecordsTable records={recordErrors} invalid={true} companies={companies} onRefresh={onRefresh} valid={validRecords} silenced={silencedRecords}/>
         )}
 
           {activeTab === 'valid' && (validRecords?.length ?? 0) > 0 && (

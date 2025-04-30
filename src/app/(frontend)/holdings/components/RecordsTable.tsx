@@ -51,7 +51,7 @@ const holdingColumns: Column<RecordType>[] = [
   },
 ]
 
-const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
+const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedLine[],onRefresh: (records: any[]) => void): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
@@ -64,7 +64,7 @@ const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>{row.error}</span>
           {row.error === 'נייר ערך לא מוכר' && (
-            <SilenceDialog stockId={row.stockId} companies={companies} />
+            <SilenceDialog stockId={row.stockId} companies={companies} allRecords={allRecords} onRefresh={onRefresh} />
           )}
         </div>
       )
@@ -76,7 +76,10 @@ export const RecordsTable: React.FC<{
   records: HoldingFeedLine[]
   invalid?: boolean
   companies: string[]
-}> = ({ records, invalid, companies }) => {
+  onRefresh?: (records: HoldingFeedLine[]) => void;
+  valid?: HoldingFeedLine[]
+  silenced?: HoldingFeedLine[]
+}> = ({ records, invalid, companies,onRefresh,valid,silenced }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
@@ -85,8 +88,16 @@ export const RecordsTable: React.FC<{
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))
+  const allRecords = [
+    ...records,
+    ...(valid ?? []),
+    ...(silenced ?? [])
+  ]
+  const columns = invalid && onRefresh
+    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies, allRecords, onRefresh)]
+    : holdingColumns
 
-  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
+
   const tableWidth = columns.reduce((sum, column) => {
     return sum + (column.width || column.minWidth) + 25
   }, 0)
