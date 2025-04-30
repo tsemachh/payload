@@ -16,7 +16,7 @@ export interface TreeNode {
 interface CompanyTreeSelectorProps {
   companies: TreeNode[]
   selectedCompanies: string[]
-  onSelectionChange: (selected: string[]) => void
+  onSelectionChangeAction: (selected: string[]) => Promise<void> | void
   className?: string
   isLoading?: boolean
 }
@@ -24,7 +24,7 @@ interface CompanyTreeSelectorProps {
 export function CompanyTreeSelector({
   companies,
   selectedCompanies,
-  onSelectionChange,
+  onSelectionChangeAction,
   className,
   isLoading = false,
 }: CompanyTreeSelectorProps) {
@@ -191,7 +191,7 @@ export function CompanyTreeSelector({
 
     // Only pass leaf nodes to the parent component
     const leafNodesOnly = getLeafNodesOnly(newSelection)
-    onSelectionChange(leafNodesOnly)
+    onSelectionChangeAction(leafNodesOnly)
   }
 
   const handleChildSelect = (childId: string, checked: boolean) => {
@@ -248,7 +248,7 @@ export function CompanyTreeSelector({
 
     // Only pass leaf nodes to the parent component
     const leafNodesOnly = getLeafNodesOnly(newSelection)
-    onSelectionChange(leafNodesOnly)
+    onSelectionChangeAction(leafNodesOnly)
   }
 
   const toggleExpand = (nodeId: string, e: React.MouseEvent) => {

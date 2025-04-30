@@ -38,7 +38,7 @@ const getMissingFieldsInRow = (row: any, fields: string[]): string[] => {
   return fields.filter((field) => !row[field])
 }
 export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
-  return await payload.find({
+  const result = await payload.find({
     collection: 'meetings',
     where: {
       magnaId: {
@@ -47,12 +47,16 @@ export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
     },
     limit: 1,
   })
+
+  return result
 }
 
 const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
 export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
   const errors: string[] = []
   try {
+    // The file is at req.file as specified in the issue description
+
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
@@ -145,7 +149,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
             }
             if (!stockData?.active) {
               errors.push(
-                `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
+                `לאסיפה עם האסמכתא ${row.magnaId} יש נייר ערך  ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
               )
               return
             }
@@ -208,8 +212,6 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         }),
       )
     }
-
-    // Wait for all promises to complete
     await promisePool.waitForAll()
     req.payload.logger.info(
       `Successfully processed ${rows.length} rows from CSV file: ${file.name}`,

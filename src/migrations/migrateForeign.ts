@@ -68,43 +68,45 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             'Foreign', // origin
             true, // active
             `Created from foreign stock ${originalStock.stockId}`,
-          )
+          ) as string | null
         }
 
         // Update the original stock to point to the new ISIN stock
-        req.payload.update({
-          collection: 'stocks',
-          id: originalStock.id,
-          data: {
-            relatedStock: newStockSequence,
-            tradable: false,
-          },
-        })
-        // Update all stocks that had this stock as related to point to the new ISIN stock
-        req.payload.update({
-          collection: 'stocks',
-          data: {
-            tradable: false,
-            relatedStock: newStockSequence,
-          },
-          where: {
-            relatedStock: {
-              equals: originalStock.id,
+        if (newStockSequence){
+          req.payload.update({
+            collection: 'stocks',
+            id: originalStock.id,
+            data: {
+              relatedStock: newStockSequence,
+              tradable: false,
             },
-          },
-        })
-        req.payload.update({
-          collection: 'meetings',
-          data: {
-            stock: newStockSequence,
-          },
-          where: {
-            stock: {
-              equals: originalStock.id,
+          })
+          // Update all stocks that had this stock as related to point to the new ISIN stock
+          req.payload.update({
+            collection: 'stocks',
+            data: {
+              tradable: false,
+              relatedStock: newStockSequence,
             },
-          },
-        })
-        console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
+            where: {
+              relatedStock: {
+                equals: originalStock.id,
+              },
+            },
+          })
+          req.payload.update({
+            collection: 'meetings',
+            data: {
+              stock: newStockSequence,
+            },
+            where: {
+              stock: {
+                equals: originalStock.id,
+              },
+            },
+          })
+          console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
+        }
       } catch (error) {
         await logMigrationFault({
           payload,

@@ -5,12 +5,12 @@ import { UploadCloud } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface FileUploaderProps {
-  onFileChange: (file: File | null) => void
+  onFileChangeAction: (file: File | null) => Promise<void> | void
   className?: string
   disabled?: boolean
 }
 
-export function FileUploader({ onFileChange, className, disabled = false }: FileUploaderProps) {
+export function FileUploader({ onFileChangeAction, className, disabled = false }: FileUploaderProps) {
   const [fileName, setFileName] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -18,10 +18,10 @@ export function FileUploader({ onFileChange, className, disabled = false }: File
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0]
       setFileName(file.name)
-      onFileChange(file)
+      onFileChangeAction(file)
     } else {
       setFileName(null)
-      onFileChange(null)
+      onFileChangeAction(null)
     }
   }
 
@@ -35,7 +35,7 @@ export function FileUploader({ onFileChange, className, disabled = false }: File
       fileInputRef.current.value = ''
     }
     setFileName(null)
-    onFileChange(null)
+    onFileChangeAction(null)
   }
 
   return (

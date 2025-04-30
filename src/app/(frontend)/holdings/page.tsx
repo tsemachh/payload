@@ -45,6 +45,7 @@ export default function HoldingsFeedView() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
+  const [silencedRecords, setSilencedRecords] = useState<HoldingFeedLine[]>([])
   const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
@@ -73,6 +74,26 @@ export default function HoldingsFeedView() {
       localStorage.setItem('selectedHoldingsCompanies', JSON.stringify(selectedCompanies))
     }
   }, [selectedCompanies])
+
+  // Create an action to update selected companies
+  const handleSelectionChangeAction = async (selected: string[]) => {
+    setSelectedCompanies(selected)
+  }
+
+  // Create an action to update the date
+  const handleDateChangeAction = async (newDate: Date | undefined) => {
+    setDate(newDate)
+  }
+
+  // Create an action to handle file changes
+  const handleFileChangeAction = async (file: File | null) => {
+    setFile(file)
+  }
+
+  // Create actions for ProcessingResults
+  const setIsSuccessAction = async (value: boolean) => {
+    setIsSuccess(value)
+  }
 
   const handleSubmit = async () => {
     if (!date) {
@@ -104,6 +125,7 @@ export default function HoldingsFeedView() {
     setEditForm(false)
     setIsValidating(true)
     setvalidRecords([])
+    setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
     setWarnings([])
@@ -129,6 +151,7 @@ export default function HoldingsFeedView() {
         setFatals(feedResults.fatalErrors)
         setWarnings(feedResults.warnings)
         setRecordErrors(feedResults.recordErrors)
+        setSilencedRecords(feedResults.silencedRecords)
       } else {
         toast({
           title: 'שגיאה בהעלאת הקובץ',
@@ -149,7 +172,7 @@ export default function HoldingsFeedView() {
   }
 
   // Second step: save the validated file
-  const handleSaveConfirmed = async () => {
+  const handleSaveConfirmedAction = async () => {
     if (!date || !file) {
       return
     }
@@ -183,9 +206,10 @@ export default function HoldingsFeedView() {
   }
 
   // Cancel the upload
-  const handleCancel = () => {
+  const handleCancelAction = () => {
     setEditForm(true)
     setRecordErrors([])
+    setSilencedRecords([])
     setWarnings([])
     setFile(null)
   }
@@ -200,7 +224,7 @@ export default function HoldingsFeedView() {
               <CompanyTreeSelector
                 companies={companies}
                 selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
+                onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
                 isLoading={isLoading}
               />
@@ -210,7 +234,7 @@ export default function HoldingsFeedView() {
               <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
               <DateSelector
                 date={date}
-                onDateChange={setDate}
+                onDateChangeAction={handleDateChangeAction}
                 className="w-full"
                 filterDate={(date) => {
                   const day = date.getDay()
@@ -221,12 +245,17 @@ export default function HoldingsFeedView() {
 
             <div className="">
               <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
-              <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
+              <FileUploader onFileChangeAction={handleFileChangeAction} disabled={isUploading} className="w-full" />
             </div>
           </div>
 
           <div className="flex justify-center mt-6">
             <Button
+              variant={
+                !date || !file || isUploading || selectedCompanies.length === 0
+                  ? 'default'
+                  : 'defaultHover'
+              }
               onClick={
                 !date || !file || isUploading || selectedCompanies.length === 0
                   ? () => {}
@@ -246,24 +275,26 @@ export default function HoldingsFeedView() {
       ) : (
         <>
           {date && file && (
-            <h2 className="text-xl text-center">
+            <h4 className="text-xl text-center">
               אחזקות מקובץ{' '}
               <bdi className="inline-block font-mono" dir={'ltr'}>
                 {file.name}
               </bdi>{' '}
               לתאריך {format(date, 'dd/MM/yyyy')}
-            </h2>
+            </h4>
           )}
           <ProcessingResults
             isSuccess={isSuccess}
-            setIsSuccess={setIsSuccess}
+            setIsSuccessAction={setIsSuccessAction}
             validRecords={validRecords}
+            silencedRecords={silencedRecords}
             recordErrors={recordErrors}
             warnings={warnings}
             fatals={fatals}
+            companies={selectedCompanies}
             className="mt-16"
-            onConfirm={handleSaveConfirmed}
-            onCancel={handleCancel}
+            onConfirmAction={handleSaveConfirmedAction}
+            onCancelAction={handleCancelAction}
             isValidating={isValidating}
             isUploading={isUploading}
           />

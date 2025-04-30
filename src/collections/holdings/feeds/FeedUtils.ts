@@ -22,7 +22,7 @@ export const parseFileContent = (file: any): any[] => {
     // Use header: 1 option to handle XLSX without headers
     results = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
   }
-
+  
   return results
 }
 /**

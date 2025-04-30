@@ -16,49 +16,39 @@ import { Button } from '../../components/ui/button'
 import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 import { RecordsTable } from './RecordsTable'
 
-export interface ProcessingError {
-  lineNumber?: number
-  stockId?: string
-  accountId?: string
-  quantity?: string
-  error: string
-}
-
-export interface ProcessingWarning {
-  type: 'existingHoldings' | 'missingAccounts' | 'lineCountDifference'
-  message: string
-  details?: string[]
-  count?: number
-}
 
 interface ProcessingResultsProps {
   isSuccess: boolean
-  setIsSuccess: (v: boolean) => void
+  setIsSuccessAction: (v: boolean) => Promise<void> | void
   validRecords: HoldingFeedLine[]
+  silencedRecords:HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
+  companies:string[]
   className?: string
-  onConfirm?: () => void
-  onContinue?: () => void
-  onCancel?: () => void
+  onConfirmAction?: () => Promise<void> | void
+  onContinueAction?: () => Promise<void> | void
+  onCancelAction?: () => Promise<void> | void
   isValidating?: boolean
   isUploading?: boolean
 }
 
 export function ProcessingResults({
   isSuccess,
-  setIsSuccess,
+  setIsSuccessAction,
   validRecords,
+  silencedRecords,
   recordErrors,
   warnings,
   fatals,
+  companies,
   className,
-  onConfirm,
-  onCancel,
+  onConfirmAction,
+  onCancelAction,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid'>('valid')
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid');
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
@@ -70,9 +60,9 @@ export function ProcessingResults({
   }, [warnings])
 
   const handleFinalConfirm = () => {
-    if (onConfirm) {
-      setIsSuccess(true)
-      onConfirm()
+    if (onConfirmAction) {
+      setIsSuccessAction(true)
+      onConfirmAction()
     }
   }
 
@@ -83,8 +73,8 @@ export function ProcessingResults({
 
   const handleCancelWarning = () => {
     setShowWarningDialog(false)
-    if (onCancel) {
-      onCancel()
+    if (onCancelAction) {
+      onCancelAction()
     }
   }
 
@@ -122,17 +112,19 @@ export function ProcessingResults({
             <ul className="space-y-3">
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
-                  <span className="font-medium">{warning.message.replace(/$$\d+$$/g, '')}</span>
-                  {warning.details && warning.details.length > 0 && (
-                    <div className="mt-2 pr-6 text-gray-700 text-sm">
-                      {warning.details.map((detail, idx) => (
-                        <span key={idx}>
+                  <div className="pr-6">
+                    <span className="font-medium text-black text-base">
+                      {warning.message.replace(/\$\$\d+\$\$/g, '')}
+                      {warning.details && warning.details.length > 0 && ':'}{' '}
+                    </span>
+                    {warning.details &&
+                      warning.details.map((detail, idx) => (
+                        <span key={idx} className="text-gray-800 text-sm">
                           {detail}
-                          {idx !== warning.details!.length - 1 && ', '}
+                          {idx !== warning.details!.length - 1 ? ', ' : '.'}
                         </span>
                       ))}
-                    </div>
-                  )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -161,17 +153,19 @@ export function ProcessingResults({
             <ul className="space-y-3">
               {fatals.map((error, index) => (
                 <li key={index} className="text-gray-800">
-                  <span className="font-medium">{error.message}</span>
-
-                  {error.details && error.details.length > 0 && (
-                    <ul className="mt-2 pr-6 text-gray-700 list-disc list-inside">
-                      {error.details.map((detail, idx) => (
-                        <li key={idx} className="text-sm">
+                  <div className="pr-6">
+                    <span className="font-medium text-black text-base">
+                      {error.message.replace(/\$\$\d+\$\$/g, '')}
+                      {error.details && error.details.length > 0 && ':'}{' '}
+                    </span>
+                    {error.details &&
+                      error.details.map((detail, idx) => (
+                        <span key={idx} className="text-gray-800 text-sm">
                           {detail}
-                        </li>
+                          {idx !== error.details!.length - 1 ? ', ' : '.'}
+                        </span>
                       ))}
-                    </ul>
-                  )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -208,20 +202,36 @@ export function ProcessingResults({
               >
                 שגויות {recordErrors.length > 0 && `(${recordErrors.length})`}
               </button>
+              <button
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'silenced'
+                    ? 'border-b-2 border-yellow-300 text-yellow-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('silenced')}
+              >
+                מושתקות {(silencedRecords?.length ?? 0) > 0 && `(${silencedRecords.length})`}
+              </button>
             </div>
           </div>
 
-          {/* Invalid Records Table */}
-          {activeTab === 'invalid' && recordErrors.length > 0 && (
-            <RecordsTable records={recordErrors} invalid={true} />
+          {/* Records Table Display */}
+          {activeTab === 'invalid' && (recordErrors?.length ?? 0) > 0 && (
+          <RecordsTable records={recordErrors} invalid={true} companies={companies} />
+        )}
+
+          {activeTab === 'valid' && (validRecords?.length ?? 0) > 0 && (
+            <RecordsTable records={validRecords} companies={companies} />
           )}
 
-          {/* Valid Records Message */}
-          {activeTab === 'valid' && <RecordsTable records={validRecords} />}
+          {activeTab === 'silenced' && (silencedRecords?.length ?? 0) > 0 && (
+            <RecordsTable records={silencedRecords} companies={companies} />
+          )}
+
 
           {/* Confirm/Cancel Buttons */}
           <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
-            <Button variant="secondary" onClick={onCancel} className="font-medium">
+            <Button variant="secondary" onClick={onCancelAction} className="font-medium">
               ביטול
             </Button>
             <Button onClick={handleFinalConfirm} className="font-medium">

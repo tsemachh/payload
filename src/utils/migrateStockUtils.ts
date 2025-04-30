@@ -1,4 +1,5 @@
-import { StockType } from '@/payload-types'
+import { Stock, StockType } from '@/payload-types'
+import { PayloadRequest } from 'payload'
 
 export interface StockRow {
   stockID: string
@@ -128,4 +129,33 @@ export function parseDate(dateStr:string) {
   }
 
   return date;
+}
+
+export async function getStockIdToSequenceMap(req:PayloadRequest){
+  const stockMap = new Map<string, string>()
+  // Prefetch common stocks to reduce database lookups
+  console.log('Prefetching common stocks...')
+  const stockIdToSequenceMap = await req.payload.find({
+    collection: 'stocks',
+    limit: 20000,
+    select: {
+      stockId: true,
+      id:true,
+      relatedStock: true,
+    },
+    req,
+    depth:1
+  })
+  for (const stock of stockIdToSequenceMap.docs) {
+    if (stock.relatedStock && typeof stock.relatedStock === 'object' && 'id' in stock.relatedStock)
+      stockMap.set(`${stock.stockId}`, String(stock.relatedStock.id))
+    else {
+      if (stock.stockId) {
+        stockMap.set(`${stock.stockId}`, String(stock.id))
+      }
+    }
+  }
+  console.log(`Prefetched ${stockMap.size} stocks`)
+
+  return stockMap
 }
