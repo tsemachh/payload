@@ -28,10 +28,14 @@ export default function HoldingsView() {
     if (encoded) {
       try {
         const decoded = JSON.parse(atob(encoded))
-        setDate(decoded.date)
+        setDate(new Date(decoded.date))
+        setError('')
       } catch (e) {
+        setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
         console.error('Invalid data', e)
       }
+    } else {
+      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
     }
   }, [])
 
@@ -41,17 +45,7 @@ export default function HoldingsView() {
     }
   }, [date])
 
-  const getHoldingsFromAPI = async (formattedDate: string) => {
-    let selectedCompanies: string[] = []
-    if (user?.leafCompanies) {
-      selectedCompanies = user?.leafCompanies.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
-    }
-    if (selectedCompanies.length === 0) {
-      setError('לא נמצאו חברות.')
-      // return
-    }
+  const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
     const query: Where = {
       and: [
         {
@@ -93,12 +87,23 @@ export default function HoldingsView() {
     setIsLoading(true)
 
     try {
+      let selectedCompanies: string[] = []
+      if (user?.leafCompanies) {
+        selectedCompanies = user?.leafCompanies.map((company) =>
+          typeof company === 'string' ? company : company.id,
+        )
+      }
+      if (selectedCompanies.length === 0) {
+        setError('לא נמצאו חברות.')
+        return
+      }
       const formattedDate = format(date, 'yyyy-MM-dd')
-      const response = await getHoldingsFromAPI(formattedDate)
+      const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
       const data = await response.json()
 
       if (response.ok) {
         if (!data.docs.length) setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
+        setError('')
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
