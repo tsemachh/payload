@@ -102,7 +102,10 @@ export default function HoldingsView() {
       const data = await response.json()
 
       if (response.ok) {
-        if (!data.docs.length) setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
+        if (!data.docs.length) {
+          setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
+          return
+        }
         setError('')
         setHoldings(
           data.docs.map((holding: any) => ({
