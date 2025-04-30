@@ -51,7 +51,6 @@ export const processMeetingsAgendaFeedCsv = async (
         topicType: getAgendaType(data.MeetingType || '') as TopicType,
         magnaId: data.ProofId || '',
         majorityType: getMajorityType(data.MajorityRequired) || '',
-        otherMajority: data.OtherMajority || '',
       }
       console.log('row', row)
       const magnaId = row.magnaId
