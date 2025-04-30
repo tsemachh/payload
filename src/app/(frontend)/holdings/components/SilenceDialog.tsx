@@ -26,8 +26,9 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
       })
       if (response.ok) {
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
-        onRefresh(allRecords)
-      } else {
+        setTimeout(() => {
+          onRefresh(allRecords)
+        }, 2000)      } else {
         setResultMessage('נכשל להשתיק את השגיאה.')
       }
     } catch (error) {
