@@ -166,6 +166,7 @@ export default function HoldingsFeedView() {
     })) as StandardizedRow[]
 
 
+    setIsUploading(true)
     try {
       const response = await fetch(
         `/api/holdings/refresh?companies=${selectedCompanies}`,
@@ -181,7 +182,6 @@ export default function HoldingsFeedView() {
 
       const result = await response.json()
       console.log("888response",response)
-      console.log("888response.json()",response.json())
       console.log("888response.ok",response.ok)
       //setIsValidating(false)
       if (response.ok) {

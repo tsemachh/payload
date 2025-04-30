@@ -1,20 +1,7 @@
-import {
-  preloadAccountsToCompanyMap,
-  preloadStocks,
-  fetchAllSilencedStocks,
-} from '@/collections/holdings/feeds/FeedDataUtils';
-import { validateRow } from '@/collections/holdings/feeds/FeedValidations';
-import { HoldingFeedLine } from '@/payload-types';
-import { addDataAndFileToRequest, PayloadRequest } from 'payload'
-import { FeedValidationResult, StandardizedRow } from '@/collections/holdings/feeds/FeedTypes';
 
-const validationResult: FeedValidationResult = {
-  fatalErrors: [],
-  warnings: [],
-  recordErrors: [],
-  validRecords: [],
-  silencedRecords: [],
-};
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { initializeValidationResult, loadValidationData, runValidationLoop } from './FeedValidationService';
+
 
 const refreshEndPoint = async (req: PayloadRequest) => {
   const { companies } = req.query;
@@ -60,34 +47,26 @@ const refreshEndPoint = async (req: PayloadRequest) => {
 
   console.log("-----@@@selectedCompanies", selectedCompanies);
 
-  const accountToCompanyMap = await preloadAccountsToCompanyMap(
+
+  const validationResult = initializeValidationResult();
+
+  const {
+    accountToCompanyMap,
+    stockMap,
+    silencedStockIds
+  } = await loadValidationData(
     req,
     selectedCompanies,
+    recordsArray
   );
 
-  const stockMap = await preloadStocks(req, recordsArray);
-  console.log("-----@@@selectedCompanies", selectedCompanies);
-
-  const processedRecords: HoldingFeedLine[] = [];
-  const allSilencedStocks = await fetchAllSilencedStocks(req, selectedCompanies);
-  console.log("-----@@@selectedCompanies", selectedCompanies);
-
-  const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);
-  console.log("-----@@@selectedCompanies", selectedCompanies);
-
-  for (const [index, row] of recordsArray.entries()) {
-    const { processedRecord } = await validateRow(row, index, accountToCompanyMap, stockMap, silencedStockIds);
-    processedRecords.push(processedRecord);
-
-    if (processedRecord.status === 'error') {
-      validationResult.recordErrors.push(processedRecord);
-    }
-    else if (processedRecord.status === 'success') {
-      validationResult.validRecords.push(processedRecord);
-    } else {
-      validationResult.silencedRecords.push(processedRecord);
-    }
-  }
+  await runValidationLoop(
+    recordsArray,
+    accountToCompanyMap,
+    stockMap,
+    silencedStockIds,
+    validationResult
+  );
 
   console.log("-----@@@validationResult.silencedRecords", validationResult.silencedRecords);
   console.log("-----@@@validationResult.validRecords", validationResult.validRecords);

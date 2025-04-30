@@ -26,7 +26,7 @@ export const processHoldingsFeedCsv = async (
   validateOnly: boolean = false,
 ): Promise<FeedValidationResult | undefined> => {
   try {
-    // Initialize validation result
+//-------
     const validationResult: FeedValidationResult = {
       fatalErrors: [],
       warnings: [],
@@ -34,8 +34,7 @@ export const processHoldingsFeedCsv = async (
       validRecords: [],
       silencedRecords: [],
     }
-    // Initial validation
-    // Get the file from the request
+//-------
 
     const file = req.file
     if (!file) {
@@ -47,7 +46,6 @@ export const processHoldingsFeedCsv = async (
       return validationResult
     }
 
-    // Get the value date from the document
     const valueDate = doc.valueDate
     if (!valueDate) {
       validationResult.fatalErrors.push({
@@ -57,7 +55,6 @@ export const processHoldingsFeedCsv = async (
       return validationResult
     }
 
-    // Check user permissions //TODO check that companies are subset of user leaf companies
     if (!req.user) {
       validationResult.fatalErrors.push({
         type: 'other',
@@ -66,7 +63,6 @@ export const processHoldingsFeedCsv = async (
       return validationResult
     }
 
-    // File conversion to JSON
     const fileExt = file.name.split('.').pop()?.toLowerCase()
     if (fileExt !== 'csv' && fileExt !== 'xlsx' && fileExt !== 'xls') {
       validationResult.fatalErrors.push({
@@ -76,29 +72,23 @@ export const processHoldingsFeedCsv = async (
       return validationResult
     }
 
-    // Parse the file content
     const results = parseFileContent(file).filter(row => row.length > 0);
 
-    // Validate the whole feed
     const fatalErrors = validateWholeFeed(results)
     if (fatalErrors.length > 0) {
       validationResult.fatalErrors = fatalErrors
       return validationResult
     }
-
-    // Preload accounts
+//-------
     const accountToCompanyMap = await preloadAccountsToCompanyMap(
       req,
       doc.selectedCompanies as string[],
     )
 
-    // Standardize the JSON to be in standard format for both CSV and Excel
     const standardizedRows = standardizeRows(results)
 
-    // Preload stocks
     const stockMap = await preloadStocks(req, standardizedRows)
-
-    // Collect all unique account IDs from the standardized rows
+//-------
     const uniqueAccountIds = Array.from(
       new Set(
         standardizedRows
@@ -107,7 +97,6 @@ export const processHoldingsFeedCsv = async (
       ),
     )
 
-    // Check for warnings
     const warnings = await checkFeedWarnings(
       req,
       valueDate,
@@ -118,6 +107,7 @@ export const processHoldingsFeedCsv = async (
     )
     validationResult.warnings = warnings
 
+//-------
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
     const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
@@ -137,6 +127,8 @@ export const processHoldingsFeedCsv = async (
     }
     console.log("-----validationResult.silencedRecords",validationResult.silencedRecords)
     console.log("-----validationResult.validRecords",validationResult.validRecords)
+//-------
+
 
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {
