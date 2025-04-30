@@ -47,7 +47,15 @@ export function ProcessingResults({
   onCancelAction,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid')
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>(
+    validRecords.length > 0
+      ? 'valid'
+      : recordErrors.length > 0
+      ? 'invalid'
+      : silencedRecords?.length > 0
+      ? 'silenced'
+      : 'valid'
+  );
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
