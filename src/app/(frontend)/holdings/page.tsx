@@ -191,7 +191,6 @@ export default function HoldingsFeedView() {
       if (response.ok) {
         const payload = {
           date: date.toISOString(),
-          selectedCompanies,
         }
         const encoded = btoa(JSON.stringify(payload))
         router.push(`/holdings/view?data=${encodeURIComponent(encoded)}`)
@@ -237,8 +236,10 @@ export default function HoldingsFeedView() {
                 onDateChangeAction={handleDateChangeAction}
                 className="w-full"
                 filterDate={(date) => {
+                  const now = new Date()
+                  now.setHours(0, 0, 0, 0)
                   const day = date.getDay()
-                  return day == 5 || day == 6
+                  return day == 5 || day == 6 || date > now
                 }}
               />
             </div>

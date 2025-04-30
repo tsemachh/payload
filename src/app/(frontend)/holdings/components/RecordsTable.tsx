@@ -28,7 +28,8 @@ const holdingColumns: Column<RecordType>[] = [
     key: 'stockName',
     header: 'נייר ערך',
     type: 'string',
-    minWidth: 90,
+    minWidth: 70,
+    width: 130,
     render: (row) => `${row.stockId ?? 'N/A'} - ${row.stockName ?? 'N/A'}`,
   },
   {
@@ -36,15 +37,15 @@ const holdingColumns: Column<RecordType>[] = [
     header: 'חשבון',
     type: 'string',
     filterable: true,
-    minWidth: 100,
-    width: 100,
+    minWidth: 60,
+    width: 60,
   },
   {
     key: 'quantity',
     header: 'כמות',
     type: 'number',
-    width: 100,
-    minWidth: 100,
+    width: 60,
+    minWidth: 60,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         Number(row.quantity) || 0,
@@ -57,8 +58,8 @@ const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] 
     key: 'error',
     header: 'שגיאה',
     type: 'string',
-    width: 200,
-    minWidth: 200,
+    width: 100,
+    minWidth: 120,
     filterable: true,
     render: (row) => {
       return (
@@ -88,17 +89,19 @@ export const RecordsTable: React.FC<{
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
+  const columns = invalid
+    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)]
+    : holdingColumns
   const tableWidth = columns.reduce((sum, column) => {
-    return sum + (column.width || column.minWidth) + 25
+    return sum + (column.width || column.minWidth)
   }, 0)
 
   return (
     <div
       style={{
         maxHeight: `${window.innerHeight - 300}px`,
-        minWidth: tableWidth + 80 + 'px',
-        maxWidth: tableWidth + 80 + columns.length * 40 + 'px',
+        minWidth: tableWidth + 50 + 'px',
+        maxWidth: tableWidth + 80 + columns.length * 100 + 'px',
         width: '100%',
         margin: '0 auto',
       }}
