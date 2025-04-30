@@ -19,27 +19,13 @@ const validationResult: FeedValidationResult = {
 const refreshEndPoint = async (req: PayloadRequest) => {
   const { companies } = req.query;
 
-  // Handle req.body as stream or already-parsed JSON
-  let standardizedRecords: unknown;
-
-  if (req.body && typeof req.body.getReader === 'function') {
-    // body is a ReadableStream, need to parse manually
-    const buffers: Uint8Array[] = [];
-    for await (const chunk of req.body) {
-      buffers.push(chunk);
-    }
-    const rawBody = Buffer.concat(buffers).toString();
-    standardizedRecords = JSON.parse(rawBody);
-  } else {
-    // body already parsed
-    standardizedRecords = req.body;
-  }
+ const standardizedRecords = req.payload
 
   console.log("-----@@@companies", companies);
   console.log("-----@@@records", standardizedRecords);
 
   // Ensure we have an array to work with
-  const recordsArray: StandardizedRow[] = Array.isArray(standardizedRecords)
+  const recordsArray: any[] = Array.isArray(standardizedRecords)
     ? standardizedRecords
     : standardizedRecords
       ? [standardizedRecords]
