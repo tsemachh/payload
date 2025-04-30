@@ -139,7 +139,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: "100px" },
+                  admin: { width: '100px' },
                 },
               ],
             },
@@ -454,10 +454,10 @@ export const Meetings: CollectionConfig = {
               collection: 'votes',
               on: 'meeting',
               defaultLimit: 0,
-              admin:{
-                defaultColumns:['companies','votes']
-              }
-            }
+              admin: {
+                defaultColumns: ['companies', 'votes'],
+              },
+            },
           ],
         },
         {

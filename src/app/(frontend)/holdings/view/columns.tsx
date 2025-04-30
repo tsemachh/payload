@@ -3,24 +3,18 @@ import { Column } from '../../types/meetings'
 
 export const columns: Column<any>[] = [
   {
-    key: 'stockNumber',
-    header: 'מספר נייר ערך',
-    type: 'string',
-    minWidth: 120,
-    width: 100,
-  },
-  {
     key: 'stockName',
-    header: 'שם נייר ערך',
+    header: 'נייר ערך',
     type: 'string',
     minWidth: 120,
-    width: 100,
+    width: 300,
+    render: (row) => `${row.stockId ?? 'N/A'} - ${row.stockName ?? 'N/A'}`,
   },
   {
     key: 'quantity',
     header: 'כמות',
     type: 'number',
-    minWidth: 100,
+    minWidth: 60,
     width: 100,
     render: (row) => <span className="text-right">{row.quantity.toLocaleString()}</span>,
   },
@@ -28,7 +22,8 @@ export const columns: Column<any>[] = [
     key: 'company',
     header: 'חברה',
     type: 'string',
-    minWidth: 150,
-    width: 350,
+    filterable: true,
+    minWidth: 120,
+    width: 300,
   },
 ]

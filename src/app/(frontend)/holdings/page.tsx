@@ -79,6 +79,26 @@ export default function HoldingsFeedView() {
     }
   }, [selectedCompanies])
 
+  // Create an action to update selected companies
+  const handleSelectionChangeAction = async (selected: string[]) => {
+    setSelectedCompanies(selected)
+  }
+
+  // Create an action to update the date
+  const handleDateChangeAction = async (newDate: Date | undefined) => {
+    setDate(newDate)
+  }
+
+  // Create an action to handle file changes
+  const handleFileChangeAction = async (file: File | null) => {
+    setFile(file)
+  }
+
+  // Create actions for ProcessingResults
+  const setIsSuccessAction = async (value: boolean) => {
+    setIsSuccess(value)
+  }
+
   const handleSubmit = async () => {
     if (!date) {
       toast({
@@ -216,7 +236,7 @@ export default function HoldingsFeedView() {
     }
   }
   // Second step: save the validated file
-  const handleSaveConfirmed = async () => {
+  const handleSaveConfirmedAction = async () => {
     if (!date || !file) {
       return
     }
@@ -235,7 +255,6 @@ export default function HoldingsFeedView() {
       if (response.ok) {
         const payload = {
           date: date.toISOString(),
-          selectedCompanies,
         }
         const encoded = btoa(JSON.stringify(payload))
         router.push(`/holdings/view?data=${encodeURIComponent(encoded)}`)
@@ -250,7 +269,7 @@ export default function HoldingsFeedView() {
   }
 
   // Cancel the upload
-  const handleCancel = () => {
+  const handleCancelAction = () => {
     setEditForm(true)
     setRecordErrors([])
     setSilencedRecords([])
@@ -275,7 +294,7 @@ export default function HoldingsFeedView() {
               <CompanyTreeSelector
                 companies={companies}
                 selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
+                onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
                 isLoading={isLoading}
               />
@@ -285,18 +304,20 @@ export default function HoldingsFeedView() {
               <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
               <DateSelector
                 date={date}
-                onDateChange={setDate}
+                onDateChangeAction={handleDateChangeAction}
                 className="w-full"
                 filterDate={(date) => {
+                  const now = new Date()
+                  now.setHours(0, 0, 0, 0)
                   const day = date.getDay()
-                  return day == 5 || day == 6
+                  return day == 5 || day == 6 || date > now
                 }}
               />
             </div>
 
             <div className="">
               <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
-              <FileUploader onFileChange={setFile} disabled={isUploading} className="w-full" />
+              <FileUploader onFileChangeAction={handleFileChangeAction} disabled={isUploading} className="w-full" />
             </div>
           </div>
 
@@ -336,7 +357,7 @@ export default function HoldingsFeedView() {
           )}
           <ProcessingResults
             isSuccess={isSuccess}
-            setIsSuccess={setIsSuccess}
+            setIsSuccessAction={setIsSuccessAction}
             validRecords={validRecords}
             silencedRecords={silencedRecords}
             recordErrors={recordErrors}
@@ -344,8 +365,8 @@ export default function HoldingsFeedView() {
             fatals={fatals}
             companies={selectedCompanies}
             className="mt-16"
-            onConfirm={handleSaveConfirmed}
-            onCancel={handleCancel}
+            onConfirmAction={handleSaveConfirmedAction}
+            onCancelAction={handleCancelAction}
             onRefresh={handleRefresh}
             isValidating={isValidating}
             isUploading={isUploading}

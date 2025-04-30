@@ -5,6 +5,7 @@ import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
+import { HoldingFeedLineWithName } from '@/collections/holdings/feeds/FeedValidations'
 
 interface RecordType {
   lineNumber: string | number
@@ -13,6 +14,7 @@ interface RecordType {
   quantity: string | number
   error: string
   id?: string | number
+  stockName: string
 }
 
 const holdingColumns: Column<RecordType>[] = [
@@ -24,26 +26,27 @@ const holdingColumns: Column<RecordType>[] = [
     width: 50,
   },
   {
-    key: 'stockId',
+    key: 'stockName',
     header: 'נייר ערך',
     type: 'string',
-    minWidth: 150,
-    width: 150,
+    minWidth: 70,
+    width: 130,
+    render: (row) => `${row.stockId ?? 'N/A'} - ${row.stockName ?? 'N/A'}`,
   },
   {
     key: 'accountId',
     header: 'חשבון',
     type: 'string',
     filterable: true,
-    minWidth: 100,
-    width: 100,
+    minWidth: 60,
+    width: 60,
   },
   {
     key: 'quantity',
     header: 'כמות',
     type: 'number',
-    width: 100,
-    minWidth: 100,
+    width: 60,
+    minWidth: 60,
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
         Number(row.quantity) || 0,
@@ -56,8 +59,8 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
     key: 'error',
     header: 'שגיאה',
     type: 'string',
-    width: 200,
-    minWidth: 200,
+    width: 100,
+    minWidth: 120,
     filterable: true,
     render: (row) => {
       return (
@@ -73,7 +76,7 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
 ]
 
 export const RecordsTable: React.FC<{
-  records: HoldingFeedLine[]
+  records: HoldingFeedLineWithName[]
   invalid?: boolean
   companies: string[]
   onRefresh?: (records: HoldingFeedLine[]) => void;
@@ -84,6 +87,7 @@ export const RecordsTable: React.FC<{
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
     stockId: holding.stockId ?? 'N/A',
+    stockName: holding.stockName ?? 'N/A',
     accountId: holding.accountId ?? 'N/A',
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
@@ -97,7 +101,6 @@ export const RecordsTable: React.FC<{
     ? [...holdingColumns, ...getInvalidColumnsAdditional(companies, allRecords, onRefresh)]
     : holdingColumns
 
-
   const tableWidth = columns.reduce((sum, column) => {
     return sum + (column.width || column.minWidth) + 25
   }, 0)
@@ -106,8 +109,8 @@ export const RecordsTable: React.FC<{
     <div
       style={{
         maxHeight: `${window.innerHeight - 300}px`,
-        minWidth: tableWidth + 80 + 'px',
-        maxWidth: tableWidth + 80 + columns.length * 40 + 'px',
+        minWidth: tableWidth + 50 + 'px',
+        maxWidth: tableWidth + 80 + columns.length * 100 + 'px',
         width: '100%',
         margin: '0 auto',
       }}
