@@ -26,6 +26,7 @@ import {
 } from '../components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
+import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 
 
 export default function HoldingsFeedView() {
@@ -44,6 +45,7 @@ export default function HoldingsFeedView() {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
@@ -166,7 +168,7 @@ export default function HoldingsFeedView() {
     })) as StandardizedRow[]
 
 
-    setIsUploading(true)
+    setIsRefreshing(true)
     try {
       const response = await fetch(
         `/api/holdings/refresh?companies=${selectedCompanies}`,
@@ -210,7 +212,7 @@ export default function HoldingsFeedView() {
         variant: 'destructive',
       })
     } finally {
-      setIsUploading(false)
+      setIsRefreshing(false)
     }
   }
   // Second step: save the validated file
@@ -255,7 +257,14 @@ export default function HoldingsFeedView() {
     setWarnings([])
     setFile(null)
   }
-
+  if (isRefreshing) {
+    return (
+      <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+        <LoadingSpinnerDiamond />
+        <p className="text-center">טוען את הנתונים העדכניים...</p>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       {editForm ? (

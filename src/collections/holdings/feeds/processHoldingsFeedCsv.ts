@@ -26,7 +26,7 @@ export const processHoldingsFeedCsv = async (
   validateOnly: boolean = false,
 ): Promise<FeedValidationResult | undefined> => {
   try {
-//-------
+
     const validationResult: FeedValidationResult = {
       fatalErrors: [],
       warnings: [],
@@ -34,7 +34,6 @@ export const processHoldingsFeedCsv = async (
       validRecords: [],
       silencedRecords: [],
     }
-//-------
 
     const file = req.file
     if (!file) {
