@@ -1,5 +1,4 @@
 'use client'
-import { tree } from 'next/dist/build/templates/app-page'
 import { Column } from '../../types/meetings'
 
 export const columns: Column<any>[] = [
@@ -14,8 +13,8 @@ export const columns: Column<any>[] = [
     key: 'stockName',
     header: 'שם נייר ערך',
     type: 'string',
-    minWidth: 120,
-    width: 100,
+    minWidth: 100,
+    width: 130,
   },
   {
     key: 'quantity',

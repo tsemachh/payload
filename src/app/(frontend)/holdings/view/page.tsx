@@ -123,8 +123,8 @@ export default function HoldingsView() {
   }
 
   return (
-    <div className=" flex flex-col md:flex-row gap-6 px-4 pt-1">
-      <div className="w-full md:flex-[1]">
+    <div className="flex md:flex-row gap-6 px-4 pt-1">
+      <div className=" mt-3">
         <div>
           <label className="text-base font-semibold mb-2 block h-100">תאריך ערך</label>
           <DateSelector
@@ -141,9 +141,9 @@ export default function HoldingsView() {
           />
         </div>
       </div>
-      <div className="hidden md:block w-px bg-muteda" />
-      <div className="w-full md:flex-[3]">
-        {}
+      <div className="hidden md:block w-[2px] bg-muted self-stretch mx-2" />
+
+      <div className="w-full flex justify-center mt-3">
         {isLoading ? (
           <div className="flex flex-col h-[500px] items-center pt-[100px] ">
             <LoadingSpinnerDiamond />
@@ -162,7 +162,7 @@ export default function HoldingsView() {
                 defaultSortDirection="desc"
                 tableId="holdings-view-table"
                 columnsOption={false}
-                tableHeightOffset={250}
+                tableHeightOffset={280}
               />
               <div className="flex justify-center mt-4">
                 {holdings.length > 0 && (
