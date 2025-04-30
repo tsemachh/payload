@@ -105,7 +105,7 @@ export default function HoldingsView() {
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
-            stockNumber: holding.stock?.stockId || 'N/A',
+            stockId: holding.stock?.stockId || 'N/A',
             stockName: holding.stock?.name || 'N/A',
             quantity: holding.quantity || 'N/A',
             company: holding.company?.name || 'N/A',
@@ -124,7 +124,7 @@ export default function HoldingsView() {
 
   return (
     <div className="flex md:flex-row gap-6 px-4 pt-1">
-      <div className=" mt-3">
+      <div className="h-[400px] mt-3">
         <div>
           <label className="text-base font-semibold mb-2 block h-100">תאריך ערך</label>
           <DateSelector
