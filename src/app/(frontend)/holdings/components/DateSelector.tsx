@@ -10,16 +10,16 @@ import { useState } from 'react'
 
 interface DateSelectorProps {
   date: Date | undefined
-  onDateChange: (date: Date | undefined) => void
+  onDateChangeAction: (date: Date | undefined) => Promise<void> | void
   className?: string
   filterDate?: (date: Date) => boolean
 }
 
-export function DateSelector({ date, onDateChange, className, filterDate }: DateSelectorProps) {
+export function DateSelector({ date, onDateChangeAction, className, filterDate }: DateSelectorProps) {
   const [open, setOpen] = useState(false)
 
   const handleSelect = (selectedDate: Date | undefined) => {
-    onDateChange(selectedDate)
+    onDateChangeAction(selectedDate)
     setOpen(false)
   }
   return (

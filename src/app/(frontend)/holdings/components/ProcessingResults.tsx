@@ -19,7 +19,7 @@ import { RecordsTable } from './RecordsTable'
 
 interface ProcessingResultsProps {
   isSuccess: boolean
-  setIsSuccess: (v: boolean) => void
+  setIsSuccessAction: (v: boolean) => Promise<void> | void
   validRecords: HoldingFeedLine[]
   silencedRecords:HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
@@ -27,16 +27,16 @@ interface ProcessingResultsProps {
   fatals: FeedFatalError[]
   companies:string[]
   className?: string
-  onConfirm?: () => void
-  onContinue?: () => void
-  onCancel?: () => void
+  onConfirmAction?: () => Promise<void> | void
+  onContinueAction?: () => Promise<void> | void
+  onCancelAction?: () => Promise<void> | void
   isValidating?: boolean
   isUploading?: boolean
 }
 
 export function ProcessingResults({
   isSuccess,
-  setIsSuccess,
+  setIsSuccessAction,
   validRecords,
   silencedRecords,
   recordErrors,
@@ -44,8 +44,8 @@ export function ProcessingResults({
   fatals,
   companies,
   className,
-  onConfirm,
-  onCancel,
+  onConfirmAction,
+  onCancelAction,
   isValidating = false,
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid');
@@ -60,9 +60,9 @@ export function ProcessingResults({
   }, [warnings])
 
   const handleFinalConfirm = () => {
-    if (onConfirm) {
-      setIsSuccess(true)
-      onConfirm()
+    if (onConfirmAction) {
+      setIsSuccessAction(true)
+      onConfirmAction()
     }
   }
 
@@ -73,8 +73,8 @@ export function ProcessingResults({
 
   const handleCancelWarning = () => {
     setShowWarningDialog(false)
-    if (onCancel) {
-      onCancel()
+    if (onCancelAction) {
+      onCancelAction()
     }
   }
 
@@ -231,7 +231,7 @@ export function ProcessingResults({
 
           {/* Confirm/Cancel Buttons */}
           <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
-            <Button variant="secondary" onClick={onCancel} className="font-medium">
+            <Button variant="secondary" onClick={onCancelAction} className="font-medium">
               ביטול
             </Button>
             <Button onClick={handleFinalConfirm} className="font-medium">
