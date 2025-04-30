@@ -101,6 +101,16 @@ export default function HoldingsView() {
     }
   }, [user])
 
+  // Create an action to update selected companies
+  const handleSelectionChangeAction = async (selected: string[]) => {
+    setSelectedCompanies(selected)
+  }
+  
+  // Create an action to update the date
+  const handleDateChangeAction = async (newDate: Date | undefined) => {
+    setDate(newDate)
+  }
+
   const fetchHoldings = async () => {
     if (!date) {
       toast({
@@ -166,7 +176,7 @@ export default function HoldingsView() {
               <CompanyTreeSelector
                 companies={companies}
                 selectedCompanies={selectedCompanies}
-                onSelectionChange={setSelectedCompanies}
+                onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
               />
             </div>
@@ -175,7 +185,7 @@ export default function HoldingsView() {
               <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
               <DateSelector
                 date={date}
-                onDateChange={setDate}
+                onDateChangeAction={handleDateChangeAction}
                 className="w-full"
                 filterDate={(date) => {
                   const day = date.getDay()
