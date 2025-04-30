@@ -56,7 +56,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      errors.push('No file found in request')
+      errors.push('לא נמצא קובץ בבקשה')
       return errors
     }
 
@@ -78,7 +78,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           _status: 'draft',
         }
       } catch (e: any) {
-        errors.push(`Error processing row: ${JSON.stringify(data)} - ${e.message}`)
+        errors.push(`שגיאה בעיבוד הרשומה: ${JSON.stringify(data)} - ${e.message}`)
       }
     })
 
@@ -87,9 +87,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     // Check for missing columns in the CSV
     const missingColumns = getMissingColumns(rows, requiredFields)
     if (missingColumns.length > 0) {
-      errors.push(
-        `CSV is missing required columns: ${missingColumns.join(', ')} (empty in all rows)`,
-      )
+      errors.push(`בקובץ csv חסרות עמודות שהן חובה  ${missingColumns.join(', ')} (ריק בכל השורות)`)
       return errors
     }
 
@@ -133,20 +131,21 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
 
             if (missingFields.length > 0) {
               errors.push(
-                `Meeting with magnaId ${row.magnaId} is missing required fields: ${missingFields.join(', ')}`,
+                `לאסיפה עם האסמכתא ${row.magnaId} חסרים שדות נדרשים: ${missingFields.join(', ')}`,
               )
+
               return
             }
             const stockData = stockIdMap.get(row.stock)
             if (stockData === null || stockData === undefined) {
               errors.push(
-                `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that can't be found and will not be imported — this meeting will NOT be created`,
+                `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שלא נמצא ולא ייובא — האסיפה הזו לא תיווצר`,
               )
               return
             }
             if (!stockData?.active) {
               errors.push(
-                `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that is not active and will not be imported — this meeting will NOT be created`,
+                `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
               )
               return
             }
@@ -168,15 +167,13 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                     context: { ...req.context, from: 'migration' },
                   })
                 } catch (e: any) {
-                  errors.push(
-                    `Error updating meeting with ProofIdPrev ${row.proofIdPrev}: ${e.message}`,
-                  )
+                  errors.push(`שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`)
                   req.payload.logger.error(
                     `Error updating meeting with ProofIdPrev ${row.proofIdPrev}`,
                   )
                 }
               } else {
-                errors.push(`No meeting found for ProofIdPrev ${row.proofIdPrev}, cannot update`)
+                errors.push(`לא נמצאה אסיפה עם האסמכתא  ${row.proofIdPrev}, האסיפה לא תתעדכן`)
                 req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.proofIdPrev}`)
               }
             }
@@ -192,7 +189,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                   context: { ...req.context, from: 'migration' },
                 })
               } catch (e: any) {
-                errors.push(`Error updating meeting with stockId ${row.magnaId}: ${e.message}`)
+                errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
               }
             } else {
               try {
@@ -202,11 +199,11 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                   context: { ...req.context, from: 'migration' },
                 })
               } catch (e: any) {
-                errors.push(`Error creating meeting with stockId ${row.magnaId}: ${e.message}`)
+                errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
               }
             }
           } catch (error) {
-            errors.push(`Error processing row ${rowIndex}: ${JSON.stringify(row)} - ${error}`)
+            errors.push(`שגיאה בעיבוד הרשומה  ${rowIndex}: ${JSON.stringify(row)} - ${error}`)
           }
         }),
       )
@@ -226,7 +223,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     return errors
   } catch (error) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
-    errors.push(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${JSON.stringify(error)}`)
     if (errors.length > 0) {
       console.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
