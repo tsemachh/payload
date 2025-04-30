@@ -104,9 +104,9 @@ export default function HoldingsView() {
       if (response.ok) {
         if (!data.docs.length) {
           setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
-          return
+        } else {
+          setError('')
         }
-        setError('')
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
