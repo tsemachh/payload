@@ -14,25 +14,13 @@ export function MainNav() {
         href="/"
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
-          pathname === '/'
+          pathname === '/' || pathname === '/meetings/all'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
         )}
       >
         <Calendar className="h-4 w-4 ml-2" />
-        אסיפות עתידיות
-      </Link>
-      <Link
-        href="/meetings-all"
-        className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
-          pathname === '/meetings-all'
-            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
-            : 'text-muted-foreground hover:bg-muted',
-        )}
-      >
-        <History className="h-4 w-4 ml-2" />
-        כל האסיפות
+        אסיפות
       </Link>
       <Link
         href="/participations"

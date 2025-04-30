@@ -6,6 +6,7 @@ import { ThemeChooser } from '@/components/theme-chooser'
 import { UserNav } from './user-nav'
 import { usePathname } from 'next/navigation'
 import { HoldingsNav } from '../holdings/sub-nav-holdings'
+import { MeetingsNav } from '../meetings/sub-nav-meetings'
 
 export function HeaderWithNav() {
   const auth = useAuth()
@@ -42,9 +43,9 @@ export function HeaderWithNav() {
           <UserNav />
         </div>
       </div>
-      {pathname.startsWith('/holdings') ? (
+      {pathname == '/' || pathname == '/meetings/all' ? (
         <div className="flex h-8 items-center justify-between px-4">
-          <HoldingsNav />
+          <MeetingsNav />
         </div>
       ) : (
         pathname.startsWith('/holdings') && (
