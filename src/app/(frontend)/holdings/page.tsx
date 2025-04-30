@@ -177,15 +177,24 @@ export default function HoldingsFeedView() {
           body: JSON.stringify(standardizedRecords),
         },
       )
+
+
       const result = await response.json()
-      setIsValidating(false)
+      console.log("888response",response)
+      console.log("888response.json()",response.json())
+      console.log("888response.ok",response.ok)
+      //setIsValidating(false)
       if (response.ok) {
-        const feedResults: FeedValidationResult = result.feedResult
-        setvalidRecords(feedResults.validRecords)
-        setFatals(feedResults.fatalErrors)
-        setWarnings(feedResults.warnings)
-        setRecordErrors(feedResults.recordErrors)
-        setSilencedRecords(feedResults.silencedRecords)
+        console.log("888result",result)
+        console.log("888result.validationResult",result.validationResult)
+        console.log("888result.validationResult.validRecords",result.validationResult.validRecords)
+
+        const validationResult: FeedValidationResult = result.validationResult
+        setvalidRecords(validationResult.validRecords)
+        setFatals(validationResult.fatalErrors)
+        setWarnings(validationResult.warnings)
+        setRecordErrors(validationResult.recordErrors)
+        setSilencedRecords(validationResult.silencedRecords)
       } else {
         toast({
           title: 'עדכון טבלאות נכשל',

@@ -5,7 +5,7 @@ import {
 } from '@/collections/holdings/feeds/FeedDataUtils';
 import { validateRow } from '@/collections/holdings/feeds/FeedValidations';
 import { HoldingFeedLine } from '@/payload-types';
-import { PayloadRequest } from 'payload';
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { FeedValidationResult, StandardizedRow } from '@/collections/holdings/feeds/FeedTypes';
 
 const validationResult: FeedValidationResult = {
@@ -18,8 +18,16 @@ const validationResult: FeedValidationResult = {
 
 const refreshEndPoint = async (req: PayloadRequest) => {
   const { companies } = req.query;
-
- const standardizedRecords = req.payload
+  await addDataAndFileToRequest(req)
+  if (req === null) {
+    return Response.json({ error: 'forbidden' }, { status: 403 })
+  }
+  if (!req.user) {
+    return Response.json({ error: 'forbidden' }, { status: 403 })
+  }
+  // @ts-expect-error req not null
+  const standardizedRecords = await req.json()
+ //const standardizedRecords = await req?.json()
 
   console.log("-----@@@companies", companies);
   console.log("-----@@@records", standardizedRecords);
@@ -58,9 +66,14 @@ const refreshEndPoint = async (req: PayloadRequest) => {
   );
 
   const stockMap = await preloadStocks(req, recordsArray);
+  console.log("-----@@@selectedCompanies", selectedCompanies);
+
   const processedRecords: HoldingFeedLine[] = [];
   const allSilencedStocks = await fetchAllSilencedStocks(req, selectedCompanies);
+  console.log("-----@@@selectedCompanies", selectedCompanies);
+
   const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);
+  console.log("-----@@@selectedCompanies", selectedCompanies);
 
   for (const [index, row] of recordsArray.entries()) {
     const { processedRecord } = await validateRow(row, index, accountToCompanyMap, stockMap, silencedStockIds);
@@ -76,10 +89,15 @@ const refreshEndPoint = async (req: PayloadRequest) => {
     }
   }
 
-  console.log("-----validationResult.silencedRecords", validationResult.silencedRecords);
-  console.log("-----validationResult.validRecords", validationResult.validRecords);
+  console.log("-----@@@validationResult.silencedRecords", validationResult.silencedRecords);
+  console.log("-----@@@validationResult.validRecords", validationResult.validRecords);
+  console.log("-----@@@validationResult", validationResult);
 
-  return validationResult
-};
+
+    return Response.json({
+      validationResult,
+    })
+}
+
 
 export default refreshEndPoint;
