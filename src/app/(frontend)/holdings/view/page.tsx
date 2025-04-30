@@ -3,14 +3,11 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
-import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from './columns'
 import { Holding } from '../types'
 import { ExportButton } from '@/components/export-button'
-import { transformCompaniesToTree } from '../../helpers/utils-holdings'
-import { CompanyTreeSelector, TreeNode } from '../components/CompanySelector'
 import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
@@ -18,7 +15,6 @@ import { useSearchParams } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -28,9 +24,7 @@ import { AlertTriangle } from 'lucide-react'
 
 export default function HoldingsView() {
   const { user } = useAuth()
-  const [companies, setCompanies] = useState<TreeNode[]>([])
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
-  const [date, setDate] = useState<Date | undefined>()
+  const [date, setDate] = useState<Date | undefined>(undefined)
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isError, setIsError] = useState('')
@@ -44,7 +38,6 @@ export default function HoldingsView() {
       try {
         const decoded = JSON.parse(atob(encoded))
         setDate(decoded.date)
-        setSelectedCompanies(decoded.selectedCompanies)
       } catch (e) {
         console.error('Invalid data', e)
       }
@@ -52,12 +45,22 @@ export default function HoldingsView() {
   }, [])
 
   useEffect(() => {
-    if (date && selectedCompanies.length > 0) {
+    if (date) {
       fetchHoldings()
     }
-  }, [date, selectedCompanies])
+  }, [date])
 
-  const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
+  const getHoldingsFromAPI = async (formattedDate: string) => {
+    let selectedCompanies: string[] = []
+    if (user?.leafCompanies) {
+      selectedCompanies = user?.leafCompanies.map((company) =>
+        typeof company === 'string' ? company : company.id,
+      )
+    }
+    if (selectedCompanies.length === 0) {
+      setIsError('לא נמצאו חברות.')
+      // return
+    }
     const query: Where = {
       and: [
         {
@@ -85,36 +88,16 @@ export default function HoldingsView() {
     return response
   }
 
-  // Extract companies from user
-  useEffect(() => {
-    if (user?.companies) {
-      // Transform the flat company structure into a hierarchical tree
-      const transformedCompanies = transformCompaniesToTree(user.companies)
-      setCompanies(transformedCompanies)
-    }
-    if (user?.leafCompanies && selectedCompanies.length == 0) {
-      const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
-      setSelectedCompanies(tmpSelectedCompanies)
-    }
-  }, [user])
-
   const fetchHoldings = async () => {
     if (!date) {
       setIsError('תאריך לא נבחר.')
-      return
-    }
-
-    if (selectedCompanies.length === 0) {
-      setIsError('חברות לא נבחרו.')
       return
     }
     setIsLoading(true)
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
-      const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
+      const response = await getHoldingsFromAPI(formattedDate)
       const data = await response.json()
 
       if (response.ok) {

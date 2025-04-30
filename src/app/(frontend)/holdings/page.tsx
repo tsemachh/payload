@@ -171,7 +171,6 @@ export default function HoldingsFeedView() {
       if (response.ok) {
         const payload = {
           date: date.toISOString(),
-          selectedCompanies,
         }
         const encoded = btoa(JSON.stringify(payload))
         router.push(`/holdings/view?data=${encodeURIComponent(encoded)}`)
