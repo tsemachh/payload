@@ -16,16 +16,15 @@ import { Button } from '../../components/ui/button'
 import { FeedFatalError, FeedWarning } from '@/collections/holdings/feeds/FeedTypes'
 import { RecordsTable } from './RecordsTable'
 
-
 interface ProcessingResultsProps {
   isSuccess: boolean
   setIsSuccessAction: (v: boolean) => Promise<void> | void
   validRecords: HoldingFeedLine[]
-  silencedRecords:HoldingFeedLine[]
+  silencedRecords: HoldingFeedLine[]
   recordErrors: HoldingFeedLine[]
   warnings: FeedWarning[]
   fatals: FeedFatalError[]
-  companies:string[]
+  companies: string[]
   className?: string
   onConfirmAction?: () => Promise<void> | void
   onContinueAction?: () => Promise<void> | void
@@ -48,7 +47,7 @@ export function ProcessingResults({
   onCancelAction,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid');
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid')
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
@@ -182,43 +181,49 @@ export function ProcessingResults({
           {/* Tabs for Valid and Invalid Records */}
           <div className="mb-4">
             <div className="flex border-b">
-              <button
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'valid'
-                    ? 'border-b-2 border-green-500 text-green-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('valid')}
-              >
-                תקינות {validRecords.length > 0 && `(${validRecords.length})`}
-              </button>
-              <button
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'invalid'
-                    ? 'border-b-2 border-red-500 text-red-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('invalid')}
-              >
-                שגויות {recordErrors.length > 0 && `(${recordErrors.length})`}
-              </button>
-              <button
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'silenced'
-                    ? 'border-b-2 border-yellow-300 text-yellow-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('silenced')}
-              >
-                מושתקות {(silencedRecords?.length ?? 0) > 0 && `(${silencedRecords.length})`}
-              </button>
+              {validRecords.length > 0 && (
+                <button
+                  className={`px-4 py-2 font-medium ${
+                    activeTab === 'valid'
+                      ? 'border-b-2 border-green-500 text-green-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveTab('valid')}
+                >
+                  תקינות {`(${validRecords.length})`}
+                </button>
+              )}
+              {recordErrors.length > 0 && (
+                <button
+                  className={`px-4 py-2 font-medium ${
+                    activeTab === 'invalid'
+                      ? 'border-b-2 border-red-500 text-red-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveTab('invalid')}
+                >
+                  שגויות {`(${recordErrors.length})`}
+                </button>
+              )}
+              {(silencedRecords?.length ?? 0) > 0 && (
+                <button
+                  className={`px-4 py-2 font-medium ${
+                    activeTab === 'silenced'
+                      ? 'border-b-2 border-yellow-300 text-yellow-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveTab('silenced')}
+                >
+                  מושתקות {`(${silencedRecords.length})`}
+                </button>
+              )}
             </div>
           </div>
 
           {/* Records Table Display */}
           {activeTab === 'invalid' && (recordErrors?.length ?? 0) > 0 && (
-          <RecordsTable records={recordErrors} invalid={true} companies={companies} />
-        )}
+            <RecordsTable records={recordErrors} invalid={true} companies={companies} />
+          )}
 
           {activeTab === 'valid' && (validRecords?.length ?? 0) > 0 && (
             <RecordsTable records={validRecords} companies={companies} />
@@ -227,7 +232,6 @@ export function ProcessingResults({
           {activeTab === 'silenced' && (silencedRecords?.length ?? 0) > 0 && (
             <RecordsTable records={silencedRecords} companies={companies} />
           )}
-
 
           {/* Confirm/Cancel Buttons */}
           <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">

@@ -4,6 +4,7 @@ import iconv from 'iconv-lite'
 import { getSequenceStockId, getStockByStockId } from '@/utils/utils'
 import { parseDateString } from '@/utils/dateUtils'
 import { MeetingState, MeetingType } from '@/payload-types'
+import { PromisePool } from '@/utils/promisePool'
 
 export const meetingTypesMap: Map<string, MeetingType> = new Map([
   ['אסיפה מיוחדת', 'מיוחדת'],
@@ -59,7 +60,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      errors.push('No file found in request')
+      errors.push('לא נמצא קובץ בבקשה')
       return errors
     }
 
@@ -81,103 +82,137 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           _status: 'draft',
         }
       } catch (e: any) {
-        errors.push(`Error processing row: ${JSON.stringify(data)} - ${e.message}`)
+        errors.push(`שגיאה בעיבוד הרשומה: ${JSON.stringify(data)} - ${e.message}`)
       }
     })
 
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
 
-    // Process each row
+    // Check for missing columns in the CSV
+    const missingColumns = getMissingColumns(rows, requiredFields)
+    if (missingColumns.length > 0) {
+      errors.push(`בקובץ csv חסרות עמודות שהן חובה  ${missingColumns.join(', ')} (ריק בכל השורות)`)
+      return errors
+    }
+
+    // Create a promise pool with 20 concurrent threads
+    const stockIds = [...new Set(rows.map((row) => row.stock))]
+    const stocks = await req.payload.find({
+      collection: 'stocks',
+      select: {
+        id: true,
+        active: true,
+        stockId: true,
+      },
+      where: {
+        stockId: {
+          in: stockIds,
+        },
+      },
+      limit: 0,
+    })
+    const promisePool = new PromisePool(20)
+    const promises = []
+
+    const stockIdMap = new Map()
+
+    for (const stock of stocks.docs) {
+      stockIdMap.set(stock.stockId, {
+        id: stock.id,
+        active: stock.active,
+      })
+    }
+    // Process each row in parallel using the promise pool
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
-      try {
-        console.log('Row:', row)
-        const missingColumns = getMissingColumns(rows, requiredFields)
-        if (missingColumns.length > 0) {
-          errors.push(
-            `CSV is missing required columns: ${missingColumns.join(', ')} (empty in all rows)`,
-          )
-          break
-        }
-        const missingFields = getMissingFieldsInRow(row, requiredFields)
+      const rowIndex = i
 
-        if (missingFields.length > 0) {
-          errors.push(
-            `Meeting with magnaId ${row.magnaId} is missing required fields: ${missingFields.join(', ')}`,
-          )
-          continue
-        }
-        const stockId = await getSequenceStockId(req.payload, row.stock)
-        if (stockId === null) {
-          errors.push(
-            `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that can't be found and will not be imported — this meeting will NOT be created`,
-          )
-          continue
-        }
-        const stockData = await getStockByStockId(req.payload, row.stock)
-        if (!stockData?.active) {
-          errors.push(
-            `Meeting with magnaId ${row.magnaId} has stockId ${row.stock} that is not active and will not be imported — this meeting will NOT be created`,
-          )
-          continue
-        }
-        row.stock = stockId
-        if (row.proofIdPrev) {
-          const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
-          if (prevMeeting && prevMeeting.docs.length > 0) {
-            const { magnaId, ...dataToUpdate } = row
-            dataToUpdate.magnaId = row.proofIdPrev
-            delete dataToUpdate.proofIdPrev
-            const prevMeetingId = prevMeeting.docs[0].id
-            try {
-              await req.payload.update({
-                collection: 'meetings',
-                id: prevMeetingId,
-                data: dataToUpdate,
-                context: { ...req.context, from: 'migration' },
-              })
-              req.payload.logger.info(
-                `Successfully updated meeting with ProofIdPrev ${row.proofIdPrev}`,
-              )
-            } catch (e: any) {
+      promises.push(
+        promisePool.add(async () => {
+          try {
+            console.log('Row:', row)
+            const missingFields = getMissingFieldsInRow(row, requiredFields)
+
+            if (missingFields.length > 0) {
               errors.push(
-                `Error updating meeting with ProofIdPrev ${row.proofIdPrev}: ${e.message}`,
+                `לאסיפה עם האסמכתא ${row.magnaId} חסרים שדות נדרשים: ${missingFields.join(', ')}`,
               )
-              req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.proofIdPrev}`)
-            }
-          } else {
-            errors.push(`No meeting found for ProofIdPrev ${row.proofIdPrev}, cannot update`)
-            req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.proofIdPrev}`)
-          }
-        }
 
-        const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
-        if (existingMeeting?.docs.length > 0) {
-          const meetingId = existingMeeting?.docs[0].id
-          try {
-            await req.payload.update({
-              collection: 'meetings',
-              id: meetingId,
-              data: row,
-              context: { ...req.context, from: 'migration' },
-            })
-          } catch (e: any) {
-            errors.push(`Error updating meeting with stockId ${row.magnaId}: ${e.message}`)
+              return
+            }
+            const stockData = stockIdMap.get(row.stock)
+            if (stockData === null || stockData === undefined) {
+              errors.push(
+                `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שלא נמצא ולא ייובא — האסיפה הזו לא תיווצר`,
+              )
+              return
+            }
+            if (!stockData?.active) {
+              errors.push(
+                `לאסיפה עם האסמכתא ${row.magnaId} יש נייר ערך  ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
+              )
+              return
+            }
+
+            row.stock = stockData
+
+            if (row.proofIdPrev) {
+              const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
+              if (prevMeeting && prevMeeting.docs.length > 0) {
+                const { ...dataToUpdate } = row
+                dataToUpdate.magnaId = row.proofIdPrev
+                delete dataToUpdate.proofIdPrev
+                const prevMeetingId = prevMeeting.docs[0].id
+                try {
+                  await req.payload.update({
+                    collection: 'meetings',
+                    id: prevMeetingId,
+                    data: dataToUpdate,
+                    context: { ...req.context, from: 'migration' },
+                  })
+                } catch (e: any) {
+                  errors.push(`שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`)
+                  req.payload.logger.error(
+                    `Error updating meeting with ProofIdPrev ${row.proofIdPrev}`,
+                  )
+                }
+              } else {
+                errors.push(`לא נמצאה אסיפה עם האסמכתא  ${row.proofIdPrev}, האסיפה לא תתעדכן`)
+                req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.proofIdPrev}`)
+              }
+            }
+
+            const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
+            if (existingMeeting?.docs.length > 0) {
+              const meetingId = existingMeeting?.docs[0].id
+              try {
+                await req.payload.update({
+                  collection: 'meetings',
+                  id: meetingId,
+                  data: row,
+                  context: { ...req.context, from: 'migration' },
+                })
+              } catch (e: any) {
+                errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+              }
+            } else {
+              try {
+                await req.payload.create({
+                  collection: 'meetings',
+                  data: row,
+                  context: { ...req.context, from: 'migration' },
+                })
+              } catch (e: any) {
+                errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
+              }
+            }
+          } catch (error) {
+            errors.push(`שגיאה בעיבוד הרשומה  ${rowIndex}: ${JSON.stringify(row)} - ${error}`)
           }
-        } else {
-          try {
-            await req.payload.create({
-              collection: 'meetings',
-              data: row,
-            })
-          } catch (e: any) {
-            errors.push(`Error creating meeting with stockId ${row.magnaId}: ${e.message}`)
-          }
-        }
-      } catch (error) {
-        errors.push(`Error processing row ${i}: ${JSON.stringify(row)} - ${error}`)
-      }
+        }),
+      )
     }
+    await promisePool.waitForAll()
     req.payload.logger.info(
       `Successfully processed ${rows.length} rows from CSV file: ${file.name}`,
     )
@@ -190,7 +225,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     return errors
   } catch (error) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
-    errors.push(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${JSON.stringify(error)}`)
     if (errors.length > 0) {
       console.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {

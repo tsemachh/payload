@@ -34,7 +34,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
     const buffer = Buffer.concat(chunks)
     const now = new Date()
     const formattedDate = format(now, 'dd-MM-yyyy')
-    const fileName = `upload_${formattedDate}.csv`
+    const fileName = `upload_agenda_${formattedDate}.csv`
     // Create a file object from the buffer
     const file = {
       data: buffer,
@@ -53,6 +53,14 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       file: file,
     })
     const errors = await processMeetingsAgendaFeedCsv(req, { file })
+    const formattedErrors = errors.map((err, index) => `${index + 1}. ${err}`).join('\n')
+    await req.payload.update({
+      collection: 'meetings-feed',
+      id: meetingsFeed.id,
+      data: {
+        comments: formattedErrors,
+      },
+    })
     return Response.json({
       message: 'Successfully uploaded CSV file',
       stocksFeed: meetingsFeed,
