@@ -43,6 +43,9 @@ export default function HoldingsView() {
     if (date) {
       fetchHoldings()
     }
+    if (!date) {
+      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+    }
   }, [date])
 
   const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
