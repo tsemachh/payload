@@ -11,7 +11,7 @@ import { useState } from 'react'
 interface DateSelectorProps {
   date: Date | undefined
   isDateAlwaysOpen?: boolean
-  onDateChange: (date: Date | undefined) => void
+  onDateChangeAction: (date: Date | undefined) => Promise<void> | void
   className?: string
   filterDate?: (date: Date) => boolean
 }
@@ -19,14 +19,14 @@ interface DateSelectorProps {
 export function DateSelector({
   date,
   isDateAlwaysOpen = false,
-  onDateChange,
+  onDateChangeAction,
   className,
   filterDate,
 }: DateSelectorProps) {
   const [open, setOpen] = useState(false)
 
   const handleSelect = (selectedDate: Date | undefined) => {
-    onDateChange(selectedDate)
+    onDateChangeAction(selectedDate)
     setOpen(false)
   }
   return (

@@ -1,12 +1,5 @@
 import { PayloadRequest } from 'payload'
-import {
-  Account,
-  Company,
-  HoldingFeedLine,
-  HoldingsFeed,
-  Stock,
-  SilencedStock,
-} from '@/payload-types'
+import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock , SilencedStock} from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export async function getPreviousFeed(
@@ -77,12 +70,12 @@ export const fetchAllSilencedStocks = async (
       },
       limit: 0,
     })
-    return result.docs
+    return result.docs;
   } catch (error) {
-    console.error('שגיאה בקריאה לניירות מושתקים:', error)
-    return []
+    console.error('שגיאה בקריאה לניירות מושתקים:', error);
+    return [];
   }
-}
+};
 /**
  * Preload accounts from companies
  * @param req The payload request

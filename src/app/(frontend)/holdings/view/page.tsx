@@ -88,6 +88,11 @@ export default function HoldingsView() {
     return response
   }
 
+  // Create an action to update the date
+  const handleDateChangeAction = async (newDate: Date | undefined) => {
+    setDate(newDate)
+  }
+
   const fetchHoldings = async () => {
     if (!date) {
       setIsError('תאריך לא נבחר.')
@@ -130,7 +135,8 @@ export default function HoldingsView() {
           <DateSelector
             date={date}
             isDateAlwaysOpen={true}
-            onDateChange={setDate}
+            onDateChangeAction={handleDateChangeAction}
+            // onDateChange={setDate}
             className="w-full"
             filterDate={(date) => {
               const now = new Date()

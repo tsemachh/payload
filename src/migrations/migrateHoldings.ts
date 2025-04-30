@@ -1,8 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql, { IResult } from 'mssql'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
-import { Account, Company, Holding, Stock } from '@/payload-types'
-
+import { Account, Company, Holding } from '@/payload-types'
+import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
 // SQL Server configuration
 const sqlConfig: sql.config = {
   user: 'sa',
@@ -18,7 +18,7 @@ const sqlConfig: sql.config = {
 }
 
 //const DAYS_TO_IMPORT: number = 365 * 7
-const START_DATE_TO_IMPORT:string = '2025-01-01'
+const START_DATE_TO_IMPORT: string = '2025-01-01'
 
 interface HoldingRow {
   stockNum: string
@@ -29,7 +29,7 @@ interface HoldingRow {
   date_update: Date
 }
 
-async function getHoldingsCount(pool: sql.ConnectionPool,holdingDate:string): Promise<number> {
+async function getHoldingsCount(pool: sql.ConnectionPool, holdingDate: string): Promise<number> {
   const result = await pool.request().query(`
       SELECT COUNT(*) as count
       FROM [${sqlConfig.database}].[dbo].[holdings]
@@ -37,37 +37,40 @@ async function getHoldingsCount(pool: sql.ConnectionPool,holdingDate:string): Pr
   `)
   return result.recordset[0].count
 }
+
 // Generate array of dates from START_DATE_TO_IMPORT to today
 const generateDateArray = (startDateStr: string): string[] => {
-  const dates: string[] = [];
-  const startDate = new Date(startDateStr);
-  const today = new Date();
+  const dates: string[] = []
+  const startDate = new Date(startDateStr)
+  const today = new Date()
 
   // If start date is in the future, return empty array
   if (startDate > today) {
-    return dates;
+    return dates
   }
 
   // Clone the start date to avoid modifying it
-  const currentDate = new Date(startDate);
+  const currentDate = new Date(startDate)
 
   // Loop through each day from start date to today
   while (currentDate <= today) {
     // Format date as yyyy-mm-dd
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDate.getDate()).padStart(2, '0');
-    dates.push(`${year}-${month}-${day}`);
+    const year = currentDate.getFullYear()
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+    const day = String(currentDate.getDate()).padStart(2, '0')
+    dates.push(`${year}-${month}-${day}`)
 
     // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate.setDate(currentDate.getDate() + 1)
   }
 
-  return dates;
-};
+  return dates
+}
 
-
-async function getHoldingsPage(pool: sql.ConnectionPool,holdingDate:string): Promise<sql.IResult<HoldingRow>> {
+async function getHoldingsPage(
+  pool: sql.ConnectionPool,
+  holdingDate: string,
+): Promise<sql.IResult<HoldingRow>> {
   // Using string interpolation for OFFSET and FETCH parameters to avoid parameter resolution issues
   const result = await pool.request().query(`
       SELECT [stockNum]
@@ -78,12 +81,10 @@ async function getHoldingsPage(pool: sql.ConnectionPool,holdingDate:string): Pro
            , [date_update]
       FROM [${sqlConfig.database}].[dbo].[holdings]
       WHERE [date1] = '${holdingDate}'
-      ORDER BY [firm], [subAccountNum], [stockNum]          
-    `)
+      ORDER BY [firm], [subAccountNum], [stockNum]
+  `)
   return result
 }
-
-
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -96,7 +97,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
-    const stockCache = new Map<string, string>()
+    const stockCache = await getStockIdToSequenceMap(req)
     let successCount = 0
     let errorCount = 0
 
@@ -108,7 +109,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         //Find Company id
         const companyId = accountCache.get(accountKey)
         if (!companyId) {
-          console.warn(`Company ID not found for account key: ${accountKey}`);
+          console.warn(`Company ID not found for account key: ${accountKey}`)
           await logMigrationFault({
             payload,
             type: 'holding',
@@ -116,66 +117,63 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             typeId: accountKey,
             comments: createErrorFaultComment({
               id: accountKey,
-              operation: "Holdings - Company ID lookup",
-              error: new Error(`Company ID not found for account key: ${accountKey}`)
-            })
-          });
-          continue;
+              operation: 'Holdings - Company ID lookup',
+              error: new Error(`Company ID not found for account key: ${accountKey}`),
+            }),
+          })
+          continue
         }
         //Find the holding in the map if not found add it to the map
         let quantityPerStockMap: Map<string, number> | undefined = companyHoldings.get(companyId)
         if (!quantityPerStockMap) {
-          quantityPerStockMap = new Map<string, number>
-          companyHoldings.set(companyId as string, quantityPerStockMap)
+          quantityPerStockMap = new Map<string, number>()
+          companyHoldings.set(companyId, quantityPerStockMap)
         }
         const curQuantity = quantityPerStockMap.get(holding.stockNum)
-        if (curQuantity)
-          quantityPerStockMap.set(holding.stockNum, curQuantity + holding.qty)
-        else
-          quantityPerStockMap.set(holding.stockNum, holding.qty)
+        if (curQuantity) quantityPerStockMap.set(holding.stockNum, curQuantity + holding.qty)
+        else quantityPerStockMap.set(holding.stockNum, holding.qty)
       }
       //Iterate Map Values and upsert the Holdings by next logic:
       // Create Holdings Object by filling companyId + valueDate
       // Holdings - for each stock use the stockCache to get the stockId and fill the holdings with stock Id and the quantity
       //If Holding with company and holdingDate exists then update the record
       //Else insert new record with the holdings
-      for (const [companyId, stocksMap] of companyHoldings.entries()) {
+      // Convert to array to avoid iterator issues
+      for (const [companyId, stocksMap] of Array.from(companyHoldings.entries())) {
         try {
           // Prepare holdings array
-          const holdingsArray = [];
-          for (const [stockNum, quantity] of stocksMap.entries()) {
-            const stockId = stockCache.get(`${stockNum}`);
+          const holdingsArray = []
+          for (const [stockNum, quantity] of Array.from(stocksMap.entries())) {
+            const stockId = stockCache.get(`${stockNum}`)
             if (stockId) {
               holdingsArray.push({
                 quantity,
-                stock: stockId
-              });
+                stock: stockId,
+              })
             } else {
-              console.warn(`Stock ID not found for stock number: ${stockNum}`);
+              console.warn(`Stock ID not found for stock number: ${stockNum}`)
             }
           }
           if (holdingsArray.length === 0) {
-            console.warn(`No valid stocks found for company: ${companyId}`);
-            continue;
+            console.warn(`No valid stocks found for company: ${companyId}`)
+            continue
           }
           //Delete old holdings
           await payload.delete({
             collection: 'holdings',
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' }
+              context: { ...req.context, from: 'migration' },
             },
-            where:{
-              company:{
-                equals: companyId
+            where: {
+              company: {
+                equals: companyId,
               },
-              valueDate:{
-                equals: holdingDate
-              }
-            }
-          });
-
-
+              valueDate: {
+                equals: holdingDate,
+              },
+            },
+          })
 
           for (let i = 0; i < holdingsArray.length; i++) {
             const holding = holdingsArray[i]
@@ -184,69 +182,53 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               company: companyId,
               valueDate: holdingDate,
               stock: holding.stock,
-              quantity:holding.quantity
-            } as Partial<Holding>;
+              quantity: holding.quantity,
+            } as Partial<Holding>
             await payload.create({
               collection: 'holdings',
-              data: holdingData as Holding,
+              data: holdingData as Partial<Holding> as unknown as Holding,
               req: {
                 ...req,
-                context: { ...req.context, from: 'migration' }
-              }
-            });
-            successCount++;
+                context: { ...req.context, from: 'migration' },
+              },
+            })
+            successCount++
           }
         } catch (error) {
-          console.error(`Error processing holdings for company ${companyId}:`, error);
-          errorCount++;
+          console.error(`Error processing holdings for company ${companyId}:`, error)
+          errorCount++
           await logMigrationFault({
             payload,
             type: 'holding',
-            row: "",
-            typeId: "",
-            comments: createErrorFaultComment({id:companyId,operation:"Holdings", error:error as Error})
-          });
+            row: '',
+            typeId: '',
+            comments: createErrorFaultComment({
+              id: companyId,
+              operation: 'Holdings',
+              error: error as Error,
+            }),
+          })
         }
       }
     }
-
-    // Prefetch common stocks to reduce database lookups
-    console.log('Prefetching common stocks...')
-    const allStocks = await payload.find({
-      collection: 'stocks',
-      limit: 20000,
-      req,
-      depth:1
-    })
-
-    for (const stock of allStocks.docs) {
-      if (stock.relatedStock)
-        stockCache.set(`${stock.stockId}`, (stock.relatedStock as Stock).id)
-      else {
-        if (stock.stockId) {
-          stockCache.set(`${stock.stockId}`, stock.id)
-        }
-      }
-    }
-    console.log(`Prefetched ${stockCache.size} stocks`)
 
     // Prefetch common accounts to reduce database lookups
     console.log('Prefetching common accounts...')
     const allAccounts = await payload.find({
       collection: 'accounts',
       limit: 10000,
-      where:{isCentralAccount:{equals:true}},
+      where: { isCentralAccount: { equals: true } },
       req,
-      depth:2
+      depth: 2,
     })
 
     for (const account of allAccounts.docs) {
       const company = account.company as Company
       if (company?.companyId && account.accountNumber) {
-        const accounts=[account.accountNumber]
+        const accounts = [account.accountNumber]
         if (account?.accounts?.docs) {
           for (let i = 0; i < account?.accounts?.docs?.length; i++) {
-            const subAccount:Account = account?.accounts?.docs[i] as Account
+            const subAccount: Account = account?.accounts?.docs[i] as Account
             accounts.push(subAccount.accountNumber)
           }
         }
@@ -254,8 +236,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const accountNumber = accounts[i]
           const key = `${company.companyId}-${accountNumber}`
           accountCache.set(key, company.id)
-          if (company?.parentCompany && company.parentCompany.docs && company.parentCompany.docs.length > 0){
-            const parentCompany:Company= company?.parentCompany?.docs[0] as Company
+          if (
+            company?.parentCompany &&
+            company.parentCompany.docs &&
+            company.parentCompany.docs.length > 0
+          ) {
+            const parentCompany: Company = company?.parentCompany?.docs[0] as Company
             const key = `${parentCompany.companyId}-${accountNumber}`
             accountCache.set(key, parentCompany.id)
           }
@@ -263,33 +249,35 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     }
     console.log(`Prefetched ${accountCache.size} accounts`)
-    const holdingDates: string[] = generateDateArray(START_DATE_TO_IMPORT);
-    console.log(`Generated ${holdingDates.length} dates to process`);
+    const holdingDates: string[] = generateDateArray(START_DATE_TO_IMPORT)
+    console.log(`Generated ${holdingDates.length} dates to process`)
 
     // Control batch size and parallel processing
-    const MAX_CONCURRENT_PROCESSES = 10;
+    const MAX_CONCURRENT_PROCESSES = 10
 
     // Process holdings in batches with controlled concurrency
     for (let i = 0; i < holdingDates.length; i += MAX_CONCURRENT_PROCESSES) {
-      const batch = [];
+      const batch = []
 
       // Create a batch of promises up to MAX_CONCURRENT_PROCESSES
       for (let j = 0; j < MAX_CONCURRENT_PROCESSES && i + j < holdingDates.length; j++) {
-        const holdingDate = holdingDates[i + j];
+        const holdingDate = holdingDates[i + j]
         // Get total count
-        const totalCount = await getHoldingsCount(pool, holdingDate);
-        console.log(`Total holdings to process for ${holdingDate}: ${totalCount}`);
+        const totalCount = await getHoldingsCount(pool, holdingDate)
+        console.log(`Total holdings to process for ${holdingDate}: ${totalCount}`)
 
         // Process all pages
-        const holdings = await getHoldingsPage(pool, holdingDate);
+        const holdings = await getHoldingsPage(pool, holdingDate)
 
         // Add to batch
-        batch.push(processHoldingsChunk(holdings, holdingDate));
+        batch.push(processHoldingsChunk(holdings, holdingDate))
       }
 
       // Wait for all promises in the current batch to complete
-      await Promise.all(batch);
-      console.log(`Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(holdingDates.length / MAX_CONCURRENT_PROCESSES)}`);
+      await Promise.all(batch)
+      console.log(
+        `Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(holdingDates.length / MAX_CONCURRENT_PROCESSES)}`,
+      )
     }
     console.log(`Migration completed. Success: ${successCount}, Errors: ${errorCount}`)
   } catch (error) {
