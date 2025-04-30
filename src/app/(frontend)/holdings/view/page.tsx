@@ -43,6 +43,9 @@ export default function HoldingsView() {
     if (date) {
       fetchHoldings()
     }
+    if (!date) {
+      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+    }
   }, [date])
 
   const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
@@ -104,9 +107,9 @@ export default function HoldingsView() {
       if (response.ok) {
         if (!data.docs.length) {
           setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
-          return
+        } else {
+          setError('')
         }
-        setError('')
         setHoldings(
           data.docs.map((holding: any) => ({
             id: holding.id,
