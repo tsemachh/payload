@@ -52,6 +52,7 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
       collection: 'meetings-feed',
       file: file,
     })
+    
     const errors = await processMeetingsFeedCsv(req, { file })
     const formattedErrors = errors.map((err, index) => `${index + 1}. ${err}`).join('\n')
     await req.payload.update({

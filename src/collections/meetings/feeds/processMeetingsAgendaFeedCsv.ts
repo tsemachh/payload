@@ -1,6 +1,8 @@
 import { PayloadRequest } from 'payload'
 import csvToJson from 'convert-csv-to-json'
 import iconv from 'iconv-lite'
+import { PromisePool } from '@/utils/promisePool'
+
 export type TopicType = 'reporting' | 'decision'
 
 export const topicTypesMap: Map<string, TopicType> = new Map([
@@ -10,6 +12,7 @@ export const topicTypesMap: Map<string, TopicType> = new Map([
 export function getAgendaType(rowType: string): TopicType {
   return topicTypesMap.get((rowType || '').trim()) || 'decision'
 }
+
 export const majorityTypesMap: Map<string, 'regular' | 'privileged'> = new Map([
   ['רוב רגיל', 'regular'],
   ['רוב מיוחד', 'privileged'],
@@ -17,26 +20,23 @@ export const majorityTypesMap: Map<string, 'regular' | 'privileged'> = new Map([
 
 export function getMajorityType(label: string): 'regular' | 'privileged' {
   const mappedValue = majorityTypesMap.get((label || '').trim())
-
   if (mappedValue) {
     return mappedValue
   }
-
-  if ((label || '').trim() !== 'רוב רגיל') {
-    return 'privileged'
-  }
-  return 'regular'
+  return (label || '').trim() !== 'רוב רגיל' ? 'privileged' : 'regular'
 }
+
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
 ): Promise<string[]> => {
   const errors: string[] = []
+
   try {
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      errors.push('No file found in request')
+      errors.push('לא נמצא קובץ בבקשה')
       return errors
     }
 
@@ -51,9 +51,8 @@ export const processMeetingsAgendaFeedCsv = async (
         topicType: getAgendaType(data.MeetingType || '') as TopicType,
         magnaId: data.ProofId || '',
         majorityType: getMajorityType(data.MajorityRequired) || '',
-        otherMajority: data.OtherMajority || '',
       }
-
+      console.log('row', row)
       const magnaId = row.magnaId
       if (!rowsByMagnaId.has(magnaId)) {
         rowsByMagnaId.set(magnaId, [])
@@ -64,41 +63,45 @@ export const processMeetingsAgendaFeedCsv = async (
     req.payload.logger.info(
       `Processing ${rowsByMagnaId.size} unique meetings from CSV file: ${file.name}`,
     )
+    const magnaIds = Array.from(rowsByMagnaId.keys())
+    const existingMeetings = await req.payload.find({
+      collection: 'meetings',
+      where: {
+        magnaId: {
+          in: magnaIds,
+        },
+      },
+      limit: 0,
+    })
+    const meetingsMap = new Map<string, any>(
+      existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
+    )
+    const promisePool = new PromisePool(20)
+    const promises: Promise<void>[] = []
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
-      try {
-        const existingMeetings = await req.payload.find({
-          collection: 'meetings',
-          where: {
-            magnaId: {
-              equals: magnaId,
-            },
-          },
-          limit: 1,
-        })
+      const meeting = meetingsMap.get(magnaId)
+      if (!meeting) {
+        errors.push(`  לא נמצאה אסיפה עם מספר האסמכתא ${magnaId} `)
+        continue
+      }
 
-        if (existingMeetings.docs.length === 0) {
-          errors.push(`No meeting found with magnaId ${magnaId}`)
-          continue
-        }
-
-        for (const meeting of existingMeetings.docs) {
+      promisePool.add(async () => {
+        try {
           await req.payload.update({
             collection: 'meetings',
             id: meeting.id,
-            data: {
-              agenda: agendaRows,
-            },
+            data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
           })
+        } catch (e: any) {
+          errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
-      } catch (error: any) {
-        errors.push(`Error updating meetings for magnaId ${magnaId}: ${error.message}`)
-      }
+      })
     }
 
+    await promisePool.waitForAll()
     req.payload.logger.info(`Finished processing file: ${file.name}`)
-
     if (errors.length > 0) {
       console.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
@@ -107,9 +110,9 @@ export const processMeetingsAgendaFeedCsv = async (
     }
 
     return errors
-  } catch (error) {
-    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
-    errors.push(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
+  } catch (e) {
+    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(e)}`)
+    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${JSON.stringify(e)}`)
     return errors
   }
 }
