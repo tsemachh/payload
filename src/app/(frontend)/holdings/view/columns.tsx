@@ -1,4 +1,5 @@
 'use client'
+import { tree } from 'next/dist/build/templates/app-page'
 import { Column } from '../../types/meetings'
 
 export const columns: Column<any>[] = [
@@ -28,6 +29,7 @@ export const columns: Column<any>[] = [
     key: 'company',
     header: 'חברה',
     type: 'string',
+    filterable: true,
     minWidth: 150,
     width: 350,
   },

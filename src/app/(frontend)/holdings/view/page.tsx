@@ -141,32 +141,25 @@ export default function HoldingsView() {
 
   return (
     <div className=" flex flex-col md:flex-row gap-6 px-4 pt-1">
-      <div className="w-full md:w-1/2">
-        <div className="flex flex-col gap-6 px-4 pt-10 md:px-10">
-          <div>
-            <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
-            <DateSelector
-              date={date}
-              onDateChange={setDate}
-              className="w-full"
-              filterDate={(date) => {
-                const day = date.getDay()
-                return day == 5 || day == 6
-              }}
-            />
-          </div>
-          <div>
-            <label className="text-base font-semibold mb-2 block">חברות</label>
-            <CompanyTreeSelector
-              companies={companies}
-              selectedCompanies={selectedCompanies}
-              onSelectionChange={setSelectedCompanies}
-              className="w-full"
-            />
-          </div>
+      <div className="w-full md:flex-[1]">
+        <div>
+          <label className="text-base font-semibold mb-2 block h-100">תאריך ערך</label>
+          <DateSelector
+            date={date}
+            isDateAlwaysOpen={true}
+            onDateChange={setDate}
+            className="w-full"
+            filterDate={(date) => {
+              const now = new Date()
+              now.setHours(0, 0, 0, 0)
+              const day = date.getDay()
+              return day == 5 || day == 6 || date > now
+            }}
+          />
         </div>
       </div>
-      <div className="w-full md:w-1/2">
+      <div className="hidden md:block w-px bg-muteda" />
+      <div className="w-full md:flex-[3]">
         {}
         {isLoading ? (
           <div className="flex flex-col h-[500px] items-center pt-[100px] ">
@@ -174,8 +167,10 @@ export default function HoldingsView() {
             <p className="text-center">מייבא נתונים...</p>
           </div>
         ) : (
-          holdings.length > 0 && (
+          holdings.length > 0 &&
+          date && (
             <div>
+              <h4 className="text-xl text-center">אחזקות לתאריך {format(date, 'dd/MM/yyyy')}</h4>
               <DataTable
                 columns={columns}
                 data={holdings}
@@ -183,19 +178,16 @@ export default function HoldingsView() {
                 defaultSortField="lastUpdated"
                 defaultSortDirection="desc"
                 tableId="holdings-view-table"
-                filterOption={false}
-                tableHeightOffset={400}
+                columnsOption={false}
+                tableHeightOffset={250}
               />
-              <div className="flex justify-end gap-3 mt-6 ml-[8%] rtl">
-                <div className="flex items-center space-x-4 space-x-reverse">
-                  {holdings.length > 0 && (
-                    <ExportButton
-                      data={holdings}
-                      filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
-                    />
-                  )}
-                  <Button onClick={() => {}}>חזרה לעריכת חברות ותאריך</Button>
-                </div>
+              <div className="flex justify-center mt-4">
+                {holdings.length > 0 && (
+                  <ExportButton
+                    data={holdings}
+                    filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
+                  />
+                )}
               </div>
             </div>
           )

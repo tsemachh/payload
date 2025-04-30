@@ -88,9 +88,11 @@ export const RecordsTable: React.FC<{
     error: holding.error ?? ' ',
   }))
 
-  const columns = invalid ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)] : holdingColumns
+  const columns = invalid
+    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)]
+    : holdingColumns
   const tableWidth = columns.reduce((sum, column) => {
-    return sum + (column.width || column.minWidth) + 25
+    return sum + (column.width || column.minWidth) + 40
   }, 0)
 
   return (

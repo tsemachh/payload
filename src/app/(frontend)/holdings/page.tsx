@@ -217,8 +217,10 @@ export default function HoldingsFeedView() {
                 onDateChange={setDate}
                 className="w-full"
                 filterDate={(date) => {
+                  const now = new Date()
+                  now.setHours(0, 0, 0, 0)
                   const day = date.getDay()
-                  return day == 5 || day == 6
+                  return day == 5 || day == 6 || date > now
                 }}
               />
             </div>
