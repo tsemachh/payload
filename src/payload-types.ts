@@ -344,12 +344,11 @@ export interface Meeting {
     | {
         text: string;
         shortText?: string | null;
+        isRemovedFromAgenda?: boolean | null;
         topicType: 'reporting' | 'decision';
         majorityType?: ('regular' | 'privileged') | null;
-        otherMajority?: string | null;
         vpercent?: number | null;
         vPercentSpecial?: number | null;
-        isRemovedFromAgenda?: boolean | null;
         recommendation?: string | null;
         result?: ('0' | '1' | '2' | '3') | null;
         id?: string | null;
@@ -1061,12 +1060,11 @@ export interface MeetingsSelect<T extends boolean = true> {
     | {
         text?: T;
         shortText?: T;
+        isRemovedFromAgenda?: T;
         topicType?: T;
         majorityType?: T;
-        otherMajority?: T;
         vpercent?: T;
         vPercentSpecial?: T;
-        isRemovedFromAgenda?: T;
         recommendation?: T;
         result?: T;
         id?: T;
