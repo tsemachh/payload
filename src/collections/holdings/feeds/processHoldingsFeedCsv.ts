@@ -79,16 +79,9 @@ export const processHoldingsFeedCsv = async (
       validationResult.fatalErrors = fatalErrors
       return validationResult
     }
-//-------
-    const accountToCompanyMap = await preloadAccountsToCompanyMap(
-      req,
-      doc.selectedCompanies as string[],
-    )
-
     const standardizedRows = standardizeRows(results)
 
-    const stockMap = await preloadStocks(req, standardizedRows)
-//-------
+
     const uniqueAccountIds = Array.from(
       new Set(
         standardizedRows
@@ -96,21 +89,17 @@ export const processHoldingsFeedCsv = async (
           .filter((accountId) => !isNaN(accountId)),
       ),
     )
-
-    const warnings = await checkFeedWarnings(
+//-------
+    const accountToCompanyMap = await preloadAccountsToCompanyMap(
       req,
-      valueDate,
-      uniqueAccountIds,
-      standardizedRows,
-      accountToCompanyMap,
       doc.selectedCompanies as string[],
     )
-    validationResult.warnings = warnings
 
-//-------
+    const stockMap = await preloadStocks(req, standardizedRows)
+    const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
+
     // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
-    const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
     const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);  // סגור את הסוגריים כאן
 
     for (const [index, row] of standardizedRows.entries()) {
@@ -129,7 +118,15 @@ export const processHoldingsFeedCsv = async (
     console.log("-----validationResult.validRecords",validationResult.validRecords)
 //-------
 
-
+    const warnings = await checkFeedWarnings(
+      req,
+      valueDate,
+      uniqueAccountIds,
+      standardizedRows,
+      accountToCompanyMap,
+      doc.selectedCompanies as string[],
+    )
+    validationResult.warnings = warnings
     // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {
       return { line: item as HoldingFeedLine }

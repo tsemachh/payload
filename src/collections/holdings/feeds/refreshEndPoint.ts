@@ -1,6 +1,6 @@
 
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
-import { initializeValidationResult, loadValidationData, runValidationLoop } from './FeedValidationService';
+import { processValidationData } from './FeedValidationService';
 
 
 const refreshEndPoint = async (req: PayloadRequest) => {
@@ -46,27 +46,8 @@ const refreshEndPoint = async (req: PayloadRequest) => {
   }
 
   console.log("-----@@@selectedCompanies", selectedCompanies);
+  const validationResult = await processValidationData(req, selectedCompanies, recordsArray);
 
-
-  const validationResult = initializeValidationResult();
-
-  const {
-    accountToCompanyMap,
-    stockMap,
-    silencedStockIds
-  } = await loadValidationData(
-    req,
-    selectedCompanies,
-    recordsArray
-  );
-
-  await runValidationLoop(
-    recordsArray,
-    accountToCompanyMap,
-    stockMap,
-    silencedStockIds,
-    validationResult
-  );
 
   console.log("-----@@@validationResult.silencedRecords", validationResult.silencedRecords);
   console.log("-----@@@validationResult.validRecords", validationResult.validRecords);
