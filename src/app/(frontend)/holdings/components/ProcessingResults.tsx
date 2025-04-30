@@ -47,17 +47,19 @@ export function ProcessingResults({
   onCancelAction,
   isValidating = false,
 }: ProcessingResultsProps) {
-  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>(
-    validRecords.length > 0
-      ? 'valid'
-      : recordErrors.length > 0
-      ? 'invalid'
-      : silencedRecords?.length > 0
-      ? 'silenced'
-      : 'valid'
-  );
+  const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid')
   const [shouldContinue, setShouldContinue] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
+
+  useEffect(() => {
+    if (validRecords.length > 0) {
+      setActiveTab('valid')
+    } else if (recordErrors.length > 0) {
+      setActiveTab('invalid')
+    } else if (silencedRecords?.length > 0) {
+      setActiveTab('silenced')
+    }
+  }, [validRecords, recordErrors, silencedRecords])
 
   useEffect(() => {
     // Show warning dialog when warnings are present
