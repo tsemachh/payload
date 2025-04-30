@@ -28,7 +28,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import { Column, CompanyTableDate, DataTableProps, MeetingTableDataType } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
-import { unSortAbleColumnsOnServer } from '../meetings-future/meetingTableConstants'
+import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],

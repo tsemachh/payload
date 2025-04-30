@@ -5,7 +5,7 @@ import { MainNav } from './main-nav'
 import { ThemeChooser } from '@/components/theme-chooser'
 import { UserNav } from './user-nav'
 import { usePathname } from 'next/navigation'
-import { HoldingsNav } from '../holdings/components/sub-nav-holdings'
+import { HoldingsNav } from '../holdings/sub-nav-holdings'
 
 export function HeaderWithNav() {
   const auth = useAuth()
@@ -16,9 +16,8 @@ export function HeaderWithNav() {
 
   // Don't render the top menu if the user is not logged in
   // Check if auth.user exists, is not null, and is a valid user object with expected properties
-  const isValidUser = auth.user && 
-                     typeof auth.user === 'object' &&
-                     (auth.user.id || auth.user.email);
+  const isValidUser =
+    auth.user && typeof auth.user === 'object' && (auth.user.id || auth.user.email)
 
   if (!isValidUser) {
     return (
@@ -43,10 +42,16 @@ export function HeaderWithNav() {
           <UserNav />
         </div>
       </div>
-      {pathname.startsWith('/holdings') && (
+      {pathname.startsWith('/holdings') ? (
         <div className="flex h-8 items-center justify-between px-4">
           <HoldingsNav />
         </div>
+      ) : (
+        pathname.startsWith('/holdings') && (
+          <div className="flex h-8 items-center justify-between px-4">
+            <HoldingsNav />
+          </div>
+        )
       )}
     </header>
   )
