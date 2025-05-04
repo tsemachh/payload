@@ -44,6 +44,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     sortKey: 'companies',
     minWidth: 50,
     width: 50,
+    isAlwaysVisible: true,
   },
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {

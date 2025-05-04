@@ -756,6 +756,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                 {columns.map((column) => (
                   <DropdownMenuCheckboxItem
                     key={String(column.key)}
+                    disabled={column.isAlwaysVisible}
                     checked={columnVisibility[String(column.key)]}
                     onCheckedChange={() => toggleColumnVisibility(String(column.key))}
                     onSelect={(event) => event.preventDefault()}

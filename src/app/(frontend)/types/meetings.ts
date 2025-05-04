@@ -52,6 +52,7 @@ export interface Column<T> {
   width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
   options?: { label: string; value: string }[]
+  isAlwaysVisible?: boolean
 }
 
 // Structure for faceted filters
