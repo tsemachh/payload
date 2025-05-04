@@ -67,7 +67,7 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>{row.error}</span>
           {row.error === 'נייר ערך לא מוכר' && (
-            <SilenceDialog stockId={row.stockId} companies={companies} allRecords={allRecords} onRefresh={onRefresh} />
+            <SilenceDialog stockId={row.stockId} companies={companies} allRecords={allRecords} onRefreshAction={onRefresh} />
           )}
         </div>
       )

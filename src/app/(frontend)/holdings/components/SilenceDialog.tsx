@@ -9,10 +9,10 @@ interface SilenceDialogProps {
   stockId: string | number
   companies: string[]
   allRecords:HoldingFeedLine[]
-  onRefresh: (records: HoldingFeedLine[]) => void;
+  onRefreshAction: (records: HoldingFeedLine[]) => void;
 }
 
-export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,allRecords,onRefresh }:SilenceDialogProps) => {
+export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,allRecords,onRefreshAction }:SilenceDialogProps) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
@@ -26,7 +26,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
       if (response.ok) {
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
         setTimeout(() => {
-          onRefresh(allRecords)
+          onRefreshAction(allRecords)
         }, 2000)      } else {
         setResultMessage('נכשל להשתיק את השגיאה.')
       }
