@@ -30,11 +30,17 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             },
           ],
         },
-        {
-          companies: {
-            in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-          },
-        },
+        user?.leafCompanies
+          ? {
+              companies: {
+                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+              },
+            }
+          : {
+              companies: {
+                in: [], // no matches if user.leafCompanies is missing or empty
+              },
+            },
       ],
     },
   })
