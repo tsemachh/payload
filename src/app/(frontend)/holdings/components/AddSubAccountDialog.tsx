@@ -10,14 +10,14 @@ interface AddSubAccountDialogProps {
   accountId: string | number
   companies: string[]
   allRecords: HoldingFeedLine[]
-  onRefresh: (records: HoldingFeedLine[]) => void
+  onRefreshAction: (records: HoldingFeedLine[]) => void
 }
 
 export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
                                                                           accountId,
                                                                           companies,
                                                                           allRecords,
-                                                                          onRefresh,
+                                                                          onRefreshAction,
                                                                         }) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -42,7 +42,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
       if (response.ok) {
         setResultMessage('החשבון נוסף בהצלחה!')
         setTimeout(() => {
-          onRefresh(allRecords)
+          onRefreshAction(allRecords)
         }, 2000)
       } else {
         setResultMessage('נכשל להוסיף את החשבון.')

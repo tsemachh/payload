@@ -62,7 +62,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle>האם את/ה בטוח/ה שברצונך להשתיק את נייר הערך?</DialogTitle>
+            <DialogTitle dir="rtl"> האם בטוח שברצונך להשתיק את נייר הערך?</DialogTitle>
           </DialogHeader>
 
           {resultMessage ? (

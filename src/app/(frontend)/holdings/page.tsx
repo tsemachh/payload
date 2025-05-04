@@ -174,7 +174,7 @@ export default function HoldingsFeedView() {
       setIsUploading(false)
     }
   }
-  const handleRefresh = async (records:HoldingFeedLine[]) => {
+  const handleRefreshAction = async (records:HoldingFeedLine[]) => {
     setvalidRecords([])
     setSilencedRecords([])
     setRecordErrors([])
@@ -357,7 +357,7 @@ export default function HoldingsFeedView() {
             className="mt-16"
             onConfirmAction={handleSaveConfirmedAction}
             onCancelAction={handleCancelAction}
-            onRefresh={handleRefresh}
+            onRefresh={handleRefreshAction}
             isValidating={isValidating}
             isUploading={isUploading}
           />

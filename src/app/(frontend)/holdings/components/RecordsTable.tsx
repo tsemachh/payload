@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Column } from '../../types/meetings'
-import { DataTableStatic } from '../../components/data-table-client'
+import { DataTableStatic } from '@/components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
 import { AddSubAccountDialog } from './AddSubAccountDialog'
