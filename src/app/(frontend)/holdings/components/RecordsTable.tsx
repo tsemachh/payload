@@ -86,7 +86,6 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
             />
           )}
         </div>
-
       )
     },
   },
