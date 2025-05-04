@@ -15,10 +15,7 @@ const refreshEndPoint = async (req: PayloadRequest) => {
   }
   // @ts-expect-error req not null
   const standardizedRecords = await req.json()
- //const standardizedRecords = await req?.json()
 
-  console.log("-----@@@companies", companies);
-  console.log("-----@@@records", standardizedRecords);
 
   // Ensure we have an array to work with
   const recordsArray: any[] = Array.isArray(standardizedRecords)
@@ -27,7 +24,6 @@ const refreshEndPoint = async (req: PayloadRequest) => {
       ? [standardizedRecords]
       : [];
 
-  console.log("-----@@@recordsArray", recordsArray);
 
   // Parse companies parameter
   let selectedCompanies: string[] = [];
@@ -46,8 +42,6 @@ const refreshEndPoint = async (req: PayloadRequest) => {
     }
   }
 
-  console.log("-----@@@selectedCompanies", selectedCompanies);
-
 
   const validationResult: FeedValidationResult = {
     fatalErrors: [],
@@ -58,11 +52,6 @@ const refreshEndPoint = async (req: PayloadRequest) => {
   }
 
   await processValidationData(req, selectedCompanies, recordsArray,validationResult);
-
-
-  console.log("-----@@@validationResult.silencedRecords", validationResult.silencedRecords);
-  console.log("-----@@@validationResult.validRecords", validationResult.validRecords);
-  console.log("-----@@@validationResult", validationResult);
 
 
     return Response.json({
