@@ -72,7 +72,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle>האם להוסיף את החשבון לחברה שנבחרה?</DialogTitle>
+            <DialogTitle className="direction-rtl text-right">האם להוסיף את החשבון לחברה שנבחרה?</DialogTitle>
           </DialogHeader>
 
           {resultMessage ? (
