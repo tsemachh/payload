@@ -45,6 +45,7 @@ export function DataTableServer<T extends Record<string, any>>({
   onServerSort,
   onServerSearch,
   initialSearchTerm = '',
+  tableHeightOffset = 200,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
@@ -271,6 +272,10 @@ export function DataTableServer<T extends Record<string, any>>({
             <DropdownMenuContent>
               {columns.map((column) => (
                 <DropdownMenuCheckboxItem
+                  style={{
+                    overflowY: 'auto',
+                    maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+                  }}
                   key={String(column.key)}
                   checked={columnVisibility[String(column.key)]}
                   onCheckedChange={() => toggleColumnVisibility(String(column.key))}
@@ -290,12 +295,16 @@ export function DataTableServer<T extends Record<string, any>>({
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
               <LoadingSpinnerDiamond />
-              <p className="text-sm text-muted-foreground">טוען נתונים...</p>
             </div>
           </div>
         )}
         <div className="rounded-md border cursor-default">
-          <div className="max-h-[calc(108vh-300px)] overflow-auto relative">
+          <div
+            className="overflow-auto relative"
+            style={{
+              maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
+            }}
+          >
             <Table className="table-auto w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
