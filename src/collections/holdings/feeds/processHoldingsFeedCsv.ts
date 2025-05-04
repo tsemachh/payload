@@ -3,6 +3,7 @@ import { HoldingFeedLine, HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { checkFeedWarnings, validateRow, validateWholeFeed } from '@/collections/holdings/feeds/FeedValidations'
 import { parseFileContent, standardizeRows } from '@/collections/holdings/feeds/FeedUtils'
+import { performance } from 'perf_hooks'
 import {
   createHoldings,
   deleteExistingHoldings,
@@ -25,6 +26,7 @@ export const processHoldingsFeedCsv = async (
   doc: Partial<HoldingsFeed>,
   validateOnly: boolean = false,
 ): Promise<FeedValidationResult | undefined> => {
+  const processStartTime = performance.now()
   try {
 
     const validationResult: FeedValidationResult = {
@@ -34,6 +36,9 @@ export const processHoldingsFeedCsv = async (
       validRecords: [],
       silencedRecords: [],
     }
+    req.payload.logger.info('Starting holdings feed processing')
+    // Initial validation
+    // Get the file from the request
 
     const file = req.file
     if (!file) {
@@ -71,23 +76,44 @@ export const processHoldingsFeedCsv = async (
       return validationResult
     }
 
+    const parseStartTime = performance.now()
     const results = parseFileContent(file).filter(row => row.length > 0);
+    const parseEndTime = performance.now()
+    req.payload.logger.info(`File parsing completed in ${parseEndTime - parseStartTime}ms, found ${results.length} rows`)
 
+    // Validate the whole feed
+    const validateStartTime = performance.now()
     const fatalErrors = validateWholeFeed(results)
+    const validateEndTime = performance.now()
+    req.payload.logger.info(`Feed validation completed in ${validateEndTime - validateStartTime}ms`)
+
     if (fatalErrors.length > 0) {
       validationResult.fatalErrors = fatalErrors
+      const processEndTime = performance.now()
+      req.payload.logger.info(`Process aborted due to fatal errors after ${processEndTime - processStartTime}ms`)
       return validationResult
     }
 
     // Preload accounts
+    const accountStartTime = performance.now()
     const accountToCompanyMap = await preloadAccountsToCompanyMap(
       req,
       doc.selectedCompanies as string[],
     )
+    const accountEndTime = performance.now()
+    req.payload.logger.info(`Account preloading completed in ${accountEndTime - accountStartTime}ms, found ${accountToCompanyMap.size} accounts`)
 
+    // Standardize the JSON to be in standard format for both CSV and Excel
+    const standardizeStartTime = performance.now()
     const standardizedRows = standardizeRows(results)
+    const standardizeEndTime = performance.now()
+    req.payload.logger.info(`Row standardization completed in ${standardizeEndTime - standardizeStartTime}ms`)
 
+    // Preload stocks
+    const stockStartTime = performance.now()
     const { stockIdMap: stockMap, stockNameMap } = await preloadStocks(req, standardizedRows)
+    const stockEndTime = performance.now()
+    req.payload.logger.info(`Stock preloading completed in ${stockEndTime - stockStartTime}ms, found ${stockMap.size} stocks`)
 
     const uniqueAccountIds = Array.from(
       new Set(
@@ -97,6 +123,8 @@ export const processHoldingsFeedCsv = async (
       ),
     )
 
+    // Check for warnings
+    const warningsStartTime = performance.now()
     const warnings = await checkFeedWarnings(
       req,
       valueDate,
@@ -105,12 +133,19 @@ export const processHoldingsFeedCsv = async (
       accountToCompanyMap,
       doc.selectedCompanies as string[],
     )
+    const warningsEndTime = performance.now()
+    req.payload.logger.info(`Feed warnings check completed in ${warningsEndTime - warningsStartTime}ms, found ${warnings.length} warnings`)
     validationResult.warnings = warnings
 
-    const processedRecords: HoldingFeedLine[] = []
-    const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
-    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);  // סגור את הסוגריים כאן
+    const silencedStartTime = performance.now()
+    const allSilencedStocks = await fetchAllSilencedStocks(req, doc.selectedCompanies as string[]);
+    const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);
+    const silencedEndTime = performance.now()
+    req.payload.logger.info(`Silenced stocks fetching completed in ${silencedEndTime - silencedStartTime}ms, found ${silencedStockIds.length} silenced stocks`)
 
+    const processedRecords: HoldingFeedLine[] = []
+
+    const rowValidationStartTime = performance.now()
     for (const [index, row] of standardizedRows.entries()) {
       const { processedRecord } = await validateRow(
         row,
@@ -129,8 +164,9 @@ export const processHoldingsFeedCsv = async (
         validationResult.validRecords.push(processedRecord)
       } else validationResult.silencedRecords.push(processedRecord)
     }
-    console.log("-----validationResult.silencedRecords",validationResult.silencedRecords)
-    console.log("-----validationResult.validRecords",validationResult.validRecords)
+    const rowValidationEndTime = performance.now()
+    req.payload.logger.info(`Row validation completed in ${rowValidationEndTime - rowValidationStartTime}ms`)
+    req.payload.logger.info(`Validation results: ${validationResult.validRecords.length} valid records, ${validationResult.recordErrors.length} errors, ${validationResult.silencedRecords.length} silenced`)
 
     const lineErrors = processedRecords.map((item) => {
       return { line: item as HoldingFeedLine }
@@ -140,8 +176,9 @@ export const processHoldingsFeedCsv = async (
     doc.accountsJson = JSON.stringify(uniqueAccountIds)
 
     if (validateOnly) {
+      const processEndTime = performance.now()
       req.payload.logger.info(
-        `Successfully validated ${processedRecords.length} holdings for date ${valueDate}`,
+        `Successfully validated ${processedRecords.length} holdings for date ${valueDate} in ${processEndTime - processStartTime}ms`,
       )
 
       return validationResult
@@ -150,26 +187,37 @@ export const processHoldingsFeedCsv = async (
     // If we're here, this is a save request
     // Delete existing holdings for the date if they exist
     if (warnings.some((w) => w.type === 'duplicateFeedForDate')) {
+      const deleteStartTime = performance.now()
       await deleteExistingHoldings(req, valueDate, doc.selectedCompanies as string[])
+      const deleteEndTime = performance.now()
+      req.payload.logger.info(`Deleted existing holdings in ${deleteEndTime - deleteStartTime}ms`)
     }
 
     //Create the holding feed
+    const feedCreateStartTime = performance.now()
     await req.payload.create({
       collection: 'holdings-feed',
       data: doc as HoldingsFeed,
       file: file,
     })
+    const feedCreateEndTime = performance.now()
+    req.payload.logger.info(`Created holdings feed document in ${feedCreateEndTime - feedCreateStartTime}ms`)
 
     // Create holdings
+    const holdingsCreateStartTime = performance.now()
     await createHoldings(req, processedRecords, accountToCompanyMap, stockMap, valueDate)
+    const holdingsCreateEndTime = performance.now()
+    req.payload.logger.info(`Created holdings in ${holdingsCreateEndTime - holdingsCreateStartTime}ms`)
 
+    const processEndTime = performance.now()
     req.payload.logger.info(
-      `Successfully processed ${processedRecords.length} holdings for date ${valueDate}`,
+      `Successfully processed ${processedRecords.length} holdings for date ${valueDate} in ${processEndTime - processStartTime}ms`,
     )
 
     return validationResult
   } catch (error) {
-    req.payload.logger.error(`Error processing holdings feed: ${JSON.stringify(error)}`)
+    const errorTime = performance.now()
+    req.payload.logger.error(`Error processing holdings feed after ${errorTime - processStartTime}ms: ${JSON.stringify(error)}`)
     throw error
   }
 }

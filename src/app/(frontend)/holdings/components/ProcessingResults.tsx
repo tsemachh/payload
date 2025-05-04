@@ -94,7 +94,6 @@ export function ProcessingResults({
     return (
       <div className="flex flex-col h-[500px] items-center pt-[100px] ">
         <LoadingSpinnerDiamond />
-        <p className="text-center">מעבד נתונים...</p>
       </div>
     )
   }
@@ -102,7 +101,6 @@ export function ProcessingResults({
     return (
       <div className="flex flex-col h-[500px] items-center pt-[100px] ">
         <LoadingSpinnerDiamond />
-        <p className="text-center">שומר נתונים...</p>
       </div>
     )
   }

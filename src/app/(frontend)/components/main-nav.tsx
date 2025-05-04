@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Calendar, CalendarCheck, BarChart3, Briefcase, History } from 'lucide-react'
+import { Calendar, CalendarCheck, BarChart3, Briefcase } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function MainNav() {

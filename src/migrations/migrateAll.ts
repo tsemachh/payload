@@ -10,7 +10,9 @@ import { up as migrateHoldings } from './migrateHoldings'
 import { up as migrateParentCompanies } from './migrateParentCompanies'
 import { up as migrateAccountCompaniesToCompanies } from './migrateAccountCompaniesToCompanies'
 import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCompanies'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
+import { up as migrateVotes } from './migrateVotes'
+import { processCompaniesMeetings } from '@/collections/companies-meetings/utils/processCompaniesMeetings'
 
 /**
  * Migrates all collections in the following order:
@@ -26,12 +28,14 @@ import { logMigrationFault } from '@/utils/migrationFaultUtils'
  * 10. Account Companies To Companies
  * 11. Silenced Stocks Companies
  * 
+ * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
  */
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting migrateAll process...')
 
   try {
+
 
    // 1. Migrate Stocks
     console.log('\n=== Starting Stocks Migration ===')
@@ -58,12 +62,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateUsers({ payload, req })
     console.log('=== Users Migration Completed ===\n')
 
-
-    // After migrating users, create users from test.users.json
-    console.log('\n=== Creating Users from test.users.json ===')
-    await createUsersFromTestJson({ payload, req })
-    console.log('=== Test Users Creation Completed ===\n')
-
     // 6. Migrate Accounts
     console.log('\n=== Starting Accounts Migration ===')
     await migrateAccounts({ payload, req })
@@ -86,129 +84,34 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateAccountCompaniesToCompanies({ payload, req })
     console.log('=== Account Companies To Companies Migration Completed ===\n')
 
+
     // 11. Migrate Holdings
     console.log('\n=== Starting Holdings Migration ===')
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
 
-    // 12. Process Meeting companies
-    //TODO
-
-    //  13. Process silenced stocks - match them to companies
+    //  12. Process silenced stocks - match them to companies
     console.log('\n=== Starting Silenced Stocks Companies Migration ===')
     await migrateSilencedStocksCompanies({ payload, req })
     console.log('=== Silenced Stocks Companies Migration Completed ===\n')
+
+    // 13. Migrate Meeting Agenda
+    console.log('\n=== Starting Meeting Agenda Migration ===')
+    await migrateMeetingAgenda({ payload, req })
+    console.log('=== Meeting Agenda Migration Completed ===\n')
+
+    // 14. Migrate Votes
+    console.log('\n=== Starting Votes Migration ===')
+    await migrateVotes({ payload, req })
+    console.log('=== Votes Migration Completed ===\n')
+
+    // 15. Migrate processCompaniesMeetings
+    console.log('\n=== Starting processCompaniesMeetings ===')
+    await processCompaniesMeetings(req)
+    console.log('=== processCompaniesMeetings Completed ===\n')
     console.log('migrateAll process completed successfully!')
   } catch (error) {
     console.error('Error during migrateAll process:', error)
-    throw error
-  }
-}
-
-/**
- * Creates users from test.users.json file
- */
-async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): Promise<void> {
-  try {
-    // Read the test.users.json file
-    const testUsers = [
-      {
-        "name": "חנה",
-        "isAdmin": true,
-        "email": "channahk@shefing.com",
-        "password": "channahk@shefing.com"
-      },
-      {
-        "name": "אפרת שפריי",
-        "isAdmin": true,
-        "email": "efrats@shefing.com",
-        "password": "efrats@shefing.com"
-      },
-      {
-        "name": "tsemachh",
-        "isAdmin": true,
-        "email": "tsemachh@shefing.com",
-        "password": "tsemachh@shefing.com",
-      },
-      {
-        "name": "shaked",
-        "isAdmin": true,
-        "email": "shaked@emdaresearch.co.il",
-        "password": "shaked@emdaresearch.co.il",
-      },
-      {
-        "name": "mayab",
-        "isAdmin": true,
-        "email": "mayab@emdaresearch.co.il",
-        "password": "mayab@emdaresearch.co.il"
-      },
-      {
-        "name": "philc@shefing.com",
-        "isAdmin": true,
-        "email": "philc@shefing.com"
-      }
-    ]
-
-    console.log(`Found ${testUsers.length} users in test.users.json`)
-
-    let createdCount = 0
-    let updatedCount = 0
-    let errorCount = 0
-
-    // Process each user in the test.users.json file
-    for (const userData of testUsers) {
-      try {
-        // Check if user already exists
-        const existingUser = await payload.find({
-          collection: 'users',
-          where: {
-            email: {
-              equals: userData.email
-            }
-          },
-          limit: 1
-        })
-
-        if (existingUser.docs.length > 0) {
-          // Update existing user
-          await payload.update({
-            collection: 'users',
-            id: existingUser.docs[0].id,
-            data: userData
-          })
-          updatedCount++
-          console.log(`✓ Updated test user ${userData.name} (${userData.email})`)
-        } else {
-          // Create new user
-          await payload.create({
-            collection: 'users',
-            data: userData
-          })
-          createdCount++
-          console.log(`✓ Created test user ${userData.name} (${userData.email})`)
-        }
-      } catch (error:any) {
-        errorCount++
-        await logMigrationFault({
-          payload,
-          type: 'user',
-          typeId: userData.email,
-          comments: `Failed to create/update test user: ${error?.message as string}`,
-          row: JSON.stringify(userData, null, 2)
-        })
-        console.error(`✗ Failed to create/update test user ${userData.name} (${userData.email}):`, error)
-      }
-    }
-
-    // Print summary
-    console.log('\nTest Users Creation Summary:')
-    console.log(`✓ Successfully processed users: ${createdCount + updatedCount}`)
-    console.log(`  - Created: ${createdCount}`)
-    console.log(`  - Updated: ${updatedCount}`)
-    console.log(`✗ Failed: ${errorCount}`)
-    console.log(`Total processed: ${testUsers.length}`)
-  } catch (error) {
-    console.error('Error creating users from test.users.json:', error)
     throw error
   }
 }

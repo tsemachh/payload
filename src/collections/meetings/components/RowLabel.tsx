@@ -40,5 +40,5 @@ export const SubjectLabel: React.FC = () => {
 
 export const ArrayLabel: ArrayFieldLabelClientComponent = ({ field, path }) => {
   const { value } = useField<string>({ path: path })
-  return <FieldLabel label={` ${field?.label}(${value})`} path={path} required={field?.required} />
+  return <FieldLabel label={` ${field?.label}${typeof value != 'undefined'?'('+value+')':''}`} path={path} required={field?.required} />
 }

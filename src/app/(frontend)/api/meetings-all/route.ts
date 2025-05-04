@@ -32,11 +32,17 @@ export async function GET(request: NextRequest) {
       sort: sort,
       where: {
         and: [
-          {
-            companies: {
-              in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-            },
-          },
+          user?.leafCompanies
+            ? {
+                companies: {
+                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                },
+              }
+            : {
+                companies: {
+                  in: [], // no matches if user.leafCompanies is missing or empty
+                },
+              },
           {
             _status: {
               equals: 'published',
@@ -98,11 +104,17 @@ export async function GET(request: NextRequest) {
           where: {
             and: [
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
-              {
-                company: {
-                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                },
-              },
+              user?.leafCompanies
+                ? {
+                    company: {
+                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                    },
+                  }
+                : {
+                    company: {
+                      in: [], // no matches if user.leafCompanies is missing or empty
+                    },
+                  },
             ],
           },
           sort: '-valueDate',
@@ -132,11 +144,17 @@ export async function GET(request: NextRequest) {
               and: [
                 { stock: { equals: stockIdToUse } },
                 { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-                {
-                  company: {
-                    in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                  },
-                },
+                user?.leafCompanies
+                  ? {
+                      company: {
+                        in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      },
+                    }
+                  : {
+                      company: {
+                        in: [], // no matches if user.leafCompanies is missing or empty
+                      },
+                    },
               ],
             },
             limit: 0,
