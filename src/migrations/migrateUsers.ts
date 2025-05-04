@@ -1,7 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Company, User, UserCompany } from '@/payload-types'
+import { Company, User } from '@/payload-types'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { getCompanyIdToSequenceMap } from '@/utils/utils'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -12,8 +13,8 @@ const sqlConfig: sql.config = {
   port: 1433,
   options: {
     encrypt: false,
-    trustServerCertificate: true
-  }
+    trustServerCertificate: true,
+  },
 }
 
 // Migration script for users from SQL Server to Payload CMS
@@ -127,60 +128,57 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const usersToFirms = await getUsersToFirms(pool)
     const userProfiles = await getUserProfiles(pool)
     const userProfileCodes = await getUserProfileCodes(pool)
-    let userData: Partial<User>={}
+    let userData: Partial<User> = {}
+    const companyMap = await getCompanyIdToSequenceMap(payload)
+
     // Process each user
     for (const userProfile of userProfiles) {
       try {
         // Get related data
 
-        const userProfileCode = userProfileCodes.find(p => p.UserId === userProfile.UserId)
-        const userFirms = usersToFirms.filter(f => f.userID === userProfile.UserId)
+        const userProfileCode = userProfileCodes.find((p) => p.UserId === userProfile.UserId)
+        const userFirms = usersToFirms.filter((f) => f.userID === userProfile.UserId)
 
         // Transform companies data
         const companies: {
-          companyId: string | Company;
-          permission?: ('read' | 'write') | null;
-          id?: string | null;
+          companyId: string | Company
+          permission?: ('read' | 'write') | null
+          id?: string | null
         }[] = []
         for (const firm of userFirms) {
           try {
             // Find the firm in the new system
-            const existingCompany = await payload.find({
-              collection: 'companies',
-              where: {
-                companyId: {
-                  equals: firm.firmID.toString()
-                }
-              },
-              limit: 1
-            })
-
-            if (!existingCompany.docs.length) {
+            const existingCompany = companyMap.get(firm.firmID.toString())
+            if (!existingCompany) {
               await logMigrationFault({
                 payload,
                 type: 'user',
                 typeId: userProfile.UserId.toString(),
-                comments: `Referenced firm with ID ${firm.firmID} not found`
+                comments: `Referenced firm with ID ${firm.firmID} not found`,
               })
-              console.warn(`⚠ Skipping firm ${firm.firmID} for user ${userProfile.UserName} - firm not found`)
+              console.warn(
+                `⚠ Skipping firm ${firm.firmID} for user ${userProfile.UserName} - firm not found`,
+              )
               continue
             }
 
             // Create a new object with the correct property name
             const companyObj = {
-              companyId: existingCompany.docs[0].id,
-              permission: 'write' as const
-            };
+              companyId: existingCompany,
+              permission: 'write' as const,
+            }
             companies.push(companyObj)
-          } catch (error) {
-
+          } catch (error:any) {
             await logMigrationFault({
               payload,
               type: 'user',
-              typeId: userProfile.UserId.toString(), // @ts-ignore
-              comments: `Error processing firm ${firm.firmID}: ${error.message}`
+              typeId: userProfile.UserId.toString(),
+              comments: `Error processing firm ${firm.firmID}: ${error.message}`,
             })
-            console.error(`✗ Error processing firm ${firm.firmID} for user ${userProfile.UserName}:`, error)
+            console.error(
+              `✗ Error processing firm ${firm.firmID} for user ${userProfile.UserName}:`,
+              error,
+            )
           }
         }
 
@@ -189,14 +187,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           collection: 'users',
           where: {
             email: {
-              equals: userProfile.UserName.toLowerCase().trim()
-            }
+              equals: userProfile.UserName.toLowerCase().trim(),
+            },
           },
-          limit: 1
+          limit: 1,
         })
 
         // Prepare userAuth data with all required fields
-        userData= {
+        userData = {
           // Basic userAuth information
           name: userProfile.UserName.toLowerCase().trim(),
           email: userProfile.UserName.toLowerCase().trim(),
@@ -208,15 +206,21 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           companies: companies,
           // Profile settings
           userIp: userProfile?.UserIP || '',
-          changePassword: !!userProfile?.ChangePassword ,
+          changePassword: !!userProfile?.ChangePassword,
           lastLogin: userProfile?.LastLogin as string | null | undefined,
           // QR code lifecycle data
-          qrCodeData: userProfileCode ? {
-            showQr: !!userProfile?.ShowQr,
-            createDate: userProfileCode.CreateDate ? new Date(userProfileCode.CreateDate).toISOString() : null,
-            lastCodeFailureDate: userProfileCode.LastCodeFailureDate ? new Date(userProfileCode.LastCodeFailureDate).toISOString() : null,
-            codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess
-          } : undefined,
+          qrCodeData: userProfileCode
+            ? {
+                showQr: !!userProfile?.ShowQr,
+                createDate: userProfileCode.CreateDate
+                  ? new Date(userProfileCode.CreateDate).toISOString()
+                  : null,
+                lastCodeFailureDate: userProfileCode.LastCodeFailureDate
+                  ? new Date(userProfileCode.LastCodeFailureDate).toISOString()
+                  : null,
+                codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess,
+              }
+            : undefined,
 
           // Authentication settings
           loginAttempts: 0,
@@ -237,12 +241,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'user',
             typeId: userProfile.UserId ? userProfile.UserId.toString() : 'unknown',
             comments: `Validation failed: ${validationIssues.join(', ')}`,
-            row: JSON.stringify(userProfile, null, 2)
+            row: JSON.stringify(userProfile, null, 2),
           })
           console.warn(`⚠ Skipping user due to validation issues: ${validationIssues.join(', ')}`)
           continue
         }
-
 
         let newUser
         if (existingUser.docs.length > 0) {
@@ -250,7 +253,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           newUser = await payload.update({
             collection: 'users',
             id: existingUser.docs[0].id,
-            data: userData
+            data: userData,
           })
         } else {
           // Create new userAuth
@@ -260,30 +263,41 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: {
               ...userData,
               password: userData.email as string, // Default password only for new users
-            }
+            },
           })
         }
 
         successCount++
         if (existingUser.docs.length > 0) {
           updatedCount++
-          console.log(`✓ Updated user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`)
+          console.log(
+            `✓ Updated user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`,
+          )
         } else {
           createdCount++
-          console.log(`✓ Created user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`)
+          console.log(
+            `✓ Created user ${userProfile.UserName} (${userProfile.UserId}) with ${companies.length} firms`,
+          )
         }
       } catch (error) {
         errorCount++
         await logMigrationFault({
           payload,
           type: 'user',
-          typeId: userProfile.UserId.toString(),//@ts-ignore
+          typeId: userProfile.UserId.toString(), //@ts-ignore
           comments: `Failed to migrate user: ${error.message}`,
-          row: JSON.stringify({
-            userData,
-          }, null, 2)
+          row: JSON.stringify(
+            {
+              userData,
+            },
+            null,
+            2,
+          ),
         })
-        console.error(`✗ Failed to migrate user ${userProfile.UserName} (${userProfile.UserId}):`, error)
+        console.error(
+          `✗ Failed to migrate user ${userProfile.UserName} (${userProfile.UserId}):`,
+          error,
+        )
       }
     }
 
@@ -297,6 +311,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     if (errorCount > 0) {
       console.log('\nCheck migration-faults collection for detailed error information.')
     }
+    // After migrating users, create users from test.users.json
+    console.log('\n=== Creating Users from test.users.json ===')
+    await createUsersFromTestJson({ payload, req })
+    console.log('=== Test Users Creation Completed ===\n')
+
   } catch (error) {
     console.error('Migration failed:', error)
     throw error
@@ -309,4 +328,129 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ payload }: MigrateUpArgs): Promise<void> {
   // Implement the down migration if needed
+}
+/**
+ * Creates users from test.users.json file
+ */
+export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): Promise<void> {
+  try {
+    // Read the test.users.json file
+    const testUsers: Partial<User>[] = [
+      {
+        name: 'חנה',
+        isAdmin: true,
+        email: 'channahk@shefing.com',
+        password: 'channahk@shefing.com',
+      },
+      {
+        name: 'אפרת שפריי',
+        isAdmin: true,
+        email: 'efrats@shefing.com',
+        password: 'efrats@shefing.com',
+        // "companies":['17','22','23','49','25']
+      },
+      {
+        name: 'tsemachh',
+        isAdmin: true,
+        email: 'tsemachh@shefing.com',
+        password: 'tsemachh@shefing.com',
+        // "companies":['15','3918','3928']
+      },
+      {
+        name: 'shaked',
+        isAdmin: true,
+        email: 'shaked@emdaresearch.co.il',
+        password: 'shaked@emdaresearch.co.il',
+      },
+      {
+        name: 'mayab',
+        isAdmin: true,
+        email: 'mayab@emdaresearch.co.il',
+        password: 'mayab@emdaresearch.co.il',
+      },
+      {
+        name: 'philc@shefing.com',
+        isAdmin: true,
+        email: 'philc@shefing.com',
+      },
+    ]
+    const seqMap = await getCompanyIdToSequenceMap(req.payload)
+
+    console.log(`Found ${testUsers.length} users in test.users.json`)
+    const companies = new Map<string, string[]>([
+      ['tsemachh@shefing.com', ['15', '22', '23','49','25']],
+      ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
+    ])
+    let createdCount = 0
+    let updatedCount = 0
+    let errorCount = 0
+
+    // Process each user in the test.users.json file
+    for (const userData of testUsers) {
+      try {
+        // Check if user already exists
+        const existingUser = await payload.find({
+          collection: 'users',
+          where: {
+            email: {
+              equals: userData.email,
+            },
+          },
+          limit: 1,
+        })
+        const userCompanies = companies.get(userData?.email as string)
+
+        if (userCompanies) {
+          userData.companies = userCompanies.map((firmId) => {
+            return {
+              companyId: seqMap.get(firmId) as string,
+              permission: 'write' as const,
+            }
+          })
+        }
+        if (existingUser.docs.length > 0) {
+          // Update existing user
+          await payload.update({
+            collection: 'users',
+            id: existingUser.docs[0].id,
+            data: userData,
+          })
+          updatedCount++
+          console.log(`✓ Updated test user ${userData.name} (${userData.email})`)
+        } else {
+          // Create new user
+          await payload.create({
+            collection: 'users',
+            data: userData as User,
+          })
+          createdCount++
+          console.log(`✓ Created test user ${userData.name} (${userData.email})`)
+        }
+      } catch (error: any) {
+        errorCount++
+        await logMigrationFault({
+          payload,
+          type: 'user',
+          typeId: userData.email as string,
+          comments: `Failed to create/update test user: ${error?.message as string}`,
+          row: JSON.stringify(userData, null, 2),
+        })
+        console.error(
+          `✗ Failed to create/update test user ${userData.name} (${userData.email}):`,
+          error,
+        )
+      }
+    }
+
+    // Print summary
+    console.log('\nTest Users Creation Summary:')
+    console.log(`✓ Successfully processed users: ${createdCount + updatedCount}`)
+    console.log(`  - Created: ${createdCount}`)
+    console.log(`  - Updated: ${updatedCount}`)
+    console.log(`✗ Failed: ${errorCount}`)
+    console.log(`Total processed: ${testUsers.length}`)
+  } catch (error) {
+    console.error('Error creating users from test.users.json:', error)
+    throw error
+  }
 }
