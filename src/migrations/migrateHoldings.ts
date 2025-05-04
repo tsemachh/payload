@@ -18,7 +18,7 @@ const sqlConfig: sql.config = {
 }
 
 //const DAYS_TO_IMPORT: number = 365 * 7
-const START_DATE_TO_IMPORT: string = '2025-01-01'
+const START_DATE_TO_IMPORT: string = '2025-04-01'
 
 interface HoldingRow {
   stockNum: string

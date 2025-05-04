@@ -1,28 +1,29 @@
-import type { CollectionConfig,  PayloadRequest } from 'payload'
+import type { CollectionConfig, PayloadRequest } from 'payload'
 import { userFields } from '@shefing/authorization'
 import type { Company } from '@/payload-types'
 import { getCollectionDoc } from '@/utils/utils'
-async function getLeafCompanies(company:Company|string,req:PayloadRequest):Promise<string[]>{
 
-  let leafCompanies:string[]=[]
-  let theCompany:Company
-  if (typeof company === "string"){
+async function getLeafCompanies(company: Company | string, req: PayloadRequest): Promise<string[]> {
+  let leafCompanies: string[] = []
+  let theCompany: Company
+  if (typeof company === 'string') {
     try {
-      theCompany=await getCollectionDoc(req,"companies",company)as Company
-    }catch (e) {
-      console.log("Error in getting company",e)
+      theCompany = (await getCollectionDoc(req, 'companies', company)) as Company
+    } catch (e) {
+      console.log('Error in getting company', e)
       return []
     }
-  }else {
+  } else {
     theCompany = company as Company
   }
-  if (theCompany.accounts && theCompany.accounts?.docs && theCompany.accounts?.docs?.length > 0){//Companies with accounts
+  if (theCompany.accounts && theCompany.accounts?.docs && theCompany.accounts?.docs?.length > 0) {
+    //Companies with accounts
     leafCompanies.push(theCompany.id)
-  }else{
+  } else {
     if (theCompany?.subCompanies)
       for (let i = 0; i < theCompany?.subCompanies.length; i++) {
         const subCompany = theCompany.subCompanies[i]
-        leafCompanies=leafCompanies.concat(await getLeafCompanies(subCompany,req))
+        leafCompanies = leafCompanies.concat(await getLeafCompanies(subCompany, req))
       }
   }
   return leafCompanies
@@ -91,10 +92,13 @@ export const Users: CollectionConfig = {
               name: 'permission',
               label: 'הרשאה',
               type: 'select',
-              options: [{ label: 'צפיה בהצבעות ודוחות', value: 'read' }, {
-                label: 'הזנת אחזקות והצבעה',
-                value: 'write',
-              }],
+              options: [
+                { label: 'צפיה בהצבעות ודוחות', value: 'read' },
+                {
+                  label: 'הזנת אחזקות והצבעה',
+                  value: 'write',
+                },
+              ],
               defaultValue: 'write',
             },
           ],
@@ -117,12 +121,16 @@ export const Users: CollectionConfig = {
           },
         ],
         afterRead: [
-          async ({ data , req }) => {
-            let leafCompanies:string[]=[]
-            for (let i = 0; i < data?.companies?.length || 0; i++) {
-              const company = data?.companies?.[i]
-              const leafRecurseCompanies= await getLeafCompanies(company.companyId,req)
-              leafCompanies=leafCompanies.concat(leafRecurseCompanies)
+          async ({ data, req }) => {
+            let leafCompanies: string[] = []
+            try {
+              for (let i = 0; i < data?.companies?.length || 0; i++) {
+                const company = data?.companies?.[i]
+                const leafRecurseCompanies = await getLeafCompanies(company.companyId, req)
+                leafCompanies = leafCompanies.concat(leafRecurseCompanies)
+              }
+            } catch (e:any) {
+              console.error("Error in getLeafCompanies",JSON.stringify(e.message))
             }
             leafCompanies = Array.from(new Set(leafCompanies))
             return leafCompanies
@@ -143,7 +151,8 @@ export const Users: CollectionConfig = {
           label: 'שינוי סיסמה',
           type: 'checkbox',
           admin: { hidden: true },
-        }],
+        },
+      ],
     },
     {
       name: 'userIp',
@@ -183,7 +192,8 @@ export const Users: CollectionConfig = {
               type: 'number',
             },
           ],
-        }],
+        },
+      ],
     },
     ...userFields,
   ],
