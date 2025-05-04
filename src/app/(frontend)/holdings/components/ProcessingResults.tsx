@@ -54,6 +54,16 @@ export function ProcessingResults({
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
   useEffect(() => {
+    if (validRecords.length > 0) {
+      setActiveTab('valid')
+    } else if (recordErrors.length > 0) {
+      setActiveTab('invalid')
+    } else if (silencedRecords?.length > 0) {
+      setActiveTab('silenced')
+    }
+  }, [validRecords, recordErrors, silencedRecords])
+
+  useEffect(() => {
     // Show warning dialog when warnings are present
     if (warnings.length > 0) {
       setShowWarningDialog(true)

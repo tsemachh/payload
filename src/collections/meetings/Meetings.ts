@@ -326,21 +326,38 @@ export const Meetings: CollectionConfig = {
                 singular: 'נושא',
                 plural: 'נושאים',
               },
+              admin: {
+                initCollapsed: true,
+                components: {
+                  RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
+                  Label: '/collections/meetings/components/RowLabel#ArrayLabel',
+                },
+              },
               fields: [
                 {
                   name: 'text',
                   label: 'תוכן הנושא',
                   type: 'textarea',
                   required: true,
-                },
-                {
-                  name: 'shortText',
-                  label: 'נושא מקוצר',
-                  type: 'text',
+                  admin: {
+                    className: 'agendaText',
+                    style: { minHeight: '37px' },
+                  },
                 },
                 {
                   type: 'row',
                   fields: [
+                    {
+                      name: 'shortText',
+                      label: 'נושא מקוצר',
+                      type: 'text',
+                    },
+                    {
+                      name: 'isRemovedFromAgenda',
+                      label: 'הוסר מסדר היום',
+                      type: 'checkbox',
+                      admin:{width:'200px'}
+                    },
                     {
                       name: 'topicType',
                       label: 'סוג נושא',
@@ -350,6 +367,9 @@ export const Meetings: CollectionConfig = {
                         { label: 'לדיווח בלבד', value: 'reporting' },
                         { label: 'להחלטה', value: 'decision' },
                       ],
+                      admin:{
+                        width: '200px',
+                      }
                     },
                     {
                       name: 'majorityType',
@@ -360,69 +380,44 @@ export const Meetings: CollectionConfig = {
                         { label: 'רוב מיוחד', value: 'privileged' },
                       ],
                       admin: {
+                        width: '200px',
                         condition: (_, siblingData) => {
                           return siblingData.topicType === 'decision'
                         },
                       },
                     },
                     {
-                      name: 'otherMajority',
-                      label: 'רוב אחר',
-                      type: 'text',
+                      name: 'vpercent',
+                      label: 'אחוז הצבעה',
+                      type: 'number',
                       admin: {
-                        condition: (_, siblingData) => {
-                          return (
-                            siblingData.majorityType === 'privileged' &&
-                            siblingData.topicType === 'decision'
-                          )
-                        },
+                        hidden:true,
+                        step: 0.01,
+                        condition: (_, siblingData) =>
+                          siblingData.topicType === 'decision' &&
+                          siblingData.majorityType === 'regular',
                       },
                     },
                     {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'vpercent',
-                          label: 'אחוז הצבעה',
-                          type: 'number',
-                          admin: {
-                            step: 0.01,
-                            condition: (_, siblingData) =>
-                              siblingData.topicType === 'decision' &&
-                              siblingData.majorityType === 'regular',
-                          },
-                        },
-                        {
-                          name: 'vPercentSpecial',
-                          label: 'אחוז הצבעה מיוחד',
-                          type: 'number',
-                          admin: {
-                            step: 0.01,
-                            condition: (_, siblingData) =>
-                              siblingData.topicType === 'decision' &&
-                              siblingData.majorityType === 'privileged',
-                          },
-                        },
-                      ],
+                      name: 'vPercentSpecial',
+                      label: 'אחוז הצבעה מיוחד',
+                      type: 'number',
+                      admin: {
+                        hidden:true,
+                        step: 0.01,
+                        condition: (_, siblingData) =>
+                          siblingData.topicType === 'decision' &&
+                          siblingData.majorityType === 'privileged',
+                      },
                     },
                   ],
                 },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'isRemovedFromAgenda',
-                      label: 'הוסר מסדר היום',
-                      type: 'checkbox',
-                    },
-                  ],
-                },
-
                 {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'text',
                   admin: {
+                    hidden:true,
                     condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
@@ -437,6 +432,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'דיון', value: '3' },
                   ],
                   admin: {
+                    hidden:true,
                     condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },

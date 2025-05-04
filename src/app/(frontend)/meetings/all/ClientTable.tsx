@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { meetingColumns, renderMeetingActions } from '../meetings-future/meetingTableConstants'
 import { DataTableServer } from '@/components/data-table-server'
-import { MeetingTableDataType } from '../types/meetings'
+import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
+import { MeetingTableDataType } from '../../types/meetings'
 
 export function MeetingsTableClient() {
   const [data, setData] = useState<MeetingTableDataType[]>([])
