@@ -144,10 +144,10 @@ export const checkFeedWarnings = async (
   // Check for unknown accounts
   const unknownAccounts: string[] = []
   standardizedRows.forEach((row) => {
-    const accountId = Number(row.accountId)
+    const accountId = Number(row?.accountId)
     if (!isNaN(accountId) && !accountToCompanyMap.has(accountId)) {
-      if (!unknownAccounts.includes(row.accountId)) {
-        unknownAccounts.push(row.accountId)
+      if (!unknownAccounts.includes(row.accountId!)) {
+        unknownAccounts.push(row.accountId!)
       }
     }
   })
@@ -234,7 +234,7 @@ export const validateRow = async (
   processedRecord: HoldingFeedLineWithName
 }> => {
   const { stockId, quantity, accountId } = row
-  const stockName = stockNameMap.get(stockId)
+  const stockName = stockNameMap.get(stockId!)
   const lineNumber = index + 1
 
   let status: 'success' | 'error' | 'silenced' = 'success'
@@ -244,7 +244,7 @@ export const validateRow = async (
   if (!stockId) {
     status = 'error';
     errorMessage = 'מספר נייר חסר';
-  } else if (isNaN(quantity) || quantity < 1) {
+  } else if (isNaN(quantity!) || quantity! < 1) {
     status = 'error';
     errorMessage = 'ערך נקוב לא תקין';
   } else if (!accountId) {

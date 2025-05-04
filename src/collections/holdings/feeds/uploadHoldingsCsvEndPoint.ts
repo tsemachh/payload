@@ -20,16 +20,7 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Value date is required' }, { status: 400 })
     }
 
-    // Optional companies parameter as JSON string of company IDs
-    let selectedCompanies: string[] = []
-    if (companies) {
-      try {
-        selectedCompanies = JSON.parse(companies as string)
-      } catch (e) {
-        // If parsing fails, try treating it as a comma-separated string
-        selectedCompanies = (companies as string).split(',')
-      }
-    }
+
 
     // Get the ReadableStream from the request body
     const stream = req.body
@@ -58,6 +49,18 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
 
     if (!file) {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
+    }
+
+
+    // Optional companies parameter as JSON string of company IDs
+    let selectedCompanies: string[] = []
+    if (companies) {
+      try {
+        selectedCompanies = JSON.parse(companies as string)
+      } catch (e) {
+        // If parsing fails, try treating it as a comma-separated string
+        selectedCompanies = (companies as string).split(',')
+      }
     }
 
     // Create a new HoldingsFeed document

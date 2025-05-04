@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
                   in: [], // no matches if user.leafCompanies is missing or empty
                 },
               },
+          {
+            _status: {
+              equals: 'published',
+            },
+          },
           searchTerm
             ? {
                 or: [

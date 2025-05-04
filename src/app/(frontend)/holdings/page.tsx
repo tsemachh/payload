@@ -25,6 +25,9 @@ import {
   DialogTitle,
 } from '../components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
+import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
+import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
+
 
 export default function HoldingsFeedView() {
   const { user } = useAuth()
@@ -42,6 +45,7 @@ export default function HoldingsFeedView() {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
@@ -170,8 +174,59 @@ export default function HoldingsFeedView() {
       setIsUploading(false)
     }
   }
+  const handleRefresh = async (records:HoldingFeedLine[]) => {
+    setvalidRecords([])
+    setSilencedRecords([])
+    setRecordErrors([])
+    setFatals([])
+    setWarnings([])
 
-  // Second step: save the validated file
+    const standardizedRecords = records.map(record => ({
+      stockId: record.stockId,
+      quantity: record.quantity,
+      accountId: record.accountId,
+    })) as StandardizedRow[]
+
+
+    setIsRefreshing(true)
+    try {
+      const response = await fetch(
+        `/api/holdings/refresh?companies=${selectedCompanies}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(standardizedRecords),
+        },
+      )
+
+      const result = await response.json()
+      if (response.ok) {
+        const validationResult: FeedValidationResult = result.validationResult
+        setvalidRecords(validationResult.validRecords)
+        setFatals(validationResult.fatalErrors)
+        setWarnings(validationResult.warnings)
+        setRecordErrors(validationResult.recordErrors)
+        setSilencedRecords(validationResult.silencedRecords)
+      } else {
+        toast({
+          title: 'עדכון טבלאות נכשל',
+          description: result.error || 'עדכון טבלאות נכשל',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: 'שגיאה בעדכון טבלאות',
+        description: 'אירעה שגיאה בעדכון טבלאות',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
   const handleSaveConfirmedAction = async () => {
     if (!date || !file) {
       return
@@ -204,7 +259,6 @@ export default function HoldingsFeedView() {
     }
   }
 
-  // Cancel the upload
   const handleCancelAction = () => {
     setEditForm(true)
     setRecordErrors([])
@@ -212,7 +266,14 @@ export default function HoldingsFeedView() {
     setWarnings([])
     setFile(null)
   }
-
+  if (isRefreshing) {
+    return (
+      <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+        <LoadingSpinnerDiamond />
+        <p className="text-center">טוען את הנתונים העדכניים...</p>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       {editForm ? (
@@ -296,6 +357,7 @@ export default function HoldingsFeedView() {
             className="mt-16"
             onConfirmAction={handleSaveConfirmedAction}
             onCancelAction={handleCancelAction}
+            onRefresh={handleRefresh}
             isValidating={isValidating}
             isUploading={isUploading}
           />

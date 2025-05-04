@@ -41,6 +41,11 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 in: [], // no matches if user.leafCompanies is missing or empty
               },
             },
+        {
+          _status: {
+            equals: 'published',
+          },
+        },
       ],
     },
   })
