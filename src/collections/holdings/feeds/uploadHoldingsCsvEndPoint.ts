@@ -3,12 +3,12 @@ import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
 import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { getBufferFromStream } from '@/utils/dataUtils'
+import { performance } from 'perf_hooks'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
+  const startTime = performance.now()
   try {
-    if (req === null) {
-      return Response.json({ error: 'forbidden' }, { status: 403 })
-    }
+    req.payload.logger.info('Starting holdings upload process')
     if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
@@ -28,7 +28,10 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No stream provided' }, { status: 400 })
     }
 
+    const streamStartTime = performance.now()
     const buffer = await getBufferFromStream(stream)
+    const streamEndTime = performance.now()
+    req.payload.logger.info(`Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`)
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
     let extension = 'csv'
@@ -71,18 +74,30 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     } as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
     req.file = file
+
     // Process the holdings feed synchronously
+    req.payload.logger.info(`Starting holdings feed processing for ${file.size} bytes`)
+    const processingStartTime = performance.now()
     const feedResult: FeedValidationResult | undefined = await processHoldingsFeedCsv(
       req,
       holdingsFeed,
       isValidationOnly,
     )
-    if (feedResult != null)
+    const processingEndTime = performance.now()
+    req.payload.logger.info(`Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`)
+    if (feedResult != null) {
+      const endTime = performance.now()
+      req.payload.logger.info(`Total holdings upload process completed in ${endTime - startTime}ms`)
       return Response.json({
         feedResult,
       })
-    else return Response.json({ error: 'Error procesing  holdings file' }, { status: 500 })
+    } else {
+      req.payload.logger.error('Error processing holdings file')
+      return Response.json({ error: 'Error processing holdings file' }, { status: 500 })
+    }
   } catch (error) {
+    const endTime = performance.now()
+    req.payload.logger.error(`Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`)
     console.error('Error uploading holdings file:', error)
     return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
   }
