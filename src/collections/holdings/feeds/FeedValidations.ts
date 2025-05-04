@@ -128,9 +128,6 @@ export const checkFeedWarnings = async (
     limit: 0,
   })
 
-  console.log('-----selectedCompanies', selectedCompanies)
-
-  console.log('-----existingHoldings', existingHoldings)
   if (existingHoldings.docs.length > 0) {
     const formattedDate = valueDate.split('-').reverse().join('/');
     warnings.push({
@@ -139,7 +136,6 @@ export const checkFeedWarnings = async (
       count: existingHoldings.docs.length,
     })
   }
-  console.log('-----existingHoldings')
 
   // Check for unknown accounts
   const unknownAccounts: string[] = []
@@ -151,8 +147,6 @@ export const checkFeedWarnings = async (
       }
     }
   })
-  console.log('-----unknownAccounts', unknownAccounts)
-
   if (unknownAccounts.length > 0) {
     warnings.push({
       type: 'unknownAccounts',
@@ -271,7 +265,7 @@ export const validateRow = async (
     status,
     error: errorMessage,
   };
-  
+
 
   return { processedRecord }
 }

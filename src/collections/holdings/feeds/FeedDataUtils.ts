@@ -19,7 +19,6 @@ export async function getPreviousFeed(
     depth: 0,
     limit: 1,
   })
-  console.log('-----prev holdings', holdings)
   if (holdings.docs.length > 0) {
     return holdings.docs[0]
   }
@@ -98,24 +97,12 @@ export const preloadAccountsToCompanyMap = async (
   })
 
   const accountToCompanyMap: Map<number, string> = new Map()
-  console.log('Processing companies:', companies.docs.length)
 
   companies.docs.forEach((company: Company) => {
-    console.log(
-      'Processing company:',
-      company.id,
-      'Accounts:',
-      company?.accounts?.docs?.length ?? 0,
-    )
     const accounts = company?.accounts?.docs as Account[]
 
     accounts.forEach((account) => {
-      console.log('Processing account:', account?.accountNumber, 'ID:', account?.id)
       accountToCompanyMap.set(account?.accountNumber, company?.id)
-
-      if (!account?.accounts?.docs || account?.accounts?.docs.length === 0) {
-        console.log('No sub-accounts found for account:', account?.accountNumber)
-      }
 
       account?.accounts?.docs?.forEach((subAccount) => {
         const subAcc = subAccount as Account
@@ -123,7 +110,6 @@ export const preloadAccountsToCompanyMap = async (
       })
     })
   })
-  console.log('Final accountToCompanyMap:', Array.from(accountToCompanyMap.entries()))
 
   return accountToCompanyMap
 }
@@ -173,8 +159,6 @@ export const preloadStocks = async (
     stockNameMap.set(stockKey, stockName as string)
   })
 
-  console.log('Final stockMap:', Array.from(stockIdMap.entries()))
-
   return { stockIdMap, stockNameMap }
 }
 /**
@@ -219,10 +203,17 @@ export const createHoldings = async (
     }
   }
 
-  // Create holdings from the aggregated records
-  for (const [_, record] of aggregatedRecords) {
-    try {
-      await req.payload.create({
+  // Create holdings from the aggregated records in batches
+  const batchSize = 50; // Adjust based on your system's capacity
+  const records = Array.from(aggregatedRecords.values());
+  const totalRecords = records.length;
+
+  req.payload.logger.info(`Creating ${totalRecords} holdings in batches of ${batchSize}`);
+
+  for (let i = 0; i < totalRecords; i += batchSize) {
+    const batch = records.slice(i, i + batchSize);
+    const batchPromises = batch.map(record => {
+      return req.payload.create({
         collection: 'holdings',
         data: {
           company: record.company,
@@ -230,9 +221,17 @@ export const createHoldings = async (
           quantity: record.quantity,
           valueDate,
         },
-      })
+      }).catch(error => {
+        req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`);
+        return null;
+      });
+    });
+
+    try {
+      await Promise.all(batchPromises);
+      req.payload.logger.info(`Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(totalRecords / batchSize)}`);
     } catch (error) {
-      req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`)
+      req.payload.logger.error(`Error processing batch: ${JSON.stringify(error)}`);
     }
   }
 }
