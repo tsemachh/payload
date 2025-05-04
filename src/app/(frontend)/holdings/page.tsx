@@ -201,16 +201,8 @@ export default function HoldingsFeedView() {
         },
       )
 
-
       const result = await response.json()
-      console.log("888response",response)
-      console.log("888response.ok",response.ok)
-      //setIsValidating(false)
       if (response.ok) {
-        console.log("888result",result)
-        console.log("888result.validationResult",result.validationResult)
-        console.log("888result.validationResult.validRecords",result.validationResult.validRecords)
-
         const validationResult: FeedValidationResult = result.validationResult
         setvalidRecords(validationResult.validRecords)
         setFatals(validationResult.fatalErrors)
@@ -235,7 +227,6 @@ export default function HoldingsFeedView() {
       setIsRefreshing(false)
     }
   }
-  // Second step: save the validated file
   const handleSaveConfirmedAction = async () => {
     if (!date || !file) {
       return
@@ -268,7 +259,6 @@ export default function HoldingsFeedView() {
     }
   }
 
-  // Cancel the upload
   const handleCancelAction = () => {
     setEditForm(true)
     setRecordErrors([])

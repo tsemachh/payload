@@ -85,10 +85,8 @@ export const processHoldingsFeedCsv = async (
       doc.selectedCompanies as string[],
     )
 
-    // Standardize the JSON to be in standard format for both CSV and Excel
     const standardizedRows = standardizeRows(results)
 
-    // Preload stocks
     const { stockIdMap: stockMap, stockNameMap } = await preloadStocks(req, standardizedRows)
 
     const uniqueAccountIds = Array.from(
@@ -109,7 +107,6 @@ export const processHoldingsFeedCsv = async (
     )
     validationResult.warnings = warnings
 
-    // Process each standardized row
     const processedRecords: HoldingFeedLine[] = []
     const allSilencedStocks = await fetchAllSilencedStocks(req,doc.selectedCompanies as string[]);
     const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId);  // סגור את הסוגריים כאן
@@ -135,16 +132,13 @@ export const processHoldingsFeedCsv = async (
     console.log("-----validationResult.silencedRecords",validationResult.silencedRecords)
     console.log("-----validationResult.validRecords",validationResult.validRecords)
 
-    // Store validation results in the document
     const lineErrors = processedRecords.map((item) => {
       return { line: item as HoldingFeedLine }
     })
 
-    // Combine line errors and feed errors
     doc.processingResults = [...lineErrors]
     doc.accountsJson = JSON.stringify(uniqueAccountIds)
 
-    // If this is a validation-only request, update the document and return
     if (validateOnly) {
       req.payload.logger.info(
         `Successfully validated ${processedRecords.length} holdings for date ${valueDate}`,

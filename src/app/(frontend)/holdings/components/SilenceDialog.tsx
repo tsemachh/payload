@@ -7,7 +7,6 @@ import { HoldingFeedLine } from '@/payload-types'
 
 interface SilenceDialogProps {
   stockId: string | number
-  //onSuccess?: () => void
   companies: string[]
   allRecords:HoldingFeedLine[]
   onRefresh: (records: HoldingFeedLine[]) => void;
