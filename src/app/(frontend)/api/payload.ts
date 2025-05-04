@@ -70,11 +70,17 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           where: {
             and: [
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
-              {
-                company: {
-                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                },
-              },
+              user?.leafCompanies
+                ? {
+                  company: {
+                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                    },
+                  }
+                : {
+                  company: {
+                      in: [], // no matches if user.leafCompanies is missing or empty
+                    },
+                  },
             ],
           },
           sort: '-valueDate',
@@ -104,11 +110,17 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               and: [
                 { stock: { equals: stockIdToUse } },
                 { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-                {
-                  company: {
-                    in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                  },
-                },
+                user?.leafCompanies
+                  ? {
+                    company: {
+                        in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      },
+                    }
+                  : {
+                    company: {
+                        in: [], // no matches if user.leafCompanies is missing or empty
+                      },
+                    },
               ],
             },
             limit: 0,
