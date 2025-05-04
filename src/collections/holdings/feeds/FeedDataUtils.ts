@@ -137,9 +137,10 @@ export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
 ): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string> }> => {
+
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
-    .filter((stockId) => stockId !== '')
+    .filter((stockId): stockId is string => typeof stockId === 'string' && stockId !== '')
 
   const stockIdMap: Map<string, string> = new Map()
   const stockNameMap: Map<string, string> = new Map()

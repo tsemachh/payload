@@ -3,14 +3,16 @@
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { HoldingFeedLine } from '@/payload-types'
 
 interface SilenceDialogProps {
   stockId: string | number
-  onSuccess?: () => void
   companies: string[]
+  allRecords:HoldingFeedLine[]
+  onRefreshAction: (records: HoldingFeedLine[]) => void;
 }
 
-export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess,companies }) => {
+export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,allRecords,onRefreshAction }:SilenceDialogProps) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
@@ -23,8 +25,9 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId, onSuccess
       })
       if (response.ok) {
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
-        onSuccess?.()
-      } else {
+        setTimeout(() => {
+          onRefreshAction(allRecords)
+        }, 2000)      } else {
         setResultMessage('נכשל להשתיק את השגיאה.')
       }
     } catch (error) {

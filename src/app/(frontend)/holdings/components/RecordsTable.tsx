@@ -3,6 +3,7 @@
 import React from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '../../components/data-table-client'
+import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
 import { HoldingFeedLineWithName } from '@/collections/holdings/feeds/FeedValidations'
 
@@ -53,7 +54,7 @@ const holdingColumns: Column<RecordType>[] = [
   },
 ]
 
-const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] => [
+const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedLine[],onRefresh: (records: any[]) => void): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
@@ -66,7 +67,7 @@ const getInvalidColumnsAdditional = (companies: string[]): Column<RecordType>[] 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>{row.error}</span>
           {row.error === 'נייר ערך לא מוכר' && (
-            <SilenceDialog stockId={row.stockId} companies={companies} />
+            <SilenceDialog stockId={row.stockId} companies={companies} allRecords={allRecords} onRefreshAction={onRefresh} />
           )}
         </div>
       )
@@ -78,7 +79,10 @@ export const RecordsTable: React.FC<{
   records: HoldingFeedLineWithName[]
   invalid?: boolean
   companies: string[]
-}> = ({ records, invalid, companies }) => {
+  onRefresh?: (records: HoldingFeedLine[]) => void;
+  valid?: HoldingFeedLine[]
+  silenced?: HoldingFeedLine[]
+}> = ({ records, invalid, companies,onRefresh,valid,silenced }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
@@ -88,12 +92,17 @@ export const RecordsTable: React.FC<{
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))
-
-  const columns = invalid
-    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies)]
+  const allRecords = [
+    ...records,
+    ...(valid ?? []),
+    ...(silenced ?? [])
+  ]
+  const columns = invalid && onRefresh
+    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies, allRecords, onRefresh)]
     : holdingColumns
+
   const tableWidth = columns.reduce((sum, column) => {
-    return sum + (column.width || column.minWidth)
+    return sum + (column.width || column.minWidth) + 25
   }, 0)
 
   return (
