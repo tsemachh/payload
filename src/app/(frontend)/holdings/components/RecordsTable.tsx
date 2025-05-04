@@ -73,7 +73,7 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
               stockId={row.stockId}
               companies={companies}
               allRecords={allRecords}
-              onRefresh={onRefresh}
+              onRefreshAction={onRefresh}
             />
           )}
 
@@ -82,7 +82,7 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
               accountId={row.accountId}
               companies={companies}
               allRecords={allRecords}
-              onRefresh={onRefresh}
+              onRefreshAction={onRefresh}
             />
           )}
         </div>
