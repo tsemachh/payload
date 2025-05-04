@@ -6,6 +6,35 @@ import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
+
+export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
+  {
+    key: 'tmpName',
+    header: 'זמני',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="" />
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            <div className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words">
+              {row.stockTradable
+                ? `The stock is currently tradable and can be bought or sold on the platform. This status may change based on market conditions.`
+                : `The stock is currently not tradable. Please check back later or contact support for more information.`}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
+    minWidth: 20,
+  },
+]
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
@@ -184,7 +213,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-
+export const futuredefaultVisibleExtra = ['tmpName']
 export const defaultVisibleColumns = [
   'companies',
   'stockNumber',
