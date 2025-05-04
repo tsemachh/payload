@@ -37,6 +37,11 @@ export async function GET(request: NextRequest) {
               in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
             },
           },
+          {
+            _status: {
+              equals: 'published',
+            },
+          },
           searchTerm
             ? {
                 or: [

@@ -35,6 +35,11 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
           },
         },
+        {
+          _status: {
+            equals: 'published',
+          },
+        },
       ],
     },
   })
