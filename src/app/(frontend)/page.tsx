@@ -10,7 +10,6 @@ export default function MeetingsPage() {
         fallback={
           <div className="flex flex-col h-[500px] items-center pt-[100px] ">
             <LoadingSpinnerDiamond />
-            <p className="text-center">טוען נתונים...</p>
           </div>
         }
       >
