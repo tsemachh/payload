@@ -747,7 +747,12 @@ export function DataTableStatic<T extends Record<string, any>>({
                   <Settings2 className="h-4 w-4 mr-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent
+                style={{
+                  overflowY: 'auto',
+                  maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+                }}
+              >
                 {columns.map((column) => (
                   <DropdownMenuCheckboxItem
                     key={String(column.key)}
