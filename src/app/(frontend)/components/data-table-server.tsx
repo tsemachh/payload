@@ -290,7 +290,6 @@ export function DataTableServer<T extends Record<string, any>>({
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
               <LoadingSpinnerDiamond />
-              <p className="text-sm text-muted-foreground">טוען נתונים...</p>
             </div>
           </div>
         )}
