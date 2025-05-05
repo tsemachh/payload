@@ -2,6 +2,7 @@ import { MeetingState } from '@/payload-types'
 
 export type MeetingTableDataType = {
   meetingId: string
+  agendaTexts: string[]
   companies: CompanyTableDate[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
@@ -43,7 +44,8 @@ export type CompanyTableDate = {
 export interface Column<T> {
   key: string
   header: string
-  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum'
+  noHeader?: boolean
+  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum' | 'other'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
@@ -52,6 +54,7 @@ export interface Column<T> {
   width?: number
   sortKey?: keyof T // Allow sorting by a different key than displayed
   options?: { label: string; value: string }[]
+  isAlwaysVisible?: boolean
 }
 
 // Structure for faceted filters

@@ -756,6 +756,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                 {columns.map((column) => (
                   <DropdownMenuCheckboxItem
                     key={String(column.key)}
+                    disabled={column.isAlwaysVisible}
                     checked={columnVisibility[String(column.key)]}
                     onCheckedChange={() => toggleColumnVisibility(String(column.key))}
                     onSelect={(event) => event.preventDefault()}
@@ -793,7 +794,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         }}
                       >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
-                          {column.header}
+                          {column.noHeader ? '' : column.header}
                         </span>
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
                           {getSortIcon(column.key)}
