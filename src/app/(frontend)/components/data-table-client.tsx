@@ -97,20 +97,27 @@ export function DataTableStatic<T extends Record<string, any>>({
       // Load column visibility from localStorage
       const loadColumnVisibility = () => {
         const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
+        const alwaysVisible = columns
+          .filter((col) => col.isAlwaysVisible)
+          .map((col) => String(col.key))
+
         if (storedColumns) {
           try {
-            const parsedColumns = JSON.parse(storedColumns)
+            const parsedColumns: string[] = JSON.parse(storedColumns)
             const validColumns = columns.map((col) => String(col.key))
-            const filteredColumns = parsedColumns.filter((col: string) =>
-              validColumns.includes(col),
-            )
 
-            if (filteredColumns.length !== parsedColumns.length) {
-              localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(filteredColumns))
+            // Filter out any invalid column keys
+            const filteredColumns = parsedColumns.filter((col) => validColumns.includes(col))
+
+            // Add alwaysVisible columns if they're not already in localStorage
+            const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
+
+            if (mergedColumns.length !== parsedColumns.length) {
+              localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(mergedColumns))
             }
 
             const newVisibility = Object.fromEntries(
-              columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+              columns.map((col) => [String(col.key), mergedColumns.includes(String(col.key))]),
             )
             setColumnVisibility(newVisibility)
           } catch (error) {
@@ -123,11 +130,23 @@ export function DataTableStatic<T extends Record<string, any>>({
       }
 
       const setDefaultColumnVisibility = () => {
-        const newVisibility = Object.fromEntries(
-          columns.map((col) => [String(col.key), defaultVisibleColumns.includes(String(col.key))]),
+        // Always-visible column keys
+        const alwaysVisible = columns
+          .filter((col) => col.isAlwaysVisible)
+          .map((col) => String(col.key))
+
+        // Merge defaultVisibleColumns with alwaysVisible, removing duplicates
+        const mergedVisible = Array.from(
+          new Set([...defaultVisibleColumns.map(String), ...alwaysVisible]),
         )
+
+        // Set visibility for each column
+        const newVisibility = Object.fromEntries(
+          columns.map((col) => [String(col.key), mergedVisible.includes(String(col.key))]),
+        )
+
         setColumnVisibility(newVisibility)
-        localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(defaultVisibleColumns))
+        localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(mergedVisible))
       }
 
       loadColumnVisibility()
