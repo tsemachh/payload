@@ -52,7 +52,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
       <Button
         variant="outline"
         size="sm"
-        className="mr-[24px] bg-transparent text-dark border border-inherit hover:bg-muted hover:text-dark transition-colors"
+        className="mr-[24px] w-[60px] bg-transparent text-dark border border-inherit hover:bg-muted hover:text-dark transition-colors"
         onClick={() => setOpen(true)}
       >
         השתקה

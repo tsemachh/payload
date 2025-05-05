@@ -85,7 +85,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
       <Button
         variant="outline"
         size="sm"
-        className="bg-transparent text-dark border border-inherit hover:bg-muted hover:text-dark transition-colors"
+        className="w-[60px] bg-transparent text-dark border border-inherit hover:bg-muted hover:text-dark transition-colors"
         onClick={() => setOpen(true)}
       >
         הוספה
