@@ -16,6 +16,7 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
     noHeader: true,
     type: 'other',
     filterable: true,
+    isAlwaysVisible: true,
     positionCenter: true,
     render: (row) => (
       <TooltipProvider>
