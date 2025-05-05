@@ -25,11 +25,13 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
             <Info className="w-4 h-4 " />
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
-            <div className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words">
+            <div
+              className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words text-right"
+              dir="rtl"
+            >
               {row.agendaTexts.length
                 ? row.agendaTexts.map((text, index) => (
                     <div key={index}>
-                      {' '}
                       {index + 1}. {text}
                     </div>
                   ))
