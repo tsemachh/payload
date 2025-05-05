@@ -106,14 +106,14 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
-              filterOptions: ({ data }) => {
-                if (!Array.isArray(data?.companies)) {
-                  return true
-                }
+              filterOptions: ({ data, siblingData }) => {
+                const currentId = (siblingData as { companyId?: string })?.companyId
 
-                const selectedIds = data.companies
-                  .map((item: { companyId?: string }) => item?.companyId)
-                  .filter(Boolean)
+                const selectedIds = Array.isArray(data?.companies)
+                  ? data.companies
+                      .map((item: { companyId?: string }) => item?.companyId)
+                      .filter((id: string | undefined) => id && id !== currentId)
+                  : []
 
                 if (selectedIds.length === 0) {
                   return true
