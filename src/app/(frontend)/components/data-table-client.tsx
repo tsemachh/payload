@@ -794,7 +794,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         }}
                       >
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
-                          {column.header}
+                          {column.noHeader ? '' : column.header}
                         </span>
                         <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
                           {getSortIcon(column.key)}

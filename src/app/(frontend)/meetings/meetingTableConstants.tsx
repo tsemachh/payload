@@ -11,9 +11,10 @@ import { Info } from 'lucide-react'
 
 export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
   {
-    key: 'tmpName',
-    header: 'זמני',
-    type: 'boolean',
+    key: 'agendaTexts',
+    header: 'סדר היום',
+    noHeader: true,
+    type: 'other',
     filterable: true,
     positionCenter: true,
     render: (row) => (
@@ -24,9 +25,14 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
             <div className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {row.stockTradable
-                ? `The stock is currently tradable and can be bought or sold on the platform. This status may change based on market conditions.`
-                : `The stock is currently not tradable. Please check back later or contact support for more information.`}
+              {row.agendaTexts.length
+                ? row.agendaTexts.map((text, index) => (
+                    <div key={index}>
+                      {' '}
+                      {index + 1}. {text}
+                    </div>
+                  ))
+                : 'אסיפה ללא נושא'}
             </div>
           </TooltipContent>
         </Tooltip>
