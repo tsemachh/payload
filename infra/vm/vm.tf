@@ -1,18 +1,18 @@
 provider "google" {
-  project = "emda-dev" 
-  region  = "me-west1"
+  project = var.project
+  region  = var.region
 }
 
 # Network
 resource "google_compute_network" "payload_network" {
-  name                    = "payload-network"
+  name                    = "${var.prefix}-network"
   auto_create_subnetworks = false
 }
 
 resource "google_compute_subnetwork" "payload_subnet" {
-  name          = "payload-subnet"
+  name          = "${var.prefix}-subnet"
   ip_cidr_range = "10.0.0.0/24"
-  region        = "me-west1"
+  region        = var.region
   network       = google_compute_network.payload_network.id
 }
 
@@ -23,7 +23,7 @@ resource "google_compute_firewall" "allow_ssh_http_s" {
 
   allow {
     protocol = "tcp"
-    ports    = ["22","80", "443","3000"]
+    ports    = ["22", "80", "443", "3000"]
   }
 
   source_ranges = ["0.0.0.0/0"]  
@@ -68,7 +68,7 @@ resource "google_compute_firewall" "allow_outbound" {
 }
 
 resource "google_compute_security_policy" "payload_security_policy" {
-  name = "payload-security-policy"
+  name = "${var.prefix}-security-policy"
 
   # Rule 1: Allow traffic from the load balancer IP
   rule {
@@ -89,7 +89,7 @@ resource "google_compute_security_policy" "payload_security_policy" {
     match {
       expr {
         expression = <<-EOT
-          request.headers['host'].contains('emda-dev.shefing.com') 
+          request.headers['host'].contains('${var.domain_name}') 
         EOT
       }
     }
@@ -125,7 +125,7 @@ resource "google_compute_security_policy" "payload_security_policy" {
 
 # Load Balancer IP
 resource "google_compute_global_address" "load_balancer_ip" {
-  name   = "payload-loadbalancer-ip"
+  name   = "${var.prefix}-loadbalancer-ip"
 
   lifecycle {
     prevent_destroy = true
@@ -134,15 +134,15 @@ resource "google_compute_global_address" "load_balancer_ip" {
 
 # Service Account
 resource "google_service_account" "payload_sa" {
-  account_id   = "payload-service-account"
-  display_name = "Payload VM Service Account"
+  account_id   = "${var.prefix}-service-account"
+  display_name = "${var.prefix} VM Service Account"
 }
 
 # VM Instance
 resource "google_compute_instance" "payload_vm" {
-  name         = "payload-vm"
+  name         = "${var.prefix}-vm"
   machine_type = "e2-medium"
-  zone         = "me-west1-b"
+  zone         = var.zone
 
   boot_disk {
     initialize_params {
@@ -190,42 +190,43 @@ sudo systemctl start docker
 
 # Configure Docker to use gcloud as a credential helper
 gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
-# Create the payload directory
-sudo mkdir -p payload
+# Create the ${var.prefix} directory
+sudo mkdir -p ${var.prefix}
 
-# Create docker-compose.yml in payload/
-cat <<EOF | sudo tee payload/docker-compose.yml 
+# Create docker-compose.yml in ${var.prefix}/
+cat <<EOF | sudo tee ${var.prefix}/docker-compose.yml 
 version: '3'
 services:
-  payload-app:
-    image: me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
+  ${var.prefix}-app:
+    image: ${var.docker_image}:${var.docker_tag}
     environment:
-      - DATABASE_URI=mongodb+srv://app:DuChQfEVyjQMiW6K@emda-dev-cluster.auybqem.mongodb.net/
-      - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
-      - HOST=emda-dev.shefing.com
-      - NEXT_PUBLIC_SERVER_URL=https://emda-dev.shefing.com
-      - GCS_BUCKET=emda-media
-      - GCS_PROJECT_ID=emda-dev
+      - DATABASE_URI=${var.database_uri}
+      - PAYLOAD_SECRET=${var.payload_secret}
+      - HOST=${var.domain_name}
+      - NEXT_PUBLIC_SERVER_URL=https://${var.domain_name}
+      - GCS_BUCKET=${var.gcs_bucket}
+      - GCS_PROJECT_ID=${var.project}
       - GCS_ENDPOINT=https://storage.googleapis.com
-      - LOGTAIL_SOURCE_TOKEN=B5p5aFX1cPDdGdzaKHFu1Vss
+      - LOGTAIL_SOURCE_TOKEN=${var.logtail_source_token}
+      - TZ=Asia/Jerusalem
     ports:
-      - "3000:3000"
+      - "${var.health_check_port}:${var.health_check_port}"
     restart: always 
 EOF
 
-# Navigate to payload 
-cd payload
+# Navigate to ${var.prefix} 
+cd ${var.prefix}
 
 #backup logs
-sudo mkdir -p /payload/logs
+sudo mkdir -p /${var.prefix}/logs
 
 # Save previous logs before restarting
-sudo docker-compose logs --no-color --timestamps > "/payload/logs/docker-compose-$(date +"%Y-%m-%d_%H-%M-%S").txt"
+sudo docker-compose logs --no-color --timestamps > "/${var.prefix}/logs/docker-compose-$(date +"%Y-%m-%d_%H-%M-%S").txt"
 
 sudo docker-compose down || true
 
 # Clean docker cache
-sudo docker image rm me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest || true
+sudo docker image rm ${var.docker_image}:${var.docker_tag} || true
 
 # Pull latest
 gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
@@ -237,18 +238,18 @@ sudo docker-compose up -d
 
 #Setup cron job for updates
 
-sudo mkdir -p /payload/logs/cron
+sudo mkdir -p /${var.prefix}/logs/cron
 
-cat > /payload/docker-image-updater.sh << 'EOF'
+cat > /${var.prefix}/docker-image-updater.sh << EOF
 #!/bin/bash
 
 # Configure these variables
-IMAGE="me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image"
-TAG="latest"
-COMPOSE_FILE="/payload/docker-compose.yml"
-SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"
+IMAGE="${var.docker_image}"
+TAG="${var.docker_tag}"
+COMPOSE_FILE="/${var.prefix}/docker-compose.yml"
+SLACK_WEBHOOK_URL="${var.slack_webhook_url}"
 
-DEPLOYMENT_URL="https://emda-dev.shefing.com"
+DEPLOYMENT_URL="https://${var.domain_name}"
 # Authenticate with GCR
 sudo gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 
@@ -278,14 +279,14 @@ else
 fi
 EOF
 
-chmod +x /payload/docker-image-updater.sh
+chmod +x /${var.prefix}/docker-image-updater.sh
 
-touch /payload/logs/cron/docker-updater-log.txt
-chmod 644 /payload/logs/cron/docker-updater-log.txt
+touch /${var.prefix}/logs/cron/docker-updater-log.txt
+chmod 644 /${var.prefix}/logs/cron/docker-updater-log.txt
 
 # Add the cron job to the root user's crontab
-if ! crontab -l 2>/dev/null | grep -q "/payload/docker-image-updater.sh"; then
-  (crontab -l 2>/dev/null; echo "*/3 * * * * /payload/docker-image-updater.sh >> /payload/logs/cron/docker-updater-log-$(date +'%Y-%m-%d-%H-%M-%S').txt 2>&1") | crontab -
+if ! crontab -l 2>/dev/null | grep -q "/${var.prefix}/docker-image-updater.sh"; then
+  (crontab -l 2>/dev/null; echo "*/3 * * * * /${var.prefix}/docker-image-updater.sh >> /${var.prefix}/logs/cron/docker-updater-log-$(date +'%Y-%m-%d-%H-%M-%S').txt 2>&1") | crontab -
 fi
 
 
@@ -296,21 +297,21 @@ EOT
 
 # Instance Group (for the load balancer backend)
 resource "google_compute_instance_group" "payload_instance_group" {
-  name        = "payload-instance-group"
-  description = "Instance group for the Payload VM"
-  zone        = "me-west1-b"
+  name        = "${var.prefix}-instance-group"
+  description = "Instance group for the ${var.prefix} VM"
+  zone        = var.zone
 
   instances = [google_compute_instance.payload_vm.self_link]
 
   named_port {
     name = "http"
-    port = 3000
+    port = var.health_check_port
   }
 }
 
 # IAM Binding for Artifact Registry Access
 resource "google_project_iam_member" "artifact_registry_access" {
-  project = "emda-dev"
+  project = var.project
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.payload_sa.email}"
 }
@@ -319,7 +320,7 @@ resource "google_project_iam_member" "artifact_registry_access" {
 # resource "google_compute_health_check" "payload_health_check" {
 #   name               = "payload-http-health-check"
 #   check_interval_sec = 60
-#   timeout_sec        = 30
+#   timeout_sec        = 300
 #   healthy_threshold  = 2
 #   unhealthy_threshold = 2
 
@@ -330,20 +331,20 @@ resource "google_project_iam_member" "artifact_registry_access" {
 # }
 
 resource "google_compute_health_check" "payload_health_tcp_check" {
-  name               = "payload-tcp-health-check"
+  name               = "${var.prefix}-tcp-health-check"
   check_interval_sec = 60
-  timeout_sec        = 30
+  timeout_sec        = 300
   healthy_threshold  = 2
   unhealthy_threshold = 2
 
   tcp_health_check {
-    port = 3000  
+    port = var.health_check_port
   }
 }
 
 # Backend Service
 resource "google_compute_backend_service" "payload_backend" {
-  name                  = "payload-backend-service"
+  name                  = "${var.prefix}-backend-service"
   health_checks         = [google_compute_health_check.payload_health_tcp_check.self_link]
   load_balancing_scheme = "EXTERNAL"
   security_policy       = google_compute_security_policy.payload_security_policy.self_link
@@ -357,34 +358,34 @@ resource "google_compute_backend_service" "payload_backend" {
   port_name = "http"  
 
   session_affinity = "NONE"
-  timeout_sec      = 600  # Increased from 30 to 600 seconds to handle longer-running requests
+  timeout_sec      = 300
 
 }
 
 # URL Map
 resource "google_compute_url_map" "payload_url_map" {
-  name            = "payload-url-map"
+  name            = "${var.prefix}-url-map"
   default_service = google_compute_backend_service.payload_backend.self_link
 }
 
 # SSL Certificate
 resource "google_compute_managed_ssl_certificate" "payload_ssl" {
-  name = "payload-ssl-cert"
+  name = "${var.prefix}-ssl-cert"
   managed {
-    domains = ["emda-dev.shefing.com"]  
+    domains = [var.domain_name]  
   }
 }
 
 # HTTPS Proxy
 resource "google_compute_target_https_proxy" "payload_https_proxy" {
-  name             = "payload-https-proxy"
+  name             = "${var.prefix}-https-proxy"
   url_map          = google_compute_url_map.payload_url_map.self_link
   ssl_certificates = [google_compute_managed_ssl_certificate.payload_ssl.self_link]
 }
 
 # Forwarding Rule
 resource "google_compute_global_forwarding_rule" "payload_https_forwarding_rule" {
-  name                  = "payload-https-forwarding-rule"
+  name                  = "${var.prefix}-https-forwarding-rule"
   target                = google_compute_target_https_proxy.payload_https_proxy.self_link
   port_range            = "443"
   load_balancing_scheme = "EXTERNAL"
@@ -393,16 +394,16 @@ resource "google_compute_global_forwarding_rule" "payload_https_forwarding_rule"
 
 # Create the Cloud Router
 resource "google_compute_router" "payload_router" {
-  name    = "payload-router"
-  region  = "me-west1"
+  name    = "${var.prefix}-router"
+  region  = var.region
   network = google_compute_network.payload_network.id
 }
 
 # Create the Cloud NAT configuration
 resource "google_compute_router_nat" "payload_nat" {
-  name                               = "payload-nat"
+  name                               = "${var.prefix}-nat"
   router                            = google_compute_router.payload_router.name
-  region                            = "me-west1"
+  region                            = var.region
   nat_ip_allocate_option            = "AUTO_ONLY"  # Automatically allocate IPs for NAT
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
@@ -414,5 +415,5 @@ resource "google_compute_router_nat" "payload_nat" {
 # Output
 output "load_balancer_ip" {
   value       = google_compute_global_address.load_balancer_ip.address
-  description = "The IP address to configure in DNS for emda-dev.shefing.com"
+  description = "The IP address to configure in DNS for the domain"
 }
