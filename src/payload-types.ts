@@ -100,6 +100,7 @@ export type MigrationType =
       | 'meetingAgenda'
       | 'vote'
       | 'silenced-stock'
+      | 'company'
     )
   | null;
 /**
@@ -470,6 +471,7 @@ export interface Company {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  silencedStocks?: string[] | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1203,6 +1205,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   accounts?: T;
   meetings?: T;
   holdings?: T;
+  silencedStocks?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

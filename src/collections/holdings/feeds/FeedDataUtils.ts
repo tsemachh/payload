@@ -58,18 +58,33 @@ export async function deleteExistingHoldings(
 export const fetchAllSilencedStocks = async (
   req: PayloadRequest,
   companies: string[],
-): Promise<SilencedStock[]> => {
+): Promise<{ stockId: string }[]> => {
   try {
+    // Fetch companies with their silenced stocks
     const result = await req.payload.find({
-      collection: 'silenced-stocks',
+      collection: 'companies',
       where: {
-        companies: {
-          all: companies,
+        id: {
+          in: companies,
         },
       },
       limit: 0,
+      depth: 0
     })
-    return result.docs;
+
+    // Collect all silenced stocks from all companies
+    const silencedStocksSet = new Set<string>()
+    result.docs.forEach(company => {
+      const silencedStocks = company.silencedStocks || []
+      silencedStocks.forEach((stockId: string) => {
+        if (stockId) {
+          silencedStocksSet.add(stockId)
+        }
+      })
+    })
+
+    // Convert to array of objects with stockId property
+    return Array.from(silencedStocksSet).map(stockId => ({ stockId }))
   } catch (error) {
     console.error('שגיאה בקריאה לניירות מושתקים:', error);
     return [];

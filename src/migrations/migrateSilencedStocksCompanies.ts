@@ -17,6 +17,9 @@ const sqlConfig: sql.config = {
   requestTimeout: 120000, // 2 minutes timeout
 }
 
+// Minimum date for holdings (January 1, 2024)
+const MIN_HOLDINGS_DATE = '2024-01-01'
+
 interface StockFirmRow {
   stockNum: string
   firm: string
@@ -27,6 +30,7 @@ async function getDistinctStockFirms(pool: sql.ConnectionPool): Promise<sql.IRes
     SELECT distinct [stockNum]
       ,[firm]
     FROM [dbEmda].[dbo].[holdings]
+    WHERE [date1] >= '${MIN_HOLDINGS_DATE}'
   `)
 }
 
@@ -42,19 +46,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
 
-    // Preload companyIdToSequence mapping
-    console.log('Preloading company ID to sequence mapping...')
+    // Preload company mappings
+    console.log('Preloading company mappings...')
     const companyIdToSequence = await getCompanyIdToSequenceMap(payload)
     const companyIdToChildCompanies = await getCompanyIdToChildCompanies(payload)
     console.log(`Preloaded ${companyIdToSequence.size} companies`)
-    console.log(`Preloaded ${companyIdToChildCompanies.size} companies`)
+    console.log(`Preloaded ${companyIdToChildCompanies.size} companies with child companies`)
 
     // Get distinct stockNum and firm from holdings table
     console.log('Fetching distinct stock numbers and firms from holdings...')
     const stockFirmsResult = await getDistinctStockFirms(pool)
-    console.log(`Found ${stockFirmsResult.recordset.length} distinct stock-firm pairs`)
+    console.log(`Found ${stockFirmsResult.recordset.length} distinct stock-firm pairs from ${MIN_HOLDINGS_DATE}`)
 
-    // Create a map of stockNum to firms
+    // Create a map of company ID to silenced stocks
+    const companyToStocks = new Map<string, Set<string>>()
+
+    // Create a map of stockNum to firms from holdings
     const stockToFirms = new Map<string, Set<string>>()
     for (const row of stockFirmsResult.recordset) {
       if (!stockToFirms.has(`${row.stockNum}`)) {
@@ -72,67 +79,85 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
     console.log(`Found ${silencedStocks.docs.length} silenced stocks`)
 
-    // For each silenced stock, find the firm IDs pointing to it and update the record
+    // For each silenced stock, find the firm IDs pointing to it and add to company-to-stocks map
     for (const silencedStock of silencedStocks.docs) {
-      try {
-        const stockId = silencedStock.stockId
-        if (!stockId) {
-          console.warn(`Silenced stock with ID ${silencedStock.id} has no stockId, skipping`)
-          continue
-        }
+      const stockId = silencedStock.stockId
+      if (!stockId) {
+        console.warn(`Silenced stock with ID ${silencedStock.id} has no stockId, skipping`)
+        continue
+      }
 
-        // Get firms for this stock
-        const firms = stockToFirms.get(stockId)
-        if (!firms || firms.size === 0) {
-          console.log(`No firms found for silenced stock ${stockId}, skipping`)
-          continue
-        }
+      // Get firms for this stock
+      const firms = stockToFirms.get(stockId)
+      if (!firms || firms.size === 0) {
+        console.log(`No firms found for silenced stock ${stockId}, skipping`)
+        continue
+      }
 
-        // Convert firms to company IDs
-        let companyIds: string[] = []
-        for (const firm of firms) {
-          const companyId = companyIdToSequence.get(firm)
-          if (companyId) {
-            companyIds.push(companyId)
-          } else {
-            console.warn(`Company ID not found for firm: ${firm}`)
+      // Convert firms to company IDs and add stock to each company
+      for (const firm of firms) {
+        const companyId = companyIdToSequence.get(firm)
+        if (companyId) {
+          // Add stock to company
+          if (!companyToStocks.has(companyId)) {
+            companyToStocks.set(companyId, new Set<string>())
           }
+          companyToStocks.get(companyId)?.add(stockId)
+
+          // Also add to child companies
           const companyChildIds = companyIdToChildCompanies.get(firm)
-          if (companyChildIds && companyChildIds.length >0) {
-            companyIds=companyIds.concat(companyChildIds)
+          if (companyChildIds && companyChildIds.length > 0) {
+            for (const childId of companyChildIds) {
+              if (!companyToStocks.has(childId)) {
+                companyToStocks.set(childId, new Set<string>())
+              }
+              companyToStocks.get(childId)?.add(stockId)
+            }
           }
+        } else {
+          console.warn(`Company ID not found for firm: ${firm}`)
         }
+      }
+    }
 
-        if (companyIds.length === 0) {
-          console.warn(`No valid company IDs found for silenced stock ${stockId}, skipping`)
+    // Update each company with its silenced stocks
+    const companyIds = Array.from(companyToStocks.keys())
+    console.log(`Updating ${companyIds.length} companies with silenced stocks...`)
+
+    for (const companyId of companyIds) {
+      try {
+        const silencedStockIds = Array.from(companyToStocks.get(companyId) || [])
+
+        if (silencedStockIds.length === 0) {
+          console.log(`No silenced stocks for company ${companyId}, skipping`)
           continue
         }
 
-        // Update the silenced stock with the company IDs
+        // Update the company with its silenced stocks
         await payload.update({
-          collection: 'silenced-stocks',
-          id: silencedStock.id,
+          collection: 'companies',
+          id: companyId,
           data: {
-            companies: companyIds,
+            silencedStocks: silencedStockIds,
           },
           req,
         })
 
         successCount++
         console.log(
-          `✓ Updated silenced stock ${stockId} with ${companyIds.length} companies (${successCount}/${silencedStocks.docs.length})`,
+          `✓ Updated company ${companyId} with ${silencedStockIds.length} silenced stocks (${successCount}/${companyIds.length})`,
         )
       } catch (error) {
         errorCount++
-        console.error(`Error updating silenced stock ${silencedStock.stockId}:`, error)
+        console.error(`Error updating company ${companyId}:`, error)
         await logMigrationFault({
           payload,
-          type: 'silenced-stock',
-          row: JSON.stringify(silencedStock),
-          typeId: silencedStock.stockId || '',
+          type: 'company',
+          row: JSON.stringify({ companyId }),
+          typeId: companyId,
           comments: createErrorFaultComment({
-            id: silencedStock.id,
-            operation: 'Update silenced stock companies',
+            id: companyId,
+            operation: 'Update company silenced stocks',
             error: error instanceof Error ? error : new Error(String(error)),
           }),
         })
@@ -140,7 +165,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     }
 
     console.log('\nMigration Summary:')
-    console.log(`Total silenced stocks processed: ${silencedStocks.docs.length}`)
+    console.log(`Total companies processed: ${companyIds.length}`)
     console.log(`Successfully updated: ${successCount}`)
     console.log(`Failed updates: ${errorCount}`)
     console.log('Migration completed successfully.')
