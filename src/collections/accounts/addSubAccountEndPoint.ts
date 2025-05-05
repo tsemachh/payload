@@ -11,62 +11,71 @@ const validateQueryParams = (accountId: string, companyId: string) => {
 }
 
 export const getParentAccountId = async (
-  companyId: number,
+  companyId: string,
   req: PayloadRequest
-): Promise<number | null> => {
+): Promise<string | null> => {
   const result = await req.payload.find({
     collection: 'companies',
     where: {
-      companyId: {
+      id: {
         equals: companyId,
       },
     },
-    depth: 1, // חשוב: כדי לקבל גם את accounts אם זה relation
+    depth: 0,
     limit: 1,
   })
 
-  console.log('----result', result)
 
   const companyDoc = result.docs[0]
 
-  if (!companyDoc || !companyDoc.accounts || !Array.isArray(companyDoc.accounts)) {
+  if (
+    !companyDoc ||
+    !companyDoc.accounts ||
+    !companyDoc.accounts.docs ||
+    !Array.isArray(companyDoc.accounts.docs) ||
+    companyDoc.accounts.docs.length === 0
+  ) {
     return null
   }
 
-  console.log('companyDoc.accounts', companyDoc.accounts)
+  const parentAccountId = companyDoc.accounts.docs[0]
+  console.log('parentAccountId', parentAccountId)
 
-  const [firstAccount] = companyDoc.accounts
-  const accountId = typeof firstAccount === 'object' ? firstAccount.id : firstAccount
+  return typeof parentAccountId === 'string' ? parentAccountId : null
 
-  return typeof accountId === 'number' ? accountId : null
 }
+
+
+const createSubAccount = async (
+  req: PayloadRequest,
+  accountNumber: number,
+  parentAccount: string | null,
+  company: string
+) => {
+  return await req.payload.create({
+    collection: 'accounts',
+    data: {
+      accountNumber,
+      name: `Sub Account ${accountNumber}`,
+      company,
+      isCentralAccount: false,
+      parentAccount,
+    },
+  })
+}
+
 
 const addSubAccountEndPoint = async (req: PayloadRequest) => {
   try {
-    console.log('-----aaa')
-
     const { accountId, companyId } = req.query as { accountId: string; companyId: string }
 
     const queryParamError = validateQueryParams(accountId, companyId)
-    console.log('-----queryParamError', queryParamError)
 
     if (queryParamError) return queryParamError
-    console.log('-----accountId', accountId)
-    console.log('-----companyId', companyId)
 
+    const parentAccountId = await getParentAccountId(companyId, req)
 
-    const numericCompanyId = Number(companyId)
-    console.log('-----numericCompanyId', numericCompanyId)
-
-    if (isNaN(numericCompanyId)) {
-      return Response.json({ error: 'Invalid companyId format' }, { status: 400 })
-    }
-
-    const parentAccountId = await getParentAccountId(numericCompanyId, req)
-
-    console.log('-----accountId', accountId)
-    console.log('-----companyId', numericCompanyId)
-    console.log('-----parentAccountId', parentAccountId)
+    await createSubAccount(req, Number(accountId), parentAccountId, companyId)
 
     return Response.json({ message: 'OK', parentAccountId }, { status: 200 })
   } catch (error) {
