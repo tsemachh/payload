@@ -220,7 +220,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-export const futuredefaultVisibleExtra = ['tmpName']
+export const futuredefaultVisibleExtra = ['agendaTexts']
 export const defaultVisibleColumns = [
   'companies',
   'stockNumber',
