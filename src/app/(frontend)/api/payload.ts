@@ -77,12 +77,12 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
               user?.leafCompanies
                 ? {
-                  company: {
+                    company: {
                       in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                     },
                   }
                 : {
-                  company: {
+                    company: {
                       in: [], // no matches if user.leafCompanies is missing or empty
                     },
                   },
@@ -117,12 +117,12 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
                 user?.leafCompanies
                   ? {
-                    company: {
+                      company: {
                         in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
                       },
                     }
                   : {
-                    company: {
+                      company: {
                         in: [], // no matches if user.leafCompanies is missing or empty
                       },
                     },
@@ -145,8 +145,12 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           })
         }
 
+        const agendaTexts = meeting.agenda?.map((item) =>
+          item.shortText?.trim() ? item.shortText : item.text,
+        ) ?? ['אסיפה ללא נושא']
         return {
           meetingId: meeting.meetingId,
+          agendaTexts,
           companies: companiesArray,
           stockNumber: stockPresent?.stockId?.toString() || '-',
           stockType: stockPresent?.type || '-',

@@ -6,6 +6,44 @@ import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
+
+export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
+  {
+    key: 'agendaTexts',
+    header: 'סדר היום',
+    noHeader: true,
+    type: 'other',
+    filterable: true,
+    isAlwaysVisible: true,
+    positionCenter: true,
+    render: (row) => (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="w-4 h-4 " />
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            <div
+              className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words text-right"
+              dir="rtl"
+            >
+              {row.agendaTexts.length
+                ? row.agendaTexts.map((text, index) => (
+                    <div key={index}>
+                      {index + 1}. {text}
+                    </div>
+                  ))
+                : 'אסיפה ללא נושא'}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
+    minWidth: 20,
+  },
+]
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
@@ -15,6 +53,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     sortKey: 'companies',
     minWidth: 50,
     width: 50,
+    isAlwaysVisible: true,
   },
   { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
   {
@@ -184,7 +223,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-
+export const futuredefaultVisibleExtra = ['agendaTexts']
 export const defaultVisibleColumns = [
   'companies',
   'stockNumber',
