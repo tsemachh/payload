@@ -3,8 +3,10 @@
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { HoldingFeedLine } from '@/payload-types'
+import { Company, HoldingFeedLine } from '@/payload-types'
 import { SelectParentCompanyTree } from './SelectParentCompanyTree'
+import { useAuth } from '@/providers/auth-provider'
+
 
 interface AddSubAccountDialogProps {
   accountId: string | number
@@ -23,12 +25,32 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
+  const { user } = useAuth()
 
   const handleClose = () => {
     setOpen(false)
     setResultMessage(null)
     setSelectedCompanyId(null)
   }
+
+  const companyIdsSet = new Set<string>(companies);
+
+  const companyOptions =
+    user?.leafCompanies
+      ?.filter((company): company is Company => {
+        return (
+          typeof company === 'object' &&
+          !!company.id &&
+          !!company.name &&
+          companyIdsSet.has(company.id)
+        );
+      })
+      .map((company) => ({
+        id: company.id,
+        label: company.name,
+      })) ?? [];
+
+
 
   const handleAddSubAccount = async () => {
     if (!selectedCompanyId) return
@@ -80,7 +102,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
           ) : (
             <>
               <SelectParentCompanyTree
-                companies={companies}
+                companies={companyOptions}
                 onSelect={(id) => setSelectedCompanyId(id)}
               />
 

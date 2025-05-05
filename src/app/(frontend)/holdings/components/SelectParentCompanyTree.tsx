@@ -1,7 +1,12 @@
 import React from 'react'
 
+interface CompanyOption {
+  id: string
+  label: string
+}
+
 interface SelectParentCompanyTreeProps {
-  companies: string[]
+  companies: CompanyOption[]
   onSelect: (companyId: string) => void
 }
 
@@ -22,11 +27,11 @@ export const SelectParentCompanyTree: React.FC<SelectParentCompanyTreeProps> = (
         defaultValue=""
       >
         <option value="" disabled>
-           בחר חברה
+          בחר חברה
         </option>
-        {companies.map((companyId) => (
-          <option key={companyId} value={companyId}>
-            {companyId}
+        {companies.map((company) => (
+          <option key={company.id} value={company.id}>
+            {company.label}
           </option>
         ))}
       </select>
