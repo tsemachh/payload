@@ -145,7 +145,9 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           })
         }
 
-        const agendaTexts = meeting.agenda?.map((item) => item.shortText ?? item.text) ?? ['אסיפה ללא נושא']
+        const agendaTexts = meeting.agenda?.map((item) =>
+          item.shortText?.trim() ? item.shortText : item.text,
+        ) ?? ['אסיפה ללא נושא']
         return {
           meetingId: meeting.meetingId,
           agendaTexts,
