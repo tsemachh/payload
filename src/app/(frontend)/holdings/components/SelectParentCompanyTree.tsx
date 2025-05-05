@@ -1,4 +1,11 @@
-import React from 'react'
+import React from "react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface CompanyOption {
   id: string
@@ -19,22 +26,17 @@ export const SelectParentCompanyTree: React.FC<SelectParentCompanyTreeProps> = (
   }
 
   return (
-    <div className="space-y-2">
-      <select
-        id="company-select"
-        onChange={(e) => onSelect(e.target.value)}
-        className="border p-2 rounded w-full"
-        defaultValue=""
-      >
-        <option value="" disabled>
-          בחר חברה
-        </option>
+    <Select dir={'rtl'} onValueChange={onSelect}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="בחר חברה" />
+      </SelectTrigger>
+      <SelectContent>
         {companies.map((company) => (
-          <option key={company.id} value={company.id}>
+          <SelectItem key={company.id} value={company.id}>
             {company.label}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-    </div>
+      </SelectContent>
+    </Select>
   )
 }
