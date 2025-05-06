@@ -20,7 +20,6 @@ export const parseFileContent = (file: any): any[] | undefined => {
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
 
-    // השתמש באופציה header: 1 עבור קובץ XLSX ללא כותרת
     const results: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
 
     return results.filter(row => row.length > 0)
