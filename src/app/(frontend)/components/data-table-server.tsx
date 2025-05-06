@@ -45,7 +45,7 @@ export function DataTableServer<T extends Record<string, any>>({
   onServerSort,
   onServerSearch,
   initialSearchTerm = '',
-  tableHeightOffset = 200,
+  tableHeightOffset = 250,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)

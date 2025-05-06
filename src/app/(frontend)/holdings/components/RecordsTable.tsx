@@ -128,7 +128,7 @@ export const RecordsTable: React.FC<{
         minWidth: tableWidth + 50 + 'px',
         maxWidth: tableWidth + 80 + columns.length * 100 + 'px',
         width: '100%',
-        margin: '0 auto',
+//        margin: '0 auto',
       }}
     >
       <DataTableStatic

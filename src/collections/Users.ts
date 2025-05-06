@@ -76,6 +76,25 @@ export const Users: CollectionConfig = {
         singular: 'חברה',
       },
       type: 'array',
+      validate: (value) => {
+        if (!Array.isArray(value)) {
+          return true // No companies selected, so valid
+        }
+        const ids = value.map((item) => {
+          if (typeof item !== 'object' || item === null || !('companyId' in item)) {
+            return null
+          }
+          return item.companyId
+        })
+        const filtered = ids.filter(Boolean)
+        const unique = new Set(filtered)
+
+        if (filtered.length !== unique.size) {
+          return 'Each company can only be selected once.'
+        }
+
+        return true
+      },
       interfaceName: 'UserCompany',
       fields: [
         {
@@ -87,6 +106,25 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
+              filterOptions: ({ data, siblingData }) => {
+                const currentId = (siblingData as { companyId?: string })?.companyId
+
+                const selectedIds = Array.isArray(data?.companies)
+                  ? data.companies
+                      .map((item: { companyId?: string }) => item?.companyId)
+                      .filter((id: string | undefined) => id && id !== currentId)
+                  : []
+
+                if (selectedIds.length === 0) {
+                  return true
+                }
+
+                return {
+                  id: {
+                    not_in: selectedIds,
+                  },
+                }
+              },
             },
             {
               name: 'permission',
@@ -129,8 +167,8 @@ export const Users: CollectionConfig = {
                 const leafRecurseCompanies = await getLeafCompanies(company.companyId, req)
                 leafCompanies = leafCompanies.concat(leafRecurseCompanies)
               }
-            } catch (e:any) {
-              console.error("Error in getLeafCompanies",JSON.stringify(e.message))
+            } catch (e: any) {
+              console.error('Error in getLeafCompanies', JSON.stringify(e.message))
             }
             leafCompanies = Array.from(new Set(leafCompanies))
             return leafCompanies
