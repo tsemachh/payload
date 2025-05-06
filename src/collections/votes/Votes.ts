@@ -18,8 +18,6 @@ export const Votes: CollectionConfig = {
       limits: [10, 20, 50, 100, 200],
     },
   },
-  versions: {
-  },
   fields: [
     {
       type:"row",
