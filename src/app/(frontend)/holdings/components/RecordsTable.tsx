@@ -2,9 +2,10 @@
 
 import React from 'react'
 import { Column } from '../../types/meetings'
-import { DataTableStatic } from '../../components/data-table-client'
+import { DataTableStatic } from '@/components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
+import { AddSubAccountDialog } from './AddSubAccountDialog'
 import { HoldingFeedLineWithName } from '@/collections/holdings/feeds/FeedValidations'
 
 interface RecordType {
@@ -66,8 +67,23 @@ const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedL
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>{row.error}</span>
+
           {row.error === 'נייר ערך לא מוכר' && (
-            <SilenceDialog stockId={row.stockId} companies={companies} allRecords={allRecords} onRefreshAction={onRefresh} />
+            <SilenceDialog
+              stockId={row.stockId}
+              companies={companies}
+              allRecords={allRecords}
+              onRefreshAction={onRefresh}
+            />
+          )}
+
+          {row.error === 'מספר חשבון לא מוכר' && (
+            <AddSubAccountDialog
+              accountId={row.accountId}
+              companies={companies}
+              allRecords={allRecords}
+              onRefreshAction={onRefresh}
+            />
           )}
         </div>
       )

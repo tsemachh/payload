@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import addSubAccountEndPoint from './addSubAccountEndPoint'
 
 export const Accounts: CollectionConfig = {
   slug: 'accounts',
@@ -84,5 +85,12 @@ export const Accounts: CollectionConfig = {
         condition: (data) => data.isCentralAccount
       }
     }
+  ],
+  endpoints: [
+    {
+      path: '/addSubAccount',
+      method: 'post',
+      handler: addSubAccountEndPoint,
+    },
   ],
 }
