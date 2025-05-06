@@ -7,23 +7,26 @@ import * as XLSX from 'xlsx'
  * @param file The file to parse
  * @returns Parsed file content as an array
  */
-export const parseFileContent = (file: any): any[] => {
+export const parseFileContent = (file: any): any[] | undefined => {
   const fileExt = file.name.split('.').pop()?.toLowerCase()
-  let results: any[] = []
 
   if (fileExt === 'csv') {
-    const csvData = file.data.toString('utf8')
+    let csvData = file.data.toString('utf8')
+    csvData="0,1,2\r\n"+csvData
     // Parse CSV without using generateHeaderNames which can cause errors
-    results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
+    return  csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
   } else if (fileExt === 'xlsx' || fileExt === 'xls') {
     const workbook = XLSX.read(file.data, { type: 'buffer' })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
-    // Use header: 1 option to handle XLSX without headers
-    results = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+
+    // השתמש באופציה header: 1 עבור קובץ XLSX ללא כותרת
+    const results: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+
+    return results.filter(row => row.length > 0)
   }
   
-  return results
+
 }
 /**
  * Standardize row data from different file formats
