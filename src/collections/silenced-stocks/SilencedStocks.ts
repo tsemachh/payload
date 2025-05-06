@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import upsertSilencedStocksEndPoint from '@/collections/silenced-stocks/upsertSilencedStocksEndPoint'
+import upsertSilencedStocksEndPoint from './upsertSilencedStocksEndPoint'
 
 export const SilencedStocks: CollectionConfig = {
   slug: 'silenced-stocks',
