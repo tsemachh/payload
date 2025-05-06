@@ -127,9 +127,9 @@ resource "google_compute_security_policy" "payload_security_policy" {
 resource "google_compute_global_address" "load_balancer_ip" {
   name   = "${var.prefix}-loadbalancer-ip"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+   lifecycle {
+     prevent_destroy = true
+   }
 }
 
 # Service Account
@@ -194,7 +194,7 @@ gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 sudo mkdir -p ${var.prefix}
 
 # Create docker-compose.yml in ${var.prefix}/
-cat <<EOF | sudo tee ${var.prefix}/docker-compose.yml 
+cat <<EOF | sudo tee ${var.prefix}/docker-compose.yml
 version: '3'
 services:
   ${var.prefix}-app:
@@ -202,7 +202,7 @@ services:
     environment:
       - DATABASE_URI=${var.database_uri}
       - PAYLOAD_SECRET=${var.payload_secret}
-      - HOST=${var.domain_name}
+      - HOST=0.0.0.0
       - NEXT_PUBLIC_SERVER_URL=https://${var.domain_name}
       - GCS_BUCKET=${var.gcs_bucket}
       - GCS_PROJECT_ID=${var.project}
@@ -211,10 +211,10 @@ services:
       - TZ=Asia/Jerusalem
     ports:
       - "${var.health_check_port}:${var.health_check_port}"
-    restart: always 
+    restart: always
 EOF
 
-# Navigate to ${var.prefix} 
+# Navigate to ${var.prefix}
 cd ${var.prefix}
 
 #backup logs
@@ -244,35 +244,30 @@ cat > /${var.prefix}/docker-image-updater.sh << EOF
 #!/bin/bash
 
 # Configure these variables
-IMAGE="${var.docker_image}"
-TAG="${var.docker_tag}"
-COMPOSE_FILE="/${var.prefix}/docker-compose.yml"
 SLACK_WEBHOOK_URL="${var.slack_webhook_url}"
-
-DEPLOYMENT_URL="https://${var.domain_name}"
 # Authenticate with GCR
 sudo gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
 
 # Get current digests
-REMOTE_DIGEST=$(sudo gcloud container images list-tags "${IMAGE}" \
-  --filter="tags=${TAG}" \
+REMOTE_DIGEST=$(sudo gcloud container images list-tags "${var.docker_image}" \
+  --filter="tags=${var.docker_tag}" \
   --format='get(digest)' \
   --sort-by=~TIMESTAMP \
   --limit=1)
 
-LOCAL_DIGEST=$(sudo docker image inspect "${IMAGE}:${TAG}" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d '@' -f 2)
+LOCAL_DIGEST=$(sudo docker image inspect "${var.docker_image}:${var.docker_tag}" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d '@' -f 2)
 
 # Check if update needed
 if [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image detected. Pulling..."
-  sudo docker pull "${IMAGE}:${TAG}"
-  sudo docker-compose -f "${COMPOSE_FILE}" down
-  sudo docker-compose -f "${COMPOSE_FILE}" up -d --force-recreate
+  sudo docker pull "${var.docker_image}:${var.docker_tag}"
+  sudo docker-compose -f "/${var.prefix}/docker-compose.yml" down
+  sudo docker-compose -f "/${var.prefix}/docker-compose.yml" up -d --force-recreate
   sudo docker image prune -a --force
   echo "$(date +"%Y-%m-%d %H:%M:%S") - New image updated."
   # Send Slack notification about the change
   curl -X POST -H 'Content-type: application/json' --data "{
-    \"text\": \"New Docker image deployed!\n*Image:* ${IMAGE}\n*Tag:* ${TAG}\n*Environment URL:* ${DEPLOYMENT_URL}\"
+    \"text\": \"New Docker image deployed!\n*Image:* ${var.docker_image}\n*Tag:* ${var.docker_tag}\n*Environment URL:* https://${var.domain_name}\"
   }" $SLACK_WEBHOOK_URL
 else
   echo "No changes detected."
@@ -332,7 +327,7 @@ resource "google_project_iam_member" "artifact_registry_access" {
 
 resource "google_compute_health_check" "payload_health_tcp_check" {
   name               = "${var.prefix}-tcp-health-check"
-  check_interval_sec = 60
+  check_interval_sec = 300
   timeout_sec        = 300
   healthy_threshold  = 2
   unhealthy_threshold = 2
