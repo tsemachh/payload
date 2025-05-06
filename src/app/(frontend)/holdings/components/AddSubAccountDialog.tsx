@@ -54,11 +54,15 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
 
   const handleAddSubAccount = async () => {
     if (!selectedCompanyId) return
-
+//TODO:
     setLoading(true)
     try {
-      const response = await fetch(`/api/accounts/addSubAccount?accountId=${accountId}&companyId=${selectedCompanyId}`, {
+      const response = await fetch(`/api/accounts/addSubAccount?companyId=${selectedCompanyId}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accountId }),
       })
 
       if (response.ok) {

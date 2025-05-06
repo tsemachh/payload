@@ -54,9 +54,12 @@ const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
     const authError = checkUserAuthorization(req)
     if (authError) return authError
 
-    const { stockId, companies } = req.query as { stockId: string; companies: string }
+    const { companies } = req.query as {companies: string }
+    // @ts-expect-error req not null
+    const stock = await req.json()
+    const stockId=stock.stockId
+
     const companiesArray = companies.split(',');
-    console.log(companiesArray);
     const queryParamError = validateQueryParams(stockId, companiesArray)
     if (queryParamError) return queryParamError
 
