@@ -24,6 +24,7 @@ import { Roles } from '@shefing/authorization'
 import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
+import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -94,6 +95,7 @@ export default buildConfig({
     MeetingsFeed,
     SilencedStocks,
     Votes,
+    ResearchDocument,
   ],
   globals: [],
   editor: lexicalEditor(),
@@ -128,6 +130,7 @@ export default buildConfig({
     gcsStorage({
       collections: {
         documents: true,
+        'research-documents': true,
       },
       enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',
