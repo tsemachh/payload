@@ -2,11 +2,11 @@ import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
 // Function to parse research document filename
 const parseResearchFilename = (fileName: string): { meetingId: string; companyName: string | null; isValid: boolean } => {
-  // Pattern for generic research doc: מחקר<אסמכתא של הישיבה>.pdf
+  // Pattern for generic research doc: מחקר<מספר אסיפה>.pdf
   const genericPattern = /^מחקר(.+)\.pdf$/;
-  // Pattern for private research doc: מחקר<אסמכתא של הישיבה>_<שם חברה>.pdf
+  // Pattern for private research doc: מחקר<מספר אסיפה>_<שם חברה>.pdf
   const privatePattern = /^מחקר(.+)_(.+)\.pdf$/;
-  
+
   const privateMatches = fileName.match(privatePattern);
   if (privateMatches) {
     return {
@@ -15,7 +15,7 @@ const parseResearchFilename = (fileName: string): { meetingId: string; companyNa
       isValid: true,
     };
   }
-  
+
   const genericMatches = fileName.match(genericPattern);
   if (genericMatches) {
     return {
@@ -24,7 +24,7 @@ const parseResearchFilename = (fileName: string): { meetingId: string; companyNa
       isValid: true,
     };
   }
-  
+
   return {
     meetingId: '',
     companyName: null,
@@ -35,28 +35,28 @@ const parseResearchFilename = (fileName: string): { meetingId: string; companyNa
 // Hook to set meeting and company based on filename
 const setMeetingAndCompanyFromFilename: CollectionBeforeValidateHook = async ({ data, req }) => {
   if (!data?.filename) return data;
-  
+
   const parsedData = parseResearchFilename(data.filename);
-  
+
   if (!parsedData.isValid) {
-    throw new Error('Invalid research document filename format. Expected format: מחקר<אסמכתא של הישיבה>.pdf or מחקר<אסמכתא של הישיבה>_<שם חברה>.pdf');
+    throw new Error('Invalid research document filename format. Expected format: מחקר<מספר אסיפה>.pdf or מחקר<מספר אסיפה>_<שם חברה>.pdf');
   }
-  
+
   // Find meeting by meetingId
   const meetingResponse = await req.payload.find({
     collection: 'meetings',
     where: {
-      magnaId: { equals: parsedData.meetingId },
+      meetingId: { equals: parsedData.meetingId },
     },
   });
-  
+
   if (meetingResponse.docs.length === 0) {
     throw new Error(`Meeting with ID ${parsedData.meetingId} not found`);
   }
-  
+
   // Set meeting relation
   data.meeting = meetingResponse.docs[0].id;
-  
+
   // If company name is provided, find and set company relation
   if (parsedData.companyName) {
     const companyResponse = await req.payload.find({
@@ -65,21 +65,21 @@ const setMeetingAndCompanyFromFilename: CollectionBeforeValidateHook = async ({ 
         name: { equals: parsedData.companyName },
       },
     });
-    
+
     if (companyResponse.docs.length === 0) {
       throw new Error(`Company with name ${parsedData.companyName} not found`);
     }
-    
+
     // Check if company is eligible to receive research documents
     const company = companyResponse.docs[0];
     if (!company.showResearch) {
       throw new Error(`Company ${parsedData.companyName} is not eligible to receive research documents`);
     }
-    
+
     // Set company relation
     data.company = company.id;
   }
-  
+
   return data;
 };
 
