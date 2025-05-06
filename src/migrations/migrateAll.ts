@@ -26,7 +26,10 @@ import { processCompaniesMeetings } from '@/collections/companies-meetings/utils
  * 8. Holdings
  * 9. Parent Companies
  * 10. Account Companies To Companies
- * 11. Silenced Stocks Companies
+ * 11. Silenced Stocks Companies (stores silenced stocks directly in companies collection)
+ * 12. Meeting Agenda
+ * 13. Votes
+ * 14. Process Companies Meetings
  * 
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
@@ -90,7 +93,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
 
-    //  12. Process silenced stocks - match them to companies
+    //  12. Process silenced stocks - match them to companies and store in companies collection
     console.log('\n=== Starting Silenced Stocks Companies Migration ===')
     await migrateSilencedStocksCompanies({ payload, req })
     console.log('=== Silenced Stocks Companies Migration Completed ===\n')

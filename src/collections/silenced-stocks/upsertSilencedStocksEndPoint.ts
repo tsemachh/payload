@@ -15,32 +15,38 @@ const validateQueryParams = (stockId: string, companiesArray: string[]) => {
   }
 }
 
-const findExistingStock = async (req: PayloadRequest, stockId: string) => {
-  const existingStock = await req.payload.find({
-    collection: 'silenced-stocks',
-    where: { stockId: { equals: stockId } },
-    depth: 0,
-    limit: 1,
-  })
-  if (existingStock.docs.length===0 )return null
-  return existingStock.docs[0]
-}
+const updateCompanySilencedStocks = async (req: PayloadRequest, stockId: string, companyId: string) => {
+  try {
+    // Get the company
+    const company = await req.payload.findByID({
+      collection: 'companies',
+      id: companyId,
+    })
 
-const updateSilencedStock = async (req: PayloadRequest, stockId: string, companies: string[], existingStock: any) => {
-  return await req.payload.update({
-    collection: 'silenced-stocks',
-    id: existingStock.id,
-    data: {
-      companies: Array.from(new Set([...(existingStock.companies || []), ...companies])),
-    },
-  })
-}
+    // Check if the stock is already silenced for this company
+    const silencedStocks = company.silencedStocks || []
+    const stockExists = silencedStocks.includes(stockId)
 
-const createSilencedStock = async (req: PayloadRequest, stockId: string, companies: string[]) => {
-  return await req.payload.create({
-    collection: 'silenced-stocks',
-    data: { stockId, companies },
-  })
+    // If the stock is already silenced, no need to update
+    if (stockExists) {
+      return { success: true, message: 'Stock already silenced for this company' }
+    }
+
+    // Add the stock to the silenced stocks
+    const updatedSilencedStocks = [...silencedStocks, stockId]
+
+    // Update the company
+    return await req.payload.update({
+      collection: 'companies',
+      id: companyId,
+      data: {
+        silencedStocks: updatedSilencedStocks,
+      },
+    })
+  } catch (error) {
+    console.error(`Error updating silenced stocks for company ${companyId}:`, error)
+    throw error
+  }
 }
 
 const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
@@ -54,16 +60,18 @@ const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
     const queryParamError = validateQueryParams(stockId, companiesArray)
     if (queryParamError) return queryParamError
 
-    const existingStock = await findExistingStock(req, stockId)
-
-    let result
-    if (existingStock) {
-      result = await updateSilencedStock(req, stockId, companiesArray, existingStock)
-    } else {
-      result = await createSilencedStock(req, stockId, companiesArray)
+    // Update each company with the silenced stock
+    const results = []
+    for (const companyId of companiesArray) {
+      try {
+        const result = await updateCompanySilencedStocks(req, stockId, companyId)
+        results.push({ companyId, success: true, result })
+      } catch (error) {
+        results.push({ companyId, success: false, error: String(error) })
+      }
     }
 
-    return Response.json({ feedResult: result })
+    return Response.json({ feedResult: results })
   } catch (error) {
     console.error('Error processing silenced stock:', error)
     return Response.json({ error: 'Server error' }, { status: 500 })

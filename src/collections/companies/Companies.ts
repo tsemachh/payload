@@ -1,22 +1,21 @@
-import type { CollectionConfig ,CollectionBeforeChangeHook} from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
-const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data ,operation,req}) => {
-    if (operation == "create"){
-      if (!data.companyId){
-        const response= await req.payload.find({
-          collection: "companies",
-          sort: "-companyId",
-          select: {
-            companyId: true,
-          },
-          limit: 1
-        })
-        data.companyId= response?.docs[0].companyId as number + 10
-      }
+const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
+  if (operation == 'create') {
+    if (!data.companyId) {
+      const response = await req.payload.find({
+        collection: 'companies',
+        sort: '-companyId',
+        select: {
+          companyId: true,
+        },
+        limit: 1,
+      })
+      data.companyId = (response?.docs[0].companyId as number) + 10
     }
-    return data
- }
-
+  }
+  return data
+}
 
 export const Companies: CollectionConfig = {
   slug: 'companies',
@@ -27,9 +26,7 @@ export const Companies: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'name',
-    defaultColumns: [
-      'name', 'companyId','accounts','parentCompany','subCompanies'
-    ],
+    defaultColumns: ['name', 'companyId', 'accounts', 'parentCompany', 'subCompanies'],
     listSearchableFields: ['name', 'companyId'],
     pagination: {
       defaultLimit: 500,
@@ -39,136 +36,171 @@ export const Companies: CollectionConfig = {
   versions: {},
   fields: [
     {
-      type: 'row',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'companyId',
-          label: 'מספר חברה',
-          type: 'number',
-          index: true,
-          admin: { hidden: false },
+          label: 'תוכן',
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'companyId',
+                  label: 'מספר חברה',
+                  type: 'number',
+                  index: true,
+                  admin: { hidden: false },
+                },
+                {
+                  name: 'legacyCompanyId',
+                  label: 'מספר חברה מקורי בפרדיקטה',
+                  type: 'number',
+                  index: true,
+                  admin: { hidden: false },
+                },
+                {
+                  name: 'order',
+                  type: 'number',
+                  index: true,
+                  admin: { hidden: true },
+                },
+                {
+                  name: 'name',
+                  label: 'שם',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  name: 'active',
+                  label: 'האם פעיל',
+                  type: 'checkbox',
+                  defaultValue: true,
+                },
+                {
+                  name: 'parentCompany',
+                  type: 'join',
+                  label: 'חברת אם',
+                  collection: 'companies',
+                  on: 'subCompanies',
+                  defaultLimit: 1,
+                  maxDepth: 2,
+                  admin: {
+                    allowCreate: false,
+                    defaultColumns: ['name', 'subCompanies', 'parentCompany', 'companyId'],
+                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'subCompanies',
+                  type: 'relationship',
+                  label: 'חברות בת',
+                  index: true,
+                  relationTo: 'companies',
+                  hasMany: true,
+                  admin: {
+                    className: 'subCompanies',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'showResearch',
+                  label: 'הצג מחקר',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'setResearchAsDefault',
+                  label: 'הגדר מחקר כברירת מחדל',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'showResearchBond',
+                  label: 'הצג מחקר אג"ח',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'setResearchAsDefaultBond',
+                  label: 'הגדר מחקר אג"ח כברירת מחדל',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'showResearchTrusteeship',
+                  label: 'הצג מחקר נאמנות',
+                  type: 'checkbox',
+                },
+                {
+                  name: 'setResearchAsDefaultTrusteeship',
+                  label: 'הגדר מחקר נאמנות כברירת מחדל',
+                  type: 'checkbox',
+                },
+              ],
+            },
+          ],
         },
         {
-          name: 'legacyCompanyId',
-          label: 'מספר חברה מקורי בפרדיקטה',
-          type: 'number',
-          index: true,
-          admin: { hidden: false },
+          label: 'חשבונות',
+          fields: [
+            {
+              name: 'accounts',
+              label: 'חשבונות',
+              type: 'join',
+              defaultLimit: 0,
+              maxDepth: 2,
+              collection: 'accounts',
+              on: 'company',
+              where: { isCentralAccount: { equals: true } },
+              admin: {
+                defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
+                //        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
+              },
+            },
+          ],
         },
         {
-          name: 'order',
-          type: 'number',
-          index: true,
-          admin: { hidden: true },
+          label: 'פגישות',
+          fields: [
+            {
+              type: 'join',
+              collection: 'meetings',
+              on: 'companies',
+              name: 'meetings',
+            },
+          ],
         },
         {
-          name: 'name',
-          label: 'שם',
-          type: 'text',
-          required: true,
+          label: 'אחזקות',
+          fields: [
+            {
+              type: 'join',
+              collection: 'holdings',
+              on: 'company',
+              name: 'holdings',
+            },
+          ],
         },
         {
-          name: 'active',
-          label: 'האם פעיל',
-          type: 'checkbox',
-          defaultValue: true,
-        },
-        {
-          name: 'parentCompany',
-          type: 'join',
-          label: 'חברת אם',
-          collection: 'companies',
-          on: 'subCompanies',
-          defaultLimit: 1,
-          maxDepth: 2,
-          admin:{
-            allowCreate: false,
-            defaultColumns:["name","subCompanies","parentCompany","companyId"],
-            description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם'
-          }
+          label: 'ניירות ערך מושתקים',
+          fields: [
+            {
+              name: 'silencedStocks',
+              label: 'ניירות ערך מושתקים',
+              type: 'text',
+              hasMany: true,
+            },
+          ],
         },
       ],
     },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'subCompanies',
-          type: 'relationship',
-          label: 'חברות בת',
-          index: true,
-          relationTo: 'companies',
-          hasMany: true,
-          admin: {
-            className: 'subCompanies',
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'showResearch',
-          label: 'הצג מחקר',
-          type: 'checkbox',
-        },
-        {
-          name: 'setResearchAsDefault',
-          label: 'הגדר מחקר כברירת מחדל',
-          type: 'checkbox',
-        },
-        {
-          name: 'showResearchBond',
-          label: 'הצג מחקר אג"ח',
-          type: 'checkbox',
-        },
-        {
-          name: 'setResearchAsDefaultBond',
-          label: 'הגדר מחקר אג"ח כברירת מחדל',
-          type: 'checkbox',
-        },
-        {
-          name: 'showResearchTrusteeship',
-          label: 'הצג מחקר נאמנות',
-          type: 'checkbox',
-        },
-        {
-          name: 'setResearchAsDefaultTrusteeship',
-          label: 'הגדר מחקר נאמנות כברירת מחדל',
-          type: 'checkbox',
-        },
-      ],
-    },
-    {
-      name: 'accounts',
-      label: 'חשבונות',
-      type: 'join',
-      defaultLimit:0,
-      maxDepth:2,
-      collection: 'accounts',
-      on: 'company',
-      where: { isCentralAccount: { equals: true } },
-      admin: {
-        defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
-//        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
-      },
-    },
-    {
-      type:'join',
-      collection: 'meetings',
-      on: 'companies',
-      name: 'meetings'
-    },
-    {
-      type:'join',
-      collection: 'holdings',
-      on: 'company',
-      name: 'holdings',
-    }
-
   ],
   hooks: {
-    beforeChange: [beforeChangeCompanyId]
-  }
+    beforeChange: [beforeChangeCompanyId],
+  },
 }
