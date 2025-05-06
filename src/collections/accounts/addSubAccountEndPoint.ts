@@ -5,6 +5,7 @@ const validateQueryParams = (accountId: string, companyId: string) => {
     return Response.json({ error: 'Missing or invalid companyId' }, { status: 400 })
   }
   if (!accountId || typeof accountId !== 'string') {
+
     return Response.json({ error: 'Missing or invalid accountId' }, { status: 400 })
   }
   return null
@@ -65,7 +66,11 @@ const createSubAccount = async (
 
 const addSubAccountEndPoint = async (req: PayloadRequest) => {
   try {
-    const { accountId, companyId } = req.query as { accountId: string; companyId: string }
+    const { companyId } = req.query as { companyId: string }
+
+    // @ts-expect-error req not null
+    const account = await req.json()
+    const accountId=account.accountId
 
     const queryParamError = validateQueryParams(accountId, companyId)
 
