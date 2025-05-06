@@ -39,8 +39,6 @@ export const getParentAccountId = async (
   }
 
   const parentAccountId = companyDoc.accounts.docs[0]
-  console.log('parentAccountId', parentAccountId)
-
   return typeof parentAccountId === 'string' ? parentAccountId : null
 
 }
