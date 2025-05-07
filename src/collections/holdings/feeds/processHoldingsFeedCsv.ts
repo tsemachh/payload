@@ -77,7 +77,7 @@ export const processHoldingsFeedCsv = async (
     }
 
     const parseStartTime = performance.now()
-    const results = parseFileContent(file);
+    const results = parseFileContent(file) ?? [];
     const parseEndTime = performance.now()
     req.payload.logger.info(`File parsing completed in ${parseEndTime - parseStartTime}ms, found ${results.length} rows`)
 
