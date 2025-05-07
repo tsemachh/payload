@@ -682,7 +682,6 @@ export interface ResearchDocument {
   meeting: string | Meeting;
   company?: (string | null) | Company;
   uploadedAt?: string | null;
-  description?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1375,7 +1374,6 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   uploadedAt?: T;
-  description?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

@@ -2,10 +2,9 @@ import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
 // Function to parse research document filename
 const parseResearchFilename = (fileName: string): { meetingId: string; companyName: string | null; isValid: boolean } => {
-  // Pattern for generic research doc: מחקר<מספר אסיפה>.pdf
-  const genericPattern = /^מחקר(.+)\.pdf$/;
-  // Pattern for private research doc: מחקר<מספר אסיפה>_<שם חברה>.pdf
-  const privatePattern = /^מחקר(.+)_(.+)\.pdf$/;
+
+  const privatePattern = /^מחקר(\d+)_(.+)\.pdf$/;
+  const genericPattern = /^מחקר(\d+)\.pdf$/;
 
   const privateMatches = fileName.match(privatePattern);
   if (privateMatches) {
@@ -72,9 +71,6 @@ const setMeetingAndCompanyFromFilename: CollectionBeforeValidateHook = async ({ 
 
     // Check if company is eligible to receive research documents
     const company = companyResponse.docs[0];
-    if (!company.showResearch) {
-      throw new Error(`Company ${parsedData.companyName} is not eligible to receive research documents`);
-    }
 
     // Set company relation
     data.company = company.id;
@@ -95,9 +91,6 @@ export const ResearchDocument: CollectionConfig = {
     defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'meeting', 'company'],
   },
-  access: {
-    read: () => true,
-  },
   upload: {
     mimeTypes: ['application/docx', 'application/pdf'],
   },
@@ -109,6 +102,7 @@ export const ResearchDocument: CollectionConfig = {
       relationTo: 'meetings',
       required: true,
       index: true,
+      admin:{readOnly:true}
     },
     {
       name: 'company',
@@ -116,6 +110,7 @@ export const ResearchDocument: CollectionConfig = {
       type: 'relationship',
       relationTo: 'companies',
       index: true,
+      admin:{readOnly:true}
     },
     {
       name: 'uploadedAt',
@@ -125,13 +120,9 @@ export const ResearchDocument: CollectionConfig = {
         date: {
           displayFormat: 'dd/MM/yyyy HH:mm',
         },
+        readOnly:true
       },
       defaultValue: () => new Date(),
-    },
-    {
-      name: 'description',
-      label: 'תיאור',
-      type: 'textarea',
     },
   ],
   hooks: {
