@@ -179,11 +179,12 @@ export async function getSequenceMeetingId(payload: BasePayload, meetingId: stri
   return id
 }
 
-export const getCollectionDoc = async (req: any, collectionType: string, id: string) => {
+export const getCollectionDoc = async (req: any, collectionType: string, id: string,depth=1) => {
   try {
     return await req.payload.findByID({
       collection: collectionType,
       id: id,
+      depth:depth
     })
   } catch (error) {
     console.error(`Error finding document in collection ${collectionType}:`, error)

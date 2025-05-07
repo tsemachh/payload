@@ -8,7 +8,7 @@ async function getLeafCompanies(company: Company | string, req: PayloadRequest):
   let theCompany: Company
   if (typeof company === 'string') {
     try {
-      theCompany = (await getCollectionDoc(req, 'companies', company)) as Company
+      theCompany = (await getCollectionDoc(req, 'companies', company,0)) as Company
     } catch (e) {
       console.log('Error in getting company', e)
       return []
