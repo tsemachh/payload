@@ -1,7 +1,7 @@
 'use client'
 
 import { BooleanIcon } from '@/components/ui/icons'
-import { formatDateTime } from '../helpers/utils-data-table'
+import { formatDateTime, isRTL } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -24,14 +24,25 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
           <TooltipTrigger asChild>
             <Info className="w-4 h-4 " />
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
+          <TooltipContent className="m-[10px]" side="top" sideOffset={4}>
             <div
-              className="max-w-xs p-0 bg-transparent text-sm leading-relaxed whitespace-pre-wrap break-words text-right"
-              dir="rtl"
+              style={{
+                maxWidth: 'min(650px, calc(100vw - 200px))',
+                maxHeight: 'calc(100vh - 100px)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 17,
+                WebkitBoxOrient: 'vertical',
+                textAlign: !row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'right' : 'left',
+                fontSize: '0.80rem',
+              }}
+              className={`p-0 bg-transparent leading-relaxed whitespace-pre-wrap break-words ${row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'text-left' : 'text-left'}`}
+              dir={!row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'rtl' : 'ltr'}
             >
               {row.agendaTexts.length
                 ? row.agendaTexts.map((text, index) => (
-                    <div key={index}>
+                    <div key={index} dir={isRTL(text) ? 'rtl' : 'ltr'}>
                       {index + 1}. {text}
                     </div>
                   ))

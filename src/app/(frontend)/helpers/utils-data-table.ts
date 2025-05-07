@@ -91,3 +91,8 @@ export const calculateHoldingValues = (
     nominalValue: Math.round(quantity),
   }
 }
+
+export const isRTL = (text: string): boolean=> {
+  const rtlChars = /[\u0590-\u05FF\u0600-\u06FF]/; // Hebrew + Arabic ranges
+  return rtlChars.test(text);
+}

@@ -15,7 +15,6 @@ import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { Stocks } from './collections/stocks/Stocks'
 import { Companies } from '@/collections/companies/Companies'
-import { Accounts } from '@/collections/accounts/Accounts'
 import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Holdings } from '@/collections/holdings/Holdings'
@@ -82,12 +81,11 @@ export default buildConfig({
     Stocks,
     StockValues,
     Meetings,
+    Companies,
     Users,
     Roles,
     Documents,
     MigrationFaults,
-    Companies,
-    Accounts,
     Holdings,
     StockMigrationMapping,
     StocksFeed,
