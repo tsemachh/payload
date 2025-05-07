@@ -18,7 +18,7 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
     filterable: true,
     isAlwaysVisible: true,
     positionCenter: true,
-    render: (row: any) => (
+    render: (row) => (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -45,10 +45,10 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
               {/* Vote Status */}
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${Number.parseInt(row.id) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
                 ></div>
                 <span className="font-medium text-sm">
-                  {Number.parseInt(row.id) % 2 === 0
+                  {Number.parseInt(row.meetingId) % 2 === 0
                     ? 'ההצבעות התקבלו בעמדה'
                     : 'ההצבעות טרם התקבלו בעמדה'}
                   - Mock data
@@ -58,14 +58,14 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
               {/* Comments Section */}
               {row.comments && row.comments != '-' && (
                 <div className="mt-1 text-right">
-                  <h4 className="font-semibold text-sm mb-1 text-right">הערות:</h4>
+                  <h4 className="font-bold text-sm mb-1 text-right">הערות:</h4>
                   <p className="text-sm bg-gray-50 p-2 rounded-md text-right">{row.comments}</p>
                 </div>
               )}
 
               {/* Agenda Items Table */}
               <div className="mt-1">
-                <h4 className="font-semibold text-סד mb-1 text-right">נושאים לסדר היום:</h4>
+                <h4 className="font-bold text-sm mb-1 text-right">נושאים לסדר היום:</h4>
                 <div className="border rounded-md overflow-hidden">
                   <table className="w-full border-collapse table-fixed">
                     <thead className="bg-gray-50">
