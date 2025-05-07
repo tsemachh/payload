@@ -77,6 +77,7 @@ export type RolePermissions =
         | 'meetings-feed'
         | 'silenced-stocks'
         | 'votes'
+        | 'research-documents'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -179,6 +180,7 @@ export interface Config {
     'meetings-feed': MeetingsFeed;
     'silenced-stocks': SilencedStock;
     votes: Vote;
+    'research-documents': ResearchDocument;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -215,6 +217,7 @@ export interface Config {
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
     'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
+    'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -672,6 +675,29 @@ export interface SilencedStock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents".
+ */
+export interface ResearchDocument {
+  id: string;
+  meeting: string | Meeting;
+  company?: (string | null) | Company;
+  uploadedAt?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -867,6 +893,10 @@ export interface PayloadLockedDocument {
         value: string | Vote;
       } | null)
     | ({
+        relationTo: 'research-documents';
+        value: string | ResearchDocument;
+      } | null)
+    | ({
         relationTo: 'exports';
         value: string | Export;
       } | null)
@@ -964,7 +994,8 @@ export interface PayloadQueryPreset {
     | 'documents'
     | 'migration-faults'
     | 'holdings'
-    | 'votes';
+    | 'votes'
+    | 'research-documents';
   updatedAt: string;
   createdAt: string;
 }
@@ -1334,6 +1365,28 @@ export interface VotesSelect<T extends boolean = true> {
   updator?: T;
   createdAt?: T;
   updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents_select".
+ */
+export interface ResearchDocumentsSelect<T extends boolean = true> {
+  meeting?: T;
+  company?: T;
+  uploadedAt?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
