@@ -1,4 +1,5 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import addSubAccountEndPoint from './addSubAccountEndPoint'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -149,19 +150,29 @@ export const Companies: CollectionConfig = {
           label: 'חשבונות',
           fields: [
             {
-              name: 'accounts',
-              label: 'חשבונות',
-              type: 'join',
-              defaultLimit: 0,
-              maxDepth: 2,
-              collection: 'accounts',
-              on: 'company',
-              where: { isCentralAccount: { equals: true } },
-              admin: {
-                defaultColumns: ['accountNumber', 'name', 'isCentralAccount'],
-                //        condition: (siblingData) => !siblingData.subCompanies || siblingData.subCompanies?.length == 0,
-              },
-            },
+              name: 'mainAccount',
+              label: 'חשבון ראשי',
+              type: 'array',
+              fields: [
+                {
+                  name: 'accountNumber',
+                  label: 'מספר חשבון',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  name: 'accountName',
+                  label: 'שם חשבון',
+                  type: 'text',
+                },
+                {
+                  name: 'subAccounts',
+                  label: 'תתי חשבונות',
+                  type: 'text',
+                  hasMany: true,
+                },
+              ],
+            }
           ],
         },
         {
@@ -203,4 +214,11 @@ export const Companies: CollectionConfig = {
   hooks: {
     beforeChange: [beforeChangeCompanyId],
   },
+  endpoints: [
+    {
+      path: '/addSubAccount',
+      method: 'post',
+      handler: addSubAccountEndPoint,
+    },
+  ],
 }

@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Account, Company, HoldingFeedLine, HoldingsFeed, Stock , SilencedStock} from '@/payload-types'
+import { Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export async function getPreviousFeed(
@@ -114,14 +114,13 @@ export const preloadAccountsToCompanyMap = async (
   const accountToCompanyMap: Map<number, string> = new Map()
 
   companies.docs.forEach((company: Company) => {
-    const accounts = company?.accounts?.docs as Account[]
+    const accounts = company?.mainAccount
 
-    accounts.forEach((account) => {
-      accountToCompanyMap.set(account?.accountNumber, company?.id)
+    accounts?.forEach((account) => {
+      accountToCompanyMap.set(parseInt(account?.accountNumber), company?.id)
 
-      account?.accounts?.docs?.forEach((subAccount) => {
-        const subAcc = subAccount as Account
-        accountToCompanyMap.set(subAcc.accountNumber, company?.id)
+      account?.subAccounts?.forEach((subAccount) => {
+        accountToCompanyMap.set(parseInt(subAccount), company?.id)
       })
     })
   })
