@@ -17,7 +17,7 @@ export const MeetingsFeed: CollectionConfig = {
   fields: [
     {
       name: 'comments',
-      type: 'text',
+      type: 'textarea',
       label: 'הערות',
     },
   ],
