@@ -22,31 +22,109 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="w-4 h-4 " />
+            <Info className="w-4 h-4" />
           </TooltipTrigger>
-          <TooltipContent className="m-[10px]" side="top" sideOffset={4}>
+          <TooltipContent
+            className="rounded-md shadow-md border border-gray-200"
+            side="left"
+            sideOffset={30}
+            align="end"
+            alignOffset={30}
+            avoidCollisions={true}
+            collisionPadding={30}
+          >
             <div
               style={{
-                maxWidth: 'min(650px, calc(100vw - 200px))',
-                maxHeight: 'calc(100vh - 100px)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: '-webkit-box',
-                WebkitLineClamp: 17,
-                WebkitBoxOrient: 'vertical',
-                textAlign: !row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'right' : 'left',
-                fontSize: '0.80rem',
+                maxWidth: 'min(800px, calc(100vw - 240px))',
+                maxHeight: 'calc(100vh - 140px)',
+                overflow: 'auto',
+                direction: 'rtl',
               }}
-              className={`p-0 bg-transparent leading-relaxed whitespace-pre-wrap break-words ${row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'text-left' : 'text-left'}`}
-              dir={!row.agendaTexts.length || isRTL(row.agendaTexts[0]) ? 'rtl' : 'ltr'}
+              className="flex flex-col gap-2"
             >
-              {row.agendaTexts.length
-                ? row.agendaTexts.map((text, index) => (
-                    <div key={index} dir={isRTL(text) ? 'rtl' : 'ltr'}>
-                      {index + 1}. {text}
-                    </div>
-                  ))
-                : 'אסיפה ללא נושא'}
+              {/* Vote Status */}
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                ></div>
+                <span className="font-medium text-sm">
+                  {Number.parseInt(row.meetingId) % 2 === 0
+                    ? 'ההצבעות התקבלו בעמדה'
+                    : 'ההצבעות טרם התקבלו בעמדה'}
+                  - Mock data
+                </span>
+              </div>
+
+              {/* Comments Section */}
+              {row.comments && row.comments != '-' && (
+                <div className="mt-1 text-right">
+                  <h4 className="font-bold text-sm mb-1 text-right">הערות:</h4>
+                  <p className="text-sm bg-gray-50 p-2 rounded-md text-right">{row.comments}</p>
+                </div>
+              )}
+
+              {/* Agenda Items Table */}
+              <div className="mt-1">
+                <h4 className="font-bold text-sm mb-1 text-right">נושאים לסדר היום:</h4>
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full border-collapse table-fixed">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          className="py-1 px-2 text-right font-medium border-b"
+                          style={{ width: '30px' }}
+                        ></th>
+                        <th className="py-1 px-2 text-right font-medium border-b">תוכן</th>
+                        <th
+                          className="py-1 px-2 text-right font-medium border-b"
+                          style={{ width: '80px' }}
+                        >
+                          חוות דעת
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {row.agendaTexts.length ? (
+                        row.agendaTexts.map((text: string, index: number) => (
+                          <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td
+                              className="py-1 px-2 border-t text-right "
+                              style={{ width: '30px', minWidth: '30px' }}
+                            >
+                              {index + 1}.
+                            </td>
+                            <td className="py-1 px-2 border-t text-right">
+                              <div
+                                dir={isRTL(text) ? 'rtl' : 'ltr'}
+                                style={{
+                                  wordBreak: 'break-word',
+                                  whiteSpace: 'pre-wrap',
+                                  overflowWrap: 'break-word',
+                                  fontSize: '0.80rem',
+                                }}
+                              >
+                                {text}
+                              </div>
+                            </td>
+                            <td
+                              className="py-1 px-2 border-t text-right text-green-600 font-medium"
+                              style={{ width: '80px', minWidth: '80px' }}
+                            >
+                              בעד - mock
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="py-1 px-2 text-center">
+                            אסיפה ללא נושא
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </TooltipContent>
         </Tooltip>
