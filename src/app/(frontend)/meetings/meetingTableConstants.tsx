@@ -51,38 +51,22 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
                   {Number.parseInt(row.meetingId) % 2 === 0
                     ? 'ההצבעות התקבלו בעמדה'
                     : 'ההצבעות טרם התקבלו בעמדה'}
-                  - Mock data
                 </span>
               </div>
 
               {/* Comments Section */}
               {row.comments && row.comments != '-' && (
                 <div className="mt-1 text-right">
-                  <h4 className="font-bold text-sm mb-1 text-right">הערות:</h4>
+                  <h4 className="font-bold text-base mb-1 text-right">הערות</h4>
                   <p className="text-sm bg-gray-50 p-2 rounded-md text-right">{row.comments}</p>
                 </div>
               )}
 
               {/* Agenda Items Table */}
               <div className="mt-1">
-                <h4 className="font-bold text-sm mb-1 text-right">נושאים לסדר היום:</h4>
+                <h4 className="font-bold text-base mb-1 text-right">נושאים לסדר היום</h4>
                 <div className="border rounded-md overflow-hidden">
                   <table className="w-full border-collapse table-fixed">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          className="py-1 px-2 text-right font-medium border-b"
-                          style={{ width: '30px' }}
-                        ></th>
-                        <th className="py-1 px-2 text-right font-medium border-b">תוכן</th>
-                        <th
-                          className="py-1 px-2 text-right font-medium border-b"
-                          style={{ width: '80px' }}
-                        >
-                          חוות דעת
-                        </th>
-                      </tr>
-                    </thead>
                     <tbody>
                       {row.agendaTexts.length ? (
                         row.agendaTexts.map((text: string, index: number) => (
@@ -110,7 +94,7 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
                               className="py-1 px-2 border-t text-right text-green-600 font-medium"
                               style={{ width: '80px', minWidth: '80px' }}
                             >
-                              בעד - mock
+                              בעד
                             </td>
                           </tr>
                         ))
