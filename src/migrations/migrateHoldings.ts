@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql, { IResult } from 'mssql'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
-import { Account, Company, Holding } from '@/payload-types'
+import { Holding } from '@/payload-types'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -18,7 +18,7 @@ const sqlConfig: sql.config = {
 }
 
 //const DAYS_TO_IMPORT: number = 365 * 7
-const START_DATE_TO_IMPORT: string = '2025-04-01'
+const START_DATE_TO_IMPORT: string = '04-01-2025'
 
 interface HoldingRow {
   stockNum: string
@@ -41,7 +41,9 @@ async function getHoldingsCount(pool: sql.ConnectionPool, holdingDate: string): 
 // Generate array of dates from START_DATE_TO_IMPORT to today
 const generateDateArray = (startDateStr: string): string[] => {
   const dates: string[] = []
-  const startDate = new Date(startDateStr)
+  // Parse date in MM-DD-YYYY format
+  const [month, day, year] = startDateStr.split('-').map(Number)
+  const startDate = new Date(year, month - 1, day)
   const today = new Date()
 
   // If start date is in the future, return empty array
@@ -54,11 +56,11 @@ const generateDateArray = (startDateStr: string): string[] => {
 
   // Loop through each day from start date to today
   while (currentDate <= today) {
-    // Format date as yyyy-mm-dd
+    // Format date as mm-dd-yyyy
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, '0')
     const day = String(currentDate.getDate()).padStart(2, '0')
-    dates.push(`${year}-${month}-${day}`)
+    dates.push(`${month}-${day}-${year}`)
 
     // Move to next day
     currentDate.setDate(currentDate.getDate() + 1)
@@ -101,6 +103,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
 
+    const silencedStocks = await payload.find({
+      collection: 'silenced-stocks',
+      select: {
+        stockId: true,
+      },
+      limit: 0,
+      req,
+    })
+    const silentStockSet = new Set<string>()
+    silencedStocks.docs.forEach((doc) => {
+      silentStockSet.add(`${doc.stockId}`)
+    })
+    console.log('Silent Stock Set size is:'+silentStockSet.size)
     const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
       const companyHoldings = new Map<string, Map<string, number>>()
       //Iterate each row
@@ -151,7 +166,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 stock: stockId,
               })
             } else {
-              console.warn(`Stock ID not found for stock number: ${stockNum}`)
+              if (!silentStockSet.has(`${stockNum}`)) {
+                console.warn(`Stock ID not found for stock number: ${stockNum}`)
+              }
             }
           }
           if (holdingsArray.length === 0) {
@@ -212,46 +229,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     }
 
-    // Prefetch common accounts to reduce database lookups
-    console.log('Prefetching common accounts...')
-    const allAccounts = await payload.find({
-      collection: 'accounts',
-      limit: 10000,
-      where: { isCentralAccount: { equals: true } },
+    // Prefetch companies with account information
+    console.log('Prefetching companies with account information...')
+    const allCompanies = await payload.find({
+      collection: 'companies',
+      limit: 0,
       req,
-      depth: 2,
+      depth: 0,
     })
 
-    for (const account of allAccounts.docs) {
-      const company = account.company as Company
-      if (company?.companyId && account.accountNumber) {
-        const accounts = [account.accountNumber]
-        if (account?.accounts?.docs) {
-          for (let i = 0; i < account?.accounts?.docs?.length; i++) {
-            const subAccount: Account = account?.accounts?.docs[i] as Account
-            accounts.push(subAccount.accountNumber)
-          }
-        }
-        for (let i = 0; i < accounts.length; i++) {
-          const accountNumber = accounts[i]
-          const key = `${company.companyId}-${accountNumber}`
+    allCompanies.docs.forEach((company) => {
+      const parentCompanyId: string | null = company.legacyCompanyId as string | null
+      if (company.mainAccount && Array.isArray(company.mainAccount)) {
+        company.mainAccount.forEach((account) => {
+          const key = `${company.companyId}-${account.accountNumber}`
           accountCache.set(key, company.id)
-          if (
-            company?.parentCompany &&
-            company.parentCompany.docs &&
-            company.parentCompany.docs.length > 0
-          ) {
-            const parentCompany: Company = company?.parentCompany?.docs[0] as Company
-            const key = `${parentCompany.companyId}-${accountNumber}`
-            accountCache.set(key, parentCompany.id)
+          if (parentCompanyId) {
+            const key = `${parentCompanyId}-${account.accountNumber}`
+            accountCache.set(key, company.id)
           }
-        }
+        })
       }
-    }
+    })
     console.log(`Prefetched ${accountCache.size} accounts`)
     const holdingDates: string[] = generateDateArray(START_DATE_TO_IMPORT)
     console.log(`Generated ${holdingDates.length} dates to process`)
-
+    debugger
     // Control batch size and parallel processing
     const MAX_CONCURRENT_PROCESSES = 10
 

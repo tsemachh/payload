@@ -65,12 +65,11 @@ export type RolePermissions =
         | 'stocks'
         | 'stock-values'
         | 'meetings'
+        | 'companies'
         | 'users'
         | 'roles'
         | 'documents'
         | 'migration-faults'
-        | 'companies'
-        | 'accounts'
         | 'holdings'
         | 'stock-migration-mapping'
         | 'stocks-feed'
@@ -168,12 +167,11 @@ export interface Config {
     stocks: Stock;
     'stock-values': StockValue;
     meetings: Meeting;
+    companies: Company;
     users: User;
     roles: Role;
     documents: Document;
     'migration-faults': MigrationFault;
-    companies: Company;
-    accounts: Account;
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
     'stocks-feed': StocksFeed;
@@ -197,24 +195,19 @@ export interface Config {
     };
     companies: {
       parentCompany: 'companies';
-      accounts: 'accounts';
       meetings: 'meetings';
       holdings: 'holdings';
-    };
-    accounts: {
-      accounts: 'accounts';
     };
   };
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
+    companies: CompaniesSelect<false> | CompaniesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
-    companies: CompaniesSelect<false> | CompaniesSelect<true>;
-    accounts: AccountsSelect<false> | AccountsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
@@ -456,11 +449,14 @@ export interface Company {
   setResearchAsDefaultBond?: boolean | null;
   showResearchTrusteeship?: boolean | null;
   setResearchAsDefaultTrusteeship?: boolean | null;
-  accounts?: {
-    docs?: (string | Account)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  mainAccount?:
+    | {
+        accountNumber: string;
+        accountName?: string | null;
+        subAccounts?: string[] | null;
+        id?: string | null;
+      }[]
+    | null;
   meetings?: {
     docs?: (string | Meeting)[];
     hasNextPage?: boolean;
@@ -472,27 +468,6 @@ export interface Company {
     totalDocs?: number;
   };
   silencedStocks?: string[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "accounts".
- */
-export interface Account {
-  id: string;
-  accountNumber: number;
-  name: string;
-  company: string | Company;
-  isCentralAccount?: boolean | null;
-  parentAccount?: (string | null) | Account;
-  accounts?: {
-    docs?: (string | Account)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -844,6 +819,10 @@ export interface PayloadLockedDocument {
         value: string | Meeting;
       } | null)
     | ({
+        relationTo: 'companies';
+        value: string | Company;
+      } | null)
+    | ({
         relationTo: 'users';
         value: string | User;
       } | null)
@@ -858,14 +837,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
-      } | null)
-    | ({
-        relationTo: 'companies';
-        value: string | Company;
-      } | null)
-    | ({
-        relationTo: 'accounts';
-        value: string | Account;
       } | null)
     | ({
         relationTo: 'holdings';
@@ -988,11 +959,10 @@ export interface PayloadQueryPreset {
   relatedCollection:
     | 'stocks'
     | 'meetings'
+    | 'companies'
     | 'users'
     | 'documents'
     | 'migration-faults'
-    | 'companies'
-    | 'accounts'
     | 'holdings'
     | 'votes';
   updatedAt: string;
@@ -1080,6 +1050,40 @@ export interface MeetingsSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "companies_select".
+ */
+export interface CompaniesSelect<T extends boolean = true> {
+  companyId?: T;
+  legacyCompanyId?: T;
+  order?: T;
+  name?: T;
+  active?: T;
+  parentCompany?: T;
+  subCompanies?: T;
+  showResearch?: T;
+  setResearchAsDefault?: T;
+  showResearchBond?: T;
+  setResearchAsDefaultBond?: T;
+  showResearchTrusteeship?: T;
+  setResearchAsDefaultTrusteeship?: T;
+  mainAccount?:
+    | T
+    | {
+        accountNumber?: T;
+        accountName?: T;
+        subAccounts?: T;
+        id?: T;
+      };
+  meetings?: T;
+  holdings?: T;
+  silencedStocks?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1179,49 +1183,6 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   typeId?: T;
   row?: T;
   comments?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "companies_select".
- */
-export interface CompaniesSelect<T extends boolean = true> {
-  companyId?: T;
-  legacyCompanyId?: T;
-  order?: T;
-  name?: T;
-  active?: T;
-  parentCompany?: T;
-  subCompanies?: T;
-  showResearch?: T;
-  setResearchAsDefault?: T;
-  showResearchBond?: T;
-  setResearchAsDefaultBond?: T;
-  showResearchTrusteeship?: T;
-  setResearchAsDefaultTrusteeship?: T;
-  accounts?: T;
-  meetings?: T;
-  holdings?: T;
-  silencedStocks?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "accounts_select".
- */
-export interface AccountsSelect<T extends boolean = true> {
-  accountNumber?: T;
-  name?: T;
-  company?: T;
-  isCentralAccount?: T;
-  parentAccount?: T;
-  accounts?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

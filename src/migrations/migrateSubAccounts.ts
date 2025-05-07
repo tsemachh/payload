@@ -1,7 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Account } from '@/payload-types'
-import { PromisePool } from '@/utils/promisePool'
+import { Company } from '@/payload-types'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -60,156 +59,156 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
 
-    // Initialize promise pool with concurrency of 20
-    const promisePool = new PromisePool(20)
-
     // Process each Holdings table
     for (const tableName of holdingsTables) {
       console.log(`Processing table: ${tableName}`)
       const subAccounts = await getSubAccounts(pool, tableName)
 
-      // Process subaccounts using promise pool
-      const processPromises = subAccounts.recordset.map(row => {
-        return promisePool.add(async () => {
-          try {
-            if (row.accountIdNew == row.accountIdOld){
+      // Group sub-accounts by firmId
+      const subAccountsByFirmId = new Map<number, SubAccountRow[]>()
+
+      for (const row of subAccounts.recordset) {
+        if (row.accountIdNew == row.accountIdOld) {
+          payload.create({
+            collection: 'migration-faults',
+            data: {
+              type: 'account',
+              comments: `duplicate accountNumber`,
+              row: JSON.stringify(row)
+            }
+          })
+          continue
+        }
+
+        if (!subAccountsByFirmId.has(row.firmId)) {
+          subAccountsByFirmId.set(row.firmId, [])
+        }
+        subAccountsByFirmId.get(row.firmId)?.push(row)
+      }
+
+      console.log(`Grouped sub-accounts into ${subAccountsByFirmId.size} firms`)
+
+      // Process firms in batches with a promise pool
+      const processFirm = async (firmId: number, firmSubAccounts: SubAccountRow[]): Promise<void> => {
+        try {
+          // Find the firm
+          const companyResult = await payload.find({
+            collection: 'companies',
+            where: {
+              companyId: {
+                equals: firmId
+              }
+            },
+            limit: 1,
+            depth: 0
+          })
+
+          if (companyResult.docs.length === 0) {
+            // Report to migration faults for all sub-accounts of this firm
+            for (const subAccount of firmSubAccounts) {
               await payload.create({
                 collection: 'migration-faults',
                 data: {
                   type: 'account',
-                  comments: `duplicate accountNumber`,
-                  row: JSON.stringify(row)
+                  comments: `No firm found for firmId: ${firmId}`,
+                  row: JSON.stringify(subAccount)
                 }
               })
-              return { success: false, error: true }
+              errorCount++
             }
-            // Find the firm
-            const companyResult = await payload.find({
-              collection: 'companies',
-              where: {
-                companyId: {
-                  equals: row.firmId
-                }
-              },
-              limit: 1
-            })
-
-            if (companyResult.docs.length === 0) {
-              // Report to migration faults
-              await payload.create({
-                collection: 'migration-faults',
-                data: {
-                  type: 'account',
-                  comments: `No firm found for firmId: ${row.firmId}`,
-                  row: JSON.stringify(row)
-                }
-              })
-              return { success: false, error: true }
-            }
-
-            const companyId = companyResult.docs[0].id
-
-            // Find the parent account (accountIdNew)
-            const parentAccountResult = await payload.find({
-              collection: 'accounts',
-              where: {
-                and: [
-                  {
-                    accountNumber: {
-                      equals: row.accountIdNew
-                    }
-                  },
-                  {
-                    company: {
-                      equals: companyId
-                    }
-                  }
-                ]
-              },
-              limit: 0
-            })
-
-            if (parentAccountResult.docs.length === 0) {
-              // Report to migration faults
-              await payload.create({
-                collection: 'migration-faults',
-                data: {
-                  type: 'account',
-                  comments: `No parent account found: ${row.accountIdNew} for firm: ${row.firmId}`,
-                  row: JSON.stringify(row)
-                }
-              })
-              return { success: false, error: true }
-            }
-
-            const parentAccountId = parentAccountResult.docs[0].id
-
-            // Create sub-account
-            const accountData: Partial<Account> = {
-              accountNumber: row.accountIdOld,
-              name: `Sub Account ${row.accountIdOld}`,
-              company: companyId,
-              isCentralAccount: false,
-              parentAccount: parentAccountId
-            }
-
-            // Check if sub-account already exists
-            const existingAccount = await payload.find({
-              collection: 'accounts',
-              where: {
-                and: [
-                  {
-                    accountNumber: {
-                      equals: row.accountIdOld
-                    }
-                  },
-                  {
-                    company: {
-                      equals: companyId
-                    }
-                  }
-                ]
-              },
-              limit: 0
-            })
-
-            if (existingAccount.docs.length > 0) {
-              // Update existing sub-account
-              await payload.update({
-                collection: 'accounts',
-                id: existingAccount.docs[0].id,
-                data: accountData
-              })
-              console.log(`Updated sub-account: ${row.accountIdOld} for firm: ${row.firmId}`)
-            } else {
-              // Create new sub-account
-              await payload.create({
-                collection: 'accounts',
-                data: accountData as Account
-              })
-              console.log(`Created new sub-account: ${row.accountIdOld} for firm: ${row.firmId}`)
-            }
-
-            return { success: true, error: false }
-          } catch (error) {
-            console.error(`Error processing sub-account ${row.accountIdOld} for firm ${row.firmId}:`, error)
-            return { success: false, error: true }
+            return
           }
-        })
-      })
 
-      // Wait for all promises to resolve
-      const results = await Promise.all(processPromises)
+          // Get the company to check for existing mainAccount
+          const company: Company = companyResult.docs[0]
+          const companyId = company.id
 
-      // Update counts
-      results.forEach(result => {
-        if (result.success) successCount++
-        if (result.error) errorCount++
-      })
+          // Get the mainAccount array
+          const mainAccount = company.mainAccount || []
+          let updated = false
+
+          // Process all sub-accounts for this firm
+          for (const row of firmSubAccounts) {
+            try {
+              // Find the mainAccount entry for the parent account
+              let mainAccountEntry = mainAccount.find(
+                (ma: any) => ma.accountNumber === row.accountIdNew.toString()
+              )
+
+              // If no mainAccount entry exists for the parent account, create one
+              if (!mainAccountEntry) {
+                mainAccountEntry = {
+                  accountNumber: row.accountIdNew.toString(),
+                  accountName: `Account ${row.accountIdNew}`,
+                  subAccounts: []
+                }
+                mainAccount.push(mainAccountEntry)
+                updated = true
+              }
+
+              // Ensure subAccounts array exists
+              if (!mainAccountEntry.subAccounts) {
+                mainAccountEntry.subAccounts = []
+                updated = true
+              }
+
+              // Check if this subaccount already exists in the array
+              const subAccountExists = mainAccountEntry.subAccounts.includes(row.accountIdOld.toString())
+
+              if (!subAccountExists) {
+                // Add new subaccount
+                mainAccountEntry.subAccounts.push(row.accountIdOld.toString())
+                updated = true
+                console.log(`Added subaccount ${row.accountIdOld} to mainAccount ${row.accountIdNew} for company ${companyId}`)
+              }
+
+              successCount++
+            } catch (error) {
+              console.error(`Error processing sub-account ${row.accountIdOld} for firm ${firmId}:`, error)
+              errorCount++
+            }
+          }
+
+          // Update company with new mainAccount array only once per firm
+          if (updated) {
+            await payload.update({
+              collection: 'companies',
+              id: companyId,
+              data: {
+                mainAccount
+              }
+            })
+            console.log(`Updated company ${companyId} with all sub-accounts`)
+          }
+        } catch (error) {
+          console.error(`Error processing firm ${firmId}:`, error)
+          errorCount += firmSubAccounts.length
+        }
+      }
+
+      // Create an array of firms to process
+      const firms = Array.from(subAccountsByFirmId.entries());
+      const totalFirms = firms.length;
+
+      // Set up promise pool with size 20
+      const POOL_SIZE = 20;
+
+      // Process firms in batches
+      for (let i = 0; i < totalFirms; i += POOL_SIZE) {
+        console.log(`Processing batch ${Math.floor(i / POOL_SIZE) + 1}/${Math.ceil(totalFirms / POOL_SIZE)}`);
+
+        const batch = [];
+
+        // Create a batch of promises up to POOL_SIZE
+        for (let j = 0; j < POOL_SIZE && i + j < totalFirms; j++) {
+          const [firmId, firmSubAccounts] = firms[i + j];
+          batch.push(processFirm(firmId, firmSubAccounts));
+        }
+
+        // Wait for all promises in the current batch to complete
+        await Promise.all(batch);
+      }
     }
-
-    // Wait for all tasks in the pool to complete
-    await promisePool.waitForAll()
 
     console.log(`Migration completed. Success: ${successCount}, Errors: ${errorCount}`)
   } catch (error) {

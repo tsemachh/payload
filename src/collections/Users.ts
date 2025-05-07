@@ -16,7 +16,7 @@ async function getLeafCompanies(company: Company | string, req: PayloadRequest):
   } else {
     theCompany = company as Company
   }
-  if (theCompany.accounts && theCompany.accounts?.docs && theCompany.accounts?.docs?.length > 0) {
+  if (theCompany.mainAccount && Array.isArray(theCompany.mainAccount) && theCompany.mainAccount.length > 0) {
     //Companies with accounts
     leafCompanies.push(theCompany.id)
   } else {

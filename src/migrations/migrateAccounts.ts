@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { Account } from '@/payload-types'
+import { Company } from '@/payload-types'
 
 // SQL Server configuration
 const sqlConfig: sql.config = {
@@ -50,82 +50,81 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
 
+    // Group accounts by firmId
+    const accountsByFirmId = new Map<number, AccountRow[]>()
+
     for (const row of resultAccounts.recordset) {
+      if (!accountsByFirmId.has(row.firmId)) {
+        accountsByFirmId.set(row.firmId, [])
+      }
+      accountsByFirmId.get(row.firmId)?.push(row)
+    }
+
+    console.log(`Grouped accounts into ${accountsByFirmId.size} firms`)
+
+    // Process each firm once
+    for (const [firmId, accounts] of accountsByFirmId.entries()) {
       try {
-        // Find or create the firm
+        // Find the firm
         const companyResult = await payload.find({
           collection: 'companies',
           where: {
             companyId: {
-              equals: row.firmId,
+              equals: firmId,
             },
           },
           limit: 1,
         })
 
         if (companyResult.docs.length === 0) {
-          console.error(`No firm found for firmId: ${row.firmId}`)
-          // Report to migration faults
-          await payload.create({
-            collection: 'migration-faults',
-            data: {
-              type: 'account',
-              comments: `No firm found for firmId: ${row.firmId}`,
-              row: JSON.stringify(row),
-              typeId: `${row.accountNumber}`
-            }
-          })
-          errorCount++
+          console.error(`No firm found for firmId: ${firmId}`)
+          // Report to migration faults for all accounts of this firm
+          for (const account of accounts) {
+            await payload.create({
+              collection: 'migration-faults',
+              data: {
+                type: 'account',
+                comments: `No firm found for firmId: ${firmId}`,
+                row: JSON.stringify(account),
+                typeId: `${account.accountNumber}`
+              }
+            })
+            errorCount++
+          }
           continue
         }
 
-        const companyId = companyResult.docs[0].id
+        const theCompany: Company = companyResult.docs[0]
+        const companyId = theCompany.id
 
-        // Check if account exists for this firm
-        const existingAccount = await payload.find({
-          collection: 'accounts',
-          where: {
-            accountNumber: {
-              equals: row.accountNumber,
-            },
-            company: {
-              equals: companyId,
-            },
+        // Get existing mainAccount array or initialize empty array
+        const mainAccount = theCompany.mainAccount || []
+
+        // Add all accounts for this firm
+        for (const account of accounts) {
+          mainAccount.push({
+            accountNumber: account.accountNumber.toString(),
+            accountName: account.name || `Account ${account.accountNumber}`
+          })
+          successCount++
+        }
+
+        // Update company with all mainAccount entries at once
+        await payload.update({
+          collection: 'companies',
+          id: companyId,
+          data: {
+            mainAccount
           },
-          limit: 0,
         })
 
-        const accountData: Partial<Account> = {
-          accountNumber: row.accountNumber,
-          name: row.name,
-          company: companyId,
-          isCentralAccount : true
-        }
-
-        if (existingAccount.docs.length > 0) {
-          // Update existing account
-          await payload.update({
-            collection: 'accounts',
-            id: existingAccount.docs[0].id,
-            data: accountData,
-          })
-          console.log(`Updated account: ${row.accountNumber} for firm: ${row.firmId}`)
-        } else {
-          // Create new account
-          await payload.create({
-            collection: 'accounts',
-            data: accountData as Account,
-          })
-          console.log(`Created new account: ${row.accountNumber} for firm: ${row.firmId}`)
-        }
-
-        successCount++
+        console.log(`Updated company ${companyId} with ${accounts.length} mainAccount entries`)
       } catch (error) {
         console.error(
-          `Error processing account ${row.accountNumber} for firm ${row.firmId}:`,
+          `Error processing accounts for firm ${firmId}:`,
           error,
         )
-        errorCount++
+        errorCount += accounts.length
       }
     }
 
