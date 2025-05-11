@@ -91,6 +91,10 @@ export const ResearchDocument: CollectionConfig = {
     defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'meeting', 'company'],
   },
+  access: {
+    admin: ({ req: { user } }) => {
+      return Boolean(user)
+    }, },
   upload: {
     mimeTypes: ['application/docx', 'application/pdf'],
   },
