@@ -16,7 +16,7 @@ const sqlConfig: sql.config = {
 }
 
 interface FirmRow {
-  showResearchPrivate: any
+  //showResearchPrivate: any
   firmId: number
   name: string
   order: number
@@ -83,7 +83,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           active: !!row.active,
           researchDocuments: {
             showResearch: !!row.showResearch,
-            showResearchPrivate: !!row.showResearchPrivate,
+            //showResearchPrivate: !!row.showResearchPrivate,
             showResearchBond: !!row.showResearchBond,
             showResearchTrusteeship: !!row.showResearchTrusteeship,
           },
