@@ -80,11 +80,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           name: row.name,
           order: row.order,
           active: !!row.active,
-          showResearch: !!row.showResearch,
+          //showResearch: !!row.showResearch,
           //setResearchAsDefault: !!row.setResearchAsDefault,
-          showResearchBond: !!row.showResearchBond,
+          //showResearchBond: !!row.showResearchBond,
           //setResearchAsDefaultBond: !!row.setResearchAsDefaultBond,
-          showResearchTrusteeship: !!row.showResearchTrusteeship,
+          //showResearchTrusteeship: !!row.showResearchTrusteeship,
           //setResearchAsDefaultTrusteeship: !!row.setResearchAsDefaultTrusteeship,
         }
 

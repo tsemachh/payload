@@ -3,8 +3,9 @@ import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 // Function to parse research document filename
 const parseResearchFilename = (fileName: string): { meetingId: string; companyName: string | null; isValid: boolean } => {
 
-  const privatePattern = /^מחקר(\d+)_(.+)\.pdf$/;
-  const genericPattern = /^מחקר(\d+)\.pdf$/;
+  const privatePattern = /^מחקר(\d+)_(.+)\.(pdf|docx)$/;
+  const genericPattern = /^מחקר(\d+)\.(pdf|docx)$/;
+  
 
   const privateMatches = fileName.match(privatePattern);
   if (privateMatches) {
@@ -96,7 +97,7 @@ export const ResearchDocument: CollectionConfig = {
       return Boolean(user)
     }, },
   upload: {
-    mimeTypes: ['application/docx', 'application/pdf'],
+    mimeTypes: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'],
   },
   fields: [
     {
