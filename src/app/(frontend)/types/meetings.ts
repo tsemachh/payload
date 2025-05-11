@@ -2,7 +2,7 @@ import { MeetingState } from '@/payload-types'
 
 export type MeetingTableDataType = {
   meetingId: string
-  agendaTexts: string[]
+  agendas: AgendasType[]
   companies: CompanyTableDate[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
@@ -38,6 +38,14 @@ export type CompanyTableDate = {
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number
+}
+
+export type AgendasType = {
+  id: string
+  text: string
+  isRemovedFromAgenda: boolean
+  privilegedMajority: boolean
+  recommendation: string
 }
 
 // Base column type for all tables
@@ -102,4 +110,20 @@ export interface DataTableProps<T extends Record<string, any>> {
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
+}
+
+export type VoteDataType = {
+  generalVotingData: GeneralVotingData
+  voterNotes: string
+  userVotes: UserVote[]
+}
+
+export type GeneralVotingData = {
+  isInterested: boolean | null
+  isSeniorOfficial: boolean | null
+  isInstitutionalInvestor: boolean | null
+}
+export type UserVote = {
+  subjectId: string
+  choice: '----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף' | null
 }

@@ -63,12 +63,13 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           )
           return null
         }
+
         let stockValues: StockValue | null = null
-        let companiesArray = null
         const stockIdToUse = stockPresent?.relatedStock
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
         // Finding Date: holdingsLimit date or the closest date before it.
+
         const { docs } = await payload.find({
           collection: 'holdings',
           depth: 0,
@@ -107,77 +108,126 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           })
           stockValues = resuStockValues.length > 0 ? resuStockValues[0] : null
 
-          // Finding holdings:
-          const { docs: holdingsLimitDateDocs } = await payload.find({
-            collection: 'holdings',
-            depth: 1,
-            where: {
-              and: [
-                { stock: { equals: stockIdToUse } },
-                { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-                user?.leafCompanies
-                  ? {
-                      company: {
-                        in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
-                      },
-                    }
-                  : {
-                      company: {
-                        in: [], // no matches if user.leafCompanies is missing or empty
-                      },
-                    },
-              ],
-            },
-            limit: 0,
-          })
-          const resuHoldings = holdingsLimitDateDocs
+          // Find the intersection of meeting companies and user's leaf companies
+          const relevantCompanyIds = (meeting.companies || [])
+            .filter((company) =>
+              user?.leafCompanies?.some(
+                (leafCompany) =>
+                  typeof leafCompany === 'object' &&
+                  typeof company === 'object' &&
+                  leafCompany.id === company.id,
+              ),
+            )
+            .map((company) => (typeof company === 'object' ? company.id : null))
+            .filter((id) => id !== null) as string[]
 
-          // Implementation of holdings values
-          companiesArray = resuHoldings.map(({ company, quantity }) => {
-            const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
-              calculateHoldingValues(company, quantity, stockValues)
+          // For each relevant company, find holdings and calculate values separately
+          const companiesArray = await Promise.all(
+            relevantCompanyIds.map(async (companyId) => {
+              // For this specific company, find the nearest holdings date
+              const { docs: companyDocs } = await payload.find({
+                collection: 'holdings',
+                depth: 0,
+                where: {
+                  and: [
+                    { valueDate: { less_than_equal: meeting.holdingsLimit } },
+                    { company: { equals: companyId } },
+                  ],
+                },
+                sort: '-valueDate',
+                limit: 1,
+              })
+
+              const nearestHoldingsLimitDate =
+                companyDocs.length > 0 ? companyDocs[0].valueDate : null
+
+              if (!nearestHoldingsLimitDate) {
+                console.log(
+                  ` --- Error! Could not find holdings date for company ID ${companyId} for meeting ${meeting.meetingId}`,
+                )
+                return null
+              }
+              // Get this company's holdings for this date
+              const { docs: companyHoldings } = await payload.find({
+                collection: 'holdings',
+                depth: 1,
+                where: {
+                  and: [
+                    { stock: { equals: stockIdToUse } },
+                    { company: { equals: companyId } },
+                    { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
+                  ],
+                },
+                limit: 1,
+              })
+
+              if (companyHoldings.length === 0) {
+                console.log(
+                  ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on date ${nearestHoldingsLimitDate}`,
+                )
+                return null
+              }
+              const company = companyHoldings[0].company
+              const quantity = companyHoldings[0].quantity
+
+              // Calculate values for this company's holdings
+              const {
+                holdingsCompanyName,
+                percentageHolding,
+                holdingValueInMillions,
+                nominalValue,
+              } = calculateHoldingValues(company, quantity, stockValues)
+
+              return {
+                holdingsCompanyName,
+                percentageHolding,
+                holdingValueInMillions,
+                nominalValue,
+                holdingsDate: nearestHoldingsLimitDate, // Optional: include the specific date used for this company
+              }
+            }),
+          ).then((results) => results.filter((result) => result !== null))
+
+          const agendas = meeting.agenda?.map((item) => {
             return {
-              holdingsCompanyName,
-              percentageHolding,
-              holdingValueInMillions,
-              nominalValue,
+              id: item.id,
+              text: item.text || ['אסיפה ללא נושא'],
+              isRemovedFromAgenda: item.isRemovedFromAgenda || false,
+              privilegedMajority: item?.majorityType == 'privileged' || false,
+              recommendation: item.recommendation,
             }
           })
-        }
 
-        const agendaTexts = meeting.agenda?.map((item) =>
-          item.shortText?.trim() ? item.shortText : item.text,
-        ) ?? ['אסיפה ללא נושא']
-        return {
-          meetingId: meeting.meetingId,
-          agendaTexts,
-          companies: companiesArray,
-          stockNumber: stockPresent?.stockId?.toString() || '-',
-          stockType: stockPresent?.type || '-',
-          stockSymbol: stockPresent?.symbol || '-',
-          stockName: stockPresent?.name || '-',
-          companyName: stockPresent?.longName || '-',
-          stockTradable: stockPresent?.tradable || false,
-          marketValue: stockValues?.marketValue || 0,
-          meetingType: meeting.type || '-',
-          meetingDate: meeting.meetingDate || '-',
-          reference: meeting.magnaId || '-',
-          location: meeting.location || '-',
-          holdingsLimit: meeting.holdingsLimit || '-',
-          proxyVotingDate: meeting.proxyVotingDate || '-',
-          nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0),
-          percentageHolding: companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0),
-          holdingValueInMillions: companiesArray?.reduce(
-            (acc, obj) => acc + obj.holdingValueInMillions,
-            0,
-          ),
-          meetingState: meeting.state || null,
-          meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
-          comments: meeting.comments || '-',
-          electronicVotingEnabled: !!meeting.electronicVotingEnabled,
-          resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
-          committeeInitiated: !!meeting.committeeInitiated,
-        } as MeetingTableDataType
+          return {
+            meetingId: meeting.meetingId,
+            agendas,
+            companies: companiesArray,
+            stockNumber: stockPresent?.stockId?.toString() || '-',
+            stockType: stockPresent?.type || '-',
+            stockSymbol: stockPresent?.symbol || '-',
+            stockName: stockPresent?.name || '-',
+            companyName: stockPresent?.longName || '-',
+            stockTradable: stockPresent?.tradable || false,
+            marketValue: stockValues?.marketValue || 0,
+            meetingType: meeting.type || '-',
+            meetingDate: meeting.meetingDate || '-',
+            reference: meeting.magnaId || '-',
+            location: meeting.location || '-',
+            holdingsLimit: meeting.holdingsLimit || '-',
+            proxyVotingDate: meeting.proxyVotingDate || '-',
+            nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0) || 0,
+            percentageHolding:
+              companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0) || 0,
+            holdingValueInMillions:
+              companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
+            meetingState: meeting.state || null,
+            meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
+            comments: meeting.comments || '-',
+            electronicVotingEnabled: !!meeting.electronicVotingEnabled,
+            resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
+            committeeInitiated: !!meeting.committeeInitiated,
+          } as MeetingTableDataType
+        }
       }),
     )
   ).filter((item): item is MeetingTableDataType => item !== null)
