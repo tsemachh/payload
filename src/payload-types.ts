@@ -194,6 +194,7 @@ export interface Config {
     };
     meetings: {
       votes: 'votes';
+      'research-documents': 'research-documents';
     };
     companies: {
       parentCompany: 'companies';
@@ -357,6 +358,11 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
+  'research-documents'?: {
+    docs?: (string | ResearchDocument)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -447,11 +453,9 @@ export interface Company {
   };
   subCompanies?: (string | Company)[] | null;
   showResearch?: boolean | null;
-  setResearchAsDefault?: boolean | null;
   showResearchBond?: boolean | null;
-  setResearchAsDefaultBond?: boolean | null;
   showResearchTrusteeship?: boolean | null;
-  setResearchAsDefaultTrusteeship?: boolean | null;
+  showResearchPrivate?: boolean | null;
   mainAccount?:
     | {
         accountNumber: string;
@@ -490,6 +494,29 @@ export interface Holding {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents".
+ */
+export interface ResearchDocument {
+  id: string;
+  meeting: string | Meeting;
+  company?: (string | null) | Company;
+  uploadedAt?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -672,29 +699,6 @@ export interface SilencedStock {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "research-documents".
- */
-export interface ResearchDocument {
-  id: string;
-  meeting: string | Meeting;
-  company?: (string | null) | Company;
-  uploadedAt?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1074,6 +1078,7 @@ export interface MeetingsSelect<T extends boolean = true> {
       };
   votes?: T;
   companies?: T;
+  'research-documents'?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1095,11 +1100,9 @@ export interface CompaniesSelect<T extends boolean = true> {
   parentCompany?: T;
   subCompanies?: T;
   showResearch?: T;
-  setResearchAsDefault?: T;
   showResearchBond?: T;
-  setResearchAsDefaultBond?: T;
   showResearchTrusteeship?: T;
-  setResearchAsDefaultTrusteeship?: T;
+  showResearchPrivate?: T;
   mainAccount?:
     | T
     | {

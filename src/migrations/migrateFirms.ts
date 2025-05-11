@@ -81,11 +81,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           order: row.order,
           active: !!row.active,
           showResearch: !!row.showResearch,
-          setResearchAsDefault: !!row.setResearchAsDefault,
+          //setResearchAsDefault: !!row.setResearchAsDefault,
           showResearchBond: !!row.showResearchBond,
-          setResearchAsDefaultBond: !!row.setResearchAsDefaultBond,
+          //setResearchAsDefaultBond: !!row.setResearchAsDefaultBond,
           showResearchTrusteeship: !!row.showResearchTrusteeship,
-          setResearchAsDefaultTrusteeship: !!row.setResearchAsDefaultTrusteeship,
+          //setResearchAsDefaultTrusteeship: !!row.setResearchAsDefaultTrusteeship,
         }
 
         // Check if firm already exists
