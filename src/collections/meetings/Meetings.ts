@@ -469,6 +469,20 @@ export const Meetings: CollectionConfig = {
             },
           ],
         },
+        {
+          label: 'מסמכי מחקר',
+          fields: [
+            {
+              name: 'research-documents',
+              label: 'מסמכי מחקר',
+              type: 'join',
+              collection: 'research-documents',
+              on: 'meeting',
+              admin: {   defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'],
+              },
+            },
+          ],
+        },
       ],
     },
   ],
