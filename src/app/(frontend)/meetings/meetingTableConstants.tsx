@@ -2,118 +2,138 @@
 
 import { BooleanIcon } from '@/components/ui/icons'
 import { formatDateTime, isRTL } from '../helpers/utils-data-table'
-import { Column, MeetingTableDataType } from '../types/meetings'
+import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
+function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
+  const router = useRouter()
+
+  const handleIconClick = (e: any) => {
+    // Stop propagation to prevent the tooltip from interfering
+    e.stopPropagation()
+    const payload = {
+      meeting: row,
+    }
+    const json = JSON.stringify(payload)
+    const encoded = btoa(unescape(encodeURIComponent(json)))
+    router.push(`/vote?data=${encodeURIComponent(encoded)}`)
+  }
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="w-4 h-4" onClick={handleIconClick} />
+        </TooltipTrigger>
+        <TooltipContent
+          className="rounded-md shadow-md border border-gray-200"
+          side="left"
+          sideOffset={30}
+          align="end"
+          alignOffset={30}
+          avoidCollisions={true}
+          collisionPadding={30}
+        >
+          <div
+            style={{
+              maxWidth: 'min(800px, calc(100vw - 240px))',
+              maxHeight: 'calc(100vh - 140px)',
+              overflow: 'auto',
+              direction: 'rtl',
+            }}
+            className="flex flex-col gap-2"
+          >
+            {/* Vote Status */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
+              ></div>
+              <span className="font-medium text-sm">
+                {Number.parseInt(row.meetingId) % 2 === 0
+                  ? 'ההצבעות התקבלו בעמדה'
+                  : 'ההצבעות טרם התקבלו בעמדה'}
+              </span>
+            </div>
+
+            {/* Comments Section */}
+            {row.comments && row.comments != '-' && (
+              <div className="mt-1 text-right">
+                <h4 className="font-bold text-base mb-1 text-right">הערות</h4>
+                <p className="text-sm bg-gray-50 p-2 rounded-md text-right">{row.comments}</p>
+              </div>
+            )}
+
+            {/* Agenda Items Table */}
+            <div className="mt-1">
+              <h4 className="font-bold text-base mb-1 text-right">נושאים לסדר היום</h4>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full border-collapse table-fixed">
+                  <tbody>
+                    {row.agendas.length ? (
+                      row.agendas.map((item: AgendasType, index: number) => (
+                        <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td
+                            className="py-1 px-2 border-t text-right "
+                            style={{ width: '30px', minWidth: '30px' }}
+                          >
+                            {index + 1}.
+                          </td>
+                          <td
+                            className={`py-1 px-2 border-t ${isRTL(item.text) ? 'text-right' : 'text-left'}`}
+                          >
+                            <div
+                              dir={isRTL(item.text) ? 'ltr' : 'ltr'}
+                              style={{
+                                wordBreak: 'break-word',
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'break-word',
+                                fontSize: '0.80rem',
+                              }}
+                            >
+                              {item.text}
+                            </div>
+                          </td>
+                          <td
+                            className="py-1 px-2 border-t text-right text-green-600 font-medium"
+                            style={{ width: '80px', minWidth: '80px' }}
+                          >
+                            בעד
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="py-1 px-2 text-center">
+                          אסיפה ללא נושא
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
 export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
   {
-    key: 'agendaTexts',
+    key: 'agendas',
     header: 'סדר היום',
     noHeader: true,
     type: 'other',
     filterable: true,
     isAlwaysVisible: true,
     positionCenter: true,
-    render: (row) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="w-4 h-4" />
-          </TooltipTrigger>
-          <TooltipContent
-            className="rounded-md shadow-md border border-gray-200"
-            side="left"
-            sideOffset={30}
-            align="end"
-            alignOffset={30}
-            avoidCollisions={true}
-            collisionPadding={30}
-          >
-            <div
-              style={{
-                maxWidth: 'min(800px, calc(100vw - 240px))',
-                maxHeight: 'calc(100vh - 140px)',
-                overflow: 'auto',
-                direction: 'rtl',
-              }}
-              className="flex flex-col gap-2"
-            >
-              {/* Vote Status */}
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
-                ></div>
-                <span className="font-medium text-sm">
-                  {Number.parseInt(row.meetingId) % 2 === 0
-                    ? 'ההצבעות התקבלו בעמדה'
-                    : 'ההצבעות טרם התקבלו בעמדה'}
-                </span>
-              </div>
-
-              {/* Comments Section */}
-              {row.comments && row.comments != '-' && (
-                <div className="mt-1 text-right">
-                  <h4 className="font-bold text-base mb-1 text-right">הערות</h4>
-                  <p className="text-sm bg-gray-50 p-2 rounded-md text-right">{row.comments}</p>
-                </div>
-              )}
-
-              {/* Agenda Items Table */}
-              <div className="mt-1">
-                <h4 className="font-bold text-base mb-1 text-right">נושאים לסדר היום</h4>
-                <div className="border rounded-md overflow-hidden">
-                  <table className="w-full border-collapse table-fixed">
-                    <tbody>
-                      {row.agendaTexts.length ? (
-                        row.agendaTexts.map((text: string, index: number) => (
-                          <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td
-                              className="py-1 px-2 border-t text-right "
-                              style={{ width: '30px', minWidth: '30px' }}
-                            >
-                              {index + 1}.
-                            </td>
-                            <td className="py-1 px-2 border-t text-right">
-                              <div
-                                dir={isRTL(text) ? 'rtl' : 'ltr'}
-                                style={{
-                                  wordBreak: 'break-word',
-                                  whiteSpace: 'pre-wrap',
-                                  overflowWrap: 'break-word',
-                                  fontSize: '0.80rem',
-                                }}
-                              >
-                                {text}
-                              </div>
-                            </td>
-                            <td
-                              className="py-1 px-2 border-t text-right text-green-600 font-medium"
-                              style={{ width: '80px', minWidth: '80px' }}
-                            >
-                              בעד
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={3} className="py-1 px-2 text-center">
-                            אסיפה ללא נושא
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
+    render: (row) => {
+      return <AgendaTooltipWithNavigation row={row} />
+    },
     minWidth: 20,
   },
 ]
@@ -296,7 +316,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-export const futuredefaultVisibleExtra = ['agendaTexts']
+export const futuredefaultVisibleExtra = ['agendas']
 export const defaultVisibleColumns = [
   'companies',
   'stockNumber',
