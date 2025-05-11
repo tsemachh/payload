@@ -112,11 +112,16 @@ export const Companies: CollectionConfig = {
               ],
             },
             {
+              name: 'researchDocuments',
+              label: 'מסמכי מחקר',
+              type: 'group',
+              fields: [
+                {
                   type: 'row',
                   fields: [
                     {
-                      name: 'showResearch',
-                      label: 'הצג מחקר',
+                      name: 'showResearchTrusteeship',
+                      label: 'הצג מחקר אג"ח נאמנות',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
@@ -131,8 +136,8 @@ export const Companies: CollectionConfig = {
                       },
                     },
                     {
-                      name: 'showResearchTrusteeship',
-                      label: 'הצג מחקר אג"ח נאמנות',
+                      name: 'showResearch',
+                      label: 'הצג מחקר כללי',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
@@ -140,14 +145,17 @@ export const Companies: CollectionConfig = {
                     },
                     {
                       name: 'showResearchPrivate',
-                      label: 'הצג מחקר פרטי',
+                      label: 'הצג מחקר פרטני',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
                       },
                     },
+                  ],
+                },
               ],
             }
+            
 
           ],
         },

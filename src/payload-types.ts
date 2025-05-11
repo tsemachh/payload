@@ -452,10 +452,12 @@ export interface Company {
     totalDocs?: number;
   };
   subCompanies?: (string | Company)[] | null;
-  showResearch?: boolean | null;
-  showResearchBond?: boolean | null;
-  showResearchTrusteeship?: boolean | null;
-  showResearchPrivate?: boolean | null;
+  researchDocuments?: {
+    showResearchTrusteeship?: boolean | null;
+    showResearchBond?: boolean | null;
+    showResearch?: boolean | null;
+    showResearchPrivate?: boolean | null;
+  };
   mainAccount?:
     | {
         accountNumber: string;
@@ -1099,10 +1101,14 @@ export interface CompaniesSelect<T extends boolean = true> {
   active?: T;
   parentCompany?: T;
   subCompanies?: T;
-  showResearch?: T;
-  showResearchBond?: T;
-  showResearchTrusteeship?: T;
-  showResearchPrivate?: T;
+  researchDocuments?:
+    | T
+    | {
+        showResearchTrusteeship?: T;
+        showResearchBond?: T;
+        showResearch?: T;
+        showResearchPrivate?: T;
+      };
   mainAccount?:
     | T
     | {
