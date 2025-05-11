@@ -16,6 +16,7 @@ const sqlConfig: sql.config = {
 }
 
 interface FirmRow {
+  showResearchPrivate: any
   firmId: number
   name: string
   order: number
@@ -75,18 +76,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const row of resultFirms.recordset) {
       try {
         // Transform the data to match Payload CMS format
-        const companyData:Partial<Company> = {
+        const companyData: Partial<Company> = {
           companyId: row.firmId,
           name: row.name,
           order: row.order,
           active: !!row.active,
-          //showResearch: !!row.showResearch,
-          //setResearchAsDefault: !!row.setResearchAsDefault,
-          //showResearchBond: !!row.showResearchBond,
-          //setResearchAsDefaultBond: !!row.setResearchAsDefaultBond,
-          //showResearchTrusteeship: !!row.showResearchTrusteeship,
-          //setResearchAsDefaultTrusteeship: !!row.setResearchAsDefaultTrusteeship,
-        }
+          researchDocuments: {
+            showResearch: !!row.showResearch,
+            showResearchPrivate: !!row.showResearchPrivate,
+            showResearchBond: !!row.showResearchBond,
+            showResearchTrusteeship: !!row.showResearchTrusteeship,
+          },
+        };
+        
 
         // Check if firm already exists
         const existingCompany = await payload.find({
