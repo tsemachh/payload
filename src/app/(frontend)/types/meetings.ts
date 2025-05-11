@@ -125,5 +125,13 @@ export type GeneralVotingData = {
 }
 export type UserVote = {
   subjectId: string
-  choice: '----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף' | null
+  choice: VoteChoice
+  questions: AgendaQuestionsType
 }
+export type AgendaQuestionsType = {
+  hasConflictOfInterest: boolean | null
+  isRelatedParty: boolean | null
+  isInvestmentCommittee: boolean | null
+  hasPersonalInterest: boolean | null
+}
+export type VoteChoice = '----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף' | null
