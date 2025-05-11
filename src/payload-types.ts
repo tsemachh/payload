@@ -447,11 +447,9 @@ export interface Company {
   };
   subCompanies?: (string | Company)[] | null;
   showResearch?: boolean | null;
-  setResearchAsDefault?: boolean | null;
   showResearchBond?: boolean | null;
-  setResearchAsDefaultBond?: boolean | null;
   showResearchTrusteeship?: boolean | null;
-  setResearchAsDefaultTrusteeship?: boolean | null;
+  showResearchPrivate?: boolean | null;
   mainAccount?:
     | {
         accountNumber: string;
@@ -1095,11 +1093,9 @@ export interface CompaniesSelect<T extends boolean = true> {
   parentCompany?: T;
   subCompanies?: T;
   showResearch?: T;
-  setResearchAsDefault?: T;
   showResearchBond?: T;
-  setResearchAsDefaultBond?: T;
   showResearchTrusteeship?: T;
-  setResearchAsDefaultTrusteeship?: T;
+  showResearchPrivate?: T;
   mainAccount?:
     | T
     | {
