@@ -387,6 +387,16 @@ export const Meetings: CollectionConfig = {
                       },
                     },
                     {
+                      name: 'votingRecommendation',
+                      label: 'המלצת הצבעה',
+                      type: 'select',
+                      options: [
+                        { label: 'בעד', value: 'for' },
+                        { label: 'נגד', value: 'against' },
+                        { label: 'נמנע', value: 'abstain' },
+                      ],
+                    },
+                    {
                       name: 'vpercent',
                       label: 'אחוז הצבעה',
                       type: 'number',
