@@ -3,7 +3,7 @@ import 'dotenv/config'
 import config from '@/payload.config'
 import { MeetingTableDataType } from '../types/meetings'
 import { headers as getHeaders } from 'next/headers.js'
-import { StockValue } from '@/payload-types'
+import { Company, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '../helpers/utils-data-table'
 
 export async function fetchFutureMeetingsForTable(): Promise<{
@@ -122,7 +122,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             .filter((id) => id !== null) as string[]
 
           // For each relevant company, find holdings and calculate values separately
-          const companiesArray = await Promise.all(
+          const results = await Promise.all(
             relevantCompanyIds.map(async (companyId) => {
               // For this specific company, find the nearest holdings date
               const { docs: companyDocs } = await payload.find({
@@ -150,7 +150,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               // Get this company's holdings for this date
               const { docs: companyHoldings } = await payload.find({
                 collection: 'holdings',
-                depth: 1,
+                depth: 2,
                 where: {
                   and: [
                     { stock: { equals: stockIdToUse } },
@@ -179,14 +179,24 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               } = calculateHoldingValues(company, quantity, stockValues)
 
               return {
-                holdingsCompanyName,
-                percentageHolding,
-                holdingValueInMillions,
-                nominalValue,
-                holdingsDate: nearestHoldingsLimitDate, // Optional: include the specific date used for this company
+                companyData: {
+                  holdingsCompanyName,
+                  percentageHolding,
+                  holdingValueInMillions,
+                  nominalValue,
+                  holdingsDate: nearestHoldingsLimitDate,
+                },
+                parentCompany: (company as Company).parentCompany as Company,
               }
             }),
-          ).then((results) => results.filter((result) => result !== null))
+          )
+          
+          const validResults = results.filter((result) => result !== null)
+          
+          // Separate arrays
+          const companiesArray = validResults.map((r) => r!.companyData)
+          const parentCompaniesArray = validResults.map((r) => r!.parentCompany)
+          
 
           const agendas = meeting.agenda?.map((item) => {
             return {
@@ -202,6 +212,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             meetingId: meeting.meetingId,
             agendas,
             companies: companiesArray,
+            parentCompanies: parentCompaniesArray,
             stockNumber: stockPresent?.stockId?.toString() || '-',
             stockType: stockPresent?.type || '-',
             stockSymbol: stockPresent?.symbol || '-',

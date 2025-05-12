@@ -1,9 +1,10 @@
-import { MeetingState } from '@/payload-types'
+import { Company, MeetingState } from '@/payload-types'
 
 export type MeetingTableDataType = {
   meetingId: string
   agendas: AgendasType[]
   companies: CompanyTableDate[]
+  parentCompanies: Company[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
@@ -38,6 +39,11 @@ export type CompanyTableDate = {
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number
+}
+
+export type CompanyVoteDate = {
+  company: CompanyTableDate
+  parentCompany: Company
 }
 
 export type AgendasType = {

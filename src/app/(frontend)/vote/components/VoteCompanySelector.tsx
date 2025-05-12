@@ -2,18 +2,20 @@
 
 import { useState } from 'react'
 import { CompanyTableDate } from '../../types/meetings'
+import { Company } from '@/payload-types'
 
 interface VoteCompanySelectorProps {
   companies: CompanyTableDate[]
+  parentCompany: Company[]
   onSelectionChange: (selectedCompanyIndex: number) => void
 }
 
 export default function VoteCompanySelector({
   companies,
+  parentCompany,
   onSelectionChange,
 }: VoteCompanySelectorProps) {
-  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(-1) // -1 means "all companies"
-
+  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(-1)
   const handleCompanyChange = (index: number) => {
     setSelectedCompanyIndex(index)
     onSelectionChange(index)
