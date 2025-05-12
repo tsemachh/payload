@@ -27,7 +27,10 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="w-4 h-4" onClick={handleIconClick} />
+          <Info
+            className="w-4 h-4 text-blue-700 hover:text-blue-800 cursor-pointer"
+            onClick={handleIconClick}
+          />
         </TooltipTrigger>
         <TooltipContent
           className="rounded-md shadow-md border border-gray-200"

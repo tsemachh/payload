@@ -15,7 +15,7 @@ export default function AgendaQuestions({ questions, onChange }: AgendaQuestions
   }
 
   return (
-    <div className="space-y-2 min-w-[200px] pl-3 pr-3">
+    <div className="space-y-2 min-w-[200px] pr-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">ניגוד עניינים </span>
         <div className="flex bg-muted rounded-full p-0.5">
