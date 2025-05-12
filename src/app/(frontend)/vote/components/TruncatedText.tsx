@@ -1,13 +1,13 @@
-"use client"
+'use client'
 
-import { useRef, useState, useEffect } from "react"
+import { useRef, useState, useEffect } from 'react'
 
 interface TruncatedTextProps {
   text: string
   className?: string
 }
 
-export default function TruncatedText({ text, className = "" }: TruncatedTextProps) {
+export default function TruncatedText({ text, className = '' }: TruncatedTextProps) {
   const textRef = useRef<HTMLSpanElement>(null)
   const [isTruncated, setIsTruncated] = useState(false)
 
@@ -20,12 +20,17 @@ export default function TruncatedText({ text, className = "" }: TruncatedTextPro
     }
 
     checkTruncation()
-    window.addEventListener("resize", checkTruncation)
-    return () => window.removeEventListener("resize", checkTruncation)
+    window.addEventListener('resize', checkTruncation)
+    return () => window.removeEventListener('resize', checkTruncation)
   }, [text])
 
   return (
-    <span ref={textRef} className={`block truncate ${className}`} title={isTruncated ? text : undefined}>
+    <span
+      ref={textRef}
+      className={`block truncate ${className} `}
+      dir="ltr"
+      title={isTruncated ? text : undefined}
+    >
       {text}
     </span>
   )

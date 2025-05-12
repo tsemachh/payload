@@ -76,9 +76,9 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
               }
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80 hover:underline text-xs flex items-center transition-colors"
+              className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
             >
-              <TruncatedText text="צפייה בנייר" className="max-w-[200px]" />
+              <TruncatedText text={meetingData.stockName} className="max-w-[200px]" />
               <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
             </a>
           </div>
@@ -88,7 +88,15 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
       {/* הערות האסיפה - רק אם יש הערות */}
       {hasComments && (
         <div className="bg-yellow-50 rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200 p-3">{meetingData.comments}</p>
+          <div className="flex items-center mb-2 px-3 pt-3">
+            <h3 className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
+              הערות האסיפה
+            </h3>
+            <div className="flex-1 border-t border-yellow-200 dark:border-yellow-800 mr-2 mt-0.5"></div>
+          </div>
+          <p className="text-sm text-yellow-800 dark:text-yellow-200 px-3 pb-3">
+            {meetingData.comments}
+          </p>
         </div>
       )}
     </div>

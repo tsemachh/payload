@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { ExternalLink, Printer, Upload } from 'lucide-react'
+import { ExternalLink, Upload } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -31,6 +30,7 @@ import AgendaQuestions from './components/AgendaQuestions'
 export default function VotingForm() {
   const searchParams = useSearchParams()
   const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
       isInterested: false,
@@ -133,8 +133,15 @@ export default function VotingForm() {
     }))
   }
 
-  const handlePrintVote = () => {
-    window.print()
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files)
+      setSelectedFiles((prev) => [...prev, ...filesArray])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   return meetingData ? (
@@ -145,7 +152,7 @@ export default function VotingForm() {
           href={`https://www.tase.co.il/he/market_data/security/${meetingData.stockNumber}/major_data`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center text-2xl font-bold text-primary hover:text-primary/80 hover:underline transition-colors"
+          className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
         >
           אסיפה {meetingData.meetingType} - {meetingData.stockName}
           <ExternalLink className="h-4 w-4 mr-2" />
@@ -155,17 +162,29 @@ export default function VotingForm() {
       {/* Main content */}
       <div className="space-y-6">
         <VoteDetails meetingData={meetingData} />
-
-        <VoteCompanySelector
-          companies={meetingData.companies}
-          onSelectionChange={() => {}}
-          //   onSelectionChange={handleCompanySelection}
-        />
-
-        <GeneralQuestions
-          generalVotingData={votingData.generalVotingData}
-          onQuestionChange={handleGeneralQuestionChange}
-        />
+        <Card>
+          <CardHeader className="bg-primary/10 py-1.5 px-3">
+            <h2 className="text-sm font-medium text-primary">בחירת חברה</h2>
+          </CardHeader>
+          <CardContent className="p-4">
+            <VoteCompanySelector
+              companies={meetingData.companies}
+              onSelectionChange={() => {}}
+              //   onSelectionChange={handleCompanySelection}
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="bg-primary/10 py-1.5 px-3">
+            <h2 className="text-sm font-medium text-primary">שאלות כלליות</h2>
+          </CardHeader>
+          <CardContent className="p-4">
+            <GeneralQuestions
+              generalVotingData={votingData.generalVotingData}
+              onQuestionChange={handleGeneralQuestionChange}
+            />
+          </CardContent>
+        </Card>
 
         {/* Agenda */}
         <Card>
@@ -175,22 +194,28 @@ export default function VotingForm() {
 
           <CardContent className="p-4">
             <div className="space-y-6">
-              {meetingData.agendas.map((item) => {
+              {meetingData.agendas.map((item, index) => {
                 const userVote = votingData.userVotes.find((v) => v.subjectId === item.id)
+                const itemNumber = index + 1
 
                 return (
                   <div key={item.id} className={`${item.isRemovedFromAgenda ? 'opacity-70' : ''}`}>
                     <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,auto] gap-4 pl-3 pr-3">
                       <div>
-                        <p
-                          className={`text-foreground font-medium ${
-                            item.isRemovedFromAgenda ? 'line-through text-muted-foreground' : ''
-                          }`}
-                        >
-                          {item.text}
-                        </p>
+                        <div className="flex items-start">
+                          <span className="text-primary font-bold ml-2 mt-0.5 min-w-[24px]">
+                            {itemNumber}.
+                          </span>
+                          <p
+                            className={`text-foreground font-medium ${
+                              item.isRemovedFromAgenda ? 'line-through text-muted-foreground' : ''
+                            }`}
+                          >
+                            {item.text}
+                          </p>{' '}
+                        </div>
 
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2 mr-7">
                           {item.privilegedMajority && !item.isRemovedFromAgenda && (
                             <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
                               דורש רוב מיוחד
@@ -205,36 +230,23 @@ export default function VotingForm() {
                       </div>
 
                       {!item.isRemovedFromAgenda && (
-                        <AgendaQuestions
-                          questions={
-                            userVote?.questions || {
-                              hasConflictOfInterest: false,
-                              isRelatedParty: false,
-                              isInvestmentCommittee: false,
-                              hasPersonalInterest: false,
-                            }
-                          }
-                          onChange={(questions: AgendaQuestionsType) =>
-                            handleAgendaQuestionsChange(item.id, questions)
-                          }
-                        />
-                      )}
-
-                      {!item.isRemovedFromAgenda && (
-                        <div className="flex flex-col items-center gap-2 min-w-[200px]">
-                          {item.recommendation && (
-                            <span
-                              className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
-                                item.recommendation === 'בעד'
-                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
-                                  : item.recommendation === 'נגד'
-                                    ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                    : 'bg-muted text-muted-foreground border-border'
-                              }`}
-                            >
-                              המלצה: {item.recommendation}
-                            </span>
-                          )}
+                        <div className="flex flex-col items-center gap-2 min-w-[180px] border-r px-4">
+                          {/* //  {item.recommendation && ( */}
+                          <span
+                            className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
+                              Number(item.id) % 3 === 2
+                                ? // item.recommendation === 'בעד'
+                                  'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
+                                : Number(item.id) % 3 === 1
+                                  ? // : item.recommendation === 'נגד'
+                                    'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
+                                  : 'bg-muted text-muted-foreground border-border'
+                            }`}
+                          >
+                            המלצה: בעד
+                            {/* המלצה: {item.recommendation}  */}
+                          </span>
+                          {/* )} */}
                           <Select
                             value={userVote?.choice || undefined}
                             onValueChange={(value) =>
@@ -277,6 +289,24 @@ export default function VotingForm() {
                           </Select>
                         </div>
                       )}
+
+                      {!item.isRemovedFromAgenda && (
+                        <div className="border-r px-4">
+                          <AgendaQuestions
+                            questions={
+                              userVote?.questions || {
+                                hasConflictOfInterest: false,
+                                isRelatedParty: false,
+                                isInvestmentCommittee: false,
+                                hasPersonalInterest: false,
+                              }
+                            }
+                            onChange={(questions: AgendaQuestionsType) =>
+                              handleAgendaQuestionsChange(item.id, questions)
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {!item.isRemovedFromAgenda &&
@@ -290,45 +320,76 @@ export default function VotingForm() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="border border-border rounded-lg p-4 bg-card">
-            <div className="flex items-center mb-3">
-              <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
-            </div>
-            <Textarea
-              value={votingData.voterNotes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="הוסף הערות כאן..."
-              className="min-h-[150px] w-full border-muted bg-background resize-none focus-visible:ring-1"
-            />
-          </div>
+        <Card>
+          <CardHeader className="bg-primary/10 py-1.5 px-3">
+            <h2 className="text-sm font-medium text-primary">נספחים להצבעה</h2>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-[3fr,1fr] gap-6">
+              {/* הערות המצביע - חלק גדול */}
+              <div>
+                <div className="flex items-center mb-2">
+                  <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
+                </div>
+                <Textarea
+                  value={votingData.voterNotes}
+                  onChange={(e) => handleNotesChange(e.target.value)}
+                  placeholder="הוסף הערות כאן..."
+                  className="min-h-[150px] w-full border-muted bg-background resize-none focus-visible:ring-1"
+                />
+              </div>
 
-          <div className="border border-border rounded-lg p-4 bg-card flex flex-col">
-            <div className="flex items-center mb-3">
-              <h3 className="text-xs font-medium text-muted-foreground">פעולות</h3>
-            </div>
+              {/* העלאת קבצים - חלק קטן */}
+              <div>
+                <div className="flex items-center mb-2">
+                  <h3 className="text-xs font-medium text-muted-foreground">העלאת קבצים</h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      multiple
+                      onChange={handleFileChange}
+                      className="sr-only"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="flex items-center gap-2 bg-background border border-input rounded-md p-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">בחר קובץ/קבצים</span>
+                    </label>
+                  </div>
 
-            <div className="mb-4">
-              <div className="text-xs text-muted-foreground mb-2">העלאת קבצים</div>
-              <div className="flex items-center gap-2 bg-background border border-input rounded-md p-2">
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <Input type="file" className="flex-1 border-0 bg-transparent focus-visible:ring-0 p-0" />
+                  {selectedFiles.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5 text-xs"
+                        >
+                          <span className="truncate max-w-[150px]">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="text-muted-foreground hover:text-destructive ml-2"
+                          >
+                            הסר
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="mt-auto space-y-3">
-              <Button
-                onClick={handlePrintVote}
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2 bg-background"
-              >
-                <Printer className="h-4 w-4" />
-                הדפסת הצבעה
-              </Button>
-
-              <Button className="w-full">שליחת הצבעה</Button>
-            </div>
-          </div>
+        {/* כפתור שליחת הצבעה */}
+        <div className="flex justify-end mt-6">
+          <Button className="px-8">שליחת הצבעה</Button>
         </div>
       </div>
     </div>
