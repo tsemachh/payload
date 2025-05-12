@@ -129,7 +129,7 @@ importers:
         specifier: ^1.1.8
         version: 1.2.6(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@shefing/authorization':
-        specifier: ^1.0.8
+        specifier: ^1.0.9
         version: 1.0.9
       '@shefing/authors-info':
         specifier: ^1.0.10
