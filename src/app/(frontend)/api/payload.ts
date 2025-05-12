@@ -33,7 +33,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
         user?.leafCompanies
           ? {
               companies: {
-                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                in: user.leafCompanies,
               },
             }
           : {
@@ -79,7 +79,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               user?.leafCompanies
                 ? {
                     company: {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      in: user.leafCompanies,
                     },
                   }
                 : {
@@ -113,9 +113,8 @@ export async function fetchFutureMeetingsForTable(): Promise<{
             .filter((company) =>
               user?.leafCompanies?.some(
                 (leafCompany) =>
-                  typeof leafCompany === 'object' &&
                   typeof company === 'object' &&
-                  leafCompany.id === company.id,
+                  leafCompany === company.id,
               ),
             )
             .map((company) => (typeof company === 'object' ? company.id : null))

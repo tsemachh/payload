@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           user?.leafCompanies
             ? {
                 companies: {
-                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                  in: user.leafCompanies,
                 },
               }
             : {
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
               user?.leafCompanies
                 ? {
                     company: {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      in: user.leafCompanies,
                     },
                   }
                 : {
@@ -140,9 +140,8 @@ export async function GET(request: NextRequest) {
             .filter((company) =>
               user?.leafCompanies?.some(
                 (leafCompany) =>
-                  typeof leafCompany === 'object' &&
                   typeof company === 'object' &&
-                  leafCompany.id === company.id,
+                  leafCompany === company.id,
               ),
             )
             .map((company) => (typeof company === 'object' ? company.id : null))
