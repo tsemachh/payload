@@ -91,6 +91,7 @@ export const ResearchDocument: CollectionConfig = {
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'meeting', 'company'],
+    group: 'אוספים משניים',
   },
   access: {
     admin: ({ req: { user } }) => {

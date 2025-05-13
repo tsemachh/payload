@@ -154,9 +154,35 @@ export const Companies: CollectionConfig = {
                   ],
                 },
               ],
+            },
+            {
+              name: 'votes',
+              label: 'הצבעות',
+              type: 'group',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'receivesVotingRecommendation',
+                      label: 'מקבל המלצת הצבעה',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                    {
+                      name: 'defaultVotingRecommendation',
+                      label: 'המלצת הצבעה כברירת מחדל',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                  ],
+                },
+              ],
             }
-            
-
           ],
         },
         {

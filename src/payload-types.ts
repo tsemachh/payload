@@ -345,6 +345,7 @@ export interface Meeting {
         isRemovedFromAgenda?: boolean | null;
         topicType: 'reporting' | 'decision';
         majorityType?: ('regular' | 'privileged') | null;
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         vpercent?: number | null;
         vPercentSpecial?: number | null;
         recommendation?: string | null;
@@ -403,20 +404,7 @@ export interface Vote {
   votes?:
     | {
         topicIndex: number;
-        voteDecision?:
-          | (
-              | 'בעד'
-              | 'נגד'
-              | 'נמנע'
-              | 'אין חובת השתתפות'
-              | 'לא משתתף'
-              | 'דיון'
-              | 'הוסר מסדר היום'
-              | 'ללא הצבעה'
-              | 'נמכרה אחזקה'
-              | 'הצבעות סותרות'
-            )
-          | null;
+        voteDecision?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
         committee?: boolean | null;
         conflict?: boolean | null;
         relatedParty?: boolean | null;
@@ -457,6 +445,10 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+  };
+  votes?: {
+    receivesVotingRecommendation?: boolean | null;
+    defaultVotingRecommendation?: boolean | null;
   };
   mainAccount?:
     | {
@@ -1072,6 +1064,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         isRemovedFromAgenda?: T;
         topicType?: T;
         majorityType?: T;
+        votingRecommendation?: T;
         vpercent?: T;
         vPercentSpecial?: T;
         recommendation?: T;
@@ -1108,6 +1101,12 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+      };
+  votes?:
+    | T
+    | {
+        receivesVotingRecommendation?: T;
+        defaultVotingRecommendation?: T;
       };
   mainAccount?:
     | T
