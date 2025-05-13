@@ -27,7 +27,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`/api/companies`)
+      const response = await fetch(`/api/companies-details`)
       if (!response.ok) {
         throw new Error('Failed to fetch compnies data')
       }
