@@ -221,7 +221,6 @@ export const Users: CollectionConfig = {
       name: 'qrCodeData',
       label: 'נתוני QR',
       type: 'group',
-      saveToJWT: false,
       fields: [
         {
           type: 'row',
@@ -252,12 +251,12 @@ export const Users: CollectionConfig = {
     },
     ...userFields,
   ],
-  hooks:{
-    beforeChange:[
+  hooks: {
+    beforeChange: [
       async ({ data, req, originalDoc }) => {
         // Check if companies have changed by comparing with originalDoc
-        const companiesChanged = originalDoc && 
-          JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies);
+        const companiesChanged =
+          originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
         // Recalculate leafCompanies if companies have changed or if leafCompanies is empty
         if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
@@ -270,7 +269,7 @@ export const Users: CollectionConfig = {
           data.leafCompanies = await computeLeafCompanies(companyIds, req)
         }
         return data
-      }
-    ]
-  }
+      },
+    ],
+  },
 }
