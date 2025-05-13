@@ -1,7 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { TreeNode, transformCompaniesToTree, fetchCompanies, fetchCompanyById, Company, Account } from '../helpers/utils-company'
+import {
+  TreeNode,
+  transformCompaniesToTree,
+  Company,
+  Account,
+  fetchCompanies,
+  fetchCompanyById,
+} from '../helpers/utils-company'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 
 export default function CompanyTreeView() {
@@ -20,7 +27,7 @@ export default function CompanyTreeView() {
         if (data.docs && Array.isArray(data.docs)) {
           // Transform the flat company structure into a hierarchical tree
           const transformedCompanies = transformCompaniesToTree(
-            data.docs.map((company: Company) => ({ company, companyId: company.companyId }))
+            data.docs.map((company: Company) => ({ company, companyId: company.companyId })),
           )
           setCompanies(transformedCompanies)
         }
@@ -44,7 +51,7 @@ export default function CompanyTreeView() {
     const getCompanyDetails = async () => {
       setIsLoadingDetails(true)
       try {
-        const data = await fetchCompanyById(selectedCompanyId)
+        const data= await fetchCompanyById(selectedCompanyId)
         console.log('Company details:', data)
         setCompanyDetails(data)
       } catch (error) {
@@ -353,8 +360,10 @@ function CompanyDetails({
           <div>
             <h3 className="text-lg font-semibold mb-2">חברות בת</h3>
             <ul className="list-disc list-inside">
-              {companyDetails.subCompanies.map((subCompany: Company) => (
-                <li key={subCompany.id}>{subCompany.name}</li>
+              {companyDetails.subCompanies.map((subCompany) => (
+                <li key={typeof subCompany === 'string' ? subCompany : subCompany.id}>
+                  {typeof subCompany === 'string' ? subCompany : subCompany.name}
+                </li>
               ))}
             </ul>
           </div>
@@ -364,15 +373,15 @@ function CompanyDetails({
           <div>
             <h3 className="text-lg font-semibold mb-2">חברת אם</h3>
             <ul className="list-disc list-inside">
-              {companyDetails.parentCompany.docs 
-                ? companyDetails.parentCompany.docs.map((parent: Company) => (
+              {(companyDetails.parentCompany as  {docs:Company[]}).docs
+                ? (companyDetails.parentCompany as  {docs:Company[]}).docs.map((parent: Company) => (
                     <li key={parent.id}>{parent.name}</li>
                   ))
                 : Array.isArray(companyDetails.parentCompany)
                   ? companyDetails.parentCompany.map((parent: Company) => (
                       <li key={parent.id}>{parent.name}</li>
                     ))
-                  : <li>{companyDetails.parentCompany.name}</li>
+                  : <li>{(companyDetails.parentCompany as Company).name}</li>
               }
             </ul>
           </div>

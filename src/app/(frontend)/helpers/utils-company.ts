@@ -1,6 +1,6 @@
-import { getPayload } from 'payload'
-import config from '@/payload.config'
+
 import { TreeNode as BaseTreeNode } from '../holdings/components/CompanySelector'
+import { stringify } from 'qs-esm'
 
 // Define account interface
 export interface Account {
@@ -13,7 +13,7 @@ export interface Account {
 export interface Company {
   id: string
   name: string
-  companyId?: number
+  companyId?: number | null
   active?: boolean
   subCompanies?: Array<Company | string>
   parentCompany?: {
@@ -43,19 +43,15 @@ export interface TreeNode extends BaseTreeNode {
  */
 export const fetchCompanies = async () => {
   try {
-    const payload = await getPayload({ config })
-
-    return await payload.find({
-      collection: 'companies',
-      depth: 2, // Fetch subCompanies and their subCompanies
-      limit: 0,
-      sort: 'name',
+    const query = {
       where: {
         active: {
           equals: true,
         },
       },
-      // Include mainAccount to check if company has accounts
+      depth: 2,
+      limit: 0,
+      sort: 'name',
       select: {
         id: true,
         name: true,
@@ -64,7 +60,16 @@ export const fetchCompanies = async () => {
         parentCompany: true,
         mainAccount: true,
       },
-    })
+    }
+
+    const stringifiedQuery = stringify(query, { addQueryPrefix: true })
+    const response = await fetch(`/api/companies${stringifiedQuery}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
   } catch (error) {
     console.error('Error fetching companies:', error)
     throw new Error('Failed to fetch companies')
@@ -78,13 +83,18 @@ export const fetchCompanies = async () => {
  */
 export const fetchCompanyById = async (id: string) => {
   try {
-    const payload = await getPayload({ config })
-
-    return await payload.findByID({
-      collection: 'companies',
-      id,
+    const query = {
       depth: 3, // Fetch more details for a single company
-    })
+    }
+
+    const stringifiedQuery = stringify(query, { addQueryPrefix: true })
+    const response = await fetch(`/api/companies/${id}${stringifiedQuery}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
   } catch (error) {
     console.error(`Error fetching company with ID ${id}:`, error)
     throw new Error('Failed to fetch company')
@@ -103,16 +113,23 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
   userCompanies.forEach((companyData) => {
     const company = companyData.company
     if (company) {
+      const hasAccount=company.mainAccount && company.mainAccount.length > 0
+      const parentCompany = company?.parentCompany as {docs: Company[]}
+      const hasParent=parentCompany !== undefined && parentCompany !== null && parentCompany.docs.length > 0
+      let hasGrandParent=false
+      if (hasParent){
+        const parentCompanyDocs = parentCompany.docs[0];
+        if (parentCompanyDocs && parentCompanyDocs.parentCompany) {
+          hasGrandParent = true
+        }
+      }
       const treeNode: TreeNode = {
         id: company.id || String(company.companyId),
         name: company.name || '',
         children: [],
-        hasAccount: company.mainAccount && company.mainAccount.length > 0,
-        hasParent: company.parentCompany !== undefined && company.parentCompany !== null,
-        hasGrandParent:
-          company.parentCompany !== undefined &&
-          company.parentCompany !== null &&
-          company.parentCompany?.docs[0] != null,
+        hasAccount,
+        hasParent,
+        hasGrandParent,
         companyId: companyData.companyId,
       }
       companyMap.set(treeNode.id, treeNode)
@@ -145,11 +162,15 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
           // Check if this subCompany already exists in the map
           const existingNode = companyMap.get(subCompanyId)
           if (existingNode) {
-            // If it exists, add it as a child to the parent
+            // If it exists, check if it's already a child of the parent by name
             if (!parentNode.children) {
               parentNode.children = []
             }
-            parentNode.children.push(existingNode)
+            // Check if a node with the same name already exists in the parent's children
+            const nodeExistsByName = parentNode.children.some(child => child.name === existingNode.name)
+            if (!nodeExistsByName) {
+              parentNode.children.push(existingNode)
+            }
           } else {
             // If it doesn't exist yet, create a new node and add it
             const newNode: TreeNode = {
@@ -158,7 +179,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
               children: [],
               hasAccount: false, // Default to false for subCompanies as we don't have this info
               hasParent: true, // It's a subCompany, so it has a parent
-              companyId: subCompany.companyId,
+              companyId: typeof subCompany === 'string' ? undefined : (subCompany.companyId ?? undefined),
               hasGrandParent: false,
             }
             companyMap.set(subCompanyId, newNode)
@@ -173,18 +194,20 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
 
     // Process parentCompany if it exists
     if (company && company.parentCompany) {
-      let parentCompanies: any[] = []
+      let parentCompanies: Company[] = []
 
       // Handle different parentCompany data structures
-      if (company.parentCompany.docs && Array.isArray(company.parentCompany.docs)) {
-        // If parentCompany has a docs array
-        parentCompanies = company.parentCompany.docs
-      } else if (Array.isArray(company.parentCompany)) {
-        // If parentCompany is an array
-        parentCompanies = company.parentCompany
-      } else {
-        // If parentCompany is a single object
-        parentCompanies = [company.parentCompany]
+      if (typeof company.parentCompany === 'object' && company.parentCompany !== null) {
+        if ('docs' in company.parentCompany && Array.isArray(company.parentCompany.docs)) {
+          // If parentCompany has a docs array
+          parentCompanies = company.parentCompany.docs
+        } else if (Array.isArray(company.parentCompany)) {
+          // If parentCompany is an array
+          parentCompanies = company.parentCompany
+        } else {
+          // If parentCompany is a single object
+          parentCompanies = [company.parentCompany as Company]
+        }
       }
 
       // Process each parent company
@@ -207,19 +230,22 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
             children: [childNode],
             hasAccount: false, // Default to false for parent companies as we don't have this info
             hasParent: false, // Default to false, will be updated if it has a parent
-            companyId: parentCompany.companyId,
+            companyId: parentCompany.companyId ?? undefined,
             hasGrandParent: false,
           }
-          companyMap.set(parentId, parentNode)
+          if (parentNode) {
+            companyMap.set(parentId, parentNode)
+          }
         } else {
           // If it exists, add the child to it if not already added
           if (!parentNode.children) {
             parentNode.children = []
           }
 
-          // Check if child is already in parent's children
-          const childExists = parentNode.children.some((child) => child.id === childNode.id)
-          if (!childExists) {
+          // Check if child is already in parent's children by ID or name
+          const childExistsById = parentNode.children.some((child) => child.id === childNode.id)
+          const childExistsByName = parentNode.children.some((child) => child.name === childNode.name)
+          if (!childExistsById && !childExistsByName) {
             parentNode.children.push(childNode)
           }
         }
