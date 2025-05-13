@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Notifications } from '@/components/notifications'
 import { AuthProvider } from '@/providers/auth-provider'
 import { HeaderWithNav } from './components/header-with-nav'
+import { CompaniesProvider } from './context/companiesContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
+          <CompaniesProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -36,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <Notifications />
           </ThemeProvider>
+          </CompaniesProvider>
         </AuthProvider>
       </body>
     </html>

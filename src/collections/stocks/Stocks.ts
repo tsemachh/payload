@@ -7,7 +7,34 @@ const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityConditions: { origin: 'TASE' ,tradable:true},
+  visibilityConditions: { origin: 'TASE', tradable: true },
+}
+
+const validateNoFutureMeetings = async (
+  value: boolean | null | undefined,
+  { req, data, id }: any,
+): Promise<true | string> => {
+  if (value === false) {
+    const stockId = id || data?.id
+    if (!stockId) return true
+
+    const currentDate = new Date()
+    const futureMeetings = await req.payload.find({
+      collection: 'meetings',
+      where: {
+        and: [
+          { stock: { equals: stockId } },
+          { meetingDate: { greater_than: currentDate.toISOString() } },
+          { state: { not_equals: 'cancelled' } },
+        ],
+      },
+    })
+
+    if (futureMeetings.docs.length > 0) {
+      return 'לא ניתן להגדיר נייר ערך כלא פעיל כאשר יש אסיפות עתידיות מתוכננות עבורו'
+    }
+  }
+  return true
 }
 
 export const Stocks: CollectionConfig = {
@@ -19,8 +46,8 @@ export const Stocks: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'stockId',
-    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin','tradable'],
-    listSearchableFields: [ 'symbol', 'stockId', 'name', 'longName'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
+    listSearchableFields: ['symbol', 'stockId', 'name', 'longName'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -137,7 +164,32 @@ export const Stocks: CollectionConfig = {
                   name: 'active',
                   label: 'נייר ערך פעיל',
                   type: 'checkbox',
-                  index: true
+                  index: true,
+                  defaultValue: true,
+                  validate: validateNoFutureMeetings,
+                  access: {
+                    update: ({ doc }) => !doc?.relatedStock,
+                  },
+                  hooks: {
+                    beforeChange: [
+                      async ({ value, originalDoc, req, operation }) => {
+                        // Only run this hook when updating a document
+                        if (operation === 'update') {
+                          // Update all related stocks to be same active status
+                          await req.payload.update({
+                            collection: 'stocks',
+                            data: {
+                              active: value,
+                            },
+                            where: {
+                              relatedStock: { equals: originalDoc.id },
+                            },
+                          })
+                        }
+                        return value
+                      },
+                    ],
+                  },
                 },
               ],
             },
@@ -163,7 +215,8 @@ export const Stocks: CollectionConfig = {
                   label: 'שם חברה',
                   type: 'text',
                   admin: {
-                    condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private'
+                    condition: (siblingData) =>
+                      siblingData.tradable || siblingData.origin == 'Private',
                   },
                 },
               ],
@@ -190,7 +243,6 @@ export const Stocks: CollectionConfig = {
               label: 'הערות',
               type: 'textarea',
             },
-
           ],
         },
         {
@@ -203,14 +255,16 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
-//              _sanitized: true,
+              //              _sanitized: true,
               admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
             },
           ],
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private' },
+          admin: {
+            condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private',
+          },
           fields: [
             {
               name: 'meetings',

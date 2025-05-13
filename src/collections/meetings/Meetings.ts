@@ -55,6 +55,7 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
     return true
   }
 }
+
 const validateMeetingnvItationLink = (
   value: string | null | undefined,
   { siblingData }: { siblingData: any },
@@ -109,6 +110,25 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
+                  filterOptions: ({ siblingData }: any) => {
+                    if (!siblingData?.meetingDate)
+                      return {
+                        active: {
+                          equals: true,
+                        },
+                      }
+                    const meetingDate = new Date(siblingData.meetingDate)
+                    const currentDate = new Date()
+                    const isFutureDate = meetingDate > currentDate
+                    if (isFutureDate) {
+                      return {
+                        active: {
+                          equals: true,
+                        },
+                      }
+                    }
+                    return true
+                  },
                   index: true,
                   required: true,
                   admin: {
@@ -356,7 +376,7 @@ export const Meetings: CollectionConfig = {
                       name: 'isRemovedFromAgenda',
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
-                      admin:{width:'200px'}
+                      admin: { width: '200px' },
                     },
                     {
                       name: 'topicType',
@@ -367,9 +387,9 @@ export const Meetings: CollectionConfig = {
                         { label: 'לדיווח בלבד', value: 'reporting' },
                         { label: 'להחלטה', value: 'decision' },
                       ],
-                      admin:{
+                      admin: {
                         width: '200px',
-                      }
+                      },
                     },
                     {
                       name: 'majorityType',
@@ -401,7 +421,7 @@ export const Meetings: CollectionConfig = {
                       label: 'אחוז הצבעה',
                       type: 'number',
                       admin: {
-                        hidden:true,
+                        hidden: true,
                         step: 0.01,
                         condition: (_, siblingData) =>
                           siblingData.topicType === 'decision' &&
@@ -413,7 +433,7 @@ export const Meetings: CollectionConfig = {
                       label: 'אחוז הצבעה מיוחד',
                       type: 'number',
                       admin: {
-                        hidden:true,
+                        hidden: true,
                         step: 0.01,
                         condition: (_, siblingData) =>
                           siblingData.topicType === 'decision' &&
@@ -427,7 +447,7 @@ export const Meetings: CollectionConfig = {
                   label: 'המלצה',
                   type: 'text',
                   admin: {
-                    hidden:true,
+                    hidden: true,
                     condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
@@ -442,7 +462,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'דיון', value: '3' },
                   ],
                   admin: {
-                    hidden:true,
+                    hidden: true,
                     condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
                 },
@@ -488,8 +508,7 @@ export const Meetings: CollectionConfig = {
               type: 'join',
               collection: 'research-documents',
               on: 'meeting',
-              admin: {   defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'],
-              },
+              admin: { defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'] },
             },
           ],
         },

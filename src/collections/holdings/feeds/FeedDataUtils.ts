@@ -136,7 +136,7 @@ export const preloadAccountsToCompanyMap = async (
 export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
-): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string> }> => {
+): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string>; stockActiveMap: Map<string, boolean> }> => {
 
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
@@ -144,6 +144,7 @@ export const preloadStocks = async (
 
   const stockIdMap: Map<string, string> = new Map()
   const stockNameMap: Map<string, string> = new Map()
+  const stockActiveMap: Map<string, boolean> = new Map()
 
   const stocksResult = await req.payload.find({
     collection: 'stocks',
@@ -168,12 +169,14 @@ export const preloadStocks = async (
       stock?.relatedStock && hasRelatedDocs
         ? ((stock.relatedStock as Stock).fullName as string)
         : stock?.name
+    const isActive = stock?.active !== false // Default to true if undefined or null
 
     stockIdMap.set(stockKey, stockValue)
     stockNameMap.set(stockKey, stockName as string)
+    stockActiveMap.set(stockKey, isActive)
   })
 
-  return { stockIdMap, stockNameMap }
+  return { stockIdMap, stockNameMap, stockActiveMap }
 }
 /**
  * Create holdings from processed records
