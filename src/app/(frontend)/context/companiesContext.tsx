@@ -17,25 +17,72 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
   const [leafCompanies, setLeafCompanies] = useState<LeafCompanyType[]>([])
 
   useEffect(() => {
-    if (user?.companies || user?.leafCompanies) {
-      const fetchSortedData = async () => {
-        await fetchData()
+    if (typeof window !== 'undefined') {
+      const savedCompanies = localStorage.getItem('companies')
+      const savedLeafCompanies = localStorage.getItem('leafCompanies')
+
+      if (savedCompanies) {
+        setCompanies(JSON.parse(savedCompanies))
       }
-      fetchSortedData()
+
+      if (savedLeafCompanies) {
+        setLeafCompanies(JSON.parse(savedLeafCompanies))
+      }
     }
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+
+    const savedUserCompanies = localStorage.getItem('userCompaniesIds')
+    const savedUserLeafCompanies = localStorage.getItem('userLeafCompaniesIds')
+
+    const currentUserCompanies = JSON.stringify(user.companies || [])
+    const currentUserLeafCompanies = JSON.stringify(user.leafCompanies || [])
+
+    const companiesChanged = currentUserCompanies !== savedUserCompanies
+    const leafCompaniesChanged = currentUserLeafCompanies !== savedUserLeafCompanies
+
+    let shouldFetch = companiesChanged || leafCompaniesChanged
+    if (!shouldFetch) {
+      if (!shouldFetch) {
+        const cachedCompanies = localStorage.getItem('companies')
+        const cachedLeafCompanies = localStorage.getItem('leafCompanies')
+        shouldFetch = !cachedCompanies || !cachedLeafCompanies
+      }
+    }
+
+    const fetchSortedData = async () => {
+      if (shouldFetch) {
+        await fetchData()
+        // save new user company IDs in localStorage
+        localStorage.setItem('userCompaniesIds', currentUserCompanies)
+        localStorage.setItem('userLeafCompaniesIds', currentUserLeafCompanies)
+      } else {
+        // load from localStorage
+        const localCompanies = localStorage.getItem('companies')
+        const localLeafCompanies = localStorage.getItem('leafCompanies')
+
+        if (localCompanies && localLeafCompanies) {
+          setCompanies(JSON.parse(localCompanies))
+          setLeafCompanies(JSON.parse(localLeafCompanies))
+        }
+      }
+    }
+
+    fetchSortedData()
   }, [user])
 
   const fetchData = async () => {
     try {
       const response = await fetch(`/api/companies-details`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch compnies data')
-      }
+      if (!response.ok) throw new Error('Failed to fetch compnies data')
+
       const result = await response.json()
       const allCompanies = result.data
 
       const companyMap = new Map<string, CompanyType>(
-        allCompanies.map((c: CompanyType) => [c.id, c]),
+        allCompanies?.map((c: CompanyType) => [c.id, c]),
       )
       // === Create detailed companies array ===
       const detailedCompanies = (user?.companies || [])
@@ -66,10 +113,12 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
           }
         })
         .filter(Boolean)
-      console.log('detailedCompanies', detailedCompanies)
 
       setCompanies(detailedCompanies as CompanyType[])
       setLeafCompanies(detailedLeafCompanies as LeafCompanyType[])
+
+      localStorage.setItem('companies', JSON.stringify(detailedCompanies))
+      localStorage.setItem('leafCompanies', JSON.stringify(detailedLeafCompanies))
     } catch (error) {
       console.error('Error fetching data:', error)
     }
@@ -85,7 +134,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
 export const useCompaniesContext = () => {
   const context = useContext(CompaniesContext)
   if (!context) {
-    throw new Error('useGlobalContext must be used within a GlobalProvider')
+    throw new Error('useCompaniesContext must be used within a CompaniesProvider')
   }
   return context
 }
