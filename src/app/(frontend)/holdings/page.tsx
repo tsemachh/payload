@@ -27,20 +27,15 @@ import {
 import { AlertTriangle } from 'lucide-react'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-
+import { useCompaniesContext } from '../context/companiesContext'
 
 export default function HoldingsFeedView() {
+  const router = useRouter()
   const { user } = useAuth()
-  const [companies, setCompanies] = useState<TreeNode[]>([])
+  const { companies } = useCompaniesContext()
+  const [treeCompanies, setTreeCompanies] = useState<TreeNode[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => {
-    // Load selected companies from localStorage on component mount
-    if (typeof window !== 'undefined') {
-      const savedCompanies = localStorage.getItem('selectedHoldingsCompanies')
-      return savedCompanies ? JSON.parse(savedCompanies) : []
-    }
-    return []
-  })
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
   const [date, setDate] = useState<Date | undefined>()
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -54,30 +49,25 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
-  const router = useRouter()
 
   // Extract companies from user
   useEffect(() => {
-    if (user?.companies) {
+    if (companies.length) {
       // Transform the flat company structure into a hierarchical tree
-      const transformedCompanies = transformCompaniesToTree(user.companies)
-      setCompanies(transformedCompanies)
+      const transformedCompanies = transformCompaniesToTree(companies)
+      setTreeCompanies(transformedCompanies)
       setIsLoading(false)
     }
+  }, [companies])
+
+  useEffect(() => {
     if (user?.leafCompanies) {
       const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
         typeof company === 'string' ? company : company.id,
       )
       setSelectedCompanies(tmpSelectedCompanies)
     }
-  }, [user])
-
-  // Save selected companies to localStorage whenever they change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedHoldingsCompanies', JSON.stringify(selectedCompanies))
-    }
-  }, [selectedCompanies])
+  }, [user?.leafCompanies])
 
   // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {
@@ -174,32 +164,28 @@ export default function HoldingsFeedView() {
       setIsUploading(false)
     }
   }
-  const handleRefreshAction = async (records:HoldingFeedLine[]) => {
+  const handleRefreshAction = async (records: HoldingFeedLine[]) => {
     setvalidRecords([])
     setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
     setWarnings([])
 
-    const standardizedRecords = records.map(record => ({
+    const standardizedRecords = records.map((record) => ({
       stockId: record.stockId,
       quantity: record.quantity,
       accountId: record.accountId,
     })) as StandardizedRow[]
 
-
     setIsRefreshing(true)
     try {
-      const response = await fetch(
-        `/api/holdings/refresh?companies=${selectedCompanies}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(standardizedRecords),
+      const response = await fetch(`/api/holdings/refresh?companies=${selectedCompanies}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      )
+        body: JSON.stringify(standardizedRecords),
+      })
 
       const result = await response.json()
       if (response.ok) {
@@ -282,7 +268,7 @@ export default function HoldingsFeedView() {
             <div>
               <label className="text-base font-semibold mb-2 block">חברות</label>
               <CompanyTreeSelector
-                companies={companies}
+                companies={treeCompanies}
                 selectedCompanies={selectedCompanies}
                 onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
@@ -307,7 +293,11 @@ export default function HoldingsFeedView() {
 
             <div className="">
               <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
-              <FileUploader onFileChangeAction={handleFileChangeAction} disabled={isUploading} className="w-full" />
+              <FileUploader
+                onFileChangeAction={handleFileChangeAction}
+                disabled={isUploading}
+                className="w-full"
+              />
             </div>
           </div>
 
