@@ -212,7 +212,6 @@ export interface Config {
     };
     meetings: {
       votes: 'votes';
-      'research-documents': 'research-documents';
     };
     companies: {
       parentCompany: 'companies';
@@ -363,11 +362,7 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  'research-documents'?: {
-    docs?: (string | ResearchDocument)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  'research-documents'?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -408,20 +403,7 @@ export interface Vote {
   votes?:
     | {
         topicIndex: number;
-        voteDecision?:
-          | (
-              | 'בעד'
-              | 'נגד'
-              | 'נמנע'
-              | 'אין חובת השתתפות'
-              | 'לא משתתף'
-              | 'דיון'
-              | 'הוסר מסדר היום'
-              | 'ללא הצבעה'
-              | 'נמכרה אחזקה'
-              | 'הצבעות סותרות'
-            )
-          | null;
+        voteDecision?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
         committee?: boolean | null;
         conflict?: boolean | null;
         relatedParty?: boolean | null;
@@ -462,6 +444,7 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+    defaultVotingRecommendation?: boolean | null;
   };
   mainAccount?:
     | {
@@ -508,7 +491,6 @@ export interface Holding {
  */
 export interface ResearchDocument {
   id: string;
-  meeting: string | Meeting;
   company?: (string | null) | Company;
   uploadedAt?: string | null;
   creator?: string | null;
@@ -1116,6 +1098,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+        defaultVotingRecommendation?: T;
       };
   mainAccount?:
     | T
@@ -1388,7 +1371,6 @@ export interface VotesSelect<T extends boolean = true> {
  * via the `definition` "research-documents_select".
  */
 export interface ResearchDocumentsSelect<T extends boolean = true> {
-  meeting?: T;
   company?: T;
   uploadedAt?: T;
   creator?: T;

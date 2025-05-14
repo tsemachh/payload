@@ -8,6 +8,7 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
+import { validateResearchDocsHook } from '../research-documents/hooks'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -56,6 +57,7 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
     return true
   }
 }
+
 const validateMeetingnvItationLink = (
   value: string | null | undefined,
   { siblingData }: { siblingData: any },
@@ -110,6 +112,25 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
+                  filterOptions: ({ siblingData }: any) => {
+                    if (!siblingData?.meetingDate)
+                      return {
+                        active: {
+                          equals: true,
+                        },
+                      }
+                    const meetingDate = new Date(siblingData.meetingDate)
+                    const currentDate = new Date()
+                    const isFutureDate = meetingDate > currentDate
+                    if (isFutureDate) {
+                      return {
+                        active: {
+                          equals: true,
+                        },
+                      }
+                    }
+                    return true
+                  },
                   index: true,
                   required: true,
                   admin: {
@@ -392,6 +413,16 @@ export const Meetings: CollectionConfig = {
                       },
                     },
                     {
+                      name: 'votingRecommendation',
+                      label: 'המלצת הצבעה',
+                      type: 'select',
+                      options: [
+                        { label: 'בעד', value: 'for' },
+                        { label: 'נגד', value: 'against' },
+                        { label: 'נמנע', value: 'abstain' },
+                      ],
+                    },
+                    {
                       name: 'vpercent',
                       label: 'אחוז הצבעה',
                       type: 'number',
@@ -482,10 +513,10 @@ export const Meetings: CollectionConfig = {
             {
               name: 'research-documents',
               label: 'מסמכי מחקר',
-              type: 'join',
-              collection: 'research-documents',
-              on: 'meeting',
-              admin: { defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'] },
+              type: 'relationship',
+              relationTo: 'research-documents',
+              hasMany: true,
+              index: true,
             },
           ],
         },
@@ -506,6 +537,7 @@ export const Meetings: CollectionConfig = {
         }
       },
     ],
+      beforeValidate: [validateResearchDocsHook],
   },
   endpoints: [
     {

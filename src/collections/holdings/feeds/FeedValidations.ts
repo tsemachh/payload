@@ -214,6 +214,8 @@ export const checkFeedWarnings = async (
  * @param index The index of the row
  * @param accountMap
  * @param stockMap
+ * @param stockNameMap
+ * @param stockActiveMap
  * @param silencedStockIds
  * @returns Validation result
  */
@@ -223,6 +225,7 @@ export const validateRow = async (
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
   stockNameMap: Map<string, string>,
+  stockActiveMap: Map<string, boolean>,
   silencedStockIds: string[],
 ): Promise<{
   processedRecord: HoldingFeedLineWithName
@@ -254,6 +257,14 @@ export const validateRow = async (
   } else if (!accountMap.has(Number(accountId))) {
     status = 'error';
     errorMessage = 'מספר חשבון לא מוכר';
+  } else if (stockActiveMap.has(stockId) && !stockActiveMap.get(stockId)) {
+    // Check if stock is inactive
+    if (silencedStockIds.includes(stockId)) {
+      status = 'silenced';
+    } else {
+      status = 'error';
+      errorMessage = 'נייר ערך לא פעיל';
+    }
   }
 
   const processedRecord: HoldingFeedLineWithName = {
