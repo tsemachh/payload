@@ -25,7 +25,7 @@ export function MeetingsTableClient() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/meetings-all?futureMeetingsOnly=true`)
+      const response = await fetch(`/api/meetings/future-meetings`)
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }
