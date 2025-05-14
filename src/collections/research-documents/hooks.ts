@@ -26,18 +26,17 @@ const parseResearchFilename = (
   }
 }
 
-// 💥 הפונקציה הראשית שיושבת על beforeValidate של הקולקשן meetings
 export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ data, req }) => {
-  console.log('****** נכנס ל-hook של אסיפות validateResearchDocsHook ******')
+  console.log('****** Entered validateResearchDocsHook ******')
 
   const type = data?.type
   const docIDs = data?.['research-documents']
 
-  console.log('****** סוג האסיפה:', type)
-  console.log('****** מזהי מסמכי מחקר:', docIDs)
+  console.log('****** Meeting type:', type)
+  console.log('****** Research document IDs:', docIDs)
 
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
-    console.log('****** אין מסמכי מחקר - יוצא מה-hook')
+    console.log('****** No research documents found - exiting hook')
     return data
   }
 
@@ -51,37 +50,46 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   })
 
   const docs = researchDocs.docs || []
-  console.log(`****** נמצאו ${docs.length} מסמכים`)
+  console.log(`****** Found ${docs.length} research documents`)
 
   for (const doc of docs) {
-    console.log(`****** בודק קובץ: ${doc.filename}`)
+    console.log(`****** Checking file: ${doc.filename}`)
 
     if (!doc.filename) continue
 
     const parsed = parseResearchFilename(doc.filename)
-    console.log('****** תוצאה מפורקת:', parsed)
+    console.log('****** Parsed result:', parsed)
 
     if (!parsed.isValid) {
-      throw new Error(parsed.error || 'Invalid research document filename format')
+      throw new Error(`Filename "${doc.filename}": ${parsed.error}`)
     }
 
     if (!parsed.isGeneric && parsed.companyName) {
       const companyResult = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName } },
+        where: { name: { equals: parsed.companyName } },
       })
 
       if (companyResult.docs.length === 0) {
-        throw new Error(`לא נמצאה חברה בשם: ${parsed.companyName}`)
+        throw new Error(`Filename "${doc.filename}": No company found with name "${parsed.companyName}"`)
       }
 
-      console.log('****** חברה קיימת במסד:', parsed.companyName)
+      const companyId = companyResult.docs[0].id
+
+      await req.payload.update({
+        collection: 'research-documents',
+        id: doc.id,
+        data: {
+          company: companyId,
+        },
+      })
+
+      console.log(`****** Linked company "${parsed.companyName}" to research document "${doc.filename}"`)
     }
   }
 
-  // הגבלה על מסמך יחיד עבור סוגים מסוימים
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
-    throw new Error('לא ניתן להעלות יותר ממסמך מחקר אחד לאסיפת אג"ח או אג"ח כהונת נאמן')
+    throw new Error('Only one research document is allowed for אג"ח or אג"ח כהונת נאמן meetings')
   }
 
   return data
