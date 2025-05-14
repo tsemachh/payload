@@ -1,31 +1,68 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 import { userFields } from '@shefing/authorization'
-import type { Company } from '@/payload-types'
-import { getCollectionDoc } from '@/utils/utils'
+import { getIdOfRelationField } from '@/utils/utils'
+import { Company } from '@/payload-types'
 
-async function getLeafCompanies(company: Company | string, req: PayloadRequest): Promise<string[]> {
+async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
   let leafCompanies: string[] = []
-  let theCompany: Company
-  if (typeof company === 'string') {
-    try {
-      theCompany = (await getCollectionDoc(req, 'companies', company)) as Company
-    } catch (e) {
-      console.log('Error in getting company', e)
-      return []
-    }
-  } else {
-    theCompany = company as Company
-  }
-  if (theCompany.mainAccount && Array.isArray(theCompany.mainAccount) && theCompany.mainAccount.length > 0) {
-    //Companies with accounts
-    leafCompanies.push(theCompany.id)
-  } else {
-    if (theCompany?.subCompanies)
-      for (let i = 0; i < theCompany?.subCompanies.length; i++) {
-        const subCompany = theCompany.subCompanies[i]
-        leafCompanies = leafCompanies.concat(await getLeafCompanies(subCompany, req))
+  const companies = await req.payload.find({
+    collection: 'companies',
+    select: {
+      mainAccount: false,
+      silencedStocks: false,
+      meetings: false,
+      parentCompany: false,
+      holdings: false,
+      'subCompanies.id': true,
+      'subCompanies.subCompanies': true,
+      'subCompanies.subCompanies.subCompanies': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies': true,
+    },
+    populate: {
+      companies: {
+        subCompanies: true,
+      },
+    },
+    where: {
+      id: {
+        in: companyIds,
+      },
+    },
+    limit: 0,
+    depth: 5,
+  })
+  // go over the docs aggregate each Id in either in the root or in the subCompanies only if subCompanies are empty, store it in leafCompanies array
+  const processCompanies = (company: Partial<Company>): string[] => {
+    const result: string[] = []
+
+    // If company has an id, add it to the result
+    if (company.id) {
+      // Check if company has subCompanies
+      if (!company.subCompanies || company.subCompanies.length === 0) {
+        // This is a leaf company, add its ID
+        result.push(company.id)
+      } else {
+        // Process subCompanies recursively
+        company.subCompanies.forEach((subCompany: any) => {
+          result.push(...processCompanies(subCompany))
+        })
       }
+    }
+
+    return result
   }
+
+  // Process all companies in the docs array
+  if (companies && companies.docs) {
+    companies.docs.forEach((company: any) => {
+      const companyLeafs = processCompanies(company)
+      leafCompanies.push(...companyLeafs)
+    })
+
+    // Remove duplicates
+    leafCompanies = Array.from(new Set(leafCompanies))
+  }
+
   return leafCompanies
 }
 
@@ -152,29 +189,6 @@ export const Users: CollectionConfig = {
       admin: {
         readOnly: true,
       },
-      hooks: {
-        beforeChange: [
-          ({ siblingData }) => {
-            delete siblingData['allCompanies']
-          },
-        ],
-        afterRead: [
-          async ({ data, req }) => {
-            let leafCompanies: string[] = []
-            try {
-              for (let i = 0; i < data?.companies?.length || 0; i++) {
-                const company = data?.companies?.[i]
-                const leafRecurseCompanies = await getLeafCompanies(company.companyId, req)
-                leafCompanies = leafCompanies.concat(leafRecurseCompanies)
-              }
-            } catch (e: any) {
-              console.error('Error in getLeafCompanies', JSON.stringify(e.message))
-            }
-            leafCompanies = Array.from(new Set(leafCompanies))
-            return leafCompanies
-          },
-        ],
-      },
     },
     {
       type: 'row',
@@ -235,4 +249,20 @@ export const Users: CollectionConfig = {
     },
     ...userFields,
   ],
+  hooks:{
+    beforeChange:[
+      async ({ data, req  }) => {
+        if (!data?.leafCompanies || data?.leafCompanies.length === 0) {
+          const companyIds = data?.companies.map((company: any) =>
+            getIdOfRelationField(company.companyId),
+          )
+          if (companyIds.length === 0) {
+            return data
+          }
+          data.leafCompanies=await computeLeafCompanies(companyIds,req)
+        }
+        return data
+      }
+    ]
+  }
 }

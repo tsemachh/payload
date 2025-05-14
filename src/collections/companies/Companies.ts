@@ -1,3 +1,4 @@
+
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 
@@ -33,6 +34,7 @@ export const Companies: CollectionConfig = {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
     },
+    
   },
   versions: {},
   fields: [
@@ -110,40 +112,51 @@ export const Companies: CollectionConfig = {
               ],
             },
             {
-              type: 'row',
+              name: 'researchDocuments',
+              label: 'מסמכי מחקר',
+              type: 'group',
               fields: [
                 {
-                  name: 'showResearch',
-                  label: 'הצג מחקר',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'setResearchAsDefault',
-                  label: 'הגדר מחקר כברירת מחדל',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'showResearchBond',
-                  label: 'הצג מחקר אג"ח',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'setResearchAsDefaultBond',
-                  label: 'הגדר מחקר אג"ח כברירת מחדל',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'showResearchTrusteeship',
-                  label: 'הצג מחקר נאמנות',
-                  type: 'checkbox',
-                },
-                {
-                  name: 'setResearchAsDefaultTrusteeship',
-                  label: 'הגדר מחקר נאמנות כברירת מחדל',
-                  type: 'checkbox',
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'showResearchTrusteeship',
+                      label: 'הצג מחקר אג"ח נאמנות',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                    {
+                      name: 'showResearchBond',
+                      label: 'הצג מחקר אג"ח',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                    {
+                      name: 'showResearch',
+                      label: 'הצג מחקר כללי',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                    {
+                      name: 'showResearchPrivate',
+                      label: 'הצג מחקר פרטני',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                  ],
                 },
               ],
-            },
+            }
+            
+
           ],
         },
         {
