@@ -1,10 +1,14 @@
-import type { CollectionBeforeValidateHook } from 'payload'
+import { ValidationError, type CollectionBeforeValidateHook } from 'payload'
 
 const parseResearchFilename = (
   fileName: string
 ): { stockName?: string; companyName?: string; isGeneric: boolean; isValid: boolean; error?: string } => {
   if (!/\.(pdf|docx)$/i.test(fileName)) {
-    return { isGeneric: false, isValid: false, error: 'Invalid file extension' }
+    return {
+      isGeneric: false,
+      isValid: false,
+      error: 'סיומת הקובץ אינה נתמכת. יש להעלות קבצים מסוג PDF או DOCX בלבד.',
+    }
   }
 
   const nameWithoutExtension = fileName.replace(/\.(pdf|docx)$/i, '').trim()
@@ -12,7 +16,11 @@ const parseResearchFilename = (
 
   const match = nameWithoutDate.match(/^(.+?)\s*\(([^)]+)\)$/)
   if (!match) {
-    return { isGeneric: false, isValid: false, error: 'Missing (company) part' }
+    return {
+      isGeneric: false,
+      isValid: false,
+      error: 'שם הקובץ אינו בפורמט הנדרש. יש לכלול שם נייר ערך ושם חברה בתוך סוגריים.',
+    }
   }
 
   const stockName = match[1].trim()
@@ -27,16 +35,10 @@ const parseResearchFilename = (
 }
 
 export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ data, req }) => {
-  console.log('****** Entered validateResearchDocsHook ******')
-
   const type = data?.type
   const docIDs = data?.['research-documents']
 
-  console.log('****** Meeting type:', type)
-  console.log('****** Research document IDs:', docIDs)
-
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
-    console.log('****** No research documents found - exiting hook')
     return data
   }
 
@@ -50,18 +52,19 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   })
 
   const docs = researchDocs.docs || []
-  console.log(`****** Found ${docs.length} research documents`)
+  const validationErrors: { message: string; path: string }[] = []
 
   for (const doc of docs) {
-    console.log(`****** Checking file: ${doc.filename}`)
-
     if (!doc.filename) continue
 
     const parsed = parseResearchFilename(doc.filename)
-    console.log('****** Parsed result:', parsed)
 
     if (!parsed.isValid) {
-      throw new Error(`Filename "${doc.filename}": ${parsed.error}`)
+      validationErrors.push({
+        message: `קובץ "${doc.filename}": ${parsed.error}`,
+        path: 'research-documents',
+      })
+      continue
     }
 
     if (!parsed.isGeneric && parsed.companyName) {
@@ -70,27 +73,43 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
         where: { name: { equals: parsed.companyName } },
       })
 
-      if (companyResult.docs.length === 0) {
-        throw new Error(`Filename "${doc.filename}": No company found with name "${parsed.companyName}"`)
+      const foundCompany = companyResult.docs[0]
+
+      if (!foundCompany) {
+        validationErrors.push({
+          message: `קובץ "${doc.filename}": לא נמצאה חברה בשם "${parsed.companyName}".`,
+          path: 'research-documents',
+        })
+        continue
       }
 
-      const companyId = companyResult.docs[0].id
-
-      await req.payload.update({
-        collection: 'research-documents',
-        id: doc.id,
-        data: {
-          company: companyId,
-        },
-      })
-
-      console.log(`****** Linked company "${parsed.companyName}" to research document "${doc.filename}"`)
+      try {
+        await req.payload.update({
+          collection: 'research-documents',
+          id: doc.id,
+          data: {
+            company: foundCompany.id,
+          },
+        })
+      } catch (err) {
+        validationErrors.push({
+          message: `קובץ "${doc.filename}": אירעה שגיאה בעת ניסיון לשייך את החברה "${parsed.companyName}" למסמך.`,
+          path: 'research-documents',
+        })
+      }
     }
   }
 
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
-    throw new Error('Only one research document is allowed for אג"ח or אג"ח כהונת נאמן meetings')
+    validationErrors.push({
+      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף מסמך מחקר אחד בלבד.',
+      path: 'research-documents',
+    })
   }
+
+  if (validationErrors.length > 0) {
+    throw new ValidationError({ errors: validationErrors })
+}
 
   return data
 }
