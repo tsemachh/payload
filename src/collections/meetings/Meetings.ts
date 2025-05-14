@@ -138,6 +138,7 @@ export const Meetings: CollectionConfig = {
                 {
                   name: 'type',
                   label: 'סוג',
+                  index: true,
                   type: 'select',
                   interfaceName: 'MeetingType',
                   options: [
@@ -234,6 +235,7 @@ export const Meetings: CollectionConfig = {
                   name: 'holdingsLimit',
                   label: 'מועד קובע',
                   type: 'date',
+                  index: true,
                   admin: {
                     date: {
                       displayFormat: 'dd/MM/yyyy',
@@ -260,6 +262,7 @@ export const Meetings: CollectionConfig = {
                   name: 'meetingDate',
                   label: 'מועד האסיפה',
                   type: 'date',
+                  index: true,
                   admin: {
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
@@ -480,6 +483,7 @@ export const Meetings: CollectionConfig = {
               collection: 'votes',
               on: 'meeting',
               defaultLimit: 0,
+              maxDepth: 0,
               admin: {
                 defaultColumns: ['companies', 'votes'],
               },
@@ -496,6 +500,7 @@ export const Meetings: CollectionConfig = {
               name: 'companies',
               label: 'חברות',
               index: true,
+              maxDepth: 0,
             },
           ],
         },
