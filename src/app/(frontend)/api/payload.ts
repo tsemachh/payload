@@ -16,6 +16,23 @@ export async function fetchFutureMeetingsForTable(): Promise<{
 
   const meetings = await payload.find({
     collection: 'meetings',
+    select: {
+      meetingId: true,
+      agenda: true,
+      companies: true,
+      stock: true,
+      holdingsLimit: true,
+      type: true,
+      meetingDate: true,
+      magnaId: true,
+      location: true,
+      proxyVotingDate: true,
+      state: true,
+      comments: true,
+      electronicVotingEnabled: true,
+      resultsConfirmationStatus: true,
+      committeeInitiated: true,
+    },
     depth: 1,
     limit: 0,
     where: {
@@ -33,7 +50,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
         user?.leafCompanies
           ? {
               companies: {
-                in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                in: user.leafCompanies,
               },
             }
           : {
@@ -69,9 +86,11 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           ? (stockPresent?.relatedStock as { id: string }).id
           : stockPresent?.id
         // Finding Date: holdingsLimit date or the closest date before it.
-
         const { docs } = await payload.find({
           collection: 'holdings',
+          select: {
+            valueDate: true,
+          },
           depth: 0,
           where: {
             and: [
@@ -79,12 +98,12 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               user?.leafCompanies
                 ? {
                     company: {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      in: user.leafCompanies,
                     },
                   }
                 : {
                     company: {
-                      in: [], // no matches if user.leafCompanies is missing or empty
+                      in: [],
                     },
                   },
             ],
@@ -92,41 +111,39 @@ export async function fetchFutureMeetingsForTable(): Promise<{
           sort: '-valueDate',
           limit: 1,
         })
+
         const nearestHoldingsLimitDate = docs.length > 0 ? docs[0].valueDate : null
+
         if (!nearestHoldingsLimitDate) {
           console.log(' --- Error! nearestHoldingsLimitDate not find for stockId', stockIdToUse)
         } else {
           // Finding stockValues:
           const { docs: resuStockValues } = await payload.find({
             collection: 'stock-values',
-            depth: 1,
+            depth: 0,
             where: {
               stockId: { equals: stockIdToUse },
               valueDate: { equals: new Date(nearestHoldingsLimitDate) },
             },
             limit: 0,
           })
+
           stockValues = resuStockValues.length > 0 ? resuStockValues[0] : null
 
           // Find the intersection of meeting companies and user's leaf companies
           const relevantCompanyIds = (meeting.companies || [])
-            .filter((company) =>
-              user?.leafCompanies?.some(
-                (leafCompany) =>
-                  typeof leafCompany === 'object' &&
-                  typeof company === 'object' &&
-                  leafCompany.id === company.id,
-              ),
+            .filter((companyID) =>
+              user?.leafCompanies?.some((leafCompanyID) => leafCompanyID === companyID),
             )
-            .map((company) => (typeof company === 'object' ? company.id : null))
             .filter((id) => id !== null) as string[]
 
           // For each relevant company, find holdings and calculate values separately
           const companiesArray = await Promise.all(
             relevantCompanyIds.map(async (companyId) => {
               // For this specific company, find the nearest holdings date
-              const { docs: companyDocs } = await payload.find({
+              const { docs: holdingsDateDocs } = await payload.find({
                 collection: 'holdings',
+                select: { valueDate: true },
                 depth: 0,
                 where: {
                   and: [
@@ -139,7 +156,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
               })
 
               const nearestHoldingsLimitDate =
-                companyDocs.length > 0 ? companyDocs[0].valueDate : null
+                holdingsDateDocs.length > 0 ? holdingsDateDocs[0].valueDate : null
 
               if (!nearestHoldingsLimitDate) {
                 console.log(
@@ -147,9 +164,14 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 )
                 return null
               }
+
               // Get this company's holdings for this date
               const { docs: companyHoldings } = await payload.find({
                 collection: 'holdings',
+                select: {
+                  company: true,
+                  quantity: true,
+                },
                 depth: 1,
                 where: {
                   and: [
@@ -167,6 +189,7 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 )
                 return null
               }
+
               const company = companyHoldings[0].company
               const quantity = companyHoldings[0].quantity
 
@@ -183,7 +206,6 @@ export async function fetchFutureMeetingsForTable(): Promise<{
                 percentageHolding,
                 holdingValueInMillions,
                 nominalValue,
-                holdingsDate: nearestHoldingsLimitDate, // Optional: include the specific date used for this company
               }
             }),
           ).then((results) => results.filter((result) => result !== null))

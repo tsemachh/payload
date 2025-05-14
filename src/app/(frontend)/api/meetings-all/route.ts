@@ -27,6 +27,23 @@ export async function GET(request: NextRequest) {
 
     const query: any = {
       collection: 'meetings',
+      select: {
+        meetingId: true,
+        agenda: true,
+        companies: true,
+        stock: true,
+        holdingsLimit: true,
+        type: true,
+        meetingDate: true,
+        magnaId: true,
+        location: true,
+        proxyVotingDate: true,
+        state: true,
+        comments: true,
+        electronicVotingEnabled: true,
+        resultsConfirmationStatus: true,
+        committeeInitiated: true,
+      },
       limit: pageSize,
       page: page,
       sort: sort,
@@ -35,7 +52,7 @@ export async function GET(request: NextRequest) {
           user?.leafCompanies
             ? {
                 companies: {
-                  in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                  in: user.leafCompanies,
                 },
               }
             : {
@@ -55,17 +72,10 @@ export async function GET(request: NextRequest) {
                   { 'stock.stockId': { contains: searchTerm } },
                   { 'stock.name': { contains: searchTerm } },
                   { 'stock.symbol': { contains: searchTerm } },
-                  // { 'stock.tradable': { contains: searchTerm } },
-                  // { 'stock.marketValue': { contains: searchTerm } },
                   { 'stock.type': { contains: searchTerm } },
                   { magnaId: { contains: searchTerm } },
                   { type: { contains: searchTerm } },
-                  // { meetingDate: { contains: searchTerm } },
-                  // { reference: { contains: searchTerm } },
                   { location: { contains: searchTerm } },
-                  // { holdingsLimit: { contains: searchTerm } },
-                  // { proxyVotingDate: { contains: searchTerm } },
-                  // { meetingState: { contains: searchTerm } },
                   { comments: { contains: searchTerm } },
                 ],
               }
@@ -99,6 +109,9 @@ export async function GET(request: NextRequest) {
         // Finding Date: holdingsLimit date or the closest date before it.
         const { docs } = await payload.find({
           collection: 'holdings',
+          select: {
+            valueDate: true,
+          },
           depth: 0,
           where: {
             and: [
@@ -106,12 +119,12 @@ export async function GET(request: NextRequest) {
               user?.leafCompanies
                 ? {
                     company: {
-                      in: user?.leafCompanies?.map((e) => typeof e === 'object' && e.id),
+                      in: user.leafCompanies,
                     },
                   }
                 : {
                     company: {
-                      in: [], // no matches if user.leafCompanies is missing or empty
+                      in: [],
                     },
                   },
             ],
@@ -119,7 +132,9 @@ export async function GET(request: NextRequest) {
           sort: '-valueDate',
           limit: 1,
         })
+
         const nearestHoldingsLimitDate = docs.length > 0 ? docs[0].valueDate : null
+
         if (!nearestHoldingsLimitDate) {
           console.log(' --- Error! nearestHoldingsLimitDate not find for stockId', stockIdToUse)
         } else {
@@ -133,26 +148,21 @@ export async function GET(request: NextRequest) {
             },
             limit: 0,
           })
+
           stockValues = resuStockValues.length > 0 ? resuStockValues[0] : null
 
           // Find the intersection of meeting companies and user's leaf companies
           const relevantCompanyIds = (meeting.companies || [])
-            .filter((company) =>
-              user?.leafCompanies?.some(
-                (leafCompany) =>
-                  typeof leafCompany === 'object' &&
-                  typeof company === 'object' &&
-                  leafCompany.id === company.id,
-              ),
+            .filter((companyID) =>
+              user?.leafCompanies?.some((leafCompany) => leafCompany === companyID),
             )
-            .map((company) => (typeof company === 'object' ? company.id : null))
             .filter((id) => id !== null) as string[]
 
           // For each relevant company, find holdings and calculate values separately
           const companiesArray = await Promise.all(
             relevantCompanyIds.map(async (companyId) => {
               // For this specific company, find the nearest holdings date
-              const { docs: companyDocs } = await payload.find({
+              const { docs: holdingsDateDocs } = await payload.find({
                 collection: 'holdings',
                 depth: 0,
                 where: {
@@ -166,7 +176,7 @@ export async function GET(request: NextRequest) {
               })
 
               const nearestHoldingsLimitDate =
-                companyDocs.length > 0 ? companyDocs[0].valueDate : null
+                holdingsDateDocs.length > 0 ? holdingsDateDocs[0].valueDate : null
 
               if (!nearestHoldingsLimitDate) {
                 console.log(
@@ -174,9 +184,14 @@ export async function GET(request: NextRequest) {
                 )
                 return null
               }
+
               // Get this company's holdings for this date
               const { docs: companyHoldings } = await payload.find({
                 collection: 'holdings',
+                select: {
+                  company: true,
+                  quantity: true,
+                },
                 depth: 1,
                 where: {
                   and: [
@@ -194,6 +209,7 @@ export async function GET(request: NextRequest) {
                 )
                 return null
               }
+
               const company = companyHoldings[0].company
               const quantity = companyHoldings[0].quantity
 

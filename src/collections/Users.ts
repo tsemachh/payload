@@ -140,6 +140,7 @@ export const Users: CollectionConfig = {
             {
               label: 'חברה',
               name: 'companyId',
+              maxDepth: 0,
               type: 'relationship',
               relationTo: 'companies',
               required: true,
@@ -185,6 +186,7 @@ export const Users: CollectionConfig = {
       label: 'כל החברות עם החשבונות(כולל חברות בת)',
       type: 'relationship',
       relationTo: 'companies',
+      maxDepth: 0,
       hasMany: true,
       admin: {
         readOnly: true,
@@ -249,20 +251,25 @@ export const Users: CollectionConfig = {
     },
     ...userFields,
   ],
-  hooks:{
-    beforeChange:[
-      async ({ data, req  }) => {
-        if (!data?.leafCompanies || data?.leafCompanies.length === 0) {
+  hooks: {
+    beforeChange: [
+      async ({ data, req, originalDoc }) => {
+        // Check if companies have changed by comparing with originalDoc
+        const companiesChanged =
+          originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
+
+        // Recalculate leafCompanies if companies have changed or if leafCompanies is empty
+        if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
           const companyIds = data?.companies.map((company: any) =>
             getIdOfRelationField(company.companyId),
           )
           if (companyIds.length === 0) {
             return data
           }
-          data.leafCompanies=await computeLeafCompanies(companyIds,req)
+          data.leafCompanies = await computeLeafCompanies(companyIds, req)
         }
         return data
-      }
-    ]
-  }
+      },
+    ],
+  },
 }

@@ -111,7 +111,7 @@ export const processHoldingsFeedCsv = async (
 
     // Preload stocks
     const stockStartTime = performance.now()
-    const { stockIdMap: stockMap, stockNameMap } = await preloadStocks(req, standardizedRows)
+    const { stockIdMap: stockMap, stockNameMap, stockActiveMap } = await preloadStocks(req, standardizedRows)
     const stockEndTime = performance.now()
     req.payload.logger.info(`Stock preloading completed in ${stockEndTime - stockStartTime}ms, found ${stockMap.size} stocks`)
 
@@ -153,6 +153,7 @@ export const processHoldingsFeedCsv = async (
         accountToCompanyMap,
         stockMap,
         stockNameMap,
+        stockActiveMap,
         silencedStockIds,
       )
 
@@ -221,4 +222,3 @@ export const processHoldingsFeedCsv = async (
     throw error
   }
 }
-
