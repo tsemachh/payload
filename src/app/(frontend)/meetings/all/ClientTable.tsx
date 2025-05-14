@@ -5,7 +5,7 @@ import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { MeetingTableDataType } from '../../types/meetings'
 
-export function MeetingsTableClient() {
+export function MeetingsTableServer() {
   const [data, setData] = useState<MeetingTableDataType[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
