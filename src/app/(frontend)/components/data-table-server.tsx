@@ -264,6 +264,7 @@ export function DataTableServer<T extends Record<string, any>>({
                 variant="outline"
                 size="sm"
                 className="flex justify-between items-center w-40"
+                disabled={isLoading}
               >
                 <span>{columnsLabel}</span>
                 <Settings2 className="h-4 w-4 mr-2" />
@@ -323,7 +324,7 @@ export function DataTableServer<T extends Record<string, any>>({
                           className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
-                          {column.header}
+                          {column.noHeader ? '' : column.header}
                         </span>
                         <span
                           className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}

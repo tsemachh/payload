@@ -1,6 +1,7 @@
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
@@ -346,6 +347,7 @@ export const Meetings: CollectionConfig = {
               name: 'agenda',
               label: 'נושאים',
               type: 'array',
+              interfaceName: 'MeetingAgenda',
               labels: {
                 singular: 'נושא',
                 plural: 'נושאים',
@@ -557,6 +559,16 @@ export const Meetings: CollectionConfig = {
       path: '/upload-meetings-agenda',
       method: 'post',
       handler: uploadMeetingsAgendaEndPoint,
+    },
+    {
+      path: '/future-meetings',
+      method: 'get',
+      handler: futureMeetingsEndpoint,
+    },
+    {
+      path: '/all-meetings',
+      method: 'get',
+      handler: allMeetingsEndpoint,
     },
   ],
 }

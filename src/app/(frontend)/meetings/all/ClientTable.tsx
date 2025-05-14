@@ -5,7 +5,7 @@ import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { MeetingTableDataType } from '../../types/meetings'
 
-export function MeetingsTableClient() {
+export function MeetingsTableServer() {
   const [data, setData] = useState<MeetingTableDataType[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -21,13 +21,13 @@ export function MeetingsTableClient() {
     fetchData(1)
   }, [])
   useEffect(() => {
-  // Call fetchData only when sortField or sortDirection changes
-  const fetchSortedData = async () => {
-    await fetchData(currentPage)
-  }
+    // Call fetchData only when sortField or sortDirection changes
+    const fetchSortedData = async () => {
+      await fetchData(currentPage)
+    }
 
-  fetchSortedData()
-}, [sortField, sortDirection])
+    fetchSortedData()
+  }, [sortField, sortDirection])
 
   // Fetch data with current filters, sort, and search
   const fetchData = async (page: number, term?: string, newPageSize?: number) => {
@@ -38,7 +38,7 @@ export function MeetingsTableClient() {
       // Use the provided pageSize if available, otherwise use the pageSize state
       const pageSizeValue = newPageSize !== undefined ? newPageSize : pageSize
       const response = await fetch(
-        `/api/meetings-all?page=${page}&pageSize=${pageSizeValue}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchValue)}`,
+        `/api/meetings/future-meetings?page=${page}&pageSize=${pageSizeValue}&sortField=${sortField}&sortDirection=${sortDirection}&search=${encodeURIComponent(searchValue)}`,
       )
       if (!response.ok) {
         throw new Error('Failed to fetch data')
