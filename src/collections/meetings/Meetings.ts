@@ -7,6 +7,7 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
+import { validateResearchDocsHook } from '../research-documents/hooks'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -510,10 +511,10 @@ export const Meetings: CollectionConfig = {
             {
               name: 'research-documents',
               label: 'מסמכי מחקר',
-              type: 'join',
-              collection: 'research-documents',
-              on: 'meeting',
-              admin: { defaultColumns: ['filename', 'meeting', 'company', 'uploadedAt'] },
+              type: 'relationship',
+              relationTo: 'research-documents',
+              hasMany: true,
+              index: true,
             },
           ],
         },
@@ -534,6 +535,7 @@ export const Meetings: CollectionConfig = {
         }
       },
     ],
+      beforeValidate: [validateResearchDocsHook],
   },
   endpoints: [
     {
