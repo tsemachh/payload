@@ -46,6 +46,24 @@ export type MeetingType =
 export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingAgenda".
+ */
+export type MeetingAgenda =
+  | {
+      text: string;
+      shortText?: string | null;
+      isRemovedFromAgenda?: boolean | null;
+      topicType: 'reporting' | 'decision';
+      majorityType?: ('regular' | 'privileged') | null;
+      vpercent?: number | null;
+      vPercentSpecial?: number | null;
+      recommendation?: string | null;
+      result?: ('0' | '1' | '2' | '3') | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
  */
 export type UserCompany =
@@ -338,20 +356,7 @@ export interface Meeting {
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
-  agenda?:
-    | {
-        text: string;
-        shortText?: string | null;
-        isRemovedFromAgenda?: boolean | null;
-        topicType: 'reporting' | 'decision';
-        majorityType?: ('regular' | 'privileged') | null;
-        vpercent?: number | null;
-        vPercentSpecial?: number | null;
-        recommendation?: string | null;
-        result?: ('0' | '1' | '2' | '3') | null;
-        id?: string | null;
-      }[]
-    | null;
+  agenda?: MeetingAgenda;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -1064,20 +1069,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
-  agenda?:
-    | T
-    | {
-        text?: T;
-        shortText?: T;
-        isRemovedFromAgenda?: T;
-        topicType?: T;
-        majorityType?: T;
-        vpercent?: T;
-        vPercentSpecial?: T;
-        recommendation?: T;
-        result?: T;
-        id?: T;
-      };
+  agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
   'research-documents'?: T;
@@ -1088,6 +1080,22 @@ export interface MeetingsSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingAgenda_select".
+ */
+export interface MeetingAgendaSelect<T extends boolean = true> {
+  text?: T;
+  shortText?: T;
+  isRemovedFromAgenda?: T;
+  topicType?: T;
+  majorityType?: T;
+  vpercent?: T;
+  vPercentSpecial?: T;
+  recommendation?: T;
+  result?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

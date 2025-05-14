@@ -29,5 +29,5 @@
     "target": "ES2022"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/tc/tc.js"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".next/**/*", "!.next/types/**/*"]
 }
