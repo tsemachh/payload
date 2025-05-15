@@ -8,7 +8,7 @@ import { SelectType } from 'payload'
 /**
  * Common select fields for meetings queries
  */
-const MEETING_SELECT_FIELDS:SelectType = {
+const MEETING_SELECT_FIELDS: SelectType = {
   meetingId: true,
   agenda: true,
   companies: true,
@@ -97,11 +97,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const { user } = req
 
     // Get query parameters
-    const page = parseInt(req.query.page as string || '1')
-    const pageSize = parseInt(req.query.pageSize as string || '25')
-    const sortField = req.query.sortField as string || 'meetingDate'
-    const sortDirection = req.query.sortDirection as string || 'desc'
-    const searchTerm = (req.query.search as string || '').trim()
+    const page = parseInt((req.query.page as string) || '1')
+    const pageSize = parseInt((req.query.pageSize as string) || '25')
+    const sortField = (req.query.sortField as string) || 'meetingDate'
+    const sortDirection = (req.query.sortDirection as string) || 'desc'
+    const searchTerm = ((req.query.search as string) || '').trim()
 
     // Determine sort field
     const dbSortField = getDbFieldName(sortField)
@@ -185,7 +185,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, payload)
-    const pageSize = parseInt(req.query.pageSize as string || '25')
+    const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)
@@ -200,7 +200,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
  */
 function findRelevantCompanyIds(
   meetingCompanies: string[] | undefined,
-  leafCompanies: string[] | null | undefined
+  leafCompanies: string[] | null | undefined,
 ): string[] {
   return (meetingCompanies || [])
     .filter((companyID) => leafCompanies?.some((leafCompany) => leafCompany === companyID))
@@ -213,56 +213,18 @@ function findRelevantCompanyIds(
 async function findStockValues(
   payload: any,
   stockId: string,
-  valueDate: string | Date
+  holdingsLimit: string,
 ): Promise<any> {
   const { docs: resuStockValues } = await payload.find({
     collection: 'stock-values',
     depth: 1,
     where: {
-      stockId: { equals: stockId },
-      valueDate: { equals: new Date(valueDate) },
+      and: [{ stockId: { equals: stockId } }, { valueDate: { less_than_equal: holdingsLimit } }],
     },
-    limit: 0,
-  })
-
-  return resuStockValues.length > 0 ? resuStockValues[0] : null
-}
-
-/**
- * Finds the nearest holdings limit date before or equal to the given date
- */
-async function findNearestHoldingsLimitDate(
-  payload: any,
-  holdingsLimit: Date | string | null,
-  leafCompanies?: string[] | null
-): Promise<string | null> {
-  const { docs } = await payload.find({
-    collection: 'holdings',
-    select: {
-      valueDate: true,
-    },
-    depth: 0,
-    where: {
-      and: [
-        { valueDate: { less_than_equal: holdingsLimit } },
-        leafCompanies?.length
-          ? {
-              company: {
-                in: leafCompanies,
-              },
-            }
-          : {
-              company: {
-                in: [],
-              },
-            },
-      ],
-    },
-    sort: '-valueDate',
     limit: 1,
+    sort: '-valueDate',
   })
-
-  return docs.length > 0 ? docs[0].valueDate : null
+  return resuStockValues.length > 0 ? resuStockValues[0] : null
 }
 
 /**
@@ -273,7 +235,7 @@ function createMeetingDataObject(
   stockPresent: any,
   stockValues: any,
   agendas: any,
-  companiesArray: any[]
+  companiesArray: any[],
 ): MeetingTableDataType {
   return {
     meetingId: meeting.meetingId,
@@ -293,8 +255,7 @@ function createMeetingDataObject(
     holdingsLimit: meeting.holdingsLimit || '-',
     proxyVotingDate: meeting.proxyVotingDate || '-',
     nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0) || 0,
-    percentageHolding:
-      companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0) || 0,
+    percentageHolding: companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0) || 0,
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
@@ -341,7 +302,11 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(meetings: any[], leafCompanies?: string[] | null, payload?: any) {
+async function processMeetingsData(
+  meetings: any[],
+  leafCompanies?: string[] | null,
+  payload?: any,
+) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -362,23 +327,14 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
         ? (stockPresent?.relatedStock as { id: string }).id
         : stockPresent?.id
 
-      // Finding Date: holdingsLimit date or the closest date before it.
-      const nearestHoldingsLimitDate = await findNearestHoldingsLimitDate(
-        payload,
-        meeting.holdingsLimit as string,
-        leafCompanies
-      )
-
-      if (!nearestHoldingsLimitDate) {
-        console.log(' --- Error! nearestHoldingsLimitDate not find for stockId', stockIdToUse)
-        return null
-      }
-
       // Finding stockValues:
-      stockValues = await findStockValues(payload, stockIdToUse, nearestHoldingsLimitDate)
+      stockValues = await findStockValues(payload, stockIdToUse, meeting.holdingsLimit as string)
 
       // Find the intersection of meeting companies and user's leaf companies
-      const relevantCompanyIds = findRelevantCompanyIds(meeting.companies as string[], leafCompanies)
+      const relevantCompanyIds = findRelevantCompanyIds(
+        meeting.companies as string[],
+        leafCompanies,
+      )
 
       // For each relevant company, find holdings and calculate values separately
       const companiesArray = await Promise.all(
@@ -452,13 +408,7 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
 
       const agendas = processAgendaItems(meeting.agenda as MeetingAgenda)
 
-      return createMeetingDataObject(
-        meeting,
-        stockPresent,
-        stockValues,
-        agendas,
-        companiesArray
-      )
+      return createMeetingDataObject(meeting, stockPresent, stockValues, agendas, companiesArray)
     }),
   )
 
