@@ -1,6 +1,7 @@
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+import { addMeetingIdToResearchDocs } from './hooks/addMeetingIdToResearchDocs';
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
@@ -509,12 +510,19 @@ export const Meetings: CollectionConfig = {
           label: 'מסמכי מחקר',
           fields: [
             {
+              name: 'upload',
+              label: 'upload',
+              type: 'upload',
+              relationTo: 'research-documents',
+              hasMany: true
+            },//?   או שג׳וין ישנה בהתאם... אחרי העלעה הוק שישנה הכל וירפרש את העמוד
+            {
               name: 'research-documents',
               label: 'מסמכי מחקר',
-              type: 'relationship',
-              relationTo: 'research-documents',
-              hasMany: true,
-              index: true,
+              type: 'join',
+              collection: 'research-documents',
+              on:'meeting',
+              hasMany: true
             },
           ],
         },
@@ -534,8 +542,10 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
+      addMeetingIdToResearchDocs,
     ],
-      beforeValidate: [validateResearchDocsHook],
+
+      //beforeValidate: [validateResearchDocsHook],
   },
   endpoints: [
     {

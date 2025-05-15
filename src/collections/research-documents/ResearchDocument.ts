@@ -8,7 +8,7 @@ export const ResearchDocument: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    hidden: true,
+    //hidden: true,
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'company'],
@@ -23,6 +23,14 @@ export const ResearchDocument: CollectionConfig = {
     mimeTypes: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'],
   },
   fields: [
+    {
+      name: 'meeting',
+      label: 'אסיפות',
+      type: 'relationship',
+      relationTo: 'meetings',
+      index: true,
+      admin: { readOnly: true },
+    },
     {
       name: 'company',
       label: 'חברה',
@@ -44,4 +52,20 @@ export const ResearchDocument: CollectionConfig = {
       defaultValue: () => new Date(),
     },
   ],
+  // hooks: {
+  //   beforeChange: [
+  //     ({ data, req, operation }) => {
+  //       if (operation === 'create') {
+  //         // ננסה להבין אם נוצר דרך שדה upload בתוך meeting
+  //         const referringMeetingId = req.body?.meetingId;
+
+  //         if (referringMeetingId && !data.meeting) {
+  //           data.meeting = referringMeetingId;
+  //         }
+  //       }
+
+  //       return data;
+  //     }
+  //   ]
+  // }
 }
