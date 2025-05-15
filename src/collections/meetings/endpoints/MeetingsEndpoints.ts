@@ -210,11 +210,7 @@ function findRelevantCompanyIds(
 /**
  * Finds stock values for a given stock on a specific date
  */
-async function findStockValues(
-  payload: any,
-  stockId: string,
-  holdingsLimit: string,
-): Promise<any> {
+async function findStockValues(payload: any, stockId: string, holdingsLimit: string): Promise<any> {
   const { docs: resuStockValues } = await payload.find({
     collection: 'stock-values',
     depth: 1,
@@ -339,31 +335,6 @@ async function processMeetingsData(
       // For each relevant company, find holdings and calculate values separately
       const companiesArray = await Promise.all(
         relevantCompanyIds.map(async (companyId) => {
-          // For this specific company, find the nearest holdings date
-          const { docs: holdingsDateDocs } = await payload.find({
-            collection: 'holdings',
-            select: { valueDate: true },
-            depth: 0,
-            where: {
-              and: [
-                { valueDate: { less_than_equal: meeting.holdingsLimit } },
-                { company: { equals: companyId } },
-              ],
-            },
-            sort: '-valueDate',
-            limit: 1,
-          })
-
-          const nearestHoldingsLimitDate =
-            holdingsDateDocs.length > 0 ? holdingsDateDocs[0].valueDate : null
-
-          if (!nearestHoldingsLimitDate) {
-            console.log(
-              ` --- Error! Could not find holdings date for company ID ${companyId} for meeting ${meeting.meetingId}`,
-            )
-            return null
-          }
-
           // Get this company's holdings for this date
           const { docs: companyHoldings } = await payload.find({
             collection: 'holdings',
@@ -376,15 +347,16 @@ async function processMeetingsData(
               and: [
                 { stock: { equals: stockIdToUse } },
                 { company: { equals: companyId } },
-                { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
+                { valueDate: { less_than_equal: meeting.holdingsLimit } },
               ],
             },
             limit: 1,
+            sort: '-valueDate',
           })
 
           if (companyHoldings.length === 0) {
             console.log(
-              ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on date ${nearestHoldingsLimitDate}`,
+              ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on holdingsLimit date ${meeting.holdingsLimit}`,
             )
             return null
           }
@@ -401,7 +373,6 @@ async function processMeetingsData(
             percentageHolding,
             holdingValueInMillions,
             nominalValue,
-            holdingsDate: nearestHoldingsLimitDate, // Optional: include the specific date used for this company
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
