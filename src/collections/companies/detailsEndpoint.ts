@@ -1,19 +1,19 @@
-import { getPayload } from 'payload'
-import config from '@/payload.config'
-import { NextResponse } from 'next/server'
-import { headers as getHeaders } from 'next/headers.js'
+import { PayloadRequest } from 'payload'
+// Using the global Response object for consistent API responses
 
-export async function GET() {
+const detailsEndpoint = async (req: PayloadRequest) => {
   try {
-    // Initialize payload
-    const payload = await getPayload({ config })
-    const headers = await getHeaders()
-    const { user } = await payload.auth({ headers })
+    // Get user from the request
+    const { user } = req
+
+    // Extract company IDs from user object
     const companyIds = [
       ...(user?.leafCompanies || []).map((c) => (typeof c === 'string' ? c : c.id)),
       ...(user?.companies || []).map((c) => (typeof c === 'string' ? c : c.companyId)),
     ]
     const uniqueCompanyIds = [...new Set(companyIds)]
+
+    // Build query
     const query: any = {
       collection: 'companies',
       select: {
@@ -38,14 +38,16 @@ export async function GET() {
     }
 
     // Execute query
-    const companies = await payload.find(query)
+    const companies = await req.payload.find(query)
 
     // Return response
-    return NextResponse.json({
+    return Response.json({
       data: companies.docs,
     })
   } catch (error) {
-    console.error('Error in /api/companies:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('Error in companies details endpoint:', error)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export default detailsEndpoint

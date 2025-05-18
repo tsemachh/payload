@@ -55,7 +55,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
               <div
                 className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
               ></div>
-              <span className="font-medium text-sm">
+              <span className="font-medium text-sm px-2">
                 {Number.parseInt(row.meetingId) % 2 === 0
                   ? 'ההצבעות התקבלו בעמדה'
                   : 'ההצבעות טרם התקבלו בעמדה'}
@@ -125,7 +125,8 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
     </TooltipProvider>
   )
 }
-export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
+
+export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
     key: 'agendas',
     header: 'סדר היום',
@@ -139,9 +140,6 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
     },
     minWidth: 20,
   },
-]
-
-export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
     key: 'companies',
     header: 'חברות',
@@ -319,8 +317,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-export const futuredefaultVisibleExtra = ['agendas']
 export const defaultVisibleColumns = [
+  'agendas',
   'companies',
   'stockNumber',
   'stockType',

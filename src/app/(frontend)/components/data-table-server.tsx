@@ -40,6 +40,7 @@ export function DataTableServer<T extends Record<string, any>>({
   renderRowActions,
   searchPlaceholder = 'חיפוש כללי...',
   columnsLabel = 'עמודות',
+  defaultVisibleColumns = columns.map((column) => column.key),
   pagination,
   isLoading = false,
   onServerSort,
@@ -63,18 +64,24 @@ export function DataTableServer<T extends Record<string, any>>({
     const storageKey = `columnVisibility-${tableId}`
     const loadColumnVisibility = () => {
       const storedColumns = localStorage.getItem(storageKey)
+      const alwaysVisible = columns
+        .filter((col) => col.isAlwaysVisible)
+        .map((col) => String(col.key))
       if (storedColumns) {
         try {
           const parsedColumns = JSON.parse(storedColumns)
           const validColumns = columns.map((col) => String(col.key))
           const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
 
-          if (filteredColumns.length !== parsedColumns.length) {
-            localStorage.setItem(storageKey, JSON.stringify(filteredColumns))
+          // Add alwaysVisible columns if they're not already in localStorage
+          const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
+
+          if (mergedColumns.length !== parsedColumns.length) {
+            localStorage.setItem(storageKey, JSON.stringify(mergedColumns))
           }
 
           const newVisibility = Object.fromEntries(
-            columns.map((col) => [String(col.key), filteredColumns.includes(String(col.key))]),
+            columns.map((col) => [String(col.key), mergedColumns.includes(String(col.key))]),
           )
           setColumnVisibility(newVisibility)
         } catch (error) {
@@ -87,9 +94,22 @@ export function DataTableServer<T extends Record<string, any>>({
     }
 
     const setDefaultVisibility = () => {
-      setColumnVisibility(
-        Object.fromEntries(columns.map((col) => [String(col.key), col.defaultVisible !== false])),
+      // Always-visible column keys
+      const alwaysVisible = columns
+        .filter((col) => col.isAlwaysVisible)
+        .map((col) => String(col.key))
+
+      // Merge defaultVisibleColumns with alwaysVisible, removing duplicates
+      const mergedVisible = Array.from(
+        new Set([...defaultVisibleColumns.map(String), ...alwaysVisible]),
       )
+      // Set visibility for each column
+      const newVisibility = Object.fromEntries(
+        columns.map((col) => [String(col.key), mergedVisible.includes(String(col.key))]),
+      )
+
+      setColumnVisibility(newVisibility)
+      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(mergedVisible))
     }
 
     loadColumnVisibility()
@@ -170,7 +190,7 @@ export function DataTableServer<T extends Record<string, any>>({
   const renderCompaniesCell = useCallback(
     (row: T) => {
       return (
-        <div className="flex items-center justify-end w-[20px] p-0 m-0">
+        <div className="flex items-center justify-srart w-[20px] p-0 m-0">
           <Button
             variant="icon"
             size="sm"
@@ -264,19 +284,22 @@ export function DataTableServer<T extends Record<string, any>>({
                 variant="outline"
                 size="sm"
                 className="flex justify-between items-center w-40"
+                disabled={isLoading}
               >
                 <span>{columnsLabel}</span>
                 <Settings2 className="h-4 w-4 mr-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent
+              style={{
+                overflowY: 'auto',
+                maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+              }}
+            >
               {columns.map((column) => (
                 <DropdownMenuCheckboxItem
-                  style={{
-                    overflowY: 'auto',
-                    maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
-                  }}
                   key={String(column.key)}
+                  disabled={column.isAlwaysVisible}
                   checked={columnVisibility[String(column.key)]}
                   onCheckedChange={() => toggleColumnVisibility(String(column.key))}
                   onSelect={(event) => event.preventDefault()}
@@ -323,7 +346,7 @@ export function DataTableServer<T extends Record<string, any>>({
                           className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
-                          {column.header}
+                          {column.noHeader ? '' : column.header}
                         </span>
                         <span
                           className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
