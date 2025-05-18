@@ -8,7 +8,7 @@ export const ResearchDocument: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    hidden: true,
+    //hidden: true,
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'company'],
@@ -24,12 +24,21 @@ export const ResearchDocument: CollectionConfig = {
   },
   fields: [
     {
+      name: 'meeting',
+      label: 'אסיפות',
+      type: 'relationship',
+      relationTo: 'meetings',
+      index: true,
+      admin: { readOnly: true },
+    },
+    {
       name: 'company',
       label: 'חברה',
       type: 'relationship',
       relationTo: 'companies',
       index: true,
-      admin: { readOnly: true },
+      //admin: { readOnly: true },
+      hasMany: true,
     },
     {
       name: 'uploadedAt',

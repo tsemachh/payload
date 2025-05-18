@@ -70,12 +70,12 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
     if (!parsed.isGeneric && parsed.companyName) {
       const companyResult = await req.payload.find({
         collection: 'companies',
-        where: { name: { equals: parsed.companyName } },
+        where: { name: { like: parsed.companyName } },
       })
 
-      const foundCompany = companyResult.docs[0]
+      const foundCompanies = companyResult.docs
 
-      if (!foundCompany) {
+      if (!foundCompanies || foundCompanies.length === 0) {
         validationErrors.push({
           message: `קובץ "${doc.filename}": לא נמצאה חברה בשם "${parsed.companyName}".`,
           path: 'research-documents',
@@ -88,7 +88,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
           collection: 'research-documents',
           id: doc.id,
           data: {
-            company: foundCompany.id,
+            company: foundCompanies.map((company) => company.id),
           },
         })
       } catch (err) {
@@ -109,7 +109,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
 
   if (validationErrors.length > 0) {
     throw new ValidationError({ errors: validationErrors })
-}
+  }
 
   return data
 }
