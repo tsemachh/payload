@@ -494,7 +494,7 @@ export interface Holding {
 export interface ResearchDocument {
   id: string;
   meeting?: (string | null) | Meeting;
-  company?: (string | null) | Company;
+  company?: (string | Company)[] | null;
   uploadedAt?: string | null;
   creator?: string | null;
   updator?: string | null;
@@ -1378,6 +1378,7 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   uploadedAt?: T;
   creator?: T;
   updator?: T;
+  titleForMeeting?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;

@@ -542,7 +542,7 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-      //addMeetingIdToResearchDocs,
+      addMeetingIdToResearchDocs,
     ],
 
       //beforeValidate: [validateResearchDocsHook],

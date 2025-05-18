@@ -37,7 +37,9 @@ export const ResearchDocument: CollectionConfig = {
       type: 'relationship',
       relationTo: 'companies',
       index: true,
-      admin: { readOnly: true },
+      //admin: { readOnly: true },
+      hasMany: true,
+
     },
     {
       name: 'uploadedAt',
@@ -51,6 +53,8 @@ export const ResearchDocument: CollectionConfig = {
       },
       defaultValue: () => new Date(),
     },
+
+    
   ],
   // hooks: {
   //   beforeChange: [
