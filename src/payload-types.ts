@@ -1378,7 +1378,6 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   uploadedAt?: T;
   creator?: T;
   updator?: T;
-  titleForMeeting?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;

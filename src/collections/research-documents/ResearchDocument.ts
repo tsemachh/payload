@@ -39,7 +39,6 @@ export const ResearchDocument: CollectionConfig = {
       index: true,
       //admin: { readOnly: true },
       hasMany: true,
-
     },
     {
       name: 'uploadedAt',
@@ -53,23 +52,5 @@ export const ResearchDocument: CollectionConfig = {
       },
       defaultValue: () => new Date(),
     },
-
-    
   ],
-  // hooks: {
-  //   beforeChange: [
-  //     ({ data, req, operation }) => {
-  //       if (operation === 'create') {
-  //         // ננסה להבין אם נוצר דרך שדה upload בתוך meeting
-  //         const referringMeetingId = req.body?.meetingId;
-
-  //         if (referringMeetingId && !data.meeting) {
-  //           data.meeting = referringMeetingId;
-  //         }
-  //       }
-
-  //       return data;
-  //     }
-  //   ]
-  // }
 }
