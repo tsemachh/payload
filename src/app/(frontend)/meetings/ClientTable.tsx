@@ -3,8 +3,6 @@
 import {
   defaultVisibleColumns,
   futureDateFilterOptions,
-  futuredefaultVisibleExtra,
-  futureMeetingColumnsExtra,
   meetingColumns,
   pastDateFilterOptions,
   renderMeetingActions,
@@ -41,7 +39,7 @@ export function MeetingsTableClient() {
   return (
     <DataTableStatic
       data={data}
-      columns={[...futureMeetingColumnsExtra, ...meetingColumns]}
+      columns={meetingColumns}
       idField="meetingId"
       defaultSortField={'meetingDate' as keyof MeetingTableDataType}
       defaultSortDirection="desc"
@@ -51,7 +49,7 @@ export function MeetingsTableClient() {
       futureDateFilterOptions={futureDateFilterOptions}
       onlyFuture={true}
       searchPlaceholder="חיפוש בכל השדות..."
-      defaultVisibleColumns={[...futuredefaultVisibleExtra, ...defaultVisibleColumns]}
+      defaultVisibleColumns={defaultVisibleColumns}
       tableHeightOffset={200}
       isLoading={isLoading}
     />
