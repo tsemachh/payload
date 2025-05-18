@@ -71,7 +71,7 @@ async function processMeeting(
     } else {
       const companiesWithHolding = flattenedHoldings.map((h) => ({
         company: String(getIdOfRelationField(h.company)),
-        quantity: h,
+        holding: h.id,
       }))
       
       const { docs: stockValues } = await req.payload.find({
@@ -97,7 +97,7 @@ async function processMeeting(
         data: {
           companies: newCompanies,
           companiesWithHolding,
-          stockValues: stockValues[0],
+          stockValues: stockValues[0].id,
         },
       })
     }

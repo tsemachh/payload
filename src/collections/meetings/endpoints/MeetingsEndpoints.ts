@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Meeting, MeetingAgenda } from '@/payload-types'
+import { Meeting, MeetingAgenda, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import { MeetingTableDataType } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
@@ -24,6 +24,8 @@ const MEETING_SELECT_FIELDS: SelectType = {
   electronicVotingEnabled: true,
   resultsConfirmationStatus: true,
   committeeInitiated: true,
+  companiesWithHolding: true,
+  StockValues: true,
 }
 
 /**
@@ -318,13 +320,23 @@ async function processMeetingsData(
         return null
       }
 
-      let stockValues: any = null
+      let stockValues: StockValue
       const stockIdToUse = stockPresent?.relatedStock
         ? (stockPresent?.relatedStock as { id: string }).id
         : stockPresent?.id
 
       // Finding stockValues:
-      stockValues = await findStockValues(payload, stockIdToUse, meeting.holdingsLimit as string)
+      const now = new Date()
+      const isHoldingsLimitInFuture = new Date(meeting.holdingsLimit as string) > now
+      if (
+        !isHoldingsLimitInFuture &&
+        meeting.stockValues &&
+        typeof meeting.stockValues !== 'string'
+      ) {
+        stockValues = meeting.stockValues
+      } else {
+        stockValues = await findStockValues(payload, stockIdToUse, meeting.holdingsLimit as string)
+      }
 
       // Find the intersection of meeting companies and user's leaf companies
       const relevantCompanyIds = findRelevantCompanyIds(
@@ -335,35 +347,48 @@ async function processMeetingsData(
       // For each relevant company, find holdings and calculate values separately
       const companiesArray = await Promise.all(
         relevantCompanyIds.map(async (companyId) => {
+          let company
+          let quantity
           // Get this company's holdings for this date
-          const { docs: companyHoldings } = await payload.find({
-            collection: 'holdings',
-            select: {
-              company: true,
-              quantity: true,
-            },
-            depth: 1,
-            where: {
-              and: [
-                { stock: { equals: stockIdToUse } },
-                { company: { equals: companyId } },
-                { valueDate: { less_than_equal: meeting.holdingsLimit } },
-              ],
-            },
-            limit: 1,
-            sort: '-valueDate',
-          })
+          if (!isHoldingsLimitInFuture && meeting.companiesWithHolding?.length) {
+            const match = meeting.companiesWithHolding.find((item) => {
+              return typeof item.company === 'object' && item.company?.id == companyId
+            })
+            if (match && typeof match.holding === 'object') {
+              company = match.company
+              quantity = match.holding?.quantity
+            } else {
+              console.error(`Company ${companyId} does not exist in the companiesWithHolding array`)
+            }
+          } else {
+            const { docs: companyHoldings } = await payload.find({
+              collection: 'holdings',
+              select: {
+                company: true,
+                quantity: true,
+              },
+              depth: 1,
+              where: {
+                and: [
+                  { stock: { equals: stockIdToUse } },
+                  { company: { equals: companyId } },
+                  { valueDate: { less_than_equal: meeting.holdingsLimit } },
+                ],
+              },
+              limit: 1,
+              sort: '-valueDate',
+            })
 
-          if (companyHoldings.length === 0) {
-            console.log(
-              ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on holdingsLimit date ${meeting.holdingsLimit}`,
-            )
-            return null
+            if (companyHoldings.length === 0) {
+              console.log(
+                ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on holdingsLimit date ${meeting.holdingsLimit}`,
+              )
+              return null
+            }
+
+            company = companyHoldings[0].company
+            quantity = companyHoldings[0].quantity
           }
-
-          const company = companyHoldings[0].company
-          const quantity = companyHoldings[0].quantity
-
           // Calculate values for this company's holdings
           const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
             calculateHoldingValues(company, quantity, stockValues)
