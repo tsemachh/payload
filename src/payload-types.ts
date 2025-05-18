@@ -345,10 +345,12 @@ export interface Meeting {
         isRemovedFromAgenda?: boolean | null;
         topicType: 'reporting' | 'decision';
         majorityType?: ('regular' | 'privileged') | null;
-        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        recommendation?: {
+          votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+          recommendation?: string | null;
+        };
         vpercent?: number | null;
         vPercentSpecial?: number | null;
-        recommendation?: string | null;
         result?: ('0' | '1' | '2' | '3') | null;
         id?: string | null;
       }[]
@@ -1062,10 +1064,14 @@ export interface MeetingsSelect<T extends boolean = true> {
         isRemovedFromAgenda?: T;
         topicType?: T;
         majorityType?: T;
-        votingRecommendation?: T;
+        recommendation?:
+          | T
+          | {
+              votingRecommendation?: T;
+              recommendation?: T;
+            };
         vpercent?: T;
         vPercentSpecial?: T;
-        recommendation?: T;
         result?: T;
         id?: T;
       };

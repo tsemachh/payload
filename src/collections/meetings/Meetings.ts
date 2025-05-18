@@ -411,70 +411,85 @@ export const Meetings: CollectionConfig = {
                         },
                       },
                     },
-                    {
-                      name: 'votingRecommendation',
-                      label: 'המלצת הצבעה',
-                      type: 'select',
-                      options: [
-                        { label: 'בעד', value: 'for' },
-                        { label: 'נגד', value: 'against' },
-                        { label: 'נמנע', value: 'abstain' },
-                      ],
-                    },
-                    {
-                      name: 'vpercent',
-                      label: 'אחוז הצבעה',
-                      type: 'number',
-                      admin: {
-                        hidden: true,
-                        step: 0.01,
-                        condition: (_, siblingData) =>
-                          siblingData.topicType === 'decision' &&
-                          siblingData.majorityType === 'regular',
-                      },
-                    },
-                    {
-                      name: 'vPercentSpecial',
-                      label: 'אחוז הצבעה מיוחד',
-                      type: 'number',
-                      admin: {
-                        hidden: true,
-                        step: 0.01,
-                        condition: (_, siblingData) =>
-                          siblingData.topicType === 'decision' &&
-                          siblingData.majorityType === 'privileged',
-                      },
-                    },
-                  ],
-                },
-                {
-                  name: 'recommendation',
-                  label: 'המלצה',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                    condition: (_, siblingData) => siblingData.topicType === 'decision',
+                  ]
                   },
-                },
-                {
-                  name: 'result',
-                  label: 'תוצאה',
-                  type: 'select',
-                  options: [
-                    { label: '---', value: '0' },
-                    { label: 'בעד', value: '1' },
-                    { label: 'נגד', value: '2' },
-                    { label: 'דיון', value: '3' },
-                  ],
-                  admin: {
-                    hidden: true,
-                    condition: (_, siblingData) => siblingData.topicType === 'decision',
+                  {
+                    name: 'recommendation',
+                    label: 'המלצה',
+                    type: 'group',
+                    fields: [
+                      {
+                        type: 'row',
+                        fields: [
+                          {
+                            name: 'votingRecommendation',
+                            label: 'המלצת הצבעה',
+                            type: 'select',
+                            admin: {
+                              width: '30%',
+                            },
+                            options: [
+                              { label: 'בעד', value: 'for' },
+                              { label: 'נגד', value: 'against' },
+                              { label: 'נמנע', value: 'abstain' },
+                            ],
+                          },
+                          {
+                            name: 'recommendation',
+                            label: 'נימוק המלצה',
+                            type: 'text',
+                            admin: {
+                              width: '70%',
+                            },
+                          },
+                        ],
+                      },
+                  
+                    ],
                   },
-                },
-              ],
-            },
-          ],
-        },
+                  {
+                    name: 'vpercent',
+                    label: 'אחוז הצבעה',
+                    type: 'number',
+                    admin: {
+                      hidden: true,
+                      step: 0.01,
+                      condition: (_, siblingData) =>
+                        siblingData.topicType === 'decision' &&
+                        siblingData.majorityType === 'regular',
+                    },
+                  },
+                  {
+                    name: 'vPercentSpecial',
+                    label: 'אחוז הצבעה מיוחד',
+                    type: 'number',
+                    admin: {
+                      hidden: true,
+                      step: 0.01,
+                      condition: (_, siblingData) =>
+                        siblingData.topicType === 'decision' &&
+                        siblingData.majorityType === 'privileged',
+                    },
+                  },
+                  {
+                    name: 'result',
+                    label: 'תוצאה',
+                    type: 'select',
+                    options: [
+                      { label: '---', value: '0' },
+                      { label: 'בעד', value: '1' },
+                      { label: 'נגד', value: '2' },
+                      { label: 'דיון', value: '3' },
+                    ],
+                    admin: {
+                      hidden: true,
+                      condition: (_, siblingData) => siblingData.topicType === 'decision',
+                    },
+                  },
+                ],
+              },
+            ],
+          },    
         {
           label: 'הצבעות',
           fields: [
