@@ -65,7 +65,7 @@ async function processMeeting(
           context: { ...req.context, from: 'process' },
         },
         data: {
-          companies: newCompanies,
+          companies: [...newCompanies],
         },
       })
     } else {
@@ -73,7 +73,7 @@ async function processMeeting(
         company: String(getIdOfRelationField(h.company)),
         holding: h.id,
       }))
-      
+
       const { docs: stockValues } = await req.payload.find({
         collection: 'stock-values',
         depth: 1,
@@ -95,7 +95,7 @@ async function processMeeting(
           context: { ...req.context, from: 'process' },
         },
         data: {
-          companies: newCompanies,
+          companies: [...newCompanies],
           companiesWithHolding,
           stockValues: stockValues[0].id,
         },
