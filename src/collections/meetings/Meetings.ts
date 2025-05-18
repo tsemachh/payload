@@ -515,7 +515,7 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'research-documents',
               hasMany: true
-            },//?   או שג׳וין ישנה בהתאם... אחרי העלעה הוק שישנה הכל וירפרש את העמוד
+            },
             {
               name: 'research-documents',
               label: 'מסמכי מחקר',
@@ -542,7 +542,7 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-      addMeetingIdToResearchDocs,
+      //addMeetingIdToResearchDocs,
     ],
 
       //beforeValidate: [validateResearchDocsHook],
