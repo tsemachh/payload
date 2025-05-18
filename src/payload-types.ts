@@ -363,14 +363,14 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  'companies-quantity'?:
+  companiesWithHolding?:
     | {
         company?: (string | null) | Company;
-        quantity?: number | null;
+        holding?: (string | null) | Holding;
         id?: string | null;
       }[]
     | null;
-  marketValue?: number | null;
+  stockValues?: (string | null) | StockValue;
   'research-documents'?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
@@ -1063,14 +1063,14 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
-  'companies-quantity'?:
+  companiesWithHolding?:
     | T
     | {
         company?: T;
-        quantity?: T;
+        holding?: T;
         id?: T;
       };
-  marketValue?: T;
+  stockValues?: T;
   'research-documents'?: T;
   creator?: T;
   updator?: T;

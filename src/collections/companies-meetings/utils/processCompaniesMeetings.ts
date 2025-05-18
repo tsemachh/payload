@@ -13,12 +13,13 @@ async function processMeeting(
   // Get holdings for each company
   const holdings = await Promise.all(
     companies.map(async (company) => {
-      // Get the nearest holdings date
-      const { docs: holdingsDocs } = await req.payload.find({
+      // Get the holdings matching the less than equal holdings date
+      const { docs: holdingsLimitDateDocs } = await req.payload.find({
         collection: 'holdings',
         depth: 0,
         where: {
           and: [
+            { stock: { equals: meeting.stock } },
             { valueDate: { less_than_equal: meeting.holdingsLimit } },
             { company: { equals: company } },
           ],
@@ -26,26 +27,6 @@ async function processMeeting(
         sort: '-valueDate',
         limit: 1,
       })
-
-      const nearestHoldingsLimitDate = holdingsDocs.length > 0 ? holdingsDocs[0].valueDate : null
-      if (!nearestHoldingsLimitDate) {
-        return [] // No holdings found
-      }
-
-      // Get the holdings matching the nearest holdings date
-      const { docs: holdingsLimitDateDocs } = await req.payload.find({
-        collection: 'holdings',
-        depth: 0,
-        where: {
-          and: [
-            { stock: { equals: meeting.stock } },
-            { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-            { company: { equals: company } },
-          ],
-        },
-        limit: 0,
-      })
-
       return holdingsLimitDateDocs
     }),
   )
@@ -72,17 +53,54 @@ async function processMeeting(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
     )
 
-    await req.payload.update({
-      collection: 'meetings',
-      id: meeting.id,
-      req: {
-        ...req,
-        context: { ...req.context, from: 'process' },
-      },
-      data: {
-        companies: [...newCompanies], // Add the new companies to the existing list
-      },
-    })
+    const now = new Date()
+    const isHoldingsLimitInFuture = new Date(meeting.holdingsLimit as string) > now
+
+    if (isHoldingsLimitInFuture) {
+      await req.payload.update({
+        collection: 'meetings',
+        id: meeting.id,
+        req: {
+          ...req,
+          context: { ...req.context, from: 'process' },
+        },
+        data: {
+          companies: newCompanies,
+        },
+      })
+    } else {
+      const companiesWithHolding = flattenedHoldings.map((h) => ({
+        company: String(getIdOfRelationField(h.company)),
+        quantity: h,
+      }))
+      
+      const { docs: stockValues } = await req.payload.find({
+        collection: 'stock-values',
+        depth: 1,
+        where: {
+          and: [
+            { stockId: { equals: getIdOfRelationField(meeting.stock) } },
+            { valueDate: { less_than_equal: meeting.holdingsLimit } },
+          ],
+        },
+        limit: 1,
+        sort: '-valueDate',
+      })
+
+      await req.payload.update({
+        collection: 'meetings',
+        id: meeting.id,
+        req: {
+          ...req,
+          context: { ...req.context, from: 'process' },
+        },
+        data: {
+          companies: newCompanies,
+          companiesWithHolding,
+          stockValues: stockValues[0],
+        },
+      })
+    }
   }
 }
 
