@@ -531,7 +531,12 @@ export const Meetings: CollectionConfig = {
               label: 'upload',
               type: 'upload',
               relationTo: 'research-documents',
-              hasMany: true
+              hasMany: true,
+             admin:{
+              components: {
+                Field: '/collections/meetings/components/ResearchUploadDisplay',
+              }
+             }
             },
             {
               name: 'research-documents',
@@ -559,7 +564,7 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-      addMeetingIdToResearchDocs,
+     // addMeetingIdToResearchDocs,
     ],
 
       //beforeValidate: [validateResearchDocsHook],
