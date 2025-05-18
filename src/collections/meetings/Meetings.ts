@@ -505,6 +505,33 @@ export const Meetings: CollectionConfig = {
               index: true,
               maxDepth: 0,
             },
+            {
+              name: 'companies-quantity',
+              type: 'array',
+              label: 'חברות וכמויות',
+              hidden: true,
+              fields: [
+                {
+                  type: 'relationship',
+                  relationTo: 'companies',
+                  hasMany: false,
+                  name: 'company',
+                  label: 'חברה',
+                  maxDepth: 0,
+                },
+                {
+                  name: 'quantity',
+                  type: 'number',
+                  label: 'כמות',
+                },
+              ],
+            },
+            {
+              name: 'marketValue',
+              type: 'number',
+              label: 'שווי שוק',
+              hidden: true,
+            },
           ],
         },
         {
@@ -537,7 +564,7 @@ export const Meetings: CollectionConfig = {
         }
       },
     ],
-      beforeValidate: [validateResearchDocsHook],
+    beforeValidate: [validateResearchDocsHook],
   },
   endpoints: [
     {

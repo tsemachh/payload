@@ -55,6 +55,7 @@ export type MeetingAgenda =
       isRemovedFromAgenda?: boolean | null;
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
+      votingRecommendation?: ('for' | 'against' | 'abstain') | null;
       vpercent?: number | null;
       vPercentSpecial?: number | null;
       recommendation?: string | null;
@@ -362,6 +363,14 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
+  'companies-quantity'?:
+    | {
+        company?: (string | null) | Company;
+        quantity?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  marketValue?: number | null;
   'research-documents'?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
@@ -1054,6 +1063,14 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
+  'companies-quantity'?:
+    | T
+    | {
+        company?: T;
+        quantity?: T;
+        id?: T;
+      };
+  marketValue?: T;
   'research-documents'?: T;
   creator?: T;
   updator?: T;
@@ -1073,6 +1090,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   isRemovedFromAgenda?: T;
   topicType?: T;
   majorityType?: T;
+  votingRecommendation?: T;
   vpercent?: T;
   vPercentSpecial?: T;
   recommendation?: T;
