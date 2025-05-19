@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useField,UploadField,useAllFormFields,useDocumentInfo, useForm, useFormFields ,useBulkUpload } from '@payloadcms/ui'
 import type { ResearchDocument } from '@/payload-types'
 import { UploadFieldClientProps } from 'payload'
@@ -11,6 +11,8 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
     //const { setCollectionSlug, setCurrentActivePath, setOnSuccess } = useBulkUpload()
 
    const { value, setValue } = useField() 
+   const [uploadsData, setUploadsData] = useState<any[]>([]);
+
     const {isEditing, initialData, savedDocumentData} = useDocumentInfo()
     //const [fields, dispatchFields] = useAllFormFields()
     //const fieldData = getSiblingData(fields, 'file')
@@ -44,21 +46,57 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
 // </div>
 //query run om value adjust one one:
 //query all - 
+ // שלב 1: הבאת הקבצים מהשרת
+ useEffect(() => {
+  const getAllUploads = async () => {
+    if (!value || !Array.isArray(value) || value.length === 0) return;
+
+    const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v));
+    const idsQuery = ids.map((id: string) => `id[in][]=${id}`).join('&');
+//יש צורך לפרק במפ או משהו כמה חברות יש בכל מסמך ואז כשנרוץ נדע כמה לתת ולמי... יכול להיות למסמך הראשון 3 ולשני 2 וכן הלאה
+    try {
+      const res = await fetch(`/api/research-documents?${idsQuery}&depth=1`);
+      const data = await res.json();
+      console.log("------data",data)
+      console.log("------data.docs",data.docs)
+
+      setUploadsData(data.docs);
+    } catch (err) {
+      console.error('Failed to fetch uploads', err);
+    }
+  };
+
+  getAllUploads();
+}, [value]);
+
+// שלב 2: הוספת שמות החברות ל-DOM כל שנייה
 useEffect(() => {
-  console.log('-----------------------111')
+  const interval = setInterval(() => {
+    if (!uploadsData || uploadsData.length === 0) return;
 
-  const filenameEl = document.querySelector('.upload-relationship-details__details')
-  console.log('-----------------------filenameEl',filenameEl)
+    const filenameEls = document.querySelectorAll('.upload-relationship-details__details');
 
-  if (filenameEl && !document.querySelector('.withMeta-span')) {
-    const newSpan = document.createElement('p')
-    newSpan.textContent = 'efrat'
-    newSpan.className = 'withMeta-span'
-    newSpan.style.marginLeft = '8px'
+    filenameEls.forEach((el, i) => {
+      const upload = uploadsData[i];
+      if (!upload) return;
 
-    filenameEl.parentNode?.appendChild(newSpan)
-  }
-}, [value])
+      const companies = upload?.companies || []; // שנה את זה בהתאם לשם השדה אצלך
+      const companyNames = companies.map((c: any) => c?.name || '').filter(Boolean);
+
+      if (!el.querySelector('.withMeta-span') && companyNames.length > 0) {
+        const newSpan = document.createElement('p');
+        newSpan.className = 'withMeta-span';
+        newSpan.style.marginLeft = '8px';
+        newSpan.textContent = `חברות: ${companyNames.join(', ')}`;
+        el.appendChild(newSpan);
+      }
+    });
+  }, 1000); // כל שנייה
+
+  return () => clearInterval(interval);
+}, [uploadsData]);
+
+
 //props=...withMeta=true
   return (
     <div ><UploadField {...props} />

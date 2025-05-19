@@ -33,8 +33,8 @@ export const ResearchDocument: CollectionConfig = {
       admin: { readOnly: true },
     },
     {
-      name: 'company',
-      label: 'חברה',
+      name: 'companies',
+      label: 'חברות',
       type: 'relationship',
       relationTo: 'companies',
       index: true,
