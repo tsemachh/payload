@@ -527,8 +527,8 @@ export const Meetings: CollectionConfig = {
           label: 'מסמכי מחקר',
           fields: [
             {
-              name: 'upload',
-              label: 'upload',
+              name: 'uploadDoc',
+              label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
               hasMany: true,

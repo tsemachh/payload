@@ -5,19 +5,17 @@ import { useField,UploadField,useAllFormFields,useForm } from '@payloadcms/ui'
 import type { ResearchDocument } from '@/payload-types'
 import { UploadFieldClientProps } from 'payload'
 
-type Props = {
-  path: string
-}
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
     console.log('-----------------------props',props)
 
-    
-  const { value } = useField<string>({ path: 'upload' })
-  const a= useForm
+    //const { value, setValue } = useField({ path }) 
+
+  const { value,setValue } = useField<string>({ path: 'uploadDoc' })
+  //const a= useForm
 
   console.log('-----------------------value',value)
-  console.log('-----------------------a',a)
+  //console.log('-----------------------a',a)
 
 //   console.log('-----------[ResearchUploadDisplay] raw value:', value)
 

@@ -366,7 +366,7 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  upload?: (string | ResearchDocument)[] | null;
+  uploadDoc?: (string | ResearchDocument)[] | null;
   'research-documents'?: {
     docs?: (string | ResearchDocument)[];
     hasNextPage?: boolean;
@@ -1064,7 +1064,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
-  upload?: T;
+  uploadDoc?: T;
   'research-documents'?: T;
   creator?: T;
   updator?: T;
