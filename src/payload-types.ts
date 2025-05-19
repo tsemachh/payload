@@ -373,7 +373,7 @@ export interface Meeting {
         id?: string | null;
       }[]
     | null;
-  stockValues?: (string | null) | StockValue;
+  stockValue?: (string | null) | StockValue;
   upload?: (string | ResearchDocument)[] | null;
   'research-documents'?: {
     docs?: (string | ResearchDocument)[];
@@ -1079,7 +1079,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         holding?: T;
         id?: T;
       };
-  stockValues?: T;
+  stockValue?: T;
   upload?: T;
   'research-documents'?: T;
   creator?: T;

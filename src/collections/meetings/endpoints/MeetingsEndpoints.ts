@@ -25,7 +25,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   resultsConfirmationStatus: true,
   committeeInitiated: true,
   companiesWithHolding: true,
-  StockValues: true,
+  StockValue: true,
 }
 
 /**
@@ -212,8 +212,8 @@ function findRelevantCompanyIds(
 /**
  * Finds stock values for a given stock on a specific date
  */
-async function findStockValues(payload: any, stockId: string, holdingsLimit: string): Promise<any> {
-  const { docs: resuStockValues } = await payload.find({
+async function findStockValue(payload: any, stockId: string, holdingsLimit: string): Promise<any> {
+  const { docs: resuStockValue } = await payload.find({
     collection: 'stock-values',
     depth: 1,
     where: {
@@ -222,7 +222,7 @@ async function findStockValues(payload: any, stockId: string, holdingsLimit: str
     limit: 1,
     sort: '-valueDate',
   })
-  return resuStockValues.length > 0 ? resuStockValues[0] : null
+  return resuStockValue.length > 0 ? resuStockValue[0] : null
 }
 
 /**
@@ -231,7 +231,7 @@ async function findStockValues(payload: any, stockId: string, holdingsLimit: str
 function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: any,
-  stockValues: any,
+  stockValue: any,
   agendas: any,
   companiesArray: any[],
 ): MeetingTableDataType {
@@ -245,7 +245,7 @@ function createMeetingDataObject(
     stockName: stockPresent?.name || '-',
     companyName: stockPresent?.longName || '-',
     stockTradable: stockPresent?.tradable || false,
-    marketValue: stockValues?.marketValue || 0,
+    marketValue: stockValue?.marketValue || 0,
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
     reference: meeting.magnaId || '-',
@@ -320,22 +320,22 @@ async function processMeetingsData(
         return null
       }
 
-      let stockValues: StockValue
+      let stockValue: StockValue
       const stockIdToUse = stockPresent?.relatedStock
         ? (stockPresent?.relatedStock as { id: string }).id
         : stockPresent?.id
 
-      // Finding stockValues:
+      // Finding stockValue:
       const now = new Date()
       const isHoldingsLimitInFuture = new Date(meeting.holdingsLimit as string) > now
       if (
         !isHoldingsLimitInFuture &&
-        meeting.stockValues &&
-        typeof meeting.stockValues !== 'string'
+        meeting.stockValue &&
+        typeof meeting.stockValue !== 'string'
       ) {
-        stockValues = meeting.stockValues
+        stockValue = meeting.stockValue
       } else {
-        stockValues = await findStockValues(payload, stockIdToUse, meeting.holdingsLimit as string)
+        stockValue = await findStockValue(payload, stockIdToUse, meeting.holdingsLimit as string)
       }
 
       // Find the intersection of meeting companies and user's leaf companies
@@ -350,48 +350,26 @@ async function processMeetingsData(
           let company
           let quantity
           // Get this company's holdings for this date
-          if (!isHoldingsLimitInFuture && meeting.companiesWithHolding?.length) {
-            const match = meeting.companiesWithHolding.find((item) => {
-              return typeof item.company === 'object' && item.company?.id == companyId
-            })
-            if (match && typeof match.holding === 'object') {
-              company = match.company
-              quantity = match.holding?.quantity
-            } else {
-              console.error(`Company ${companyId} does not exist in the companiesWithHolding array`)
-            }
+          const match = meeting.companiesWithHolding?.find((item) => {
+            return typeof item.company === 'object' && item.company?.id == companyId
+          })
+          if (
+            match &&
+            typeof match.holding === 'object' &&
+            match.company &&
+            match.holding?.quantity
+          ) {
+            company = match.company
+            quantity = match.holding?.quantity
           } else {
-            const { docs: companyHoldings } = await payload.find({
-              collection: 'holdings',
-              select: {
-                company: true,
-                quantity: true,
-              },
-              depth: 1,
-              where: {
-                and: [
-                  { stock: { equals: stockIdToUse } },
-                  { company: { equals: companyId } },
-                  { valueDate: { less_than_equal: meeting.holdingsLimit } },
-                ],
-              },
-              limit: 1,
-              sort: '-valueDate',
-            })
-
-            if (companyHoldings.length === 0) {
-              console.log(
-                ` --- Error! Could not find holdings for company ID ${companyId} for stock ${stockIdToUse} on holdingsLimit date ${meeting.holdingsLimit}`,
-              )
-              return null
-            }
-
-            company = companyHoldings[0].company
-            quantity = companyHoldings[0].quantity
+            console.error(
+              `Company ${companyId} does not exist or is not valid in the companiesWithHolding array`,
+            )
+            return null
           }
           // Calculate values for this company's holdings
           const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
-            calculateHoldingValues(company, quantity, stockValues)
+            calculateHoldingValues(company, quantity, stockValue)
 
           return {
             holdingsCompanyName,
@@ -404,7 +382,7 @@ async function processMeetingsData(
 
       const agendas = processAgendaItems(meeting.agenda as MeetingAgenda)
 
-      return createMeetingDataObject(meeting, stockPresent, stockValues, agendas, companiesArray)
+      return createMeetingDataObject(meeting, stockPresent, stockValue, agendas, companiesArray)
     }),
   )
 
