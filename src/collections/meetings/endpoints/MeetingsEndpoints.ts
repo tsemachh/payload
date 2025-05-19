@@ -25,7 +25,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   resultsConfirmationStatus: true,
   committeeInitiated: true,
   companiesWithHolding: true,
-  StockValue: true,
+  stockValue: true,
 }
 
 /**

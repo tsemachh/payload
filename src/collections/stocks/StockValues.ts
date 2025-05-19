@@ -93,8 +93,16 @@ export const StockValues: CollectionConfig = {
     afterChange: [
       async ({ doc, req }) => {
         const { stockId, id } = doc
-        const { docs: meetings } = await req.payload.find({
+
+        await req.payload.update({
           collection: 'meetings',
+          req: {
+            ...req,
+            context: { ...req.context, from: 'process' },
+          },
+          data: {
+            stockValue: id,
+          },
           where: {
             and: [
               { stock: { equals: stockId } },
@@ -111,16 +119,6 @@ export const StockValues: CollectionConfig = {
             ],
           },
         })
-
-        for (const meeting of meetings) {
-          await req.payload.update({
-            collection: 'meetings',
-            id: meeting.id,
-            data: {
-              stockValue: id,
-            },
-          })
-        }
       },
     ],
   },
