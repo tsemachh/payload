@@ -5,6 +5,7 @@ import useSWR from 'swr'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { MeetingTableDataType } from '../../types/meetings'
+import { fetcher } from '../../helpers/utils-data-table'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)
@@ -71,13 +72,4 @@ export function MeetingsTableServer() {
       searchPlaceholder="חיפוש בכל השדות..."
     />
   )
-}
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const errText = await res.text()
-    throw new Error(`API error [api/meetings/all-meetings]: ${res.status} - ${errText}`)
-  }
-  return res.json()
 }
