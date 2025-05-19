@@ -77,7 +77,7 @@ async function processMeeting(
       holding: h.id,
     }))
     let stockValue = meeting.stockValue
-    if (typeof stockValue != 'object' && typeof stockValue != 'string') {
+    if (!stockValue) {
       const { docs: stockValueDocs } = await req.payload.find({
         collection: 'stock-values',
         depth: 0,

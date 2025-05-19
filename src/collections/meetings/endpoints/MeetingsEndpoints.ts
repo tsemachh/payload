@@ -209,21 +209,6 @@ function findRelevantCompanyIds(
     .filter((id) => id !== null) as string[]
 }
 
-/**
- * Finds stock values for a given stock on a specific date
- */
-async function findStockValue(payload: any, stockId: string, holdingsLimit: string): Promise<any> {
-  const { docs: resuStockValue } = await payload.find({
-    collection: 'stock-values',
-    depth: 1,
-    where: {
-      and: [{ stockId: { equals: stockId } }, { valueDate: { less_than_equal: holdingsLimit } }],
-    },
-    limit: 1,
-    sort: '-valueDate',
-  })
-  return resuStockValue.length > 0 ? resuStockValue[0] : null
-}
 
 /**
  * Creates a standardized meeting data object for the frontend
@@ -320,24 +305,6 @@ async function processMeetingsData(
         return null
       }
 
-      let stockValue: StockValue
-      const stockIdToUse = stockPresent?.relatedStock
-        ? (stockPresent?.relatedStock as { id: string }).id
-        : stockPresent?.id
-
-      // Finding stockValue:
-      const now = new Date()
-      const isHoldingsLimitInFuture = new Date(meeting.holdingsLimit as string) > now
-      if (
-        !isHoldingsLimitInFuture &&
-        meeting.stockValue &&
-        typeof meeting.stockValue !== 'string'
-      ) {
-        stockValue = meeting.stockValue
-      } else {
-        stockValue = await findStockValue(payload, stockIdToUse, meeting.holdingsLimit as string)
-      }
-
       // Find the intersection of meeting companies and user's leaf companies
       const relevantCompanyIds = findRelevantCompanyIds(
         meeting.companies as string[],
@@ -369,7 +336,7 @@ async function processMeetingsData(
           }
           // Calculate values for this company's holdings
           const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
-            calculateHoldingValues(company, quantity, stockValue)
+            calculateHoldingValues(company, quantity, meeting.stockValue)
 
           return {
             holdingsCompanyName,
@@ -382,7 +349,7 @@ async function processMeetingsData(
 
       const agendas = processAgendaItems(meeting.agenda as MeetingAgenda)
 
-      return createMeetingDataObject(meeting, stockPresent, stockValue, agendas, companiesArray)
+      return createMeetingDataObject(meeting, stockPresent, meeting.stockValue, agendas, companiesArray)
     }),
   )
 
