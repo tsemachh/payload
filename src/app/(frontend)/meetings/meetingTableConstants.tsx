@@ -1,7 +1,7 @@
 'use client'
 
 import { BooleanIcon } from '@/components/ui/icons'
-import { formatDateTime, isRTL } from '../helpers/utils-data-table'
+import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -188,10 +188,13 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.marketValue / 1_000_000,
-      ),
+    render: (row) => {
+      const marketValue = parseNumber(row.marketValue)
+
+      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
+        marketValue / 1_000_000,
+      )
+    },
     minWidth: 70,
   },
   {
