@@ -1,56 +1,68 @@
 'use client'
 
-import React from 'react'
-import { useField,UploadField,useAllFormFields,useForm } from '@payloadcms/ui'
+import React, { useEffect } from 'react'
+import { useField,UploadField,useAllFormFields,useDocumentInfo, useForm, useFormFields ,useBulkUpload } from '@payloadcms/ui'
 import type { ResearchDocument } from '@/payload-types'
 import { UploadFieldClientProps } from 'payload'
-
+import { getSiblingData } from 'payload/shared'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
-    console.log('-----------------------props',props)
+    //console.log('-----------------------propssssss',props)
+    //const { setCollectionSlug, setCurrentActivePath, setOnSuccess } = useBulkUpload()
 
-    //const { value, setValue } = useField({ path }) 
+   const { value, setValue } = useField() 
+    const {isEditing, initialData, savedDocumentData} = useDocumentInfo()
+    //const [fields, dispatchFields] = useAllFormFields()
+    //const fieldData = getSiblingData(fields, 'file')
+    //const fileName = (value as unknown as File).name
+    //console.log('-----------------------@@@@@@@fileName',fileName)
 
-  const { value,setValue } = useField<string>({ path: 'uploadDoc' })
-  //const a= useForm
+  //const { value,setValue } = useField<string>()
+  //const a= useForm()
 
-  console.log('-----------------------value',value)
   //console.log('-----------------------a',a)
+  console.log('-----------------------isEditing',isEditing)
 
-//   console.log('-----------[ResearchUploadDisplay] raw value:', value)
+  console.log('-----------------------initialData',initialData)
 
-//   // הערך יכול להיות אחד מ-2: מערך של מחרוזות (ids) או מערך של אובייקטים (documents)
-//   const documents = Array.isArray(value)
-//     ? value.filter(Boolean).map((item) => (typeof item === 'object' ? item : null)).filter(Boolean)
-//     : []
-//console.log('-----------[ResearchUploadDisplay] raw documents:', documents)
+  //console.log('-----------------------fields',fields)
+  console.log('-----------------------savedDocumentData',savedDocumentData)
+  //console.log('-----------------------dispatchFields',dispatchFields)
+  //console.log('-----------------------fieldData',fieldData)
+//   const baseClass = 'upload-relationship-details__filename'
+//   <div className={`${baseClass}__details`}>
+//   <p className={`${baseClass}__filename`}>
+//     {src ? (
+//       <a href={src} target="_blank">
+//         {filename}
+//       </a>
+//     ) : (
+//       filename
+//     )}
+//   </p>
+//   {withMeta ? <p className={`${baseClass}__meta`}>{metaText}</p> : null}
+// </div>
+//query run om value adjust one one:
+//query all - 
+useEffect(() => {
+  console.log('-----------------------111')
 
+  const filenameEl = document.querySelector('.upload-relationship-details__details')
+  console.log('-----------------------filenameEl',filenameEl)
+
+  if (filenameEl && !document.querySelector('.withMeta-span')) {
+    const newSpan = document.createElement('p')
+    newSpan.textContent = 'efrat'
+    newSpan.className = 'withMeta-span'
+    newSpan.style.marginLeft = '8px'
+
+    filenameEl.parentNode?.appendChild(newSpan)
+  }
+}, [value])
+//props=...withMeta=true
   return (
     <div ><UploadField {...props} />
-</div>
-    // <div className="flex flex-col gap-4 mt-2">
-    //   {documents.length > 0 ? (
-    //     documents.map((doc: any) => (
-    //       <div key={doc.id || doc.filename} className="border p-3 rounded-md bg-gray-100 text-sm leading-6">
-    //         <div><strong>שם קובץ:</strong> {doc.filename || 'ללא שם'}</div>
-    //         <div className="flex flex-wrap">
-    //           <strong className="mr-1">חברות:</strong>
-    //           {Array.isArray(doc.company) && doc.company.length > 0 ? (
-    //             <span>
-    //               {doc.company
-    //                 .map((c: { name: any }) => (typeof c === 'object' ? c.name : c))
-    //                 .join(', ')}
-    //             </span>
-    //           ) : (
-    //             <span>ללא חברות</span>
-    //           )}
-    //         </div>
-    //       </div>
-    //     ))
-    //   ) : (
-    //     <div className="text-gray-500">לא נבחרו מסמכים</div>
-    //   )}
-    // </div>
+    </div>
   )
 }
 
