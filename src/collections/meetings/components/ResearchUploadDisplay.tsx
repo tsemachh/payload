@@ -46,7 +46,6 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
 }, [value]);
 
 useEffect(() => {
-  const interval = setInterval(() => {
     if (!uploadsData || uploadsData.length === 0) return;
 
     const filenameEls = document.querySelectorAll('.upload-relationship-details__details');
@@ -65,9 +64,7 @@ useEffect(() => {
         el.appendChild(newSpan);
       }
     });
-  }, 1000);
 
-  return () => clearInterval(interval);
 }, [uploadsData]);
 
 
