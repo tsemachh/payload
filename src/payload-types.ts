@@ -215,7 +215,6 @@ export interface Config {
     };
     meetings: {
       votes: 'votes';
-      'research-documents': 'research-documents';
     };
     companies: {
       parentCompany: 'companies';
@@ -374,12 +373,7 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
-  upload?: (string | ResearchDocument)[] | null;
-  'research-documents'?: {
-    docs?: (string | ResearchDocument)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  uploadDoc?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -509,7 +503,7 @@ export interface Holding {
 export interface ResearchDocument {
   id: string;
   meeting?: (string | null) | Meeting;
-  company?: (string | Company)[] | null;
+  companies?: (string | Company)[] | null;
   uploadedAt?: string | null;
   creator?: string | null;
   updator?: string | null;
@@ -1080,8 +1074,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
-  upload?: T;
-  'research-documents'?: T;
+  uploadDoc?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1404,7 +1397,7 @@ export interface VotesSelect<T extends boolean = true> {
  */
 export interface ResearchDocumentsSelect<T extends boolean = true> {
   meeting?: T;
-  company?: T;
+  companies?: T;
   uploadedAt?: T;
   creator?: T;
   updator?: T;

@@ -556,19 +556,16 @@ export const Meetings: CollectionConfig = {
           label: 'מסמכי מחקר',
           fields: [
             {
-              name: 'upload',
-              label: 'upload',
+              name: 'uploadDoc',
+              label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
               hasMany: true,
-            },
-            {
-              name: 'research-documents',
-              label: 'מסמכי מחקר',
-              type: 'join',
-              collection: 'research-documents',
-              on: 'meeting',
-              hasMany: true,
+             admin:{
+              components: {
+                Field: '/collections/meetings/components/ResearchUploadDisplay',
+              }
+             }
             },
           ],
         },
@@ -588,7 +585,7 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-      addMeetingIdToResearchDocs,
+     // addMeetingIdToResearchDocs,
     ],
 
     //beforeValidate: [validateResearchDocsHook],

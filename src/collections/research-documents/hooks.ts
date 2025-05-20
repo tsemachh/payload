@@ -1,4 +1,4 @@
-import { ValidationError, type CollectionBeforeValidateHook } from 'payload'
+import { ValidationError, type CollectionBeforeValidateHook ,type CollectionAfterChangeHook, CollectionBeforeChangeHook} from 'payload'
 
 const parseResearchFilename = (
   fileName: string
@@ -88,7 +88,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
           collection: 'research-documents',
           id: doc.id,
           data: {
-            company: foundCompanies.map((company) => company.id),
+            companies: foundCompanies.map((company) => company.id),
           },
         })
       } catch (err) {

@@ -32,8 +32,8 @@ export const ResearchDocument: CollectionConfig = {
       admin: { readOnly: true },
     },
     {
-      name: 'company',
-      label: 'חברה',
+      name: 'companies',
+      label: 'חברות',
       type: 'relationship',
       relationTo: 'companies',
       index: true,
@@ -51,6 +51,7 @@ export const ResearchDocument: CollectionConfig = {
         readOnly: true,
       },
       defaultValue: () => new Date(),
-    },
+   },
+  
   ],
 }
