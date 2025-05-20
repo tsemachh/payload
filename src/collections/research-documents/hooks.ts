@@ -1,4 +1,4 @@
-import { ValidationError, type CollectionBeforeValidateHook ,type CollectionAfterChangeHook, CollectionBeforeChangeHook} from 'payload'
+import { ValidationError, type CollectionBeforeValidateHook ,type CollectionBeforeChangeHook} from 'payload'
 
 const parseResearchFilename = (
   fileName: string
@@ -13,6 +13,8 @@ const parseResearchFilename = (
 
   const nameWithoutExtension = fileName.replace(/\.(pdf|docx)$/i, '').trim()
   const nameWithoutDate = nameWithoutExtension.replace(/\d{2}\.\d{2}\.\d{4}$/, '').trim()
+  console.log("----nameWithoutExtension",nameWithoutExtension)
+  console.log("----nameWithoutDate",nameWithoutDate)
 
   const match = nameWithoutDate.match(/^(.+?)\s*\(([^)]+)\)$/)
   if (!match) {
@@ -66,7 +68,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
       })
       continue
     }
-
+//להוריד
     if (!parsed.isGeneric && parsed.companyName) {
       const companyResult = await req.payload.find({
         collection: 'companies',
@@ -113,3 +115,36 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
 
   return data
 }
+
+export const beforeChangeCompaniesFromFilename:CollectionBeforeChangeHook = async ({ data, req }) => {
+  const filename = data.filename || '';
+  const parsed = parseResearchFilename(filename);
+  console.log("----parsed",parsed)
+
+  if (!parsed.isValid) {
+    console.warn(parsed.error)
+    console.log("----parsed.error",parsed.error)
+    return data
+  }
+
+  if (parsed.isGeneric) {
+    // Generic case - אולי companies ריק או ערך ברירת מחדל
+    data.companies = []
+  } else {
+    if (!parsed.isGeneric && parsed.companyName) {
+      const companies = await req.payload.find({
+        collection: 'companies',
+        where: { name: { like: parsed.companyName } },
+      })
+      console.log("-----companies",companies)
+
+    if (companies) {
+      const foundCompanies = companies.docs
+      data.companies = foundCompanies.map((company) => company.id)
+    } else {
+      data.companies = []
+    }
+  }
+
+  return data;
+}}
