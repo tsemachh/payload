@@ -117,7 +117,7 @@ export const fetcher = async (url: string) => {
   const res = await fetch(url)
   if (!res.ok) {
     const errText = await res.text()
-    throw new Error(`API error [api/meetings/all-meetings]: ${res.status} - ${errText}`)
+    throw new Error(`API error: ${res.status} - ${errText}`)
   }
   return res.json()
 }

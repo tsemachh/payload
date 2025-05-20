@@ -512,7 +512,9 @@ export const Meetings: CollectionConfig = {
             {
               name: 'companiesWithHolding',
               type: 'array',
-              // hidden: true,
+              admin: {
+                hidden: true,
+              },
               fields: [
                 {
                   name: 'company',
@@ -536,7 +538,9 @@ export const Meetings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'stock-values',
               hasMany: false,
-              // hidden: true,
+              admin: {
+                hidden: true,
+              },
               maxDepth: 1,
             },
           ],
