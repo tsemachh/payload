@@ -538,14 +538,6 @@ export const Meetings: CollectionConfig = {
               }
              }
             },
-            {
-              name: 'research-documents',
-              label: 'מסמכי מחקר',
-              type: 'join',
-              collection: 'research-documents',
-              on:'meeting',
-              hasMany: true
-            },
           ],
         },
       ],

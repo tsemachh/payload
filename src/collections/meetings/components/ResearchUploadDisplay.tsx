@@ -5,6 +5,7 @@ import { useField,UploadField,useAllFormFields,useDocumentInfo, useForm, useForm
 import type { ResearchDocument } from '@/payload-types'
 import { UploadFieldClientProps } from 'payload'
 import { getSiblingData } from 'payload/shared'
+import { stringify } from 'qs-esm'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
     //console.log('-----------------------propssssss',props)
@@ -52,15 +53,27 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
     if (!value || !Array.isArray(value) || value.length === 0) return;
 
     const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v));
-    const idsQuery = ids.map((id: string) => `id[in][]=${id}`).join('&');
-//יש צורך לפרק במפ או משהו כמה חברות יש בכל מסמך ואז כשנרוץ נדע כמה לתת ולמי... יכול להיות למסמך הראשון 3 ולשני 2 וכן הלאה
+    const query = {
+      where: {
+        id: {
+          in: ids, 
+        },
+      },
+      depth: 1,
+      limit: 0,
+      select: {
+        companies: true, 
+      },
+    };
+    
+    const stringifiedQuery = stringify(query, { addQueryPrefix: true })  
     try {
-      const res = await fetch(`/api/research-documents?${idsQuery}&depth=1`);
-      const data = await res.json();
-      console.log("------data",data)
-      console.log("------data.docs",data.docs)
+      const res = await fetch(`/api/research-documents${stringifiedQuery}`);
+      const { docs } = await res.json();
 
-      setUploadsData(data.docs);
+      const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]));
+      const sortedDocs = ids.map(id => uploadsMap.get(id)).filter(Boolean);
+      setUploadsData(sortedDocs);
     } catch (err) {
       console.error('Failed to fetch uploads', err);
     }
@@ -69,7 +82,6 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
   getAllUploads();
 }, [value]);
 
-// שלב 2: הוספת שמות החברות ל-DOM כל שנייה
 useEffect(() => {
   const interval = setInterval(() => {
     if (!uploadsData || uploadsData.length === 0) return;
@@ -80,8 +92,7 @@ useEffect(() => {
       const upload = uploadsData[i];
       if (!upload) return;
 
-      const companies = upload?.companies || []; // שנה את זה בהתאם לשם השדה אצלך
-      const companyNames = companies.map((c: any) => c?.name || '').filter(Boolean);
+      const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean);
 
       if (!el.querySelector('.withMeta-span') && companyNames.length > 0) {
         const newSpan = document.createElement('p');
@@ -91,7 +102,7 @@ useEffect(() => {
         el.appendChild(newSpan);
       }
     });
-  }, 1000); // כל שנייה
+  }, 1000);
 
   return () => clearInterval(interval);
 }, [uploadsData]);
