@@ -70,7 +70,7 @@ export default function CompanyTreeView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[500px] items-center pt-[100px]">
+      <div className="flex flex-col h-[600px] items-center pt-[100px]">
         <LoadingSpinnerDiamond />
         <p className="text-center">טוען חברות...</p>
       </div>
@@ -267,10 +267,30 @@ function CompanyTree({
     })
   }
 
+  const expandAll = () => {
+    const getAllNodeIds = (nodes: TreeNode[]): string[] => {
+      let result: string[] = []
+      nodes.forEach((node) => {
+        if (node.children && node.children.length > 0) {
+          result.push(node.id)
+          result = result.concat(getAllNodeIds(node.children))
+        }
+      })
+      return result
+    }
+
+    const allNodeIds = getAllNodeIds(companies)
+    setExpandedNodes(allNodeIds)
+  }
+
+  const collapseAll = () => {
+    setExpandedNodes([])
+  }
+
   return (
     <div dir="rtl">
       <div className="sticky top-0 z-10 bg-white p-2 border-b">
-        <div className="flex justify-start">
+        <div className="flex justify-between items-center">
           <input
             type="text"
             placeholder="חפש חברה..."
@@ -278,9 +298,23 @@ function CompanyTree({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-1/3 h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
+          <div className="flex gap-2">
+            <button 
+              onClick={expandAll}
+              className="px-2 py-1 text-sm bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-sm"
+            >
+              הרחב הכל
+            </button>
+            <button 
+              onClick={collapseAll}
+              className="px-2 py-1 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-sm"
+            >
+              כווץ הכל
+            </button>
+          </div>
         </div>
       </div>
-      <div className="max-h-[500px] overflow-auto bg-gray-100">
+      <div className="max-h-[600px] overflow-auto bg-gray-100">
         {filteredCompanies.length > 0 ? (
           <TreeItems nodes={filteredCompanies} />
         ) : (
@@ -317,7 +351,7 @@ function CompanyDetails({
   }
 
   return (
-    <div dir="rtl" className="max-h-[500px] overflow-auto">
+    <div dir="rtl" className="max-h-[800px] overflow-auto">
       <h2 className="text-xl font-bold mb-4">{companyDetails.name}</h2>
 
       <div className="space-y-4">
