@@ -3,26 +3,25 @@
 import {
   defaultVisibleColumns,
   futureDateFilterOptions,
-  futuredefaultVisibleExtra,
-  futureMeetingColumnsExtra,
   meetingColumns,
   pastDateFilterOptions,
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
 import { MeetingTableDataType } from '../types/meetings'
+import useSWR from 'swr'
+import { fetcher } from '../helpers/utils-data-table'
 
-export function MeetingsTableClient({
-  initialData,
-  onlyFuture,
-}: {
-  initialData: MeetingTableDataType[]
-  onlyFuture?: boolean
-}) {
+export function MeetingsTableClient() {
+  const { data, isLoading } = useSWR(`/api/meetings/future-meetings`, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+
   return (
     <DataTableStatic
-      data={initialData}
-      columns={[...futureMeetingColumnsExtra, ...meetingColumns]}
+      data={data?.data || []}
+      columns={meetingColumns}
       idField="meetingId"
       defaultSortField={'meetingDate' as keyof MeetingTableDataType}
       defaultSortDirection="desc"
@@ -30,10 +29,11 @@ export function MeetingsTableClient({
       renderRowActions={renderMeetingActions}
       pastDateFilterOptions={pastDateFilterOptions}
       futureDateFilterOptions={futureDateFilterOptions}
-      onlyFuture={onlyFuture}
+      onlyFuture={true}
       searchPlaceholder="חיפוש בכל השדות..."
-      defaultVisibleColumns={[...futuredefaultVisibleExtra, ...defaultVisibleColumns]}
+      defaultVisibleColumns={defaultVisibleColumns}
       tableHeightOffset={200}
+      isLoading={isLoading}
     />
   )
 }

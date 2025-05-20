@@ -65,16 +65,12 @@ export const Votes: CollectionConfig = {
               label: 'הצבעה',
               type: 'select',
               options: [
+                { label: '----', value: '----' },
                 { label: 'בעד', value: 'בעד' },
                 { label: 'נגד', value: 'נגד' },
                 { label: 'נמנע', value: 'נמנע' },
                 { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
-                { label: 'דיון', value: 'דיון' },
-                { label: 'הוסר מסדר היום', value: 'הוסר מסדר היום' },
-                { label: 'ללא הצבעה', value: 'ללא הצבעה' },
-                { label: 'נמכרה אחזקה', value: 'נמכרה אחזקה' },
-                { label: 'הצבעות סותרות', value: 'הצבעות סותרות' },
               ],
             },
           ]

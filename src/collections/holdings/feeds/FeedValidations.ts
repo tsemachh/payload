@@ -10,8 +10,8 @@ import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
 export type HoldingFeedLineWithName = HoldingFeedLine & {
-  stockName?: string | null;
-};
+  stockName?: string | null
+}
 
 /**
  * Validate the whole feed for fatal errors
@@ -129,7 +129,7 @@ export const checkFeedWarnings = async (
   })
 
   if (existingHoldings.docs.length > 0) {
-    const formattedDate = valueDate.split('-').reverse().join('/');
+    const formattedDate = valueDate.split('-').reverse().join('/')
     warnings.push({
       type: 'duplicateFeedForDate',
       message: `בוצעה בעבר הזנה לתאריך ${formattedDate}`,
@@ -174,9 +174,18 @@ export const checkFeedWarnings = async (
 
     const currentAccounts = new Set<string>(accountIds.map((id) => id.toString()))
 
-    const previousAccountsArray = (JSON.parse(previousFeed.accountsJson as string) as number[]).map(
-      String,
-    )
+    // Safely parse accountsJson with null check and try-catch
+    let previousAccountsArray: string[] = []
+    try {
+      if (previousFeed.accountsJson) {
+        const parsed = JSON.parse(previousFeed.accountsJson as string)
+        previousAccountsArray = parsed?.length ? parsed.map(String) : []
+      }
+    } catch (error) {
+      console.error('Error parsing accountsJson:', error)
+      previousAccountsArray = []
+    }
+
     const previousAccounts = new Set<string>(previousAccountsArray)
 
     // חשבונות שהיו קודם ועכשיו חסרים
@@ -214,6 +223,8 @@ export const checkFeedWarnings = async (
  * @param index The index of the row
  * @param accountMap
  * @param stockMap
+ * @param stockNameMap
+ * @param stockActiveMap
  * @param silencedStockIds
  * @returns Validation result
  */
@@ -223,6 +234,7 @@ export const validateRow = async (
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
   stockNameMap: Map<string, string>,
+  stockActiveMap: Map<string, boolean>,
   silencedStockIds: string[],
 ): Promise<{
   processedRecord: HoldingFeedLineWithName
@@ -236,24 +248,32 @@ export const validateRow = async (
 
   // Check required fields
   if (!stockId) {
-    status = 'error';
-    errorMessage = 'מספר נייר חסר';
+    status = 'error'
+    errorMessage = 'מספר נייר חסר'
   } else if (isNaN(quantity!) || quantity! < 1) {
-    status = 'error';
-    errorMessage = 'ערך נקוב לא תקין';
+    status = 'error'
+    errorMessage = 'ערך נקוב לא תקין'
   } else if (!accountId) {
-    status = 'error';
-    errorMessage = 'מספר חשבון חסר';
+    status = 'error'
+    errorMessage = 'מספר חשבון חסר'
   } else if (!stockMap.has(stockId)) {
     if (silencedStockIds.includes(stockId)) {
-      status = 'silenced';
+      status = 'silenced'
     } else {
-      status = 'error';
-      errorMessage = 'נייר ערך לא מוכר';
+      status = 'error'
+      errorMessage = 'נייר ערך לא מוכר'
     }
   } else if (!accountMap.has(Number(accountId))) {
-    status = 'error';
-    errorMessage = 'מספר חשבון לא מוכר';
+    status = 'error'
+    errorMessage = 'מספר חשבון לא מוכר'
+  } else if (stockActiveMap.has(stockId) && !stockActiveMap.get(stockId)) {
+    // Check if stock is inactive
+    if (silencedStockIds.includes(stockId)) {
+      status = 'silenced'
+    } else {
+      status = 'error'
+      errorMessage = 'נייר ערך לא פעיל'
+    }
   }
 
   const processedRecord: HoldingFeedLineWithName = {
@@ -264,8 +284,7 @@ export const validateRow = async (
     lineNumber,
     status,
     error: errorMessage,
-  };
-
+  }
 
   return { processedRecord }
 }

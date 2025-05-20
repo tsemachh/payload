@@ -46,6 +46,27 @@ export type MeetingType =
 export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingAgenda".
+ */
+export type MeetingAgenda =
+  | {
+      text: string;
+      shortText?: string | null;
+      isRemovedFromAgenda?: boolean | null;
+      topicType: 'reporting' | 'decision';
+      majorityType?: ('regular' | 'privileged') | null;
+      recommendation?: {
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        recommendation?: string | null;
+      };
+      vpercent?: number | null;
+      vPercentSpecial?: number | null;
+      result?: ('0' | '1' | '2' | '3') | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
  */
 export type UserCompany =
@@ -194,7 +215,6 @@ export interface Config {
     };
     meetings: {
       votes: 'votes';
-      'research-documents': 'research-documents';
     };
     companies: {
       parentCompany: 'companies';
@@ -338,31 +358,22 @@ export interface Meeting {
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
-  agenda?:
-    | {
-        text: string;
-        shortText?: string | null;
-        isRemovedFromAgenda?: boolean | null;
-        topicType: 'reporting' | 'decision';
-        majorityType?: ('regular' | 'privileged') | null;
-        vpercent?: number | null;
-        vPercentSpecial?: number | null;
-        recommendation?: string | null;
-        result?: ('0' | '1' | '2' | '3') | null;
-        id?: string | null;
-      }[]
-    | null;
+  agenda?: MeetingAgenda;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  'research-documents'?: {
-    docs?: (string | ResearchDocument)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  companiesWithHolding?:
+    | {
+        company?: (string | null) | Company;
+        holding?: (string | null) | Holding;
+        id?: string | null;
+      }[]
+    | null;
+  stockValue?: (string | null) | StockValue;
+  uploadDoc?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -403,20 +414,7 @@ export interface Vote {
   votes?:
     | {
         topicIndex: number;
-        voteDecision?:
-          | (
-              | 'בעד'
-              | 'נגד'
-              | 'נמנע'
-              | 'אין חובת השתתפות'
-              | 'לא משתתף'
-              | 'דיון'
-              | 'הוסר מסדר היום'
-              | 'ללא הצבעה'
-              | 'נמכרה אחזקה'
-              | 'הצבעות סותרות'
-            )
-          | null;
+        voteDecision?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
         committee?: boolean | null;
         conflict?: boolean | null;
         relatedParty?: boolean | null;
@@ -457,6 +455,7 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+    defaultVotingRecommendation?: boolean | null;
   };
   mainAccount?:
     | {
@@ -503,8 +502,8 @@ export interface Holding {
  */
 export interface ResearchDocument {
   id: string;
-  meeting: string | Meeting;
-  company?: (string | null) | Company;
+  meeting?: (string | null) | Meeting;
+  companies?: (string | Company)[] | null;
   uploadedAt?: string | null;
   creator?: string | null;
   updator?: string | null;
@@ -1064,23 +1063,18 @@ export interface MeetingsSelect<T extends boolean = true> {
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
-  agenda?:
-    | T
-    | {
-        text?: T;
-        shortText?: T;
-        isRemovedFromAgenda?: T;
-        topicType?: T;
-        majorityType?: T;
-        vpercent?: T;
-        vPercentSpecial?: T;
-        recommendation?: T;
-        result?: T;
-        id?: T;
-      };
+  agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
-  'research-documents'?: T;
+  companiesWithHolding?:
+    | T
+    | {
+        company?: T;
+        holding?: T;
+        id?: T;
+      };
+  stockValue?: T;
+  uploadDoc?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1088,6 +1082,27 @@ export interface MeetingsSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MeetingAgenda_select".
+ */
+export interface MeetingAgendaSelect<T extends boolean = true> {
+  text?: T;
+  shortText?: T;
+  isRemovedFromAgenda?: T;
+  topicType?: T;
+  majorityType?: T;
+  recommendation?:
+    | T
+    | {
+        votingRecommendation?: T;
+        recommendation?: T;
+      };
+  vpercent?: T;
+  vPercentSpecial?: T;
+  result?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1108,6 +1123,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+        defaultVotingRecommendation?: T;
       };
   mainAccount?:
     | T
@@ -1381,7 +1397,7 @@ export interface VotesSelect<T extends boolean = true> {
  */
 export interface ResearchDocumentsSelect<T extends boolean = true> {
   meeting?: T;
-  company?: T;
+  companies?: T;
   uploadedAt?: T;
   creator?: T;
   updator?: T;

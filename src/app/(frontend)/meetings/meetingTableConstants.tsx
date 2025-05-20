@@ -1,7 +1,7 @@
 'use client'
 
 import { BooleanIcon } from '@/components/ui/icons'
-import { formatDateTime, isRTL } from '../helpers/utils-data-table'
+import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -55,7 +55,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
               <div
                 className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
               ></div>
-              <span className="font-medium text-sm">
+              <span className="font-medium text-sm px-2">
                 {Number.parseInt(row.meetingId) % 2 === 0
                   ? 'ההצבעות התקבלו בעמדה'
                   : 'ההצבעות טרם התקבלו בעמדה'}
@@ -125,7 +125,8 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
     </TooltipProvider>
   )
 }
-export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
+
+export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
     key: 'agendas',
     header: 'סדר היום',
@@ -139,9 +140,6 @@ export const futureMeetingColumnsExtra: Column<MeetingTableDataType>[] = [
     },
     minWidth: 20,
   },
-]
-
-export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
     key: 'companies',
     header: 'חברות',
@@ -190,10 +188,13 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.marketValue / 1_000_000,
-      ),
+    render: (row) => {
+      const marketValue = parseNumber(row.marketValue)
+
+      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
+        marketValue / 1_000_000,
+      )
+    },
     minWidth: 70,
   },
   {
@@ -319,8 +320,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
   },
 ]
-export const futuredefaultVisibleExtra = ['agendas']
 export const defaultVisibleColumns = [
+  'agendas',
   'companies',
   'stockNumber',
   'stockType',

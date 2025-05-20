@@ -1,6 +1,7 @@
 
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
+import detailsEndpoint from './detailsEndpoint'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -34,7 +35,7 @@ export const Companies: CollectionConfig = {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
     },
-    
+
   },
   versions: {},
   fields: [
@@ -113,7 +114,7 @@ export const Companies: CollectionConfig = {
             },
             {
               name: 'researchDocuments',
-              label: 'מסמכי מחקר',
+              label: 'חוות דעת',
               type: 'group',
               fields: [
                 {
@@ -121,15 +122,16 @@ export const Companies: CollectionConfig = {
                   fields: [
                     {
                       name: 'showResearchTrusteeship',
-                      label: 'הצג מחקר אג"ח נאמנות',
+                      label: 'אג"ח נאמנות',
                       type: 'checkbox',
+                      defaultValue: true,
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
                       },
                     },
                     {
                       name: 'showResearchBond',
-                      label: 'הצג מחקר אג"ח',
+                      label: 'אג"ח',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
@@ -137,15 +139,28 @@ export const Companies: CollectionConfig = {
                     },
                     {
                       name: 'showResearch',
-                      label: 'הצג מחקר כללי',
+                      label: 'כללי',
+                      type: 'checkbox',
+                      admin: {
+                        condition: (data) => !!data?.mainAccount?.[0],
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'showResearchPrivate',
+                      label: 'מקבל מסמכי מחקר פרטנים',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
                       },
                     },
                     {
-                      name: 'showResearchPrivate',
-                      label: 'הצג מחקר פרטני',
+                      name: 'defaultVotingRecommendation',
+                      label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',
                       admin: {
                         condition: (data) => !!data?.mainAccount?.[0],
@@ -155,7 +170,7 @@ export const Companies: CollectionConfig = {
                 },
               ],
             }
-            
+
 
           ],
         },
@@ -232,6 +247,11 @@ export const Companies: CollectionConfig = {
       path: '/addSubAccount',
       method: 'post',
       handler: addSubAccountEndPoint,
+    },
+    {
+      path: '/details',
+      method: 'get',
+      handler: detailsEndpoint,
     },
   ],
 }

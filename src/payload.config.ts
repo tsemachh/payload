@@ -129,6 +129,9 @@ export default buildConfig({
       collections: {
         documents: true,
         'research-documents': true,
+        'holdings-feed': true,
+        'meetings-feed': true,
+        'stocks-feed': true
       },
       enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',

@@ -13,7 +13,7 @@ async function processMeeting(
   // Get holdings for each company
   const holdings = await Promise.all(
     companies.map(async (company) => {
-      // Get the nearest holdings date
+      // Get the holdings matching the less than equal holdings date
       const { docs: holdingsDocs } = await req.payload.find({
         collection: 'holdings',
         depth: 0,
@@ -72,6 +72,27 @@ async function processMeeting(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
     )
 
+    const companiesWithHolding = flattenedHoldings.map((h) => ({
+      company: String(getIdOfRelationField(h.company)),
+      holding: h.id,
+    }))
+    let stockValue = meeting.stockValue
+    if (!stockValue) {
+      const { docs: stockValueDocs } = await req.payload.find({
+        collection: 'stock-values',
+        depth: 0,
+        where: {
+          and: [
+            { stockId: { equals: getIdOfRelationField(meeting.stock) } },
+            { valueDate: { less_than_equal: meeting.holdingsLimit } },
+          ],
+        },
+        limit: 1,
+        sort: '-valueDate',
+      })
+      stockValue = stockValueDocs[0].id
+    }
+
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -80,7 +101,9 @@ async function processMeeting(
         context: { ...req.context, from: 'process' },
       },
       data: {
-        companies: [...newCompanies], // Add the new companies to the existing list
+        companies: [...newCompanies],
+        companiesWithHolding,
+        stockValue,
       },
     })
   }
@@ -165,7 +188,6 @@ export const processCompaniesMeetings = async (
 
     req.payload.logger.info('End of process: All meetings have been processed')
   } catch (error: unknown) {
-    //@ts-ignore
     req.payload.logger.error(
       `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
       error,

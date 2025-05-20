@@ -55,6 +55,7 @@ import {
 } from '../types/meetings'
 import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
+import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -74,6 +75,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   defaultVisibleColumns = columns.map((column) => column.key),
   onlyFuture = false,
   tableHeightOffset = 200,
+  isLoading = false,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -592,7 +594,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const renderCompaniesCell = useCallback(
     (row: T) => {
       return (
-        <div className="flex items-center justify-end w-[20px] p-0 m-0">
+        <div className="flex items-center justify-start w-[20px] p-0 m-0">
           <Button
             variant="icon"
             size="sm"
@@ -736,6 +738,7 @@ export function DataTableStatic<T extends Record<string, any>>({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 text-right"
+            disabled={isLoading}
           />
         </div>
         <div className="flex space-x-2 space-x-reverse">
@@ -745,6 +748,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               size="sm"
               onClick={() => resetFilters()}
               className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
+              disabled={isLoading}
             >
               {isFilterActive ? `הסר ${filterLabel}` : filterLabel}
               {isFilterActive ? (
@@ -761,6 +765,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                   variant="outline"
                   size="sm"
                   className="flex justify-between items-center w-40"
+                  disabled={isLoading}
                 >
                   <span>{columnsLabel}</span>
                   <Settings2 className="h-4 w-4 mr-2" />
@@ -790,7 +795,14 @@ export function DataTableStatic<T extends Record<string, any>>({
         </div>
       </div>
 
-      <div className="bg-background">
+      <div className="bg-background relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
+            <div className="flex flex-col items-center gap-2">
+              <LoadingSpinnerDiamond />
+            </div>
+          </div>
+        )}
         <div className="rounded-md border cursor-default">
           <div
             className="overflow-auto relative"
@@ -812,10 +824,16 @@ export function DataTableStatic<T extends Record<string, any>>({
                           width: `${calculateColumnWidths(column.minWidth, visibleColumns.length, column.width)}px`,
                         }}
                       >
-                        <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                          onClick={() => !isLoading && handleSort(column.key)}
+                        >
                           {column.noHeader ? '' : column.header}
                         </span>
-                        <span className="cursor-pointer" onClick={() => handleSort(column.key)}>
+                        <span
+                          className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          onClick={() => !isLoading && handleSort(column.key)}
+                        >
                           {getSortIcon(column.key)}
                         </span>
 

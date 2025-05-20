@@ -56,3 +56,4 @@ next-env.d.ts
 /stocks-feed/*.csv
 /src/uploads/*.csv
 /src/uploads/*.json
+**/.claude/settings.local.json

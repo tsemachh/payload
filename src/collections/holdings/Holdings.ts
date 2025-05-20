@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { updateCompaniesMeetingsOnHoldingChange } from './hooks/updateCompaniesMeetings'
 import uploadHoldingsCsvEndPoint from './feeds/uploadHoldingsCsvEndPoint'
 import refreshEndPoint from './feeds/refreshEndPoint'
+
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
@@ -58,6 +59,13 @@ export const Holdings: CollectionConfig = {
           relationTo: 'stocks',
           required: true,
           index: true,
+          filterOptions: () => {
+            return {
+              active: {
+                equals: true,
+              },
+            }
+          },
         },
         {
           name: 'quantity',
