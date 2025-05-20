@@ -21,11 +21,6 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
     if (orText) {
       (orText as HTMLElement).style.display = 'none';
     }
-  
-    const dropzoneAndUpload = document.querySelector('.dropzone.dropzoneStyle--default');
-    if (dropzoneAndUpload) {
-      (dropzoneAndUpload as HTMLElement).style.width = '135px';
-    }
   }, []);
   
 
