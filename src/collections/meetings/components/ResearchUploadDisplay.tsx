@@ -8,46 +8,9 @@ import { getSiblingData } from 'payload/shared'
 import { stringify } from 'qs-esm'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
-    //console.log('-----------------------propssssss',props)
-    //const { setCollectionSlug, setCurrentActivePath, setOnSuccess } = useBulkUpload()
-
-   const { value, setValue } = useField() 
+   const { value } = useField() 
    const [uploadsData, setUploadsData] = useState<any[]>([]);
 
-    const {isEditing, initialData, savedDocumentData} = useDocumentInfo()
-    //const [fields, dispatchFields] = useAllFormFields()
-    //const fieldData = getSiblingData(fields, 'file')
-    //const fileName = (value as unknown as File).name
-    //console.log('-----------------------@@@@@@@fileName',fileName)
-
-  //const { value,setValue } = useField<string>()
-  //const a= useForm()
-
-  //console.log('-----------------------a',a)
-  console.log('-----------------------isEditing',isEditing)
-
-  console.log('-----------------------initialData',initialData)
-
-  //console.log('-----------------------fields',fields)
-  console.log('-----------------------savedDocumentData',savedDocumentData)
-  //console.log('-----------------------dispatchFields',dispatchFields)
-  //console.log('-----------------------fieldData',fieldData)
-//   const baseClass = 'upload-relationship-details__filename'
-//   <div className={`${baseClass}__details`}>
-//   <p className={`${baseClass}__filename`}>
-//     {src ? (
-//       <a href={src} target="_blank">
-//         {filename}
-//       </a>
-//     ) : (
-//       filename
-//     )}
-//   </p>
-//   {withMeta ? <p className={`${baseClass}__meta`}>{metaText}</p> : null}
-// </div>
-//query run om value adjust one one:
-//query all - 
- // שלב 1: הבאת הקבצים מהשרת
  useEffect(() => {
   const getAllUploads = async () => {
     if (!value || !Array.isArray(value) || value.length === 0) return;
@@ -108,7 +71,6 @@ useEffect(() => {
 }, [uploadsData]);
 
 
-//props=...withMeta=true
   return (
     <div ><UploadField {...props} />
     </div>

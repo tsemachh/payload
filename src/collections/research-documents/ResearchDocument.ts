@@ -1,5 +1,4 @@
 import type {CollectionConfig } from 'payload'
-//import { updateFilename } from './hooks'
 
 export const ResearchDocument: CollectionConfig = {
   slug: 'research-documents',
@@ -52,17 +51,7 @@ export const ResearchDocument: CollectionConfig = {
         readOnly: true,
       },
       defaultValue: () => new Date(),
-    },
-    // {
-    //   name: 'customFilename',
-    //   type: 'text',
-    //   label: 'שם קובץ מותאם אישית',
-    // },
+   },
+  
   ],
- //hooks: {
-   // afterChange: [updateFilename],
-    //beforeChange: [updateFilename1],
-
-    
-  //},
 }
