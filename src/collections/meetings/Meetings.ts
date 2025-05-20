@@ -9,7 +9,6 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
-import { validateResearchDocsHook } from '../research-documents/hooks'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -59,16 +58,6 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   }
 }
 
-const validateMeetingnvItationLink = (
-  value: string | null | undefined,
-  { siblingData }: { siblingData: any },
-) => {
-  return true
-  /*//TODO Check if in conversion we can fix the meetings without the magnaId then bring it back
-  if(siblingData.magnaId || siblingData.invitationDocument || value) return true
-    return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
-*/
-}
 // @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
