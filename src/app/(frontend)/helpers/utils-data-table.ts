@@ -71,18 +71,23 @@ export const calculatePrecedingColumnsWidth = (
 
 export const calculateHoldingValues = (
   // account: Account | string, //TODO: add holdingsCompanyName
-  company: Company  | string,
+  company: Company | string,
   quantity: number,
-  stockValues: StockValue | null,
+  stockValues: StockValue | null | undefined | string,
 ) => {
-  const holdingsCompanyName = typeof company === 'object' ? company.name : 'Unknown Account'
-  const percentageHolding = stockValues?.registeredValue
-    ? parseFloat(((quantity / stockValues.registeredValue) * 100).toFixed(2))
-    : 0
+  let safeStockValue
+  if (typeof stockValues == 'object') {
+    safeStockValue = stockValues
+  } else {
+    safeStockValue = { registeredValue: 0, closingRate: 0 }
+  }
 
-  const holdingValueInMillions = stockValues?.closingRate
-    ? Math.round((quantity * stockValues.closingRate) / 100000000)
-    : 0
+  const holdingsCompanyName = typeof company === 'object' ? company.name : 'Unknown Account'
+  const registeredValue = parseNumber(safeStockValue?.registeredValue)
+  const closingRate = parseNumber(safeStockValue?.closingRate)
+  const percentageHolding = parseFloat(((quantity / registeredValue) * 100).toFixed(2))
+
+  const holdingValueInMillions = Math.round((quantity * closingRate) / 100000000)
 
   return {
     holdingsCompanyName,
@@ -92,7 +97,27 @@ export const calculateHoldingValues = (
   }
 }
 
-export const isRTL = (text: string): boolean=> {
-  const rtlChars = /[\u0590-\u05FF\u0600-\u06FF]/; // Hebrew + Arabic ranges
-  return rtlChars.test(text);
+export const isRTL = (text: string): boolean => {
+  const rtlChars = /[\u0590-\u05FF\u0600-\u06FF]/ // Hebrew + Arabic ranges
+  return rtlChars.test(text)
+}
+
+// Helper to clean and parse value (handles number or string with commas)
+export const parseNumber = (value: string | number | undefined | null): number => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/,/g, '')
+    const parsed = parseFloat(cleaned)
+    return isNaN(parsed) ? 0 : parsed
+  }
+  return 0
+}
+
+export const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`API error [api/meetings/all-meetings]: ${res.status} - ${errText}`)
+  }
+  return res.json()
 }

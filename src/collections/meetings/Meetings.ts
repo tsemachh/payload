@@ -2,7 +2,7 @@ import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
-import { addMeetingIdToResearchDocs } from './hooks/addMeetingIdToResearchDocs';
+import { addMeetingIdToResearchDocs } from './hooks/addMeetingIdToResearchDocs'
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
@@ -413,85 +413,84 @@ export const Meetings: CollectionConfig = {
                         },
                       },
                     },
-                  ]
-                  },
-                  {
-                    name: 'recommendation',
-                    label: 'המלצה',
-                    type: 'group',
-                    fields: [
-                      {
-                        type: 'row',
-                        fields: [
-                          {
-                            name: 'votingRecommendation',
-                            label: 'המלצת הצבעה',
-                            type: 'select',
-                            admin: {
-                              width: '30%',
-                            },
-                            options: [
-                              { label: 'בעד', value: 'for' },
-                              { label: 'נגד', value: 'against' },
-                              { label: 'נמנע', value: 'abstain' },
-                            ],
+                  ],
+                },
+                {
+                  name: 'recommendation',
+                  label: 'המלצה',
+                  type: 'group',
+                  fields: [
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'votingRecommendation',
+                          label: 'המלצת הצבעה',
+                          type: 'select',
+                          admin: {
+                            width: '30%',
                           },
-                          {
-                            name: 'recommendation',
-                            label: 'נימוק המלצה',
-                            type: 'text',
-                            admin: {
-                              width: '70%',
-                            },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
+                          name: 'recommendation',
+                          label: 'נימוק המלצה',
+                          type: 'text',
+                          admin: {
+                            width: '70%',
                           },
-                        ],
-                      },
-                  
-                    ],
-                  },
-                  {
-                    name: 'vpercent',
-                    label: 'אחוז הצבעה',
-                    type: 'number',
-                    admin: {
-                      hidden: true,
-                      step: 0.01,
-                      condition: (_, siblingData) =>
-                        siblingData.topicType === 'decision' &&
-                        siblingData.majorityType === 'regular',
+                        },
+                      ],
                     },
+                  ],
+                },
+                {
+                  name: 'vpercent',
+                  label: 'אחוז הצבעה',
+                  type: 'number',
+                  admin: {
+                    hidden: true,
+                    step: 0.01,
+                    condition: (_, siblingData) =>
+                      siblingData.topicType === 'decision' &&
+                      siblingData.majorityType === 'regular',
                   },
-                  {
-                    name: 'vPercentSpecial',
-                    label: 'אחוז הצבעה מיוחד',
-                    type: 'number',
-                    admin: {
-                      hidden: true,
-                      step: 0.01,
-                      condition: (_, siblingData) =>
-                        siblingData.topicType === 'decision' &&
-                        siblingData.majorityType === 'privileged',
-                    },
+                },
+                {
+                  name: 'vPercentSpecial',
+                  label: 'אחוז הצבעה מיוחד',
+                  type: 'number',
+                  admin: {
+                    hidden: true,
+                    step: 0.01,
+                    condition: (_, siblingData) =>
+                      siblingData.topicType === 'decision' &&
+                      siblingData.majorityType === 'privileged',
                   },
-                  {
-                    name: 'result',
-                    label: 'תוצאה',
-                    type: 'select',
-                    options: [
-                      { label: '---', value: '0' },
-                      { label: 'בעד', value: '1' },
-                      { label: 'נגד', value: '2' },
-                      { label: 'דיון', value: '3' },
-                    ],
-                    admin: {
-                      hidden: true,
-                      condition: (_, siblingData) => siblingData.topicType === 'decision',
-                    },
+                },
+                {
+                  name: 'result',
+                  label: 'תוצאה',
+                  type: 'select',
+                  options: [
+                    { label: '---', value: '0' },
+                    { label: 'בעד', value: '1' },
+                    { label: 'נגד', value: '2' },
+                    { label: 'דיון', value: '3' },
+                  ],
+                  admin: {
+                    hidden: true,
+                    condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
-                ],
-              },
-            ],
-          },    
+                },
+              ],
+            },
+          ],
+        },
         {
           label: 'הצבעות',
           fields: [
@@ -520,6 +519,36 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
+            },
+            {
+              name: 'companiesWithHolding',
+              type: 'array',
+              // hidden: true,
+              fields: [
+                {
+                  name: 'company',
+                  type: 'relationship',
+                  relationTo: 'companies',
+                  hasMany: false,
+                  label: 'חברה',
+                  maxDepth: 1,
+                },
+                {
+                  name: 'holding',
+                  type: 'relationship',
+                  relationTo: 'holdings',
+                  hasMany: false,
+                  maxDepth: 1,
+                },
+              ],
+            },
+            {
+              name: 'stockValue',
+              type: 'relationship',
+              relationTo: 'stock-values',
+              hasMany: false,
+              // hidden: true,
+              maxDepth: 1,
             },
           ],
         },
@@ -559,7 +588,7 @@ export const Meetings: CollectionConfig = {
      // addMeetingIdToResearchDocs,
     ],
 
-      //beforeValidate: [validateResearchDocsHook],
+    //beforeValidate: [validateResearchDocsHook],
   },
   endpoints: [
     {

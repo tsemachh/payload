@@ -88,4 +88,38 @@ export const StockValues: CollectionConfig = {
       ],
     },
   ],
+
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        const { stockId, id } = doc
+
+        await req.payload.update({
+          collection: 'meetings',
+          req: {
+            ...req,
+            context: { ...req.context, from: 'process' },
+          },
+          data: {
+            stockValue: id,
+          },
+          where: {
+            and: [
+              { stock: { equals: stockId } },
+              {
+                or: [
+                  {
+                    meetingDate: { greater_than_equal: new Date() },
+                  },
+                  {
+                    meetingDate: { exists: false },
+                  },
+                ],
+              },
+            ],
+          },
+        })
+      },
+    ],
+  },
 }
