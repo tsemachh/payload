@@ -98,7 +98,7 @@ useEffect(() => {
         const newSpan = document.createElement('p');
         newSpan.className = 'withMeta-span';
         newSpan.style.marginLeft = '8px';
-        newSpan.textContent = `חברות: ${companyNames.join(', ')}`;
+        newSpan.textContent = companyNames.join(', ');
         el.appendChild(newSpan);
       }
     });

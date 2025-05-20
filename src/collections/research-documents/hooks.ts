@@ -88,7 +88,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
           collection: 'research-documents',
           id: doc.id,
           data: {
-            company: foundCompanies.map((company) => company.id),
+            companies: foundCompanies.map((company) => company.id),
           },
         })
       } catch (err) {
@@ -113,33 +113,3 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
 
   return data
 }
-
-
-
-// export const updateFilename: CollectionAfterChangeHook = async ({ doc, req }) => {
-//   const newName = 'my-new-filename.pdf' // כאן תקבעי איך את רוצה לחשב את זה
-// console.log("------newName",newName)
-// console.log("------doc.id",doc.id)
-// if (doc.filename === newName) {
-//   return doc // לא לעדכן שוב אם זה כבר נכון
-// }
-//   await req.payload.update({
-//     collection: 'research-documents',
-//     id: doc.id,
-//     data: {
-//       filename: newName,
-//     },
-//   })
-
-//   return doc
-// }
-
-// export const updateFilename1: CollectionBeforeChangeHook = async ({ data }) => {
-//   const newName = 'קרדן נדלן יזום ופיתוח (כלל) 15.05.2025.docx' // כאן תקבעי איך לחשב את זה
-//   console.log("------1newName", newName)
-
-//   return {
-//     ...data,
-//     filename: newName,
-//   }
-// }
