@@ -1,4 +1,5 @@
 import type {CollectionConfig } from 'payload'
+import {beforeChangeCompaniesFromFilename} from './hooks'
 
 export const ResearchDocument: CollectionConfig = {
   slug: 'research-documents',
@@ -54,4 +55,7 @@ export const ResearchDocument: CollectionConfig = {
    },
   
   ],
+  hooks: {
+    beforeChange: [beforeChangeCompaniesFromFilename],
+  },
 }
