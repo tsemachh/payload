@@ -24,20 +24,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           body: JSON.stringify(args),
         })
 
-        if (!res.ok) {
-          throw new Error('Login failed')
-        }
+      const result = await res.json()
 
-        const result = await res.json()
-        setUser(result.user)
-        return result.user
-      } catch (error) {
-        console.error('Error logging in:', error)
-        throw error
+      if (!res.ok) {
+        throw new Error(result.errors?.[0]?.message || 'Login failed')
       }
-    },
-    [],
-  )
+
+      setUser(result.user)
+      return result.user
+    } catch (error) {
+      console.error('Error logging in:', error)
+      throw error
+    }
+  }, [])
 
   const logout = useCallback<Logout>(async () => {
     try {

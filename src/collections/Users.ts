@@ -1,4 +1,5 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
+import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
 import { getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
@@ -269,6 +270,14 @@ export const Users: CollectionConfig = {
           data.leafCompanies = await computeLeafCompanies(companyIds, req)
         }
         return data
+      },
+    ],
+    beforeLogin: [
+      async ({ user }) => {
+        if (!user.active) {
+          throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
+        }
+        return user
       },
     ],
   },
