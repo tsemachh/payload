@@ -11,6 +11,19 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
    const { value } = useField() 
    const [uploadsData, setUploadsData] = useState<any[]>([]);
 
+   useEffect(() => {
+    const chooseExistingBtn = document.querySelector('.upload__listToggler');
+    if (chooseExistingBtn) {
+      (chooseExistingBtn as HTMLElement).style.display = 'none';
+    }
+  
+    const orText = document.querySelector('.upload__dropzoneContent__orText');
+    if (orText) {
+      (orText as HTMLElement).style.display = 'none';
+    }
+  }, []);
+  
+
  useEffect(() => {
   const getAllUploads = async () => {
     if (!value || !Array.isArray(value) || value.length === 0) return;
