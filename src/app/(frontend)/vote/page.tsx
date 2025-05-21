@@ -35,7 +35,7 @@ export default function VotingForm() {
     generalVotingData: {
       isInterested: false,
       isSeniorOfficial: false,
-      isInstitutionalInvestor: false,
+      isInstitutionalInvestor: true,
     },
     voterNotes: '',
     userVotes: [],
@@ -85,12 +85,17 @@ export default function VotingForm() {
   const handleGeneralQuestionChange = (
     question: 'isInterested' | 'isSeniorOfficial' | 'isInstitutionalInvestor',
     value: boolean,
+    explanation?: string,
   ) => {
     setVotingData((prev) => ({
       ...prev,
       generalVotingData: {
         ...prev.generalVotingData,
         [question]: value,
+        ...(question === "isInterested" && explanation !== undefined ? { interestedExplanation: explanation } : {}),
+        ...(question === "isSeniorOfficial" && explanation !== undefined
+          ? { seniorOfficialExplanation: explanation }
+          : {}),
       },
     }))
   }
@@ -116,7 +121,7 @@ export default function VotingForm() {
               questions: {
                 hasConflictOfInterest: false,
                 isRelatedParty: false,
-                isInvestmentCommittee: false,
+                isInvestmentCommittee: true,
                 hasPersonalInterest: false,
               },
             },
@@ -297,7 +302,7 @@ export default function VotingForm() {
                               userVote?.questions || {
                                 hasConflictOfInterest: false,
                                 isRelatedParty: false,
-                                isInvestmentCommittee: false,
+                                isInvestmentCommittee: true,
                                 hasPersonalInterest: false,
                               }
                             }
