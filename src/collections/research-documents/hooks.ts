@@ -99,22 +99,22 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   //         continue
   //       }
 
-  //       try {
-  //         await req.payload.update({
-  //           collection: 'research-documents',
-  //           id: doc.id,
-  //           data: {
-  //             companies: foundCompanies.map((company) => company.id),
-  //           },
-  //         })
-  //       } catch (err) {
-  //         validationErrors.push({
-  //           message: `קובץ "${doc.filename}": אירעה שגיאה בעת ניסיון לשייך את החברה "${parsed.companyName}" למסמך.`,
-  //           path: 'research-documents',
-  //         })
-  //       }
-  //     }
-  //   }
+  // try {
+  //   await req.payload.update({
+  //     collection: 'research-documents',
+  //     id: doc.id,
+  //     data: {
+  //       meeting:
+  //     },
+  //   })
+  // } catch (err) {
+  //   validationErrors.push({
+  //     message: `שגיאת בעת חיבור הקבצים אל אסיפה זו בשדה אסיפה במסמכי מחקר`,
+  //     path: 'researchDocuments',
+  //   })
+  // }
+  // }
+  // }
 
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({

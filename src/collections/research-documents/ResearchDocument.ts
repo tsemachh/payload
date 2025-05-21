@@ -28,14 +28,6 @@ export const ResearchDocument: CollectionConfig = {
   },
   fields: [
     {
-      name: 'meeting',
-      label: 'אסיפות',
-      type: 'relationship',
-      relationTo: 'meetings',
-      index: true,
-      admin: { readOnly: true },
-    },
-    {
       name: 'companies',
       label: 'חברות',
       type: 'relationship',
