@@ -1,7 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
-import { MeetingTableDataType } from '@/app/(frontend)/types/meetings'
+import { CompanyTableDate, MeetingTableDataType } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
 // Response is available globally from lib.dom.d.ts
 
@@ -221,7 +221,7 @@ function createMeetingDataObject(
   stockPresent: Stock,
   stockValue: StockValue,
   agendas: any,
-  companiesArray: any[],
+  companiesArray: CompanyTableDate[],
 ): MeetingTableDataType {
   return {
     meetingId: meeting.meetingId,
@@ -338,6 +338,7 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
             calculateHoldingValues(company, quantity, meeting.stockValue)
 
           return {
+            id: companyId,
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,

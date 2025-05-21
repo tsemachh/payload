@@ -1,6 +1,6 @@
 'use client'
 import { Textarea } from '../../components/ui/textarea'
-import type { AgendaQuestionsType } from '../../types/meetings'
+import type { AgendaQuestionsType } from '../../types/vote'
 
 interface AgendaQuestionsProps {
   questions: AgendaQuestionsType
@@ -23,7 +23,7 @@ export default function AgendaQuestions({ questions, onChange }: AgendaQuestions
   }
 
   return (
-    <div className="space-y-3 min-w-[180px]">
+    <div className="space-y-3 min-w-[300px]">
       {/* שאלה 1: ניגוד עניינים */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -58,7 +58,7 @@ export default function AgendaQuestions({ questions, onChange }: AgendaQuestions
         {questions.hasConflictOfInterest === true && (
           <Textarea
             placeholder="נא לפרט..."
-            className="min-h-[60px] text-xs"
+            className="min-h-[60px] text-xs w-full"
             value={questions.conflictOfInterestExplanation || ''}
             onChange={(e) =>
               handleExplanationChange('conflictOfInterestExplanation', e.target.value)

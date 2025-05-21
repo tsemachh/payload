@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Upload } from 'lucide-react'
 import {
@@ -15,20 +14,19 @@ import {
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
 import { useSearchParams } from 'next/navigation'
-import {
-  AgendaQuestionsType,
-  MeetingTableDataType,
-  UserVote,
-  VoteDataType,
-} from '../types/meetings'
+import { MeetingTableDataType } from '../types/meetings'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import VoteDetails from './components/VoteDetails'
 import VoteCompanySelector from './components/VoteCompanySelector'
 import GeneralQuestions from './components/GeneralQuestions'
 import AgendaQuestions from './components/AgendaQuestions'
+import { AgendaQuestionsType, UserVote, VoteDataType } from '../types/vote'
+import { getParentCompaniesOfMeetingCompanies } from '../helpers/utils-vote'
+import { useCompaniesContext } from '../context/companiesContext'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
+  const { companies, leafCompanies } = useCompaniesContext()
   const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [votingData, setVotingData] = useState<VoteDataType>({
@@ -40,6 +38,13 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
+  const parentCompanies = useMemo(() => {
+    if (meetingData) {
+      return getParentCompaniesOfMeetingCompanies(meetingData.companies, leafCompanies, companies)
+    } else {
+      return []
+    }
+  }, [meetingData, leafCompanies])
 
   useEffect(() => {
     const encoded = searchParams.get('data')
@@ -92,8 +97,10 @@ export default function VotingForm() {
       generalVotingData: {
         ...prev.generalVotingData,
         [question]: value,
-        ...(question === "isInterested" && explanation !== undefined ? { interestedExplanation: explanation } : {}),
-        ...(question === "isSeniorOfficial" && explanation !== undefined
+        ...(question === 'isInterested' && explanation !== undefined
+          ? { interestedExplanation: explanation }
+          : {}),
+        ...(question === 'isSeniorOfficial' && explanation !== undefined
           ? { seniorOfficialExplanation: explanation }
           : {}),
       },
@@ -173,7 +180,7 @@ export default function VotingForm() {
           </CardHeader>
           <CardContent className="p-4">
             <VoteCompanySelector
-              companies={meetingData.companies}
+              companies={parentCompanies}
               onSelectionChange={() => {}}
               //   onSelectionChange={handleCompanySelection}
             />
@@ -235,7 +242,7 @@ export default function VotingForm() {
                       </div>
 
                       {!item.isRemovedFromAgenda && (
-                        <div className="flex flex-col items-center gap-2 min-w-[180px] border-r px-4">
+                        <div className="flex flex-col items-center gap-2 min-w-[200px] border-r px-4  pl-0">
                           {/* //  {item.recommendation && ( */}
                           <span
                             className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
@@ -296,7 +303,7 @@ export default function VotingForm() {
                       )}
 
                       {!item.isRemovedFromAgenda && (
-                        <div className="border-r px-4">
+                        <div className="border-r px-4 pl-0">
                           <AgendaQuestions
                             questions={
                               userVote?.questions || {
