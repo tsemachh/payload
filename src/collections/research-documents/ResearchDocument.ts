@@ -1,5 +1,5 @@
-import type {CollectionConfig } from 'payload'
-import {beforeChangeCompaniesFromFilename} from './hooks'
+import type { CollectionConfig } from 'payload'
+import { beforeChangeCompaniesFromFilename } from './hooks'
 
 export const ResearchDocument: CollectionConfig = {
   slug: 'research-documents',
@@ -21,7 +21,10 @@ export const ResearchDocument: CollectionConfig = {
     },
   },
   upload: {
-    mimeTypes: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'],
+    mimeTypes: [
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/pdf',
+    ],
   },
   fields: [
     {
@@ -52,10 +55,9 @@ export const ResearchDocument: CollectionConfig = {
         readOnly: true,
       },
       defaultValue: () => new Date(),
-   },
-  
+    },
   ],
   hooks: {
-    beforeChange: [beforeChangeCompaniesFromFilename],
+    beforeValidate: [beforeChangeCompaniesFromFilename],
   },
 }
