@@ -13,7 +13,10 @@ import useSWR from 'swr'
 import { fetcher } from '../helpers/utils-data-table'
 
 export function MeetingsTableClient() {
-  const { data, isLoading } = useSWR(`/api/meetings/future-meetings`, fetcher)
+  const { data, isLoading } = useSWR(`/api/meetings/future-meetings`, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
 
   return (
     <DataTableStatic

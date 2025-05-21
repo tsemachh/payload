@@ -25,7 +25,10 @@ export function MeetingsTableServer() {
     return `/api/meetings/all-meetings?${params.toString()}`
   }, [currentPage, pageSize, sortField, sortDirection, searchTerm])
 
-  const { data, isLoading } = useSWR(query, fetcher)
+  const { data, isLoading } = useSWR(query, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)

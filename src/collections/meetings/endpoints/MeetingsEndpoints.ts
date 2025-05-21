@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Meeting, MeetingAgenda, StockValue } from '@/payload-types'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import { MeetingTableDataType } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
@@ -31,7 +31,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
 /**
  * Creates a companies filter condition based on user's leaf companies
  */
-function createCompaniesFilter(userLeafCompanies: any) {
+function createCompaniesFilter(userLeafCompanies: (string | Company)[] | undefined | null) {
   return userLeafCompanies
     ? {
         companies: {
@@ -59,8 +59,8 @@ function createPublishedStatusFilter() {
 /**
  * Converts user's leaf companies to a safe format
  */
-function getSafeLeafCompanies(userLeafCompanies: any) {
-  return userLeafCompanies?.map((company: any) =>
+function getSafeLeafCompanies(userLeafCompanies: (string | Company)[] | undefined | null) {
+  return userLeafCompanies?.map((company: string | Company) =>
     typeof company === 'string' ? company : company.id,
   )
 }
@@ -82,7 +82,11 @@ function createErrorResponse(error: any, message: string) {
 /**
  * Creates a standardized success response
  */
-function createSuccessResponse(data: any[], totalDocs: number, totalPages: number) {
+function createSuccessResponse(
+  data: MeetingTableDataType[],
+  totalDocs: number,
+  totalPages: number,
+) {
   return Response.json({
     data,
     totalItems: totalDocs,
@@ -143,7 +147,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, payload)
+    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -186,7 +190,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, payload)
+    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -209,14 +213,13 @@ function findRelevantCompanyIds(
     .filter((id) => id !== null) as string[]
 }
 
-
 /**
  * Creates a standardized meeting data object for the frontend
  */
 function createMeetingDataObject(
   meeting: Meeting,
-  stockPresent: any,
-  stockValue: any,
+  stockPresent: Stock,
+  stockValue: StockValue,
   agendas: any,
   companiesArray: any[],
 ): MeetingTableDataType {
@@ -285,11 +288,7 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(
-  meetings: any[],
-  leafCompanies?: string[] | null,
-  payload?: any,
-) {
+async function processMeetingsData(meetings: any[], leafCompanies?: string[] | null) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -349,7 +348,13 @@ async function processMeetingsData(
 
       const agendas = processAgendaItems(meeting.agenda as MeetingAgenda)
 
-      return createMeetingDataObject(meeting, stockPresent, meeting.stockValue, agendas, companiesArray)
+      return createMeetingDataObject(
+        meeting,
+        stockPresent,
+        meeting.stockValue as StockValue,
+        agendas,
+        companiesArray,
+      )
     }),
   )
 

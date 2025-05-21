@@ -61,16 +61,6 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
   }
 }
 
-const validateMeetingnvItationLink = (
-  value: string | null | undefined,
-  { siblingData }: { siblingData: any },
-) => {
-  return true
-  /*//TODO Check if in conversion we can fix the meetings without the magnaId then bring it back
-  if(siblingData.magnaId || siblingData.invitationDocument || value) return true
-    return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
-*/
-}
 // @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
@@ -525,7 +515,9 @@ export const Meetings: CollectionConfig = {
             {
               name: 'companiesWithHolding',
               type: 'array',
-              // hidden: true,
+              admin: {
+                hidden: true,
+              },
               fields: [
                 {
                   name: 'company',
@@ -549,7 +541,9 @@ export const Meetings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'stock-values',
               hasMany: false,
-              // hidden: true,
+              admin: {
+                hidden: true,
+              },
               maxDepth: 1,
             },
           ],

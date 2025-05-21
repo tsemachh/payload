@@ -122,6 +122,8 @@ export type GeneralVotingData = {
   isInterested: boolean | null
   isSeniorOfficial: boolean | null
   isInstitutionalInvestor: boolean | null
+  interestedExplanation?: string
+  seniorOfficialExplanation?: string
 }
 export type UserVote = {
   subjectId: string
@@ -133,5 +135,8 @@ export type AgendaQuestionsType = {
   isRelatedParty: boolean | null
   isInvestmentCommittee: boolean | null
   hasPersonalInterest: boolean | null
+  conflictOfInterestExplanation?: string
+  relatedPartyExplanation?: string
+  personalInterestExplanation?: string
 }
 export type VoteChoice = '----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף' | null

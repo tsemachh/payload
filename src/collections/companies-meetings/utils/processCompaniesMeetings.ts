@@ -188,7 +188,6 @@ export const processCompaniesMeetings = async (
 
     req.payload.logger.info('End of process: All meetings have been processed')
   } catch (error: unknown) {
-    //@ts-ignore
     req.payload.logger.error(
       `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
       error,
