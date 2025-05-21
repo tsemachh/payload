@@ -47,7 +47,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
-    listSearchableFields: ['symbol', 'stockId', 'name', 'longName'],
+    listSearchableFields: ['symbol', 'stockId', 'name', 'longName','comments'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -241,6 +241,7 @@ export const Stocks: CollectionConfig = {
             {
               name: 'comments',
               label: 'הערות',
+              index: true,
               type: 'textarea',
             },
           ],
