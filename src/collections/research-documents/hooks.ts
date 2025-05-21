@@ -51,70 +51,13 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   const type = data?.type
   const docIDs = data?.researchDocuments
   console.log('----docIDs', docIDs)
-  //console.log('----data', data)
 
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
     return data
   }
   console.log('----type', type)
 
-  //   const researchDocs = await req.payload.find({
-  //     collection: 'research-documents',
-  //     where: {
-  //       id: {
-  //         in: docIDs,
-  //       },
-  //     },
-  //   })
-
-  //   const docs = researchDocs.docs || []
   const validationErrors: { message: string; path: string }[] = []
-
-  //   for (const doc of docs) {
-  //     if (!doc.filename) continue
-
-  //     const parsed = parseResearchFilename(doc.filename)
-
-  //     if (!parsed.isValid) {
-  //       validationErrors.push({
-  //         message: `קובץ "${doc.filename}": ${parsed.error}`,
-  //         path: 'research-documents',
-  //       })
-  //       continue
-  //     }
-  // //להוריד
-  //     if (!parsed.isGeneric && parsed.companyName) {
-  //       const companyResult = await req.payload.find({
-  //         collection: 'companies',
-  //         where: { name: { like: parsed.companyName } },
-  //       })
-
-  //       const foundCompanies = companyResult.docs
-
-  //       if (!foundCompanies || foundCompanies.length === 0) {
-  //         validationErrors.push({
-  //           message: `קובץ "${doc.filename}": לא נמצאה חברה בשם "${parsed.companyName}".`,
-  //           path: 'research-documents',
-  //         })
-  //         continue
-  //       }
-
-  // try {
-  //   await req.payload.update({
-  //     collection: 'research-documents',
-  //     id: doc.id,
-  //     data: {
-  //       meeting:
-  //     },
-  //   })
-  // } catch (err) {
-  //   validationErrors.push({
-  //     message: `שגיאת בעת חיבור הקבצים אל אסיפה זו בשדה אסיפה במסמכי מחקר`,
-  //     path: 'researchDocuments',
-  //   })
-  // }
-  // }
-  // }
 
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
