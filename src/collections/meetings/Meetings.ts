@@ -2,14 +2,16 @@ import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
-import { addMeetingIdToResearchDocs } from './hooks/addMeetingIdToResearchDocs'
 
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
-import { validateResearchDocsHook } from '../research-documents/hooks'
+import {
+  validateResearchDocsInMeetings,
+  afterChangeDeleteResearchDocs,
+} from '../research-documents/hooks'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -585,10 +587,10 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-      // addMeetingIdToResearchDocs,
+      afterChangeDeleteResearchDocs,
     ],
 
-    beforeValidate: [validateResearchDocsHook],
+    beforeValidate: [validateResearchDocsInMeetings],
   },
   endpoints: [
     {

@@ -3,6 +3,7 @@ import {
   ValidationError,
   type CollectionBeforeValidateHook,
   type CollectionBeforeChangeHook,
+  type CollectionAfterChangeHook,
 } from 'payload'
 
 const parseResearchFilename = (
@@ -47,7 +48,10 @@ const parseResearchFilename = (
   }
 }
 
-export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ data, req }) => {
+export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
+  data,
+  req,
+}) => {
   const type = data?.type
   const docIDs = data?.researchDocuments
   console.log('----docIDs', docIDs)
@@ -73,7 +77,7 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   return data
 }
 
-export const beforeChangeCompaniesFromFilename: CollectionBeforeValidateHook = async ({
+export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = async ({
   data,
   req,
 }) => {
@@ -118,4 +122,26 @@ export const beforeChangeCompaniesFromFilename: CollectionBeforeValidateHook = a
     }
     return data
   }
+}
+
+export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
+  doc,
+  req,
+  previousDoc,
+}) => {
+  const prev = previousDoc?.researchDocuments || []
+  const curr = doc?.researchDocuments || []
+  const removed = prev.filter((id: string) => !curr.includes(id))
+  console.log('-------------- prev', prev)
+  console.log('-------------- curr', curr)
+  console.log('-------------- removed', removed)
+
+  await Promise.all(
+    removed.map(async (id: any) => {
+      await req.payload.delete({
+        collection: 'research-documents',
+        id: id,
+      })
+    }),
+  )
 }
