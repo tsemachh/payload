@@ -21,43 +21,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   const { value, setValue } = useField()
   const [uploadsData, setUploadsData] = useState<any[]>([])
   const [fileName, setFileName] = useState<string>('')
-  //const filename1 = useFormFields(([fields, dispatch]) => fields.filename)
 
-  // const { form } = useForm()
-  // const { formFields } = useFormFields()
-  // useEffect(() => {
-  //   console.log('🔍 useEffect התחיל – מחפש .file-field__filename')
-
-  //   const fileInputs = document.querySelectorAll('.file-field__filename')
-  //   console.log(`📄 נמצאו ${fileInputs.length} קבצים`)
-
-  //   fileInputs.forEach((inputEl, index) => {
-  //     console.log(`➡️ קובץ ${index + 1}:`, inputEl)
-
-  //     const parentDiv = inputEl.parentElement
-  //     if (!parentDiv) {
-  //       console.warn(`⚠️ לקובץ ${index + 1} אין אלמנט אב`)
-  //       return
-  //     }
-
-  //     // בדיקה אם כבר הוספנו span כדי לא לשכפל
-  //     if (parentDiv.querySelector('.test-span')) {
-  //       console.log(`ℹ️ כבר קיים test-span עבור קובץ ${index + 1}`)
-  //       return
-  //     }
-
-  //     const testSpan = document.createElement('span')
-  //     testSpan.className = 'test-span'
-  //     testSpan.textContent = '👀 הצלחתי לגשת!'
-  //     testSpan.style.color = 'green'
-  //     testSpan.style.marginLeft = '10px'
-
-  //     parentDiv.appendChild(testSpan)
-  //     console.log(`✅ הוספתי טקסט ליד קובץ ${index + 1}`)
-  //   })
-
-  //   console.log('🏁 useEffect הסתיים')
-  // }, [])
   useEffect(() => {
     const interval = setInterval(async () => {
       const fileAdjustmentsDiv = document.querySelector(
