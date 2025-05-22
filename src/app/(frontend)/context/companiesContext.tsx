@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
 import { CompanyType, LeafCompanyType } from '../types/companies'
+import { Company } from '@/payload-types'
 
 type CompaniesContextType = {
   companies: CompanyType[]
@@ -81,20 +82,18 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json()
       const allCompanies = result.data
 
-      const companyMap = new Map<string, CompanyType>(
-        allCompanies?.map((c: CompanyType) => [c.id, c]),
-      )
+      const companyMap = new Map<string, Company>(allCompanies?.map((c: Company) => [c.id, c]))
       // === Create detailed companies array ===
       const detailedCompanies = (user?.companies || [])
         .map((company) => {
           const id = typeof company === 'string' ? company : company.companyId
           if (typeof id !== 'string') return null
           const fullCompany = companyMap.get(id)
-          if (!fullCompany || !(fullCompany as CompanyType)) return null
+          if (!fullCompany || !(fullCompany as Company)) return null
           return {
             id: fullCompany.id,
             name: fullCompany.name,
-            parentCompany: fullCompany.parentCompany,
+            parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
             subCompanies: fullCompany.subCompanies,
           }
         })
@@ -109,7 +108,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
           return {
             id: fullCompany.id,
             name: fullCompany.name,
-            parentCompany: fullCompany.parentCompany,
+            parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
           }
         })
         .filter(Boolean)

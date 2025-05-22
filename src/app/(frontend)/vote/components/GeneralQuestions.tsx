@@ -1,7 +1,7 @@
 'use client'
 
 import { Textarea } from '../../components/ui/textarea'
-import { GeneralVotingData } from '../../types/meetings'
+import { GeneralVotingData } from '../../types/vote'
 
 interface GeneralQuestionsProps {
   generalVotingData: GeneralVotingData
