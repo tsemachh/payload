@@ -56,3 +56,9 @@
 .field-type.upload.invitationDocument {
   max-width:200px;
 }
+
+@layer payload-default{
+  .collection-list{
+    overflow: auto;
+  }
+}
