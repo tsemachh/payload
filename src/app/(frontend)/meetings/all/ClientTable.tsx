@@ -9,7 +9,7 @@ import { fetcher } from '../../helpers/utils-data-table'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(25)
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')

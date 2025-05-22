@@ -67,7 +67,7 @@ async function processMeeting(
   const newCompanies = Array.from(newCompaniesSet)
 
   // Update meeting if necessary
-  if (isDirty) {
+  if (isDirty || !meeting.companiesWithHolding?.length) {
     req.payload.logger.info(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
     )
@@ -149,7 +149,6 @@ export const processCompaniesMeetings = async (
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
-
     // Process meetings in batches
     for (let i = 0; i < meetings.length; i += batchSize) {
       const batchPromises: Promise<void>[] = []

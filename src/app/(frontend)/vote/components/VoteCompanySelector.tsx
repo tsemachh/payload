@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { CompanyTableDate } from '../../types/meetings'
+import { VoteCompanyType } from '../../types/vote'
 
 interface VoteCompanySelectorProps {
-  companies: CompanyTableDate[]
+  companies: VoteCompanyType[]
   onSelectionChange: (selectedCompanyIndex: number) => void
 }
 
@@ -12,7 +12,9 @@ export default function VoteCompanySelector({
   companies,
   onSelectionChange,
 }: VoteCompanySelectorProps) {
-  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(-1) // -1 means "all companies"
+  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(
+    companies.length > 1 ? -1 : 0,
+  ) // -1 means "all companies"
 
   const handleCompanyChange = (index: number) => {
     setSelectedCompanyIndex(index)
@@ -24,7 +26,11 @@ export default function VoteCompanySelector({
       return 'הצבעה עבור כל החברות'
     } else {
       const selectedCompany = companies[selectedCompanyIndex]
-      return `הצבעה עבור חברה ${selectedCompany.holdingsCompanyName}`
+      return (
+        <>
+          הצבעה עבור חברת: <i>{selectedCompany.name}</i>
+        </>
+      )
     }
   }
 
@@ -32,23 +38,27 @@ export default function VoteCompanySelector({
     <div className="mb-4">
       <div className="mb-4 font-medium text-base text-primary">{getSummaryText()}</div>
       <div className="flex flex-wrap gap-2">
-        <label
-          className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
-            selectedCompanyIndex === -1
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'bg-muted hover:bg-muted/80 text-foreground'
-          }`}
-        >
-          <input
-            type="radio"
-            className="sr-only"
-            name="company"
-            value="-1"
-            checked={selectedCompanyIndex === -1}
-            onChange={() => handleCompanyChange(-1)}
-          />
-          <span>כל החברות</span>
-        </label>
+        {companies.length > 1 && (
+          <>
+            <label
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
+                selectedCompanyIndex === -1
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted hover:bg-muted/80 text-foreground'
+              }`}
+            >
+              <input
+                type="radio"
+                className="sr-only"
+                name="company"
+                value="-1"
+                checked={selectedCompanyIndex === -1}
+                onChange={() => handleCompanyChange(-1)}
+              />
+              <span>כל החברות</span>
+            </label>
+          </>
+        )}
 
         {companies.map((company, index) => (
           <label
@@ -67,7 +77,7 @@ export default function VoteCompanySelector({
               checked={selectedCompanyIndex === index}
               onChange={() => handleCompanyChange(index)}
             />
-            <span>{company.holdingsCompanyName}</span>
+            <span>{company.name}</span>
           </label>
         ))}
       </div>

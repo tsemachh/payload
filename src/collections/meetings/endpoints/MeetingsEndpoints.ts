@@ -1,7 +1,11 @@
 import { PayloadRequest } from 'payload'
 import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
-import { MeetingTableDataType } from '@/app/(frontend)/types/meetings'
+import {
+  AgendasType,
+  CompanyTableDate,
+  MeetingTableDataType,
+} from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
 // Response is available globally from lib.dom.d.ts
 
@@ -16,6 +20,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   holdingsLimit: true,
   type: true,
   meetingDate: true,
+  recommendation: true,
   magnaId: true,
   location: true,
   proxyVotingDate: true,
@@ -26,6 +31,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   committeeInitiated: true,
   companiesWithHolding: true,
   stockValue: true,
+  invitationLink: true,
 }
 
 /**
@@ -220,8 +226,8 @@ function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: Stock,
   stockValue: StockValue,
-  agendas: any,
-  companiesArray: any[],
+  agendas: AgendasType[],
+  companiesArray: CompanyTableDate[],
 ): MeetingTableDataType {
   return {
     meetingId: meeting.meetingId,
@@ -233,6 +239,7 @@ function createMeetingDataObject(
     stockName: stockPresent?.name || '-',
     companyName: stockPresent?.longName || '-',
     stockTradable: stockPresent?.tradable || false,
+    stockOrigin: stockPresent?.origin || '-',
     marketValue: stockValue?.marketValue || 0,
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
@@ -245,7 +252,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
-    meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
+    meetingInviteUrl: meeting.invitationLink,
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
@@ -259,11 +266,14 @@ function createMeetingDataObject(
 function processAgendaItems(agenda: MeetingAgenda | undefined) {
   return agenda?.map((item) => {
     return {
-      id: item.id,
-      text: item.text || ['אסיפה ללא נושא'],
+      id: item.id || '',
+      text: item.text || 'אסיפה ללא נושא',
       isRemovedFromAgenda: item.isRemovedFromAgenda || false,
       privilegedMajority: item?.majorityType == 'privileged' || false,
-      recommendation: item.recommendation,
+      recommendation: {
+        votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
+        recommendationExplanation: item.recommendation?.recommendation || '',
+      },
     }
   })
 }
@@ -338,6 +348,7 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
             calculateHoldingValues(company, quantity, meeting.stockValue)
 
           return {
+            id: companyId,
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,
@@ -346,7 +357,7 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
         }),
       ).then((results) => results.filter((result) => result !== null))
 
-      const agendas = processAgendaItems(meeting.agenda as MeetingAgenda)
+      const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
 
       return createMeetingDataObject(
         meeting,

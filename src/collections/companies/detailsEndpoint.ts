@@ -24,7 +24,7 @@ const detailsEndpoint = async (req: PayloadRequest) => {
         subCompanies: true,
       },
       hidden: true,
-      depth: 1,
+      depth: 0,
       limit: 0,
       where: {
         and: [

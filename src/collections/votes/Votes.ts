@@ -62,6 +62,7 @@ export const Votes: CollectionConfig = {
             },
             {
               name: 'voteDecision',
+              interfaceName: 'VoteDecision',
               label: 'הצבעה',
               type: 'select',
               options: [
