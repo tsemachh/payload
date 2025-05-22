@@ -2,7 +2,6 @@ import { error } from 'console'
 import {
   ValidationError,
   type CollectionBeforeValidateHook,
-  type CollectionBeforeChangeHook,
   type CollectionAfterChangeHook,
 } from 'payload'
 

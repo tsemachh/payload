@@ -35,6 +35,12 @@ export const ResearchDocument: CollectionConfig = {
       index: true,
       //admin: { readOnly: true },
       hasMany: true,
+      admin: {
+        components: {
+          Field:
+            '/collections/research-documents/components/ResearchRelationshipValidationFilename',
+        },
+      },
     },
     {
       name: 'uploadedAt',
