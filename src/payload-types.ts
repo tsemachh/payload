@@ -373,7 +373,7 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
-  uploadDoc?: (string | ResearchDocument)[] | null;
+  researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -502,7 +502,6 @@ export interface Holding {
  */
 export interface ResearchDocument {
   id: string;
-  meeting?: (string | null) | Meeting;
   companies?: (string | Company)[] | null;
   uploadedAt?: string | null;
   creator?: string | null;
@@ -1074,7 +1073,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
-  uploadDoc?: T;
+  researchDocuments?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1396,7 +1395,6 @@ export interface VotesSelect<T extends boolean = true> {
  * via the `definition` "research-documents_select".
  */
 export interface ResearchDocumentsSelect<T extends boolean = true> {
-  meeting?: T;
   companies?: T;
   uploadedAt?: T;
   creator?: T;

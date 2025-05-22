@@ -40,6 +40,8 @@ yarn-error.log*
 next-env.d.ts
 
 .env
+continue.config.yaml
+
 
 /document
 
