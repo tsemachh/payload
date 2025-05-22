@@ -7,6 +7,7 @@ import { ExportSaveButton as ExportSaveButton_cdf7e044479f899a31f804427d568b36 }
 import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
+import { default as default_fcaa2890d5aa1c35175ea24b8aaf6f95 } from '../../../collections/research-documents/components/CompaniesRelationField'
 import { SortBy as SortBy_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { FieldsToExport as FieldsToExport_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { CollectionField as CollectionField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -31,6 +32,7 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#ArrayLabel": ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
+  "/collections/research-documents/components/CompaniesRelationField#default": default_fcaa2890d5aa1c35175ea24b8aaf6f95,
   "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#FieldsToExport": FieldsToExport_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#CollectionField": CollectionField_cdf7e044479f899a31f804427d568b36,

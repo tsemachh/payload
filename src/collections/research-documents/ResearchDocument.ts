@@ -34,6 +34,11 @@ export const ResearchDocument: CollectionConfig = {
       relationTo: 'companies',
       index: true,
       //admin: { readOnly: true },
+      admin:{
+        components:{
+          Field:'/collections/research-documents/components/CompaniesRelationField'
+        }
+      },
       hasMany: true,
     },
     {
