@@ -15,6 +15,7 @@ import type { ResearchDocument } from '@/payload-types'
 import { RelationshipFieldClientProps } from 'payload'
 import { getSiblingData } from 'payload/shared'
 import { stringify } from 'qs-esm'
+import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { value } = useField()
@@ -22,7 +23,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   const [fileName, setFileName] = useState<string>('')
   // const { form } = useForm()
   // const { formFields } = useFormFields()
-
   // useEffect(() => {
   //   console.log('🔍 useEffect התחיל – מחפש .file-field__filename')
 
@@ -61,18 +61,36 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       const fileAdjustmentsDiv = document.querySelector(
         '.file-field__file-adjustments',
       ) as HTMLElement | null
+
       const input = fileAdjustmentsDiv?.querySelector(
         'input.file-field__filename',
       ) as HTMLInputElement | null
 
       if (fileAdjustmentsDiv && input) {
-        const span = document.createElement('span')
-        span.textContent = `שם הקובץ הוא: ${input.value}`
-        span.style.color = 'red'
-        span.style.marginRight = '10px'
-        fileAdjustmentsDiv.appendChild(span)
-        console.log('הוספנו ספאן:', span)
         clearInterval(interval)
+
+        // הרצת הפונקציה על שם הקובץ
+        const fileName = input.value
+        const result = parseResearchFilename(fileName)
+
+        // יצירת הספאן
+        const span = document.createElement('span')
+        span.className = 'filename-info'
+        span.style.color = result.isValid ? 'green' : 'red'
+        span.style.marginRight = '10px'
+        span.style.display = 'block'
+        span.style.marginTop = '5px'
+
+        if (!result.isValid) {
+          span.textContent = `${result.error}`
+        } else if (result.isGeneric) {
+          span.textContent = `קובץ כללי`
+        } else {
+          span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
+        }
+
+        fileAdjustmentsDiv.appendChild(span)
+        console.log('פלט הפונקציה:', result)
       } else {
         console.log('עדיין לא נמצא האלמנט או הקלט...')
       }
