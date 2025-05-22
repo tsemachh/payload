@@ -71,7 +71,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
-    listSearchableFields: ['fullName','magnaId', 'stock', 'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName','magnaId',  'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
       'magnaId',
@@ -158,6 +158,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
+                  label: 'שם',
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
@@ -169,7 +170,7 @@ export const Meetings: CollectionConfig = {
                         let stockName=""
                         if (typeof data?.stock == 'string'){
                           const stock  = await getCollectionDoc(req,"stocks",data.stock,0)
-                          stockName = stock.name
+                          stockName = stock.fullName
                         }
                         return `${data?.type}-${stockName}`
                       },
