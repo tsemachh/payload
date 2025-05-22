@@ -140,6 +140,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Relationship statuses
           hasTradableRelation: !!(relatedStock && predictaStocks.has(relatedStock)),
           hasForeignRelation: !!(relatedStock && foreignStocksShaked.has(relatedStock)),
+          hasRelation:!!relatedStock,
 
           // Root statuses
           isRootStock: isRootStock,
@@ -185,6 +186,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stockStatuses.isPredictaStock ||
               stockStatuses.isPrivateShaked ||
               stockStatuses.isRootStock ||
+              (stockStatuses.hasActiveMeeting  && !stockStatuses.hasRelation) ||
               stockStatuses.isNonTradableShaked ||
               stockStatuses.isForeign;
 
