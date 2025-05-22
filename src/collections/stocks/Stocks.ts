@@ -45,7 +45,7 @@ export const Stocks: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    useAsTitle: 'stockId',
+    useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
     listSearchableFields: ['symbol', 'stockId', 'name', 'longName','comments'],
     pagination: {
@@ -89,18 +89,15 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מספר נייר - שם',
-                  type: 'text',
-                  admin: { readOnly: true, hidden: true },
+                  type: 'text', // Stored in the database
+                  admin: {
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                  },
+                  index:true,
                   hooks: {
                     beforeChange: [
-                      ({ siblingData }) => {
-                        delete siblingData['fullName']
-                      },
-                    ],
-                    afterRead: [
-                      ({ data }) => {
-                        return `${data?.stockId} ${data?.name}`
+                      async ({ data }) => {
+                        return `${data?.name}(${data?.stockId})`
                       },
                     ],
                   },

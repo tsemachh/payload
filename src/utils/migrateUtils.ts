@@ -292,6 +292,7 @@ export async function upsertStockFromImport(
       if (
         stock.name != stockData.name ||
         stock.active != stockData.active ||
+        stock.comments != stockData.comments ||
         (stockData.longName && stock.longName != stockData.longName)
       ) {
         await req.payload.update({

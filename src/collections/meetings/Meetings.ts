@@ -12,7 +12,7 @@ import {
   validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
 } from '../research-documents/hooks'
-
+import { getCollectionDoc } from '@/utils/utils'
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
@@ -70,13 +70,12 @@ export const Meetings: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId', 'stock', 'invitationLink', 'meetingId'],
+    useAsTitle: 'fullName',
+    listSearchableFields: ['fullName','magnaId', 'stock', 'invitationLink', 'meetingId'],
     defaultColumns: [
+      'fullName',
       'magnaId',
       'invitationLink',
-      'stock',
-      'type',
       'holdingsLimit',
       'proxyVotingDate',
       'meetingDate',
@@ -156,6 +155,31 @@ export const Meetings: CollectionConfig = {
                   unique: true,
                   index: true,
                   admin: { width: '100px' },
+                },
+                {
+                  name: 'fullName',
+                  type: 'text', // Stored in the database
+                  admin: {
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                  },
+                  index:true,
+                  hooks: {
+                    beforeChange: [
+                      async ({ data ,req}) => {
+                        let stockName=""
+                        if (typeof data?.stock == 'string'){
+                          const stock  = await getCollectionDoc(req,"stocks",data.stock,0)
+                          stockName = stock.fullName
+                        }
+                        const formattedDate= new Date(data?.meetingDate).toLocaleDateString('he-il', {
+                          year: 'numeric',
+                          month: 'numeric',
+                          day: 'numeric',
+                        });
+                        return `${data?.type}-${stockName}-${formattedDate}`
+                      },
+                    ],
+                  },
                 },
               ],
             },
