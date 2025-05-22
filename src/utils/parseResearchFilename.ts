@@ -16,11 +16,10 @@ export const parseResearchFilename = (
   }
 
   const nameWithoutExtension = fileName.replace(/\.(pdf|docx)$/i, '').trim()
-  const nameWithoutDate = nameWithoutExtension.replace(/\d{2}\.\d{2}\.\d{4}$/, '').trim()
-  console.log('----nameWithoutExtension', nameWithoutExtension)
-  console.log('----nameWithoutDate', nameWithoutDate)
 
-  const match = nameWithoutDate.match(/^(.+?)\s*\(([^)]+)\)$/)
+  // מתעלם מכל מה שאחרי הסוגריים
+  const match = nameWithoutExtension.match(/^(.+?)\s*\(([^)]+)\)/)
+
   if (!match) {
     return {
       isGeneric: false,
