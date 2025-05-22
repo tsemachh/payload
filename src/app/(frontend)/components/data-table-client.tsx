@@ -593,6 +593,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   // Function to render the companies cell with toggle button
   const renderCompaniesCell = useCallback(
     (row: T) => {
+      if (row.companies?.length === 0) return null
       return (
         <div className="flex items-center justify-start w-[20px] p-0 m-0">
           <Button

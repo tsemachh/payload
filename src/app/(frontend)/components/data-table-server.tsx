@@ -189,6 +189,7 @@ export function DataTableServer<T extends Record<string, any>>({
   // Function to render the companies cell with toggle button
   const renderCompaniesCell = useCallback(
     (row: T) => {
+      if(row.companies?.length === 0) return null
       return (
         <div className="flex items-center justify-srart w-[20px] p-0 m-0">
           <Button
@@ -362,7 +363,7 @@ export function DataTableServer<T extends Record<string, any>>({
               </TableHeader>
               <TableBody>
                 {filteredAndSortedData.map((row) => (
-                  <React.Fragment key={row.meetingId}>
+                  <React.Fragment key={row.meetingId + uuidv4()}>
                     <TableRow key={uuidv4()} className="group hover:bg-primary/20">
                       {visibleColumns.map((column) => (
                         <TableCell

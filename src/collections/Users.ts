@@ -258,15 +258,11 @@ export const Users: CollectionConfig = {
         // Check if companies have changed by comparing with originalDoc
         const companiesChanged =
           originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
-
         // Recalculate leafCompanies if companies have changed or if leafCompanies is empty
         if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
           const companyIds = data?.companies.map((company: any) =>
             getIdOfRelationField(company.companyId),
           )
-          if (companyIds.length === 0) {
-            return data
-          }
           data.leafCompanies = await computeLeafCompanies(companyIds, req)
         }
         return data
