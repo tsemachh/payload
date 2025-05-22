@@ -57,7 +57,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   //   console.log('🏁 useEffect הסתיים')
   // }, [])
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const fileAdjustmentsDiv = document.querySelector(
         '.file-field__file-adjustments',
       ) as HTMLElement | null
@@ -66,33 +66,62 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         'input.file-field__filename',
       ) as HTMLInputElement | null
 
-      if (fileAdjustmentsDiv && input) {
-        clearInterval(interval)
-
-        // הרצת הפונקציה על שם הקובץ
+      if (fileAdjustmentsDiv && input && input.value) {
         const fileName = input.value
         const result = parseResearchFilename(fileName)
 
-        // יצירת הספאן
         const span = document.createElement('span')
-        span.className = 'filename-info'
-        span.style.color = result.isValid ? 'green' : 'red'
+        span.style.color = 'red'
         span.style.marginRight = '10px'
-        span.style.display = 'block'
-        span.style.marginTop = '5px'
 
         if (!result.isValid) {
-          span.textContent = `${result.error}`
-        } else if (result.isGeneric) {
-          span.textContent = `קובץ כללי`
-        } else {
-          span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
+          span.textContent = result.error || 'שם הקובץ אינו תקין'
+          fileAdjustmentsDiv.appendChild(span)
+          clearInterval(interval)
+          return
         }
 
-        fileAdjustmentsDiv.appendChild(span)
-        console.log('פלט הפונקציה:', result)
+        if (result.isGeneric) {
+          span.textContent = `קובץ גנרי עבור כל החברות`
+          fileAdjustmentsDiv.appendChild(span)
+          clearInterval(interval)
+          return
+        }
+
+        if (result.companyName) {
+          const query = {
+            where: {
+              name: {
+                like: result.companyName,
+              },
+            },
+            limit: 1,
+          }
+
+          const stringified = stringify(query, {
+            addQueryPrefix: true,
+            encode: false,
+          })
+
+          try {
+            const res = await fetch(`/api/companies${stringified}`)
+            const data = await res.json()
+
+            if (data?.docs?.length > 0) {
+              span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
+            } else {
+              span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
+            }
+          } catch (err) {
+            console.error('שגיאה בבדיקת החברה:', err)
+            span.textContent = 'אירעה שגיאה בבדיקת החברה'
+          }
+
+          fileAdjustmentsDiv.appendChild(span)
+          clearInterval(interval)
+        }
       } else {
-        console.log('עדיין לא נמצא האלמנט או הקלט...')
+        console.log('עדיין לא נמצא האלמנט או שאין ערך בקובץ...')
       }
     }, 1000)
 
