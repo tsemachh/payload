@@ -67,6 +67,11 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
  */
 export type UserCompany =
@@ -414,7 +419,7 @@ export interface Vote {
   votes?:
     | {
         topicIndex: number;
-        voteDecision?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
+        voteDecision?: VoteDecision;
         committee?: boolean | null;
         conflict?: boolean | null;
         relatedParty?: boolean | null;

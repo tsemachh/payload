@@ -159,17 +159,23 @@ export default function VotingForm() {
   return meetingData ? (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
       {/* Header */}
-      <div className="mb-3 mt-[-20px] text-center">
-        <a
-          href={`https://www.tase.co.il/he/market_data/security/${meetingData.stockNumber}/major_data`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
-        >
+      {meetingData.meetingInviteUrl ? (
+        <div className="mb-3 mt-[-20px] text-center">
+          <a
+            href={meetingData.meetingInviteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
+          >
+            אסיפה {meetingData.meetingType} - {meetingData.stockName}
+            <ExternalLink className="h-4 w-4 mr-2" />
+          </a>
+        </div>
+      ) : (
+        <div className="mb-3 mt-[-20px] text-center items-center justify-center text-2xl font-bold">
           אסיפה {meetingData.meetingType} - {meetingData.stockName}
-          <ExternalLink className="h-4 w-4 mr-2" />
-        </a>
-      </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="space-y-6">

@@ -18,7 +18,10 @@ export function getParentCompaniesOfMeetingCompanies(
         if (parentCompany) {
           result.push({ id: parentCompany.id, name: parentCompany.name })
         } else {
-          console.error('no parent company found for leaf company', match)
+          console.warn(
+            `Parent company with ID ${match.parentCompany} was not found in the user's companies array, for child company: ${match}.`,
+          )
+          result.push({ id: match.id, name: match.name })
         }
       } else {
         result.push({ id: match.id, name: match.name })

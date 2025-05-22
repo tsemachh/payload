@@ -1,3 +1,5 @@
+import { VoteDecision } from "@/payload-types"
+
 export type VoteDataType = {
   generalVotingData: GeneralVotingData
   voterNotes: string
@@ -13,7 +15,7 @@ export type GeneralVotingData = {
 }
 export type UserVote = {
   subjectId: string
-  choice: VoteChoice
+  choice: VoteDecision
   questions: AgendaQuestionsType
 }
 export type AgendaQuestionsType = {
@@ -25,7 +27,6 @@ export type AgendaQuestionsType = {
   relatedPartyExplanation?: string
   personalInterestExplanation?: string
 }
-export type VoteChoice = '----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף' | null
 
 export type VoteCompanyType = {
   id: string
