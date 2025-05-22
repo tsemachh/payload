@@ -169,14 +169,9 @@ export const Meetings: CollectionConfig = {
                         let stockName=""
                         if (typeof data?.stock == 'string'){
                           const stock  = await getCollectionDoc(req,"stocks",data.stock,0)
-                          stockName = stock.fullName
+                          stockName = stock.name
                         }
-                        const formattedDate= new Date(data?.meetingDate).toLocaleDateString('he-il', {
-                          year: 'numeric',
-                          month: 'numeric',
-                          day: 'numeric',
-                        });
-                        return `${data?.type}-${stockName}-${formattedDate}`
+                        return `${data?.type}-${stockName}`
                       },
                     ],
                   },
