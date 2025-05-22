@@ -44,7 +44,7 @@ export default function VotingForm() {
     } else {
       return []
     }
-  }, [meetingData, leafCompanies])
+  }, [meetingData, leafCompanies, companies])
 
   useEffect(() => {
     const encoded = searchParams.get('data')
@@ -243,22 +243,19 @@ export default function VotingForm() {
 
                       {!item.isRemovedFromAgenda && (
                         <div className="flex flex-col items-center gap-2 min-w-[200px] border-r px-4  pl-0">
-                          {/* //  {item.recommendation && ( */}
-                          <span
-                            className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
-                              Number(item.id) % 3 === 2
-                                ? // item.recommendation === 'בעד'
-                                  'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
-                                : Number(item.id) % 3 === 1
-                                  ? // : item.recommendation === 'נגד'
-                                    'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                  : 'bg-muted text-muted-foreground border-border'
-                            }`}
-                          >
-                            המלצה: בעד
-                            {/* המלצה: {item.recommendation}  */}
-                          </span>
-                          {/* )} */}
+                          {item.recommendation.votingRecommendation && (
+                            <span
+                              className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
+                                item.recommendation.votingRecommendation === 'בעד'
+                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
+                                  : item.recommendation.votingRecommendation === 'נגד'
+                                    ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
+                                    : 'bg-muted text-muted-foreground border-border'
+                              }`}
+                            >
+                              המלצה: {item.recommendation.votingRecommendation}
+                            </span>
+                          )}
                           <Select
                             value={userVote?.choice || undefined}
                             onValueChange={(value) =>

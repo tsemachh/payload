@@ -46,7 +46,11 @@ export type AgendasType = {
   text: string
   isRemovedFromAgenda: boolean
   privilegedMajority: boolean
-  recommendation: string
+  recommendation: recommendationType
+}
+export type recommendationType = {
+  votingRecommendation: string
+  recommendationExplanation: string
 }
 
 // Base column type for all tables
