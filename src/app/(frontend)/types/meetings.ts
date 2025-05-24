@@ -1,4 +1,4 @@
-import { MeetingState } from '@/payload-types'
+import { MeetingState, StockOrigin } from '@/payload-types'
 
 export type MeetingTableDataType = {
   meetingId: string
@@ -10,6 +10,7 @@ export type MeetingTableDataType = {
   stockName: string //שם נייר
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
+  stockOrigin: StockOrigin// מקור נייר הערך
   marketValue: number //שווי שוק
   nominalValue: number // ערך נקוב ליום קובע
   percentageHolding: number //אחוז אחזקות

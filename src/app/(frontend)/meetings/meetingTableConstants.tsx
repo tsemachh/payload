@@ -23,6 +23,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
     const encoded = btoa(unescape(encodeURIComponent(json)))
     router.push(`/vote?data=${encodeURIComponent(encoded)}`)
   }
+  if (row.companies.length === 0) return null
   return (
     <TooltipProvider>
       <Tooltip>

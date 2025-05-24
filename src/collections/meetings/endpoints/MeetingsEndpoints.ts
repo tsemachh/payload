@@ -31,6 +31,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   committeeInitiated: true,
   companiesWithHolding: true,
   stockValue: true,
+  invitationLink: true,
 }
 
 /**
@@ -238,6 +239,7 @@ function createMeetingDataObject(
     stockName: stockPresent?.name || '-',
     companyName: stockPresent?.longName || '-',
     stockTradable: stockPresent?.tradable || false,
+    stockOrigin: stockPresent?.origin || '-',
     marketValue: stockValue?.marketValue || 0,
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
@@ -250,7 +252,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
-    meetingInviteUrl: `https://www.magna.isa.gov.il/details?id=${meeting.magnaId}&file=0`,
+    meetingInviteUrl: meeting.invitationLink,
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,

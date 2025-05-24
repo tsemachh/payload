@@ -71,7 +71,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
-    listSearchableFields: ['fullName','magnaId', 'stock', 'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName','magnaId',  'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
       'magnaId',
@@ -158,6 +158,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
+                  label: 'שם',
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
@@ -171,12 +172,7 @@ export const Meetings: CollectionConfig = {
                           const stock  = await getCollectionDoc(req,"stocks",data.stock,0)
                           stockName = stock.fullName
                         }
-                        const formattedDate= new Date(data?.meetingDate).toLocaleDateString('he-il', {
-                          year: 'numeric',
-                          month: 'numeric',
-                          day: 'numeric',
-                        });
-                        return `${data?.type}-${stockName}-${formattedDate}`
+                        return `${data?.type}-${stockName}`
                       },
                     ],
                   },

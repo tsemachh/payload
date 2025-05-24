@@ -66,22 +66,26 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
               className="text-foreground max-w-[250px]"
             />
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">קישור לנייר בבורסה</span>
-            <a
-              href={
-                'https://www.tase.co.il/he/market_data/security/' +
-                meetingData.stockNumber +
-                '/major_data'
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
-            >
+          {meetingData.stockOrigin === 'TASE' &&
+            meetingData.stockTradable === true &&
+            meetingData.stockNumber && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-medium">קישור לנייר בבורסה</span>
+                <a
+                  href={
+                    'https://www.tase.co.il/he/market_data/security/' +
+                    meetingData.stockNumber +
+                    '/major_data'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
+                >
               <TruncatedText text={meetingData.stockName} className="max-w-[200px]" />
-              <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
-            </a>
-          </div>
+                  <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                </a>
+              </div>
+            )}
         </div>
       </div>
 
