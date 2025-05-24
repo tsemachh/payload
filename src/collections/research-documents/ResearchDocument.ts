@@ -9,7 +9,6 @@ export const ResearchDocument: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    //hidden: true,
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'company'],
@@ -33,12 +32,11 @@ export const ResearchDocument: CollectionConfig = {
       type: 'relationship',
       relationTo: 'companies',
       index: true,
-      //admin: { readOnly: true },
-      admin:{
-        components:{
-          Field:'/collections/research-documents/components/CompaniesRelationField'
-        }
-      },
+      // admin:{
+      //   components:{
+      //     Field:'/collections/research-documents/components/CompaniesRelationField'
+      //   }
+      // },
       hasMany: true,
       admin: {
         components: {
