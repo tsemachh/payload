@@ -3,7 +3,7 @@ import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
 import { getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
-import { MinimalCompany } from '@/types/companies'
+import { MinimalCompany } from '../types/companies'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
