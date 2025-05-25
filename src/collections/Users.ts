@@ -4,8 +4,14 @@ import { userFields } from '@shefing/authorization'
 import { getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
 
-async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
-  let leafCompanies: string[] = []
+async function computeCompanyTreeAndLeafs(
+  companyIds: string[],
+  req: PayloadRequest,
+): Promise<{
+  leafCompanies: string[]
+  treeCompanies: string
+}> {
+  // Query all companies and their nested subCompanies up to depth 4
   const companies = await req.payload.find({
     collection: 'companies',
     select: {
@@ -32,7 +38,9 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
     limit: 0,
     depth: 5,
   })
-  // go over the docs aggregate each Id in either in the root or in the subCompanies only if subCompanies are empty, store it in leafCompanies array
+
+  // Compute leaf companies recursively
+  const leafCompanies: string[] = []
   const processCompanies = (company: Partial<Company>): string[] => {
     const result: string[] = []
 
@@ -53,52 +61,38 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
     return result
   }
 
-  // Process all companies in the docs array
-  if (companies && companies.docs) {
-    companies.docs.forEach((company: any) => {
-      const companyLeafs = processCompanies(company)
-      leafCompanies.push(...companyLeafs)
-    })
-
-    // Remove duplicates
-    leafCompanies = Array.from(new Set(leafCompanies))
-  }
-
-  return leafCompanies
-}
-
-async function getParentCompaniesOfLeafs(
-  leafCompanyIds: string[],
-  req: PayloadRequest,
-): Promise<string[]> {
-  const parents = await req.payload.find({
-    collection: 'companies',
-    where: {
-      'subCompanies.id': { in: leafCompanyIds },
-    },
-    limit: 0,
-    depth: 0,
+  companies.docs.forEach((doc: any) => {
+    leafCompanies.push(...processCompanies(doc))
   })
 
-  const parentIds = parents.docs.map(parent => parent.id)
+  // Build the tree based only on IDs
+  const buildTreeFromDocs = (company: any): Record<string, any> => {
+    const id = company.id || 'unknown'
+    const subs = (company.subCompanies || []).map((sub: any) => buildTreeFromDocs(sub))
 
-  const foundLeafIds = new Set<string>()
-  for (const parent of parents.docs) {
-    for (const sub of parent.subCompanies || []) {
-      if (typeof sub === 'object' && sub?.id) {
-        foundLeafIds.add(sub.id)
-      } else if (typeof sub === 'string') {
-        foundLeafIds.add(sub)
-      }
+    if (subs.length === 0) return { [id]: null }
+
+    const children: Record<string, any> = {}
+    for (const child of subs) {
+      Object.assign(children, child)
+    }
+
+    return {
+      [id]: children,
     }
   }
 
-  const orphanLeafIds = leafCompanyIds.filter(id => !foundLeafIds.has(id))
+  // Merge all trees from top-level companies
+  const fullTree: Record<string, any> = {}
+  companies.docs.forEach((doc: any) => {
+    Object.assign(fullTree, buildTreeFromDocs(doc))
+  })
 
-  return [...parentIds, ...orphanLeafIds]
+  return {
+    leafCompanies: Array.from(new Set(leafCompanies)),
+    treeCompanies: JSON.stringify(fullTree),
+  }
 }
-
-
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -227,14 +221,11 @@ export const Users: CollectionConfig = {
       },
     },
     {
-      name: 'parentLeafCompanies',
-      label: 'כל חברות האם של חברות עם החשבונות(כולל חברות בת)',
-      type: 'relationship',
-      relationTo: 'companies',
-      maxDepth: 0,
-      hasMany: true,
+      name: 'treeCompanies',
+      label: 'מבנה החברות כעץ מחרוזתי',
+      type: 'text',
       admin: {
-        readOnly: true,
+        hidden: true,
       },
     },
     {
@@ -299,28 +290,21 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-        // Check if companies have changed by comparing with originalDoc
         const companiesChanged =
           originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
-        // Recalculate leafCompanies and parentLeafCompanies if companies have changed or if leafCompanies is empty
 
         if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
           const companyIds = data?.companies.map((company: any) =>
             getIdOfRelationField(company.companyId),
           )
-
-          const leafCompanies = await computeLeafCompanies(companyIds, req)
+          const { leafCompanies, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
           data.leafCompanies = leafCompanies
-
-          // get parent companies of the leaf companies
-          const parentCompanies = await getParentCompaniesOfLeafs(leafCompanies, req)
-          data.parentLeafCompanies = parentCompanies
+          data.treeCompanies = treeCompanies
         }
 
         return data
       },
     ],
-
     beforeLogin: [
       async ({ user }) => {
         if (!user.active) {
