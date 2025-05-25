@@ -23,39 +23,27 @@ import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 
 export const importMap = {
-  '/admincomponents/link/IconLinkCell#default': default_0ba51fa546833e39b1776668c92181e7,
-  '/admincomponents/link/IconLinkTextField#default': default_4b828ebf050d5322d4780521d858b578,
-  '@shefing/authors-info/client#CreatedAtCell': CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
-  '@shefing/authors-info/client#UpdatedAtCell': UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
-  '@payloadcms/plugin-import-export/rsc#ExportListMenuItem':
-    ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/plugin-import-export/rsc#ExportSaveButton':
-    ExportSaveButton_cdf7e044479f899a31f804427d568b36,
-  '/collections/meetings/components/RowLabel#ArrayLabel':
-    ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32,
-  '/collections/meetings/components/RowLabel#SubjectLabel':
-    SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
-  '/collections/meetings/components/ResearchUploadDisplay#default':
-    default_e874c7256760885471bb1c48244ad8ef,
-  '/collections/research-documents/components/ResearchRelationshipValidationFilename#default':
-    default_5d8225adaebf43e1e640836b9165c5bf,
-  '@payloadcms/plugin-import-export/rsc#SortBy': SortBy_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/plugin-import-export/rsc#FieldsToExport':
-    FieldsToExport_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/plugin-import-export/rsc#CollectionField':
-    CollectionField_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/plugin-import-export/rsc#WhereField': WhereField_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/plugin-import-export/rsc#Preview': Preview_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/ui#QueryPresetsAccessCell': QueryPresetsAccessCell_3817bf644402e67bfe6577f60ef982de,
-  '@payloadcms/ui#QueryPresetsWhereCell': QueryPresetsWhereCell_3817bf644402e67bfe6577f60ef982de,
-  '@payloadcms/ui#QueryPresetsWhereField': QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
-  '@payloadcms/ui#QueryPresetsColumnsCell':
-    QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
-  '@payloadcms/ui#QueryPresetsColumnField':
-    QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
-  '/graphics/Logo#default': default_18511c0cf9cf95761601ec48f5703bd5,
-  '@payloadcms/plugin-import-export/rsc#ImportExportProvider':
-    ImportExportProvider_cdf7e044479f899a31f804427d568b36,
-  '@payloadcms/storage-gcs/client#GcsClientUploadHandler':
-    GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
+  "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
+  "/admincomponents/link/IconLinkTextField#default": default_4b828ebf050d5322d4780521d858b578,
+  "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
+  "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
+  "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#ExportSaveButton": ExportSaveButton_cdf7e044479f899a31f804427d568b36,
+  "/collections/meetings/components/RowLabel#ArrayLabel": ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32,
+  "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
+  "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
+  "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
+  "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#FieldsToExport": FieldsToExport_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#CollectionField": CollectionField_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#WhereField": WhereField_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#Preview": Preview_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/ui#QueryPresetsAccessCell": QueryPresetsAccessCell_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsWhereCell": QueryPresetsWhereCell_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsWhereField": QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsColumnsCell": QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsColumnField": QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
+  "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,
+  "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934
 }
