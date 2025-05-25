@@ -541,7 +541,6 @@ export interface User {
   active?: boolean | null;
   companies?: UserCompany;
   leafCompanies?: (string | Company)[] | null;
-  parentLeafCompanies?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -559,6 +558,7 @@ export interface User {
   userRoles?: (string | Role)[] | null;
   creator?: string | null;
   updator?: string | null;
+  treeCompanies?: string | null;
   createdAt: string;
   updatedAt: string;
   enableAPIKey?: boolean | null;
@@ -1189,7 +1189,6 @@ export interface UsersSelect<T extends boolean = true> {
   active?: T;
   companies?: T | UserCompanySelect<T>;
   leafCompanies?: T;
-  parentLeafCompanies?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
@@ -1206,6 +1205,7 @@ export interface UsersSelect<T extends boolean = true> {
   userRoles?: T;
   creator?: T;
   updator?: T;
+  treeCompanies?: T;
   createdAt?: T;
   updatedAt?: T;
   enableAPIKey?: T;
