@@ -24,6 +24,7 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
+import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -94,6 +95,7 @@ export default buildConfig({
     SilencedStocks,
     Votes,
     ResearchDocument,
+    AdminNotifications,
   ],
   globals: [],
   editor: lexicalEditor(),
@@ -105,7 +107,7 @@ export default buildConfig({
   logger: logger,
   plugins: [
     importExportPlugin({
-      collections: ['stocks', 'meetings', 'companies'],
+      collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }

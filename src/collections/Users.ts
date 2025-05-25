@@ -1,7 +1,7 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
-import { getIdOfRelationField } from '@/utils/utils'
+import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
 
 async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
@@ -327,6 +327,60 @@ export const Users: CollectionConfig = {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
         return user
+      },
+    ],
+    afterChange: [
+      async ({ doc, req, operation, previousDoc }) => {
+        try {
+          // Case 1: New user created
+          if (operation === 'create') {
+            await createAdminNotification(
+              req.payload,
+              `משתמש חדש נוצר: ${doc.email}`,
+              `/admin/collections/users/${doc.id}`,
+              undefined,
+              doc.id,
+            )
+            return
+          }
+
+          // Case 2: User permissions changed
+          if (operation === 'update' && previousDoc) {
+            const changes = []
+
+            // Check if active status changed
+            if (doc.active !== previousDoc.active) {
+              const status = doc.active ? 'פעיל' : 'לא פעיל'
+              changes.push(`סטטוס שונה ל-${status}`)
+            }
+
+            // Check if isAdmin status changed
+            if (doc.isAdmin !== previousDoc.isAdmin) {
+              const status = doc.isAdmin ? 'מנהל' : 'לא מנהל'
+              changes.push(`הרשאת מנהל שונתה ל-${status}`)
+            }
+
+            // Check if companies changed
+            const companiesChanged =
+              JSON.stringify(doc.companies) !== JSON.stringify(previousDoc.companies)
+            if (companiesChanged) {
+              changes.push('הרשאות חברות שונו')
+            }
+
+            // If any changes were detected, create a notification
+            if (changes.length > 0) {
+              await createAdminNotification(
+                req.payload,
+                `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
+                `/admin/collections/users/${doc.id}`,
+                undefined,
+                doc.id,
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Error creating notification for user changes:', error)
+        }
       },
     ],
   },

@@ -1,7 +1,7 @@
 /**
  * Utility functions for date parsing and formatting
  */
-import { parse } from 'date-fns';
+import { parse } from 'date-fns'
 
 /**
  * Parses a date string in the format "DD/MM/YYYY HH:MM:SS" to a JavaScript Date object
@@ -11,15 +11,40 @@ import { parse } from 'date-fns';
  */
 export function parseDateString(dateStr: string): Date {
   if (!dateStr) {
-    throw new Error("Date string is empty or undefined");
+    throw new Error('Date string is empty or undefined')
   }
 
   try {
     // Use date-fns to parse the date string
     // Format: dd/MM/yyyy HH:mm:ss
-    return parse(dateStr, 'dd/MM/yyyy HH:mm:ss', new Date());
+    return parse(dateStr, 'dd/MM/yyyy HH:mm:ss', new Date())
   } catch (error) {
-    throw new Error(`Failed to parse date string: ${dateStr}`);
+    throw new Error(`Failed to parse date string: ${dateStr}`)
   }
 }
 
+/**
+ * Checks if two dates are on the same day
+ * @param date1 - The first date
+ * @param date2 - The second date
+ * @returns True if the dates are on the same day, false otherwise
+ */
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
+}
+
+/**
+ * Adds a specified number of days to a date
+ * @param date - The original date
+ * @param days - The number of days to add
+ * @returns A new date with the added days
+ */
+export const addDays = (date: Date, days: number): Date => {
+  const result = new Date(date)
+  result.setDate(date.getDate() + days)
+  return result
+}
