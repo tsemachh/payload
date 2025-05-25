@@ -266,6 +266,7 @@ export async function upsertStockFromImport(
   origin: StockOrigin = 'TASE',
   active: boolean | null = true,
   comments: string = '',
+  fromMagna: boolean = false,
 ) {
   const stockData: Partial<Stock> = {
     active: active,
@@ -276,7 +277,8 @@ export async function upsertStockFromImport(
     longName: row.longName || null,
     tradable: tradable as boolean | null,
     origin: origin,
-    comments: comments
+    comments: comments,
+    fromMagna: fromMagna
   }
   try {
     if (!stock) {
