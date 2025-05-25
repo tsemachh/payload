@@ -34,60 +34,65 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       'input.file-field__filename',
     ) as HTMLInputElement | null
 
-    if (fileAdjustmentsDiv && input && input.value) {
-      const fileName = input.value
-      const result = parseResearchFilename(fileName)
+    if (!fileAdjustmentsDiv || !input?.value) {
+      console.log('עדיין לא נמצא האלמנט או שאין ערך בקובץ...')
+      return
+    }
 
-      const span = document.createElement('span')
+    const fileName = input.value
+    const result = parseResearchFilename(fileName)
+
+    // יצירת או שימוש ב-span קיים
+    let span = fileAdjustmentsDiv.querySelector(
+      '#research-validation-message',
+    ) as HTMLSpanElement | null
+    if (!span) {
+      span = document.createElement('span')
+      span.id = 'research-validation-message'
       span.style.color = 'red'
       span.style.marginRight = '10px'
+      fileAdjustmentsDiv.appendChild(span)
+    }
 
-      if (!result.isValid) {
-        span.textContent = result.error || 'שם הקובץ אינו תקין'
-        fileAdjustmentsDiv.appendChild(span)
-        return
-      }
+    if (!result.isValid) {
+      span.textContent = result.error || 'שם הקובץ אינו תקין'
+      return
+    }
 
-      if (result.isGeneric) {
-        span.textContent = `קובץ גנרי עבור כל החברות`
-        fileAdjustmentsDiv.appendChild(span)
-        return
-      }
+    if (result.isGeneric) {
+      span.textContent = `קובץ גנרי עבור כל החברות`
+      return
+    }
 
-      if (result.companyName) {
-        const query = {
-          where: {
-            name: {
-              like: result.companyName,
-            },
+    if (result.companyName) {
+      const query = {
+        where: {
+          name: {
+            like: result.companyName,
           },
-        }
-
-        const stringified = stringify(query, {
-          addQueryPrefix: true,
-          encode: false,
-        })
-
-        try {
-          const res = await fetch(`/api/companies${stringified}`)
-          const data = await res.json()
-
-          if (data?.docs?.length > 0) {
-            span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
-            const companyIds = data.docs.map((doc: any) => doc.id)
-            setValue(companyIds)
-          } else {
-            span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
-          }
-        } catch (err) {
-          console.error('שגיאה בבדיקת החברה:', err)
-          span.textContent = 'אירעה שגיאה בבדיקת החברה'
-        }
-
-        fileAdjustmentsDiv.appendChild(span)
+        },
       }
-    } else {
-      console.log('עדיין לא נמצא האלמנט או שאין ערך בקובץ...')
+
+      const stringified = stringify(query, {
+        addQueryPrefix: true,
+        encode: false,
+      })
+
+      try {
+        const res = await fetch(`/api/companies${stringified}`)
+        const data = await res.json()
+
+        if (data?.docs?.length > 0) {
+          span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
+          const companyIds = data.docs.map((doc: any) => doc.id)
+          setValue(companyIds)
+        } else {
+          span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
+        }
+      } catch (err) {
+        console.error('שגיאה בבדיקת החברה:', err)
+        span.textContent = 'אירעה שגיאה בבדיקת החברה'
+      }
     }
   }
 
