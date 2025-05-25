@@ -3,6 +3,7 @@ import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
 import { getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
+import { MinimalCompany } from '@/types/companies'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -21,13 +22,18 @@ async function computeCompanyTreeAndLeafs(
       parentCompany: false,
       holdings: false,
       'subCompanies.id': true,
-      'subCompanies.subCompanies': true,
-      'subCompanies.subCompanies.subCompanies': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies': true,
+      'subCompanies.name': true,
+      'subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.name': true,
     },
     populate: {
       companies: {
         subCompanies: true,
+        name: true,
       },
     },
     where: {
@@ -65,32 +71,19 @@ async function computeCompanyTreeAndLeafs(
     leafCompanies.push(...processCompanies(doc))
   })
 
-  // Build the tree based only on IDs
-  const buildTreeFromDocs = (company: any): Record<string, any> => {
-    const id = company.id || 'unknown'
-    const subs = (company.subCompanies || []).map((sub: any) => buildTreeFromDocs(sub))
-
-    if (subs.length === 0) return { [id]: null }
-
-    const children: Record<string, any> = {}
-    for (const child of subs) {
-      Object.assign(children, child)
-    }
-
+  const cleanCompanyTree = (company: any): MinimalCompany => {
     return {
-      [id]: children,
+      id: company.id,
+      name: company.name,
+      subCompanies: (company.subCompanies || []).map((sub: any) => cleanCompanyTree(sub)),
     }
   }
 
-  // Merge all trees from top-level companies
-  const fullTree: Record<string, any> = {}
-  companies.docs.forEach((doc: any) => {
-    Object.assign(fullTree, buildTreeFromDocs(doc))
-  })
-
+  // Apply to all top-level companies
+  const cleanedTree: MinimalCompany[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
   return {
     leafCompanies: Array.from(new Set(leafCompanies)),
-    treeCompanies: JSON.stringify(fullTree),
+    treeCompanies: JSON.stringify(cleanedTree),
   }
 }
 
