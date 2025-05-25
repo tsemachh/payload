@@ -1,26 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import {
-  useField,
-  UploadField,
-  useAllFormFields,
-  useDocumentInfo,
-  useForm,
-  useFormFields,
-  useBulkUpload,
-  RelationshipField,
-} from '@payloadcms/ui'
-import type { ResearchDocument } from '@/payload-types'
+import { useField, RelationshipField } from '@payloadcms/ui'
 import { RelationshipFieldClientProps } from 'payload'
-import { getSiblingData } from 'payload/shared'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
-  const { value, setValue } = useField()
-  const [uploadsData, setUploadsData] = useState<any[]>([])
-  const [fileName, setFileName] = useState<string>('')
+  const { setValue } = useField()
   const { value: file } = useField<string>({
     path: `file`,
   })

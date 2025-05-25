@@ -32,11 +32,6 @@ export const ResearchDocument: CollectionConfig = {
       type: 'relationship',
       relationTo: 'companies',
       index: true,
-      // admin:{
-      //   components:{
-      //     Field:'/collections/research-documents/components/CompaniesRelationField'
-      //   }
-      // },
       hasMany: true,
       admin: {
         components: {

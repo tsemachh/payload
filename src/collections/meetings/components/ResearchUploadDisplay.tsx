@@ -1,18 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import {
-  useField,
-  UploadField,
-  useAllFormFields,
-  useDocumentInfo,
-  useForm,
-  useFormFields,
-  useBulkUpload,
-} from '@payloadcms/ui'
-import type { ResearchDocument } from '@/payload-types'
+import { useField, UploadField } from '@payloadcms/ui'
 import { UploadFieldClientProps } from 'payload'
-import { getSiblingData } from 'payload/shared'
 import { stringify } from 'qs-esm'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
