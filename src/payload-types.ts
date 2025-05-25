@@ -535,6 +535,7 @@ export interface User {
   active?: boolean | null;
   companies?: UserCompany;
   leafCompanies?: (string | Company)[] | null;
+  parentLeafCompanies?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -1161,6 +1162,7 @@ export interface UsersSelect<T extends boolean = true> {
   active?: T;
   companies?: T | UserCompanySelect<T>;
   leafCompanies?: T;
+  parentLeafCompanies?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;

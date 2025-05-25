@@ -67,6 +67,39 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
   return leafCompanies
 }
 
+async function getParentCompaniesOfLeafs(
+  leafCompanyIds: string[],
+  req: PayloadRequest,
+): Promise<string[]> {
+  const parents = await req.payload.find({
+    collection: 'companies',
+    where: {
+      'subCompanies.id': { in: leafCompanyIds },
+    },
+    limit: 0,
+    depth: 0,
+  })
+
+  const parentIds = parents.docs.map(parent => parent.id)
+
+  const foundLeafIds = new Set<string>()
+  for (const parent of parents.docs) {
+    for (const sub of parent.subCompanies || []) {
+      if (typeof sub === 'object' && sub?.id) {
+        foundLeafIds.add(sub.id)
+      } else if (typeof sub === 'string') {
+        foundLeafIds.add(sub)
+      }
+    }
+  }
+
+  const orphanLeafIds = leafCompanyIds.filter(id => !foundLeafIds.has(id))
+
+  return [...parentIds, ...orphanLeafIds]
+}
+
+
+
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: {
@@ -194,6 +227,17 @@ export const Users: CollectionConfig = {
       },
     },
     {
+      name: 'parentLeafCompanies',
+      label: 'כל חברות האם של חברות עם החשבונות(כולל חברות בת)',
+      type: 'relationship',
+      relationTo: 'companies',
+      maxDepth: 0,
+      hasMany: true,
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
       type: 'row',
       fields: [
         {
@@ -258,16 +302,25 @@ export const Users: CollectionConfig = {
         // Check if companies have changed by comparing with originalDoc
         const companiesChanged =
           originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
-        // Recalculate leafCompanies if companies have changed or if leafCompanies is empty
+        // Recalculate leafCompanies and parentLeafCompanies if companies have changed or if leafCompanies is empty
+
         if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
           const companyIds = data?.companies.map((company: any) =>
             getIdOfRelationField(company.companyId),
           )
-          data.leafCompanies = await computeLeafCompanies(companyIds, req)
+
+          const leafCompanies = await computeLeafCompanies(companyIds, req)
+          data.leafCompanies = leafCompanies
+
+          // get parent companies of the leaf companies
+          const parentCompanies = await getParentCompaniesOfLeafs(leafCompanies, req)
+          data.parentLeafCompanies = parentCompanies
         }
+
         return data
       },
     ],
+
     beforeLogin: [
       async ({ user }) => {
         if (!user.active) {
