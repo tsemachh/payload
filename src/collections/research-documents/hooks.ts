@@ -65,9 +65,6 @@ export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
   const prev = previousDoc?.researchDocuments || []
   const curr = doc?.researchDocuments || []
   const removed = prev.filter((id: string) => !curr.includes(id))
-  console.log('-------------- prev', prev)
-  console.log('-------------- curr', curr)
-  console.log('-------------- removed', removed)
 
   await Promise.all(
     removed.map(async (id: any) => {

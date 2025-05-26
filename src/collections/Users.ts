@@ -80,7 +80,7 @@ async function getParentCompaniesOfLeafs(
     depth: 0,
   })
 
-  const parentIds = parents.docs.map(parent => parent.id)
+  const parentIds = parents.docs.map((parent) => parent.id)
 
   const foundLeafIds = new Set<string>()
   for (const parent of parents.docs) {
@@ -93,12 +93,10 @@ async function getParentCompaniesOfLeafs(
     }
   }
 
-  const orphanLeafIds = leafCompanyIds.filter(id => !foundLeafIds.has(id))
+  const orphanLeafIds = leafCompanyIds.filter((id) => !foundLeafIds.has(id))
 
   return [...parentIds, ...orphanLeafIds]
 }
-
-
 
 export const Users: CollectionConfig = {
   slug: 'users',
