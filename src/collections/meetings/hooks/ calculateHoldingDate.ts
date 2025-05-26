@@ -2,7 +2,7 @@ import { FieldHook } from 'payload'
 import Holidays from 'date-holidays'
 
 const hd = new Holidays('IL')
-const isHolidayOrShabbat = (date: Date): boolean => {
+export const isHolidayOrShabbat = (date: Date): boolean => {
   const holidays = hd.getHolidays(date.getFullYear())
   const isShabbat = date.getDay() === 5 || date.getDay() === 6
   const holiday = holidays.find((holiday) => {
@@ -13,13 +13,31 @@ const isHolidayOrShabbat = (date: Date): boolean => {
   return holiday !== undefined || isShabbat
 }
 
-const getWorkingDateBefore = (date: Date, workingDaysBefore: number, hour: number): Date => {
+export const getWorkingDateBefore = (date: Date, workingDaysBefore: number, hour: number): Date => {
   const result = new Date(date)
   result.setHours(hour, 0, 0, 0)
 
   let daysLeft = workingDaysBefore
   while (daysLeft > 0) {
     result.setDate(result.getDate() - 1)
+    if (!isHolidayOrShabbat(result)) {
+      daysLeft--
+    }
+  }
+
+  return result
+}
+
+/**
+ * Get a date that is a specified number of working days after the given date
+ */
+export const getWorkingDateAfter = (date: Date, workingDaysAfter: number, hour: number): Date => {
+  const result = new Date(date)
+  result.setHours(hour, 0, 0, 0)
+
+  let daysLeft = workingDaysAfter
+  while (daysLeft > 0) {
+    result.setDate(result.getDate() + 1)
     if (!isHolidayOrShabbat(result)) {
       daysLeft--
     }
@@ -65,11 +83,9 @@ export const calculateHoldingDateHook: FieldHook = ({ data, value }) => {
   if (data?.meetingDate) {
     const meetingDate = new Date(data?.meetingDate)
     if (data?.type === 'אג"ח') {
-      const holdingDate = getTwoHoursBeforeWithinWorkingHours(meetingDate)
-      return holdingDate
+      return getTwoHoursBeforeWithinWorkingHours(meetingDate)
     } else {
-      const holdingDate = getWorkingDateBefore(meetingDate, 2, 12)
-      return holdingDate
+      return getWorkingDateBefore(meetingDate, 2, 12)
     }
   }
 
