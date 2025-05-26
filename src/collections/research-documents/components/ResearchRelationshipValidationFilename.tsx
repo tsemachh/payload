@@ -74,11 +74,11 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
           console.log('----==== 111', companyIds)
-          const companyIdsSubTree = await getSubtreeExcludingLeaves(companyIds)
+          //const companyIdsSubTree = await getSubtreeExcludingLeaves(companyIds)
 
-          console.log('----==== companyIdsSubTree', companyIdsSubTree)
+          console.log('----==== companyIdsSubTree', companyIds)
 
-          setValue(Array.from(companyIdsSubTree))
+          setValue(Array.from(companyIds))
         } else {
           span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
         }

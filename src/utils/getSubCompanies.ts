@@ -41,6 +41,12 @@ export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise
 
     const results = await response.json()
     console.log('----==== results', results)
+    if (!results.docs[0].subCompanies || results.docs[0].subCompanies.length === 0) {
+      console.log('----==== results.docs[0].subCompanies', results.docs[0].subCompanies)
+      console.log('----==== results.docs[0].id', results.docs[0].id)
+
+      return new Set([results.docs[0].id])
+    }
 
     function traverse(node: any) {
       const children = node.subCompanies?.docs ?? node.subCompanies
