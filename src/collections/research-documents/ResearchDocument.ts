@@ -39,18 +39,6 @@ export const ResearchDocument: CollectionConfig = {
             '/collections/research-documents/components/ResearchRelationshipValidationFilename',
         },
       },
-      // filterOptions: ({ data, siblingData }) => {
-      //   console.log('-----siblingData', siblingData)
-      //   console.log('----111data', data)
-
-      //   return {
-      //     subCompanies: {
-      //       exists: false,
-      //     },
-
-      //     // parentCompany: { equals: true }, // הוסף את זה
-      //   }
-      // },
     },
     {
       name: 'uploadedAt',

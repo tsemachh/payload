@@ -5,6 +5,7 @@ import { useField, RelationshipField } from '@payloadcms/ui'
 import { RelationshipFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { setValue } = useField()
@@ -72,7 +73,12 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         if (data?.docs?.length > 0) {
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
-          setValue(companyIds)
+          console.log('----==== 111', companyIds)
+          const companyIdsSubTree = await getSubtreeExcludingLeaves(companyIds)
+
+          console.log('----==== companyIdsSubTree', companyIdsSubTree)
+
+          setValue(Array.from(companyIdsSubTree))
         } else {
           span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
         }
