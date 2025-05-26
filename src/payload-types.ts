@@ -302,6 +302,7 @@ export interface Stock {
   fullName?: string | null;
   type?: StockType;
   fromMagna?: boolean | null;
+  isFinancial?: boolean | null;
   origin: StockOrigin;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
@@ -1052,6 +1053,7 @@ export interface StocksSelect<T extends boolean = true> {
   fullName?: T;
   type?: T;
   fromMagna?: T;
+  isFinancial?: T;
   origin?: T;
   tradable?: T;
   relatedStock?: T;
