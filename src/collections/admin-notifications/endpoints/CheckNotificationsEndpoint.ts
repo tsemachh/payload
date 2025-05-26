@@ -1,11 +1,13 @@
 import { PayloadRequest } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
+import { getWorkingDateBefore, getWorkingDateAfter } from '@/collections/meetings/hooks/ calculateHoldingDate'
+import { Vote } from '@/payload-types'
 
 /**
  * Endpoint to check for various conditions and create notifications
- * 1. Companies not feeding holdings for more than 2 days
- * 2. Companies not voting on meetings happening in 1 day
- * 3. No feed from Predictae in the past day
+ * 1. Companies not feeding holdings for more than 2 working days
+ * 2. Companies not voting on meetings happening in the next working day
+ * 3. No feed from Predictae (stocks or meetings) in the past working day
  */
 const CheckNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
@@ -20,7 +22,7 @@ const CheckNotificationsEndpoint = async (req: PayloadRequest) => {
       noFeedFromPredictae: false,
     }
 
-    // 1. Check companies not feeding holdings for more than 2 days
+    // 1. Check companies not feeding holdings for more than 5 days
     await checkHoldingsFeeds(req, notifications)
 
     // 2. Check companies not voting on meetings happening in 1 day
@@ -47,22 +49,33 @@ const CheckNotificationsEndpoint = async (req: PayloadRequest) => {
 }
 
 /**
- * Check companies not feeding holdings for more than 2 days
+ * Check companies not feeding holdings for more than 2 working days
  */
 async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
   try {
     // Get current date
     const now = new Date()
 
-    // Calculate date 2 days ago
-    const twoDaysAgo = new Date(now)
-    twoDaysAgo.setDate(now.getDate() - 2)
-    const twoDaysAgoISO = twoDaysAgo.toISOString()
+    // Number of working days to check (configurable)
+    const workingDaysToCheck = 5
+
+    // Calculate date for working days ago using getWorkingDateBefore
+    const workingDaysAgo = getWorkingDateBefore(now, workingDaysToCheck, 12)
+    const workingDaysAgoISO = workingDaysAgo.toISOString()
 
     // Find all companies
     const { docs: companies } = await req.payload.find({
       collection: 'companies',
-      limit: 1000,
+      select:{
+        name:true
+      },
+      where:{
+        subCompanies:{
+          exists: false
+        }
+      },
+      limit: 0,
+      depth: 0
     })
 
     // For each company, check if they have holdings after twoDaysAgo
@@ -75,7 +88,7 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
             contains: company.id,
           },
           valueDate: {
-            greater_than_equal: twoDaysAgoISO,
+            greater_than_equal: workingDaysAgoISO,
           },
         },
         sort: '-valueDate',
@@ -86,7 +99,7 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
       if (holdingsFeeds.length === 0) {
         await createAdminNotification(
           req.payload,
-          `חברה ${company.name || company.id} לא דיווחה על אחזקות במשך יותר מ-2 ימים`,
+          `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`,
           `/admin/collections/companies/${company.id}`,
           company.id,
         )
@@ -99,35 +112,42 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
 }
 
 /**
- * Check companies not voting on meetings happening in 1 day
+ * Check companies not voting on meetings happening in the next working day
  */
 async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
   try {
     // Get current date
     const now = new Date()
 
-    // Calculate tomorrow's date
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
-    const tomorrowStart = new Date(tomorrow)
-    tomorrowStart.setHours(0, 0, 0, 0)
-    const tomorrowEnd = new Date(tomorrow)
-    tomorrowEnd.setHours(23, 59, 59, 999)
+    // Number of working days ahead to check (configurable)
+    const workingDaysAhead = 1
 
-    // Find meetings happening tomorrow
-    const { docs: tomorrowMeetings } = await req.payload.find({
+    // Calculate next working day using getWorkingDateAfter
+    const nextWorkingDay = getWorkingDateAfter(now, workingDaysAhead, 0)
+    const nextWorkingDayStart = new Date(nextWorkingDay)
+    nextWorkingDayStart.setHours(0, 0, 0, 0)
+    const nextWorkingDayEnd = new Date(nextWorkingDay)
+    nextWorkingDayEnd.setHours(23, 59, 59, 999)
+
+    // Find meetings happening on the next working day
+    const { docs: nextDayMeetings } = await req.payload.find({
       collection: 'meetings',
+      select:{
+        companies: true,
+        fullName: true
+      },
       where: {
         meetingDate: {
-          greater_than_equal: tomorrowStart.toISOString(),
-          less_than_equal: tomorrowEnd.toISOString(),
+          greater_than_equal: nextWorkingDayStart.toISOString(),
+          less_than_equal: nextWorkingDayEnd.toISOString(),
         },
       },
-      limit: 1000,
+      limit: 0,
+      depth: 0
     })
 
     // For each meeting, check which companies should vote but haven't
-    for (const meeting of tomorrowMeetings) {
+    for (const meeting of nextDayMeetings) {
       // Get companies related to this meeting
       if (
         !meeting.companies ||
@@ -137,13 +157,14 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         continue
       }
 
-      const meetingCompanyIds = meeting.companies.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
+      const meetingCompanyIds = meeting.companies as string[]
 
       // Find votes for this meeting
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
+        select:{
+          companies: true
+        },
         where: {
           meeting: {
             equals: meeting.id,
@@ -152,17 +173,15 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
             equals: 'published',
           },
         },
-        limit: 1000,
+        limit: 0,
+        depth : 0
       })
 
       // Get companies that have voted
       const votedCompanyIds = new Set()
-      votes.forEach((vote) => {
+      votes.forEach((vote:Partial<Vote>) => {
         if (vote.companies && Array.isArray(vote.companies)) {
-          vote.companies.forEach((company) => {
-            const companyId = typeof company === 'string' ? company : company.id
-            votedCompanyIds.add(companyId)
-          })
+          votedCompanyIds.add(vote.companies as string[])
         }
       })
 
@@ -174,12 +193,15 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         // Get company details
         const company = await req.payload.findByID({
           collection: 'companies',
+          select:{
+            name: true
+          },
           id: companyId,
         })
 
         await createAdminNotification(
           req.payload,
-          `חברה ${company.name || companyId} לא הצביעה באסיפה שתתקיים מחר: ${meeting.meetingId || meeting.meetingId || meeting.id}`,
+          `חברה ${company.name || companyId} לא הצביעה באסיפה שתתקיים ביום העבודה הבא: ${meeting.fullName}`,
           `/admin/collections/meetings/${meeting.id}`,
           companyId,
         )
@@ -192,19 +214,21 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
 }
 
 /**
- * Check if there was no feed from Predictae in the past day
+ * Check if there was no feed from Predictae in the past working day
  */
 async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
   try {
     // Get current date
     const now = new Date()
 
-    // Calculate date 1 day ago
-    const oneDayAgo = new Date(now)
-    oneDayAgo.setDate(now.getDate() - 1)
+    // Number of working days to check (configurable)
+    const workingDaysToCheck = 1
+
+    // Calculate date for working days ago using getWorkingDateBefore
+    const oneDayAgo = getWorkingDateBefore(now, workingDaysToCheck, 12)
     const oneDayAgoISO = oneDayAgo.toISOString()
 
-    // Check for any feed in the last 24 hours
+    // Check for any feed in the past working day
     // Since we don't have specific information about Predictae feeds,
     // we'll check all feed collections
 
@@ -217,18 +241,9 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         },
       },
       limit: 1,
+      depth: 0
     })
 
-    // Check holdings feed
-    const { docs: holdingsFeeds } = await req.payload.find({
-      collection: 'holdings-feed',
-      where: {
-        createdAt: {
-          greater_than_equal: oneDayAgoISO,
-        },
-      },
-      limit: 1,
-    })
 
     // Check meetings feed
     const { docs: meetingsFeeds } = await req.payload.find({
@@ -239,13 +254,24 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         },
       },
       limit: 1,
+      depth: 0
     })
 
     // If no feeds found in any collection, create a notification
-    if (stocksFeeds.length === 0 && holdingsFeeds.length === 0 && meetingsFeeds.length === 0) {
+    if (stocksFeeds.length === 0 || meetingsFeeds.length === 0) {
+      let message = `לא התקבל פיד מ-Predictae ביום העבודה האחרון: `;
+
+      if (stocksFeeds.length === 0 && meetingsFeeds.length === 0) {
+        message += `מניות ואסיפות`;
+      } else if (stocksFeeds.length === 0) {
+        message += `מניות`;
+      } else {
+        message += `אסיפות`;
+      }
+
       await createAdminNotification(
         req.payload,
-        `לא התקבל פיד מ-Predictae ב-24 השעות האחרונות`,
+        message,
         `/admin`,
       )
       notifications.noFeedFromPredictae = true
