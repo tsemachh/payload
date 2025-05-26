@@ -3,7 +3,7 @@ import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
-import { MinimalCompany } from '@/types/companies'
+import { TreeCompanyType } from '@/types/companies'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -71,7 +71,7 @@ async function computeCompanyTreeAndLeafs(
     leafCompanies.push(...processCompanies(doc))
   })
 
-  const cleanCompanyTree = (company: any): MinimalCompany => {
+  const cleanCompanyTree = (company: any): TreeCompanyType => {
     return {
       id: company.id,
       name: company.name,
@@ -80,7 +80,7 @@ async function computeCompanyTreeAndLeafs(
   }
 
   // Apply to all top-level companies
-  const cleanedTree: MinimalCompany[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
+  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
   return {
     leafCompanies: Array.from(new Set(leafCompanies)),
     treeCompanies: JSON.stringify(cleanedTree),
