@@ -11,8 +11,7 @@ import {
   FeedValidationResult,
   FeedWarning,
 } from '@/collections/holdings/feeds/FeedTypes'
-import { CompanyTreeSelector, TreeNode } from './components/CompanySelector'
-import { transformCompaniesToTree } from '../helpers/utils-holdings'
+import { CompanyTreeSelector } from './components/CompanySelector'
 import { DateSelector } from './components/DateSelector'
 import { FileUploader } from './components/FileUploader'
 import { ProcessingResults } from './components/ProcessingResults'
@@ -27,14 +26,10 @@ import {
 import { AlertTriangle } from 'lucide-react'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-import { useCompaniesContext } from '../context/companiesContext'
 
 export default function HoldingsFeedView() {
   const router = useRouter()
   const { user } = useAuth()
-  const { companies } = useCompaniesContext()
-  const [treeCompanies, setTreeCompanies] = useState<TreeNode[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
   const [date, setDate] = useState<Date | undefined>()
   const [file, setFile] = useState<File | null>(null)
@@ -49,16 +44,6 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
-
-  // Extract companies from user
-  useEffect(() => {
-    if (companies.length) {
-      // Transform the flat company structure into a hierarchical tree
-      const transformedCompanies = transformCompaniesToTree(companies)
-      setTreeCompanies(transformedCompanies)
-      setIsLoading(false)
-    }
-  }, [companies])
 
   useEffect(() => {
     if (user?.leafCompanies) {
@@ -268,11 +253,9 @@ export default function HoldingsFeedView() {
             <div>
               <label className="text-base font-semibold mb-2 block">חברות</label>
               <CompanyTreeSelector
-                companies={treeCompanies}
                 selectedCompanies={selectedCompanies}
                 onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
-                isLoading={isLoading}
               />
             </div>
 
