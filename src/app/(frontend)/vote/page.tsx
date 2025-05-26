@@ -21,12 +21,13 @@ import VoteCompanySelector from './components/VoteCompanySelector'
 import GeneralQuestions from './components/GeneralQuestions'
 import AgendaQuestions from './components/AgendaQuestions'
 import { AgendaQuestionsType, UserVote, VoteDataType } from '../types/vote'
-import { getParentCompaniesOfMeetingCompanies } from '../helpers/utils-vote'
-import { useCompaniesContext } from '../context/companiesContext'
+import { useAuth } from '@/providers/auth-provider'
+import { getParentCompanies } from '../helpers/utils-vote'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
-  const { companies, leafCompanies } = useCompaniesContext()
+  const { user } = useAuth()
+
   const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [votingData, setVotingData] = useState<VoteDataType>({
@@ -38,13 +39,14 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
+
   const parentCompanies = useMemo(() => {
-    if (meetingData) {
-      return getParentCompaniesOfMeetingCompanies(meetingData.companies, leafCompanies, companies)
+    if (user?.treeCompanies && meetingData) {
+      return getParentCompanies(meetingData.companies, JSON.parse(user?.treeCompanies || '[]'))
     } else {
       return []
     }
-  }, [meetingData, leafCompanies, companies])
+  }, [meetingData, user?.treeCompanies])
 
   useEffect(() => {
     const encoded = searchParams.get('data')
