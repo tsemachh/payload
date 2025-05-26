@@ -79,6 +79,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
           location: data.location || '',
           state: getMeetingState(data.state || '') as MeetingState,
           proofIdPrev: data.ProofIdPrev || '',
+          electronicVotingEnabled: true,
           _status: 'draft',
         }
       } catch (e: any) {

@@ -440,12 +440,13 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצת הצבעה',
                           type: 'select',
                           admin: {
-                            width: '30%',
+                            width: '10%',
                           },
                           options: [
                             { label: 'בעד', value: 'for' },
                             { label: 'נגד', value: 'against' },
                             { label: 'נמנע', value: 'abstain' },
+/*                            { label: '----', value: '----' },*/
                           ],
                         },
                         {
@@ -453,7 +454,7 @@ export const Meetings: CollectionConfig = {
                           label: 'נימוק המלצה',
                           type: 'text',
                           admin: {
-                            width: '70%',
+                            width: '90%',
                           },
                         },
                       ],
@@ -531,6 +532,9 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
+              admin: {
+                readOnly: true,
+              }
             },
             {
               name: 'companiesWithHolding',
