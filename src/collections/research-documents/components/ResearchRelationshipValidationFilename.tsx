@@ -8,7 +8,7 @@ import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
-  const { value, setValue } = useField()
+  const { value, setValue } = useField<string[]>()
   const { value: file } = useField<string>({
     path: `file`,
   })
@@ -118,24 +118,26 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     validateFile()
   }, [file])
 
-  // useEffect(() => {
-  //   const prevValue = prevValueRef.current
-  //   const added = value.filter((id) => !prevValue.includes(id))
+  useEffect(() => {
+    if (!Array.isArray(value)) return
 
-  //   if (added.length > 0) {
-  //     console.log('----==== 111', added)
+    const prevValue = prevValueRef.current
+    const added = value.filter((id) => !prevValue.includes(id))
 
-  //     getSubtreeExcludingLeaves(added).then((companyIdsSubTree) => {
-  //       console.log('----==== companyIdsSubTree', companyIdsSubTree)
+    if (added.length > 0) {
+      console.log('----==== added', added)
 
-  //       // Combine existing + new IDs from subtree (no duplicates)
-  //       const newSet = new Set([...value, ...companyIdsSubTree])
-  //       setValue(Array.from(newSet))
-  //     })
-  //   }
+      getSubtreeExcludingLeaves(added).then((companyIdsSubTree) => {
+        console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
-  //   prevValueRef.current = value
-  // }, [value])
+        // Combine existing + new IDs from subtree (no duplicates)
+        const newSet = new Set([...value, ...companyIdsSubTree])
+        setValue(Array.from(newSet))
+      })
+    }
+
+    prevValueRef.current = value
+  }, [value])
 
   return (
     <div>
