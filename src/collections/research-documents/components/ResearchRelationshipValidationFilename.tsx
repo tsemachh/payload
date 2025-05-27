@@ -24,7 +24,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     ) as HTMLInputElement | null
 
     if (!fileAdjustmentsDiv || !input?.value) {
-      console.log('עדיין לא נמצא האלמנט או שאין ערך בקובץ...')
       return
     }
 
@@ -75,10 +74,10 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         if (data?.docs?.length > 0) {
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
-          console.log('----==== 111', companyIds)
+          // console.log('----==== 111', companyIds)
           const companyIdsSubTree = await getSubtreeExcludingLeaves(companyIds)
 
-          console.log('----==== companyIdsSubTree', companyIdsSubTree)
+          // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
           setValue(Array.from(companyIds))
         } else {
@@ -125,10 +124,10 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     const added = value.filter((id) => !prevValue.includes(id))
 
     if (added.length > 0) {
-      console.log('----==== added', added)
+      // console.log('----==== added', added)
 
       getSubtreeExcludingLeaves(added).then((companyIdsSubTree) => {
-        console.log('----==== companyIdsSubTree', companyIdsSubTree)
+        // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
         // Combine existing + new IDs from subtree (no duplicates)
         const newSet = new Set([...value, ...companyIdsSubTree])

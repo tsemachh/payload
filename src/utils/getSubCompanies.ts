@@ -2,7 +2,7 @@ import { stringify } from 'qs-esm'
 
 export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise<Set<string>> {
   const validIds = new Set<string>()
-  console.log('----==== userAddedIds', userAddedIds)
+  //   console.log('----==== userAddedIds', userAddedIds)
 
   try {
     const query = {
@@ -28,11 +28,11 @@ export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise
       limit: 0,
     }
 
-    console.log('----==== query', query)
+    // console.log('----==== query', query)
 
     const stringified = stringify(query, { addQueryPrefix: true })
     const response = await fetch(`/api/companies${stringified}`)
-    console.log('----==== response', response)
+    // console.log('----==== response', response)
 
     if (!response.ok) {
       console.error(`Failed to fetch companies: ${response.status}`)
@@ -40,7 +40,7 @@ export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise
     }
 
     const results = await response.json()
-    console.log('----==== results', results)
+    // console.log('----==== results', results)
 
     function traverseExcludingLeaves(node: any) {
       const children = node.subCompanies?.docs ?? node.subCompanies
@@ -66,7 +66,7 @@ export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise
   } catch (error) {
     console.error('Error in getSubtreeExcludingLeaves:', error)
   }
-  console.log('----==== validIds', validIds)
+  //   console.log('----==== validIds', validIds)
 
   return validIds
 }
