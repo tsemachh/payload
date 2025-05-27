@@ -125,13 +125,13 @@ jobs:
           git commit -m "ci: update payload image tag to ${NEW_TAG}"
           git push origin main
           # Tag the local image with the GCR tag
-          # docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-          # Push the tagged image to GCR
-          # if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}; then
-          #   echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
-          # else
-          #   echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
-          # fi
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
+          Push the tagged image to GCR
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}; then
+            echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
+          else
+            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+          fi
       - name: Print NEW_IMAGE_PUSHED Value
         run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
       - name: Notify Slack - Deployment Completed
