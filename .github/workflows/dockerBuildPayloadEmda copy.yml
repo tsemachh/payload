@@ -123,7 +123,7 @@ jobs:
             PR_NUMBER=$COMMIT_SHA
           fi
 
-          NEW_TAG="latest_$PR_NUMBER"
+          NEW_TAG="$PR_NUMBER"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           yq e -i ".image.tag = \"$NEW_TAG\"" helm/values.yaml
 
@@ -137,7 +137,7 @@ jobs:
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
-
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
           if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}; then
             echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
           else
