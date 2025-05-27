@@ -164,6 +164,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               holdingsArray.push({
                 quantity,
                 stock: stockId,
+                feedStockNum:stockNum
               })
             } else {
               if (!silentStockSet.has(`${stockNum}`)) {
@@ -200,6 +201,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               valueDate: holdingDate,
               stock: holding.stock,
               quantity: holding.quantity,
+              feedStockNum: holding.feedStockNum,
             } as Partial<Holding>
             await payload.create({
               collection: 'holdings',

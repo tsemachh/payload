@@ -6,15 +6,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown, ChevronLeft, Loader2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
-
-export interface TreeNode {
-  id: string
-  name: string
-  children?: TreeNode[]
-}
+import { TreeCompanyType } from '@/types/companies'
+import { useAuth } from '@/providers/auth-provider'
 
 interface CompanyTreeSelectorProps {
-  companies: TreeNode[]
   selectedCompanies: string[]
   onSelectionChangeAction: (selected: string[]) => Promise<void> | void
   className?: string
@@ -22,27 +17,32 @@ interface CompanyTreeSelectorProps {
 }
 
 export function CompanyTreeSelector({
-  companies,
   selectedCompanies,
   onSelectionChangeAction,
   className,
   isLoading = false,
 }: CompanyTreeSelectorProps) {
+  const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [internalSelectedCompanies, setInternalSelectedCompanies] =
     useState<string[]>(selectedCompanies)
   const treeContainerRef = useRef<HTMLDivElement>(null)
   const [shouldScroll, setShouldScroll] = useState(false)
-  const [filteredCompanies, setFilteredCompanies] = useState<TreeNode[]>(companies)
+  const [filteredCompanies, setFilteredCompanies] = useState<TreeCompanyType[]>(companies)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    setCompanies(JSON.parse(user?.treeCompanies || '[]'))
+  }, [user])
 
   // Add a new function to collect all node IDs that have children
-  const getAllParentNodeIds = useCallback((nodes: TreeNode[]): string[] => {
+  const getAllParentNodeIds = useCallback((nodes: TreeCompanyType[]): string[] => {
     let result: string[] = []
     nodes.forEach((node) => {
-      if (node.children && node.children.length > 0) {
+      if (node.subCompanies && node.subCompanies.length > 0) {
         result.push(node.id)
-        result = result.concat(getAllParentNodeIds(node.children))
+        result = result.concat(getAllParentNodeIds(node.subCompanies))
       }
     })
     return result
@@ -89,10 +89,10 @@ export function CompanyTreeSelector({
   }, [filteredCompanies, expandedNodes])
 
   // Get all descendant IDs for a node
-  const getAllDescendantIds = (node: TreeNode): string[] => {
+  const getAllDescendantIds = (node: TreeCompanyType): string[] => {
     let result: string[] = []
-    if (node.children && node.children.length > 0) {
-      node.children.forEach((child) => {
+    if (node.subCompanies && node.subCompanies.length > 0) {
+      node.subCompanies.forEach((child) => {
         result.push(child.id)
         result = result.concat(getAllDescendantIds(child))
       })
@@ -101,18 +101,18 @@ export function CompanyTreeSelector({
   }
 
   // Check if a node is a leaf node (no children)
-  const isLeafNode = (node: TreeNode | null): boolean => {
-    return !node?.children || node.children.length === 0
+  const isLeafNode = (node: TreeCompanyType | null): boolean => {
+    return !node?.subCompanies || node.subCompanies.length === 0
   }
 
   // Find a node by ID
-  const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
+  const findNode = (nodes: TreeCompanyType[], id: string): TreeCompanyType | null => {
     for (const node of nodes) {
       if (node.id === id) {
         return node
       }
-      if (node.children && node.children.length > 0) {
-        const foundInChildren = findNode(node.children, id)
+      if (node.subCompanies && node.subCompanies.length > 0) {
+        const foundInChildren = findNode(node.subCompanies, id)
         if (foundInChildren) return foundInChildren
       }
     }
@@ -128,14 +128,16 @@ export function CompanyTreeSelector({
   }
 
   // Recursively check node selection state
-  const getNodeSelectionState = (node: TreeNode): 'checked' | 'unchecked' | 'indeterminate' => {
+  const getNodeSelectionState = (
+    node: TreeCompanyType,
+  ): 'checked' | 'unchecked' | 'indeterminate' => {
     // If the node has no children, just check if it's selected
-    if (!node.children || node.children.length === 0) {
+    if (!node.subCompanies || node.subCompanies.length === 0) {
       return internalSelectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
     }
 
     // Check children states
-    const childStates = node.children.map((child) => {
+    const childStates = node.subCompanies.map((child) => {
       return {
         id: child.id,
         state: getNodeSelectionState(child),
@@ -197,16 +199,16 @@ export function CompanyTreeSelector({
   const handleChildSelect = (childId: string, checked: boolean) => {
     // Find the child node and its parent
     const findNodeAndParent = (
-      nodes: TreeNode[],
+      nodes: TreeCompanyType[],
       id: string,
-      parent: TreeNode | null = null,
-    ): { node: TreeNode | null; parent: TreeNode | null } => {
+      parent: TreeCompanyType | null = null,
+    ): { node: TreeCompanyType | null; parent: TreeCompanyType | null } => {
       for (const node of nodes) {
         if (node.id === id) {
           return { node, parent }
         }
-        if (node.children && node.children.length > 0) {
-          const result = findNodeAndParent(node.children, id, node)
+        if (node.subCompanies && node.subCompanies.length > 0) {
+          const result = findNodeAndParent(node.subCompanies, id, node)
           if (result.node) return result
         }
       }
@@ -225,8 +227,8 @@ export function CompanyTreeSelector({
       }
 
       // If all siblings are now selected, select the parent too
-      if (parent && parent.children) {
-        const allSiblingsSelected = parent.children.every(
+      if (parent && parent.subCompanies) {
+        const allSiblingsSelected = parent.subCompanies.every(
           (sibling) => sibling.id === childId || newSelection.includes(sibling.id),
         )
 
@@ -259,23 +261,23 @@ export function CompanyTreeSelector({
   }
 
   // Filter tree based on search query
-  const filterTree = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
+  const filterTree = useCallback((nodes: TreeCompanyType[], query: string): TreeCompanyType[] => {
     if (!query) return nodes
 
     return nodes
       .map((node) => {
         const matchesQuery = node.name.toLowerCase().includes(query.toLowerCase())
-        const filteredChildren = node.children ? filterTree(node.children, query) : []
+        const filteredChildren = node.subCompanies ? filterTree(node.subCompanies, query) : []
 
         if (matchesQuery || filteredChildren.length > 0) {
           return {
             ...node,
-            children: filteredChildren.length > 0 ? filteredChildren : node.children,
+            children: filteredChildren.length > 0 ? filteredChildren : node.subCompanies,
           }
         }
         return null
       })
-      .filter(Boolean) as TreeNode[]
+      .filter(Boolean) as TreeCompanyType[]
   }, [])
 
   useEffect(() => {
@@ -288,18 +290,18 @@ export function CompanyTreeSelector({
     if (searchQuery) {
       const nodesToExpand: string[] = []
 
-      const findAndMarkParents = (nodes: TreeNode[]) => {
+      const findAndMarkParents = (nodes: TreeCompanyType[]) => {
         nodes.forEach((node) => {
-          if (node.children && node.children.length > 0) {
-            const hasMatchingChild = node.children.some(
+          if (node.subCompanies && node.subCompanies.length > 0) {
+            const hasMatchingChild = node.subCompanies.some(
               (child) =>
                 child.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (child.children && child.children.length > 0),
+                (child.subCompanies && child.subCompanies.length > 0),
             )
 
             if (hasMatchingChild) {
               nodesToExpand.push(node.id)
-              findAndMarkParents(node.children)
+              findAndMarkParents(node.subCompanies)
             }
           }
         })
@@ -311,7 +313,7 @@ export function CompanyTreeSelector({
   }, [searchQuery, companies])
 
   // Recursive component to render tree nodes
-  const TreeItems = ({ nodes, level = 0 }: { nodes: TreeNode[]; level?: number }) => {
+  const TreeItems = ({ nodes, level = 0 }: { nodes: TreeCompanyType[]; level?: number }) => {
     return nodes.map((node, index) => {
       const selectionState = getNodeSelectionState(node)
       const isNodeLeaf = isLeafNode(node)
@@ -328,7 +330,7 @@ export function CompanyTreeSelector({
             style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
           >
             <div className="flex items-center min-w-0">
-              {node.children && node.children.length > 0 ? (
+              {node.subCompanies && node.subCompanies.length > 0 ? (
                 <div onClick={(e) => toggleExpand(node.id, e)}>
                   {expandedNodes.includes(node.id) ? (
                     <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
@@ -370,8 +372,8 @@ export function CompanyTreeSelector({
             </div>
           </div>
 
-          {node.children && node.children.length > 0 && expandedNodes.includes(node.id) && (
-            <TreeItems nodes={node.children} level={level + 1} />
+          {node.subCompanies && node.subCompanies.length > 0 && expandedNodes.includes(node.id) && (
+            <TreeItems nodes={node.subCompanies} level={level + 1} />
           )}
         </div>
       )

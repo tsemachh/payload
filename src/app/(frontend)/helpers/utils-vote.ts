@@ -1,32 +1,37 @@
-import { CompanyType, LeafCompanyType } from '../types/companies'
+import { TreeCompanyType } from '@/types/companies'
 import { CompanyTableDate } from '../types/meetings'
 import { VoteCompanyType } from '../types/vote'
 
-export function getParentCompaniesOfMeetingCompanies(
+export function getParentCompanies(
   meetingCompanies: CompanyTableDate[],
-  leafCompanies: LeafCompanyType[],
-  companies: CompanyType[],
+  treeCompanies: TreeCompanyType[],
 ): VoteCompanyType[] {
-  const result: VoteCompanyType[] = []
-
-  for (const item of meetingCompanies) {
-    const match = leafCompanies.find((leaf) => leaf.id === item.id)
-
-    if (match) {
-      if (match.parentCompany) {
-        const parentCompany = companies?.find((company) => company.id === match.parentCompany)
-        if (parentCompany) {
-          result.push({ id: parentCompany.id, name: parentCompany.name })
-        } else {
-          console.warn(
-            `Parent company with ID ${match.parentCompany} was not found in the user's companies array, for child company: ${match}.`,
-          )
-          result.push({ id: match.id, name: match.name })
-        }
-      } else {
-        result.push({ id: match.id, name: match.name })
+  const findParent = (targetId: string, nodes: TreeCompanyType[]): TreeCompanyType | null => {
+    for (const node of nodes) {
+      if (node.subCompanies?.some((child) => child.id === targetId)) {
+        return node
+      }
+      if (node.subCompanies && node.subCompanies.length > 0) {
+        const parent = findParent(targetId, node.subCompanies)
+        if (parent) return parent
       }
     }
+    return null
   }
-  return result
+
+  const uniqueCompanies = Array.from(
+    new Map(
+      meetingCompanies.map((leaf) => {
+        const parent = findParent(leaf.id, treeCompanies)
+        const company = parent
+          ? { id: parent.id, name: parent.name }
+          : { id: leaf.id, name: leaf.holdingsCompanyName }
+        return [company.id, company]
+      }),
+    ).values(),
+  )
+  return uniqueCompanies.map((company) => ({
+    id: company.id,
+    name: company.name,
+  }))
 }

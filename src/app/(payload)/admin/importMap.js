@@ -8,6 +8,7 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
+import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
 import { SortBy as SortBy_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { FieldsToExport as FieldsToExport_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { CollectionField as CollectionField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -33,6 +34,7 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
+  "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,
   "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#FieldsToExport": FieldsToExport_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#CollectionField": CollectionField_cdf7e044479f899a31f804427d568b36,

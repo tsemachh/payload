@@ -1,4 +1,7 @@
 import { type CollectionConfig } from 'payload'
+import { createAdminNotification } from '@/utils/utils'
+import { isSameDay, addDays } from '@/utils/dateUtils'
+import { Meeting } from '@/payload-types'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -7,12 +10,13 @@ export const Votes: CollectionConfig = {
     singular: 'הצבעה',
   },
   enableQueryPresets: true,
+  versions: {
+    drafts: true,
+    maxPerDoc: 1,
+  },
   admin: {
     useAsTitle: 'meeting',
-    defaultColumns: [
-      'meeting',
-      'companies',
-    ],
+    defaultColumns: ['meeting', 'companies'],
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200],
@@ -20,8 +24,8 @@ export const Votes: CollectionConfig = {
   },
   fields: [
     {
-      type:"row",
-      fields:[
+      type: 'row',
+      fields: [
         {
           name: 'meeting',
           label: 'אסיפה',
@@ -39,7 +43,7 @@ export const Votes: CollectionConfig = {
           required: true,
           index: true,
         },
-      ]
+      ],
     },
     {
       name: 'votes',
@@ -52,13 +56,13 @@ export const Votes: CollectionConfig = {
       fields: [
         {
           type: 'row',
-          fields:[
+          fields: [
             {
               name: 'topicIndex',
               label: 'מספר נושא',
               type: 'number',
               required: true,
-              admin:{width:'100px'}
+              admin: { width: '100px' },
             },
             {
               name: 'voteDecision',
@@ -74,11 +78,11 @@ export const Votes: CollectionConfig = {
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
             },
-          ]
+          ],
         },
         {
-          type:'row',
-          fields:[
+          type: 'row',
+          fields: [
             {
               name: 'committee',
               label: 'ועדה',
@@ -99,7 +103,7 @@ export const Votes: CollectionConfig = {
               label: 'עניין אישי',
               type: 'checkbox',
             },
-          ]
+          ],
         },
         {
           name: 'professionalFactor',
@@ -120,39 +124,46 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-/*    beforeChange: [
-      async ({ data, req }) => {
-        // If meeting is provided, fetch its agenda to populate the votes array
-
-        if (data.meeting) {
+    afterChange: [
+      async ({ doc, req }) => {
+        if (doc._status === 'published') {
           try {
-            const meeting = await req.payload.findByID({
-              collection: 'meetings',
-              id: data.meeting,
-            });
+            let meeting: Meeting | string = doc.meeting
+            if (typeof meeting === 'string')
+              meeting = await req.payload.findByID({
+                collection: 'meetings',
+                id: meeting,
+              })
 
-            // If meeting has agenda, create a vote entry for each topic
-            if (meeting.agenda && Array.isArray(meeting.agenda)) {
-              data.votes = meeting.agenda.map((topic, index) => ({
-                topicIndex: index + 1,
-                voteDecision: null,
-                comment: '',
-                clientComment: '',
-                committee: false,
-                conflict: false,
-                relatedParty: false,
-                personalInterest: false,
-                professionalFactor: '',
-              }));
+            if (meeting?.holdingsLimit) {
+              const holdingsLimit = new Date(meeting.holdingsLimit)
+              const dayAfterHoldings = addDays(holdingsLimit, 1)
+
+              if (isSameDay(new Date(), dayAfterHoldings)) {
+                const meetingName = meeting?.fullName
+                const message = `הצבעה חדשה פורסמה עבור ${meetingName}`
+                const url = `/admin/collections/votes/${doc.id}`
+                //TODO ask @philc if we need to put hte first company in the notification
+                const relatedCompany = doc.companies?.[0]
+                  ? typeof doc.companies[0] === 'string'
+                    ? doc.companies[0]
+                    : doc.companies[0].id
+                  : undefined
+
+                await createAdminNotification(
+                  req.payload,
+                  message,
+                  url,
+                  relatedCompany,
+                  req?.user?.id,
+                )
+              }
             }
           } catch (error) {
-            console.error('Error fetching meeting agenda:', error);
+            console.error('Error creating notification for published vote:', error)
           }
-
         }
-
-        return data;
       },
-    ],*/
+    ],
   },
 }

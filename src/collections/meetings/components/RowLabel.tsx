@@ -12,7 +12,7 @@ export const SubjectLabel: React.FC = () => {
     if (data?.text) {
       // Store original text for tooltip and convert to uppercase for display
       setOriginalText(data.text)
-      setLabel(data.text.toUpperCase())
+      setLabel(`${rowNumber as number + 1}. ${data.text}`)
     } else {
       // Default label if header is not present
       setOriginalText('')

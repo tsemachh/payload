@@ -68,6 +68,12 @@ export const Holdings: CollectionConfig = {
           },
         },
         {
+          name: 'feedStockNum',
+          label: 'מספר נייר ערך באחזקה',
+          type: 'text',
+          index: true,
+        },
+        {
           name: 'quantity',
           label: 'כמות',
           type: 'number',

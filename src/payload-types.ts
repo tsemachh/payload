@@ -104,6 +104,7 @@ export type RolePermissions =
         | 'silenced-stocks'
         | 'votes'
         | 'research-documents'
+        | 'admin-notifications'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -207,6 +208,7 @@ export interface Config {
     'silenced-stocks': SilencedStock;
     votes: Vote;
     'research-documents': ResearchDocument;
+    'admin-notifications': AdminNotification;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -244,6 +246,7 @@ export interface Config {
     'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
     'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
+    'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -298,6 +301,8 @@ export interface Stock {
   stockId: string;
   fullName?: string | null;
   type?: StockType;
+  fromMagna?: boolean | null;
+  isFinancial?: boolean | null;
   origin: StockOrigin;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
@@ -433,8 +438,11 @@ export interface Vote {
     | null;
   creator?: string | null;
   updator?: string | null;
+  publishDate?: string | null;
+  publisher?: string | null;
   createdAt: string;
   updatedAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -496,6 +504,7 @@ export interface Holding {
   company: string | Company;
   valueDate: string;
   stock: string | Stock;
+  feedStockNum?: string | null;
   quantity: number;
   creator?: string | null;
   updator?: string | null;
@@ -535,7 +544,6 @@ export interface User {
   active?: boolean | null;
   companies?: UserCompany;
   leafCompanies?: (string | Company)[] | null;
-  parentLeafCompanies?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -553,6 +561,7 @@ export interface User {
   userRoles?: (string | Role)[] | null;
   creator?: string | null;
   updator?: string | null;
+  treeCompanies?: string | null;
   createdAt: string;
   updatedAt: string;
   enableAPIKey?: boolean | null;
@@ -702,6 +711,22 @@ export interface SilencedStock {
   id: string;
   stockId: string;
   companies?: (string | Company)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications".
+ */
+export interface AdminNotification {
+  id: string;
+  message: string;
+  url?: string | null;
+  readStatus?: boolean | null;
+  relatedCompany?: (string | null) | Company;
+  relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -908,6 +933,10 @@ export interface PayloadLockedDocument {
         value: string | ResearchDocument;
       } | null)
     | ({
+        relationTo: 'admin-notifications';
+        value: string | AdminNotification;
+      } | null)
+    | ({
         relationTo: 'exports';
         value: string | Export;
       } | null)
@@ -1006,7 +1035,8 @@ export interface PayloadQueryPreset {
     | 'migration-faults'
     | 'holdings'
     | 'votes'
-    | 'research-documents';
+    | 'research-documents'
+    | 'admin-notifications';
   /**
    * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
@@ -1022,6 +1052,8 @@ export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   fullName?: T;
   type?: T;
+  fromMagna?: T;
+  isFinancial?: T;
   origin?: T;
   tradable?: T;
   relatedStock?: T;
@@ -1162,7 +1194,6 @@ export interface UsersSelect<T extends boolean = true> {
   active?: T;
   companies?: T | UserCompanySelect<T>;
   leafCompanies?: T;
-  parentLeafCompanies?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
@@ -1179,6 +1210,7 @@ export interface UsersSelect<T extends boolean = true> {
   userRoles?: T;
   creator?: T;
   updator?: T;
+  treeCompanies?: T;
   createdAt?: T;
   updatedAt?: T;
   enableAPIKey?: T;
@@ -1264,6 +1296,7 @@ export interface HoldingsSelect<T extends boolean = true> {
   company?: T;
   valueDate?: T;
   stock?: T;
+  feedStockNum?: T;
   quantity?: T;
   creator?: T;
   updator?: T;
@@ -1400,8 +1433,11 @@ export interface VotesSelect<T extends boolean = true> {
       };
   creator?: T;
   updator?: T;
+  publishDate?: T;
+  publisher?: T;
   createdAt?: T;
   updatedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1423,6 +1459,21 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications_select".
+ */
+export interface AdminNotificationsSelect<T extends boolean = true> {
+  message?: T;
+  url?: T;
+  readStatus?: T;
+  relatedCompany?: T;
+  relatedUser?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

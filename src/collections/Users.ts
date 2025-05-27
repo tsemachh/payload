@@ -1,11 +1,18 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
-import { getIdOfRelationField } from '@/utils/utils'
+import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import { Company } from '@/payload-types'
+import { TreeCompanyType } from '@/types/companies'
 
-async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
-  let leafCompanies: string[] = []
+async function computeCompanyTreeAndLeafs(
+  companyIds: string[],
+  req: PayloadRequest,
+): Promise<{
+  leafCompanies: string[]
+  treeCompanies: string
+}> {
+  // Query all companies and their nested subCompanies up to depth 4
   const companies = await req.payload.find({
     collection: 'companies',
     select: {
@@ -15,13 +22,18 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
       parentCompany: false,
       holdings: false,
       'subCompanies.id': true,
-      'subCompanies.subCompanies': true,
-      'subCompanies.subCompanies.subCompanies': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies': true,
+      'subCompanies.name': true,
+      'subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.name': true,
     },
     populate: {
       companies: {
         subCompanies: true,
+        name: true,
       },
     },
     where: {
@@ -32,7 +44,9 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
     limit: 0,
     depth: 5,
   })
-  // go over the docs aggregate each Id in either in the root or in the subCompanies only if subCompanies are empty, store it in leafCompanies array
+
+  // Compute leaf companies recursively
+  const leafCompanies: string[] = []
   const processCompanies = (company: Partial<Company>): string[] => {
     const result: string[] = []
 
@@ -53,49 +67,24 @@ async function computeLeafCompanies(companyIds: any, req: PayloadRequest) {
     return result
   }
 
-  // Process all companies in the docs array
-  if (companies && companies.docs) {
-    companies.docs.forEach((company: any) => {
-      const companyLeafs = processCompanies(company)
-      leafCompanies.push(...companyLeafs)
-    })
-
-    // Remove duplicates
-    leafCompanies = Array.from(new Set(leafCompanies))
-  }
-
-  return leafCompanies
-}
-
-async function getParentCompaniesOfLeafs(
-  leafCompanyIds: string[],
-  req: PayloadRequest,
-): Promise<string[]> {
-  const parents = await req.payload.find({
-    collection: 'companies',
-    where: {
-      'subCompanies.id': { in: leafCompanyIds },
-    },
-    limit: 0,
-    depth: 0,
+  companies.docs.forEach((doc: any) => {
+    leafCompanies.push(...processCompanies(doc))
   })
 
-  const parentIds = parents.docs.map((parent) => parent.id)
-
-  const foundLeafIds = new Set<string>()
-  for (const parent of parents.docs) {
-    for (const sub of parent.subCompanies || []) {
-      if (typeof sub === 'object' && sub?.id) {
-        foundLeafIds.add(sub.id)
-      } else if (typeof sub === 'string') {
-        foundLeafIds.add(sub)
-      }
+  const cleanCompanyTree = (company: any): TreeCompanyType => {
+    return {
+      id: company.id,
+      name: company.name,
+      subCompanies: (company.subCompanies || []).map((sub: any) => cleanCompanyTree(sub)),
     }
   }
 
-  const orphanLeafIds = leafCompanyIds.filter((id) => !foundLeafIds.has(id))
-
-  return [...parentIds, ...orphanLeafIds]
+  // Apply to all top-level companies
+  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
+  return {
+    leafCompanies: Array.from(new Set(leafCompanies)),
+    treeCompanies: JSON.stringify(cleanedTree),
+  }
 }
 
 export const Users: CollectionConfig = {
@@ -225,14 +214,11 @@ export const Users: CollectionConfig = {
       },
     },
     {
-      name: 'parentLeafCompanies',
-      label: 'כל חברות האם של חברות עם החשבונות(כולל חברות בת)',
-      type: 'relationship',
-      relationTo: 'companies',
-      maxDepth: 0,
-      hasMany: true,
+      name: 'treeCompanies',
+      label: 'מבנה החברות כעץ מחרוזתי',
+      type: 'text',
       admin: {
-        readOnly: true,
+        hidden: true,
       },
     },
     {
@@ -297,34 +283,81 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-        // Check if companies have changed by comparing with originalDoc
         const companiesChanged =
           originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
-        // Recalculate leafCompanies and parentLeafCompanies if companies have changed or if leafCompanies is empty
 
         if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
           const companyIds = data?.companies.map((company: any) =>
             getIdOfRelationField(company.companyId),
           )
-
-          const leafCompanies = await computeLeafCompanies(companyIds, req)
+          const { leafCompanies, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
           data.leafCompanies = leafCompanies
-
-          // get parent companies of the leaf companies
-          const parentCompanies = await getParentCompaniesOfLeafs(leafCompanies, req)
-          data.parentLeafCompanies = parentCompanies
+          data.treeCompanies = treeCompanies
         }
 
         return data
       },
     ],
-
     beforeLogin: [
       async ({ user }) => {
         if (!user.active) {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
         return user
+      },
+    ],
+    afterChange: [
+      async ({ doc, req, operation, previousDoc }) => {
+        try {
+          // Case 1: New user created
+          if (operation === 'create') {
+            await createAdminNotification(
+              req.payload,
+              `משתמש חדש נוצר: ${doc.email}`,
+              `/admin/collections/users/${doc.id}`,
+              undefined,
+              doc.id,
+            )
+            return
+          }
+
+          // Case 2: User permissions changed
+          if (operation === 'update' && previousDoc) {
+            const changes = []
+
+            // Check if active status changed
+            if (doc.active !== previousDoc.active) {
+              const status = doc.active ? 'פעיל' : 'לא פעיל'
+              changes.push(`סטטוס שונה ל-${status}`)
+            }
+
+            // Check if isAdmin status changed
+            if (doc.isAdmin !== previousDoc.isAdmin) {
+              const status = doc.isAdmin ? 'מנהל' : 'לא מנהל'
+              changes.push(`הרשאת מנהל שונתה ל-${status}`)
+            }
+
+            // Check if companies changed
+            const companiesChanged =
+              JSON.stringify(doc.companies) !== JSON.stringify(previousDoc.companies)
+            if (companiesChanged) {
+              changes.push('הרשאות חברות שונו')
+            }
+
+            // If any changes were detected, create a notification
+            if (changes.length > 0) {
+              await createAdminNotification(
+                req.payload,
+                `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
+                `/admin/collections/users/${doc.id}`,
+                undefined,
+                doc.id,
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Error creating notification for user changes:', error)
+        }
       },
     ],
   },

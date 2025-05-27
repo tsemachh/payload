@@ -1,5 +1,3 @@
-
-import { TreeNode as BaseTreeNode } from '../holdings/components/CompanySelector'
 import { stringify } from 'qs-esm'
 
 // Define account interface
@@ -29,7 +27,9 @@ export interface CompanyData {
 }
 
 // Extended TreeNode interface with additional properties
-export interface TreeNode extends BaseTreeNode {
+export interface TreeNode {
+  id: string
+  name: string
   hasAccount?: boolean
   hasParent?: boolean
   companyId?: number

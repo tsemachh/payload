@@ -199,7 +199,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           name: userProfile.UserName.toLowerCase().trim(),
           email: userProfile.UserName.toLowerCase().trim(),
           legacyId: userProfile.UserId,
-
+          active: true,
           // User type and permissions
           isAdmin: userProfile.UserType === 1,
           // Firm relationships

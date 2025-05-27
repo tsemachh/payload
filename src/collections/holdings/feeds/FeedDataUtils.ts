@@ -194,7 +194,7 @@ export const createHoldings = async (
   valueDate: string,
 ): Promise<void> => {
   // Aggregate records with the same accountId and stockId
-  const aggregatedRecords = new Map<string, { company: string; stock: string; quantity: number }>()
+  const aggregatedRecords = new Map<string, { company: string; stock: string; quantity: number ,feedStockNum:string}>()
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
@@ -203,7 +203,7 @@ export const createHoldings = async (
       const stock = stockMap.get(record.stockId as string) as string
 
       // Create a unique key for each account-stock combination
-      const key = `${company}-${stock}`
+      const key = `${company}-${stock}-${record.stockId}`
 
       if (aggregatedRecords.has(key)) {
         // If this combination already exists, add to the quantity
@@ -214,6 +214,7 @@ export const createHoldings = async (
         aggregatedRecords.set(key, {
           company,
           stock,
+          feedStockNum: record.stockId as string,
           quantity: record.quantity as number,
         })
       }
@@ -236,6 +237,7 @@ export const createHoldings = async (
           company: record.company,
           stock: record.stock,
           quantity: record.quantity,
+          feedStockNum: record.feedStockNum,
           valueDate,
         },
       }).catch(error => {
