@@ -55,8 +55,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         // Skip if company has no accounts or only one account
-        if (accountInfos.length <= 0) {
-          console.log(`Company ${company.name} has no accounts , skipping`)
+        if (accountInfos.length <= 1) {
+          console.log(`Company ${company.name} has no accounts or only 1 account, skipping`)
           continue
         }
 
