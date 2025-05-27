@@ -65,12 +65,19 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       if (!upload) return
 
       const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
+      const existingSpan = el.querySelector('.withMeta-span')
 
-      if (!el.querySelector('.withMeta-span') && companyNames.length > 0) {
+      if (!existingSpan) {
         const newSpan = document.createElement('p')
         newSpan.className = 'withMeta-span'
+
+        newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
+
+        newSpan.style.color = '#006400'
         newSpan.style.marginLeft = '8px'
-        newSpan.textContent = companyNames.join(', ')
+        newSpan.style.fontFamily = 'Arial, sans-serif'
+        newSpan.style.fontStyle = 'italic'
+
         el.appendChild(newSpan)
       }
     })

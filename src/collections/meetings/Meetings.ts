@@ -11,6 +11,7 @@ import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 import {
   validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
+  clearCompaniesInSingleBondResearchDoc,
 } from '../research-documents/hooks'
 import { getCollectionDoc } from '@/utils/utils'
 const PropsManualLink: IconLinkProps = {
@@ -71,7 +72,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
-    listSearchableFields: ['fullName','magnaId',  'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
       'magnaId',
@@ -163,13 +164,13 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
                   },
-                  index:true,
+                  index: true,
                   hooks: {
                     beforeChange: [
-                      async ({ data ,req}) => {
-                        let stockName=""
-                        if (typeof data?.stock == 'string'){
-                          const stock  = await getCollectionDoc(req,"stocks",data.stock,0)
+                      async ({ data, req }) => {
+                        let stockName = ''
+                        if (typeof data?.stock == 'string') {
+                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
                         return `${data?.type}-${stockName}`
@@ -446,7 +447,7 @@ export const Meetings: CollectionConfig = {
                             { label: 'בעד', value: 'for' },
                             { label: 'נגד', value: 'against' },
                             { label: 'נמנע', value: 'abstain' },
-/*                            { label: '----', value: '----' },*/
+                            /*                            { label: '----', value: '----' },*/
                           ],
                         },
                         {
@@ -534,7 +535,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 readOnly: true,
-              }
+              },
             },
             {
               name: 'companiesWithHolding',
@@ -609,6 +610,7 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
+    beforeChange: [clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {

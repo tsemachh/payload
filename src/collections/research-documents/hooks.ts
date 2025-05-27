@@ -3,9 +3,11 @@ import {
   ValidationError,
   type CollectionBeforeValidateHook,
   type CollectionAfterChangeHook,
+  type CollectionBeforeChangeHook,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
+import { Companies } from '../companies/Companies'
 
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
@@ -20,15 +22,66 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
 
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
-      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף מסמך מחקר אחד בלבד.',
+      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) -אחד בלבד.',
       path: 'researchDocuments',
     })
+  } else {
+    if (docIDs.length > 1) {
+      const query: any = {
+        collection: 'research-documents',
+        select: {
+          id: true,
+          companies: true,
+        },
+        depth: 0,
+        limit: 0,
+        where: {
+          id: {
+            in: docIDs,
+          },
+        },
+      }
+
+      const researchDocuments = await req.payload.find(query)
+
+      const generalDocs = researchDocuments?.docs?.filter(
+        (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
+      )
+      if (generalDocs.length > 1) {
+        validationErrors.push({
+          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
+          path: 'researchDocuments',
+        })
+      }
+    }
   }
 
   if (validationErrors.length > 0) {
     throw new ValidationError({ errors: validationErrors })
   }
 
+  return data
+}
+
+export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
+  data,
+  req,
+}) => {
+  const type = data?.type
+  const docIDs = data?.researchDocuments
+  if (
+    (type === 'אג"ח' || type === 'אג"ח כהונת נאמן') &&
+    Array.isArray(docIDs) &&
+    docIDs.length === 1
+  ) {
+    await req.payload.update({
+      collection: 'research-documents',
+      id: docIDs[0],
+      data: {
+        companies: [],
+      },
+    })
+  }
   return data
 }
 
