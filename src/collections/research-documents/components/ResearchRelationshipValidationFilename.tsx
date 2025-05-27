@@ -75,7 +75,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
           // console.log('----==== 111', companyIds)
-          const companyIdsSubTree = await getSubtreeExcludingLeaves(companyIds)
+          const companyIdsSubTree = await getSubtreeExcludingLeaves({ ids: companyIds })
 
           // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
@@ -126,7 +126,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     if (added.length > 0) {
       // console.log('----==== added', added)
 
-      getSubtreeExcludingLeaves(added).then((companyIdsSubTree) => {
+      getSubtreeExcludingLeaves({ ids: added }).then((companyIdsSubTree) => {
         // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
         // Combine existing + new IDs from subtree (no duplicates)

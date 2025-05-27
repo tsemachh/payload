@@ -1,54 +1,72 @@
 import { stringify } from 'qs-esm'
+import type { PayloadRequest } from 'payload'
 
-export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise<Set<string>> {
+type GetSubtreeOptions =
+  | { ids: string[]; req: PayloadRequest } // צד שרת
+  | { ids: string[] } // צד לקוח
+
+export async function getSubtreeExcludingLeaves(options: GetSubtreeOptions): Promise<Set<string>> {
+  const ids = options.ids
   const validIds = new Set<string>()
-  //   console.log('----==== userAddedIds', userAddedIds)
 
   try {
-    const query = {
-      where: {
-        id: {
-          in: userAddedIds,
+    let results: any
+
+    if ('req' in options) {
+      // צד שרת
+      results = await options.req.payload.find({
+        collection: 'companies',
+        where: {
+          id: { in: ids },
         },
-      },
-      select: {
-        companyId: true,
-        subCompanies: true,
-        'subCompanies.id': true,
-        'subCompanies.subCompanies': true,
-        'subCompanies.subCompanies.subCompanies': true,
-        'subCompanies.subCompanies.subCompanies.subCompanies': true,
-      },
-      populate: {
-        companies: {
+        select: {
+          companyId: true,
           subCompanies: true,
+          'subCompanies.id': true,
+          'subCompanies.subCompanies': true,
+          'subCompanies.subCompanies.subCompanies': true,
+          'subCompanies.subCompanies.subCompanies.subCompanies': true,
         },
-      },
-      depth: 4,
-      limit: 0,
-    }
-
-    // console.log('----==== query', query)
-
-    const stringified = stringify(query, { addQueryPrefix: true })
-    const response = await fetch(`/api/companies${stringified}`)
-    // console.log('----==== response', response)
-
-    if (!response.ok) {
-      console.error(`Failed to fetch companies: ${response.status}`)
-      return validIds
-    }
-
-    const results = await response.json()
-    // console.log('----==== results', results)
-
-    function traverseExcludingLeaves(node: any) {
-      const children = node.subCompanies?.docs ?? node.subCompanies
-      if (!children?.length) {
-        // It's a leaf – skip!
-        return
+        populate: {
+          companies: { subCompanies: true },
+        },
+        depth: 4,
+        limit: 0,
+      })
+    } else {
+      // צד לקוח
+      const query = {
+        where: {
+          id: { in: ids },
+        },
+        select: {
+          companyId: true,
+          subCompanies: true,
+          'subCompanies.id': true,
+          'subCompanies.subCompanies': true,
+          'subCompanies.subCompanies.subCompanies': true,
+          'subCompanies.subCompanies.subCompanies.subCompanies': true,
+        },
+        populate: {
+          companies: { subCompanies: true },
+        },
+        depth: 4,
+        limit: 0,
       }
-      // It's a non-leaf – include it
+      const stringified = stringify(query, { addQueryPrefix: true })
+      const response = await fetch(`/api/companies${stringified}`)
+
+      if (!response.ok) {
+        console.error(`Failed to fetch companies: ${response.status}`)
+        return validIds
+      }
+
+      results = await response.json()
+    }
+
+    const traverseExcludingLeaves = (node: any) => {
+      const children = node.subCompanies?.docs ?? node.subCompanies
+      if (!children?.length) return
       validIds.add(node.id)
       children.forEach(traverseExcludingLeaves)
     }
@@ -56,17 +74,14 @@ export async function getSubtreeExcludingLeaves(userAddedIds: string[]): Promise
     for (const doc of results.docs) {
       const children = doc.subCompanies?.docs ?? doc.subCompanies
       if (!children?.length) {
-        // Original node is a leaf → include it
         validIds.add(doc.id)
       } else {
-        // Original node is a tree → process recursively, excluding leaves
         traverseExcludingLeaves(doc)
       }
     }
   } catch (error) {
     console.error('Error in getSubtreeExcludingLeaves:', error)
   }
-  //   console.log('----==== validIds', validIds)
 
   return validIds
 }

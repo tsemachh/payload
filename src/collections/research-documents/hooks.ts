@@ -5,6 +5,7 @@ import {
   type CollectionAfterChangeHook,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
 
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
@@ -37,7 +38,11 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
 }) => {
   const filename = data?.file?.filename || data?.filename
   if (!filename) return data
-  if (data?.companies) return data
+  if (data?.companies) {
+    const validCompaniesSet = await getSubtreeExcludingLeaves({ ids: data.companies, req })
+    data.companies = Array.from(validCompaniesSet)
+    return data
+  }
   const parsed = parseResearchFilename(filename)
 
   if (parsed.isGeneric) {
@@ -50,7 +55,9 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
       })
       if (companies) {
         const foundCompanies = companies.docs
-        data.companies = foundCompanies.map((company) => company.id)
+        const ids = foundCompanies.map((company) => company.id)
+        const validCompaniesSet = await getSubtreeExcludingLeaves({ ids: ids, req })
+        data.companies = Array.from(validCompaniesSet)
       }
     }
     return data
