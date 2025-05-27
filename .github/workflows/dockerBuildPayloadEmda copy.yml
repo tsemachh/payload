@@ -109,7 +109,7 @@ jobs:
           sudo chmod +x /usr/bin/yq
           yq --version
           # Clone ArgoCD config repo
-          git clone https://x-access-token:${{ secrets.EMDA_ARGOCD_PER }}@github.com/emda-dev/emda-argocd-config.git
+          git clone https://x-access-token:${{ secrets.EMDA_ARGOCD_PER }}@github.com/shefing/emda-argocd.git
           cd emda-argocd-config
 
           # Set the new tag value
