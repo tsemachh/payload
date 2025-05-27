@@ -69,8 +69,6 @@ export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook =
 }) => {
   const type = data?.type
   const docIDs = data?.researchDocuments
-  // ולהוסיף אם יש יותר ממסמך כללי אחד לזרוק שיגאה - לכל אסיפב יש מסמך מחקר כללי אחד בלבד ---מימוש לקרו לכל מסמכי מחקר שיש בדף ולבדוק אם יש יותר מ1 ללא חברות
-  // אם אני אגח ויש לי חברות לאפס!! לנסות לבדוק אם אפשר בקוסטם קומפוננט יחד עם הוספת הערה
   if (
     (type === 'אג"ח' || type === 'אג"ח כהונת נאמן') &&
     Array.isArray(docIDs) &&
