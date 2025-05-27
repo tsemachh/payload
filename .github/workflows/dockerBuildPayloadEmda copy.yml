@@ -1,0 +1,173 @@
+name: Docker Emda Payload Image CI
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout code
+      - uses: actions/checkout@v3
+
+      # Step 2: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+
+      # Step 3: Set up Google Cloud credentials
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
+
+      # Step 4: Set tag parameter
+      - name: Set tag parameter
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "TAG=pr" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+          else
+            echo "TAG=release" >> $GITHUB_ENV
+          fi
+
+      # Step 5: MongoDB Atlas access
+      - name: Permit runner to access MongoDB Atlas
+        uses: textbook/atlas-ip@v1
+        with:
+          atlas-private-key: ${{ secrets.ATLAS_PRIVATE_KEY }}
+          atlas-public-key: ${{ secrets.ATLAS_PUBLIC_KEY }}
+          group-id: ${{ vars.ATLAS_GROUP_ID }}
+
+      # Step 6: Docker setup
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          use: true
+          version: latest
+
+      # Step 7: Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Step 8: Login to GCR
+      - name: Login to Google Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: me-west1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_CREDENTIALS_JSON }}
+
+      # Step 9: Build and test
+      - name: Build, Test, and Push
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: |
+          # Build the image without cache options to avoid driver errors
+          docker build \
+            --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
+            --build-arg DATABASE_URI="$DATABASE_URI" \
+            -t payload-image:local-test .
+
+          # Run container
+          docker run -d --name payload-container -p 3000:3000 payload-image:local-test
+
+          # Wait for the app to start
+          echo "Waiting for the application to start..."
+          sleep 30
+
+          # Check logs for debugging
+          echo "Container logs:"
+          docker logs payload-container
+
+          # Test the application
+          curl http://localhost:3000 || exit 1
+
+          # Stop the container after testing
+          docker stop payload-container
+
+      # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
+      - name: Install yq and prepare tag
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.43.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --version
+
+          # Clone ArgoCD config repo
+          git clone https://x-access-token:${{ secrets.EMDA_ARGOCD_PER }}@github.com/shefing/emda-argocd.git
+          cd emda-argocd
+
+          REPO="shefing/emda" 
+          COMMIT_SHA=${GITHUB_SHA}
+
+          PR_NUMBER=$(curl -s -H "Authorization: token ${{ secrets.EMDA_ARGOCD_PER }}" \
+            "https://api.github.com/repos/$REPO/pulls?state=closed&sort=updated&direction=desc" | \
+            jq ".[] | select(.merge_commit_sha==\"$COMMIT_SHA\") | .number" | head -n 1)
+
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$COMMIT_SHA
+          fi
+
+          NEW_TAG="$PR_NUMBER"
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          yq e -i ".image.tag = \"$NEW_TAG\"" helm/values.yaml
+
+          git config user.email "ci-bot@emda.dev"
+          git config user.name "Emda CI Bot"
+          git add helm/values.yaml
+          git commit -m "ci: update payload image tag to $NEW_TAG"
+          git push origin main
+
+      - name: Tag and Push Docker image
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}; then
+            echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
+          else
+            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+          fi
+        env:
+          NEW_TAG: ${{ env.NEW_TAG }}
+
+      - name: Print NEW_IMAGE_PUSHED Value
+        run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
+      - name: Notify Slack - Deployment Completed
+        if: ${{ success() && env.NEW_IMAGE_PUSHED == 'true' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: 'New Docker image deployed to GCR!'
+      # Step 11: Reset VM - moved to cron job
+      # - name: Reset GCP VM
+      #   run: |
+      #     gcloud compute instances reset payload-vm \
+      #       --zone=me-west1-b \
+      #       --project=${{ secrets.GCP_PROJECT_ID }}
+
+  notify-slack:
+    needs: docker-build
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
