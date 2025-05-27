@@ -48,7 +48,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     }
 
     if (result.isGeneric) {
-      span.textContent = `קובץ גנרי עבור כל החברות`
+      span.textContent = `קובץ כללי עבור כל החברות`
       return
     }
 

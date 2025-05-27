@@ -65,12 +65,22 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       if (!upload) return
 
       const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
+      const existingSpan = el.querySelector('.withMeta-span')
 
-      if (!el.querySelector('.withMeta-span') && companyNames.length > 0) {
+      // אם כבר נוסף - לא להוסיף שוב
+      if (!existingSpan) {
         const newSpan = document.createElement('p')
         newSpan.className = 'withMeta-span'
+
+        // תוכן
+        newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
+
+        // עיצוב: פונט וגוון
+        newSpan.style.color = '#006400' // "DarkGreen" — ירוק בקבוק קלאסי
         newSpan.style.marginLeft = '8px'
-        newSpan.textContent = companyNames.join(', ')
+        newSpan.style.fontFamily = 'Arial, sans-serif' // תוכל לשנות לפונט אחר
+        newSpan.style.fontStyle = 'italic' // סגנון שונה, אופציונלי
+
         el.appendChild(newSpan)
       }
     })
