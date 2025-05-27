@@ -1,4 +1,4 @@
-import { type CollectionConfig } from 'payload'
+import { type CollectionConfig, PayloadRequest, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
@@ -13,6 +13,7 @@ import {
   afterChangeDeleteResearchDocs,
 } from '../research-documents/hooks'
 import { getCollectionDoc } from '@/utils/utils'
+import type { TextFieldSingleValidation } from 'payload'
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
@@ -20,9 +21,19 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const validateMeetingState = (value: string | null | undefined, options: any) => {
+const validateMeetingInvitationLink:TextFieldSingleValidation = (value: string | null | undefined, options: any) => {
+  if (options.req.context.from == 'migration') {
+    return true
+  }
+  if (options.siblingData.magnaId || options.siblingData.invitationDocument || value) return true
+  return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
+}
+const validateMeetingState: SelectFieldSingleValidation = (value: string | null | undefined, options: any) => {
   if (!value) return true
 
+  if (options.req.context.from == 'migration') {
+    return true
+  }
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
@@ -59,6 +70,8 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
     }
     return true
   }
+  // Ensure we always return a valid value
+  return true
 }
 
 // @ts-ignore
@@ -219,7 +232,7 @@ export const Meetings: CollectionConfig = {
                       },
                     },
                   },
-                  //validate: validateMeetingnvItationLink,
+                  validate: validateMeetingInvitationLink,
                   hooks: {
                     afterRead: [
                       async ({ data, req }) => {
@@ -310,7 +323,6 @@ export const Meetings: CollectionConfig = {
                     ],
                   },
                   interfaceName: 'MeetingState',
-                  // @ts-expect-error
                   validate: validateMeetingState,
                   options: [
                     { label: 'מתוכננת', value: 'scheduled' },

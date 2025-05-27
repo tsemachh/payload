@@ -66,6 +66,20 @@ export async function getEmdaStockIds(pool: sql.ConnectionPool) {
   return getStockIdsByUpdateId(pool, await getLatestStockEmdaLogId(pool))
 }
 
+export async function getFinancialSecurityIds(pool: sql.ConnectionPool) {
+  const resultSecurityIds = await pool.request().query(`
+      SELECT [SecurityId]
+      FROM [dbEmda].[dbo].[FinancialGroupChosen]
+  `)
+
+  console.log(`getFinancialSecurityIds - Retrieved ${resultSecurityIds.recordset.length} records from SQL Server`)
+  const securityIds: Set<string> = new Set()
+  for (const row of resultSecurityIds.recordset) {
+    securityIds.add(`${row.SecurityId}`)
+  }
+  return securityIds
+}
+
 export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdateIds: string[]) {
   // Handle empty array case
   if (logUpdateIds.length === 0) {
@@ -267,6 +281,7 @@ export async function upsertStockFromImport(
   active: boolean | null = true,
   comments: string = '',
   fromMagna: boolean = false,
+  isFinancial: boolean = false,
 ) {
   const stockData: Partial<Stock> = {
     active: active,
@@ -278,7 +293,8 @@ export async function upsertStockFromImport(
     tradable: tradable as boolean | null,
     origin: origin,
     comments: comments,
-    fromMagna: fromMagna
+    fromMagna: fromMagna,
+    isFinancial: isFinancial
   }
   try {
     if (!stock) {
@@ -295,12 +311,17 @@ export async function upsertStockFromImport(
         stock.name != stockData.name ||
         stock.active != stockData.active ||
         stock.comments != stockData.comments ||
+        stock.isFinancial != stockData.isFinancial ||
         (stockData.longName && stock.longName != stockData.longName)
       ) {
         await req.payload.update({
           collection: 'stocks',
           id: stock.id,
-          data: { name: stockData.name, longName: stockData.longName },
+          data: { 
+            name: stockData.name, 
+            longName: stockData.longName,
+            isFinancial: stockData.isFinancial 
+          },
           req,
         })
       }
