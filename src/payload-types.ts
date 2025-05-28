@@ -450,6 +450,7 @@ export interface Vote {
  */
 export interface Company {
   id: string;
+  type?: ('regular' | 'parent' | 'fund') | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
@@ -1152,6 +1153,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  type?: T;
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;

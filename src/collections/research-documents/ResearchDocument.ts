@@ -33,6 +33,11 @@ export const ResearchDocument: CollectionConfig = {
       relationTo: 'companies',
       index: true,
       hasMany: true,
+      filterOptions:{
+        type:{
+          equals: 'regular'
+        }
+      },
       admin: {
         components: {
           Field:

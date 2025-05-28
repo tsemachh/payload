@@ -1,13 +1,9 @@
-import { error } from 'console'
 import {
   ValidationError,
   type CollectionBeforeValidateHook,
-  type CollectionAfterChangeHook,
-  type CollectionBeforeChangeHook,
+  type CollectionAfterChangeHook, CollectionBeforeChangeHook,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
-import { Companies } from '../companies/Companies'
 
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
@@ -92,8 +88,6 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
   const filename = data?.file?.filename || data?.filename
   if (!filename) return data
   if (data?.companies) {
-    const validCompaniesSet = await getSubtreeExcludingLeaves({ ids: data.companies, req })
-    data.companies = Array.from(validCompaniesSet)
     return data
   }
   const parsed = parseResearchFilename(filename)
@@ -104,13 +98,11 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
     if (!parsed.isGeneric && parsed.companyName) {
       const companies = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName } },
+        where: { name: { like: parsed.companyName }, type: { equals: 'regular' } },
       })
       if (companies) {
         const foundCompanies = companies.docs
-        const ids = foundCompanies.map((company) => company.id)
-        const validCompaniesSet = await getSubtreeExcludingLeaves({ ids: ids, req })
-        data.companies = Array.from(validCompaniesSet)
+        data.companies = foundCompanies.map((company) => company.id)
       }
     }
     return data

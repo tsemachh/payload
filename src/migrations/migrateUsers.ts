@@ -380,7 +380,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     const companies = new Map<string, string[]>([
       ['tsemachh@shefing.com', ['15', '22', '23','49','25']],
       ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
-      ['philc@shefing.com', ['1167', '1168', '1258']],
+      ['philc@shefing.com', ['1167', '1168', '15']],
     ])
     let createdCount = 0
     let updatedCount = 0
