@@ -3,13 +3,14 @@
 import { format } from 'date-fns'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
 interface DateSelectorProps {
   date: Date | undefined
+  markedDates?: Date[]
   isDateAlwaysOpen?: boolean
   onDateChangeAction: (date: Date | undefined) => Promise<void> | void
   className?: string
@@ -18,6 +19,7 @@ interface DateSelectorProps {
 
 export function DateSelector({
   date,
+  markedDates = [],
   isDateAlwaysOpen = false,
   onDateChangeAction,
   className,
@@ -38,6 +40,10 @@ export function DateSelector({
           selected={date}
           onSelect={handleSelect}
           initialFocus
+          modifiers={{ marked: markedDates }}
+          modifiersClassNames={{
+            marked: 'border border-primary/10  shadow-sm',
+          }}
           disabled={filterDate}
         />
       ) : (
