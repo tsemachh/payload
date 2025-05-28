@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import {  MeetingState, MeetingType } from '@/payload-types'
+import { Meeting, MeetingState, MeetingType } from '@/payload-types'
 import { getSequenceMeetingId } from '@/utils/utils' // Then you can use sql.close() directly
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
@@ -81,11 +81,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[stockID]
              ,[location]
              ,[mtype]
+             ,[link2]
              ,[comments]
              ,[ResultConfirm]
              ,[ElectronicVoting]
              ,[CommiteeRequest]
-        FROM [dbEmda].[dbo].[meetings];
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
+            
     `)
     console.log(`Retrieved ${result?.recordset?.length} records from SQL Server`)
 
@@ -150,7 +152,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               })
               return;
             }
-            const meetingData = {
+            const meetingData:Partial<Meeting> = {
               meetingId:`${row.id}`,
               stock:stockId as string,
               magnaId:row.proofId,
@@ -166,7 +168,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               committeeInitiated:!!row.CommiteeRequest,
               _status:"published" as const
             }
-
+            if (!row.proofId && row?.link2?.startsWith('http')) {
+                meetingData.invitationLink= row.link2
+            }
             //console.log("Data",JSON.stringify(meetingData, null, 2))
             const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
             if (id){
@@ -184,7 +188,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               // Insert into Payload CMS
               await payload.create({
                 collection: 'meetings',
-                data: meetingData,
+                data: meetingData as Meeting,
                 req: {
                   ...req,
                   context: { ...req.context, from: 'migration' }

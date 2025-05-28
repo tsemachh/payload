@@ -7,6 +7,7 @@ import {
   getAllStocksInLatestMeetings,
   getAllStocksInMeetings,
   getEmdaStockIds,
+  getFinancialSecurityIds,
   getPredictaStockIds,
   getStockIdsByMappingType,
   getStockRelations,
@@ -79,6 +80,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
     //const predictaHistoryStocks: Set<string> = await getHistoryPredictaStockIds(pool) //Bursa stocks including history
     const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
+    const financialSecurityIds: Set<string> = await getFinancialSecurityIds(pool) // Financial securities from FinancialGroupChosen table
     const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
     const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
@@ -132,6 +134,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Stock source statuses
           isPredictaStock: predictaStocks.has(stockID),
           isEmdaStock: emdaStocks.has(stockID),
+
+          // Financial status
+          isFinancial: financialSecurityIds.has(stockID),
 
           // Meeting status
           hasActiveMeeting: stocksInMeeting.has(stockID) || (relatedStock && stocksInMeeting.has(relatedStock)),
@@ -231,7 +236,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               origin,
               isActive,
               comments,
-              stockStatuses.isPredictaStock
+              stockStatuses.isPredictaStock,
+              stockStatuses.isFinancial
             );
 
             if (stockSequence) {

@@ -10,33 +10,6 @@ const stockLinkProps: IconLinkProps = {
   visibilityConditions: { origin: 'TASE', tradable: true ,fromMagna:true},
 }
 
-const FINANCIAL_COMPANY_NAMES:string[]=[
-  'אי.בי.אי. בית השקעות בע\"מ',
-  'איי.די.איי. חברה לביטוח בע\"מ',
-  'איילון חברה לביטוח בע\"מ',
-  'אלטשולר שחם פיננסים בע\"מ',
-  'אנליסט אי.אמ.אס.-שרותי ניהול השקעות בע\"מ',
-  'הבנק הבינלאומי הראשון לישראל בע\"מ',
-  'ברק בית השקעות בע\"מ',
-  'גמא ניהול וסליקה בע\"מ',
-  'בנק דיסקונט לישראל בע\"מ',
-  'הכשרה חברה לביטוח בע\"מ',
-  'הפניקס פיננסים בע\"מ',
-  'הראל השקעות בביטוח ושרותים פיננסים בע\"מ',
-  'ווישור גלובלטק בע\"מ',
-  'בנק ירושלים בע\"מ',
-  'כלל החזקות עסקי ביטוח בע\"מ',
-  'בנק לאומי לישראל בע\"מ',
-  'ליברה חברה לביטוח בע\"מ',
-  'מגדל אחזקות ביטוח ופיננסים בע\"מ',
-  'מור גמל ופנסיה בע\"מ',
-  'י.ד. מור השקעות בע\"מ',
-  'בנק מזרחי טפחות בע\"מ',
-  'מיטב בית השקעות בע\"מ',
-  'מימון ישיר מקבוצת ישיר (2006) בע\"מ',
-  'מנורה מבטחים החזקות בע\"מ',
-  'בנק הפועלים בע\"מ'
-]
 const validateNoFutureMeetings = async (
   value: boolean | null | undefined,
   { req, data, id }: any,
@@ -162,13 +135,6 @@ export const Stocks: CollectionConfig = {
                   defaultValue: false
                 },
                 {
-                  name: 'isFinancial',
-                  type: 'checkbox',
-                  defaultValue: false,
-                  virtual: true,
-                  hooks: { afterRead: [({data}) => FINANCIAL_COMPANY_NAMES.includes(data?.longName)]},
-                },
-                {
                   name: 'origin',
                   label: 'מקור',
                   type: 'select',
@@ -230,6 +196,15 @@ export const Stocks: CollectionConfig = {
                       },
                     ],
                   },
+                },
+                {
+                  name: 'isFinancial',
+                  label: 'פיננסי',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin:{
+                    condition:(siblingData)=>siblingData.type == 'מניות'
+                  }
                 },
               ],
             },
