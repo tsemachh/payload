@@ -130,15 +130,15 @@ jobs:
           git push origin main
 
       - name: Tag and Push Docker image
-          run: |
-            docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
-            docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
-            if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG} && \
-              docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest; then
-              echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
-            else
-              echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
-            fi
+        run: |
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG} && \
+            docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest; then
+            echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
+          else
+            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+          fi
 
         env:
           NEW_TAG: ${{ env.NEW_TAG }}
