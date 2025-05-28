@@ -217,6 +217,7 @@ export default function VotingForm() {
               {meetingData.agendas.map((item, index) => {
                 const userVote = votingData.userVotes.find((v) => v.subjectId === item.id)
                 const itemNumber = index + 1
+                const isHebrew = /[\u0590-\u05FF]/.test(item.text)
 
                 return (
                   <div key={item.id} className={`${item.isRemovedFromAgenda ? 'opacity-70' : ''}`}>
@@ -226,16 +227,24 @@ export default function VotingForm() {
                           <span className="text-primary font-bold ml-2 mt-0.5 min-w-[24px]">
                             {itemNumber}.
                           </span>
-                          <p
-                            className={`text-foreground font-medium ${
-                              item.isRemovedFromAgenda ? 'line-through text-muted-foreground' : ''
-                            }`}
-                          >
-                            {item.text}
-                          </p>{' '}
+                          <div className={`flex-1 ${isHebrew ? 'text-right' : 'text-left'}`}>
+                            <p
+                              className={`text-foreground font-medium ${
+                                item.isRemovedFromAgenda ? 'line-through text-muted-foreground' : ''
+                              }`}
+                              dir={isHebrew ? 'rtl' : 'ltr'}
+                            >
+                              {item.text}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mt-2 mr-7">
+                        <div
+                          className="flex flex-wrap gap-2 mt-2 mr-7"
+                          style={{
+                            justifyContent: isHebrew ? 'flex-start' : 'flex-end',
+                          }}
+                        >
                           {item.privilegedMajority && !item.isRemovedFromAgenda && (
                             <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
                               דורש רוב מיוחד
