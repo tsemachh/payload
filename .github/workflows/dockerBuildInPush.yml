@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'main'
-  pull_request:
-    branches:
-      - 'main'
 
 jobs:
   docker-build:
@@ -102,7 +99,6 @@ jobs:
 
       # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
       - name: Install yq and prepare tag
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.43.1/yq_linux_amd64 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
@@ -134,15 +130,16 @@ jobs:
           git push origin main
 
       - name: Tag and Push Docker image
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        run: |
-          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
-          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
-          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}; then
-            echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
-          else
-            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
-          fi
+          run: |
+            docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
+            docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
+            if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG} && \
+              docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest; then
+              echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
+            else
+              echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+            fi
+
         env:
           NEW_TAG: ${{ env.NEW_TAG }}
 
