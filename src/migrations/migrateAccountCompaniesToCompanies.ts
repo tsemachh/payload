@@ -17,7 +17,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const companiesResult = await payload.find({
       collection: 'companies',
       limit: 0,
-      depth: 0
+      depth: 0,
+      where: {type:{equals: 'regular'}}
     })
 
     console.log(`Found ${companiesResult.docs.length} companies with accounts`)
@@ -55,8 +56,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         // Skip if company has no accounts or only one account
-        if (accountInfos.length <= 1) {
-          console.log(`Company ${company.name} has no accounts or only 1 account, skipping`)
+        if (accountInfos.length <= 0) {
+          console.log(`Company ${company.name} has no accounts , skipping`)
           continue
         }
 
@@ -117,8 +118,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Create a new company with the account name
             const newCompanyData: Partial<Company> = {
               legacyCompanyId: company.companyId,
-              name: accountInfo.name,
+              name: `${accountInfo.name} - ${accountInfo.accountNumber}`,
               active: true,
+              type: 'fund',
               // Set the account number in the appropriate field using the new structure
               mainAccount: [
                 {

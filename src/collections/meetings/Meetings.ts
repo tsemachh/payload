@@ -587,12 +587,20 @@ export const Meetings: CollectionConfig = {
         },
         {
           label: 'מסמכי מחקר',
+          admin:{
+              condition: (data) =>  data?.companies?.length > 0
+          },
           fields: [
             {
               name: 'researchDocuments',
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
+              filterOptions: ({ data }) => {
+               return {
+                 company:{in: data.companies}
+               }
+              },
               hasMany: true,
               admin: {
                 components: {

@@ -236,6 +236,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const allCompanies = await payload.find({
       collection: 'companies',
       limit: 0,
+      where:{
+        type: {equals:'fund'}
+      },
       req,
       depth: 0,
     })
@@ -244,8 +247,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const parentCompanyId: string | null = company.legacyCompanyId as string | null
       if (company.mainAccount && Array.isArray(company.mainAccount)) {
         company.mainAccount.forEach((account) => {
-          const key = `${company.companyId}-${account.accountNumber}`
-          accountCache.set(key, company.id)
           if (parentCompanyId) {
             const key = `${parentCompanyId}-${account.accountNumber}`
             accountCache.set(key, company.id)

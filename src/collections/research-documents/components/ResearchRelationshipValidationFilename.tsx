@@ -5,7 +5,7 @@ import { useField, RelationshipField } from '@payloadcms/ui'
 import { RelationshipFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-import { getSubtreeExcludingLeaves } from '@/utils/getSubCompanies'
+
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { value, setValue } = useField<string[]>()
@@ -75,8 +75,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
           // console.log('----==== 111', companyIds)
-          const companyIdsSubTree = await getSubtreeExcludingLeaves({ ids: companyIds })
-
           // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
           setValue(Array.from(companyIds))
@@ -119,21 +117,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
 
   useEffect(() => {
     if (!Array.isArray(value)) return
-
-    const prevValue = prevValueRef.current
-    const added = value.filter((id) => !prevValue.includes(id))
-
-    if (added.length > 0) {
-      // console.log('----==== added', added)
-
-      getSubtreeExcludingLeaves({ ids: added }).then((companyIdsSubTree) => {
-        // console.log('----==== companyIdsSubTree', companyIdsSubTree)
-
-        // Combine existing + new IDs from subtree (no duplicates)
-        const newSet = new Set([...value, ...companyIdsSubTree])
-        setValue(Array.from(newSet))
-      })
-    }
 
     prevValueRef.current = value
   }, [value])

@@ -1,4 +1,4 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { CollectionConfig, PayloadRequest, Where } from 'payload'
 import { APIError } from 'payload'
 import { userFields } from '@shefing/authorization'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
@@ -173,16 +173,18 @@ export const Users: CollectionConfig = {
                       .map((item: { companyId?: string }) => item?.companyId)
                       .filter((id: string | undefined) => id && id !== currentId)
                   : []
-
+                const query: Where = {
+                    type: {
+                      equals: 'regular',
+                    }
+                }
                 if (selectedIds.length === 0) {
-                  return true
+                  return query
                 }
-
-                return {
-                  id: {
-                    not_in: selectedIds,
-                  },
+                query.id={
+                  not_in: selectedIds,
                 }
+                return query
               },
             },
             {
@@ -283,6 +285,7 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
+      if  (data?.companies) {
         const companiesChanged =
           originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
@@ -294,7 +297,7 @@ export const Users: CollectionConfig = {
           data.leafCompanies = leafCompanies
           data.treeCompanies = treeCompanies
         }
-
+      }
         return data
       },
     ],

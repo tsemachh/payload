@@ -49,6 +49,13 @@ export const Companies: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'type',
+                  type: 'select',
+                  admin: {hidden: true},
+                  defaultValue: 'regular',
+                  options: ['regular','parent','fund']
+                },
+                {
                   name: 'companyId',
                   label: 'מספר חברה',
                   type: 'number',
