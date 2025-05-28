@@ -61,7 +61,8 @@ export type MeetingAgenda =
         checkbox?: boolean | null;
         exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
         companies?: (string | Company)[] | null;
-        exceptionalRecommendationReason?: string | null;
+        reasonRef?: (string | null) | Reason;
+        reasonText?: string | null;
       };
       vpercent?: number | null;
       vPercentSpecial?: number | null;
@@ -490,6 +491,18 @@ export interface Holding {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reasons".
+ */
+export interface Reason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "votes".
  */
 export interface Vote {
@@ -591,18 +604,6 @@ export interface Role {
   id: string;
   name?: string | null;
   permissions?: RolePermissions;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "reasons".
- */
-export interface Reason {
-  id: string;
-  content: string;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1167,7 +1168,8 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
         checkbox?: T;
         exceptionalRecommendationVote?: T;
         companies?: T;
-        exceptionalRecommendationReason?: T;
+        reasonRef?: T;
+        reasonText?: T;
       };
   vpercent?: T;
   vPercentSpecial?: T;

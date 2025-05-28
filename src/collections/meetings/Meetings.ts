@@ -520,30 +520,18 @@ export const Meetings: CollectionConfig = {
                           },
                         },
                         {
-                          name: 'aaa',
-                          label: 'aaa ',
-                          type: 'select',
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'reasons',
                           admin: {
-                            condition: (data, siblingData) => {
-                              return siblingData?.checkbox === true
-                            },
+                            position: 'sidebar',
                           },
-                          options: [
-                            { label: 'בעד', value: 'for' },
-                            { label: 'נגד', value: 'against' },
-                            { label: 'נמנע', value: 'abstain' },
-                          ],
                         },
                         {
-                          name: 'exceptionalRecommendationReason',
-                          label: 'נימוק המלצה',
-                          type: 'text',
-                          admin: {
-                            width: '30%',
-                            condition: (data, siblingData) => {
-                              return siblingData?.checkbox === true
-                            },
-                          },
+                          name: 'reasonText',
+                          label: 'נימוק (נבחר או חופשי)',
+                          type: 'textarea',
                         },
                       ],
                     },

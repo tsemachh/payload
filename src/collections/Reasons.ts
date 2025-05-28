@@ -8,6 +8,7 @@ export const Reasons: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'content',
+    group: 'אוספים משניים',
   },
   fields: [
     {
