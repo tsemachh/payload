@@ -188,6 +188,7 @@ export default function VotingForm() {
           </CardHeader>
           <CardContent className="p-4">
             <VoteCompanySelector
+            meetingData={meetingData}
               companies={parentCompanies}
               onSelectionChange={() => {}}
               //   onSelectionChange={handleCompanySelection}
