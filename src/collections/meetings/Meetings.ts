@@ -520,6 +520,21 @@ export const Meetings: CollectionConfig = {
                           },
                         },
                         {
+                          name: 'aaa',
+                          label: 'aaa ',
+                          type: 'select',
+                          admin: {
+                            condition: (data, siblingData) => {
+                              return siblingData?.checkbox === true
+                            },
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
                           name: 'exceptionalRecommendationReason',
                           label: 'נימוק המלצה',
                           type: 'text',

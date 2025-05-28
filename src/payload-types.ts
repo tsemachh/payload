@@ -99,6 +99,7 @@ export type RolePermissions =
         | 'users'
         | 'roles'
         | 'documents'
+        | 'reasons'
         | 'migration-faults'
         | 'holdings'
         | 'stock-migration-mapping'
@@ -203,6 +204,7 @@ export interface Config {
     users: User;
     roles: Role;
     documents: Document;
+    reasons: Reason;
     'migration-faults': MigrationFault;
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
@@ -241,6 +243,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    reasons: ReasonsSelect<false> | ReasonsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
@@ -595,6 +598,18 @@ export interface Role {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reasons".
+ */
+export interface Reason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "migration-faults".
  */
 export interface MigrationFault {
@@ -899,6 +914,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'documents';
         value: string | Document;
+      } | null)
+    | ({
+        relationTo: 'reasons';
+        value: string | Reason;
       } | null)
     | ({
         relationTo: 'migration-faults';
@@ -1281,6 +1300,17 @@ export interface DocumentsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reasons_select".
+ */
+export interface ReasonsSelect<T extends boolean = true> {
+  content?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

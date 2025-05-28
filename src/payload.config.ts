@@ -13,6 +13,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
+import { Reasons } from './collections/Reasons'
 import { Stocks } from './collections/stocks/Stocks'
 import { Companies } from '@/collections/companies/Companies'
 import { StockValues } from '@/collections/stocks/StockValues'
@@ -86,6 +87,7 @@ export default buildConfig({
     Users,
     Roles,
     Documents,
+    Reasons,
     MigrationFaults,
     Holdings,
     StockMigrationMapping,
@@ -133,7 +135,7 @@ export default buildConfig({
         'research-documents': true,
         'holdings-feed': true,
         'meetings-feed': true,
-        'stocks-feed': true
+        'stocks-feed': true,
       },
       enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',
