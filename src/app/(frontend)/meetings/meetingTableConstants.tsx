@@ -265,7 +265,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'holdingValueInMillions',
-    header: 'שווי אחזקה (מיליוני)',
+    header: 'שווי אחזקה  (מיליוני ₪)',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
