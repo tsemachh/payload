@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
@@ -12,6 +12,8 @@ import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
 import { useSearchParams } from 'next/navigation'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
+import useSWR from 'swr'
+import { fetcher } from '../../helpers/utils-data-table'
 
 export default function HoldingsView() {
   const { user } = useAuth()
@@ -22,6 +24,22 @@ export default function HoldingsView() {
 
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
+
+  const { data: recentData } = useSWR('/api/holdings/dates?month=true', fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+  const { data: fullData } = useSWR(recentData ? '/api/holdings/dates' : null, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+
+  const markedDates = useMemo(() => {
+    const recent = recentData?.data ?? []
+    const full = fullData?.data ?? []
+    const combined = [...new Set([...recent, ...full])]
+    return combined.map((d) => new Date(d))
+  }, [recentData, fullData])
 
   // Fetch initial data when component mounts
   useEffect(() => {
@@ -100,7 +118,7 @@ export default function HoldingsView() {
         setError('לא נמצאו חברות.')
         return
       }
-      const formattedDate = format(date, 'yyyy-MM-dd')
+      const formattedDate = date.toISOString()
       const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
       const data = await response.json()
 
@@ -137,6 +155,7 @@ export default function HoldingsView() {
           <label className="text-base font-semibold mb-2 block h-100 text-center">תאריך ערך</label>
           <DateSelector
             date={date}
+            markedDates={markedDates}
             isDateAlwaysOpen={true}
             onDateChangeAction={handleDateChangeAction}
             className="w-full"
