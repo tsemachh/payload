@@ -31,4 +31,7 @@ export type AgendaQuestionsType = {
 export type VoteCompanyType = {
   id: string
   name: string
+  percentageHolding: number
+  holdingValueInMillions: number
+  nominalValue: number
 }

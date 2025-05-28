@@ -23,15 +23,46 @@ export function getParentCompanies(
     new Map(
       meetingCompanies.map((leaf) => {
         const parent = findParent(leaf.id, treeCompanies)
-        const company = parent
-          ? { id: parent.id, name: parent.name }
-          : { id: leaf.id, name: leaf.holdingsCompanyName }
-        return [company.id, company]
-      }),
-    ).values(),
+
+        if (parent) {
+          // Find all children of this parent that are in meetingCompanies
+          const childrenHoldings = meetingCompanies.filter((mc) =>
+            parent.subCompanies?.some((child) => child.id === mc.id)
+          )
+
+          const percentageHolding = childrenHoldings.reduce((sum, c) => sum + (c.percentageHolding || 0), 0)
+          const holdingValueInMillions = childrenHoldings.reduce((sum, c) => sum + (c.holdingValueInMillions || 0), 0)
+          const nominalValue = childrenHoldings.reduce((sum, c) => sum + (c.nominalValue || 0), 0)
+
+          const company = {
+            id: parent.id,
+            name: parent.name,
+            percentageHolding,
+            holdingValueInMillions,
+            nominalValue,
+          }
+
+          return [company.id, company]
+        } else {
+          const company = {
+            id: leaf.id,
+            name: leaf.holdingsCompanyName,
+            percentageHolding: leaf.percentageHolding,
+            holdingValueInMillions: leaf.holdingValueInMillions,
+            nominalValue: leaf.nominalValue,
+          }
+          return [company.id, company]
+        }
+      })
+    ).values()
   )
+
   return uniqueCompanies.map((company) => ({
     id: company.id,
     name: company.name,
+    percentageHolding: company.percentageHolding,
+    holdingValueInMillions: company.holdingValueInMillions,
+    nominalValue: company.nominalValue,
   }))
 }
+
