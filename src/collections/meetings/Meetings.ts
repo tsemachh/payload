@@ -12,6 +12,7 @@ import {
   validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
+  handleRecommendationReason,
 } from '../research-documents/hooks'
 import { getCollectionDoc } from '@/utils/utils'
 import type { TextFieldSingleValidation } from 'payload'
@@ -691,33 +692,7 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [
-      async ({ data, req }) => {
-        if (Array.isArray(data.agenda)) {
-          await Promise.all(
-            data.agenda.map(async (item) => {
-              const rec = item.recommendation
-              if (rec?.checkbox) {
-                if (rec.reasonRef) {
-                  const reason = await req.payload.findByID({
-                    collection: 'reasons',
-                    id: rec.reasonRef,
-                  })
-                  if (reason?.content) {
-                    rec.reasonText = reason.content
-                  }
-                }
-              } else {
-                rec.reasonRef = undefined
-                rec.reasonText = undefined
-              }
-            }),
-          )
-        }
-        return data
-      },
-      clearCompaniesInSingleBondResearchDoc,
-    ],
+    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {

@@ -117,6 +117,32 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
   }
 }
 
+export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ data, req }) => {
+  if (!Array.isArray(data.agenda)) return data
+
+  await Promise.all(
+    data.agenda.map(async (item) => {
+      const rec = item.recommendation
+      if (rec?.checkbox) {
+        if (rec.reasonRef) {
+          const reason = await req.payload.findByID({
+            collection: 'reasons',
+            id: rec.reasonRef,
+          })
+          if (reason?.content) {
+            rec.reasonText = reason.content
+          }
+        }
+      } else {
+        rec.reasonRef = undefined
+        rec.reasonText = undefined
+      }
+    }),
+  )
+
+  return data
+}
+
 export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
   doc,
   req,
