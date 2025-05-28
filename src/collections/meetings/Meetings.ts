@@ -485,9 +485,8 @@ export const Meetings: CollectionConfig = {
                           name: 'checkbox',
                           label: 'האם יש המלצה חריגה?',
                           type: 'checkbox',
-                          //virtual: true, ?
                           admin: {
-                            width: '10%',
+                            width: '20%',
                           },
                         },
                         {
@@ -496,9 +495,7 @@ export const Meetings: CollectionConfig = {
                           type: 'select',
                           admin: {
                             width: '10%',
-                            condition: (data, siblingData) => {
-                              return siblingData?.checkbox === true
-                            },
+                            condition: (_, siblingData) => siblingData?.checkbox === true,
                           },
                           options: [
                             { label: 'בעד', value: 'for' },
@@ -513,25 +510,34 @@ export const Meetings: CollectionConfig = {
                           relationTo: 'companies',
                           hasMany: true,
                           admin: {
-                            width: '30%',
-                            condition: (data, siblingData) => {
-                              return siblingData?.checkbox === true
-                            },
+                            width: '70%',
+                            condition: (_, siblingData) => siblingData?.checkbox === true,
                           },
                         },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      admin: {
+                        condition: (_, siblingData) => siblingData?.checkbox === true,
+                      },
+                      fields: [
                         {
                           name: 'reasonRef',
                           label: 'נימוק מוכן',
                           type: 'relationship',
                           relationTo: 'reasons',
                           admin: {
-                            position: 'sidebar',
+                            width: '60%',
                           },
                         },
                         {
                           name: 'reasonText',
                           label: 'נימוק (נבחר או חופשי)',
                           type: 'textarea',
+                          admin: {
+                            width: '40%',
+                          },
                         },
                       ],
                     },
@@ -685,7 +691,33 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [
+      async ({ data, req }) => {
+        if (Array.isArray(data.agenda)) {
+          await Promise.all(
+            data.agenda.map(async (item) => {
+              const rec = item.recommendation
+              if (rec?.checkbox) {
+                if (rec.reasonRef) {
+                  const reason = await req.payload.findByID({
+                    collection: 'reasons',
+                    id: rec.reasonRef,
+                  })
+                  if (reason?.content) {
+                    rec.reasonText = reason.content
+                  }
+                }
+              } else {
+                rec.reasonRef = undefined
+                rec.reasonText = undefined
+              }
+            }),
+          )
+        }
+        return data
+      },
+      clearCompaniesInSingleBondResearchDoc,
+    ],
   },
   endpoints: [
     {
