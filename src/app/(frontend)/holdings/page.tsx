@@ -204,7 +204,7 @@ export default function HoldingsFeedView() {
     }
     setIsUploading(true)
     try {
-      const formattedDate = format(date, 'yyyy-MM-dd')
+      const formattedDate = date.toISOString()
       const formattedCompanies = encodeURIComponent(JSON.stringify(selectedCompanies))
       // Save the file (validateOnly=false)
       const response = await fetch(
