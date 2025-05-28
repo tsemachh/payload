@@ -1,7 +1,8 @@
 import {
   ValidationError,
   type CollectionBeforeValidateHook,
-  type CollectionAfterChangeHook, CollectionBeforeChangeHook,
+  type CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
@@ -118,7 +119,7 @@ export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ d
       if (rec?.checkbox) {
         if (rec.reasonRef) {
           const reason = await req.payload.findByID({
-            collection: 'reasons',
+            collection: 'recommendation-reasons',
             id: rec.reasonRef,
           })
           if (reason?.content) {
