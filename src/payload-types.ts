@@ -58,6 +58,10 @@ export type MeetingAgenda =
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         recommendation?: string | null;
+        checkbox?: boolean | null;
+        exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
+        companies?: (string | Company)[] | null;
+        exceptionalRecommendationReason?: string | null;
       };
       vpercent?: number | null;
       vPercentSpecial?: number | null;
@@ -416,36 +420,6 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  companies: (string | Company)[];
-  votes?:
-    | {
-        topicIndex: number;
-        voteDecision?: VoteDecision;
-        committee?: boolean | null;
-        conflict?: boolean | null;
-        relatedParty?: boolean | null;
-        personalInterest?: boolean | null;
-        professionalFactor?: string | null;
-        comment?: string | null;
-        clientComment?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  creator?: string | null;
-  updator?: string | null;
-  publishDate?: string | null;
-  publisher?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "companies".
  */
 export interface Company {
@@ -510,6 +484,36 @@ export interface Holding {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        voteDecision?: VoteDecision;
+        committee?: boolean | null;
+        conflict?: boolean | null;
+        relatedParty?: boolean | null;
+        personalInterest?: boolean | null;
+        professionalFactor?: string | null;
+        comment?: string | null;
+        clientComment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  publishDate?: string | null;
+  publisher?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1141,6 +1145,10 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | {
         votingRecommendation?: T;
         recommendation?: T;
+        checkbox?: T;
+        exceptionalRecommendationVote?: T;
+        companies?: T;
+        exceptionalRecommendationReason?: T;
       };
   vpercent?: T;
   vPercentSpecial?: T;

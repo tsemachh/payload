@@ -22,14 +22,20 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const validateMeetingInvitationLink:TextFieldSingleValidation = (value: string | null | undefined, options: any) => {
+const validateMeetingInvitationLink: TextFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
   if (options.req.context.from == 'migration') {
     return true
   }
   if (options.siblingData.magnaId || options.siblingData.invitationDocument || value) return true
   return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
 }
-const validateMeetingState: SelectFieldSingleValidation = (value: string | null | undefined, options: any) => {
+const validateMeetingState: SelectFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
   if (!value) return true
 
   if (options.req.context.from == 'migration') {
@@ -468,6 +474,60 @@ export const Meetings: CollectionConfig = {
                           type: 'text',
                           admin: {
                             width: '90%',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'checkbox',
+                          label: 'האם יש המלצה חריגה?',
+                          type: 'checkbox',
+                          //virtual: true, ?
+                          admin: {
+                            width: '10%',
+                          },
+                        },
+                        {
+                          name: 'exceptionalRecommendationVote',
+                          label: 'המלצה חריגה',
+                          type: 'select',
+                          admin: {
+                            width: '10%',
+                            condition: (data, siblingData) => {
+                              return siblingData?.checkbox === true
+                            },
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
+                          admin: {
+                            width: '30%',
+                            condition: (data, siblingData) => {
+                              return siblingData?.checkbox === true
+                            },
+                          },
+                        },
+                        {
+                          name: 'exceptionalRecommendationReason',
+                          label: 'נימוק המלצה',
+                          type: 'text',
+                          admin: {
+                            width: '30%',
+                            condition: (data, siblingData) => {
+                              return siblingData?.checkbox === true
+                            },
                           },
                         },
                       ],
