@@ -86,8 +86,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[ResultConfirm]
              ,[ElectronicVoting]
              ,[CommiteeRequest]
-        FROM [dbEmda].[dbo].[meetings]
-        WHERE mdate > '2018-01-01';
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
             
     `)
     console.log(`Retrieved ${result?.recordset?.length} records from SQL Server`)

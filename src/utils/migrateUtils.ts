@@ -226,7 +226,7 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
   const res = await pool.request().query(`
       SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[meetings]   `)
+      FROM [dbEmda].[dbo].[meetings]  WHERE mdate > '2018-01-01' `)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
     stocks.add(`${row.stockID}`)

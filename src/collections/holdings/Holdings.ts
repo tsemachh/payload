@@ -59,7 +59,9 @@ export const Holdings: CollectionConfig = {
           relationTo: 'stocks',
           required: true,
           index: true,
-          filterOptions: () => {
+          filterOptions: ({req}) => {
+            if (req.context?.from == 'migration')
+              return true
             return {
               active: {
                 equals: true,

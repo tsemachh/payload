@@ -54,7 +54,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Executing SQL query for meetings.')
     const meetingsResult = await pool.request().query(`
         SELECT id
-        FROM [dbEmda].[dbo].[meetings];
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
     `)
 
     const meetings = meetingsResult.recordset
