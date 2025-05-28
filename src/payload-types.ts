@@ -58,6 +58,11 @@ export type MeetingAgenda =
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         recommendation?: string | null;
+        showExceptional?: boolean | null;
+        exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
+        companies?: (string | Company)[] | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
       };
       vpercent?: number | null;
       vPercentSpecial?: number | null;
@@ -95,6 +100,7 @@ export type RolePermissions =
         | 'users'
         | 'roles'
         | 'documents'
+        | 'recommendation-reasons'
         | 'migration-faults'
         | 'holdings'
         | 'stock-migration-mapping'
@@ -199,6 +205,7 @@ export interface Config {
     users: User;
     roles: Role;
     documents: Document;
+    'recommendation-reasons': RecommendationReason;
     'migration-faults': MigrationFault;
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
@@ -237,6 +244,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
@@ -416,36 +424,6 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  companies: (string | Company)[];
-  votes?:
-    | {
-        topicIndex: number;
-        voteDecision?: VoteDecision;
-        committee?: boolean | null;
-        conflict?: boolean | null;
-        relatedParty?: boolean | null;
-        personalInterest?: boolean | null;
-        professionalFactor?: string | null;
-        comment?: string | null;
-        clientComment?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  creator?: string | null;
-  updator?: string | null;
-  publishDate?: string | null;
-  publisher?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "companies".
  */
 export interface Company {
@@ -511,6 +489,48 @@ export interface Holding {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        voteDecision?: VoteDecision;
+        committee?: boolean | null;
+        conflict?: boolean | null;
+        relatedParty?: boolean | null;
+        personalInterest?: boolean | null;
+        professionalFactor?: string | null;
+        comment?: string | null;
+        clientComment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  publishDate?: string | null;
+  publisher?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -898,6 +918,10 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
+        relationTo: 'recommendation-reasons';
+        value: string | RecommendationReason;
+      } | null)
+    | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
       } | null)
@@ -1142,6 +1166,11 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | {
         votingRecommendation?: T;
         recommendation?: T;
+        showExceptional?: T;
+        exceptionalRecommendationVote?: T;
+        companies?: T;
+        reasonRef?: T;
+        reasonText?: T;
       };
   vpercent?: T;
   vPercentSpecial?: T;
@@ -1275,6 +1304,17 @@ export interface DocumentsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons_select".
+ */
+export interface RecommendationReasonsSelect<T extends boolean = true> {
+  content?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

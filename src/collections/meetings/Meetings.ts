@@ -12,6 +12,7 @@ import {
   validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
+  handleRecommendationReason,
 } from '../research-documents/hooks'
 import { getCollectionDoc } from '@/utils/utils'
 import type { TextFieldSingleValidation } from 'payload'
@@ -22,14 +23,20 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const validateMeetingInvitationLink:TextFieldSingleValidation = (value: string | null | undefined, options: any) => {
+const validateMeetingInvitationLink: TextFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
   if (options.req.context.from == 'migration') {
     return true
   }
   if (options.siblingData.magnaId || options.siblingData.invitationDocument || value) return true
   return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
 }
-const validateMeetingState: SelectFieldSingleValidation = (value: string | null | undefined, options: any) => {
+const validateMeetingState: SelectFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
   if (!value) return true
 
   if (options.req.context.from == 'migration') {
@@ -472,6 +479,69 @@ export const Meetings: CollectionConfig = {
                         },
                       ],
                     },
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'showExceptional',
+                          label: 'האם יש המלצה חריגה?',
+                          type: 'checkbox',
+                          admin: {
+                            width: '20%',
+                          },
+                        },
+                        {
+                          name: 'exceptionalRecommendationVote',
+                          label: 'המלצה חריגה',
+                          type: 'select',
+                          admin: {
+                            width: '10%',
+                            condition: (_, siblingData) => siblingData?.checkbox === true,
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
+                          admin: {
+                            width: '70%',
+                            condition: (_, siblingData) => siblingData?.checkbox === true,
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      admin: {
+                        condition: (_, siblingData) => siblingData?.checkbox === true,
+                      },
+                      fields: [
+                        {
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'recommendation-reasons',
+                          admin: {
+                            width: '60%',
+                          },
+                        },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק (נבחר או חופשי)',
+                          type: 'textarea',
+                          admin: {
+                            width: '40%',
+                          },
+                        },
+                      ],
+                    },
                   ],
                 },
                 {
@@ -587,8 +657,8 @@ export const Meetings: CollectionConfig = {
         },
         {
           label: 'מסמכי מחקר',
-          admin:{
-              condition: (data) =>  data?.companies?.length > 0
+          admin: {
+            condition: (data) => data?.companies?.length > 0,
           },
           fields: [
             {
@@ -597,9 +667,9 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'research-documents',
               filterOptions: ({ data }) => {
-               return {
-                 company:{in: data.companies}
-               }
+                return {
+                  company: { in: data.companies },
+                }
               },
               hasMany: true,
               admin: {
@@ -630,7 +700,7 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {
