@@ -483,7 +483,7 @@ export const Meetings: CollectionConfig = {
                       type: 'row',
                       fields: [
                         {
-                          name: 'checkbox',
+                          name: 'showExceptional',
                           label: 'האם יש המלצה חריגה?',
                           type: 'checkbox',
                           admin: {

@@ -1,7 +1,7 @@
 import { CollectionConfig } from 'payload'
 
-export const Reasons: CollectionConfig = {
-  slug: 'reasons',
+export const RecommendationReasons: CollectionConfig = {
+  slug: 'recommendation-reasons',
   labels: {
     singular: 'נימוק',
     plural: 'נימוקים',
@@ -13,7 +13,7 @@ export const Reasons: CollectionConfig = {
   fields: [
     {
       name: 'content',
-      type: 'textarea',
+      type: 'text',
       label: 'תוכן הנימוק',
       required: true,
     },
