@@ -118,7 +118,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Create a new company with the account name
             const newCompanyData: Partial<Company> = {
               legacyCompanyId: company.companyId,
-              name: accountInfo.name,
+              name: `${accountInfo.name} - ${accountInfo.accountNumber}`,
               active: true,
               type: 'fund',
               // Set the account number in the appropriate field using the new structure
