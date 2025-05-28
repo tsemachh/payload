@@ -527,7 +527,7 @@ export const Meetings: CollectionConfig = {
                           name: 'reasonRef',
                           label: 'נימוק מוכן',
                           type: 'relationship',
-                          relationTo: 'reasons',
+                          relationTo: 'recommendation-reasons',
                           admin: {
                             width: '60%',
                           },
@@ -657,8 +657,8 @@ export const Meetings: CollectionConfig = {
         },
         {
           label: 'מסמכי מחקר',
-          admin:{
-              condition: (data) =>  data?.companies?.length > 0
+          admin: {
+            condition: (data) => data?.companies?.length > 0,
           },
           fields: [
             {
@@ -667,9 +667,9 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'research-documents',
               filterOptions: ({ data }) => {
-               return {
-                 company:{in: data.companies}
-               }
+                return {
+                  company: { in: data.companies },
+                }
               },
               hasMany: true,
               admin: {

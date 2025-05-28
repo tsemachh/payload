@@ -58,10 +58,10 @@ export type MeetingAgenda =
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         recommendation?: string | null;
-        checkbox?: boolean | null;
+        showExceptional?: boolean | null;
         exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
         companies?: (string | Company)[] | null;
-        reasonRef?: (string | null) | Reason;
+        reasonRef?: (string | null) | RecommendationReason;
         reasonText?: string | null;
       };
       vpercent?: number | null;
@@ -100,7 +100,7 @@ export type RolePermissions =
         | 'users'
         | 'roles'
         | 'documents'
-        | 'reasons'
+        | 'recommendation-reasons'
         | 'migration-faults'
         | 'holdings'
         | 'stock-migration-mapping'
@@ -205,7 +205,7 @@ export interface Config {
     users: User;
     roles: Role;
     documents: Document;
-    reasons: Reason;
+    'recommendation-reasons': RecommendationReason;
     'migration-faults': MigrationFault;
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
@@ -244,7 +244,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
-    reasons: ReasonsSelect<false> | ReasonsSelect<true>;
+    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
@@ -492,9 +492,9 @@ export interface Holding {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "reasons".
+ * via the `definition` "recommendation-reasons".
  */
-export interface Reason {
+export interface RecommendationReason {
   id: string;
   content: string;
   creator?: string | null;
@@ -918,8 +918,8 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
-        relationTo: 'reasons';
-        value: string | Reason;
+        relationTo: 'recommendation-reasons';
+        value: string | RecommendationReason;
       } | null)
     | ({
         relationTo: 'migration-faults';
@@ -1166,7 +1166,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | {
         votingRecommendation?: T;
         recommendation?: T;
-        checkbox?: T;
+        showExceptional?: T;
         exceptionalRecommendationVote?: T;
         companies?: T;
         reasonRef?: T;
@@ -1307,9 +1307,9 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "reasons_select".
+ * via the `definition` "recommendation-reasons_select".
  */
-export interface ReasonsSelect<T extends boolean = true> {
+export interface RecommendationReasonsSelect<T extends boolean = true> {
   content?: T;
   creator?: T;
   updator?: T;
