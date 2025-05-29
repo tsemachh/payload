@@ -58,6 +58,11 @@ export type MeetingAgenda =
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         recommendation?: string | null;
+        showExceptional?: boolean | null;
+        exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
+        companies?: (string | Company)[] | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
       };
       vpercent?: number | null;
       vPercentSpecial?: number | null;
@@ -95,6 +100,7 @@ export type RolePermissions =
         | 'users'
         | 'roles'
         | 'documents'
+        | 'recommendation-reasons'
         | 'migration-faults'
         | 'holdings'
         | 'stock-migration-mapping'
@@ -104,6 +110,7 @@ export type RolePermissions =
         | 'silenced-stocks'
         | 'votes'
         | 'research-documents'
+        | 'admin-notifications'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -198,6 +205,7 @@ export interface Config {
     users: User;
     roles: Role;
     documents: Document;
+    'recommendation-reasons': RecommendationReason;
     'migration-faults': MigrationFault;
     holdings: Holding;
     'stock-migration-mapping': StockMigrationMapping;
@@ -207,6 +215,7 @@ export interface Config {
     'silenced-stocks': SilencedStock;
     votes: Vote;
     'research-documents': ResearchDocument;
+    'admin-notifications': AdminNotification;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -223,6 +232,7 @@ export interface Config {
     };
     companies: {
       parentCompany: 'companies';
+      'researchDocuments.researchDocuments': 'research-documents';
       meetings: 'meetings';
       holdings: 'holdings';
     };
@@ -235,6 +245,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
@@ -244,6 +255,7 @@ export interface Config {
     'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
     'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
+    'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -298,10 +310,12 @@ export interface Stock {
   stockId: string;
   fullName?: string | null;
   type?: StockType;
+  fromMagna?: boolean | null;
   origin: StockOrigin;
   tradable?: boolean | null;
   relatedStock?: (string | null) | Stock;
   active?: boolean | null;
+  isFinancial?: boolean | null;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -351,6 +365,7 @@ export interface Meeting {
   stock: string | Stock;
   type?: MeetingType;
   meetingId?: string | null;
+  fullName?: string | null;
   magnaId?: string | null;
   invitationDocument?: (string | null) | Document;
   invitationLink?: string | null;
@@ -378,7 +393,7 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
-  uploadDoc?: (string | ResearchDocument)[] | null;
+  researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -410,42 +425,17 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  companies: (string | Company)[];
-  votes?:
-    | {
-        topicIndex: number;
-        voteDecision?: VoteDecision;
-        committee?: boolean | null;
-        conflict?: boolean | null;
-        relatedParty?: boolean | null;
-        personalInterest?: boolean | null;
-        professionalFactor?: string | null;
-        comment?: string | null;
-        clientComment?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "companies".
  */
 export interface Company {
   id: string;
+  name: string;
+  active?: boolean | null;
+  type?: ('regular' | 'parent' | 'fund') | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
-  name: string;
-  active?: boolean | null;
+  subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
    */
@@ -454,13 +444,17 @@ export interface Company {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  subCompanies?: (string | Company)[] | null;
   researchDocuments?: {
     showResearchTrusteeship?: boolean | null;
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
     defaultVotingRecommendation?: boolean | null;
+    researchDocuments?: {
+      docs?: (string | ResearchDocument)[];
+      hasNextPage?: boolean;
+      totalDocs?: number;
+    };
   };
   mainAccount?:
     | {
@@ -488,26 +482,10 @@ export interface Company {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  company: string | Company;
-  valueDate: string;
-  stock: string | Stock;
-  quantity: number;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "research-documents".
  */
 export interface ResearchDocument {
   id: string;
-  meeting?: (string | null) | Meeting;
   companies?: (string | Company)[] | null;
   uploadedAt?: string | null;
   creator?: string | null;
@@ -523,6 +501,64 @@ export interface ResearchDocument {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  company: string | Company;
+  valueDate: string;
+  stock: string | Stock;
+  feedStockNum?: string | null;
+  quantity: number;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  companies: (string | Company)[];
+  votes?:
+    | {
+        topicIndex: number;
+        voteDecision?: VoteDecision;
+        committee?: boolean | null;
+        conflict?: boolean | null;
+        relatedParty?: boolean | null;
+        personalInterest?: boolean | null;
+        professionalFactor?: string | null;
+        comment?: string | null;
+        clientComment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  publishDate?: string | null;
+  publisher?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -709,6 +745,22 @@ export interface SilencedStock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications".
+ */
+export interface AdminNotification {
+  id: string;
+  message: string;
+  url?: string | null;
+  readStatus?: boolean | null;
+  relatedCompany?: (string | null) | Company;
+  relatedUser?: (string | null) | User;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -872,6 +924,10 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
+        relationTo: 'recommendation-reasons';
+        value: string | RecommendationReason;
+      } | null)
+    | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
       } | null)
@@ -906,6 +962,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'research-documents';
         value: string | ResearchDocument;
+      } | null)
+    | ({
+        relationTo: 'admin-notifications';
+        value: string | AdminNotification;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1006,7 +1066,12 @@ export interface PayloadQueryPreset {
     | 'migration-faults'
     | 'holdings'
     | 'votes'
-    | 'research-documents';
+    | 'research-documents'
+    | 'admin-notifications';
+  /**
+   * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   */
+  isTemp?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1018,10 +1083,12 @@ export interface StocksSelect<T extends boolean = true> {
   stockId?: T;
   fullName?: T;
   type?: T;
+  fromMagna?: T;
   origin?: T;
   tradable?: T;
   relatedStock?: T;
   active?: T;
+  isFinancial?: T;
   symbol?: T;
   name?: T;
   longName?: T;
@@ -1057,6 +1124,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   stock?: T;
   type?: T;
   meetingId?: T;
+  fullName?: T;
   magnaId?: T;
   invitationDocument?: T;
   invitationLink?: T;
@@ -1080,7 +1148,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
-  uploadDoc?: T;
+  researchDocuments?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1104,6 +1172,11 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | {
         votingRecommendation?: T;
         recommendation?: T;
+        showExceptional?: T;
+        exceptionalRecommendationVote?: T;
+        companies?: T;
+        reasonRef?: T;
+        reasonText?: T;
       };
   vpercent?: T;
   vPercentSpecial?: T;
@@ -1115,13 +1188,14 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  type?: T;
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
-  name?: T;
-  active?: T;
-  parentCompany?: T;
   subCompanies?: T;
+  parentCompany?: T;
   researchDocuments?:
     | T
     | {
@@ -1130,6 +1204,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearch?: T;
         showResearchPrivate?: T;
         defaultVotingRecommendation?: T;
+        researchDocuments?: T;
       };
   mainAccount?:
     | T
@@ -1239,6 +1314,17 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons_select".
+ */
+export interface RecommendationReasonsSelect<T extends boolean = true> {
+  content?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "migration-faults_select".
  */
 export interface MigrationFaultsSelect<T extends boolean = true> {
@@ -1259,6 +1345,7 @@ export interface HoldingsSelect<T extends boolean = true> {
   company?: T;
   valueDate?: T;
   stock?: T;
+  feedStockNum?: T;
   quantity?: T;
   creator?: T;
   updator?: T;
@@ -1395,15 +1482,17 @@ export interface VotesSelect<T extends boolean = true> {
       };
   creator?: T;
   updator?: T;
+  publishDate?: T;
+  publisher?: T;
   createdAt?: T;
   updatedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "research-documents_select".
  */
 export interface ResearchDocumentsSelect<T extends boolean = true> {
-  meeting?: T;
   companies?: T;
   uploadedAt?: T;
   creator?: T;
@@ -1419,6 +1508,21 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications_select".
+ */
+export interface AdminNotificationsSelect<T extends boolean = true> {
+  message?: T;
+  url?: T;
+  readStatus?: T;
+  relatedCompany?: T;
+  relatedUser?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1543,6 +1647,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
   where?: T;
   columns?: T;
   relatedCollection?: T;
+  isTemp?: T;
   updatedAt?: T;
   createdAt?: T;
 }

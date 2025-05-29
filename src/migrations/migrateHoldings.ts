@@ -164,6 +164,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               holdingsArray.push({
                 quantity,
                 stock: stockId,
+                feedStockNum:stockNum
               })
             } else {
               if (!silentStockSet.has(`${stockNum}`)) {
@@ -200,6 +201,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               valueDate: holdingDate,
               stock: holding.stock,
               quantity: holding.quantity,
+              feedStockNum: holding.feedStockNum,
             } as Partial<Holding>
             await payload.create({
               collection: 'holdings',
@@ -234,6 +236,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const allCompanies = await payload.find({
       collection: 'companies',
       limit: 0,
+      where:{
+        type: {equals:'fund'}
+      },
       req,
       depth: 0,
     })
@@ -242,8 +247,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const parentCompanyId: string | null = company.legacyCompanyId as string | null
       if (company.mainAccount && Array.isArray(company.mainAccount)) {
         company.mainAccount.forEach((account) => {
-          const key = `${company.companyId}-${account.accountNumber}`
-          accountCache.set(key, company.id)
           if (parentCompanyId) {
             const key = `${parentCompanyId}-${account.accountNumber}`
             accountCache.set(key, company.id)

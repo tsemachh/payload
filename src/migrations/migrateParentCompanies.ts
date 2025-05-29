@@ -1,6 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import path from 'path'
 import fs from 'fs'
+import { Company } from '@/payload-types'
 
 // Define interfaces for our company data
 interface CompanyNode {
@@ -133,19 +134,15 @@ async function processCompany(
       console.log(`Updated company: ${company.name}`)
     } else {
       // Create new company
-      const createData: any = {
+      const createData: Partial<Company> = {
         name: company.name,
         active: true,
+        type: 'parent'
       }
 
       // Set companyId if provided
       if (company.companyId) {
         createData.companyId = company.companyId
-      }
-
-      // Set parent company if provided
-      if (parentId) {
-        createData.parentCompany = parentId
       }
 
       const result = await payload.create({
@@ -191,6 +188,7 @@ async function processCompany(
           collection: 'companies',
           id: companyId,
           data: {
+            type: 'parent',
             subCompanies: newSubCompanies,
           },
         })

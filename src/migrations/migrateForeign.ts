@@ -86,6 +86,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'stocks',
             data: {
               tradable: false,
+              origin: 'Foreign',
+              active: true,
               relatedStock: newStockSequence,
             },
             where: {

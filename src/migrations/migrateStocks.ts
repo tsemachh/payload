@@ -7,6 +7,7 @@ import {
   getAllStocksInLatestMeetings,
   getAllStocksInMeetings,
   getEmdaStockIds,
+  getFinancialSecurityIds,
   getPredictaStockIds,
   getStockIdsByMappingType,
   getStockRelations,
@@ -79,6 +80,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
     //const predictaHistoryStocks: Set<string> = await getHistoryPredictaStockIds(pool) //Bursa stocks including history
     const emdaStocks: Set<string> = await getEmdaStockIds(pool) //Shaked feed stocks
+    const financialSecurityIds: Set<string> = await getFinancialSecurityIds(pool) // Financial securities from FinancialGroupChosen table
     const relationStocks: Map<string, string> = await getStockRelations(pool, payload) // stock relations
     const rootRelatedStocks: Set<string> = new Set<string>(relationStocks.values()) // All stock which someone points to
     const stocksInMeeting: Set<string> = await getAllStocksInMeetings(pool)
@@ -133,20 +135,28 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           isPredictaStock: predictaStocks.has(stockID),
           isEmdaStock: emdaStocks.has(stockID),
 
+          // Financial status
+          isFinancial: financialSecurityIds.has(stockID),
+
           // Meeting status
-          hasActiveMeeting: stocksInMeeting.has(stockID),
-          hasLatestMeeting: stocksInLatestMeeting.has(stockID),
+          hasActiveMeeting: stocksInMeeting.has(stockID) || (relatedStock && stocksInMeeting.has(relatedStock)),
+          hasLatestMeeting: stocksInLatestMeeting.has(stockID) || (relatedStock && stocksInLatestMeeting.has(relatedStock)),
 
           // Relationship statuses
           hasTradableRelation: !!(relatedStock && predictaStocks.has(relatedStock)),
           hasForeignRelation: !!(relatedStock && foreignStocksShaked.has(relatedStock)),
+          hasRelation:!!relatedStock,
 
           // Root statuses
           isRootStock: isRootStock,
           isRootEmda: isRootStock && emdaStocks.has(stockID),
 
           // Foreign status (including relations)
-          isForeign: foreignStocksShaked.has(stockID)
+          isForeign: foreignStocksShaked.has(stockID),
+
+          //shouldProcessStock
+          isTradable:false,
+          shouldProcessStock: false
         };
 
         // Determine if stock should be processed
@@ -158,7 +168,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           stockStatuses.isPrivateShaked ||
           stockStatuses.isNonTradableShaked ||
           stockStatuses.isNotActiveShaked;
-
+        stockStatuses.shouldProcessStock= shouldProcessStock
         if (shouldProcessStock) {
           try {
             let stockSequence: string | null | undefined = stockIdTOSequence.get(stockID);
@@ -184,10 +194,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const isTradable =
               stockStatuses.isPredictaStock ||
               stockStatuses.isPrivateShaked ||
-              stockStatuses.isRootStock ||
+              // stockStatuses.isRootStock ||
+              (stockStatuses.hasActiveMeeting  && !stockStatuses.hasRelation) ||
               stockStatuses.isNonTradableShaked ||
               stockStatuses.isForeign;
 
+            stockStatuses.isTradable = isTradable
             let comments = JSON.stringify(stockStatuses);
 
             // Determine active status:
@@ -196,7 +208,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             let isActive = stockStatuses.hasLatestMeeting || stockStatuses.isPredictaStock || 
                           (stockStatuses.isPrivateShaked || stockStatuses.isNonTradableShaked || stockStatuses.isForeign);
 
-            if (!isTradable && !relatedStock) {
+            if (!isTradable) {
               if (!stockStatuses.hasActiveMeeting) {
                 // Move stock to Silenced stocks
                 await insertSilenceStocks(stockID, req);
@@ -223,7 +235,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               isTradable,
               origin,
               isActive,
-              comments
+              comments,
+              stockStatuses.isPredictaStock,
+              stockStatuses.isFinancial
             );
 
             if (stockSequence) {
@@ -266,7 +280,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               isPredictaStock: stockStatuses.isPredictaStock,
               isEmdaStock: stockStatuses.isEmdaStock,
               hasTradableRelationStock: stockStatuses.hasTradableRelation,
-              stockHasMeeting: stockStatuses.hasActiveMeeting,
+              stockHasMeeting: stockStatuses.hasActiveMeeting as boolean,
             }),
             row,
           });

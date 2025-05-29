@@ -1,112 +1,56 @@
-import { ValidationError, type CollectionBeforeValidateHook ,type CollectionBeforeChangeHook} from 'payload'
+import {
+  ValidationError,
+  type CollectionBeforeValidateHook,
+  type CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
+} from 'payload'
+import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
-const parseResearchFilename = (
-  fileName: string
-): { stockName?: string; companyName?: string; isGeneric: boolean; isValid: boolean; error?: string } => {
-  if (!/\.(pdf|docx)$/i.test(fileName)) {
-    return {
-      isGeneric: false,
-      isValid: false,
-      error: 'סיומת הקובץ אינה נתמכת. יש להעלות קבצים מסוג PDF או DOCX בלבד.',
-    }
-  }
-
-  const nameWithoutExtension = fileName.replace(/\.(pdf|docx)$/i, '').trim()
-  const nameWithoutDate = nameWithoutExtension.replace(/\d{2}\.\d{2}\.\d{4}$/, '').trim()
-  console.log("----nameWithoutExtension",nameWithoutExtension)
-  console.log("----nameWithoutDate",nameWithoutDate)
-
-  const match = nameWithoutDate.match(/^(.+?)\s*\(([^)]+)\)$/)
-  if (!match) {
-    return {
-      isGeneric: false,
-      isValid: false,
-      error: 'שם הקובץ אינו בפורמט הנדרש. יש לכלול שם נייר ערך ושם חברה בתוך סוגריים.',
-    }
-  }
-
-  const stockName = match[1].trim()
-  const companyName = match[2].trim()
-
-  return {
-    stockName,
-    companyName,
-    isGeneric: companyName === 'עמדה',
-    isValid: true,
-  }
-}
-
-export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ data, req }) => {
+export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
+  data,
+  req,
+}) => {
   const type = data?.type
-  const docIDs = data?.['research-documents']
-
+  const docIDs = data?.researchDocuments
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
     return data
   }
-
-  const researchDocs = await req.payload.find({
-    collection: 'research-documents',
-    where: {
-      id: {
-        in: docIDs,
-      },
-    },
-  })
-
-  const docs = researchDocs.docs || []
   const validationErrors: { message: string; path: string }[] = []
-
-  for (const doc of docs) {
-    if (!doc.filename) continue
-
-    const parsed = parseResearchFilename(doc.filename)
-
-    if (!parsed.isValid) {
-      validationErrors.push({
-        message: `קובץ "${doc.filename}": ${parsed.error}`,
-        path: 'research-documents',
-      })
-      continue
-    }
-//להוריד
-    if (!parsed.isGeneric && parsed.companyName) {
-      const companyResult = await req.payload.find({
-        collection: 'companies',
-        where: { name: { like: parsed.companyName } },
-      })
-
-      const foundCompanies = companyResult.docs
-
-      if (!foundCompanies || foundCompanies.length === 0) {
-        validationErrors.push({
-          message: `קובץ "${doc.filename}": לא נמצאה חברה בשם "${parsed.companyName}".`,
-          path: 'research-documents',
-        })
-        continue
-      }
-
-      try {
-        await req.payload.update({
-          collection: 'research-documents',
-          id: doc.id,
-          data: {
-            companies: foundCompanies.map((company) => company.id),
-          },
-        })
-      } catch (err) {
-        validationErrors.push({
-          message: `קובץ "${doc.filename}": אירעה שגיאה בעת ניסיון לשייך את החברה "${parsed.companyName}" למסמך.`,
-          path: 'research-documents',
-        })
-      }
-    }
-  }
 
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
-      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף מסמך מחקר אחד בלבד.',
-      path: 'research-documents',
+      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) -אחד בלבד.',
+      path: 'researchDocuments',
     })
+  } else {
+    if (docIDs.length > 1) {
+      const query: any = {
+        collection: 'research-documents',
+        select: {
+          id: true,
+          companies: true,
+        },
+        depth: 0,
+        limit: 0,
+        where: {
+          id: {
+            in: docIDs,
+          },
+        },
+      }
+
+      const researchDocuments = await req.payload.find(query)
+
+      const generalDocs = researchDocuments?.docs?.filter(
+        (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
+      )
+      if (generalDocs.length > 1) {
+        validationErrors.push({
+          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
+          path: 'researchDocuments',
+        })
+      }
+    }
   }
 
   if (validationErrors.length > 0) {
@@ -116,35 +60,97 @@ export const validateResearchDocsHook: CollectionBeforeValidateHook = async ({ d
   return data
 }
 
-export const beforeChangeCompaniesFromFilename:CollectionBeforeChangeHook = async ({ data, req }) => {
-  const filename = data.filename || '';
-  const parsed = parseResearchFilename(filename);
-  console.log("----parsed",parsed)
+export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
+  data,
+  req,
+}) => {
+  const type = data?.type
+  const docIDs = data?.researchDocuments
+  if (
+    (type === 'אג"ח' || type === 'אג"ח כהונת נאמן') &&
+    Array.isArray(docIDs) &&
+    docIDs.length === 1
+  ) {
+    await req.payload.update({
+      collection: 'research-documents',
+      id: docIDs[0],
+      data: {
+        companies: [],
+      },
+    })
+  }
+  return data
+}
 
-  if (!parsed.isValid) {
-    console.warn(parsed.error)
-    console.log("----parsed.error",parsed.error)
+export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = async ({
+  data,
+  req,
+}) => {
+  const filename = data?.file?.filename || data?.filename
+  if (!filename) return data
+  if (data?.companies) {
     return data
   }
+  const parsed = parseResearchFilename(filename)
 
   if (parsed.isGeneric) {
-    // Generic case - אולי companies ריק או ערך ברירת מחדל
     data.companies = []
   } else {
     if (!parsed.isGeneric && parsed.companyName) {
       const companies = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName } },
+        where: { name: { like: parsed.companyName }, type: { equals: 'regular' } },
       })
-      console.log("-----companies",companies)
-
-    if (companies) {
-      const foundCompanies = companies.docs
-      data.companies = foundCompanies.map((company) => company.id)
-    } else {
-      data.companies = []
+      if (companies) {
+        const foundCompanies = companies.docs
+        data.companies = foundCompanies.map((company) => company.id)
+      }
     }
+    return data
   }
+}
 
-  return data;
-}}
+export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ data, req }) => {
+  if (!Array.isArray(data.agenda)) return data
+
+  await Promise.all(
+    data.agenda.map(async (item) => {
+      const rec = item.recommendation
+      if (rec?.checkbox) {
+        if (rec.reasonRef) {
+          const reason = await req.payload.findByID({
+            collection: 'recommendation-reasons',
+            id: rec.reasonRef,
+          })
+          if (reason?.content) {
+            rec.reasonText = reason.content
+          }
+        }
+      } else {
+        rec.reasonRef = undefined
+        rec.reasonText = undefined
+      }
+    }),
+  )
+
+  return data
+}
+
+export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
+  doc,
+  req,
+  previousDoc,
+}) => {
+  const prev = previousDoc?.researchDocuments || []
+  const curr = doc?.researchDocuments || []
+  const removed = prev.filter((id: string) => !curr.includes(id))
+
+  await Promise.all(
+    removed.map(async (id: any) => {
+      await req.payload.delete({
+        collection: 'research-documents',
+        id: id,
+      })
+    }),
+  )
+}

@@ -1,88 +1,91 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useField,UploadField,useAllFormFields,useDocumentInfo, useForm, useFormFields ,useBulkUpload } from '@payloadcms/ui'
-import type { ResearchDocument } from '@/payload-types'
+import { useField, UploadField } from '@payloadcms/ui'
 import { UploadFieldClientProps } from 'payload'
-import { getSiblingData } from 'payload/shared'
 import { stringify } from 'qs-esm'
 
-const ResearchUploadDisplay: React.FC<UploadFieldClientProps>  = (props) => {
-   const { value } = useField() 
-   const [uploadsData, setUploadsData] = useState<any[]>([]);
+const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
+  const { value } = useField()
+  const [uploadsData, setUploadsData] = useState<any[]>([])
 
-   useEffect(() => {
-    const chooseExistingBtn = document.querySelector('.upload__listToggler');
+  useEffect(() => {
+    const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
-      (chooseExistingBtn as HTMLElement).style.display = 'none';
+      ;(chooseExistingBtn as HTMLElement).style.display = 'none'
     }
-  
-    const orText = document.querySelector('.upload__dropzoneContent__orText');
+
+    const orText = document.querySelector('.upload__dropzoneContent__orText')
     if (orText) {
-      (orText as HTMLElement).style.display = 'none';
+      ;(orText as HTMLElement).style.display = 'none'
     }
-  }, []);
-  
+  }, [])
 
- useEffect(() => {
-  const getAllUploads = async () => {
-    if (!value || !Array.isArray(value) || value.length === 0) return;
+  useEffect(() => {
+    const getAllUploads = async () => {
+      if (!value || !Array.isArray(value) || value.length === 0) return
 
-    const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v));
-    const query = {
-      where: {
-        id: {
-          in: ids, 
+      const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v))
+      const query = {
+        where: {
+          id: {
+            in: ids,
+          },
         },
-      },
-      depth: 1,
-      limit: 0,
-      select: {
-        companies: true, 
-      },
-    };
-    
-    const stringifiedQuery = stringify(query, { addQueryPrefix: true })  
-    try {
-      const res = await fetch(`/api/research-documents${stringifiedQuery}`);
-      const { docs } = await res.json();
+        depth: 1,
+        limit: 0,
+        select: {
+          companies: true,
+        },
+      }
 
-      const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]));
-      const sortedDocs = ids.map(id => uploadsMap.get(id)).filter(Boolean);
-      setUploadsData(sortedDocs);
-    } catch (err) {
-      console.error('Failed to fetch uploads', err);
+      const stringifiedQuery = stringify(query, { addQueryPrefix: true })
+      try {
+        const res = await fetch(`/api/research-documents${stringifiedQuery}`)
+        const { docs } = await res.json()
+
+        const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]))
+        const sortedDocs = ids.map((id) => uploadsMap.get(id)).filter(Boolean)
+        setUploadsData(sortedDocs)
+      } catch (err) {
+        console.error('Failed to fetch uploads', err)
+      }
     }
-  };
 
-  getAllUploads();
-}, [value]);
+    getAllUploads()
+  }, [value])
 
-useEffect(() => {
-    if (!uploadsData || uploadsData.length === 0) return;
+  useEffect(() => {
+    if (!uploadsData || uploadsData.length === 0) return
 
-    const filenameEls = document.querySelectorAll('.upload-relationship-details__details');
+    const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
 
     filenameEls.forEach((el, i) => {
-      const upload = uploadsData[i];
-      if (!upload) return;
+      const upload = uploadsData[i]
+      if (!upload) return
 
-      const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean);
+      const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
+      const existingSpan = el.querySelector('.withMeta-span')
 
-      if (!el.querySelector('.withMeta-span') && companyNames.length > 0) {
-        const newSpan = document.createElement('p');
-        newSpan.className = 'withMeta-span';
-        newSpan.style.marginLeft = '8px';
-        newSpan.textContent = companyNames.join(', ');
-        el.appendChild(newSpan);
+      if (!existingSpan) {
+        const newSpan = document.createElement('p')
+        newSpan.className = 'withMeta-span'
+
+        newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
+
+        newSpan.style.color = '#006400'
+        newSpan.style.marginLeft = '8px'
+        newSpan.style.fontFamily = 'Arial, sans-serif'
+        newSpan.style.fontStyle = 'italic'
+
+        el.appendChild(newSpan)
       }
-    });
-
-}, [uploadsData]);
-
+    })
+  }, [uploadsData])
 
   return (
-    <div ><UploadField {...props} />
+    <div>
+      <UploadField {...props} />
     </div>
   )
 }

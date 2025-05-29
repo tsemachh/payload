@@ -29,11 +29,6 @@ interface FirmRow {
   setResearchAsDefaultTrusteeship: boolean
 }
 
-interface GroupToFirmRow {
-  group_id: number
-  firm_id: number
-}
-
 async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>> {
 
   const result = await pool.request().query(`
@@ -71,7 +66,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Transform and insert data into Payload CMS
     let successCount = 0
     let errorCount = 0
-    const groupIdToMongoId = new Map<number, string>()
 
     for (const row of resultFirms.recordset) {
       try {
@@ -80,6 +74,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           companyId: row.firmId,
           name: row.name,
           order: row.order,
+          type: 'regular',
           active: !!row.active,
           researchDocuments: {
             showResearch: !!row.showResearch,

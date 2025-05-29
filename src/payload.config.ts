@@ -13,6 +13,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
+import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
 import { Stocks } from './collections/stocks/Stocks'
 import { Companies } from '@/collections/companies/Companies'
 import { StockValues } from '@/collections/stocks/StockValues'
@@ -24,6 +25,7 @@ import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
+import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -85,6 +87,7 @@ export default buildConfig({
     Users,
     Roles,
     Documents,
+    RecommendationReasons,
     MigrationFaults,
     Holdings,
     StockMigrationMapping,
@@ -94,6 +97,7 @@ export default buildConfig({
     SilencedStocks,
     Votes,
     ResearchDocument,
+    AdminNotifications,
   ],
   globals: [],
   editor: lexicalEditor(),
@@ -105,7 +109,7 @@ export default buildConfig({
   logger: logger,
   plugins: [
     importExportPlugin({
-      collections: ['stocks', 'meetings', 'companies'],
+      collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
         collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
@@ -131,7 +135,7 @@ export default buildConfig({
         'research-documents': true,
         'holdings-feed': true,
         'meetings-feed': true,
-        'stocks-feed': true
+        'stocks-feed': true,
       },
       enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',

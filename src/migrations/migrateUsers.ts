@@ -199,7 +199,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           name: userProfile.UserName.toLowerCase().trim(),
           email: userProfile.UserName.toLowerCase().trim(),
           legacyId: userProfile.UserId,
-
+          active: true,
           // User type and permissions
           isAdmin: userProfile.UserType === 1,
           // Firm relationships
@@ -380,6 +380,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     const companies = new Map<string, string[]>([
       ['tsemachh@shefing.com', ['15', '22', '23','49','25']],
       ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
+      ['philc@shefing.com', ['1167', '1168', '15']],
     ])
     let createdCount = 0
     let updatedCount = 0
@@ -388,6 +389,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     // Process each user in the test.users.json file
     for (const userData of testUsers) {
       try {
+        userData.active = true
         // Check if user already exists
         const existingUser = await payload.find({
           collection: 'users',

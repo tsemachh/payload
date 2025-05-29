@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'main'
-  pull_request:
-    branches:
-      - 'main'
 
 jobs:
   docker-build:
@@ -101,17 +98,51 @@ jobs:
           docker stop payload-container
 
       # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
-      - name: Tag and Push Docker image to GCR
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Install yq and prepare tag
         run: |
-          # Tag the local image with the GCR tag
-          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}
-          # Push the tagged image to GCR
-          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${{ env.TAG }}; then
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.43.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --version
+
+          # Clone ArgoCD config repo
+          git clone https://x-access-token:${{ secrets.EMDA_ARGOCD_PER }}@github.com/shefing/emda-argocd.git
+          cd emda-argocd
+
+          REPO="shefing/emda" 
+          COMMIT_SHA=${GITHUB_SHA}
+
+          PR_NUMBER=$(curl -s -H "Authorization: token ${{ secrets.EMDA_ARGOCD_PER }}" \
+            "https://api.github.com/repos/$REPO/pulls?state=closed&sort=updated&direction=desc" | \
+            jq ".[] | select(.merge_commit_sha==\"$COMMIT_SHA\") | .number" | head -n 1)
+
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$COMMIT_SHA
+          fi
+
+          NEW_TAG="$PR_NUMBER"
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          yq e -i ".image.tag = \"$NEW_TAG\"" helm/values.yaml
+
+          git config user.email "ci-bot@emda.dev"
+          git config user.name "Emda CI Bot"
+          git add helm/values.yaml
+          git commit -m "ci: update payload image tag to $NEW_TAG"
+          git push origin main
+
+      - name: Tag and Push Docker image
+        run: |
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
+          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
+          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG} && \
+            docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest; then
             echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
           else
             echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
           fi
+
+        env:
+          NEW_TAG: ${{ env.NEW_TAG }}
+
       - name: Print NEW_IMAGE_PUSHED Value
         run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
       - name: Notify Slack - Deployment Completed
@@ -137,3 +168,4 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        

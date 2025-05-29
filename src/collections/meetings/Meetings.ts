@@ -1,4 +1,4 @@
-import { type CollectionConfig } from 'payload'
+import { type CollectionConfig, PayloadRequest, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
@@ -8,7 +8,14 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
-
+import {
+  validateResearchDocsInMeetings,
+  afterChangeDeleteResearchDocs,
+  clearCompaniesInSingleBondResearchDoc,
+  handleRecommendationReason,
+} from '../research-documents/hooks'
+import { getCollectionDoc } from '@/utils/utils'
+import type { TextFieldSingleValidation } from 'payload'
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
@@ -16,9 +23,25 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const validateMeetingState = (value: string | null | undefined, options: any) => {
+const validateMeetingInvitationLink: TextFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
+  if (options.req.context.from == 'migration') {
+    return true
+  }
+  if (options.siblingData.magnaId || options.siblingData.invitationDocument || value) return true
+  return 'יש להזין קישור לזימון, אסמכתא או מסמך זימון'
+}
+const validateMeetingState: SelectFieldSingleValidation = (
+  value: string | null | undefined,
+  options: any,
+) => {
   if (!value) return true
 
+  if (options.req.context.from == 'migration') {
+    return true
+  }
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
@@ -55,9 +78,10 @@ const validateMeetingState = (value: string | null | undefined, options: any) =>
     }
     return true
   }
+  // Ensure we always return a valid value
+  return true
 }
 
-// @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -66,13 +90,12 @@ export const Meetings: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    useAsTitle: 'meetingId',
-    listSearchableFields: ['magnaId', 'stock', 'invitationLink', 'meetingId'],
+    useAsTitle: 'fullName',
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
+      'fullName',
       'magnaId',
       'invitationLink',
-      'stock',
-      'type',
       'holdingsLimit',
       'proxyVotingDate',
       'meetingDate',
@@ -153,6 +176,27 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: { width: '100px' },
                 },
+                {
+                  name: 'fullName',
+                  label: 'שם',
+                  type: 'text', // Stored in the database
+                  admin: {
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                  },
+                  index: true,
+                  hooks: {
+                    beforeChange: [
+                      async ({ data, req }) => {
+                        let stockName = ''
+                        if (typeof data?.stock == 'string') {
+                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
+                          stockName = stock.fullName
+                        }
+                        return `${data?.type}-${stockName}`
+                      },
+                    ],
+                  },
+                },
               ],
             },
             {
@@ -195,7 +239,7 @@ export const Meetings: CollectionConfig = {
                       },
                     },
                   },
-                  //validate: validateMeetingnvItationLink,
+                  validate: validateMeetingInvitationLink,
                   hooks: {
                     afterRead: [
                       async ({ data, req }) => {
@@ -286,7 +330,6 @@ export const Meetings: CollectionConfig = {
                     ],
                   },
                   interfaceName: 'MeetingState',
-                  // @ts-expect-error
                   validate: validateMeetingState,
                   options: [
                     { label: 'מתוכננת', value: 'scheduled' },
@@ -416,7 +459,43 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצת הצבעה',
                           type: 'select',
                           admin: {
-                            width: '30%',
+                            width: '10%',
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                            /*                            { label: '----', value: '----' },*/
+                          ],
+                        },
+                        {
+                          name: 'recommendation',
+                          label: 'נימוק המלצה',
+                          type: 'text',
+                          admin: {
+                            width: '90%',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'showExceptional',
+                          label: 'האם יש המלצה חריגה?',
+                          type: 'checkbox',
+                          admin: {
+                            width: '20%',
+                          },
+                        },
+                        {
+                          name: 'exceptionalRecommendationVote',
+                          label: 'המלצה חריגה',
+                          type: 'select',
+                          admin: {
+                            width: '10%',
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                           options: [
                             { label: 'בעד', value: 'for' },
@@ -425,11 +504,39 @@ export const Meetings: CollectionConfig = {
                           ],
                         },
                         {
-                          name: 'recommendation',
-                          label: 'נימוק המלצה',
-                          type: 'text',
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
                           admin: {
                             width: '70%',
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      admin: {
+                        condition: (_, siblingData) => siblingData?.showExceptional === true,
+                      },
+                      fields: [
+                        {
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'recommendation-reasons',
+                          admin: {
+                            width: '60%',
+                          },
+                        },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק (נבחר או חופשי)',
+                          type: 'text',
+                          admin: {
+                            width: '40%',
                           },
                         },
                       ],
@@ -507,6 +614,9 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
+              admin: {
+                readOnly: true,
+              },
             },
             {
               name: 'companiesWithHolding',
@@ -546,18 +656,26 @@ export const Meetings: CollectionConfig = {
         },
         {
           label: 'מסמכי מחקר',
+          admin: {
+            condition: (data) => data?.companies?.length > 0,
+          },
           fields: [
             {
-              name: 'uploadDoc',
+              name: 'researchDocuments',
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
+              filterOptions: ({ data }) => {
+                return {
+                  company: { in: data.companies },
+                }
+              },
               hasMany: true,
-             admin:{
-              components: {
-                Field: '/collections/meetings/components/ResearchUploadDisplay',
-              }
-             }
+              admin: {
+                components: {
+                  Field: '/collections/meetings/components/ResearchUploadDisplay',
+                },
+              },
             },
           ],
         },
@@ -577,10 +695,11 @@ export const Meetings: CollectionConfig = {
           }
         }
       },
-     // addMeetingIdToResearchDocs,
+      afterChangeDeleteResearchDocs,
     ],
 
-    //beforeValidate: [validateResearchDocsHook],
+    beforeValidate: [validateResearchDocsInMeetings],
+    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {

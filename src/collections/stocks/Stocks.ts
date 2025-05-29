@@ -7,7 +7,7 @@ const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityConditions: { origin: 'TASE', tradable: true },
+  visibilityConditions: { origin: 'TASE', tradable: true ,fromMagna:true},
 }
 
 const validateNoFutureMeetings = async (
@@ -45,9 +45,9 @@ export const Stocks: CollectionConfig = {
   },
   enableQueryPresets: true,
   admin: {
-    useAsTitle: 'stockId',
+    useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
-    listSearchableFields: ['symbol', 'stockId', 'name', 'longName'],
+    listSearchableFields: ['symbol', 'stockId', 'name', 'longName','comments'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -89,18 +89,16 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מספר נייר - שם',
-                  type: 'text',
-                  admin: { readOnly: true, hidden: true },
+                  label:'שם מלא',
+                  type: 'text', // Stored in the database
+                  admin: {
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                  },
+                  index:true,
                   hooks: {
                     beforeChange: [
-                      ({ siblingData }) => {
-                        delete siblingData['fullName']
-                      },
-                    ],
-                    afterRead: [
-                      ({ data }) => {
-                        return `${data?.stockId} ${data?.name}`
+                      async ({ data }) => {
+                        return `${data?.name}(${data?.stockId})`
                       },
                     ],
                   },
@@ -127,6 +125,14 @@ export const Stocks: CollectionConfig = {
                   ],
                   index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
+                },
+                {
+                  name: 'fromMagna',
+                  type: 'checkbox',
+                  admin:{
+                    hidden: true
+                  },
+                  defaultValue: false
                 },
                 {
                   name: 'origin',
@@ -191,6 +197,15 @@ export const Stocks: CollectionConfig = {
                     ],
                   },
                 },
+                {
+                  name: 'isFinancial',
+                  label: 'פיננסי',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin:{
+                    condition:(siblingData)=>siblingData.type == 'מניות'
+                  }
+                },
               ],
             },
             {
@@ -241,6 +256,7 @@ export const Stocks: CollectionConfig = {
             {
               name: 'comments',
               label: 'הערות',
+              index: true,
               type: 'textarea',
             },
           ],
