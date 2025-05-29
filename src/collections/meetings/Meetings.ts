@@ -407,11 +407,6 @@ export const Meetings: CollectionConfig = {
                   type: 'row',
                   fields: [
                     {
-                      name: 'shortText',
-                      label: 'נושא מקוצר',
-                      type: 'text',
-                    },
-                    {
                       name: 'isRemovedFromAgenda',
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
@@ -668,7 +663,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'research-documents',
               filterOptions: ({ data }) => {
                 return {
-                  company: { in: data.companies },
+                  companies: { in: data.companies },
                 }
               },
               hasMany: true,
