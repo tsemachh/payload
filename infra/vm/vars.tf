@@ -84,3 +84,4 @@ variable "logtail_source_token" {
   default     = "B5p5aFX1cPDdGdzaKHFu1Vss"
   description = "Logtail source token for logging"
 }
+
