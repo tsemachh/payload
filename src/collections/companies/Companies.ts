@@ -49,33 +49,6 @@ export const Companies: CollectionConfig = {
               type: 'row',
               fields: [
                 {
-                  name: 'type',
-                  type: 'select',
-                  admin: {hidden: true},
-                  defaultValue: 'regular',
-                  options: ['regular','parent','fund']
-                },
-                {
-                  name: 'companyId',
-                  label: 'מספר חברה',
-                  type: 'number',
-                  index: true,
-                  admin: { hidden: false },
-                },
-                {
-                  name: 'legacyCompanyId',
-                  label: 'מספר חברה מקורי בפרדיקטה',
-                  type: 'number',
-                  index: true,
-                  admin: { hidden: false },
-                },
-                {
-                  name: 'order',
-                  type: 'number',
-                  index: true,
-                  admin: { hidden: true },
-                },
-                {
                   name: 'name',
                   label: 'שם',
                   type: 'text',
@@ -86,7 +59,51 @@ export const Companies: CollectionConfig = {
                   label: 'האם פעיל',
                   type: 'checkbox',
                   defaultValue: true,
+                  admin: {
+                    hidden: false ,width: '100px',
+                  },
                 },
+                {
+                  name: 'type',
+                  label: 'סוג',
+                  type: 'select',
+                  defaultValue: 'regular',
+                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'מסלול'}],
+                  admin: {
+                    hidden: false ,width: '120px',
+                  },
+                },
+                {
+                  name: 'companyId',
+                  label: 'מספר חברה',
+                  type: 'number',
+                  index: true,
+                  admin: {
+                    hidden: false ,width: '100px',
+                  },
+                },
+                {
+                  name: 'legacyCompanyId',
+                  label: 'מספר מקורי',
+                  type: 'number',
+                  index: true,
+                  admin: {
+                    hidden: false ,width: '100px',
+                  },
+                },
+                {
+                  name: 'order',
+                  type: 'number',
+                  index: true,
+                  admin: {
+                    hidden: false ,width: '100px',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
                 {
                   name: 'parentCompany',
                   type: 'join',
@@ -101,7 +118,7 @@ export const Companies: CollectionConfig = {
                     description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
                   },
                 },
-              ],
+              ]
             },
             {
               type: 'row',
@@ -115,6 +132,7 @@ export const Companies: CollectionConfig = {
                   hasMany: true,
                   admin: {
                     className: 'subCompanies',
+                    condition: (data) => data?.type != 'fund',
                   },
                 },
               ],
@@ -123,6 +141,9 @@ export const Companies: CollectionConfig = {
               name: 'researchDocuments',
               label: 'חוות דעת',
               type: 'group',
+              admin:{
+                condition: (data) => data?.type == 'regular'
+              },
               fields: [
                 {
                   type: 'row',
@@ -177,12 +198,13 @@ export const Companies: CollectionConfig = {
                 },
               ],
             }
-
-
           ],
         },
         {
           label: 'חשבונות',
+          admin:{
+            condition: (data) => data?.type == 'fund'
+          },
           fields: [
             {
               name: 'mainAccount',
@@ -212,6 +234,9 @@ export const Companies: CollectionConfig = {
         },
         {
           label: 'פגישות',
+          admin:{
+            condition: (data) => data?.type == 'regular'
+          },
           fields: [
             {
               type: 'join',
@@ -223,6 +248,9 @@ export const Companies: CollectionConfig = {
         },
         {
           label: 'אחזקות',
+          admin:{
+            condition: (data) => data?.type == 'fund'
+          },
           fields: [
             {
               type: 'join',
@@ -234,6 +262,9 @@ export const Companies: CollectionConfig = {
         },
         {
           label: 'ניירות ערך מושתקים',
+          admin:{
+            condition: (data) => data?.type == 'regular'
+          },
           fields: [
             {
               name: 'silencedStocks',
