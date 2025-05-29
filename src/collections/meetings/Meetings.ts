@@ -472,6 +472,14 @@ export const Meetings: CollectionConfig = {
                             width: '90%',
                           },
                         },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק חופשי',
+                          type: 'text',
+                          admin: {
+                            width: '40%',
+                          },
+                        },
                       ],
                     },
                     {
@@ -520,7 +528,7 @@ export const Meetings: CollectionConfig = {
                       fields: [
                         {
                           name: 'reasonRef',
-                          label: 'נימוק מוכן',
+                          label: 'נימוק',
                           type: 'relationship',
                           relationTo: 'recommendation-reasons',
                           admin: {
@@ -529,7 +537,7 @@ export const Meetings: CollectionConfig = {
                         },
                         {
                           name: 'reasonText',
-                          label: 'נימוק (נבחר או חופשי)',
+                          label: 'נימוק חופשי',
                           type: 'text',
                           admin: {
                             width: '40%',
