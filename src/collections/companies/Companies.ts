@@ -68,7 +68,7 @@ export const Companies: CollectionConfig = {
                   label: 'סוג',
                   type: 'select',
                   defaultValue: 'regular',
-                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'מסלול'}],
+                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'קרן'}],
                   admin: {
                     hidden: false ,width: '120px',
                   },
@@ -105,25 +105,6 @@ export const Companies: CollectionConfig = {
               type: 'row',
               fields: [
                 {
-                  name: 'parentCompany',
-                  type: 'join',
-                  label: 'חברת אם',
-                  collection: 'companies',
-                  on: 'subCompanies',
-                  defaultLimit: 1,
-                  maxDepth: 2,
-                  admin: {
-                    allowCreate: false,
-                    defaultColumns: ['name', 'subCompanies', 'parentCompany', 'companyId'],
-                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
-                  },
-                },
-              ]
-            },
-            {
-              type: 'row',
-              fields: [
-                {
                   name: 'subCompanies',
                   type: 'relationship',
                   label: 'חברות בת',
@@ -136,6 +117,25 @@ export const Companies: CollectionConfig = {
                   },
                 },
               ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'parentCompany',
+                  type: 'join',
+                  label: 'חברת אם',
+                  collection: 'companies',
+                  on: 'subCompanies',
+                  defaultLimit: 1,
+                  maxDepth: 2,
+                  admin: {
+                    allowCreate: false,
+                    defaultColumns: ['name', 'type','subCompanies', 'parentCompany', 'companyId'],
+                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
+                  },
+                },
+              ]
             },
             {
               name: 'researchDocuments',
@@ -153,25 +153,25 @@ export const Companies: CollectionConfig = {
                       label: 'אג"ח נאמנות',
                       type: 'checkbox',
                       defaultValue: true,
-                      admin: {
-                        condition: (data) => !!data?.mainAccount?.[0],
-                      },
+                      admin:{
+                        width: '200px'
+                      }
                     },
                     {
                       name: 'showResearchBond',
                       label: 'אג"ח',
                       type: 'checkbox',
-                      admin: {
-                        condition: (data) => !!data?.mainAccount?.[0],
-                      },
+                      admin:{
+                        width: '200px'
+                      }
                     },
                     {
                       name: 'showResearch',
                       label: 'כללי',
                       type: 'checkbox',
-                      admin: {
-                        condition: (data) => !!data?.mainAccount?.[0],
-                      },
+                      admin:{
+                        width: '200px'
+                      }
                     },
                   ],
                 },
@@ -182,19 +182,34 @@ export const Companies: CollectionConfig = {
                       name: 'showResearchPrivate',
                       label: 'מקבל מסמכי מחקר פרטנים',
                       type: 'checkbox',
-                      admin: {
-                        condition: (data) => !!data?.mainAccount?.[0],
-                      },
+                      admin:{
+                        width: '200px'
+                      }
                     },
                     {
                       name: 'defaultVotingRecommendation',
                       label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',
-                      admin: {
-                        condition: (data) => !!data?.mainAccount?.[0],
-                      },
+                      admin:{
+                        width: '200px'
+                      }
                     },
                   ],
+                },
+                {
+                  name: 'researchDocuments',
+                  type: 'join',
+                  label: 'מסמכי מחקר פרטניים',
+                  collection: 'research-documents',
+                  on: 'companies',
+                  maxDepth: 0,
+                  admin: {
+                    allowCreate: false,
+                    defaultColumns: ['filename'],
+                    condition: (siblingData ) => {
+                      return siblingData?.researchDocuments?.showResearchPrivate === true
+                    }
+                  },
                 },
               ],
             }
@@ -221,6 +236,9 @@ export const Companies: CollectionConfig = {
                   name: 'accountName',
                   label: 'שם חשבון',
                   type: 'text',
+                  admin: {
+                    hidden: true
+                  },
                 },
                 {
                   name: 'subAccounts',
