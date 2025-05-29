@@ -495,7 +495,7 @@ export const Meetings: CollectionConfig = {
                           type: 'select',
                           admin: {
                             width: '10%',
-                            condition: (_, siblingData) => siblingData?.checkbox === true,
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                           options: [
                             { label: 'בעד', value: 'for' },
@@ -511,7 +511,7 @@ export const Meetings: CollectionConfig = {
                           hasMany: true,
                           admin: {
                             width: '70%',
-                            condition: (_, siblingData) => siblingData?.checkbox === true,
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                         },
                       ],
@@ -519,7 +519,7 @@ export const Meetings: CollectionConfig = {
                     {
                       type: 'row',
                       admin: {
-                        condition: (_, siblingData) => siblingData?.checkbox === true,
+                        condition: (_, siblingData) => siblingData?.showExceptional === true,
                       },
                       fields: [
                         {
@@ -534,7 +534,7 @@ export const Meetings: CollectionConfig = {
                         {
                           name: 'reasonText',
                           label: 'נימוק (נבחר או חופשי)',
-                          type: 'textarea',
+                          type: 'text',
                           admin: {
                             width: '40%',
                           },
