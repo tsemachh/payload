@@ -353,6 +353,22 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
             percentageHolding,
             holdingValueInMillions,
             nominalValue,
+            funds: [
+              {
+                id: companyId + '12',
+                name: holdingsCompanyName + ' mock data',
+                percentageHolding,
+                holdingValueInMillions,
+                nominalValue,
+              },
+              {
+                id: companyId + '13',
+                name: holdingsCompanyName + ' mock data',
+                percentageHolding,
+                holdingValueInMillions,
+                nominalValue,
+              },
+            ],
           }
         }),
       ).then((results) => results.filter((result) => result !== null))

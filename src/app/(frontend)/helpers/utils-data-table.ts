@@ -56,8 +56,9 @@ export const calculatePrecedingColumnsWidth = (
   columns: Column<MeetingTableDataType>[],
   company: CompanyTableDate,
 ) => {
+  const companyColumns: string[] = []
   const firstValueColumnIndex = columns.findIndex((col) => col.key in company)
-  if (firstValueColumnIndex === -1) return '500px'
+  if (firstValueColumnIndex === -1) return '600px'
 
   const columnCount = columns.length
   let totalWidth = 0
