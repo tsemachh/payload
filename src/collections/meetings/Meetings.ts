@@ -535,7 +535,7 @@ export const Meetings: CollectionConfig = {
                         {
                           name: 'reasonText',
                           label: 'נימוק (נבחר או חופשי)',
-                          type: 'textarea',
+                          type: 'text',
                           admin: {
                             width: '40%',
                           },
