@@ -428,12 +428,12 @@ export interface Document {
  */
 export interface Company {
   id: string;
+  name: string;
+  active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
-  name: string;
-  active?: boolean | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
    */
@@ -1182,12 +1182,12 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
   type?: T;
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
-  name?: T;
-  active?: T;
   parentCompany?: T;
   subCompanies?: T;
   researchDocuments?:
