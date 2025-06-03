@@ -512,7 +512,7 @@ export const Meetings: CollectionConfig = {
                           filterOptions:({data})=>{
                             return {
                               id:{
-                                in: data.companies.map(getIdOfRelationField)
+                                in: data?.companies?.map(getIdOfRelationField) || []
                               }
                             }
                           },
