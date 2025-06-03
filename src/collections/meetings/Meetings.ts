@@ -621,11 +621,11 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
-              filterOptions:{
+/*              filterOptions:{
                 type:{
                   equals : 'regular'
                 }
-              },
+              },*/
               admin: {
                 readOnly: true,
               },
