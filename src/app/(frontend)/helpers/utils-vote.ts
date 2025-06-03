@@ -46,7 +46,7 @@ export function getParentCompanies(
         } else {
           const company = {
             id: leaf.id,
-            name: leaf.holdingsCompanyName,
+            name: leaf.companyName,
             percentageHolding: leaf.percentageHolding,
             holdingValueInMillions: leaf.holdingValueInMillions,
             nominalValue: leaf.nominalValue,

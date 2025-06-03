@@ -570,7 +570,7 @@ export interface User {
   legacyId?: number | null;
   active?: boolean | null;
   companies?: UserCompany;
-  leafCompanies?: (string | Company)[] | null;
+  funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -1231,7 +1231,7 @@ export interface UsersSelect<T extends boolean = true> {
   legacyId?: T;
   active?: T;
   companies?: T | UserCompanySelect<T>;
-  leafCompanies?: T;
+  funds?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;

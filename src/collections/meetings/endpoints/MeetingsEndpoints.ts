@@ -1,9 +1,10 @@
 import { PayloadRequest } from 'payload'
-import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue, UserCompany } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
   CompanyTableDate,
+  FundType,
   MeetingTableDataType,
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
@@ -127,7 +128,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       sort: sort,
       where: {
         and: [
-          createCompaniesFilter(user?.leafCompanies),
+          createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
           searchTerm
             ? {
@@ -150,10 +151,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Execute query
     const meetings = await payload.find(query)
-    const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
+    const safeLeafCompanies = getSafeLeafCompanies(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
+    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, user?.companies)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -187,16 +188,16 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
               },
             ],
           },
-          createCompaniesFilter(user?.leafCompanies),
+          createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },
     })
 
-    const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
+    const safeLeafCompanies = getSafeLeafCompanies(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
+    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, user?.companies)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -298,7 +299,11 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(meetings: any[], leafCompanies?: string[] | null) {
+async function processMeetingsData(
+  meetings: any[],
+  leafCompanies?: string[] | null,
+  userCompany?: UserCompany | undefined,
+) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -321,7 +326,7 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
       )
 
       // For each relevant company, find holdings and calculate values separately
-      const companiesArray = await Promise.all(
+      const fundsArray = await Promise.all(
         relevantCompanyIds.map(async (companyId) => {
           let company
           let quantity
@@ -353,25 +358,86 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
             percentageHolding,
             holdingValueInMillions,
             nominalValue,
-            funds: [
-              {
-                id: companyId + '12',
-                name: holdingsCompanyName + ' mock data',
-                percentageHolding,
-                holdingValueInMillions,
-                nominalValue,
-              },
-              {
-                id: companyId + '13',
-                name: holdingsCompanyName + ' mock data',
-                percentageHolding,
-                holdingValueInMillions,
-                nominalValue,
-              },
-            ],
+            parentCompany:
+              typeof company === 'object' && company.parentCompany ? company.parentCompany : null,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
+
+      const parentCompaniesMap = new Map<string, { parentCompany: string; funds: FundType[] }>()
+      // Process each fund to find its parent and group them
+      for (const fund of fundsArray) {
+        // If no parent found, skip this fund or treat the fund itself as parent
+        if (!fund.parentCompany) {
+          console.warn(`No parent company found for fund ${fund.id}`)
+          continue
+        }
+        if (typeof fund.parentCompany != 'object') {
+          console.warn(
+            `The type of parent company found for fund ${fund.id} is string, expected object`,
+          )
+          continue
+        }
+
+        const parentCompanyID =
+          typeof fund.parentCompany === 'object' && typeof fund.parentCompany.docs?.[0] === 'string'
+            ? fund.parentCompany.docs?.[0]
+            : null
+
+        if (!parentCompanyID) {
+          console.warn(`Invalid parent company for fund ${fund.id}`)
+          continue
+        }
+        const tmpFund: FundType = {
+          id: fund.id,
+          holdingsCompanyName: fund.holdingsCompanyName,
+          percentageHolding: fund.percentageHolding,
+          holdingValueInMillions: fund.holdingValueInMillions,
+          nominalValue: fund.nominalValue,
+        }
+        if (parentCompaniesMap.has(parentCompanyID)) {
+          parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
+        } else {
+          parentCompaniesMap.set(parentCompanyID, {
+            parentCompany: parentCompanyID,
+            funds: [tmpFund],
+          })
+        }
+      }
+
+      // Create the final companiesArray
+      const companiesArray: CompanyTableDate[] = Array.from(parentCompaniesMap.values()).map(
+        ({ parentCompany, funds }) => {
+          // Calculate aggregated values for the parent company
+          const totalPercentageHolding = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.percentageHolding || 0)
+          }, 0)
+
+          const totalHoldingValueInMillions = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.holdingValueInMillions || 0)
+          }, 0)
+
+          const totalNominalValue = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.nominalValue || 0)
+          }, 0)
+          const companyName = userCompany?.find((c) => {
+            if (typeof c.companyId === 'object' && c.companyId.id === parentCompany)
+              return c.companyId.name
+          })
+
+          return {
+            id: parentCompany,
+            companyName: typeof companyName == 'string' ? companyName : 'Unknown Company',
+            percentageHolding: totalPercentageHolding,
+            holdingValueInMillions: totalHoldingValueInMillions,
+            nominalValue: totalNominalValue,
+            funds,
+          }
+        },
+      )
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
 

@@ -628,10 +628,17 @@ export function DataTableStatic<T extends Record<string, any>>({
   )
   const renderFundsCell = useCallback(
     (company: CompanyTableDate) => {
-      if (company.funds?.length === 0) return company.holdingsCompanyName
+      if (company.funds?.length === 0) return company.companyName
       return (
-        <div className="flex items-center justify-start p-0 m-0 mr-3">
-          {/* TODO: ajast to the width of the column */}
+        <div
+          className="flex items-center justify-start p-0 m-0 mr-3"
+          style={{
+            maxWidth: calculatePrecedingColumnsWidth(
+              visibleColumns as unknown as Column<MeetingTableDataType>[],
+              company,
+            ),
+          }}
+        >
           <Button
             variant="icon"
             size="sm"
@@ -647,15 +654,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               <ChevronLeft className="h-4 w-4" />
             )}
           </Button>
-          <span
-            className="mr-1"
-            style={{
-              maxWidth: calculatePrecedingColumnsWidth(
-                visibleColumns as unknown as Column<MeetingTableDataType>[],
-                company,
-              ),
-            }}
-          >{`${company.holdingsCompanyName} ${company.funds?.length} `}</span>
+          <span className="mr-1 truncate font-medium">{`${company.companyName} ${company.funds?.length} `}</span>
         </div>
       )
     },
@@ -1196,10 +1195,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                         maxWidth: calculatePrecedingColumnsWidth(
                                                           visibleColumns as unknown as Column<MeetingTableDataType>[],
                                                           company,
+                                                          true,
                                                         ),
                                                       }}
                                                     >
-                                                      {fund.name}
+                                                      {fund.holdingsCompanyName}
                                                     </span>
                                                   </div>
                                                 )}

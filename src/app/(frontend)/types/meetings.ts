@@ -36,7 +36,7 @@ export type DateFilterOption = {
 
 export type CompanyTableDate = {
   id: string
-  holdingsCompanyName: string
+  companyName: string
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number
@@ -44,7 +44,7 @@ export type CompanyTableDate = {
 }
 export type FundType = {
   id: string
-  name: string
+  holdingsCompanyName: string
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number
