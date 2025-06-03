@@ -512,7 +512,7 @@ export const Meetings: CollectionConfig = {
                           filterOptions:({data})=>{
                             return {
                               id:{
-                                in: data.companies.map(getIdOfRelationField)
+                                in: data?.companies?.map(getIdOfRelationField) || []
                               }
                             }
                           },
@@ -661,6 +661,11 @@ export const Meetings: CollectionConfig = {
                   hasMany: false,
                   label: 'חברה',
                   maxDepth: 1,
+                  filterOptions:{
+                    type:{
+                      equals : 'fund'
+                    }
+                  },
                 },
                 {
                   name: 'holding',
@@ -694,11 +699,11 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              filterOptions: ({ data }) => {
+/*              filterOptions: ({ data }) => {
                 return {
-                  company: { in: data.companies },
+                  companies: {all: data.companies },
                 }
-              },
+              },*/
               hasMany: true,
               admin: {
                 components: {

@@ -184,7 +184,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               context: { ...req.context, from: 'migration' },
             },
             where: {
-              company: {
+              fund: {
                 equals: companyId,
               },
               valueDate: {
