@@ -621,11 +621,11 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
-/*              filterOptions:{
+              filterOptions:{
                 type:{
                   equals : 'regular'
                 }
-              },*/
+              },
               admin: {
                 readOnly: true,
               },
@@ -661,6 +661,11 @@ export const Meetings: CollectionConfig = {
                   hasMany: false,
                   label: 'חברה',
                   maxDepth: 1,
+                  filterOptions:{
+                    type:{
+                      equals : 'fund'
+                    }
+                  },
                 },
                 {
                   name: 'holding',
@@ -694,11 +699,11 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              filterOptions: ({ data }) => {
+/*              filterOptions: ({ data }) => {
                 return {
-                  company: { in: data.companies },
+                  companies: {all: data.companies },
                 }
-              },
+              },*/
               hasMany: true,
               admin: {
                 components: {
