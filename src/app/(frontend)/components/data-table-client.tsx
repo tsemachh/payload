@@ -57,6 +57,7 @@ import {
 import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
+import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -183,7 +184,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const visibleColumns = useMemo(() => {
     if (!columnsOption) return columns
     return columns.filter((column) => columnVisibility[column.key as string])
-  }, [columns, columnVisibility])
+  }, [columnsOption, columns, columnVisibility])
 
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
@@ -598,68 +599,6 @@ export function DataTableStatic<T extends Record<string, any>>({
       ),
     )
   }, [])
-
-  // Function to render the companies cell with toggle button
-  const renderCompaniesCell = useCallback(
-    (row: T) => {
-      if (row.companies?.length === 0) return null
-      return (
-        <div className="flex items-center justify-start w-[20px] p-0 m-0">
-          <Button
-            variant="icon"
-            size="sm"
-            className="p-0 h-6 w-6"
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleRowExpansion(row.meetingId, true)
-            }}
-          >
-            {companiesExpandedRows[row.meetingId] ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
-          <span className="mr-1">{row.companies?.length || 0}</span>
-        </div>
-      )
-    },
-    [companiesExpandedRows, toggleRowExpansion],
-  )
-  const renderFundsCell = useCallback(
-    (company: CompanyTableDate) => {
-      if (company.funds?.length === 0) return company.companyName
-      return (
-        <div
-          className="flex items-center justify-start p-0 m-0 mr-3"
-          style={{
-            maxWidth: calculatePrecedingColumnsWidth(
-              visibleColumns as unknown as Column<MeetingTableDataType>[],
-              company,
-            ),
-          }}
-        >
-          <Button
-            variant="icon"
-            size="sm"
-            className="p-0 h-6 w-6"
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleRowExpansion(company.id, false)
-            }}
-          >
-            {fundsExpandedRows[company.id] ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
-          <span className="mr-1 truncate font-medium">{`${company.companyName} ${company.funds?.length} `}</span>
-        </div>
-      )
-    },
-    [fundsExpandedRows, toggleRowExpansion, visibleColumns],
-  )
 
   // Get sort icon for column header
   const getSortIcon = (columnKey: keyof T) => {
@@ -1083,7 +1022,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                           }}
                         >
                           {column.key === 'companies'
-                            ? renderCompaniesCell(row)
+                            ? renderCompaniesCell(
+                                row,
+                                companiesExpandedRows,
+                                setCompaniesExpandedRows,
+                              )
                             : column.render
                               ? column.render(row)
                               : highlightText(getDisplayValue(row, column.key), searchTerm)}
@@ -1135,7 +1078,12 @@ export function DataTableStatic<T extends Record<string, any>>({
                                         {columnIndex === 0 && (
                                           <div className="relative h-40px">
                                             <span className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate">
-                                              {renderFundsCell(company)}
+                                              {renderFundsCell(
+                                                company,
+                                                fundsExpandedRows,
+                                                setFundsExpandedRows,
+                                                visibleColumns,
+                                              )}
                                             </span>
                                           </div>
                                         )}
