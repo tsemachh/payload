@@ -20,7 +20,7 @@ async function processMeeting(
         where: {
           and: [
             { valueDate: { less_than_equal: meeting.holdingsLimit } },
-            { company: { equals: company } },
+            { fund: { equals: company } },
           ],
         },
         sort: '-valueDate',
@@ -40,7 +40,7 @@ async function processMeeting(
           and: [
             { stock: { equals: meeting.stock } },
             { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-            { company: { equals: company } },
+            { fund: { equals: company } },
           ],
         },
         limit: 0,
@@ -53,27 +53,27 @@ async function processMeeting(
   const flattenedHoldings = holdings.flat()
 
   // Check and update companies list
-  const newCompaniesSet = new Set<string>()
+  const newFundsSet = new Set<string>()
 
   for (let i = 0; i < flattenedHoldings.length; i++) {
     const holding = flattenedHoldings[i]
-    const companyId: string = getIdOfRelationField(holding.company) as string
-    if (!newCompaniesSet.has(companyId)) {
-      newCompaniesSet.add(companyId)
+    const fundId: string = getIdOfRelationField(holding.fund) as string
+    if (!newFundsSet.has(fundId)) {
+      newFundsSet.add(fundId)
       isDirty = true
     }
   }
 
-  const newCompanies = Array.from(newCompaniesSet)
+  const newFunds = Array.from(newFundsSet)
 
   // Update meeting if necessary
-  if (isDirty || !meeting.companiesWithHolding?.length) {
+  if (isDirty || !meeting.fundsWithHolding?.length) {
     req.payload.logger.info(
-      `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
+      `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
 
-    const companiesWithHolding = flattenedHoldings.map((h) => ({
-      company: String(getIdOfRelationField(h.company)),
+    const fundsWithHolding = flattenedHoldings.map((h) => ({
+      company: String(getIdOfRelationField(h.fund)),
       holding: h.id,
     }))
     let stockValue = meeting.stockValue
@@ -92,7 +92,23 @@ async function processMeeting(
       })
       stockValue = stockValueDocs[0].id
     }
-
+    const companies = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      select:{
+        parentCompany: true
+      },
+      where:{
+        id:{
+          in: newFunds
+        }
+      }
+    })
+    const compIds=companies.docs.map((comp)=>{
+      if (comp?.parentCompany?.docs){
+        return comp.parentCompany.docs[0]
+      }
+    })
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -101,8 +117,9 @@ async function processMeeting(
         context: { ...req.context, from: 'process' },
       },
       data: {
-        companies: [...newCompanies],
-        companiesWithHolding,
+        companies:compIds,
+        funds: [...newFunds],
+        fundsWithHolding,
         stockValue,
       },
     })

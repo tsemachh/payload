@@ -29,7 +29,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   electronicVotingEnabled: true,
   resultsConfirmationStatus: true,
   committeeInitiated: true,
-  companiesWithHolding: true,
+  fundsWithHolding: true,
   stockValue: true,
   invitationLink: true,
 }
@@ -326,20 +326,20 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
           let company
           let quantity
           // Get this company's holdings for this date
-          const match = meeting.companiesWithHolding?.find((item) => {
-            return typeof item.company === 'object' && item.company?.id == companyId
+          const match = meeting?.fundsWithHolding?.find((item) => {
+            return typeof item.fund === 'object' && item.fund?.id == companyId
           })
           if (
             match &&
             typeof match.holding === 'object' &&
-            match.company &&
+            match.fund &&
             match.holding?.quantity
           ) {
-            company = match.company
+            company = match.fund
             quantity = match.holding?.quantity
           } else {
             console.error(
-              `Company ${companyId} does not exist or is not valid in the companiesWithHolding array`,
+              `Company ${companyId} does not exist or is not valid in the fundsWithHolding array`,
             )
             return null
           }

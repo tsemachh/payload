@@ -18,14 +18,14 @@ export const updateCompaniesMeetingsOnHoldingChange = async (
   holding: Holding
 ): Promise<void> => {
   try {
-    if (!holding.company || !holding.stock || !holding.valueDate) {
+    if (!holding.fund || !holding.stock || !holding.valueDate) {
       return
     }
 
     // Get the account to find the company
     const company = await req.payload.findByID({
       collection: 'companies',
-      id: getIdOfRelationField(holding.company) as string,
+      id: getIdOfRelationField(holding.fund) as string,
     })
 
     if (!company) {

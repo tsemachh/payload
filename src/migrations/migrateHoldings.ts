@@ -197,7 +197,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const holding = holdingsArray[i]
             // Create holding object
             const holdingData = {
-              company: companyId,
+              fund: companyId,
               valueDate: holdingDate,
               stock: holding.stock,
               quantity: holding.quantity,
