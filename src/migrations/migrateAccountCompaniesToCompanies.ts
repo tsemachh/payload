@@ -18,7 +18,20 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       collection: 'companies',
       limit: 0,
       depth: 0,
-      where: {type:{equals: 'regular'}}
+      where: {
+        and: [
+          {
+            type: {
+              equals: 'regular'
+            }
+          },
+          {
+            mainAccount: {
+              exists: true
+            }
+          }
+        ]
+      }
     })
 
     console.log(`Found ${companiesResult.docs.length} companies with accounts`)
@@ -144,15 +157,38 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             errorCount++
           }
         }
-        // Update the account to link to the new company
-        await payload.update({
-          collection: 'companies',
-          id: company.id,
-          data: {
-            subCompanies: childIds,
-            mainAccount:[]
-          },
-        })
+        // Update the account to link to the new company and clear all account-related fields
+        try {
+          const updateResult = await payload.update({
+            collection: 'companies',
+            id: company.id,
+            data: {
+              subCompanies: childIds,
+              mainAccount: [] // Clear the mainAccount array
+            },
+          })
+
+          // Verify that the mainAccount array was cleared
+          if (updateResult.mainAccount && updateResult.mainAccount.length > 0) {
+            console.error(`Warning: mainAccount array not cleared for company ${company.name} (ID: ${company.id})`)
+
+            // Try again with a direct update
+            await payload.update({
+              collection: 'companies',
+              id: company.id,
+              data: {
+                mainAccount: []
+              },
+            })
+
+            console.log(`Attempted second update to clear mainAccount for company ${company.name} (ID: ${company.id})`)
+          } else {
+            console.log(`Successfully cleared mainAccount for company ${company.name} (ID: ${company.id})`)
+          }
+        } catch (error) {
+          console.error(`Error updating company ${company.name} (ID: ${company.id}):`, error)
+          errorCount++
+        }
         processedCompanies++
       } catch (error) {
         console.error(`Error processing company ${company.name} (ID: ${company.id}):`, error)
@@ -160,11 +196,63 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     }
 
+    // Final check to find any companies that still have accounts
+    const companiesWithAccountsResult = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      where: {
+        and: [
+          {
+            type: {
+              equals: 'regular'
+            }
+          },
+          {
+            mainAccount: {
+              exists: true
+            }
+          },
+          {
+            mainAccount: {
+              not_equals: []
+            }
+          }
+        ]
+      }
+    })
+
+    if (companiesWithAccountsResult.docs.length > 0) {
+      console.log(`Warning: Found ${companiesWithAccountsResult.docs.length} companies that still have accounts after migration`)
+
+      // Process each company that still has accounts
+      for (const company of companiesWithAccountsResult.docs) {
+        console.log(`Company ${company.name} (ID: ${company.id}) still has ${company?.mainAccount?.length} accounts`)
+
+        // Try to clear the mainAccount array again
+        try {
+          await payload.update({
+            collection: 'companies',
+            id: company.id,
+            data: {
+              mainAccount: []
+            },
+          })
+          console.log(`Cleared mainAccount for company ${company.name} (ID: ${company.id})`)
+        } catch (error) {
+          console.error(`Error clearing mainAccount for company ${company.name} (ID: ${company.id}):`, error)
+        }
+      }
+    } else {
+      console.log('No companies found with accounts after migration')
+    }
+
     console.log(`
 Migration completed:
 - Processed companies: ${processedCompanies}
 - Processed accounts: ${processedAccounts}
 - Errors: ${errorCount}
+- Companies still with accounts: ${companiesWithAccountsResult.docs.length}
     `)
 
   } catch (error) {

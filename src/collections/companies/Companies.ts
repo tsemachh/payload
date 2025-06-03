@@ -273,7 +273,7 @@ export const Companies: CollectionConfig = {
             {
               type: 'join',
               collection: 'holdings',
-              on: 'company',
+              on: 'fund',
               name: 'holdings',
             },
           ],

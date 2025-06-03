@@ -104,7 +104,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
           companyToStocks.get(companyId)?.add(stockId)
 
-          // Also add to child companies
+/*          // Also add to child companies
           const companyChildIds = companyIdToChildCompanies.get(firm)
           if (companyChildIds && companyChildIds.length > 0) {
             for (const childId of companyChildIds) {
@@ -113,7 +113,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               }
               companyToStocks.get(childId)?.add(stockId)
             }
-          }
+          }*/
         } else {
           console.warn(`Company ID not found for firm: ${firm}`)
         }

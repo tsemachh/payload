@@ -207,10 +207,9 @@ function CompanyTree({
               color: 'black',
               backgroundColor: isSelected ? 'inherit' : 
                     node.name.includes('קבוצת') ? 'yellow' : // bg-yellow-300 - Companies with "קבוצת" in their name: yellow
-                    node.hasAccount ? 'orange' : // bg-orange-600/60 - Companies with accounts: orange accent 6
-                      !isNodeLeaf && node.hasGrandParent ? 'lightblue' : // bg-orange-400 - Parent companies with parent: orange
-                    !isNodeLeaf && node.hasParent ? 'lightcyan' : // bg-orange-400 - Parent companies with parent: orange
-                    !isNodeLeaf ? 'lightsalmon' : // bg-blue-200 - Parent companies: light blue
+                    node.type  == 'parent' ? 'orange' : // bg-orange-600/60 - Companies with accounts: orange accent 6
+                      node.type  == 'regular' ? 'lightblue' : // bg-orange-400 - Parent companies with parent: orange
+                        node.type  == 'fund' ? 'peachpuff' : // bg-orange-400 - Parent companies with parent: orange
                     'inherit'
             }}
             onClick={() => onSelectCompany(node.id)}
@@ -357,12 +356,32 @@ function CompanyDetails({
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold mb-2">פרטי חברה</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             <div className="font-medium">מספר חברה:</div>
             <div>{companyDetails.companyId || 'לא זמין'}</div>
 
             <div className="font-medium">סטטוס:</div>
             <div>{companyDetails.active ? 'פעיל' : 'לא פעיל'}</div>
+
+            <div className="font-medium">סוג חברה:</div>
+            <div>{companyDetails.type === 'regular' ? 'רגיל' : 
+                  companyDetails.type === 'parent' ? 'הורה' : 
+                  companyDetails.type === 'fund' ? 'קרן' : 
+                  companyDetails.type || 'לא זמין'}</div>
+
+            {companyDetails.holdings && (
+              <>
+                <div className="font-medium">מספר אחזקות:</div>
+                <div>{companyDetails.holdings.docs?.length || 0}</div>
+              </>
+            )}
+
+            {companyDetails.meetings && (
+              <>
+                <div className="font-medium">מספר פגישות:</div>
+                <div>{companyDetails.meetings.docs?.length || 0}</div>
+              </>
+            )}
           </div>
         </div>
 
@@ -415,9 +434,18 @@ function CompanyDetails({
                   ? companyDetails.parentCompany.map((parent: Company) => (
                       <li key={parent.id}>{parent.name}</li>
                     ))
-                  : <li>{(companyDetails.parentCompany as Company).name}</li>
+                  : <li key={(companyDetails.parentCompany as Company).id}>{(companyDetails.parentCompany as Company).name}</li>
               }
             </ul>
+          </div>
+        )}
+
+        {companyDetails.silencedStocks && companyDetails.silencedStocks.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">ניירות ערך מושתקים</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <div>{companyDetails.silencedStocks.join(', ')}</div>
+            </div>
           </div>
         )}
       </div>
