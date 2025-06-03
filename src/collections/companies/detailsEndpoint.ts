@@ -8,7 +8,7 @@ const detailsEndpoint = async (req: PayloadRequest) => {
 
     // Extract company IDs from user object
     const companyIds = [
-      ...(user?.leafCompanies || []).map((c) => (typeof c === 'string' ? c : c.id)),
+      ...(user?.funds || []).map((c) => (typeof c === 'string' ? c : c.id)),
       ...(user?.companies || []).map((c) => (typeof c === 'string' ? c : c.companyId)),
     ]
     const uniqueCompanyIds = [...new Set(companyIds)]

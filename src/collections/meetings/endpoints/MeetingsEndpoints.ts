@@ -38,16 +38,16 @@ const MEETING_SELECT_FIELDS: SelectType = {
 /**
  * Creates a companies filter condition based on user's leaf companies
  */
-function createCompaniesFilter(userLeafCompanies: (string | Company)[] | undefined | null) {
-  return userLeafCompanies
+function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
+  return userFunds
     ? {
         companies: {
-          in: userLeafCompanies,
+          in: userFunds,
         },
       }
     : {
         companies: {
-          in: [], // no matches if user.leafCompanies is missing or empty
+          in: [], // no matches if user.funds is missing or empty
         },
       }
 }
@@ -66,8 +66,8 @@ function createPublishedStatusFilter() {
 /**
  * Converts user's leaf companies to a safe format
  */
-function getSafeLeafCompanies(userLeafCompanies: (string | Company)[] | undefined | null) {
-  return userLeafCompanies?.map((company: string | Company) =>
+function getSafeFunds(userFunds: (string | Company)[] | undefined | null) {
+  return userFunds?.map((company: string | Company) =>
     typeof company === 'string' ? company : company.id,
   )
 }
@@ -151,10 +151,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Execute query
     const meetings = await payload.find(query)
-    const safeLeafCompanies = getSafeLeafCompanies(user?.funds)
+    const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -194,10 +194,10 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       },
     })
 
-    const safeLeafCompanies = getSafeLeafCompanies(user?.funds)
+    const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -213,10 +213,10 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
  */
 function findRelevantCompanyIds(
   meetingCompanies: string[] | undefined,
-  leafCompanies: string[] | null | undefined,
+  funds: string[] | null | undefined,
 ): string[] {
   return (meetingCompanies || [])
-    .filter((companyID) => leafCompanies?.some((leafCompany) => leafCompany === companyID))
+    .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
 }
 
@@ -301,7 +301,7 @@ function getDbFieldName(clientField: string): string {
  */
 async function processMeetingsData(
   meetings: any[],
-  leafCompanies?: string[] | null,
+  funds?: string[] | null,
   userCompany?: UserCompany | undefined,
 ) {
   // Process results
@@ -320,10 +320,7 @@ async function processMeetingsData(
       }
 
       // Find the intersection of meeting companies and user's leaf companies
-      const relevantCompanyIds = findRelevantCompanyIds(
-        meeting.companies as string[],
-        leafCompanies,
-      )
+      const relevantCompanyIds = findRelevantCompanyIds(meeting.companies as string[], funds)
 
       // For each relevant company, find holdings and calculate values separately
       const fundsArray = await Promise.all(
@@ -334,12 +331,7 @@ async function processMeetingsData(
           const match = meeting?.fundsWithHolding?.find((item) => {
             return typeof item.fund === 'object' && item.fund?.id == companyId
           })
-          if (
-            match &&
-            typeof match.holding === 'object' &&
-            match.fund &&
-            match.holding?.quantity
-          ) {
+          if (match && typeof match.holding === 'object' && match.fund && match.holding?.quantity) {
             company = match.fund
             quantity = match.holding?.quantity
           } else {
