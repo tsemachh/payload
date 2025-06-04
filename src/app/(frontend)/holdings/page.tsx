@@ -46,13 +46,13 @@ export default function HoldingsFeedView() {
   const [saveError, setSaveError] = useState(false)
 
   useEffect(() => {
-    if (user?.leafCompanies) {
-      const tmpSelectedCompanies = user?.leafCompanies.map((company) =>
+    if (user?.funds) {
+      const tmpSelectedCompanies = user?.funds.map((company) =>
         typeof company === 'string' ? company : company.id,
       )
       setSelectedCompanies(tmpSelectedCompanies)
     }
-  }, [user?.leafCompanies])
+  }, [user?.funds])
 
   // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {

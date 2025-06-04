@@ -385,9 +385,10 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  companiesWithHolding?:
+  funds?: (string | Company)[] | null;
+  fundsWithHolding?:
     | {
-        company?: (string | null) | Company;
+        fund?: (string | null) | Company;
         holding?: (string | null) | Holding;
         id?: string | null;
       }[]
@@ -508,7 +509,7 @@ export interface ResearchDocument {
  */
 export interface Holding {
   id: string;
-  company: string | Company;
+  fund: string | Company;
   valueDate: string;
   stock: string | Stock;
   feedStockNum?: string | null;
@@ -570,7 +571,7 @@ export interface User {
   legacyId?: number | null;
   active?: boolean | null;
   companies?: UserCompany;
-  leafCompanies?: (string | Company)[] | null;
+  funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -1140,10 +1141,11 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
-  companiesWithHolding?:
+  funds?: T;
+  fundsWithHolding?:
     | T
     | {
-        company?: T;
+        fund?: T;
         holding?: T;
         id?: T;
       };
@@ -1231,7 +1233,7 @@ export interface UsersSelect<T extends boolean = true> {
   legacyId?: T;
   active?: T;
   companies?: T | UserCompanySelect<T>;
-  leafCompanies?: T;
+  funds?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
@@ -1342,7 +1344,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  * via the `definition` "holdings_select".
  */
 export interface HoldingsSelect<T extends boolean = true> {
-  company?: T;
+  fund?: T;
   valueDate?: T;
   stock?: T;
   feedStockNum?: T;

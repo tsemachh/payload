@@ -26,7 +26,7 @@ const getHoldingsDatesEndPoint = async (req: PayloadRequest) => {
     where: {
       and: [
         {
-          company: { in: user?.leafCompanies || [] },
+          company: { in: user?.funds || [] },
         },
         onlyMonth
           ? {

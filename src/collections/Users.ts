@@ -9,7 +9,7 @@ async function computeCompanyTreeAndLeafs(
   companyIds: string[],
   req: PayloadRequest,
 ): Promise<{
-  leafCompanies: string[]
+  funds: string[]
   treeCompanies: string
 }> {
   // Query all companies and their nested subCompanies up to depth 4
@@ -23,12 +23,6 @@ async function computeCompanyTreeAndLeafs(
       holdings: false,
       'subCompanies.id': true,
       'subCompanies.name': true,
-      'subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.name': true,
-      'subCompanies.subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.subCompanies.name': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies.name': true,
     },
     populate: {
       companies: {
@@ -42,11 +36,11 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     limit: 0,
-    depth: 5,
+    depth: 1,
   })
 
   // Compute leaf companies recursively
-  const leafCompanies: string[] = []
+  const funds: string[] = []
   const processCompanies = (company: Partial<Company>): string[] => {
     const result: string[] = []
 
@@ -68,7 +62,7 @@ async function computeCompanyTreeAndLeafs(
   }
 
   companies.docs.forEach((doc: any) => {
-    leafCompanies.push(...processCompanies(doc))
+    funds.push(...processCompanies(doc))
   })
 
   const cleanCompanyTree = (company: any): TreeCompanyType => {
@@ -82,7 +76,7 @@ async function computeCompanyTreeAndLeafs(
   // Apply to all top-level companies
   const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
   return {
-    leafCompanies: Array.from(new Set(leafCompanies)),
+    funds: Array.from(new Set(funds)),
     treeCompanies: JSON.stringify(cleanedTree),
   }
 }
@@ -174,14 +168,14 @@ export const Users: CollectionConfig = {
                       .filter((id: string | undefined) => id && id !== currentId)
                   : []
                 const query: Where = {
-                    type: {
-                      equals: 'regular',
-                    }
+                  type: {
+                    equals: 'regular',
+                  },
                 }
                 if (selectedIds.length === 0) {
                   return query
                 }
-                query.id={
+                query.id = {
                   not_in: selectedIds,
                 }
                 return query
@@ -205,8 +199,8 @@ export const Users: CollectionConfig = {
       ],
     },
     {
-      name: 'leafCompanies',
-      label: 'כל החברות עם החשבונות(כולל חברות בת)',
+      name: 'funds',
+      label: 'קרנות',
       type: 'relationship',
       relationTo: 'companies',
       maxDepth: 0,
@@ -285,19 +279,19 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-      if  (data?.companies) {
-        const companiesChanged =
-          originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
+        if (data?.companies) {
+          const companiesChanged =
+            originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
-        if (companiesChanged || !data?.leafCompanies || data?.leafCompanies.length === 0) {
-          const companyIds = data?.companies.map((company: any) =>
-            getIdOfRelationField(company.companyId),
-          )
-          const { leafCompanies, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
-          data.leafCompanies = leafCompanies
-          data.treeCompanies = treeCompanies
+          if (companiesChanged || !data?.funds || data?.funds.length === 0) {
+            const companyIds = data?.companies.map((company: any) =>
+              getIdOfRelationField(company.companyId),
+            )
+            const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
+            data.funds = funds
+            data.treeCompanies = treeCompanies
+          }
         }
-      }
         return data
       },
     ],

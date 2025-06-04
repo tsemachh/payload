@@ -6,7 +6,7 @@ export interface CompanyType {
   subCompanies?: string[]
 }
 
-export interface LeafCompanyType {
+export interface FundType {
   id: string
   name: string
   parentCompany?: string | null

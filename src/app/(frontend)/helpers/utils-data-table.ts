@@ -55,17 +55,29 @@ export const calculateColumnWidths = (
 export const calculatePrecedingColumnsWidth = (
   columns: Column<MeetingTableDataType>[],
   company: CompanyTableDate,
+  fund: boolean = false,
 ) => {
-  const firstValueColumnIndex = columns.findIndex((col) => col.key in company)
-  if (firstValueColumnIndex === -1) return '500px'
+  const firstValueColumnIndex = columns.findIndex(
+    (col) => col.key !== 'companyName' && col.key in company,
+  )
+  console.log('First value column index:', firstValueColumnIndex)
+
+  if (firstValueColumnIndex === -1) return '600px'
 
   const columnCount = columns.length
   let totalWidth = 0
   for (let i = 1; i < firstValueColumnIndex; i++) {
-    const minWidth = columns[i]?.minWidth ?? 100 // אם אין minWidth, משתמשים ב-100 ברירת מחדל
+    const minWidth = columns[i]?.minWidth ?? 100
     const columnWidth = calculateColumnWidths(minWidth, columnCount)
     totalWidth += columnWidth
+    console.log(`Column ${i} width: ${columnWidth}, Total width: ${totalWidth}`)
   }
+  if (fund) {
+    totalWidth -= 50
+  } else {
+    totalWidth -= 15
+  }
+
   return `${totalWidth}px`
 }
 

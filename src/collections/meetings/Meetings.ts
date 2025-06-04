@@ -14,7 +14,7 @@ import {
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
 } from '../research-documents/hooks'
-import { getCollectionDoc } from '@/utils/utils'
+import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 import type { TextFieldSingleValidation } from 'payload'
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -509,6 +509,13 @@ export const Meetings: CollectionConfig = {
                           type: 'relationship',
                           relationTo: 'companies',
                           hasMany: true,
+                          filterOptions:({data})=>{
+                            return {
+                              id:{
+                                in: data?.companies?.map(getIdOfRelationField) || []
+                              }
+                            }
+                          },
                           admin: {
                             width: '70%',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
@@ -614,24 +621,51 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
+              filterOptions:{
+                type:{
+                  equals : 'regular'
+                }
+              },
               admin: {
                 readOnly: true,
               },
             },
             {
-              name: 'companiesWithHolding',
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'funds',
+              label: 'קרנות',
+              index: true,
+              maxDepth: 0,
+              filterOptions:{
+                  type:{
+                    equals : 'fund'
+                  }
+              },
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
+              name: 'fundsWithHolding',
               type: 'array',
               admin: {
                 hidden: true,
               },
               fields: [
                 {
-                  name: 'company',
+                  name: 'fund',
                   type: 'relationship',
                   relationTo: 'companies',
                   hasMany: false,
                   label: 'חברה',
                   maxDepth: 1,
+                  filterOptions:{
+                    type:{
+                      equals : 'fund'
+                    }
+                  },
                 },
                 {
                   name: 'holding',
@@ -665,11 +699,11 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              filterOptions: ({ data }) => {
+/*              filterOptions: ({ data }) => {
                 return {
-                  company: { in: data.companies },
+                  companies: {all: data.companies },
                 }
-              },
+              },*/
               hasMany: true,
               admin: {
                 components: {
