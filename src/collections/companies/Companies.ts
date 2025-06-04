@@ -68,7 +68,7 @@ export const Companies: CollectionConfig = {
                   label: 'סוג',
                   type: 'select',
                   defaultValue: 'regular',
-                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'קרן'}],
+                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'תיק'}],
                   admin: {
                     hidden: false ,width: '120px',
                   },

@@ -29,7 +29,7 @@ export const Holdings: CollectionConfig = {
       fields: [
         {
           name: 'fund',
-          label: 'קרן',
+          label: 'תיק',
           type: 'relationship',
           relationTo: 'companies',
           required: true,
