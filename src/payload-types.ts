@@ -55,14 +55,14 @@ export type MeetingAgenda =
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-      'reasonRef${suffix}'?: (string | null) | RecommendationReason;
-      'reasonText${suffix}'?: string | null;
+      reasonRef?: (string | null) | RecommendationReason;
+      reasonText?: string | null;
       exceptionalRecommendation?: {
         showExceptional?: boolean | null;
         companies?: (string | Company)[] | null;
-        votingRecommendationException?: ('for' | 'against' | 'abstain') | null;
-        'reasonRef${suffix}'?: (string | null) | RecommendationReason;
-        'reasonText${suffix}'?: string | null;
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
       };
       vpercent?: number | null;
       vPercentSpecial?: number | null;
@@ -1167,16 +1167,16 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   topicType?: T;
   majorityType?: T;
   votingRecommendation?: T;
-  'reasonRef${suffix}'?: T;
-  'reasonText${suffix}'?: T;
+  reasonRef?: T;
+  reasonText?: T;
   exceptionalRecommendation?:
     | T
     | {
         showExceptional?: T;
         companies?: T;
-        votingRecommendationException?: T;
-        'reasonRef${suffix}'?: T;
-        'reasonText${suffix}'?: T;
+        votingRecommendation?: T;
+        reasonRef?: T;
+        reasonText?: T;
       };
   vpercent?: T;
   vPercentSpecial?: T;

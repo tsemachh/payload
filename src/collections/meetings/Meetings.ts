@@ -22,48 +22,6 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const RECOMMENDATION_FIELDS_TPL: Field[] = [
-  {
-    name: 'votingRecommendation${suffix}',
-    label: 'המלצת הצבעה',
-    type: 'select',
-    admin: {
-      width: '10%',
-    },
-    options: [
-      { label: 'בעד', value: 'for' },
-      { label: 'נגד', value: 'against' },
-      { label: 'נמנע', value: 'abstain' },
-    ],
-  },
-  {
-    name: 'reasonRef${suffix}',
-    label: 'נימוק מוכן',
-    type: 'relationship',
-    relationTo: 'recommendation-reasons',
-    admin: {
-      width: '50%',
-    },
-  },
-  {
-    name: 'reasonText${suffix}',
-    label: 'נימוק חופשי',
-    type: 'text',
-    admin: {
-      width: '40%',
-      components: {
-        Field: {
-            path: '/components/text/TextFromRelationField',
-            clientProps: {
-              relationField: 'reasonRef${suffix}',
-            },
-          },
-      },
-    },
-  },
-]
-const RECOMMENDATION_FIELDS= JSON.parse(JSON.stringify(RECOMMENDATION_FIELDS_TPL).replace("${suffix}", ''));
-const RECOMMENDATION_FIELDS2= JSON.parse(JSON.stringify(RECOMMENDATION_FIELDS_TPL).replace("${suffix}", 'Exception'));
 const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
@@ -488,8 +446,47 @@ export const Meetings: CollectionConfig = {
                   fields: [
                     {
                       type: 'row',
-                      fields: RECOMMENDATION_FIELDS,
-                    }
+                      fields: [
+                        {
+                          name: 'votingRecommendation',
+                          label: 'המלצת הצבעה',
+                          type: 'select',
+                          admin: {
+                            width: '10%',
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'recommendation-reasons',
+                          admin: {
+                            width: '50%',
+                          },
+                        },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק חופשי',
+                          type: 'text',
+                          admin: {
+                            width: '40%',
+                            components: {
+                              Field: {
+                                path: '/collections/meetings/components/ConditionalReasonText',
+                                clientProps: {
+                                  relationField: 'Exception',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      ],
+                    },
                   ],
                 },
                 {
@@ -531,7 +528,46 @@ export const Meetings: CollectionConfig = {
                         condition: (_, siblingData) => siblingData?.showExceptional === true,
                       },
                       type: 'row',
-                      fields: RECOMMENDATION_FIELDS2,
+                      fields: [
+                        {
+                          name: 'votingRecommendation',
+                          label: 'המלצת הצבעה',
+                          type: 'select',
+                          admin: {
+                            width: '10%',
+                          },
+                          options: [
+                            { label: 'בעד', value: 'for' },
+                            { label: 'נגד', value: 'against' },
+                            { label: 'נמנע', value: 'abstain' },
+                          ],
+                        },
+                        {
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'recommendation-reasons',
+                          admin: {
+                            width: '50%',
+                          },
+                        },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק חופשי',
+                          type: 'text',
+                          admin: {
+                            width: '40%',
+                            components: {
+                              Field: {
+                                path: '/collections/meetings/components/ConditionalReasonText',
+                                clientProps: {
+                                  relationField: 'Exception',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
