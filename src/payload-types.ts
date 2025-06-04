@@ -51,16 +51,18 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
 export type MeetingAgenda =
   | {
       text: string;
-      shortText?: string | null;
       isRemovedFromAgenda?: boolean | null;
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-        recommendation?: string | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
+      };
+      exceptionalRecommendation?: {
         showExceptional?: boolean | null;
-        exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
         companies?: (string | Company)[] | null;
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         reasonRef?: (string | null) | RecommendationReason;
         reasonText?: string | null;
       };
@@ -426,6 +428,18 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "companies".
  */
 export interface Company {
@@ -514,18 +528,6 @@ export interface Holding {
   stock: string | Stock;
   feedStockNum?: string | null;
   quantity: number;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons".
- */
-export interface RecommendationReason {
-  id: string;
-  content: string;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1165,7 +1167,6 @@ export interface MeetingsSelect<T extends boolean = true> {
  */
 export interface MeetingAgendaSelect<T extends boolean = true> {
   text?: T;
-  shortText?: T;
   isRemovedFromAgenda?: T;
   topicType?: T;
   majorityType?: T;
@@ -1173,10 +1174,15 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | T
     | {
         votingRecommendation?: T;
-        recommendation?: T;
+        reasonRef?: T;
+        reasonText?: T;
+      };
+  exceptionalRecommendation?:
+    | T
+    | {
         showExceptional?: T;
-        exceptionalRecommendationVote?: T;
         companies?: T;
+        votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
       };
