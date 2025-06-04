@@ -55,7 +55,7 @@ export const fetchCompanies = async () => {
         },
         // Removed type filter to include all company types
       },
-      depth: 4,
+      depth: 0,
       limit: 0,
       sort: 'name',
       select: {
