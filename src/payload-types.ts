@@ -234,6 +234,7 @@ export interface Config {
     };
     companies: {
       parentCompany: 'companies';
+      'researchDocuments.researchDocuments': 'research-documents';
       meetings: 'meetings';
       holdings: 'holdings';
     };
@@ -442,12 +443,13 @@ export interface RecommendationReason {
  */
 export interface Company {
   id: string;
+  name: string;
+  active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
-  name: string;
-  active?: boolean | null;
+  subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
    */
@@ -456,13 +458,17 @@ export interface Company {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  subCompanies?: (string | Company)[] | null;
   researchDocuments?: {
     showResearchTrusteeship?: boolean | null;
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
     defaultVotingRecommendation?: boolean | null;
+    researchDocuments?: {
+      docs?: (string | ResearchDocument)[];
+      hasNextPage?: boolean;
+      totalDocs?: number;
+    };
   };
   mainAccount?:
     | {
@@ -487,6 +493,28 @@ export interface Company {
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents".
+ */
+export interface ResearchDocument {
+  id: string;
+  companies?: (string | Company)[] | null;
+  uploadedAt?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -533,28 +561,6 @@ export interface Vote {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "research-documents".
- */
-export interface ResearchDocument {
-  id: string;
-  companies?: (string | Company)[] | null;
-  uploadedAt?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1188,14 +1194,14 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
   type?: T;
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
-  name?: T;
-  active?: T;
-  parentCompany?: T;
   subCompanies?: T;
+  parentCompany?: T;
   researchDocuments?:
     | T
     | {
@@ -1204,6 +1210,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearch?: T;
         showResearchPrivate?: T;
         defaultVotingRecommendation?: T;
+        researchDocuments?: T;
       };
   mainAccount?:
     | T

@@ -12,6 +12,7 @@ import { up as migrateAccountCompaniesToCompanies } from './migrateAccountCompan
 import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCompanies'
 import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
 import { up as migrateVotes } from './migrateVotes'
+import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
 import { processCompaniesMeetings } from '@/collections/companies-meetings/utils/processCompaniesMeetings'
 
 /**
@@ -29,7 +30,8 @@ import { processCompaniesMeetings } from '@/collections/companies-meetings/utils
  * 11. Silenced Stocks Companies (stores silenced stocks directly in companies collection)
  * 12. Meeting Agenda
  * 13. Votes
- * 14. Process Companies Meetings
+ * 14. Recommendation Reasons
+ * 15. Process Companies Meetings
  * 
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
@@ -107,6 +109,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Votes Migration ===')
     await migrateVotes({ payload, req })
     console.log('=== Votes Migration Completed ===\n')
+
+    // 15. Migrate Recommendation Reasons
+    console.log('\n=== Starting Recommendation Reasons Migration ===')
+    await migrateRecommendationReasons({ payload, req })
+    console.log('=== Recommendation Reasons Migration Completed ===\n')
 
     // 15. Migrate processCompaniesMeetings
     console.log('\n=== Starting processCompaniesMeetings ===')

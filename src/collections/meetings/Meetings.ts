@@ -117,7 +117,6 @@ const validateMeetingState: SelectFieldSingleValidation = (
   return true
 }
 
-// @ts-ignore
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
