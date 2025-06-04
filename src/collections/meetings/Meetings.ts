@@ -727,7 +727,7 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [/**handleRecommendationReason,**/ clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {
