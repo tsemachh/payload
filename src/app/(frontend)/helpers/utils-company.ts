@@ -53,11 +53,9 @@ export const fetchCompanies = async () => {
         active: {
           equals: true,
         },
-        type:{
-          equals: 'parent',
-        }
+        // Removed type filter to include all company types
       },
-      depth: 3,
+      depth: 4,
       limit: 0,
       sort: 'name',
       select: {

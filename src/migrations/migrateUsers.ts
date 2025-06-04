@@ -58,46 +58,46 @@ interface UserProfileCodeRow {
 // SQL Query Functions
 async function getUsers(pool: sql.ConnectionPool): Promise<UserRow[]> {
   const result = await pool.request().query(`
-    SELECT TOP (1000) [id]
-      ,[user]
-      ,[userType]
-    FROM [${sqlConfig.database}].[dbo].[users]
+      SELECT TOP (1000) [id]
+                      , [user]
+                      , [userType]
+      FROM [${sqlConfig.database}].[dbo].[users]
   `)
   return result.recordset
 }
 
 async function getUsersToFirms(pool: sql.ConnectionPool): Promise<UserToFirmRow[]> {
   const result = await pool.request().query(`
-    SELECT [userID]
-      ,[firmID]
-      ,[emailOnNoHoldings]
-      ,[votePermission]
-    FROM [${sqlConfig.database}].[dbo].[userstofirms]
+      SELECT [userID]
+           , [firmID]
+           , [emailOnNoHoldings]
+           , [votePermission]
+      FROM [${sqlConfig.database}].[dbo].[userstofirms]
   `)
   return result.recordset
 }
 
 async function getUserProfiles(pool: sql.ConnectionPool): Promise<UserProfileRow[]> {
   const result = await pool.request().query(`
-    SELECT [UserId]
-      ,[UserName]
-      ,[UserType]
-      ,[UserIP]
-      ,[ChangePassword]
-      ,[ShowQr]
-      ,[LastLogin]
-    FROM [${sqlConfig.database}].[dbo].[UserProfile]
+      SELECT [UserId]
+           , [UserName]
+           , [UserType]
+           , [UserIP]
+           , [ChangePassword]
+           , [ShowQr]
+           , [LastLogin]
+      FROM [${sqlConfig.database}].[dbo].[UserProfile]
   `)
   return result.recordset
 }
 
 async function getUserProfileCodes(pool: sql.ConnectionPool): Promise<UserProfileCodeRow[]> {
   const result = await pool.request().query(`
-    SELECT [UserId]
-      ,[CreateDate]
-      ,[LastCodeFailureDate]
-      ,[CodeFailuresSinceLastSuccess]
-    FROM [${sqlConfig.database}].[dbo].[UserProfileCode]
+      SELECT [UserId]
+           , [CreateDate]
+           , [LastCodeFailureDate]
+           , [CodeFailuresSinceLastSuccess]
+      FROM [${sqlConfig.database}].[dbo].[UserProfileCode]
   `)
   return result.recordset
 }
@@ -168,7 +168,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               permission: 'write' as const,
             }
             companies.push(companyObj)
-          } catch (error:any) {
+          } catch (error: any) {
             await logMigrationFault({
               payload,
               type: 'user',
@@ -315,7 +315,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Creating Users from test.users.json ===')
     await createUsersFromTestJson({ payload, req })
     console.log('=== Test Users Creation Completed ===\n')
-
   } catch (error) {
     console.error('Migration failed:', error)
     throw error
@@ -329,6 +328,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 export async function down({ payload }: MigrateUpArgs): Promise<void> {
   // Implement the down migration if needed
 }
+
 /**
  * Creates users from test.users.json file
  */
@@ -336,6 +336,16 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
   try {
     // Read the test.users.json file
     const testUsers: Partial<User>[] = [
+      {
+        name: 'amosp@praedicta.com',
+        isAdmin: false,
+        userRoles: [],
+        enableAPIKey: true,
+        apiKey:
+          '3dbb49cb-ce8f-4032-a3df-4ed088d4234c',
+        email: 'amosp@praedicta.com',
+        password: '7Kdy46pN4CNmGq6',
+      },
       {
         name: 'חנה',
         isAdmin: true,
@@ -378,8 +388,9 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
 
     console.log(`Found ${testUsers.length} users in test.users.json`)
     const companies = new Map<string, string[]>([
-      ['tsemachh@shefing.com', ['15', '22', '23','49','25']],
+      ['tsemachh@shefing.com', ['15', '22', '23', '49', '25']],
       ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
+      ['shaked@emdaresearch.co.il', ['17', '22', '23', '49', '25']],
       ['philc@shefing.com', ['1167', '1168', '15']],
     ])
     let createdCount = 0
