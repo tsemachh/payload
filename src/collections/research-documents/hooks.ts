@@ -115,20 +115,29 @@ export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ d
 
   await Promise.all(
     data.agenda.map(async (item) => {
-      const rec = item.recommendation
-      if (rec?.checkbox) {
-        if (rec.reasonRef) {
-          const reason = await req.payload.findByID({
-            collection: 'recommendation-reasons',
-            id: rec.reasonRef,
-          })
-          if (reason?.content) {
-            rec.reasonText = reason.content
-          }
+      // המלצה רגילה
+      if (item.recommendation.reasonRef) {
+        const reason = await req.payload.findByID({
+          collection: 'recommendation-reasons',
+          id: item.recommendation.reasonRef,
+        })
+
+        if (reason?.content !== 'אחר' && reason?.content) {
+          item.recommendation.reasonText = reason.content
         }
-      } else {
-        rec.reasonRef = undefined
-        rec.reasonText = undefined
+      }
+
+      // המלצה חריגה
+      const exceptional = item?.exceptionalRecommendation
+      if (exceptional?.showExceptional && exceptional?.reasonRef) {
+        const exceptionalReason = await req.payload.findByID({
+          collection: 'recommendation-reasons',
+          id: exceptional.reasonRef,
+        })
+
+        if (exceptionalReason?.content !== 'אחר' && exceptionalReason?.content) {
+          exceptional.reasonText = exceptionalReason.content
+        }
       }
     }),
   )

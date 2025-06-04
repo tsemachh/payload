@@ -274,7 +274,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
       privilegedMajority: item?.majorityType == 'privileged' || false,
       recommendation: {
         votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
-        recommendationExplanation: item.recommendation?.recommendation || '',
+        recommendationExplanation: item.recommendation?.reasonText || '',
       },
     }
   })
