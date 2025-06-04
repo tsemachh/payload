@@ -24,7 +24,6 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
-  ChevronLeft,
   Filter,
   FilterX,
   Search,
@@ -200,20 +199,6 @@ export function DataTableStatic<T extends Record<string, any>>({
     },
     [tableId],
   )
-
-  const toggleRowExpansion = useCallback((id: string, companies?: boolean) => {
-    if (companies) {
-      setCompaniesExpandedRows((prev) => ({
-        ...prev,
-        [id]: !prev[id],
-      }))
-    } else {
-      setFundsExpandedRows((prev) => ({
-        ...prev,
-        [id]: !prev[id],
-      }))
-    }
-  }, [])
 
   // Function that extracts the displayed value of a field
   const getDisplayValue = useCallback(
