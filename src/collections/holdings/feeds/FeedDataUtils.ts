@@ -234,7 +234,7 @@ export const createHoldings = async (
       return req.payload.create({
         collection: 'holdings',
         data: {
-          company: record.company,
+          fund: record.company,
           stock: record.stock,
           quantity: record.quantity,
           feedStockNum: record.feedStockNum,

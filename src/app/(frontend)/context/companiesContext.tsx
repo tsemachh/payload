@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
-import { CompanyType, LeafCompanyType } from '../types/companies'
+import { CompanyType, FundType } from '../types/companies'
 import { Company } from '@/payload-types'
 
 type CompaniesContextType = {
   companies: CompanyType[]
-  leafCompanies: LeafCompanyType[]
+  funds: FundType[]
 }
 
 const CompaniesContext = createContext<CompaniesContextType | undefined>(undefined)
@@ -15,19 +15,19 @@ const CompaniesContext = createContext<CompaniesContextType | undefined>(undefin
 export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<CompanyType[]>([])
-  const [leafCompanies, setLeafCompanies] = useState<LeafCompanyType[]>([])
+  const [funds, setFunds] = useState<FundType[]>([])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedCompanies = localStorage.getItem('companies')
-      const savedLeafCompanies = localStorage.getItem('leafCompanies')
+      const savedFunds = localStorage.getItem('funds')
 
       if (savedCompanies) {
         setCompanies(JSON.parse(savedCompanies))
       }
 
-      if (savedLeafCompanies) {
-        setLeafCompanies(JSON.parse(savedLeafCompanies))
+      if (savedFunds) {
+        setFunds(JSON.parse(savedFunds))
       }
     }
   }, [])
@@ -36,20 +36,20 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return
 
     const savedUserCompanies = localStorage.getItem('userCompaniesIds')
-    const savedUserLeafCompanies = localStorage.getItem('userLeafCompaniesIds')
+    const savedUserFunds = localStorage.getItem('userFunds')
 
     const currentUserCompanies = JSON.stringify(user.companies || [])
-    const currentUserLeafCompanies = JSON.stringify(user.leafCompanies || [])
+    const currentUserFunds = JSON.stringify(user.funds || [])
 
     const companiesChanged = currentUserCompanies !== savedUserCompanies
-    const leafCompaniesChanged = currentUserLeafCompanies !== savedUserLeafCompanies
+    const fundsChanged = currentUserFunds !== savedUserFunds
 
-    let shouldFetch = companiesChanged || leafCompaniesChanged
+    let shouldFetch = companiesChanged || fundsChanged
     if (!shouldFetch) {
       if (!shouldFetch) {
         const cachedCompanies = localStorage.getItem('companies')
-        const cachedLeafCompanies = localStorage.getItem('leafCompanies')
-        shouldFetch = !cachedCompanies || !cachedLeafCompanies
+        const cachedFunds = localStorage.getItem('funds')
+        shouldFetch = !cachedCompanies || !cachedFunds
       }
     }
 
@@ -58,15 +58,15 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
         await fetchData()
         // save new user company IDs in localStorage
         localStorage.setItem('userCompaniesIds', currentUserCompanies)
-        localStorage.setItem('userLeafCompaniesIds', currentUserLeafCompanies)
+        localStorage.setItem('userFunds', currentUserFunds)
       } else {
         // load from localStorage
         const localCompanies = localStorage.getItem('companies')
-        const localLeafCompanies = localStorage.getItem('leafCompanies')
+        const localFunds = localStorage.getItem('funds')
 
-        if (localCompanies && localLeafCompanies) {
+        if (localCompanies && localFunds) {
           setCompanies(JSON.parse(localCompanies))
-          setLeafCompanies(JSON.parse(localLeafCompanies))
+          setFunds(JSON.parse(localFunds))
         }
       }
     }
@@ -99,8 +99,8 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
         })
         .filter(Boolean)
 
-      // === Create detailed leafCompanies array ===
-      const detailedLeafCompanies = (user?.leafCompanies || [])
+      // === Create detailed funds array ===
+      const detailedFunds = (user?.funds || [])
         .map((company: string | { id: string }) => {
           const id = typeof company === 'string' ? company : company.id
           const fullCompany = companyMap.get(id)
@@ -114,19 +114,17 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
         .filter(Boolean)
 
       setCompanies(detailedCompanies as CompanyType[])
-      setLeafCompanies(detailedLeafCompanies as LeafCompanyType[])
+      setFunds(detailedFunds as FundType[])
 
       localStorage.setItem('companies', JSON.stringify(detailedCompanies))
-      localStorage.setItem('leafCompanies', JSON.stringify(detailedLeafCompanies))
+      localStorage.setItem('funds', JSON.stringify(detailedFunds))
     } catch (error) {
       console.error('Error fetching data:', error)
     }
   }
 
   return (
-    <CompaniesContext.Provider value={{ companies, leafCompanies }}>
-      {children}
-    </CompaniesContext.Provider>
+    <CompaniesContext.Provider value={{ companies, funds }}>{children}</CompaniesContext.Provider>
   )
 }
 

@@ -10,7 +10,7 @@ export type MeetingTableDataType = {
   stockName: string //שם נייר
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
-  stockOrigin: StockOrigin// מקור נייר הערך
+  stockOrigin: StockOrigin // מקור נייר הערך
   marketValue: number //שווי שוק
   nominalValue: number // ערך נקוב ליום קובע
   percentageHolding: number //אחוז אחזקות
@@ -35,6 +35,14 @@ export type DateFilterOption = {
 }
 
 export type CompanyTableDate = {
+  id: string
+  companyName: string
+  percentageHolding: number
+  holdingValueInMillions: number
+  nominalValue: number
+  funds: FundType[]
+}
+export type FundType = {
   id: string
   holdingsCompanyName: string
   percentageHolding: number

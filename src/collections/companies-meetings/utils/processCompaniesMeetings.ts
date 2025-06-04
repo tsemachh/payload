@@ -5,14 +5,14 @@ import { getIdOfRelationField } from '@/utils/utils'
 async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
-  companies: string[],
+  funds: string[],
 ): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
 
   // Get holdings for each company
   const holdings = await Promise.all(
-    companies.map(async (company) => {
+    funds.map(async (fund) => {
       // Get the holdings matching the less than equal holdings date
       const { docs: holdingsDocs } = await req.payload.find({
         collection: 'holdings',
@@ -20,7 +20,7 @@ async function processMeeting(
         where: {
           and: [
             { valueDate: { less_than_equal: meeting.holdingsLimit } },
-            { company: { equals: company } },
+            { fund: { equals: fund } },
           ],
         },
         sort: '-valueDate',
@@ -40,7 +40,7 @@ async function processMeeting(
           and: [
             { stock: { equals: meeting.stock } },
             { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-            { company: { equals: company } },
+            { fund: { equals: fund } },
           ],
         },
         limit: 0,
@@ -52,28 +52,28 @@ async function processMeeting(
 
   const flattenedHoldings = holdings.flat()
 
-  // Check and update companies list
-  const newCompaniesSet = new Set<string>()
+  // Check and update funds list
+  const newFundsSet = new Set<string>()
 
   for (let i = 0; i < flattenedHoldings.length; i++) {
     const holding = flattenedHoldings[i]
-    const companyId: string = getIdOfRelationField(holding.company) as string
-    if (!newCompaniesSet.has(companyId)) {
-      newCompaniesSet.add(companyId)
+    const fundId: string = getIdOfRelationField(holding.fund) as string
+    if (!newFundsSet.has(fundId)) {
+      newFundsSet.add(fundId)
       isDirty = true
     }
   }
 
-  const newCompanies = Array.from(newCompaniesSet)
+  const newFunds = Array.from(newFundsSet)
 
   // Update meeting if necessary
-  if (isDirty || !meeting.companiesWithHolding?.length) {
+  if (isDirty || !meeting.fundsWithHolding?.length) {
     req.payload.logger.info(
-      `Successfully processed companies-meeting: ${meeting.id} with companies: ${newCompanies.join(', ')}`,
+      `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
 
-    const companiesWithHolding = flattenedHoldings.map((h) => ({
-      company: String(getIdOfRelationField(h.company)),
+    const fundsWithHolding = flattenedHoldings.map((h) => ({
+      fund: String(getIdOfRelationField(h.fund)),
       holding: h.id,
     }))
     let stockValue = meeting.stockValue
@@ -92,7 +92,23 @@ async function processMeeting(
       })
       stockValue = stockValueDocs[0].id
     }
-
+    const companies = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      select:{
+        parentCompany: true
+      },
+      where:{
+        id:{
+          in: newFunds
+        }
+      }
+    })
+    const compIds=companies.docs.map((comp)=>{
+      if (comp?.parentCompany?.docs){
+        return comp.parentCompany.docs[0]
+      }
+    })
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -101,8 +117,9 @@ async function processMeeting(
         context: { ...req.context, from: 'process' },
       },
       data: {
-        companies: [...newCompanies],
-        companiesWithHolding,
+        companies: Array.from(new Set(compIds)),
+        funds: [...newFunds],
+        fundsWithHolding,
         stockValue,
       },
     })
@@ -124,7 +141,7 @@ export const processCompaniesMeetings = async (
   meetingIds?: string[],
 ): Promise<void> => {
   try {
-    req.payload.logger.info('Starting to load companies')
+    req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
     const where = meetingIds ? { id: { in: meetingIds } } : ({} as Where)
@@ -142,10 +159,10 @@ export const processCompaniesMeetings = async (
       depth: 0,
       limit: 0,
       where: {
-        or: [{ subCompanies: { equals: [] } }, { subCompanies: { exists: false } }],
+        type:{equals:'fund'}
       },
     })
-    const companies = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+    const funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
@@ -166,7 +183,7 @@ export const processCompaniesMeetings = async (
           continue
         }
         console.log('meeting started', meeting.id)
-        const promise = processMeeting(meeting, req, companies)
+        const promise = processMeeting(meeting, req, funds)
           .then(() => {
             console.log('meeting finished', meeting.id)
           })
