@@ -116,7 +116,7 @@ export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ d
   await Promise.all(
     data.agenda.map(async (item) => {
       const rec = item.recommendation
-      if (rec?.checkbox) {
+      if (rec?.showExceptional) {
         if (rec.reasonRef) {
           const reason = await req.payload.findByID({
             collection: 'recommendation-reasons',

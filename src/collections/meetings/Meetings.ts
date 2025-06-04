@@ -507,7 +507,7 @@ export const Meetings: CollectionConfig = {
                             return {
                               id: { in: data.companies },
                             }
-                          },
+                          }, //  TODO: לא עובד....
                           admin: {
                             width: '80%',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
