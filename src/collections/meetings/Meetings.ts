@@ -441,6 +441,7 @@ export const Meetings: CollectionConfig = {
                   ],
                 },
                 {
+                  name: 'recommendation',
                   label: 'המלצה',
                   type: 'group',
                   fields: [
@@ -476,12 +477,7 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             width: '40%',
                             components: {
-                              Field: {
-                                path: '/collections/meetings/components/ConditionalReasonText',
-                                clientProps: {
-                                  relationField: 'Exception',
-                                },
-                              },
+                              Field: '/collections/meetings/components/ConditionalReasonText',
                             },
                           },
                         },
@@ -560,12 +556,7 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             width: '40%',
                             components: {
-                              Field: {
-                                path: '/collections/meetings/components/ConditionalReasonText',
-                                clientProps: {
-                                  relationField: 'Exception',
-                                },
-                              },
+                              Field: '/collections/meetings/components/ConditionalReasonText',
                             },
                           },
                         },

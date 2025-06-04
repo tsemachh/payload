@@ -54,9 +54,11 @@ export type MeetingAgenda =
       isRemovedFromAgenda?: boolean | null;
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
-      votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-      reasonRef?: (string | null) | RecommendationReason;
-      reasonText?: string | null;
+      recommendation?: {
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
+      };
       exceptionalRecommendation?: {
         showExceptional?: boolean | null;
         companies?: (string | Company)[] | null;
@@ -1168,9 +1170,13 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   isRemovedFromAgenda?: T;
   topicType?: T;
   majorityType?: T;
-  votingRecommendation?: T;
-  reasonRef?: T;
-  reasonText?: T;
+  recommendation?:
+    | T
+    | {
+        votingRecommendation?: T;
+        reasonRef?: T;
+        reasonText?: T;
+      };
   exceptionalRecommendation?:
     | T
     | {

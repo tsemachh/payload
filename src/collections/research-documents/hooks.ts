@@ -116,14 +116,14 @@ export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ d
   await Promise.all(
     data.agenda.map(async (item) => {
       // המלצה רגילה
-      if (item.reasonRef) {
+      if (item.recommendation.reasonRef) {
         const reason = await req.payload.findByID({
           collection: 'recommendation-reasons',
-          id: item.reasonRef,
+          id: item.recommendation.reasonRef,
         })
 
         if (reason?.content !== 'אחר' && reason?.content) {
-          item.reasonText = reason.content
+          item.recommendation.reasonText = reason.content
         }
       }
 
