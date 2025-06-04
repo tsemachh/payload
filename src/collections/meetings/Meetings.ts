@@ -22,9 +22,9 @@ const PropsManualLink: IconLinkProps = {
   iconOnly: true,
 }
 
-const RECOMMENDATION_FIELDS: Field[] = [
+const RECOMMENDATION_FIELDS_TPL: Field[] = [
   {
-    name: 'votingRecommendation',
+    name: 'votingRecommendation${suffix}',
     label: 'המלצת הצבעה',
     type: 'select',
     admin: {
@@ -37,7 +37,7 @@ const RECOMMENDATION_FIELDS: Field[] = [
     ],
   },
   {
-    name: 'reasonRef',
+    name: 'reasonRef${suffix}',
     label: 'נימוק מוכן',
     type: 'relationship',
     relationTo: 'recommendation-reasons',
@@ -46,18 +46,24 @@ const RECOMMENDATION_FIELDS: Field[] = [
     },
   },
   {
-    name: 'reasonText',
+    name: 'reasonText${suffix}',
     label: 'נימוק חופשי',
     type: 'text',
     admin: {
       width: '40%',
       components: {
-        Field: '/collections/meetings/components/ConditionalReasonText',
+        Field: {
+            path: '/components/text/TextFromRelationField',
+            clientProps: {
+              relationField: 'reasonRef${suffix}',
+            },
+          },
       },
     },
   },
 ]
-
+const RECOMMENDATION_FIELDS= JSON.parse(JSON.stringify(RECOMMENDATION_FIELDS_TPL).replace("${suffix}", ''));
+const RECOMMENDATION_FIELDS2= JSON.parse(JSON.stringify(RECOMMENDATION_FIELDS_TPL).replace("${suffix}", 'Exception'));
 const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
@@ -477,14 +483,20 @@ export const Meetings: CollectionConfig = {
                   ],
                 },
                 {
-                  name: 'recommendation',
                   label: 'המלצה',
                   type: 'group',
                   fields: [
                     {
                       type: 'row',
                       fields: RECOMMENDATION_FIELDS,
-                    },
+                    }
+                  ],
+                },
+                {
+                  type: 'group',
+                  name: 'exceptionalRecommendation',
+                  label: 'המלצה חריגה',
+                  fields: [
                     {
                       type: 'row',
                       fields: [
@@ -515,23 +527,11 @@ export const Meetings: CollectionConfig = {
                       ],
                     },
                     {
-                      type: 'row',
                       admin: {
                         condition: (_, siblingData) => siblingData?.showExceptional === true,
                       },
-                      fields: [
-                        {
-                          type: 'group',
-                          name: 'exceptional',
-                          label: 'המלצה חריגה',
-                          fields: [
-                            {
-                              type: 'row',
-                              fields: RECOMMENDATION_FIELDS,
-                            },
-                          ],
-                        },
-                      ],
+                      type: 'row',
+                      fields: RECOMMENDATION_FIELDS2,
                     },
                   ],
                 },
@@ -691,7 +691,7 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [/**handleRecommendationReason,**/ clearCompaniesInSingleBondResearchDoc],
   },
   endpoints: [
     {
