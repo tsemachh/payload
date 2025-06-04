@@ -17,6 +17,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   meetingId: true,
   agenda: true,
   companies: true,
+  funds: true,
   stock: true,
   holdingsLimit: true,
   type: true,
@@ -41,12 +42,12 @@ const MEETING_SELECT_FIELDS: SelectType = {
 function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
   return userFunds
     ? {
-        companies: {
+        funds: {
           in: userFunds,
         },
       }
     : {
-        companies: {
+        funds: {
           in: [], // no matches if user.funds is missing or empty
         },
       }
@@ -320,7 +321,7 @@ async function processMeetingsData(
       }
 
       // Find the intersection of meeting companies and user's leaf companies
-      const relevantCompanyIds = findRelevantCompanyIds(meeting.companies as string[], funds)
+      const relevantCompanyIds = findRelevantCompanyIds(meeting.funds as string[], funds)
 
       // For each relevant company, find holdings and calculate values separately
       const fundsArray = await Promise.all(
