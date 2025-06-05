@@ -57,6 +57,7 @@ import { getDateRange } from '../meetings/meetingTableConstants'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
+import { useCompaniesContext } from '../context/companiesContext'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -85,6 +86,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     key: (defaultSortField || columns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
+  const { companies } = useCompaniesContext()
   const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
@@ -1065,6 +1067,8 @@ export function DataTableStatic<T extends Record<string, any>>({
                                             <span className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate">
                                               {renderFundsCell(
                                                 company,
+                                                companies.find((c) => c.id === company.id)?.name ||
+                                                  '',
                                                 fundsExpandedRows,
                                                 setFundsExpandedRows,
                                                 visibleColumns,

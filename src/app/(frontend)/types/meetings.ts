@@ -36,7 +36,6 @@ export type DateFilterOption = {
 
 export type CompanyTableDate = {
   id: string
-  companyName: string
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number

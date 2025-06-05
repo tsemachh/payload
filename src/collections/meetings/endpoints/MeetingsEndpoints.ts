@@ -220,54 +220,6 @@ function findRelevantCompanyIds(
     .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
 }
-
-/**
- * Find company name by ID in the tree structure
- * @param treeCompaniesJson - JSON string of the tree structure
- * @param companyId - ID of the company to find
- * @returns The name of the company or 'Unknown Company' if not found
- */
-function findCompanyNameById(treeCompaniesJson: string, companyId: string): string {
-  try {
-    // Parse the JSON string
-    const treeCompanies = JSON.parse(treeCompaniesJson)
-
-    // Search through all parent companies
-    for (const parentCompany of treeCompanies) {
-      // Check if this is the company we're looking for
-      if (parentCompany.id === companyId) {
-        return parentCompany.name
-      }
-
-      // Check in subCompanies
-      if (parentCompany.subCompanies && parentCompany.subCompanies.length > 0) {
-        for (const subCompany of parentCompany.subCompanies) {
-          if (subCompany.id === companyId) {
-            return subCompany.name
-          }
-
-          // If there are deeper nested companies and we need to check them
-          // (though from your description, it seems we only need to check the first two levels)
-          if (subCompany.subCompanies && subCompany.subCompanies.length > 0) {
-            const found = subCompany.subCompanies.find(
-              (nestedCompany: { id: string }) => nestedCompany.id === companyId,
-            )
-            if (found) {
-              return found.name
-            }
-          }
-        }
-      }
-    }
-
-    // If no company with the given ID is found
-    return 'Unknown Company'
-  } catch (error) {
-    console.error('Error parsing or searching tree companies:', error)
-    return 'Unknown Company'
-  }
-}
-
 /**
  * Creates a standardized meeting data object for the frontend
  */
@@ -460,11 +412,9 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
 
-          const companyName = findCompanyNameById(user?.treeCompanies, parentCompany)
-
           return {
             id: parentCompany,
-            companyName: companyName,
+            companyName: '',
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,
