@@ -55,7 +55,7 @@ export default function HoldingsView() {
     } else {
       setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
     }
-  }, [])
+  }, [encoded])
 
   useEffect(() => {
     if (date) {
@@ -109,9 +109,9 @@ export default function HoldingsView() {
 
     try {
       let selectedCompanies: string[] = []
-      if (user?.leafCompanies) {
-        selectedCompanies = user?.leafCompanies.map((company) =>
-          typeof company === 'string' ? company : company.id,
+      if (user?.funds) {
+        selectedCompanies = user?.funds.map((fund) =>
+          typeof fund === 'string' ? fund : fund.id,
         )
       }
       if (selectedCompanies.length === 0) {

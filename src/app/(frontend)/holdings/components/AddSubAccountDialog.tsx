@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import {  HoldingFeedLine } from '@/payload-types'
 import { SelectParentCompanyTree } from './SelectParentCompanyTree'
 import { useCompaniesContext } from '../../context/companiesContext'
-import { LeafCompanyType } from '../../types/companies'
+import { FundType } from '../../types/companies'
 
 interface AddSubAccountDialogProps {
   accountId: string | number
@@ -31,7 +31,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
-  const { leafCompanies } = useCompaniesContext()
+  const { funds } = useCompaniesContext()
 
   const handleClose = () => {
     setOpen(false)
@@ -42,8 +42,8 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
   const companyIdsSet = new Set<string>(companies)
 
   const companyOptions =
-    leafCompanies
-      ?.filter((company): company is LeafCompanyType => {
+  funds
+      ?.filter((company): company is FundType => {
         return (
           typeof company === 'object' &&
           !!company.id &&

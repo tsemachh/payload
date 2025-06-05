@@ -1,9 +1,10 @@
 import { PayloadRequest } from 'payload'
-import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue, UserCompany } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
   CompanyTableDate,
+  FundType,
   MeetingTableDataType,
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
@@ -16,6 +17,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   meetingId: true,
   agenda: true,
   companies: true,
+  funds: true,
   stock: true,
   holdingsLimit: true,
   type: true,
@@ -29,7 +31,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   electronicVotingEnabled: true,
   resultsConfirmationStatus: true,
   committeeInitiated: true,
-  companiesWithHolding: true,
+  fundsWithHolding: true,
   stockValue: true,
   invitationLink: true,
 }
@@ -37,16 +39,16 @@ const MEETING_SELECT_FIELDS: SelectType = {
 /**
  * Creates a companies filter condition based on user's leaf companies
  */
-function createCompaniesFilter(userLeafCompanies: (string | Company)[] | undefined | null) {
-  return userLeafCompanies
+function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
+  return userFunds
     ? {
-        companies: {
-          in: userLeafCompanies,
+        funds: {
+          in: userFunds,
         },
       }
     : {
-        companies: {
-          in: [], // no matches if user.leafCompanies is missing or empty
+        funds: {
+          in: [], // no matches if user.funds is missing or empty
         },
       }
 }
@@ -65,8 +67,8 @@ function createPublishedStatusFilter() {
 /**
  * Converts user's leaf companies to a safe format
  */
-function getSafeLeafCompanies(userLeafCompanies: (string | Company)[] | undefined | null) {
-  return userLeafCompanies?.map((company: string | Company) =>
+function getSafeFunds(userFunds: (string | Company)[] | undefined | null) {
+  return userFunds?.map((company: string | Company) =>
     typeof company === 'string' ? company : company.id,
   )
 }
@@ -127,7 +129,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       sort: sort,
       where: {
         and: [
-          createCompaniesFilter(user?.leafCompanies),
+          createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
           searchTerm
             ? {
@@ -150,10 +152,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Execute query
     const meetings = await payload.find(query)
-    const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
+    const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -187,16 +189,16 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
               },
             ],
           },
-          createCompaniesFilter(user?.leafCompanies),
+          createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },
     })
 
-    const safeLeafCompanies = getSafeLeafCompanies(user?.leafCompanies)
+    const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeLeafCompanies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -212,10 +214,10 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
  */
 function findRelevantCompanyIds(
   meetingCompanies: string[] | undefined,
-  leafCompanies: string[] | null | undefined,
+  funds: string[] | null | undefined,
 ): string[] {
   return (meetingCompanies || [])
-    .filter((companyID) => leafCompanies?.some((leafCompany) => leafCompany === companyID))
+    .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
 }
 
@@ -272,7 +274,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
       privilegedMajority: item?.majorityType == 'privileged' || false,
       recommendation: {
         votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
-        recommendationExplanation: item.recommendation?.recommendation || '',
+        recommendationExplanation: item.recommendation?.reasonText || '',
       },
     }
   })
@@ -298,7 +300,11 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(meetings: any[], leafCompanies?: string[] | null) {
+async function processMeetingsData(
+  meetings: any[],
+  funds?: string[] | null,
+  userCompany?: UserCompany | undefined,
+) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -315,31 +321,23 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
       }
 
       // Find the intersection of meeting companies and user's leaf companies
-      const relevantCompanyIds = findRelevantCompanyIds(
-        meeting.companies as string[],
-        leafCompanies,
-      )
+      const relevantCompanyIds = findRelevantCompanyIds(meeting.funds as string[], funds)
 
       // For each relevant company, find holdings and calculate values separately
-      const companiesArray = await Promise.all(
+      const fundsArray = await Promise.all(
         relevantCompanyIds.map(async (companyId) => {
           let company
           let quantity
           // Get this company's holdings for this date
-          const match = meeting.companiesWithHolding?.find((item) => {
-            return typeof item.company === 'object' && item.company?.id == companyId
+          const match = meeting?.fundsWithHolding?.find((item) => {
+            return typeof item.fund === 'object' && item.fund?.id == companyId
           })
-          if (
-            match &&
-            typeof match.holding === 'object' &&
-            match.company &&
-            match.holding?.quantity
-          ) {
-            company = match.company
+          if (match && typeof match.holding === 'object' && match.fund && match.holding?.quantity) {
+            company = match.fund
             quantity = match.holding?.quantity
           } else {
             console.error(
-              `Company ${companyId} does not exist or is not valid in the companiesWithHolding array`,
+              `Company ${companyId} does not exist or is not valid in the fundsWithHolding array`,
             )
             return null
           }
@@ -353,9 +351,86 @@ async function processMeetingsData(meetings: any[], leafCompanies?: string[] | n
             percentageHolding,
             holdingValueInMillions,
             nominalValue,
+            parentCompany:
+              typeof company === 'object' && company.parentCompany ? company.parentCompany : null,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
+
+      const parentCompaniesMap = new Map<string, { parentCompany: string; funds: FundType[] }>()
+      // Process each fund to find its parent and group them
+      for (const fund of fundsArray) {
+        // If no parent found, skip this fund or treat the fund itself as parent
+        if (!fund.parentCompany) {
+          console.warn(`No parent company found for fund ${fund.id}`)
+          continue
+        }
+        if (typeof fund.parentCompany != 'object') {
+          console.warn(
+            `The type of parent company found for fund ${fund.id} is string, expected object`,
+          )
+          continue
+        }
+
+        const parentCompanyID =
+          typeof fund.parentCompany === 'object' && typeof fund.parentCompany.docs?.[0] === 'string'
+            ? fund.parentCompany.docs?.[0]
+            : null
+
+        if (!parentCompanyID) {
+          console.warn(`Invalid parent company for fund ${fund.id}`)
+          continue
+        }
+        const tmpFund: FundType = {
+          id: fund.id,
+          holdingsCompanyName: fund.holdingsCompanyName,
+          percentageHolding: fund.percentageHolding,
+          holdingValueInMillions: fund.holdingValueInMillions,
+          nominalValue: fund.nominalValue,
+        }
+        if (parentCompaniesMap.has(parentCompanyID)) {
+          parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
+        } else {
+          parentCompaniesMap.set(parentCompanyID, {
+            parentCompany: parentCompanyID,
+            funds: [tmpFund],
+          })
+        }
+      }
+
+      // Create the final companiesArray
+      const companiesArray: CompanyTableDate[] = Array.from(parentCompaniesMap.values()).map(
+        ({ parentCompany, funds }) => {
+          // Calculate aggregated values for the parent company
+          const totalPercentageHolding = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.percentageHolding || 0)
+          }, 0)
+
+          const totalHoldingValueInMillions = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.holdingValueInMillions || 0)
+          }, 0)
+
+          const totalNominalValue = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.nominalValue || 0)
+          }, 0)
+          const companyName = userCompany?.find((c) => {
+            if (typeof c.companyId === 'object' && c.companyId.id === parentCompany)
+              return c.companyId.name
+          })
+
+          return {
+            id: parentCompany,
+            companyName: typeof companyName == 'string' ? companyName : 'Unknown Company',
+            percentageHolding: totalPercentageHolding,
+            holdingValueInMillions: totalHoldingValueInMillions,
+            nominalValue: totalNominalValue,
+            funds,
+          }
+        },
+      )
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
 

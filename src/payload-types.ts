@@ -51,16 +51,18 @@ export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' 
 export type MeetingAgenda =
   | {
       text: string;
-      shortText?: string | null;
       isRemovedFromAgenda?: boolean | null;
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       recommendation?: {
         votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-        recommendation?: string | null;
+        reasonRef?: (string | null) | RecommendationReason;
+        reasonText?: string | null;
+      };
+      exceptionalRecommendation?: {
         showExceptional?: boolean | null;
-        exceptionalRecommendationVote?: ('for' | 'against' | 'abstain') | null;
         companies?: (string | Company)[] | null;
+        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
         reasonRef?: (string | null) | RecommendationReason;
         reasonText?: string | null;
       };
@@ -385,9 +387,10 @@ export interface Meeting {
     totalDocs?: number;
   };
   companies?: (string | Company)[] | null;
-  companiesWithHolding?:
+  funds?: (string | Company)[] | null;
+  fundsWithHolding?:
     | {
-        company?: (string | null) | Company;
+        fund?: (string | null) | Company;
         holding?: (string | null) | Holding;
         id?: string | null;
       }[]
@@ -422,6 +425,18 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -508,23 +523,11 @@ export interface ResearchDocument {
  */
 export interface Holding {
   id: string;
-  company: string | Company;
+  fund: string | Company;
   valueDate: string;
   stock: string | Stock;
   feedStockNum?: string | null;
   quantity: number;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons".
- */
-export interface RecommendationReason {
-  id: string;
-  content: string;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -570,7 +573,7 @@ export interface User {
   legacyId?: number | null;
   active?: boolean | null;
   companies?: UserCompany;
-  leafCompanies?: (string | Company)[] | null;
+  funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   /**
@@ -1140,10 +1143,11 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votes?: T;
   companies?: T;
-  companiesWithHolding?:
+  funds?: T;
+  fundsWithHolding?:
     | T
     | {
-        company?: T;
+        fund?: T;
         holding?: T;
         id?: T;
       };
@@ -1163,7 +1167,6 @@ export interface MeetingsSelect<T extends boolean = true> {
  */
 export interface MeetingAgendaSelect<T extends boolean = true> {
   text?: T;
-  shortText?: T;
   isRemovedFromAgenda?: T;
   topicType?: T;
   majorityType?: T;
@@ -1171,10 +1174,15 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
     | T
     | {
         votingRecommendation?: T;
-        recommendation?: T;
+        reasonRef?: T;
+        reasonText?: T;
+      };
+  exceptionalRecommendation?:
+    | T
+    | {
         showExceptional?: T;
-        exceptionalRecommendationVote?: T;
         companies?: T;
+        votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
       };
@@ -1231,7 +1239,7 @@ export interface UsersSelect<T extends boolean = true> {
   legacyId?: T;
   active?: T;
   companies?: T | UserCompanySelect<T>;
-  leafCompanies?: T;
+  funds?: T;
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
@@ -1342,7 +1350,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  * via the `definition` "holdings_select".
  */
 export interface HoldingsSelect<T extends boolean = true> {
-  company?: T;
+  fund?: T;
   valueDate?: T;
   stock?: T;
   feedStockNum?: T;

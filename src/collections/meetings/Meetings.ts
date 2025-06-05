@@ -1,8 +1,7 @@
-import { type CollectionConfig, PayloadRequest, SelectFieldSingleValidation } from 'payload'
+import { type CollectionConfig, Field, PayloadRequest, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
-
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
@@ -14,7 +13,7 @@ import {
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
 } from '../research-documents/hooks'
-import { getCollectionDoc } from '@/utils/utils'
+import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 import type { TextFieldSingleValidation } from 'payload'
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -406,11 +405,6 @@ export const Meetings: CollectionConfig = {
                   type: 'row',
                   fields: [
                     {
-                      name: 'shortText',
-                      label: 'נושא מקוצר',
-                      type: 'text',
-                    },
-                    {
                       name: 'isRemovedFromAgenda',
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
@@ -465,19 +459,37 @@ export const Meetings: CollectionConfig = {
                             { label: 'בעד', value: 'for' },
                             { label: 'נגד', value: 'against' },
                             { label: 'נמנע', value: 'abstain' },
-                            /*                            { label: '----', value: '----' },*/
                           ],
                         },
                         {
-                          name: 'recommendation',
-                          label: 'נימוק המלצה',
+                          name: 'reasonRef',
+                          label: 'נימוק מוכן',
+                          type: 'relationship',
+                          relationTo: 'recommendation-reasons',
+                          admin: {
+                            width: '50%',
+                          },
+                        },
+                        {
+                          name: 'reasonText',
+                          label: 'נימוק חופשי',
                           type: 'text',
                           admin: {
-                            width: '90%',
+                            width: '40%',
+                            components: {
+                              Field: '/collections/meetings/components/ConditionalReasonText',
+                            },
                           },
                         },
                       ],
                     },
+                  ],
+                },
+                {
+                  type: 'group',
+                  name: 'exceptionalRecommendation',
+                  label: 'המלצה חריגה',
+                  fields: [
                     {
                       type: 'row',
                       fields: [
@@ -490,12 +502,37 @@ export const Meetings: CollectionConfig = {
                           },
                         },
                         {
-                          name: 'exceptionalRecommendationVote',
-                          label: 'המלצה חריגה',
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
+                          filterOptions: ({ data }) => {
+                            return {
+                              id: {
+                                in: data?.companies?.map(getIdOfRelationField) || [],
+                              },
+                            }
+                          },
+                          admin: {
+                            width: '80%',
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      admin: {
+                        condition: (_, siblingData) => siblingData?.showExceptional === true,
+                      },
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'votingRecommendation',
+                          label: 'המלצת הצבעה',
                           type: 'select',
                           admin: {
                             width: '10%',
-                            condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                           options: [
                             { label: 'בעד', value: 'for' },
@@ -504,39 +541,23 @@ export const Meetings: CollectionConfig = {
                           ],
                         },
                         {
-                          name: 'companies',
-                          label: 'חברות',
-                          type: 'relationship',
-                          relationTo: 'companies',
-                          hasMany: true,
-                          admin: {
-                            width: '70%',
-                            condition: (_, siblingData) => siblingData?.showExceptional === true,
-                          },
-                        },
-                      ],
-                    },
-                    {
-                      type: 'row',
-                      admin: {
-                        condition: (_, siblingData) => siblingData?.showExceptional === true,
-                      },
-                      fields: [
-                        {
                           name: 'reasonRef',
                           label: 'נימוק מוכן',
                           type: 'relationship',
                           relationTo: 'recommendation-reasons',
                           admin: {
-                            width: '60%',
+                            width: '50%',
                           },
                         },
                         {
                           name: 'reasonText',
-                          label: 'נימוק (נבחר או חופשי)',
+                          label: 'נימוק חופשי',
                           type: 'text',
                           admin: {
                             width: '40%',
+                            components: {
+                              Field: '/collections/meetings/components/ConditionalReasonText',
+                            },
                           },
                         },
                       ],
@@ -614,24 +635,51 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 0,
+              filterOptions: {
+                type: {
+                  equals: 'regular',
+                },
+              },
               admin: {
                 readOnly: true,
               },
             },
             {
-              name: 'companiesWithHolding',
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'funds',
+              label: 'קרנות',
+              index: true,
+              maxDepth: 0,
+              filterOptions: {
+                type: {
+                  equals: 'fund',
+                },
+              },
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
+              name: 'fundsWithHolding',
               type: 'array',
               admin: {
                 hidden: true,
               },
               fields: [
                 {
-                  name: 'company',
+                  name: 'fund',
                   type: 'relationship',
                   relationTo: 'companies',
                   hasMany: false,
                   label: 'חברה',
                   maxDepth: 1,
+                  filterOptions: {
+                    type: {
+                      equals: 'fund',
+                    },
+                  },
                 },
                 {
                   name: 'holding',
@@ -665,11 +713,11 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              filterOptions: ({ data }) => {
+              /*              filterOptions: ({ data }) => {
                 return {
-                  company: { in: data.companies },
+                  companies: {all: data.companies },
                 }
-              },
+              },*/
               hasMany: true,
               admin: {
                 components: {

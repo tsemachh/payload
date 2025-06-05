@@ -18,7 +18,7 @@ const sqlConfig: sql.config = {
 }
 
 //const DAYS_TO_IMPORT: number = 365 * 7
-const START_DATE_TO_IMPORT: string = '04-01-2025'
+const START_DATE_TO_IMPORT: string = '01-05-2025'
 
 interface HoldingRow {
   stockNum: string
@@ -184,7 +184,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               context: { ...req.context, from: 'migration' },
             },
             where: {
-              company: {
+              fund: {
                 equals: companyId,
               },
               valueDate: {
@@ -197,7 +197,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const holding = holdingsArray[i]
             // Create holding object
             const holdingData = {
-              company: companyId,
+              fund: companyId,
               valueDate: holdingDate,
               stock: holding.stock,
               quantity: holding.quantity,

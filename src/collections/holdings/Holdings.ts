@@ -28,8 +28,8 @@ export const Holdings: CollectionConfig = {
       type: 'row',
       fields: [
         {
-          name: 'company',
-          label: 'חברה',
+          name: 'fund',
+          label: 'תיק',
           type: 'relationship',
           relationTo: 'companies',
           required: true,
