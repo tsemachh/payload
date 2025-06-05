@@ -76,7 +76,7 @@ export const processMeetingsAgendaFeedCsv = async (
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
-    const promisePool = new PromisePool(20)
+    const promisePool = new PromisePool(4)
     const promises: Promise<void>[] = []
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
