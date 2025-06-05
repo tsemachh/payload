@@ -60,7 +60,6 @@ export const calculatePrecedingColumnsWidth = (
   const firstValueColumnIndex = columns.findIndex(
     (col) => col.key !== 'companyName' && col.key in company,
   )
-  console.log('First value column index:', firstValueColumnIndex)
 
   if (firstValueColumnIndex === -1) return '600px'
 
@@ -70,7 +69,6 @@ export const calculatePrecedingColumnsWidth = (
     const minWidth = columns[i]?.minWidth ?? 100
     const columnWidth = calculateColumnWidths(minWidth, columnCount)
     totalWidth += columnWidth
-    console.log(`Column ${i} width: ${columnWidth}, Total width: ${totalWidth}`)
   }
   if (fund) {
     totalWidth -= 50

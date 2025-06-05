@@ -1,5 +1,5 @@
-import { PayloadRequest } from 'payload'
-import { Company, Meeting, MeetingAgenda, Stock, StockValue, UserCompany } from '@/payload-types'
+import { PayloadRequest, User } from 'payload'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
@@ -155,7 +155,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -198,7 +198,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -219,6 +219,53 @@ function findRelevantCompanyIds(
   return (meetingCompanies || [])
     .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
+}
+
+/**
+ * Find company name by ID in the tree structure
+ * @param treeCompaniesJson - JSON string of the tree structure
+ * @param companyId - ID of the company to find
+ * @returns The name of the company or 'Unknown Company' if not found
+ */
+function findCompanyNameById(treeCompaniesJson: string, companyId: string): string {
+  try {
+    // Parse the JSON string
+    const treeCompanies = JSON.parse(treeCompaniesJson)
+
+    // Search through all parent companies
+    for (const parentCompany of treeCompanies) {
+      // Check if this is the company we're looking for
+      if (parentCompany.id === companyId) {
+        return parentCompany.name
+      }
+
+      // Check in subCompanies
+      if (parentCompany.subCompanies && parentCompany.subCompanies.length > 0) {
+        for (const subCompany of parentCompany.subCompanies) {
+          if (subCompany.id === companyId) {
+            return subCompany.name
+          }
+
+          // If there are deeper nested companies and we need to check them
+          // (though from your description, it seems we only need to check the first two levels)
+          if (subCompany.subCompanies && subCompany.subCompanies.length > 0) {
+            const found = subCompany.subCompanies.find(
+              (nestedCompany: { id: string }) => nestedCompany.id === companyId,
+            )
+            if (found) {
+              return found.name
+            }
+          }
+        }
+      }
+    }
+
+    // If no company with the given ID is found
+    return 'Unknown Company'
+  } catch (error) {
+    console.error('Error parsing or searching tree companies:', error)
+    return 'Unknown Company'
+  }
 }
 
 /**
@@ -300,11 +347,7 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(
-  meetings: any[],
-  funds?: string[] | null,
-  userCompany?: UserCompany | undefined,
-) {
+async function processMeetingsData(meetings: any[], funds?: string[] | null, user?: User | null) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -416,14 +459,12 @@ async function processMeetingsData(
             const originalFund = fundsArray.find((f) => f.id === fund.id)
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
-          const companyName = userCompany?.find((c) => {
-            if (typeof c.companyId === 'object' && c.companyId.id === parentCompany)
-              return c.companyId.name
-          })
+
+          const companyName = findCompanyNameById(user?.treeCompanies, parentCompany)
 
           return {
             id: parentCompany,
-            companyName: typeof companyName == 'string' ? companyName : 'Unknown Company',
+            companyName: companyName,
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,
