@@ -56,7 +56,7 @@ export const processStocksFeedCsv = async (req: PayloadRequest, data:StocksFeed)
     let processedRows=0
 
     // Create a Promise Pool with concurrency of 20
-    const pool = new PromisePool(20);
+    const pool = new PromisePool(4);
     // Get the stockMap using the helper function
     const stockMap = await createStocksMap(req,"TASE")
     // Process each row

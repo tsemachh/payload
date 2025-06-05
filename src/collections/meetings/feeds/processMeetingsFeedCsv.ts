@@ -112,7 +112,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       },
       limit: 0,
     })
-    const promisePool = new PromisePool(20)
+    const promisePool = new PromisePool(4)
     const promises = []
 
     const stockIdMap = new Map()
