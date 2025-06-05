@@ -53,9 +53,12 @@ export const fetchCompanies = async () => {
         active: {
           equals: true,
         },
+        type:{
+          in: ['parent','regular']
+        }
         // Removed type filter to include all company types
       },
-      depth: 0,
+      depth: 4,
       limit: 0,
       sort: 'name',
       select: {
@@ -105,9 +108,6 @@ export const fetchCompanyById = async (id: string) => {
         parentCompany: true,
         mainAccount: true,
         silencedStocks: true,
-        holdings: {
-          docs: true
-        },
         meetings: {
           docs: true
         }
