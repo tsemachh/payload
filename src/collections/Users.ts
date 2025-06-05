@@ -36,7 +36,7 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     limit: 0,
-    depth: 1,
+    depth: 0,
   })
 
   // Compute leaf companies recursively

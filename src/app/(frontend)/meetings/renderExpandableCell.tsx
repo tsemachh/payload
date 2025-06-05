@@ -36,11 +36,12 @@ export function renderCompaniesCell<T>(
 // Function to display a button for funds within a company
 export function renderFundsCell(
   company: CompanyTableDate,
+  companyName: string,
   fundsExpandedRows: Record<string, boolean>,
   setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
   visibleColumns?: Column<any>[],
 ) {
-  if (company.funds?.length === 0) return company.companyName
+  if (company.funds?.length === 0) return companyName
 
   return (
     <div
@@ -67,7 +68,7 @@ export function renderFundsCell(
           <ChevronLeft className="h-4 w-4" />
         )}
       </Button>
-      <span className="mr-1 truncate font-medium">{`${company.companyName} ${company.funds?.length} `}</span>
+      <span className="mr-1 truncate font-medium">{`${companyName} ${company.funds?.length} `}</span>
     </div>
   )
 }

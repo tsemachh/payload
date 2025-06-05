@@ -1,36 +1,37 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { VoteCompanyType } from '../../types/vote'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { MeetingTableDataType } from '../../types/meetings'
+import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
+import { useCompaniesContext } from '../../context/companiesContext'
 
 interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
-  companies: VoteCompanyType[]
+  meetingCompanies: CompanyTableDate[]
   onSelectionChange: (selectedCompanyIndex: number) => void
 }
 
 export default function VoteCompanySelector({
   meetingData,
-  companies,
+  meetingCompanies,
   onSelectionChange,
 }: VoteCompanySelectorProps) {
+  const { companies: companiesMap } = useCompaniesContext()
   const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(
-    companies.length > 1 ? -1 : companies.length === 1 ? 0 : -2, //  -1 means "all companies", -2 means "no companies"
+    meetingCompanies.length > 1 ? -1 : meetingCompanies.length === 1 ? 0 : -2, //  -1 means "all companies", -2 means "no companies"
   )
 
   useEffect(() => {
-    if (companies.length === 1) {
+    if (meetingCompanies.length === 1) {
       setSelectedCompanyIndex(0)
       onSelectionChange(0)
-    } else if (companies.length > 1) {
+    } else if (meetingCompanies.length > 1) {
       setSelectedCompanyIndex(-1)
       onSelectionChange(-1)
     } else {
       setSelectedCompanyIndex(-2)
     }
-  }, [companies, onSelectionChange])
+  }, [meetingCompanies, onSelectionChange])
 
   const handleCompanyChange = (index: number) => {
     setSelectedCompanyIndex(index)
@@ -43,16 +44,17 @@ export default function VoteCompanySelector({
     } else if (selectedCompanyIndex === -1) {
       return 'הצבעה עבור כל החברות'
     } else {
-      const selectedCompany = companies[selectedCompanyIndex]
+      const selectedCompany = meetingCompanies[selectedCompanyIndex]
       return (
         <>
-          הצבעה עבור חברת: <i>{selectedCompany?.name}</i>
+          הצבעה עבור חברת:{' '}
+          <i>{companiesMap.find((c) => c.id === selectedCompany?.id)?.name || ''}</i>
         </>
       )
     }
   }
 
-  if (companies.length === 0) {
+  if (meetingCompanies.length === 0) {
     return (
       <div className="mb-4">
         <div className="font-medium text-base text-destructive">אין חברות זמינות להצבעה</div>
@@ -65,7 +67,7 @@ export default function VoteCompanySelector({
       <div className="mb-4">
         <div className="mb-4 font-medium text-base text-primary">{getSummaryText()}</div>
         <div className="flex flex-wrap gap-2">
-          {companies.length > 1 && (
+          {meetingCompanies.length > 1 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <label
@@ -96,7 +98,7 @@ export default function VoteCompanySelector({
             </Tooltip>
           )}
 
-          {companies.map((company, index) => (
+          {meetingCompanies.map((company, index) => (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <label
@@ -114,7 +116,7 @@ export default function VoteCompanySelector({
                     checked={selectedCompanyIndex === index}
                     onChange={() => handleCompanyChange(index)}
                   />
-                  <span>{company.name}</span>
+                  <span>{companiesMap.find((c) => c.id === company?.id)?.name || '-'}</span>
                 </label>
               </TooltipTrigger>
               <TooltipContent>

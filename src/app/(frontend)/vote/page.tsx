@@ -21,12 +21,9 @@ import VoteCompanySelector from './components/VoteCompanySelector'
 import GeneralQuestions from './components/GeneralQuestions'
 import AgendaQuestions from './components/AgendaQuestions'
 import { AgendaQuestionsType, UserVote, VoteDataType } from '../types/vote'
-import { useAuth } from '@/providers/auth-provider'
-import { getParentCompanies } from '../helpers/utils-vote'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
-  const { user } = useAuth()
 
   const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -39,14 +36,6 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
-
-  const parentCompanies = useMemo(() => {
-    if (user?.treeCompanies && meetingData) {
-      return getParentCompanies(meetingData.companies, JSON.parse(user?.treeCompanies || '[]'))
-    } else {
-      return []
-    }
-  }, [meetingData, user?.treeCompanies])
 
   useEffect(() => {
     const encoded = searchParams.get('data')
@@ -188,8 +177,8 @@ export default function VotingForm() {
           </CardHeader>
           <CardContent className="p-4">
             <VoteCompanySelector
-            meetingData={meetingData}
-              companies={parentCompanies}
+              meetingData={meetingData}
+              meetingCompanies={meetingData.companies}
               onSelectionChange={() => {}}
               //   onSelectionChange={handleCompanySelection}
             />

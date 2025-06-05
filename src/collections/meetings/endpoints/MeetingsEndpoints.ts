@@ -1,5 +1,5 @@
-import { PayloadRequest } from 'payload'
-import { Company, Meeting, MeetingAgenda, Stock, StockValue, UserCompany } from '@/payload-types'
+import { PayloadRequest, User } from 'payload'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
@@ -155,7 +155,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -198,7 +198,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user?.companies)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -220,7 +220,6 @@ function findRelevantCompanyIds(
     .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
 }
-
 /**
  * Creates a standardized meeting data object for the frontend
  */
@@ -300,11 +299,7 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(
-  meetings: any[],
-  funds?: string[] | null,
-  userCompany?: UserCompany | undefined,
-) {
+async function processMeetingsData(meetings: any[], funds?: string[] | null, user?: User | null) {
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -416,14 +411,9 @@ async function processMeetingsData(
             const originalFund = fundsArray.find((f) => f.id === fund.id)
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
-          const companyName = userCompany?.find((c) => {
-            if (typeof c.companyId === 'object' && c.companyId.id === parentCompany)
-              return c.companyId.name
-          })
 
           return {
             id: parentCompany,
-            companyName: typeof companyName == 'string' ? companyName : 'Unknown Company',
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,

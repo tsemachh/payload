@@ -46,11 +46,9 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
 
     let shouldFetch = companiesChanged || fundsChanged
     if (!shouldFetch) {
-      if (!shouldFetch) {
-        const cachedCompanies = localStorage.getItem('companies')
-        const cachedFunds = localStorage.getItem('funds')
-        shouldFetch = !cachedCompanies || !cachedFunds
-      }
+      const cachedCompanies = localStorage.getItem('companies')
+      const cachedFunds = localStorage.getItem('funds')
+      shouldFetch = !cachedCompanies || !cachedFunds
     }
 
     const fetchSortedData = async () => {

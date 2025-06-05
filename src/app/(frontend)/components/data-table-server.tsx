@@ -36,6 +36,7 @@ import {
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
+import { useCompaniesContext } from '../context/companiesContext'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -55,6 +56,8 @@ export function DataTableServer<T extends Record<string, any>>({
   initialSearchTerm = '',
   tableHeightOffset = 250,
 }: DataTableProps<T>) {
+  const { companies } = useCompaniesContext()
+
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
@@ -419,6 +422,8 @@ export function DataTableServer<T extends Record<string, any>>({
                                             <span className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate">
                                               {renderFundsCell(
                                                 company,
+                                                companies.find((c) => c.id === company.id)?.name ||
+                                                  '',
                                                 fundsExpandedRows,
                                                 setFundsExpandedRows,
                                                 visibleColumns,
