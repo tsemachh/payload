@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from './columns'
-import { Holding } from '../../types/holdings'
+import { Holding } from '@/payload-types'
 import { ExportButton } from '@/components/export-button'
 import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
@@ -18,18 +18,19 @@ import { fetcher } from '../../helpers/utils-data-table'
 export default function HoldingsView() {
   const { user } = useAuth()
   const [date, setDate] = useState<Date | undefined>(undefined)
-  const [holdings, setHoldings] = useState<Holding[]>([])
+  const [holdingDays,setHoldingDays] = useState<Holding[]>([])
+  const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
 
-  const { data: recentData } = useSWR('/api/holdings/dates?month=true', fetcher, {
+  const { data: recentData } = useSWR('/api/holding-days/dates?month=true', fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-  const { data: fullData } = useSWR(recentData ? '/api/holdings/dates' : null, fetcher, {
+  const { data: fullData } = useSWR(recentData ? '/api/holding-days/dates' : null, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
@@ -75,7 +76,7 @@ export default function HoldingsView() {
           },
         },
         {
-          company: {
+          fund: {
             in: selectedCompanies,
           },
         },
@@ -86,11 +87,20 @@ export default function HoldingsView() {
       {
         where: query,
         limit: 0,
+        select:{
+          fund:true,
+          holdings:{
+            stock:true,
+            fund:true,
+            quantity: true
+          }
+        },
+        depth: 1, // Need to get stock details
       },
       { addQueryPrefix: true },
     )
 
-    const response = await fetch(`/api/holdings${stringifiedQuery}`)
+    const response = await fetch(`/api/holding-days${stringifiedQuery}`)
     return response
   }
 
@@ -128,20 +138,35 @@ export default function HoldingsView() {
         } else {
           setError('')
         }
-        setHoldings(
-          data.docs.map((holding: any) => ({
-            id: holding.id,
-            stockId: holding.stock?.stockId || 'N/A',
-            stockName: holding.stock?.name || 'N/A',
-            quantity: holding.quantity || 'N/A',
-            company: holding.company?.name || 'N/A',
-          })),
-        )
+
+        // Store the original holding days data
+        setHoldingDays(data.docs)
+
+        // Process the holding days data for display
+        const processed = []
+        for (const holdingDay of data.docs) {
+          const fundName = holdingDay.fund?.name || 'N/A'
+
+          // Process each holding item in the holdings array
+          if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
+            for (const item of holdingDay.holdings) {
+              processed.push({
+                id: `${holdingDay.id}-${item.stock?.id || 'unknown'}`,
+                stockId: item.stock?.stockId || item.feedStockNum || 'N/A',
+                stockName: item.stock?.name || 'N/A',
+                quantity: item.quantity || 'N/A',
+                company: fundName,
+              })
+            }
+          }
+        }
+
+        setProcessedHoldings(processed)
       } else {
         setError('שגיאת נתונים.')
       }
     } catch (error) {
-      console.error('Error fetching holdings:', error)
+      console.error('Error fetching holding days:', error)
       setError('שגיאה בטעינת הנתונים.')
     } finally {
       setIsLoading(false)
@@ -175,7 +200,7 @@ export default function HoldingsView() {
             <LoadingSpinnerDiamond />
           </div>
         ) : (
-          holdings.length > 0 &&
+          processedHoldings.length > 0 &&
           date && (
             <div>
               <h4 className="text-xl text-center pb-3">
@@ -183,7 +208,7 @@ export default function HoldingsView() {
               </h4>
               <DataTable
                 columns={columns}
-                data={holdings}
+                data={processedHoldings}
                 idField="id"
                 defaultSortField="lastUpdated"
                 defaultSortDirection="desc"
@@ -192,9 +217,9 @@ export default function HoldingsView() {
                 tableHeightOffset={280}
               />
               <div className="flex justify-center mt-4">
-                {holdings.length > 0 && (
+                {processedHoldings.length > 0 && (
                   <ExportButton
-                    data={holdings}
+                    data={processedHoldings}
                     filename={`holdings-${date ? format(date, 'yyyy-MM-dd') : 'export'}`}
                   />
                 )}

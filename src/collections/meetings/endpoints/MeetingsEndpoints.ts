@@ -8,6 +8,7 @@ import {
   MeetingTableDataType,
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
+import { getIdOfRelationField } from '@/utils/utils'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -316,23 +317,23 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       }
 
       // Find the intersection of meeting companies and user's leaf companies
-      const relevantCompanyIds = findRelevantCompanyIds(meeting.funds as string[], funds)
+      const relevantFundIds = findRelevantCompanyIds(meeting.funds as string[], funds)
 
-      // For each relevant company, find holdings and calculate values separately
+      // For each relevant fund, find holdings and calculate values separately
       const fundsArray = await Promise.all(
-        relevantCompanyIds.map(async (companyId) => {
+        relevantFundIds.map(async (fundId) => {
           let company
           let quantity
           // Get this company's holdings for this date
           const match = meeting?.fundsWithHolding?.find((item) => {
-            return typeof item.fund === 'object' && item.fund?.id == companyId
+            return item.fund && getIdOfRelationField(item.fund) as string == fundId
           })
-          if (match && typeof match.holding === 'object' && match.fund && match.holding?.quantity) {
+          if (match && match.fund && match?.quantity) {
             company = match.fund
-            quantity = match.holding?.quantity
+            quantity = match.quantity
           } else {
             console.error(
-              `Company ${companyId} does not exist or is not valid in the fundsWithHolding array`,
+              `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
             )
             return null
           }
@@ -341,7 +342,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             calculateHoldingValues(company, quantity, meeting.stockValue)
 
           return {
-            id: companyId,
+            id: fundId,
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,

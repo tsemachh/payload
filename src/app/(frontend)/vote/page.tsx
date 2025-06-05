@@ -179,8 +179,8 @@ export default function VotingForm() {
             <VoteCompanySelector
               meetingData={meetingData}
               meetingCompanies={meetingData.companies}
-              onSelectionChange={() => {}}
-              //   onSelectionChange={handleCompanySelection}
+              onSelectionChangeAction={() => {}}
+              //   onSelectionChangeAction={handleCompanySelection}
             />
           </CardContent>
         </Card>
@@ -191,7 +191,7 @@ export default function VotingForm() {
           <CardContent className="p-4">
             <GeneralQuestions
               generalVotingData={votingData.generalVotingData}
-              onQuestionChange={handleGeneralQuestionChange}
+              onQuestionChangeAction={handleGeneralQuestionChange}
             />
           </CardContent>
         </Card>
@@ -317,7 +317,7 @@ export default function VotingForm() {
                                 hasPersonalInterest: false,
                               }
                             }
-                            onChange={(questions: AgendaQuestionsType) =>
+                            onChangeAction={(questions: AgendaQuestionsType) =>
                               handleAgendaQuestionsChange(item.id, questions)
                             }
                           />

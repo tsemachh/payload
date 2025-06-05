@@ -110,9 +110,9 @@ export const processMeetingsAgendaFeedCsv = async (
     }
 
     return errors
-  } catch (e) {
-    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(e)}`)
-    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${JSON.stringify(e)}`)
+  } catch (e:any) {
+    req.payload.logger.error(`Error processing Meetings feed CSV: ${e.message})}`)
+    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${e.message}`)
     return errors
   }
 }

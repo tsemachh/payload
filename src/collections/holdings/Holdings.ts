@@ -1,19 +1,19 @@
 import type { CollectionConfig } from 'payload'
-import { updateCompaniesMeetingsOnHoldingChange } from './hooks/updateCompaniesMeetings'
-import uploadHoldingsCsvEndPoint from './feeds/uploadHoldingsCsvEndPoint'
-import refreshEndPoint from './feeds/refreshEndPoint'
-import getHoldingsDatesEndPoint from './feeds/getHoldingsDatesEndPoint'
+import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
+import { updateCompaniesMeetingsOnHoldingChange } from '@/collections/holdings/hooks/updateCompaniesMeetings'
+import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
+import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
-    plural: 'אחזקות',
-    singular: 'אחזקה',
+    plural: 'אחזקות יומיות',
+    singular: 'אחזקה יומית',
   },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'id',
-    defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
+    defaultColumns: ['fund', 'valueDate'],
     group: 'אוספים משניים',
   },
   hooks: {
@@ -51,38 +51,43 @@ export const Holdings: CollectionConfig = {
       ],
     },
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'stock',
-          label: 'נייר ערך',
-          type: 'relationship',
-          relationTo: 'stocks',
-          required: true,
-          index: true,
-          filterOptions: ({req}) => {
-            if (req.context?.from == 'migration')
-              return true
-            return {
-              active: {
-                equals: true,
-              },
-            }
+      name: 'holdings',
+      label: 'אחזקות',
+      type: 'array',
+      required: true,
+      interfaceName: 'HoldingsPerDay',
+      fields: [{
+        type: 'row',
+        fields: [
+          {
+            name: 'stock',
+            label: 'נייר ערך',
+            type: 'relationship',
+            relationTo: 'stocks',
+            required: true,
+            filterOptions: ({req}) => {
+              if (req.context?.from == 'migration')
+                return true
+              return {
+                active: {
+                  equals: true,
+                },
+              }
+            },
           },
-        },
-        {
-          name: 'feedStockNum',
-          label: 'מספר נייר ערך באחזקה',
-          type: 'text',
-          index: true,
-        },
-        {
-          name: 'quantity',
-          label: 'כמות',
-          type: 'number',
-          required: true,
-        },
-      ],
+          {
+            name: 'feedStockNum',
+            label: 'מספר נייר ערך באחזקה',
+            type: 'text',
+          },
+          {
+            name: 'quantity',
+            label: 'כמות',
+            type: 'number',
+            required: true,
+          },
+        ],
+      }]
     },
   ],
   endpoints: [

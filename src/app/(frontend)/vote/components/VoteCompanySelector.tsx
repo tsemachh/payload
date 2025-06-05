@@ -8,13 +8,13 @@ import { useCompaniesContext } from '../../context/companiesContext'
 interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
   meetingCompanies: CompanyTableDate[]
-  onSelectionChange: (selectedCompanyIndex: number) => void
+  onSelectionChangeAction: (selectedCompanyIndex: number) => void
 }
 
 export default function VoteCompanySelector({
   meetingData,
   meetingCompanies,
-  onSelectionChange,
+  onSelectionChangeAction,
 }: VoteCompanySelectorProps) {
   const { companies: companiesMap } = useCompaniesContext()
   const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(
@@ -24,18 +24,18 @@ export default function VoteCompanySelector({
   useEffect(() => {
     if (meetingCompanies.length === 1) {
       setSelectedCompanyIndex(0)
-      onSelectionChange(0)
+      onSelectionChangeAction(0)
     } else if (meetingCompanies.length > 1) {
       setSelectedCompanyIndex(-1)
-      onSelectionChange(-1)
+      onSelectionChangeAction(-1)
     } else {
       setSelectedCompanyIndex(-2)
     }
-  }, [meetingCompanies, onSelectionChange])
+  }, [meetingCompanies, onSelectionChangeAction])
 
   const handleCompanyChange = (index: number) => {
     setSelectedCompanyIndex(index)
-    onSelectionChange(index)
+    onSelectionChangeAction(index)
   }
 
   const getSummaryText = () => {
