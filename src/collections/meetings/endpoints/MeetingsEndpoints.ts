@@ -414,7 +414,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
 
           return {
             id: parentCompany,
-            companyName: '',
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,
