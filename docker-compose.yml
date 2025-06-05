@@ -5,17 +5,19 @@ services:
       context: .
       dockerfile: Dockerfile
     image: imagedev
+    env_file:
+      - .env
     ports:
       - '3000:3000'
     environment:
       - HOST=0.0.0.0
-      - DATABASE_URI=mongodb+srv://app:DuChQfEVyjQMiW6K@emda-dev-cluster.auybqem.mongodb.net/?retryWrites=true&w=majority&appName=emda-dev-cluster
-      - PAYLOAD_SECRET=9e9da2a4427c56cc0a45e076
-      - GCS_BUCKET=emda-media
-      - GCS_PROJECT_ID=emda-dev
-      - GCS_ENDPOINT=https://storage.googleapis.com
+      - DATABASE_URI
+      - PAYLOAD_SECRET
+      - GCS_BUCKET
+      - GCS_PROJECT_ID
+      - GCS_ENDPOINT
       - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
-      - LOGTAIL_SOURCE_TOKEN=B5p5aFX1cPDdGdzaKHFu1Vss
+      - LOGTAIL_SOURCE_TOKEN
 
     volumes:
       - node_modules:/app/node_modules
