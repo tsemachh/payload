@@ -1,4 +1,5 @@
 import { MeetingState, StockOrigin } from '@/payload-types'
+import { TreeCompanyType } from '@/types/companies'
 
 export type MeetingTableDataType = {
   meetingId: string
@@ -47,6 +48,7 @@ export type FundType = {
   percentageHolding: number
   holdingValueInMillions: number
   nominalValue: number
+  parentCompany?: TreeCompanyType // Parent company structure
 }
 
 export type AgendasType = {

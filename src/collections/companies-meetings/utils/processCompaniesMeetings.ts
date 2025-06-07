@@ -78,6 +78,7 @@ async function processMeeting(
     const fundsWithHolding = flattenedHoldings.map((h) => ({
       fund: String(getIdOfRelationField(h.fund)),
       quantity: h.holdings[0].quantity,
+      feedStockNum: h.holdings[0].feedStockNum,
     }))
     let stockValue = meeting.stockValue
     if (!stockValue) {

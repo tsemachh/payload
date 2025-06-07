@@ -9,6 +9,7 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
 import { getIdOfRelationField } from '@/utils/utils'
+import { TreeCompanyType } from '@/types/companies'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -301,6 +302,28 @@ function getDbFieldName(clientField: string): string {
  * Process meetings data to standardized format for frontend table
  */
 async function processMeetingsData(meetings: any[], funds?: string[] | null, user?: User | null) {
+  const companyTree = JSON.parse(user?.treeCompanies || '[]')
+
+  // Create a map between fundId and parent company structure from the companyTree
+  const fundToParentMap = new Map<string, TreeCompanyType>()
+
+  // Function to traverse the tree and build the map
+  const buildFundToParentMap = (companies: TreeCompanyType[]) => {
+    for (const company of companies) {
+      if (company.subCompanies && company.subCompanies.length > 0) {
+        // For each subCompany, set the current company as parent
+        for (const subCompany of company.subCompanies) {
+          fundToParentMap.set(subCompany.id, company)
+        }
+        // Recursively process subCompanies
+        buildFundToParentMap(company.subCompanies)
+      }
+    }
+  }
+
+  // Build the map
+  buildFundToParentMap(companyTree)
+
   // Process results
   const meetingData = await Promise.all(
     meetings.map(async (_meeting) => {
@@ -341,54 +364,42 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           const { holdingsCompanyName, percentageHolding, holdingValueInMillions, nominalValue } =
             calculateHoldingValues(company, quantity, meeting.stockValue)
 
+          const parentCompany = fundToParentMap.get(fundId as string)
           return {
             id: fundId,
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,
             nominalValue,
-            parentCompany:
-              typeof company === 'object' && company.parentCompany ? company.parentCompany : null,
+            parentCompany
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
 
-      const parentCompaniesMap = new Map<string, { parentCompany: string; funds: FundType[] }>()
+      const parentCompaniesMap = new Map<string, { parentCompany: string | TreeCompanyType; funds: FundType[] }>()
       // Process each fund to find its parent and group them
       for (const fund of fundsArray) {
         // If no parent found, skip this fund or treat the fund itself as parent
-        if (!fund.parentCompany) {
+        const parentCompany = fundToParentMap.get(fund.id)
+        if (!parentCompany) {
           console.warn(`No parent company found for fund ${fund.id}`)
           continue
         }
-        if (typeof fund.parentCompany != 'object') {
-          console.warn(
-            `The type of parent company found for fund ${fund.id} is string, expected object`,
-          )
-          continue
-        }
+        const parentCompanyID = parentCompany.id
 
-        const parentCompanyID =
-          typeof fund.parentCompany === 'object' && typeof fund.parentCompany.docs?.[0] === 'string'
-            ? fund.parentCompany.docs?.[0]
-            : null
-
-        if (!parentCompanyID) {
-          console.warn(`Invalid parent company for fund ${fund.id}`)
-          continue
-        }
         const tmpFund: FundType = {
           id: fund.id,
           holdingsCompanyName: fund.holdingsCompanyName,
           percentageHolding: fund.percentageHolding,
           holdingValueInMillions: fund.holdingValueInMillions,
           nominalValue: fund.nominalValue,
+          parentCompany: parentCompany
         }
         if (parentCompaniesMap.has(parentCompanyID)) {
           parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
         } else {
           parentCompaniesMap.set(parentCompanyID, {
-            parentCompany: parentCompanyID,
+            parentCompany: parentCompany,
             funds: [tmpFund],
           })
         }
@@ -414,7 +425,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           }, 0)
 
           return {
-            id: parentCompany,
+            id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,

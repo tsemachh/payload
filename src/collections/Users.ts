@@ -62,7 +62,7 @@ async function computeCompanyTreeAndLeafs(
   }
 
   companies.docs.forEach((doc: any) => {
-    funds.push(...processCompanies(doc))
+    funds.push(...doc.subCompanies)
   })
 
   const cleanCompanyTree = (company: any): TreeCompanyType => {
@@ -280,13 +280,14 @@ export const Users: CollectionConfig = {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
         if (data?.companies) {
-          const companiesChanged =
-            originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
+          const companiesChanged = true
+          //  originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
             const companyIds = data?.companies.map((company: any) =>
               getIdOfRelationField(company.companyId),
             )
+            console.error("computeCompanyTreeAndLeafs")
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
             data.treeCompanies = treeCompanies

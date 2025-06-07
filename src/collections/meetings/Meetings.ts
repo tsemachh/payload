@@ -670,20 +670,15 @@ export const Meetings: CollectionConfig = {
               fields: [
                 {
                   name: 'fund',
-                  type: 'relationship',
-                  relationTo: 'companies',
-                  hasMany: false,
-                  label: 'חברה',
-                  maxDepth: 1,
-                  filterOptions: {
-                    type: {
-                      equals: 'fund',
-                    },
-                  },
+                  type: 'text',
                 },
                 {
                   name: 'quantity',
                   type: 'number',
+                },
+                {
+                  name: 'feedStockNum',
+                  type: 'text',
                 },
               ],
             },
