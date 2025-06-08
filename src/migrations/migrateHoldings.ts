@@ -1,8 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql, { IResult } from 'mssql'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
-import { Holding } from '@/payload-types'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
+
 // SQL Server configuration
 const sqlConfig: sql.config = {
   user: 'sa',
@@ -17,7 +17,6 @@ const sqlConfig: sql.config = {
   requestTimeout: 3600000, // Increase timeout globally to 120 seconds
 }
 
-//const DAYS_TO_IMPORT: number = 365 * 7
 const START_DATE_TO_IMPORT: string = '01-05-2025'
 
 interface HoldingRow {
@@ -73,7 +72,6 @@ async function getHoldingsPage(
   pool: sql.ConnectionPool,
   holdingDate: string,
 ): Promise<sql.IResult<HoldingRow>> {
-  // Using string interpolation for OFFSET and FETCH parameters to avoid parameter resolution issues
   const result = await pool.request().query(`
       SELECT [stockNum]
            , [firm]
@@ -92,10 +90,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-    console.log('Starting holdings migration process...')
+    console.log('Starting holding days migration process...')
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
-    console.log(`Importing holdings from ${START_DATE_TO_IMPORT} date`)
+    console.log(`Importing holding days from ${START_DATE_TO_IMPORT} date`)
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
@@ -115,13 +113,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     silencedStocks.docs.forEach((doc) => {
       silentStockSet.add(`${doc.stockId}`)
     })
-    console.log('Silent Stock Set size is:'+silentStockSet.size)
+    console.log('Silent Stock Set size is:' + silentStockSet.size)
+
     const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
-      const companyHoldings = new Map<string, Map<string, number>>()
-      //Iterate each row
+      const companyHoldings = new Map<string, Map<string, { stockId: string, quantity: number, feedStockNum: string }>>()
+      
+      // Iterate each row
       for (const holding of holdings.recordset) {
         const accountKey = `${holding.firm}-${holding.subAccountNum}`
-        //Find Company id
+        // Find Company id
         const companyId = accountCache.get(accountKey)
         if (!companyId) {
           console.warn(`Company ID not found for account key: ${accountKey}`)
@@ -138,45 +138,53 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           })
           continue
         }
-        //Find the holding in the map if not found add it to the map
-        let quantityPerStockMap: Map<string, number> | undefined = companyHoldings.get(companyId)
-        if (!quantityPerStockMap) {
-          quantityPerStockMap = new Map<string, number>()
-          companyHoldings.set(companyId, quantityPerStockMap)
+        
+        // Find the holding in the map if not found add it to the map
+        let stocksMap = companyHoldings.get(companyId)
+        if (!stocksMap) {
+          stocksMap = new Map<string, { stockId: string, quantity: number, feedStockNum: string }>()
+          companyHoldings.set(companyId, stocksMap)
         }
-        const curQuantity = quantityPerStockMap.get(holding.stockNum)
-        if (curQuantity) quantityPerStockMap.set(holding.stockNum, curQuantity + holding.qty)
-        else quantityPerStockMap.set(holding.stockNum, holding.qty)
+        
+        const stockId = stockCache.get(`${holding.stockNum}`)
+        if (!stockId) {
+          if (!silentStockSet.has(`${holding.stockNum}`)) {
+            console.warn(`Stock ID not found for stock number: ${holding.stockNum}`)
+          }
+          continue
+        }
+        
+        const existingHolding = stocksMap.get(holding.stockNum)
+        if (existingHolding) {
+          existingHolding.quantity += holding.qty
+        } else {
+          stocksMap.set(holding.stockNum, {
+            stockId,
+            quantity: holding.qty,
+            feedStockNum: holding.stockNum
+          })
+        }
       }
-      //Iterate Map Values and upsert the Holdings by next logic:
-      // Create Holdings Object by filling companyId + valueDate
-      // Holdings - for each stock use the stockCache to get the stockId and fill the holdings with stock Id and the quantity
-      //If Holding with company and holdingDate exists then update the record
-      //Else insert new record with the holdings
-      // Convert to array to avoid iterator issues
+      
+      // Process each company's holdings for the day
       for (const [companyId, stocksMap] of Array.from(companyHoldings.entries())) {
         try {
           // Prepare holdings array
           const holdingsArray = []
-          for (const [stockNum, quantity] of Array.from(stocksMap.entries())) {
-            const stockId = stockCache.get(`${stockNum}`)
-            if (stockId) {
-              holdingsArray.push({
-                quantity,
-                stock: stockId,
-                feedStockNum:stockNum
-              })
-            } else {
-              if (!silentStockSet.has(`${stockNum}`)) {
-                console.warn(`Stock ID not found for stock number: ${stockNum}`)
-              }
-            }
+          for (const [_, holdingData] of Array.from(stocksMap.entries())) {
+            holdingsArray.push({
+              stock: holdingData.stockId,
+              quantity: holdingData.quantity,
+              feedStockNum: holdingData.feedStockNum
+            })
           }
+          
           if (holdingsArray.length === 0) {
             console.warn(`No valid stocks found for company: ${companyId}`)
             continue
           }
-          //Delete old holdings
+          
+          // Delete old holding day if exists
           await payload.delete({
             collection: 'holdings',
             req: {
@@ -192,27 +200,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               },
             },
           })
-
-          for (let i = 0; i < holdingsArray.length; i++) {
-            const holding = holdingsArray[i]
-            // Create holding object
-            const holdingData = {
-              fund: companyId,
-              valueDate: holdingDate,
-              stock: holding.stock,
-              quantity: holding.quantity,
-              feedStockNum: holding.feedStockNum,
-            } as Partial<Holding>
-            await payload.create({
-              collection: 'holdings',
-              data: holdingData as Partial<Holding> as unknown as Holding,
-              req: {
-                ...req,
-                context: { ...req.context, from: 'migration' },
-              },
-            })
-            successCount++
+          
+          // Create new holding day with all stocks
+          const holdingDayData = {
+            fund: companyId,
+            valueDate: holdingDate,
+            holdings: holdingsArray
           }
+          
+          await payload.create({
+            collection: 'holdings',
+            data: holdingDayData,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
+          })
+          
+          successCount++
         } catch (error) {
           console.error(`Error processing holdings for company ${companyId}:`, error)
           errorCount++
@@ -236,8 +241,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const allCompanies = await payload.find({
       collection: 'companies',
       limit: 0,
-      where:{
-        type: {equals:'fund'}
+      where: {
+        type: { equals: 'fund' }
       },
       req,
       depth: 0,
@@ -255,9 +260,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     })
     console.log(`Prefetched ${accountCache.size} accounts`)
+    
     const holdingDates: string[] = generateDateArray(START_DATE_TO_IMPORT)
     console.log(`Generated ${holdingDates.length} dates to process`)
-    debugger
+    
     // Control batch size and parallel processing
     const MAX_CONCURRENT_PROCESSES = 10
 

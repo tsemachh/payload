@@ -224,11 +224,12 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       })
     }
     return errors
-  } catch (error) {
-    req.payload.logger.error(`Error processing Meetings feed CSV: ${JSON.stringify(error)}`)
-    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${JSON.stringify(error)}`)
+  } catch (error:any) {
+    req.payload.logger.error(`Error processing Meetings feed CSV: ${error.message}`)
+    errors.push(`שגיאה בעיבוד קובץ האסיפות: ${error.message})}`)
+
     if (errors.length > 0) {
-      console.error(`\nFinished with ${errors.length} errors:`)
+      console.error(`/nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
         console.error(`${idx + 1}. ${err}`)
       })

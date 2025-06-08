@@ -369,12 +369,6 @@ function CompanyDetails({
                   companyDetails.type === 'fund' ? 'קרן' : 
                   companyDetails.type || 'לא זמין'}</div>
 
-            {companyDetails.holdings && (
-              <>
-                <div className="font-medium">מספר אחזקות:</div>
-                <div>{companyDetails.holdings.docs?.length || 0}</div>
-              </>
-            )}
 
             {companyDetails.meetings && (
               <>

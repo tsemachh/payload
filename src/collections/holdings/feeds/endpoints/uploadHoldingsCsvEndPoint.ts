@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { processHoldingsFeedCsv } from './processHoldingsFeedCsv'
+import { processHoldingsFeedCsv } from '../processHoldingsFeedCsv'
 import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { getBufferFromStream } from '@/utils/dataUtils'

@@ -26,7 +26,7 @@ const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
 ) => {
-  if (options.req.context.from == 'migration') {
+  if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
     return true
   }
   if (options.siblingData.magnaId || options.siblingData.invitationDocument || value) return true
@@ -38,7 +38,7 @@ const validateMeetingState: SelectFieldSingleValidation = (
 ) => {
   if (!value) return true
 
-  if (options.req.context.from == 'migration') {
+  if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
     return true
   }
   const { siblingData } = options
@@ -670,23 +670,15 @@ export const Meetings: CollectionConfig = {
               fields: [
                 {
                   name: 'fund',
-                  type: 'relationship',
-                  relationTo: 'companies',
-                  hasMany: false,
-                  label: 'חברה',
-                  maxDepth: 1,
-                  filterOptions: {
-                    type: {
-                      equals: 'fund',
-                    },
-                  },
+                  type: 'text',
                 },
                 {
-                  name: 'holding',
-                  type: 'relationship',
-                  relationTo: 'holdings',
-                  hasMany: false,
-                  maxDepth: 1,
+                  name: 'quantity',
+                  type: 'number',
+                },
+                {
+                  name: 'feedStockNum',
+                  type: 'text',
                 },
               ],
             },

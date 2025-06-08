@@ -81,7 +81,6 @@ export const calculatePrecedingColumnsWidth = (
 
 export const calculateHoldingValues = (
   // account: Account | string, //TODO: add holdingsCompanyName
-  company: Company | string,
   quantity: number,
   stockValues: StockValue | null | undefined | string,
 ) => {
@@ -92,7 +91,6 @@ export const calculateHoldingValues = (
     safeStockValue = { registeredValue: 0, closingRate: 0 }
   }
 
-  const holdingsCompanyName = typeof company === 'object' ? company.name : 'Unknown Account'
   const registeredValue = parseNumber(safeStockValue?.registeredValue)
   const closingRate = parseNumber(safeStockValue?.closingRate)
   const percentageHolding = parseFloat(((quantity / registeredValue) * 100).toFixed(2))
@@ -100,7 +98,6 @@ export const calculateHoldingValues = (
   const holdingValueInMillions = Math.round((quantity * closingRate) / 100000000)
 
   return {
-    holdingsCompanyName,
     percentageHolding,
     holdingValueInMillions,
     nominalValue: Math.round(quantity),

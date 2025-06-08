@@ -74,6 +74,16 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingsPerDay".
+ */
+export type HoldingsPerDay = {
+  stock: string | Stock;
+  feedStockNum?: string | null;
+  quantity: number;
+  id?: string | null;
+}[];
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
 export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
@@ -390,8 +400,9 @@ export interface Meeting {
   funds?: (string | Company)[] | null;
   fundsWithHolding?:
     | {
-        fund?: (string | null) | Company;
-        holding?: (string | null) | Holding;
+        fund?: string | null;
+        quantity?: number | null;
+        feedStockNum?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -525,9 +536,7 @@ export interface Holding {
   id: string;
   fund: string | Company;
   valueDate: string;
-  stock: string | Stock;
-  feedStockNum?: string | null;
-  quantity: number;
+  holdings: HoldingsPerDay;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1148,7 +1157,8 @@ export interface MeetingsSelect<T extends boolean = true> {
     | T
     | {
         fund?: T;
-        holding?: T;
+        quantity?: T;
+        feedStockNum?: T;
         id?: T;
       };
   stockValue?: T;
@@ -1352,13 +1362,21 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
 export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
   valueDate?: T;
-  stock?: T;
-  feedStockNum?: T;
-  quantity?: T;
+  holdings?: T | HoldingsPerDaySelect<T>;
   creator?: T;
   updator?: T;
   createdAt?: T;
   updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingsPerDay_select".
+ */
+export interface HoldingsPerDaySelect<T extends boolean = true> {
+  stock?: T;
+  feedStockNum?: T;
+  quantity?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -5,7 +5,7 @@ import { GeneralVotingData } from '../../types/vote'
 
 interface GeneralQuestionsProps {
   generalVotingData: GeneralVotingData
-  onQuestionChange: (
+  onQuestionChangeAction: (
     question: 'isInterested' | 'isSeniorOfficial' | 'isInstitutionalInvestor',
     value: boolean,
     explanation?: string,
@@ -14,7 +14,7 @@ interface GeneralQuestionsProps {
 
 export default function GeneralQuestions({
   generalVotingData,
-  onQuestionChange,
+  onQuestionChangeAction,
 }: GeneralQuestionsProps) {
   return (
     <>
@@ -28,7 +28,7 @@ export default function GeneralQuestions({
               <div className="flex bg-muted rounded-full p-0.5 mr-2">
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isInterested', true)}
+                  onClick={() => onQuestionChangeAction('isInterested', true)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isInterested === true
                       ? 'bg-primary text-primary-foreground shadow-sm'
@@ -39,7 +39,7 @@ export default function GeneralQuestions({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isInterested', false)}
+                  onClick={() => onQuestionChangeAction('isInterested', false)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isInterested === false
                       ? 'bg-primary text-primary-foreground shadow-sm'
@@ -57,7 +57,7 @@ export default function GeneralQuestions({
                   placeholder="נא לפרט את הסיבה..."
                   className="min-h-[80px] text-sm"
                   value={generalVotingData.interestedExplanation || ''}
-                  onChange={(e) => onQuestionChange('isInterested', true, e.target.value)}
+                  onChange={(e) => onQuestionChangeAction('isInterested', true, e.target.value)}
                 />
               </div>
             )}
@@ -70,7 +70,7 @@ export default function GeneralQuestions({
               <div className="flex bg-muted rounded-full p-0.5 mr-2">
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isSeniorOfficial', true)}
+                  onClick={() => onQuestionChangeAction('isSeniorOfficial', true)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isSeniorOfficial === true
                       ? 'bg-primary text-primary-foreground shadow-sm'
@@ -81,7 +81,7 @@ export default function GeneralQuestions({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isSeniorOfficial', false)}
+                  onClick={() => onQuestionChangeAction('isSeniorOfficial', false)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isSeniorOfficial === false
                       ? 'bg-primary text-primary-foreground shadow-sm'
@@ -100,7 +100,7 @@ export default function GeneralQuestions({
                   placeholder="נא לפרט את הסיבה..."
                   className="min-h-[80px] text-sm"
                   value={generalVotingData.seniorOfficialExplanation || ''}
-                  onChange={(e) => onQuestionChange('isSeniorOfficial', true, e.target.value)}
+                  onChange={(e) => onQuestionChangeAction('isSeniorOfficial', true, e.target.value)}
                 />
               </div>
             )}
@@ -113,7 +113,7 @@ export default function GeneralQuestions({
               <div className="flex bg-muted rounded-full p-0.5 mr-2">
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isInstitutionalInvestor', true)}
+                  onClick={() => onQuestionChangeAction('isInstitutionalInvestor', true)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isInstitutionalInvestor === true
                       ? 'bg-primary text-primary-foreground shadow-sm'
@@ -124,7 +124,7 @@ export default function GeneralQuestions({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onQuestionChange('isInstitutionalInvestor', false)}
+                  onClick={() => onQuestionChangeAction('isInstitutionalInvestor', false)}
                   className={`px-3 py-1 text-xs rounded-full transition-all ${
                     generalVotingData.isInstitutionalInvestor === false
                       ? 'bg-primary text-primary-foreground shadow-sm'

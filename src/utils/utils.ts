@@ -1,5 +1,6 @@
 import { BasePayload, TypeWithID } from 'payload'
 import type { Stock } from '@/payload-types'
+import { TreeCompanyType } from '@/types/companies'
 
 export async function getStockIds(stock: Stock) {
   const stockIds: string[] = []
@@ -194,6 +195,13 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
   return typeof item == 'string' ? item : item.id
+}
+
+export function findSubCompanyNameById(parentCompany: TreeCompanyType | undefined, idToFind: string) {
+  if (!parentCompany || !Array.isArray(parentCompany.subCompanies)) return null
+
+  const match = parentCompany.subCompanies.find((sub) => sub.id === idToFind)
+  return match ? match.name : null
 }
 
 /**

@@ -36,7 +36,7 @@ export async function deleteExistingHoldings(
     collection: 'holdings',
     where: {
       valueDate: { equals: new Date(valueDate).toISOString() },
-      company: {
+      fund: {
         in: companies,
       },
     },
@@ -221,36 +221,34 @@ export const createHoldings = async (
     }
   }
 
-  // Create holdings from the aggregated records in batches
-  const batchSize = 50; // Adjust based on your system's capacity
-  const records = Array.from(aggregatedRecords.values());
-  const totalRecords = records.length;
+  // Create a map of company -> records holdings
+  const companyRecordsMap = new Map<string, Array<{ stock: string; quantity: number; feedStockNum: string }>>()
 
-  req.payload.logger.info(`Creating ${totalRecords} holdings in batches of ${batchSize}`);
-
-  for (let i = 0; i < totalRecords; i += batchSize) {
-    const batch = records.slice(i, i + batchSize);
-    const batchPromises = batch.map(record => {
-      return req.payload.create({
-        collection: 'holdings',
-        data: {
-          fund: record.company,
-          stock: record.stock,
-          quantity: record.quantity,
-          feedStockNum: record.feedStockNum,
-          valueDate,
-        },
-      }).catch(error => {
-        req.payload.logger.error(`Error creating holding: ${JSON.stringify(error)}`);
-        return null;
-      });
-    });
-
-    try {
-      await Promise.all(batchPromises);
-      req.payload.logger.info(`Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(totalRecords / batchSize)}`);
-    } catch (error) {
-      req.payload.logger.error(`Error processing batch: ${JSON.stringify(error)}`);
+  // Group records by company
+  for (const record of aggregatedRecords.values()) {
+    if (!companyRecordsMap.has(record.company)) {
+      companyRecordsMap.set(record.company, [])
     }
+
+    companyRecordsMap.get(record.company)?.push({
+      stock: record.stock,
+      quantity: record.quantity,
+      feedStockNum: record.feedStockNum,
+    })
+  }
+
+  // Create holdings for each company
+  for (const [company, holdings] of companyRecordsMap.entries()) {
+    await req.payload.create({
+      collection: 'holdings',
+      data: {
+        fund: company,
+        holdings,
+        valueDate,
+      },
+    }).catch(error => {
+      req.payload.logger.error(`Error creating holding for company ${company}: ${JSON.stringify(error)}`);
+      return null;
+    });
   }
 }

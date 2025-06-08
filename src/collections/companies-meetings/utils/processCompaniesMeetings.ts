@@ -2,6 +2,7 @@ import { PayloadRequest, Where } from 'payload'
 import type { Meeting } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 
+
 async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
@@ -9,44 +10,46 @@ async function processMeeting(
 ): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
+// Cache for holding documents to avoid redundant API calls
+  const holdingDocsCache = new Map<string, any>();
 
   // Get holdings for each company
   const holdings = await Promise.all(
     funds.map(async (fund) => {
-      // Get the holdings matching the less than equal holdings date
-      const { docs: holdingsDocs } = await req.payload.find({
-        collection: 'holdings',
-        depth: 0,
-        where: {
-          and: [
-            { valueDate: { less_than_equal: meeting.holdingsLimit } },
-            { fund: { equals: fund } },
-          ],
-        },
-        sort: '-valueDate',
-        limit: 1,
-      })
+      // Create a cache key using fund and meeting.holdingsLimit
+      const cacheKey = `${fund}_${meeting.holdingsLimit}`
 
-      const nearestHoldingsLimitDate = holdingsDocs.length > 0 ? holdingsDocs[0].valueDate : null
+      // Check if the holdingDoc exists in cache
+      let holdingDoc = null
+      if (holdingDocsCache.has(cacheKey)) {
+        holdingDoc = holdingDocsCache.get(cacheKey)
+      } else {
+        // Get the holdings matching the less than equal holdings date
+        const { docs: holdingsDocs } = await req.payload.find({
+          collection: 'holdings',
+          depth: 0,
+          where: {
+            and: [
+              { valueDate: { less_than_equal: meeting.holdingsLimit } },
+              { fund: { equals: fund } },
+            ],
+          },
+          sort: '-valueDate',
+          limit: 1,
+        })
+        holdingDoc = holdingsDocs.length > 0 ? holdingsDocs[0] : null
+
+        // Store in cache for future use
+        holdingDocsCache.set(cacheKey, holdingDoc)
+      }
+      const nearestHoldingsLimitDate = holdingDoc?.valueDate
       if (!nearestHoldingsLimitDate) {
         return [] // No holdings found
       }
+      const matchedHoldings =holdingDoc.holdings.filter((holding:any) => {return holding.stock ==getIdOfRelationField(meeting.stock)})
+      if (matchedHoldings.length == 0) return [] // No holdings found for this stock
 
-      // Get the holdings matching the nearest holdings date
-      const { docs: holdingsLimitDateDocs } = await req.payload.find({
-        collection: 'holdings',
-        depth: 0,
-        where: {
-          and: [
-            { stock: { equals: meeting.stock } },
-            { valueDate: { equals: new Date(nearestHoldingsLimitDate) } },
-            { fund: { equals: fund } },
-          ],
-        },
-        limit: 0,
-      })
-
-      return holdingsLimitDateDocs
+      return {fund:getIdOfRelationField(holdingDoc.fund) as string,holdings:matchedHoldings}
     }),
   )
 
@@ -57,7 +60,7 @@ async function processMeeting(
 
   for (let i = 0; i < flattenedHoldings.length; i++) {
     const holding = flattenedHoldings[i]
-    const fundId: string = getIdOfRelationField(holding.fund) as string
+    const fundId: string = holding.fund
     if (!newFundsSet.has(fundId)) {
       newFundsSet.add(fundId)
       isDirty = true
@@ -74,7 +77,8 @@ async function processMeeting(
 
     const fundsWithHolding = flattenedHoldings.map((h) => ({
       fund: String(getIdOfRelationField(h.fund)),
-      holding: h.id,
+      quantity: h.holdings[0].quantity,
+      feedStockNum: h.holdings[0].feedStockNum,
     }))
     let stockValue = meeting.stockValue
     if (!stockValue) {
@@ -90,7 +94,7 @@ async function processMeeting(
         limit: 1,
         sort: '-valueDate',
       })
-      stockValue = stockValueDocs[0].id
+      stockValue = stockValueDocs.length > 0 ? stockValueDocs[0].id : null
     }
     const companies = await req.payload.find({
       collection: 'companies',
@@ -144,12 +148,12 @@ export const processCompaniesMeetings = async (
     req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
-    const where = meetingIds ? { id: { in: meetingIds } } : ({} as Where)
+    const where = meetingIds ? { id: { in: meetingIds } } : ({holdingsLimit:{greater_than:new Date('01/01/2024').toISOString()}} as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
-      limit: 20000,
+      limit: 0,
       where,
-      depth: 1,
+      depth: 0,
       sort: '-holdingsLimit',
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)

@@ -1,7 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { processCompaniesMeetings } from '../../companies-meetings/utils/processCompaniesMeetings'
-import type { Holding, Stock } from '@/payload-types'
-import { getIdOfRelationField, getStockIds } from '@/utils/utils'
+import type { Holding } from '@/payload-types'
+import { getIdOfRelationField } from '@/utils/utils'
 
 /**
  * Update companies-meetings collection when a holding is created or updated
@@ -18,27 +18,20 @@ export const updateCompaniesMeetingsOnHoldingChange = async (
   holding: Holding
 ): Promise<void> => {
   try {
-    if (!holding.fund || !holding.stock || !holding.valueDate) {
+    if (!holding.fund || !holding.valueDate) {
       return
     }
 
-    // Get the account to find the company
-    const company = await req.payload.findByID({
-      collection: 'companies',
-      id: getIdOfRelationField(holding.fund) as string,
-    })
-
-    if (!company) {
-      return
-    }
-
+    const stockIds=holding.holdings.map(holding=>holding.stock).map(getIdOfRelationField)
     // Get meetings with the same stock and holdingsLimit date
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
+      select:{
+      },
       where: {
         and: [
-          { stock: { in: await getStockIds(holding.stock as Stock) } },
-          { holdingsLimit: { equals: holding.valueDate } },
+          { stock: { in: stockIds} },
+          { holdingsLimit: { greater_than_equal: holding.valueDate } },
         ],
       },
       limit: 0,

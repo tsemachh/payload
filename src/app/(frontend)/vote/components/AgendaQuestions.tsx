@@ -4,19 +4,19 @@ import type { AgendaQuestionsType } from '../../types/vote'
 
 interface AgendaQuestionsProps {
   questions: AgendaQuestionsType
-  onChange: (questions: AgendaQuestionsType) => void
+  onChangeAction: (questions: AgendaQuestionsType) => void
 }
 
-export default function AgendaQuestions({ questions, onChange }: AgendaQuestionsProps) {
+export default function AgendaQuestions({ questions, onChangeAction }: AgendaQuestionsProps) {
   const handleChange = (question: keyof AgendaQuestionsType, value: boolean) => {
-    onChange({
+    onChangeAction({
       ...questions,
       [question]: value,
     })
   }
 
   const handleExplanationChange = (field: keyof AgendaQuestionsType, value: string) => {
-    onChange({
+    onChangeAction({
       ...questions,
       [field]: value,
     })

@@ -1,6 +1,6 @@
 
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
-import { processValidationData } from './FeedValidationService';
+import { processValidationData } from '../FeedValidationService';
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes';
 
 

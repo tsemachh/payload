@@ -36,7 +36,7 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     limit: 0,
-    depth: 0,
+    depth: 1,
   })
 
   // Compute leaf companies recursively
@@ -69,12 +69,12 @@ async function computeCompanyTreeAndLeafs(
     return {
       id: company.id,
       name: company.name,
-      subCompanies: (company.subCompanies || []).map((sub: any) => cleanCompanyTree(sub)),
+      subCompanies: (company.subCompanies || []).map((sub: Company) => cleanCompanyTree(sub)),
     }
   }
 
   // Apply to all top-level companies
-  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
+  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: Company) => cleanCompanyTree(doc))
   return {
     funds: Array.from(new Set(funds)),
     treeCompanies: JSON.stringify(cleanedTree),
