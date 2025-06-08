@@ -18,7 +18,7 @@ import { fetcher } from '../../helpers/utils-data-table'
 export default function HoldingsView() {
   const { user } = useAuth()
   const [date, setDate] = useState<Date | undefined>(undefined)
-  const [holdingDays,setHoldingDays] = useState<Holding[]>([])
+  const [holdingDays, setHoldingDays] = useState<Holding[]>([])
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -87,13 +87,13 @@ export default function HoldingsView() {
       {
         where: query,
         limit: 0,
-        select:{
-          fund:true,
-          holdings:{
-            stock:true,
-            fund:true,
-            quantity: true
-          }
+        select: {
+          fund: true,
+          holdings: {
+            stock: true,
+            fund: true,
+            quantity: true,
+          },
         },
         depth: 1, // Need to get stock details
       },
@@ -120,9 +120,7 @@ export default function HoldingsView() {
     try {
       let selectedCompanies: string[] = []
       if (user?.funds) {
-        selectedCompanies = user?.funds.map((fund) =>
-          typeof fund === 'string' ? fund : fund.id,
-        )
+        selectedCompanies = user?.funds.map((fund) => (typeof fund === 'string' ? fund : fund.id))
       }
       if (selectedCompanies.length === 0) {
         setError('לא נמצאו חברות.')

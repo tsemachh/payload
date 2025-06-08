@@ -205,8 +205,8 @@ export default function HoldingsFeedView() {
     setIsUploading(true)
     try {
       const formattedDate = date.toISOString()
-      const formattedCompanies = encodeURIComponent(JSON.stringify(selectedCompanies))
-      // Save the file (validateOnly=false)
+      const cleanedCompanies = selectedCompanies.filter(Boolean)
+      const formattedCompanies = encodeURIComponent(JSON.stringify(cleanedCompanies)) // Save the file (validateOnly=false)
       const response = await fetch(
         `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${formattedCompanies}&validateOnly=false`,
         {
