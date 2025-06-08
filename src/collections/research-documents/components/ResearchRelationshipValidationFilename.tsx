@@ -53,7 +53,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       span.textContent = `קובץ כללי עבור כל החברות`
       return
     }
-    console.log('📦 שששששששש', meetingCompanies)
 
     if (result.companyName) {
       const query = {
@@ -86,12 +85,9 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         if (data?.docs?.length > 0) {
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
-          // console.log('----==== 111', companyIds)
-          // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
           setValue(Array.from(companyIds))
         } else {
-          //TODO: אם החברה לא נמצאה, ניתן להוסיף הודעה מתאימה
           span.textContent = `החברה "${result.companyName}" לא נמצאה באסיפה זו`
         }
       } catch (err) {

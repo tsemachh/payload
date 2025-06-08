@@ -10,11 +10,9 @@ export const CustomContext = createContext<ICustomContext>({
   meetingCompanies: [],
   setMeetingCompanies: () => null,
 })
-console.log('✅ CustomContextProvider loaded')
 
 export const CustomContextProvider = ({ children }: PropsWithChildren<{}>) => {
   const [meetingCompanies, setMeetingCompanies] = useState<string[]>([])
-  console.log('🚀 Rendering CustomContextProvider')
 
   return (
     <CustomContext.Provider

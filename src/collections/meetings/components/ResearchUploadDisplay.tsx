@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useField, UploadField, useDocumentInfo, useDocumentForm } from '@payloadcms/ui'
+import { useField, UploadField, useDocumentInfo } from '@payloadcms/ui'
 import { UploadFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { useCustomContext } from '@/providers/CustomContext'
@@ -11,18 +11,13 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
   const [uploadsData, setUploadsData] = useState<any[]>([])
 
-  const { meetingCompanies, setMeetingCompanies } = useCustomContext()
+  const { setMeetingCompanies } = useCustomContext()
 
   const documentInfo = useDocumentInfo()
 
   useEffect(() => {
-    console.log('📦 שששששששש', meetingCompanies)
-  }, [meetingCompanies])
-
-  useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
     if (companies) {
-      console.log('📦 Setting meeting companies from DocumentInfo:', companies)
       setMeetingCompanies(companies)
     }
 
