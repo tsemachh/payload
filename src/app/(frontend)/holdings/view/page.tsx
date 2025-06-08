@@ -18,7 +18,7 @@ import { fetcher } from '../../helpers/utils-data-table'
 export default function HoldingsView() {
   const { user } = useAuth()
   const [date, setDate] = useState<Date | undefined>(undefined)
-  const [holdingDays,setHoldingDays] = useState<Holding[]>([])
+  const [holdingDays, setHoldingDays] = useState<Holding[]>([])
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,11 +26,11 @@ export default function HoldingsView() {
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
 
-  const { data: recentData } = useSWR('/api/holding-days/dates?month=true', fetcher, {
+  const { data: recentData } = useSWR('/api/holdings/dates?month=true', fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-  const { data: fullData } = useSWR(recentData ? '/api/holding-days/dates' : null, fetcher, {
+  const { data: fullData } = useSWR(recentData ? '/api/holdings/dates' : null, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
@@ -87,20 +87,20 @@ export default function HoldingsView() {
       {
         where: query,
         limit: 0,
-        select:{
-          fund:true,
-          holdings:{
-            stock:true,
-            fund:true,
-            quantity: true
-          }
+        select: {
+          fund: true,
+          holdings: {
+            stock: true,
+            fund: true,
+            quantity: true,
+          },
         },
         depth: 1, // Need to get stock details
       },
       { addQueryPrefix: true },
     )
 
-    const response = await fetch(`/api/holding-days${stringifiedQuery}`)
+    const response = await fetch(`/api/holdings${stringifiedQuery}`)
     return response
   }
 
@@ -120,9 +120,7 @@ export default function HoldingsView() {
     try {
       let selectedCompanies: string[] = []
       if (user?.funds) {
-        selectedCompanies = user?.funds.map((fund) =>
-          typeof fund === 'string' ? fund : fund.id,
-        )
+        selectedCompanies = user?.funds.map((fund) => (typeof fund === 'string' ? fund : fund.id))
       }
       if (selectedCompanies.length === 0) {
         setError('לא נמצאו חברות.')
