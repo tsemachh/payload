@@ -3,17 +3,17 @@ import { createContext, useContext, PropsWithChildren, useState } from 'react'
 
 /* eslint-disable */
 interface ICustomContext {
-  meetingCompanies: string
-  setMeetingCompanies: (value: string) => void
+  meetingCompanies: string[]
+  setMeetingCompanies: (value: string[]) => void
 }
 export const CustomContext = createContext<ICustomContext>({
-  meetingCompanies: '',
+  meetingCompanies: [],
   setMeetingCompanies: () => null,
 })
 console.log('✅ CustomContextProvider loaded')
 
 export const CustomContextProvider = ({ children }: PropsWithChildren<{}>) => {
-  const [meetingCompanies, setMeetingCompanies] = useState('')
+  const [meetingCompanies, setMeetingCompanies] = useState<string[]>([])
   console.log('🚀 Rendering CustomContextProvider')
 
   return (
