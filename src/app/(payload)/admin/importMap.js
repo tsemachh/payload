@@ -21,6 +21,7 @@ import { QueryPresetsWhereField as QueryPresetsWhereField_3817bf644402e67bfe6577
 import { QueryPresetsColumnsCell as QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnField as QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../graphics/Logo'
+import { CustomContextProvider as CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092 } from '../../../providers/CustomContext'
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 
@@ -48,6 +49,7 @@ export const importMap = {
   "@payloadcms/ui#QueryPresetsColumnsCell": QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnField": QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
   "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,
+  "/providers/CustomContext#CustomContextProvider": CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092,
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934
 }

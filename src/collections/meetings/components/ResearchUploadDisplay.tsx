@@ -1,15 +1,26 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useField, UploadField } from '@payloadcms/ui'
+import { useField, UploadField, useDocumentInfo } from '@payloadcms/ui'
 import { UploadFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
+import { useCustomContext } from '@/providers/CustomContext'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
+
   const [uploadsData, setUploadsData] = useState<any[]>([])
 
+  const { setMeetingCompanies } = useCustomContext()
+
+  const documentInfo = useDocumentInfo()
+
   useEffect(() => {
+    const companies = documentInfo.initialData?.companies || []
+    if (companies) {
+      setMeetingCompanies(companies)
+    }
+
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
       ;(chooseExistingBtn as HTMLElement).style.display = 'none'
