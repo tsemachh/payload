@@ -23,6 +23,12 @@ async function computeCompanyTreeAndLeafs(
       holdings: false,
       'subCompanies.id': true,
       'subCompanies.name': true,
+      'subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.name': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.id': true,
+      'subCompanies.subCompanies.subCompanies.subCompanies.name': true,
     },
     populate: {
       companies: {
@@ -36,7 +42,7 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     limit: 0,
-    depth: 0,
+    depth: 5,
   })
 
   // Compute leaf companies recursively
@@ -62,19 +68,19 @@ async function computeCompanyTreeAndLeafs(
   }
 
   companies.docs.forEach((doc: any) => {
-    funds.push(...doc.subCompanies)
+    funds.push(...processCompanies(doc))
   })
 
   const cleanCompanyTree = (company: any): TreeCompanyType => {
     return {
       id: company.id,
       name: company.name,
-      subCompanies: (company.subCompanies || []).map((sub: any) => cleanCompanyTree(sub)),
+      subCompanies: (company.subCompanies || []).map((sub: Company) => cleanCompanyTree(sub)),
     }
   }
 
   // Apply to all top-level companies
-  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: any) => cleanCompanyTree(doc))
+  const cleanedTree: TreeCompanyType[] = companies.docs.map((doc: Company) => cleanCompanyTree(doc))
   return {
     funds: Array.from(new Set(funds)),
     treeCompanies: JSON.stringify(cleanedTree),
@@ -280,8 +286,8 @@ export const Users: CollectionConfig = {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
         if (data?.companies) {
-          const companiesChanged = true
-          //  originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
+          const companiesChanged =
+            originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
             const companyIds = data?.companies.map((company: any) =>
