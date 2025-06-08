@@ -6,7 +6,6 @@ import { RelationshipFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
-
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { value, setValue } = useField<string[]>()
   const { value: file } = useField<string>({
@@ -59,7 +58,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
             like: result.companyName,
           },
         },
-        limit: 0, // או כל מספר אחר שתצטרכי
+        limit: 0,
       }
 
       const stringified = stringify(query, {

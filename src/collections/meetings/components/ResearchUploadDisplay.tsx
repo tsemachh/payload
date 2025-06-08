@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { useField, UploadField } from '@payloadcms/ui'
 import { UploadFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
+import { useCustomContext } from '@/providers/CustomContext'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
   const [uploadsData, setUploadsData] = useState<any[]>([])
+  const { meetingCompanies, setMeetingCompanies } = useCustomContext()
 
   useEffect(() => {
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
@@ -46,6 +48,7 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
         const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]))
         const sortedDocs = ids.map((id) => uploadsMap.get(id)).filter(Boolean)
+        setMeetingCompanies('aaaaaaaaaa')
         setUploadsData(sortedDocs)
       } catch (err) {
         console.error('Failed to fetch uploads', err)
@@ -56,6 +59,8 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   }, [value])
 
   useEffect(() => {
+    console.log('-----meetingCompanies', meetingCompanies)
+
     if (!uploadsData || uploadsData.length === 0) return
 
     const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
@@ -86,6 +91,8 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   return (
     <div>
       <UploadField {...props} />
+      <button onClick={() => setMeetingCompanies('TEST')}>Set to TEST</button>
+      <p>Current value: {meetingCompanies}</p>
     </div>
   )
 }
