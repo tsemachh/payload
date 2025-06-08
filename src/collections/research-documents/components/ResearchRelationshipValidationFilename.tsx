@@ -5,12 +5,15 @@ import { useField, RelationshipField } from '@payloadcms/ui'
 import { RelationshipFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import { useCustomContext } from '@/providers/CustomContext'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { value, setValue } = useField<string[]>()
   const { value: file } = useField<string>({
     path: `file`,
   })
+  const { meetingCompanies } = useCustomContext()
+
   const prevValueRef = useRef<string[]>([])
 
   const validateFile = async () => {
@@ -50,13 +53,23 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       span.textContent = `קובץ כללי עבור כל החברות`
       return
     }
+    console.log('📦 שששששששש', meetingCompanies)
 
     if (result.companyName) {
       const query = {
         where: {
-          name: {
-            like: result.companyName,
-          },
+          and: [
+            {
+              name: {
+                like: result.companyName,
+              },
+            },
+            {
+              id: {
+                in: meetingCompanies,
+              },
+            },
+          ],
         },
         limit: 0,
       }
@@ -78,7 +91,8 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
 
           setValue(Array.from(companyIds))
         } else {
-          span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
+          //TODO: אם החברה לא נמצאה, ניתן להוסיף הודעה מתאימה
+          span.textContent = `החברה "${result.companyName}" לא נמצאה באסיפה זו`
         }
       } catch (err) {
         console.error('שגיאה בבדיקת החברה:', err)
