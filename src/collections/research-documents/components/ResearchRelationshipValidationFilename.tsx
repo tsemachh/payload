@@ -5,13 +5,15 @@ import { useField, RelationshipField } from '@payloadcms/ui'
 import { RelationshipFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-
+import { useCustomContext } from '@/providers/CustomContext'
 
 const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
   const { value, setValue } = useField<string[]>()
   const { value: file } = useField<string>({
     path: `file`,
   })
+  const { meetingCompanies } = useCustomContext()
+
   const prevValueRef = useRef<string[]>([])
 
   const validateFile = async () => {
@@ -55,11 +57,20 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     if (result.companyName) {
       const query = {
         where: {
-          name: {
-            like: result.companyName,
-          },
+          and: [
+            {
+              name: {
+                like: result.companyName,
+              },
+            },
+            {
+              id: {
+                in: meetingCompanies,
+              },
+            },
+          ],
         },
-        limit: 0, // או כל מספר אחר שתצטרכי
+        limit: 0,
       }
 
       const stringified = stringify(query, {
@@ -74,12 +85,10 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         if (data?.docs?.length > 0) {
           span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
           const companyIds = data.docs.map((doc: any) => doc.id)
-          // console.log('----==== 111', companyIds)
-          // console.log('----==== companyIdsSubTree', companyIdsSubTree)
 
           setValue(Array.from(companyIds))
         } else {
-          span.textContent = `החברה "${result.companyName}" לא נמצאה במערכת`
+          span.textContent = `החברה "${result.companyName}" לא נמצאה באסיפה זו`
         }
       } catch (err) {
         console.error('שגיאה בבדיקת החברה:', err)
