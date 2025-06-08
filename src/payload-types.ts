@@ -136,7 +136,6 @@ export type RolePermissions =
 export type MigrationType =
   | (
       | 'holding'
-      | 'holding-day'
       | 'user'
       | 'account'
       | 'stock'

@@ -127,12 +127,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           console.warn(`Company ID not found for account key: ${accountKey}`)
           await logMigrationFault({
             payload,
-            type: 'holding-day',
+            type: 'holding',
             row: JSON.stringify(holding),
             typeId: accountKey,
             comments: createErrorFaultComment({
               id: accountKey,
-              operation: 'HoldingDay - Company ID lookup',
+              operation: 'Holdings - Company ID lookup',
               error: new Error(`Company ID not found for account key: ${accountKey}`),
             }),
           })
@@ -219,16 +219,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           
           successCount++
         } catch (error) {
-          console.error(`Error processing holding day for company ${companyId}:`, error)
+          console.error(`Error processing holdings for company ${companyId}:`, error)
           errorCount++
           await logMigrationFault({
             payload,
-            type: 'holding-day',
+            type: 'holding',
             row: '',
             typeId: '',
             comments: createErrorFaultComment({
               id: companyId,
-              operation: 'HoldingDay',
+              operation: 'Holdings',
               error: error as Error,
             }),
           })

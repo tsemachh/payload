@@ -6,7 +6,7 @@ import { up as migrateFirms } from './migrateFirms'
 import { up as migrateUsers } from './migrateUsers'
 import { up as migrateAccounts } from './migrateAccounts'
 import { up as migrateSubAccounts } from './migrateSubAccounts'
-import { up as migrateHoldingDay } from './migrateHoldings'
+import { up as migrateHoldings } from './migrateHoldings'
 import { up as migrateParentCompanies } from './migrateParentCompanies'
 import { up as migrateAccountCompaniesToCompanies } from './migrateAccountCompaniesToCompanies'
 import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCompanies'
@@ -25,14 +25,13 @@ import { processCompaniesMeetings } from '@/collections/companies-meetings/utils
  * 6. Accounts
  * 7. Sub Accounts
  * 8. Holdings
- * 9. Holding Days (aggregated holdings per date and fund)
- * 10. Parent Companies
- * 11. Account Companies To Companies
- * 12. Silenced Stocks Companies (stores silenced stocks directly in companies collection)
- * 13. Meeting Agenda
- * 14. Votes
- * 15. Recommendation Reasons
- * 16. Process Companies Meetings
+ * 9. Parent Companies
+ * 10. Account Companies To Companies
+ * 11. Silenced Stocks Companies (stores silenced stocks directly in companies collection)
+ * 12. Meeting Agenda
+ * 13. Votes
+ * 14. Recommendation Reasons
+ * 15. Process Companies Meetings
  * 
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
@@ -90,32 +89,33 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateAccountCompaniesToCompanies({ payload, req })
     console.log('=== Account Companies To Companies Migration Completed ===\n')
 
-    // 12. Migrate Holding Days
-    console.log('\n=== Starting Holding Days Migration ===')
-    await migrateHoldingDay({ payload, req })
-    console.log('=== Holding Days Migration Completed ===\n')
 
-    //  13. Process silenced stocks - match them to companies and store in companies collection
+    // 11. Migrate Holdings
+    console.log('\n=== Starting Holdings Migration ===')
+    await migrateHoldings({ payload, req })
+    console.log('=== Holdings Migration Completed ===\n')
+
+    //  12. Process silenced stocks - match them to companies and store in companies collection
     console.log('\n=== Starting Silenced Stocks Companies Migration ===')
     await migrateSilencedStocksCompanies({ payload, req })
     console.log('=== Silenced Stocks Companies Migration Completed ===\n')
 
-    // 14. Migrate Meeting Agenda
+    // 13. Migrate Meeting Agenda
     console.log('\n=== Starting Meeting Agenda Migration ===')
     await migrateMeetingAgenda({ payload, req })
     console.log('=== Meeting Agenda Migration Completed ===\n')
 
-    // 15. Migrate Votes
+    // 14. Migrate Votes
     console.log('\n=== Starting Votes Migration ===')
     await migrateVotes({ payload, req })
     console.log('=== Votes Migration Completed ===\n')
 
-    // 16. Migrate Recommendation Reasons
+    // 15. Migrate Recommendation Reasons
     console.log('\n=== Starting Recommendation Reasons Migration ===')
     await migrateRecommendationReasons({ payload, req })
     console.log('=== Recommendation Reasons Migration Completed ===\n')
 
-    // 17. Migrate processCompaniesMeetings
+    // 15. Migrate processCompaniesMeetings
     console.log('\n=== Starting processCompaniesMeetings ===')
     await processCompaniesMeetings(req)
     console.log('=== processCompaniesMeetings Completed ===\n')

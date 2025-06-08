@@ -26,11 +26,11 @@ export default function HoldingsView() {
   const searchParams = useSearchParams()
   const encoded = searchParams.get('data')
 
-  const { data: recentData } = useSWR('/api/holding-days/dates?month=true', fetcher, {
+  const { data: recentData } = useSWR('/api/holdings/dates?month=true', fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-  const { data: fullData } = useSWR(recentData ? '/api/holding-days/dates' : null, fetcher, {
+  const { data: fullData } = useSWR(recentData ? '/api/holdings/dates' : null, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
@@ -100,7 +100,7 @@ export default function HoldingsView() {
       { addQueryPrefix: true },
     )
 
-    const response = await fetch(`/api/holding-days${stringifiedQuery}`)
+    const response = await fetch(`/api/holdings${stringifiedQuery}`)
     return response
   }
 
@@ -166,7 +166,7 @@ export default function HoldingsView() {
         setError('שגיאת נתונים.')
       }
     } catch (error) {
-      console.error('Error fetching holding days:', error)
+      console.error('Error fetching holdings:', error)
       setError('שגיאה בטעינת הנתונים.')
     } finally {
       setIsLoading(false)

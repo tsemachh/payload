@@ -192,7 +192,6 @@ export const processCompaniesMeetings = async (
             console.log('meeting finished', meeting.id)
           })
           .catch((error) => {
-            debugger
             req.payload.logger.error(
               `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
               error,

@@ -23,12 +23,6 @@ async function computeCompanyTreeAndLeafs(
       holdings: false,
       'subCompanies.id': true,
       'subCompanies.name': true,
-      'subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.name': true,
-      'subCompanies.subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.subCompanies.name': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies.id': true,
-      'subCompanies.subCompanies.subCompanies.subCompanies.name': true,
     },
     populate: {
       companies: {
@@ -42,7 +36,7 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     limit: 0,
-    depth: 5,
+    depth: 1,
   })
 
   // Compute leaf companies recursively
@@ -293,7 +287,6 @@ export const Users: CollectionConfig = {
             const companyIds = data?.companies.map((company: any) =>
               getIdOfRelationField(company.companyId),
             )
-            console.error("computeCompanyTreeAndLeafs")
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
             data.treeCompanies = treeCompanies
