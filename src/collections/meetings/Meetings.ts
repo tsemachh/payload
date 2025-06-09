@@ -649,7 +649,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'companies',
               hasMany: true,
               name: 'funds',
-              label: 'קרנות',
+              label: 'תיקים',
               index: true,
               maxDepth: 0,
               filterOptions: {

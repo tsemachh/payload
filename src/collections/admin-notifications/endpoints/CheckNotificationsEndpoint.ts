@@ -72,6 +72,9 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
       where:{
         subCompanies:{
           exists: false
+        },
+        active:{
+          equals : true
         }
       },
       limit: 0,

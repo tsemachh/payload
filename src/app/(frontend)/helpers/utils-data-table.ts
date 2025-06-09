@@ -71,9 +71,9 @@ export const calculatePrecedingColumnsWidth = (
     totalWidth += columnWidth
   }
   if (fund) {
-    totalWidth -= 50
+    totalWidth -= 80
   } else {
-    totalWidth -= 15
+    totalWidth -= 35
   }
 
   return `${totalWidth}px`

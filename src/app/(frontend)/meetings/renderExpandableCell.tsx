@@ -68,7 +68,10 @@ export function renderFundsCell(
           <ChevronLeft className="h-4 w-4" />
         )}
       </Button>
-      <span className="mr-1 truncate font-medium">{`${companyName} ${company.funds?.length} `}</span>
+      <span className="truncate font-medium">
+        <span className="ml-4">{company.funds?.length}</span>
+        {companyName}
+      </span>
     </div>
   )
 }
