@@ -1,4 +1,4 @@
-import { VoteDecision } from "@/payload-types"
+import { VoteDecision } from '@/payload-types'
 
 export type VoteDataType = {
   generalVotingData: GeneralVotingData
@@ -19,11 +19,11 @@ export type UserVote = {
   questions: AgendaQuestionsType
 }
 export type AgendaQuestionsType = {
-  hasConflictOfInterest: boolean | null
+  hasConflictOf: boolean | null
   isRelatedParty: boolean | null
-  isInvestmentCommittee: boolean | null
+  isCommittee: boolean | null
   hasPersonalInterest: boolean | null
-  conflictOfInterestExplanation?: string
+  conflictExplanation?: string
   relatedPartyExplanation?: string
   personalInterestExplanation?: string
 }
