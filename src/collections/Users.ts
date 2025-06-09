@@ -31,9 +31,18 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     where: {
-      id: {
-        in: companyIds,
-      },
+      and: [
+        {
+          id: {
+            in: companyIds,
+          },
+        },
+        {
+          active: {
+            equals: true,
+          },
+        },
+      ],
     },
     limit: 0,
     depth: 1,
@@ -159,7 +168,8 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
-              filterOptions: ({ data, siblingData }) => {
+              filterOptions: ({ data, siblingData, req }) => {
+                if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 const currentId = (siblingData as { companyId?: string })?.companyId
 
                 const selectedIds = Array.isArray(data?.companies)
@@ -170,6 +180,9 @@ export const Users: CollectionConfig = {
                 const query: Where = {
                   type: {
                     equals: 'regular',
+                  },
+                  active: {
+                    equals: true,
                   },
                 }
                 if (selectedIds.length === 0) {
@@ -246,7 +259,7 @@ export const Users: CollectionConfig = {
       name: 'qrCodeData',
       label: 'נתוני QR',
       type: 'group',
-      admin:{
+      admin: {
         hidden: true,
       },
       fields: [

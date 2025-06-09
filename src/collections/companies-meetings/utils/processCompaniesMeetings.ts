@@ -163,7 +163,8 @@ export const processCompaniesMeetings = async (
       depth: 0,
       limit: 0,
       where: {
-        type:{equals:'fund'}
+        type:{equals:'fund'},
+        active:{equals:true}
       },
     })
     const funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
