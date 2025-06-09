@@ -304,8 +304,12 @@ export const Companies: CollectionConfig = {
 
         if (isRegular) {
           try {
-            if (JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies)){
+            if (JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies) || doc.active != previousDoc.active){
               await req.payload.update({
+                req: {
+                  ...req,
+                  context: { ...req.context, from: 'process' },
+                },
                 collection: 'users',
                 where: {
                   'companies.companyId': {

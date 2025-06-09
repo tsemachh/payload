@@ -36,6 +36,9 @@ export const ResearchDocument: CollectionConfig = {
       filterOptions:{
         type:{
           equals: 'regular'
+        },
+        active:{
+          equals: true
         }
       },
       admin: {
