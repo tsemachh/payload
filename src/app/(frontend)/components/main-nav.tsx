@@ -2,36 +2,20 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, CalendarCheck, BarChart3, Briefcase } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, handleNavigation } from '@/lib/utils'
 
 export function MainNav() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleNavigation = (href: string, e: React.MouseEvent) => {
-    // Check if we're on holdings page and there's a navigation handler
-    if (
-      pathname === '/holdings' &&
-      typeof window !== 'undefined' &&
-      (window as unknown as Record<string, unknown>).holdingsNavigationHandler
-    ) {
-      const canNavigate = (
-        (window as unknown as Record<string, unknown>).holdingsNavigationHandler as (
-          href: string,
-        ) => boolean
-      )(href)
-      if (!canNavigate) {
-        e.preventDefault()
-        return
-      }
-    }
-    router.push(href)
+  const handleNavigationClick = (href: string, e: React.MouseEvent) => {
+    handleNavigation(href, e, pathname, router)
   }
 
   return (
     <nav className="flex items-center space-x-4 lg:space-x-6 rtl:space-x-reverse">
       <button
-        onClick={(e) => handleNavigation('/', e)}
+        onClick={(e) => handleNavigationClick('/', e)}
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/' || pathname === '/meetings/all'
@@ -43,7 +27,7 @@ export function MainNav() {
         אסיפות
       </button>
       <button
-        onClick={(e) => handleNavigation('/participations', e)}
+        onClick={(e) => handleNavigationClick('/participations', e)}
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/participations'
@@ -55,7 +39,7 @@ export function MainNav() {
         השתתפויות
       </button>
       <button
-        onClick={(e) => handleNavigation('/holdings', e)}
+        onClick={(e) => handleNavigationClick('/holdings', e)}
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/holdings' || pathname === '/holdings/view'
@@ -67,7 +51,7 @@ export function MainNav() {
         אחזקות
       </button>
       <button
-        onClick={(e) => handleNavigation('/dashboard', e)}
+        onClick={(e) => handleNavigationClick('/dashboard', e)}
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/dashboard'

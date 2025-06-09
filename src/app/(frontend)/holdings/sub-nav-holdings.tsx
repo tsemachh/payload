@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { FileText, Eye } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, handleNavigation } from '@/lib/utils'
 
 const navItems = [
   { value: 'feed', label: 'הזנת אחזקות', icon: FileText, path: '/holdings' },
@@ -13,24 +13,8 @@ export function HoldingsNav() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleNavigation = (href: string, e: React.MouseEvent) => {
-    // Check if we're on holdings page and there's a navigation handler
-    if (
-      pathname === '/holdings' &&
-      typeof window !== 'undefined' &&
-      (window as unknown as Record<string, unknown>).holdingsNavigationHandler
-    ) {
-      const canNavigate = (
-        (window as unknown as Record<string, unknown>).holdingsNavigationHandler as (
-          href: string,
-        ) => boolean
-      )(href)
-      if (!canNavigate) {
-        e.preventDefault()
-        return
-      }
-    }
-    router.push(href)
+  const handleNavigationClick = (href: string, e: React.MouseEvent) => {
+    handleNavigation(href, e, pathname, router)
   }
 
   return (
@@ -43,7 +27,7 @@ export function HoldingsNav() {
           return (
             <button
               key={item.value}
-              onClick={(e) => handleNavigation(item.path, e)}
+              onClick={(e) => handleNavigationClick(item.path, e)}
               className={cn(
                 'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-2 py-1 rounded-md cursor-pointer',
                 isActive
