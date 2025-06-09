@@ -297,6 +297,32 @@ export const Companies: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [beforeChangeCompanyId],
+    afterChange: [
+      async ({ doc, req ,previousDoc}) => {
+        // Only proceed if the company is of type 'fund'
+        const isRegular = doc.type === 'regular';
+
+        if (isRegular) {
+          try {
+            if (JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies)){
+              await req.payload.update({
+                collection: 'users',
+                where: {
+                  'companies.companyId': {
+                    equals: doc.id,
+                  },
+                },
+                data: {
+                  funds: []
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error updating users after fund company change:', error);
+          }
+        }
+      },
+    ],
   },
   endpoints: [
     {
