@@ -1125,7 +1125,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 className="py-2 px-3 pr-14 whitespace-nowrap"
                                               >
                                                 {columnIndex === 0 && (
-                                                  <div className="relative h-40px mr-3">
+                                                  <div className="relative h-40px mr-7">
                                                     <span
                                                       className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
                                                       style={{
