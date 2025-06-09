@@ -1,6 +1,6 @@
 'use client'
 
-import { BooleanIcon } from '@/components/ui/icons'
+import { BooleanIcon, DocumentIcon } from '@/components/ui/icons'
 import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
@@ -291,6 +291,29 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 50,
   },
+  //todo: add research wvich will be a pdf iconn for research documents link to doc:
+  {
+    key: 'researchDocuments',
+    header: 'מחקר',
+    type: 'other',
+    filterable: false, // מגדיר במפורש שאין סינון
+    minWidth: 200,
+    render: (row) => (
+      <div style={{ display: 'flex', gap: 8 }}>
+        {row.researchDocuments.slice(0, 2).map((url, i) => (
+          <a
+            key={i}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Research Doc ${i + 1}`}
+          >
+            <DocumentIcon />
+          </a>
+        ))}
+      </div>
+    ),
+  },
   { key: 'location', header: 'מיקום', type: 'string', minWidth: 200 },
   { key: 'comments', header: 'הערות', type: 'string', minWidth: 120 },
   {
@@ -345,6 +368,7 @@ export const unSortAbleColumnsOnServer = [
   'nominalValue',
   'percentageHolding',
   'holdingValueInMillions',
+  'researchDocuments',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

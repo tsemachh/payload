@@ -1,5 +1,12 @@
 import { PayloadRequest, User } from 'payload'
-import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
+import {
+  Company,
+  Meeting,
+  MeetingAgenda,
+  ResearchDocument,
+  Stock,
+  StockValue,
+} from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
@@ -26,6 +33,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   meetingDate: true,
   recommendation: true,
   magnaId: true,
+  researchDocuments: true,
   location: true,
   proxyVotingDate: true,
   state: true,
@@ -155,9 +163,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Execute query
     const meetings = await payload.find(query)
     const safeFunds = getSafeFunds(user?.funds)
-
+    console.log('=======vvvv=', meetings.docs)
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    console.log('======vvvv==', meetingData)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -198,9 +207,17 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     })
 
     const safeFunds = getSafeFunds(user?.funds)
-
+    console.log('====meetings====', meetings || [])
+    // const urls = meetings.docs.flatMap(
+    //   (meeting: Meeting) =>
+    //     meeting.researchDocuments?.map((doc: any) => (typeof doc === 'string' ? null : doc.url)) ||
+    //     [],
+    // )
+    //console.log('====urls====', urls)
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    console.log('========meetingData', meetingData)
+
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -231,9 +248,10 @@ function createMeetingDataObject(
   stockValue: StockValue,
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
+  researchDocuments: string[],
 ): MeetingTableDataType {
   return {
-    meetingId: meeting.meetingId,
+    meetingId: meeting.meetingId || '',
     agendas,
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
@@ -247,6 +265,7 @@ function createMeetingDataObject(
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
     reference: meeting.magnaId || '-',
+    researchDocuments,
     location: meeting.location || '-',
     holdingsLimit: meeting.holdingsLimit || '-',
     proxyVotingDate: meeting.proxyVotingDate || '-',
@@ -255,7 +274,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
-    meetingInviteUrl: meeting.invitationLink,
+    meetingInviteUrl: meeting.invitationLink || '',
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
@@ -436,6 +455,22 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       )
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
+      //todo: take it out to a func && run users companies and every doc company and match....
+
+      const usersCompanyIds = user?.companies.map(
+        (company: { companyId: string }) => company.companyId,
+      )
+
+      const researchDocuments: string[] = (meeting.researchDocuments ?? [])
+        .filter(
+          (doc): doc is ResearchDocument => typeof doc === 'object' && doc !== null && 'url' in doc,
+        )
+        .map((doc) => doc.url)
+        .filter((url): url is string => typeof url === 'string')
+
+      //const researchDocumentCompanyIds = meeting.researchDocuments?.companies
+
+      console.log('====usersCompanyIds====', usersCompanyIds)
 
       return createMeetingDataObject(
         meeting,
@@ -443,6 +478,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         meeting.stockValue as StockValue,
         agendas,
         companiesArray,
+        researchDocuments,
       )
     }),
   )
