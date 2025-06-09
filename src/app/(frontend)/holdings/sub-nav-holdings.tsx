@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { FileText, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +11,27 @@ const navItems = [
 
 export function HoldingsNav() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleNavigation = (href: string, e: React.MouseEvent) => {
+    // Check if we're on holdings page and there's a navigation handler
+    if (
+      pathname === '/holdings' &&
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).holdingsNavigationHandler
+    ) {
+      const canNavigate = (
+        (window as unknown as Record<string, unknown>).holdingsNavigationHandler as (
+          href: string,
+        ) => boolean
+      )(href)
+      if (!canNavigate) {
+        e.preventDefault()
+        return
+      }
+    }
+    router.push(href)
+  }
 
   return (
     <div className="flex justify-start pb-[15px] pr-8" dir="rtl">
@@ -21,11 +41,11 @@ export function HoldingsNav() {
           const isActive = pathname === item.path
 
           return (
-            <Link
+            <button
               key={item.value}
-              href={item.path}
+              onClick={(e) => handleNavigation(item.path, e)}
               className={cn(
-                'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-2 py-1 rounded-md',
+                'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-2 py-1 rounded-md cursor-pointer',
                 isActive
                   ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
                   : 'text-muted-foreground hover:bg-muted',
@@ -33,7 +53,7 @@ export function HoldingsNav() {
             >
               <Icon className="h-4 w-4 ml-2" />
               {item.label}
-            </Link>
+            </button>
           )
         })}
       </nav>

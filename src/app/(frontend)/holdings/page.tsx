@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -22,7 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/ui/dialog'
+} from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
@@ -44,6 +44,8 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
+  const [showNavigationWarning, setShowNavigationWarning] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   useEffect(() => {
     if (user?.funds) {
@@ -53,6 +55,39 @@ export default function HoldingsFeedView() {
       setSelectedCompanies(tmpSelectedCompanies)
     }
   }, [user?.funds])
+
+  // Warning when user tries to leave the page while in edit mode
+  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
+    if (!editForm) {
+      e.preventDefault()
+      return 'האם להפסיק את הזנת החזקות לפני שמירתן? לצאת ללא שמירה להאשר בהזנות'
+    }
+  }, [editForm, selectedCompanies.length, date, file])
+
+  useEffect(() => {
+    if (!editForm) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [handleBeforeUnload, editForm, selectedCompanies.length, date, file])
+
+  // Navigation warning for internal navigation
+  const handleNavigation = useCallback((href: string) => {
+    if (!editForm) {
+      setPendingNavigation(href)
+      setShowNavigationWarning(true)
+      return false
+    }
+    return true
+  }, [editForm, selectedCompanies.length, date, file])
+
+  // Expose the navigation handler globally
+  useEffect(() => {
+    ;(window as unknown as Record<string, unknown>).holdingsNavigationHandler = handleNavigation
+    return () => {
+      delete (window as unknown as Record<string, unknown>).holdingsNavigationHandler
+    }
+  }, [handleNavigation])
 
   // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {
@@ -355,6 +390,44 @@ export default function HoldingsFeedView() {
           </Dialog>
         </>
       )}
+
+      {/* Navigation Warning Dialog */}
+      <Dialog open={showNavigationWarning}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-amber-600 m-0">הזנת החזקות בתהליך</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-center">האם להפסיק את הזנת החזקות לפני שמירתן?</p>
+          </div>
+
+          <DialogFooter className="flex justify-center gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNavigationWarning(false)
+                setPendingNavigation(null)
+              }}
+            >
+              להמשיך בהזנות
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowNavigationWarning(false)
+                if (pendingNavigation) {
+                  router.push(pendingNavigation)
+                }
+                setPendingNavigation(null)
+              }}
+            >
+              לצאת ללא שמירה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

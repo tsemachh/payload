@@ -1,19 +1,39 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, CalendarCheck, BarChart3, Briefcase } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function MainNav() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleNavigation = (href: string, e: React.MouseEvent) => {
+    // Check if we're on holdings page and there's a navigation handler
+    if (
+      pathname === '/holdings' &&
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).holdingsNavigationHandler
+    ) {
+      const canNavigate = (
+        (window as unknown as Record<string, unknown>).holdingsNavigationHandler as (
+          href: string,
+        ) => boolean
+      )(href)
+      if (!canNavigate) {
+        e.preventDefault()
+        return
+      }
+    }
+    router.push(href)
+  }
 
   return (
     <nav className="flex items-center space-x-4 lg:space-x-6 rtl:space-x-reverse">
-      <Link
-        href="/"
+      <button
+        onClick={(e) => handleNavigation('/', e)}
         className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/' || pathname === '/meetings/all'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
@@ -21,11 +41,11 @@ export function MainNav() {
       >
         <Calendar className="h-4 w-4 ml-2" />
         אסיפות
-      </Link>
-      <Link
-        href="/participations"
+      </button>
+      <button
+        onClick={(e) => handleNavigation('/participations', e)}
         className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/participations'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
@@ -33,11 +53,11 @@ export function MainNav() {
       >
         <CalendarCheck className="h-4 w-4 ml-2" />
         השתתפויות
-      </Link>
-      <Link
-        href="/holdings"
+      </button>
+      <button
+        onClick={(e) => handleNavigation('/holdings', e)}
         className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/holdings' || pathname === '/holdings/view'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
@@ -45,11 +65,11 @@ export function MainNav() {
       >
         <Briefcase className="h-4 w-4 ml-2" />
         אחזקות
-      </Link>
-      <Link
-        href="/dashboard"
+      </button>
+      <button
+        onClick={(e) => handleNavigation('/dashboard', e)}
         className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md',
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/dashboard'
             ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
             : 'text-muted-foreground hover:bg-muted',
@@ -57,7 +77,7 @@ export function MainNav() {
       >
         <BarChart3 className="h-4 w-4 ml-2" />
         לוח בקרה
-      </Link>
+      </button>
     </nav>
   )
 }
