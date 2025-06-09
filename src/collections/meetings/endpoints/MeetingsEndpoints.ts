@@ -457,20 +457,25 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
       //todo: take it out to a func && run users companies and every doc company and match....
 
-      const usersCompanyIds = user?.companies.map(
-        (company: { companyId: string }) => company.companyId,
-      )
+      const usersCompanyIds =
+        user?.companies
+          .map((c: { companyId: string }) => c.companyId)
+          .filter((id: string): id is string => !!id) || []
 
       const researchDocuments: string[] = (meeting.researchDocuments ?? [])
         .filter(
           (doc): doc is ResearchDocument => typeof doc === 'object' && doc !== null && 'url' in doc,
         )
+        .filter((doc) => {
+          const docCompanyIds = doc.companies ?? []
+          if (docCompanyIds.length === 0) return true
+          return docCompanyIds.some((id) => usersCompanyIds.includes(id))
+        })
         .map((doc) => doc.url)
         .filter((url): url is string => typeof url === 'string')
 
-      //const researchDocumentCompanyIds = meeting.researchDocuments?.companies
-
       console.log('====usersCompanyIds====', usersCompanyIds)
+      console.log('====researchDocuments====', usersCompanyIds)
 
       return createMeetingDataObject(
         meeting,
