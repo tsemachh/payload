@@ -26,7 +26,7 @@ export function HeaderWithNav() {
         <div className="flex h-16 items-center justify-between px-4">
           <div></div>
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            <ThemeChooser />
+            <UserNav />
           </div>
         </div>
       </header>
@@ -39,7 +39,6 @@ export function HeaderWithNav() {
       <div className="flex h-16 items-center justify-between px-4">
         <MainNav />
         <div className="flex items-center space-x-4 rtl:space-x-reverse">
-          <ThemeChooser />
           <UserNav />
         </div>
       </div>
