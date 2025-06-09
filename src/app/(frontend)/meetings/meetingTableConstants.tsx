@@ -296,10 +296,10 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     key: 'researchDocuments',
     header: 'מחקר',
     type: 'other',
-    filterable: false, // מגדיר במפורש שאין סינון
+    filterable: false,
     minWidth: 200,
     render: (row) => (
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="flex gap-2">
         {row.researchDocuments.slice(0, 2).map((url, i) => (
           <a
             key={i}
@@ -307,8 +307,9 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
             target="_blank"
             rel="noopener noreferrer"
             title={`Research Doc ${i + 1}`}
+            className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
           >
-            <DocumentIcon />
+            <DocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
           </a>
         ))}
       </div>
