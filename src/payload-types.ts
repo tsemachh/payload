@@ -589,18 +589,18 @@ export interface User {
    * הזן כתובות IP מופרדות בנקודה-פסיק (;)
    */
   userIp?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
   isAdmin?: boolean | null;
   isGeneratorUser?: boolean | null;
   userRoles?: (string | Role)[] | null;
   creator?: string | null;
   updator?: string | null;
   treeCompanies?: string | null;
+  qrCodeData?: {
+    showQr?: boolean | null;
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
   createdAt: string;
   updatedAt: string;
   enableAPIKey?: boolean | null;
@@ -1253,6 +1253,12 @@ export interface UsersSelect<T extends boolean = true> {
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
+  isAdmin?: T;
+  isGeneratorUser?: T;
+  userRoles?: T;
+  creator?: T;
+  updator?: T;
+  treeCompanies?: T;
   qrCodeData?:
     | T
     | {
@@ -1261,12 +1267,6 @@ export interface UsersSelect<T extends boolean = true> {
         lastCodeFailureDate?: T;
         codeFailuresSinceLastSuccess?: T;
       };
-  isAdmin?: T;
-  isGeneratorUser?: T;
-  userRoles?: T;
-  creator?: T;
-  updator?: T;
-  treeCompanies?: T;
   createdAt?: T;
   updatedAt?: T;
   enableAPIKey?: T;

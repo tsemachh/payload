@@ -200,7 +200,7 @@ export const Users: CollectionConfig = {
     },
     {
       name: 'funds',
-      label: 'קרנות',
+      label: 'תיקים',
       type: 'relationship',
       relationTo: 'companies',
       maxDepth: 0,
@@ -246,6 +246,9 @@ export const Users: CollectionConfig = {
       name: 'qrCodeData',
       label: 'נתוני QR',
       type: 'group',
+      admin:{
+        hidden: true,
+      },
       fields: [
         {
           type: 'row',
