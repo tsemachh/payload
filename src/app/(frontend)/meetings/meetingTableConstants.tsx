@@ -297,7 +297,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'מחקר',
     type: 'other',
     filterable: false,
-    minWidth: 200,
+    minWidth: 50,
     render: (row) => (
       <div className="flex gap-2">
         {row.researchDocuments.slice(0, 2).map((url, i) => (
