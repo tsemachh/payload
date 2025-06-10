@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react'
 import { formatDateTime } from '../../helpers/utils-data-table'
 import { MeetingTableDataType } from '../../types/meetings'
 import TruncatedText from './TruncatedText'
+import { SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 
 interface VoteDetailsProps {
   meetingData: MeetingTableDataType
@@ -9,11 +10,18 @@ interface VoteDetailsProps {
 
 export default function VoteDetails({ meetingData }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
+  const hasResearchDocuments = meetingData.researchDocuments
+
+  let gridClass = 'grid grid-cols-1 gap-4 mb-4'
+
+  if (hasComments) {
+    gridClass += ' md:grid-cols-3'
+  } else {
+    gridClass += ' md:grid-cols-2'
+  }
 
   return (
-    <div
-      className={`grid grid-cols-1 gap-4 mb-4 ${hasComments ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}
-    >
+    <div className={gridClass}>
       {/* פרטי האסיפה */}
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
@@ -56,10 +64,6 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
             />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">סוג נייר</span>
-            <TruncatedText text={meetingData.stockType} className="text-foreground max-w-[250px]" />
-          </div>
-          <div className="flex justify-between">
             <span className="text-muted-foreground font-medium">שווי שוק</span>
             <TruncatedText
               text={meetingData.marketValue.toLocaleString() + ' ₪'}
@@ -70,7 +74,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
             meetingData.stockTradable === true &&
             meetingData.stockNumber && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground font-medium">קישור לנייר בבורסה</span>
+                <span className="text-muted-foreground font-medium">סוג נייר</span>
                 <a
                   href={
                     'https://www.tase.co.il/he/market_data/security/' +
@@ -81,15 +85,49 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
                   rel="noopener noreferrer"
                   className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
                 >
-              <TruncatedText text={meetingData.stockName} className="max-w-[200px]" />
+                  <TruncatedText text={meetingData.stockType} className="max-w-[200px]" />
                   <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
                 </a>
               </div>
             )}
+          {hasResearchDocuments && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground font-medium">מחקר</span>
+              <div className="flex gap-2">
+                {meetingData.researchDocuments.length > 0 && (
+                  <button
+                    onClick={() => {
+                      meetingData.researchDocuments.forEach((url, i) => {
+                        const link = document.createElement('a')
+                        link.href = url
+                        link.download = `Research_Doc_${i + 1}`
+                        link.style.display = 'none'
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                      })
+                    }}
+                    title={
+                      meetingData.researchDocuments.length === 1
+                        ? 'Download document'
+                        : 'Download all documents'
+                    }
+                    className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+                  >
+                    {meetingData.researchDocuments.length === 1 ? (
+                      <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                    ) : (
+                      <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* הערות האסיפה - רק אם יש הערות */}
+      {/* הערות האסיפה */}
       {hasComments && (
         <div className="bg-yellow-50 rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900">
           <div className="flex items-center mb-2 px-3 pt-3">

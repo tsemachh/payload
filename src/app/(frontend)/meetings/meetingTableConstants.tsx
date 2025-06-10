@@ -1,6 +1,6 @@
 'use client'
 
-import { BooleanIcon } from '@/components/ui/icons'
+import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
@@ -291,6 +291,43 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 50,
   },
+  //todo: add research wvich will be a pdf iconn for research documents link to doc:
+  {
+    key: 'researchDocuments',
+    header: 'מחקר',
+    type: 'other',
+    filterable: false,
+    minWidth: 50,
+    render: (row) => (
+      <div className="flex gap-2">
+        {row.researchDocuments.length > 0 && (
+          <button
+            onClick={() => {
+              row.researchDocuments.forEach((url, i) => {
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `Research_Doc_${i + 1}`
+                link.style.display = 'none'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              })
+            }}
+            title={
+              row.researchDocuments.length === 1 ? 'Download document' : 'Download all documents'
+            }
+            className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+          >
+            {row.researchDocuments.length === 1 ? (
+              <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            ) : (
+              <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            )}
+          </button>
+        )}
+      </div>
+    ),
+  },
   { key: 'location', header: 'מיקום', type: 'string', minWidth: 200 },
   { key: 'comments', header: 'הערות', type: 'string', minWidth: 120 },
   {
@@ -345,6 +382,7 @@ export const unSortAbleColumnsOnServer = [
   'nominalValue',
   'percentageHolding',
   'holdingValueInMillions',
+  'researchDocuments',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

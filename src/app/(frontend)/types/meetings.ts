@@ -20,6 +20,7 @@ export type MeetingTableDataType = {
   meetingDate: string //מועד האסיפה
   reference: string
   meetingState: MeetingState | null
+  researchDocuments: string[] //מסמכי מחקר
   location: string //מיקום
   holdingsLimit: string //תאריך קובע
   proxyVotingDate: string //מועד מסירת ההצבעה
