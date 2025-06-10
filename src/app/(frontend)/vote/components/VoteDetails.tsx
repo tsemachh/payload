@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react'
 import { formatDateTime } from '../../helpers/utils-data-table'
 import { MeetingTableDataType } from '../../types/meetings'
 import TruncatedText from './TruncatedText'
+import { DocumentIcon } from '@/components/ui/icons'
 
 interface VoteDetailsProps {
   meetingData: MeetingTableDataType
@@ -9,6 +10,7 @@ interface VoteDetailsProps {
 
 export default function VoteDetails({ meetingData }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
+  const hasResearchDocuments = meetingData.researchDocuments
 
   return (
     <div
@@ -81,7 +83,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
                   rel="noopener noreferrer"
                   className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
                 >
-              <TruncatedText text={meetingData.stockName} className="max-w-[200px]" />
+                  <TruncatedText text={meetingData.stockName} className="max-w-[200px]" />
                   <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
                 </a>
               </div>
@@ -101,6 +103,32 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
           <p className="text-sm text-yellow-800 dark:text-yellow-200 px-3 pb-3">
             {meetingData.comments}
           </p>
+        </div>
+      )}
+
+      {/* הערות האסיפה - רק אם יש הערות */}
+      {hasResearchDocuments && (
+        <div className="rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900 p-3">
+          <div className="flex items-center mb-2">
+            <h3 className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
+              מסמכי מחקר
+            </h3>
+            <div className="flex-1 border-t border-yellow-200 dark:border-yellow-800 mr-2 mt-0.5"></div>
+          </div>
+          <div className="flex gap-2">
+            {meetingData.researchDocuments.slice(0, 2).map((url, i) => (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Research Doc ${i + 1}`}
+                className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+              >
+                <DocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </div>
