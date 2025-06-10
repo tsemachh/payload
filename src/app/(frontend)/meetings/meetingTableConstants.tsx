@@ -291,7 +291,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 50,
   },
-  //todo: add research wvich will be a pdf iconn for research documents link to doc:
   {
     key: 'researchDocuments',
     header: 'מחקר',
@@ -375,6 +374,7 @@ export const defaultVisibleColumns = [
   'comments',
   'electronicVotingEnabled',
   'committeeInitiated',
+  'researchDocuments',
 ]
 
 export const unSortAbleColumnsOnServer = [
@@ -382,7 +382,6 @@ export const unSortAbleColumnsOnServer = [
   'nominalValue',
   'percentageHolding',
   'holdingValueInMillions',
-  'researchDocuments',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {
