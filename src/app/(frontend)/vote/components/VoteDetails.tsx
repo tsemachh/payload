@@ -12,10 +12,20 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
   const hasResearchDocuments = meetingData.researchDocuments
 
+  let gridClass = 'grid grid-cols-1 gap-4 mb-4'
+
+  if (hasResearchDocuments && hasComments) {
+    gridClass += ' md:grid-cols-[1fr_1fr_1fr_0.4fr]'
+  } else if (hasResearchDocuments && !hasComments) {
+    gridClass += ' md:grid-cols-[2fr_2fr_1fr]'
+  } else if (!hasResearchDocuments && hasComments) {
+    gridClass += ' md:grid-cols-3'
+  } else {
+    gridClass += ' md:grid-cols-2'
+  }
+
   return (
-    <div
-      className={`grid grid-cols-1 gap-4 mb-4 ${hasComments ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}
-    >
+    <div className={gridClass}>
       {/* פרטי האסיפה */}
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
@@ -91,7 +101,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
         </div>
       </div>
 
-      {/* הערות האסיפה - רק אם יש הערות */}
+      {/* הערות האסיפה */}
       {hasComments && (
         <div className="bg-yellow-50 rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900">
           <div className="flex items-center mb-2 px-3 pt-3">
@@ -106,7 +116,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
         </div>
       )}
 
-      {/* הערות האסיפה - רק אם יש הערות */}
+      {/* מסמכי מחקר */}
       {hasResearchDocuments && (
         <div className="rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900 p-3">
           <div className="flex items-center mb-2">
