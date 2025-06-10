@@ -16,6 +16,7 @@ export default function GeneralQuestions({
   generalVotingData,
   onQuestionChangeAction,
 }: GeneralQuestionsProps) {
+
   return (
     <>
       <div className="space-y-4">

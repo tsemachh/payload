@@ -3,21 +3,34 @@ import { Textarea } from '../../components/ui/textarea'
 import type { AgendaQuestionsType } from '../../types/vote'
 interface AgendaQuestionsProps {
   questions: AgendaQuestionsType
-  onChangeAction: (questions: AgendaQuestionsType) => void
+  handleAgendaQuestionsChange: (
+    subjectId:
+      | 'hasConflictOfInterest'
+      | 'isRelatedParty'
+      | 'isInvestmentCommittee'
+      | 'hasPersonalInterest',
+    value: boolean,
+    explanation?: string,
+  ) => void
 }
-export default function AgendaQuestions({ questions, onChangeAction }: AgendaQuestionsProps) {
-  const handleChange = (question: keyof AgendaQuestionsType, value: boolean) => {
-    onChangeAction({
-      ...questions,
-      [question]: value,
-    })
-  }
-  const handleExplanationChange = (field: keyof AgendaQuestionsType, value: string) => {
-    onChangeAction({
-      ...questions,
-      [field]: value,
-    })
-  }
+export default function AgendaQuestions({
+  questions,
+  handleAgendaQuestionsChange,
+}: AgendaQuestionsProps) {
+  // const handleChange = (question: keyof AgendaQuestionsType, value: boolean) => {
+  //   const newQuestions = {
+  //     ...questions,
+  //     [question]: value,
+  //   }
+  //   onChangeAction(newQuestions)
+  // }
+  // const handleExplanationChange = (field: keyof AgendaQuestionsType, value: string) => {
+  //   const newQuestions = {
+  //     ...questions,
+  //     [field]: value,
+  //   }
+  //   onChangeAction(newQuestions)
+  // }
   return (
     <div className="space-y-3 min-w-[300px]">
       {/* שאלה 1: ניגוד עניינים */}
@@ -27,7 +40,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               type="button"
-              onClick={() => handleChange('hasConflictOfInterest', true)}
+              onClick={() => handleAgendaQuestionsChange('hasConflictOfInterest', true)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.hasConflictOfInterest === true
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -38,7 +51,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             </button>
             <button
               type="button"
-              onClick={() => handleChange('hasConflictOfInterest', false)}
+              onClick={() => handleAgendaQuestionsChange('hasConflictOfInterest', false)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.hasConflictOfInterest === false
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -57,7 +70,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             className="min-h-[60px] text-xs w-full"
             value={questions.conflictOfInterestExplanation || ''}
             onChange={(e) =>
-              handleExplanationChange('conflictOfInterestExplanation', e.target.value)
+              handleAgendaQuestionsChange('hasConflictOfInterest', true, e.target.value)
             }
           />
         )}
@@ -69,7 +82,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               type="button"
-              onClick={() => handleChange('isRelatedParty', true)}
+              onClick={() => handleAgendaQuestionsChange('isRelatedParty', true)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.isRelatedParty === true
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -80,7 +93,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             </button>
             <button
               type="button"
-              onClick={() => handleChange('isRelatedParty', false)}
+              onClick={() => handleAgendaQuestionsChange('isRelatedParty', false)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.isRelatedParty === false
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -97,7 +110,9 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             placeholder="נא לפרט..."
             className="min-h-[60px] text-xs"
             value={questions.relatedPartyExplanation || ''}
-            onChange={(e) => handleExplanationChange('relatedPartyExplanation', e.target.value)}
+            onChange={(e) =>
+              handleAgendaQuestionsChange('isRelatedParty', true, e.target.value)
+            }
           />
         )}
       </div>
@@ -107,7 +122,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
         <div className="flex bg-muted rounded-full p-0.5">
           <button
             type="button"
-            onClick={() => handleChange('isInvestmentCommittee', true)}
+            onClick={() => handleAgendaQuestionsChange('isInvestmentCommittee', true)}
             className={`px-2 py-0.5 text-xs rounded-full transition-all ${
               questions.isInvestmentCommittee === true
                 ? 'bg-primary text-primary-foreground shadow-sm'
@@ -118,7 +133,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           </button>
           <button
             type="button"
-            onClick={() => handleChange('isInvestmentCommittee', false)}
+            onClick={() => handleAgendaQuestionsChange('isInvestmentCommittee', false)}
             className={`px-2 py-0.5 text-xs rounded-full transition-all ${
               questions.isInvestmentCommittee === false
                 ? 'bg-primary text-primary-foreground shadow-sm'
@@ -136,7 +151,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               type="button"
-              onClick={() => handleChange('hasPersonalInterest', true)}
+              onClick={() => handleAgendaQuestionsChange('hasPersonalInterest', true)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.hasPersonalInterest === true
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -147,7 +162,7 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             </button>
             <button
               type="button"
-              onClick={() => handleChange('hasPersonalInterest', false)}
+              onClick={() => handleAgendaQuestionsChange('hasPersonalInterest', false)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
                 questions.hasPersonalInterest === false
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -164,7 +179,9 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             placeholder="נא לפרט..."
             className="min-h-[60px] text-xs"
             value={questions.personalInterestExplanation || ''}
-            onChange={(e) => handleExplanationChange('personalInterestExplanation', e.target.value)}
+            onChange={(e) =>
+              handleAgendaQuestionsChange('hasPersonalInterest', true, e.target.value)
+            }
           />
         )}
       </div>
