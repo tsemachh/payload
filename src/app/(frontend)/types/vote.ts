@@ -5,7 +5,6 @@ export type VoteDataType = {
   voterNotes: string
   userVotes: UserVote[]
 }
-
 export type GeneralVotingData = {
   isInterested: boolean | null
   isSeniorOfficial: boolean | null
@@ -19,15 +18,14 @@ export type UserVote = {
   questions: AgendaQuestionsType
 }
 export type AgendaQuestionsType = {
-  hasConflictOf: boolean | null
+  hasConflictOfInterest: boolean | null
   isRelatedParty: boolean | null
-  isCommittee: boolean | null
+  isInvestmentCommittee: boolean | null
   hasPersonalInterest: boolean | null
-  conflictExplanation?: string
+  conflictOfInterestExplanation?: string
   relatedPartyExplanation?: string
   personalInterestExplanation?: string
 }
-
 export type VoteCompanyType = {
   id: string
   name: string

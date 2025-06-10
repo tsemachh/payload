@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Upload } from 'lucide-react'
@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-
 import { useSearchParams } from 'next/navigation'
 import { MeetingTableDataType } from '../types/meetings'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
@@ -21,10 +20,8 @@ import VoteCompanySelector from './components/VoteCompanySelector'
 import GeneralQuestions from './components/GeneralQuestions'
 import AgendaQuestions from './components/AgendaQuestions'
 import { AgendaQuestionsType, UserVote, VoteDataType } from '../types/vote'
-
 export default function VotingForm() {
   const searchParams = useSearchParams()
-
   const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [votingData, setVotingData] = useState<VoteDataType>({
@@ -36,7 +33,6 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
-
   useEffect(() => {
     const encoded = searchParams.get('data')
     if (encoded) {
@@ -45,11 +41,10 @@ export default function VotingForm() {
         const json = JSON.parse(decodeURIComponent(escape(atob(decoded))))
         setMeetingData(json.meeting)
       } catch (error) {
-        console.error('שגיאה בהעברת הנתונים', error)
+        console.error('שגיאה בדיקוד הנתונים', error)
       }
     }
   }, [searchParams])
-
 
   //   const handleCompanySelection = (companyId: string, selected: boolean) => {
   //     setVotingData((prev) => ({
@@ -58,7 +53,6 @@ export default function VotingForm() {
   //         company.id === companyId ? { ...company, selected } : company,
   //       ),
   //     }))
-  // TODO: Implement company selection logic for auto save
   //   }
 
   const handleAgendaQuestionsChange = (subjectId: string, questions: AgendaQuestionsType) => {
@@ -79,7 +73,6 @@ export default function VotingForm() {
       }
     })
   }
-
   const handleGeneralQuestionChange = (
     question: 'isInterested' | 'isSeniorOfficial' | 'isInstitutionalInvestor',
     value: boolean,
@@ -99,7 +92,6 @@ export default function VotingForm() {
       },
     }))
   }
-
   const handleVoteChange = (subjectId: string, choice: UserVote['choice']) => {
     setVotingData((prev) => {
       const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.subjectId === subjectId)
@@ -119,9 +111,9 @@ export default function VotingForm() {
               subjectId,
               choice,
               questions: {
-                hasConflictOf: false,
+                hasConflictOfInterest: false,
                 isRelatedParty: false,
-                isCommittee: true,
+                isInvestmentCommittee: true,
                 hasPersonalInterest: false,
               },
             },
@@ -130,28 +122,23 @@ export default function VotingForm() {
       }
     })
   }
-
   const handleNotesChange = (notes: string) => {
     setVotingData((prev) => ({
       ...prev,
       voterNotes: notes,
     }))
   }
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
       setSelectedFiles((prev) => [...prev, ...filesArray])
     }
   }
-
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  return (
-    <>
-      {meetingData ? (
+  return meetingData ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
           {/* Header */}
           {meetingData.meetingInviteUrl ? (
@@ -171,7 +158,6 @@ export default function VotingForm() {
               אסיפה {meetingData.meetingType} - {meetingData.stockName}
             </div>
           )}
-
           {/* Main content */}
           <div className="space-y-6">
             <VoteDetails meetingData={meetingData} />
@@ -199,13 +185,11 @@ export default function VotingForm() {
                 />
               </CardContent>
             </Card>
-
             {/* Agenda */}
             <Card>
               <CardHeader className="bg-primary/10 py-1.5 px-3">
                 <h2 className="text-sm font-medium text-primary">סדר יום</h2>
               </CardHeader>
-
               <CardContent className="p-4">
                 <div className="space-y-6">
                   {meetingData.agendas.map((item, index) => {
@@ -214,10 +198,7 @@ export default function VotingForm() {
                     const isHebrew = /[\u0590-\u05FF]/.test(item.text)
 
                     return (
-                      <div
-                        key={item.id}
-                        className={`${item.isRemovedFromAgenda ? 'opacity-70' : ''}`}
-                      >
+                  <div key={item.id} className={`${item.isRemovedFromAgenda ? 'opacity-70' : ''}`}>
                         <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,auto] gap-4 pl-3 pr-3">
                           <div>
                             <div className="flex items-start">
@@ -227,9 +208,7 @@ export default function VotingForm() {
                               <div className={`flex-1 ${isHebrew ? 'text-right' : 'text-left'}`}>
                                 <p
                                   className={`text-foreground font-medium ${
-                                    item.isRemovedFromAgenda
-                                      ? 'line-through text-muted-foreground'
-                                      : ''
+                                item.isRemovedFromAgenda ? 'line-through text-muted-foreground' : ''
                                   }`}
                                   dir={isHebrew ? 'rtl' : 'ltr'}
                                 >
@@ -237,7 +216,6 @@ export default function VotingForm() {
                                 </p>
                               </div>
                             </div>
-
                             <div
                               className="flex flex-wrap gap-2 mt-2 mr-7"
                               style={{
@@ -256,7 +234,6 @@ export default function VotingForm() {
                               )}
                             </div>
                           </div>
-
                           {!item.isRemovedFromAgenda && (
                             <div className="flex flex-col items-center gap-2 min-w-[200px] border-r px-4  pl-0">
                               {item.recommendation.votingRecommendation && (
@@ -299,10 +276,7 @@ export default function VotingForm() {
                                   >
                                     בעד
                                   </SelectItem>
-                                  <SelectItem
-                                    value="נגד"
-                                    className="text-red-700 dark:text-red-400"
-                                  >
+                              <SelectItem value="נגד" className="text-red-700 dark:text-red-400">
                                     נגד
                                   </SelectItem>
                                   <SelectItem
@@ -317,15 +291,14 @@ export default function VotingForm() {
                               </Select>
                             </div>
                           )}
-
                           {!item.isRemovedFromAgenda && (
                             <div className="border-r px-4 pl-0">
                               <AgendaQuestions
                                 questions={
                                   userVote?.questions || {
-                                    hasConflictOf: false,
+                                hasConflictOfInterest: false,
                                     isRelatedParty: false,
-                                    isCommittee: true,
+                                isInvestmentCommittee: true,
                                     hasPersonalInterest: false,
                                   }
                                 }
@@ -336,7 +309,6 @@ export default function VotingForm() {
                             </div>
                           )}
                         </div>
-
                         {!item.isRemovedFromAgenda &&
                           item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
                             <div className="mt-4 mb-2 border-b border-border" />
@@ -347,7 +319,6 @@ export default function VotingForm() {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="bg-primary/10 py-1.5 px-3">
                 <h2 className="text-sm font-medium text-primary">נספחים להצבעה</h2>
@@ -366,7 +337,6 @@ export default function VotingForm() {
                       className="min-h-[150px] w-full border-muted bg-background resize-none focus-visible:ring-1"
                     />
                   </div>
-
                   {/* העלאת קבצים - חלק קטן */}
                   <div>
                     <div className="flex items-center mb-2">
@@ -389,7 +359,6 @@ export default function VotingForm() {
                           <span className="text-sm text-muted-foreground">בחר קובץ/קבצים</span>
                         </label>
                       </div>
-
                       {selectedFiles.length > 0 && (
                         <div className="space-y-1 mt-2">
                           {selectedFiles.map((file, index) => (
@@ -414,7 +383,6 @@ export default function VotingForm() {
                 </div>
               </CardContent>
             </Card>
-
             {/* כפתור שליחת הצבעה */}
             <div className="flex justify-end mt-6">
               <Button className="px-8">שליחת הצבעה</Button>
@@ -427,7 +395,5 @@ export default function VotingForm() {
             <LoadingSpinnerDiamond />
           </div>
         </div>
-      )}
-    </>
   )
 }

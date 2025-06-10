@@ -1,12 +1,10 @@
 'use client'
 import { Textarea } from '../../components/ui/textarea'
 import type { AgendaQuestionsType } from '../../types/vote'
-
 interface AgendaQuestionsProps {
   questions: AgendaQuestionsType
   onChangeAction: (questions: AgendaQuestionsType) => void
 }
-
 export default function AgendaQuestions({ questions, onChangeAction }: AgendaQuestionsProps) {
   const handleChange = (question: keyof AgendaQuestionsType, value: boolean) => {
     onChangeAction({
@@ -14,14 +12,12 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
       [question]: value,
     })
   }
-
   const handleExplanationChange = (field: keyof AgendaQuestionsType, value: string) => {
     onChangeAction({
       ...questions,
       [field]: value,
     })
   }
-
   return (
     <div className="space-y-3 min-w-[300px]">
       {/* שאלה 1: ניגוד עניינים */}
@@ -31,9 +27,9 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               type="button"
-              onClick={() => handleChange('hasConflictOf', true)}
+              onClick={() => handleChange('hasConflictOfInterest', true)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
-                questions.hasConflictOf === true
+                questions.hasConflictOfInterest === true
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-muted-foreground/10'
               }`}
@@ -42,9 +38,9 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
             </button>
             <button
               type="button"
-              onClick={() => handleChange('hasConflictOf', false)}
+              onClick={() => handleChange('hasConflictOfInterest', false)}
               className={`px-2 py-0.5 text-xs rounded-full transition-all ${
-                questions.hasConflictOf === false
+                questions.hasConflictOfInterest === false
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-muted-foreground/10'
               }`}
@@ -55,16 +51,17 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
         </div>
 
         {/* תיבת טקסט להסבר - מוצגת רק אם התשובה היא "כן" */}
-        {questions.hasConflictOf === true && (
+        {questions.hasConflictOfInterest === true && (
           <Textarea
             placeholder="נא לפרט..."
             className="min-h-[60px] text-xs w-full"
-            value={questions.conflictExplanation || ''}
-            onChange={(e) => handleExplanationChange('conflictExplanation', e.target.value)}
+            value={questions.conflictOfInterestExplanation || ''}
+            onChange={(e) =>
+              handleExplanationChange('conflictOfInterestExplanation', e.target.value)
+            }
           />
         )}
       </div>
-
       {/* שאלה 2: צד קשור */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -104,16 +101,15 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           />
         )}
       </div>
-
       {/* שאלה 3: ועדות השקעות */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">ועדת השקעות </span>
         <div className="flex bg-muted rounded-full p-0.5">
           <button
             type="button"
-            onClick={() => handleChange('isCommittee', true)}
+            onClick={() => handleChange('isInvestmentCommittee', true)}
             className={`px-2 py-0.5 text-xs rounded-full transition-all ${
-              questions.isCommittee === true
+              questions.isInvestmentCommittee === true
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted-foreground/10'
             }`}
@@ -122,9 +118,9 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           </button>
           <button
             type="button"
-            onClick={() => handleChange('isCommittee', false)}
+            onClick={() => handleChange('isInvestmentCommittee', false)}
             className={`px-2 py-0.5 text-xs rounded-full transition-all ${
-              questions.isCommittee === false
+              questions.isInvestmentCommittee === false
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted-foreground/10'
             }`}
@@ -133,7 +129,6 @@ export default function AgendaQuestions({ questions, onChangeAction }: AgendaQue
           </button>
         </div>
       </div>
-
       {/* שאלה 4: עניין אישי */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
