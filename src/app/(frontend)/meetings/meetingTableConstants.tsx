@@ -1,6 +1,6 @@
 'use client'
 
-import { BooleanIcon, DocumentIcon } from '@/components/ui/icons'
+import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
@@ -300,18 +300,31 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 50,
     render: (row) => (
       <div className="flex gap-2">
-        {row.researchDocuments.slice(0, 2).map((url, i) => (
-          <a
-            key={i}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={`Research Doc ${i + 1}`}
+        {row.researchDocuments.length > 0 && (
+          <button
+            onClick={() => {
+              row.researchDocuments.forEach((url, i) => {
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `Research_Doc_${i + 1}`
+                link.style.display = 'none'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              })
+            }}
+            title={
+              row.researchDocuments.length === 1 ? 'Download document' : 'Download all documents'
+            }
             className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
           >
-            <DocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
-          </a>
-        ))}
+            {row.researchDocuments.length === 1 ? (
+              <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            ) : (
+              <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            )}
+          </button>
+        )}
       </div>
     ),
   },
