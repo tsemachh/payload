@@ -126,17 +126,17 @@ export const Votes: CollectionConfig = {
           type: 'row',
           fields: [
             {
-              name: 'committee',
+              name: 'investmentCommittee',
               label: 'ועדה',
               type: 'checkbox',
               defaultValue: false,
             },
             {
-              name: 'committeeExplanation',
+              name: 'investmentCommitteeExplanation',
               label: 'הסבר ועדה',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.committee === true,
+                condition: (_, siblingData) => siblingData.investmentCommittee === true,
               },
             },
             {
@@ -154,7 +154,7 @@ export const Votes: CollectionConfig = {
               },
             },
             {
-              name: 'conflict',
+              name: 'conflictOfInterest',
               label: 'ניגוד עניינים',
               type: 'checkbox',
               defaultValue: true,

@@ -560,11 +560,11 @@ export interface Vote {
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
-        committee?: boolean | null;
-        committeeExplanation?: string | null;
+        investmentCommittee?: boolean | null;
+        investmentCommitteeExplanation?: string | null;
         relatedParty?: boolean | null;
         relatedPartyExplanation?: string | null;
-        conflict?: boolean | null;
+        conflictOfInterest?: boolean | null;
         personalInterest?: boolean | null;
         personalInterestExplanation?: string | null;
         id?: string | null;
@@ -1509,11 +1509,11 @@ export interface VotesSelect<T extends boolean = true> {
     | {
         topicIndex?: T;
         voteDecision?: T;
-        committee?: T;
-        committeeExplanation?: T;
+        investmentCommittee?: T;
+        investmentCommitteeExplanation?: T;
         relatedParty?: T;
         relatedPartyExplanation?: T;
-        conflict?: T;
+        conflictOfInterest?: T;
         personalInterest?: T;
         personalInterestExplanation?: T;
         id?: T;
