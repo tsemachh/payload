@@ -163,10 +163,8 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Execute query
     const meetings = await payload.find(query)
     const safeFunds = getSafeFunds(user?.funds)
-    console.log('=======vvvv=', meetings.docs)
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
-    console.log('======vvvv==', meetingData)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -207,16 +205,8 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     })
 
     const safeFunds = getSafeFunds(user?.funds)
-    console.log('====meetings====', meetings || [])
-    // const urls = meetings.docs.flatMap(
-    //   (meeting: Meeting) =>
-    //     meeting.researchDocuments?.map((doc: any) => (typeof doc === 'string' ? null : doc.url)) ||
-    //     [],
-    // )
-    //console.log('====urls====', urls)
-    // Process results to standardized format
+
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
-    console.log('========meetingData', meetingData)
 
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
@@ -455,7 +445,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       )
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
-      //todo: take it out to a func && run users companies and every doc company and match....
 
       const usersCompanyIds =
         user?.companies
@@ -473,9 +462,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         })
         .map((doc) => doc.url)
         .filter((url): url is string => typeof url === 'string')
-
-      console.log('====usersCompanyIds====', usersCompanyIds)
-      console.log('====researchDocuments====', usersCompanyIds)
 
       return createMeetingDataObject(
         meeting,
