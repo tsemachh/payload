@@ -2,7 +2,7 @@ import { ExternalLink } from 'lucide-react'
 import { formatDateTime } from '../../helpers/utils-data-table'
 import { MeetingTableDataType } from '../../types/meetings'
 import TruncatedText from './TruncatedText'
-import { DocumentIcon } from '@/components/ui/icons'
+import { SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 
 interface VoteDetailsProps {
   meetingData: MeetingTableDataType
@@ -94,18 +94,33 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
             <div className="flex justify-between">
               <span className="text-muted-foreground font-medium">מחקר</span>
               <div className="flex gap-2">
-                {meetingData.researchDocuments.slice(0, 2).map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`Research Doc ${i + 1}`}
+                {meetingData.researchDocuments.length > 0 && (
+                  <button
+                    onClick={() => {
+                      meetingData.researchDocuments.forEach((url, i) => {
+                        const link = document.createElement('a')
+                        link.href = url
+                        link.download = `Research_Doc_${i + 1}`
+                        link.style.display = 'none'
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                      })
+                    }}
+                    title={
+                      meetingData.researchDocuments.length === 1
+                        ? 'Download document'
+                        : 'Download all documents'
+                    }
                     className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
                   >
-                    <DocumentIcon className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
-                  </a>
-                ))}
+                    {meetingData.researchDocuments.length === 1 ? (
+                      <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                    ) : (
+                      <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           )}
