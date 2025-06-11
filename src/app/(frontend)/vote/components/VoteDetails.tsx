@@ -97,7 +97,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
                 {meetingData.researchDocuments.length > 0 && (
                   <button
                     onClick={() => {
-                      meetingData.researchDocuments.forEach((doc, i) => {
+                      meetingData.researchDocuments.forEach((doc) => {
                         const link = document.createElement('a')
                         link.href = doc.url
                         link.download = doc.filename

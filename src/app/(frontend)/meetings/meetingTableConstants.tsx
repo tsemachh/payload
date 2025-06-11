@@ -302,7 +302,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
         {row.researchDocuments.length > 0 && (
           <button
             onClick={() => {
-              row.researchDocuments.forEach((doc, i) => {
+              row.researchDocuments.forEach((doc) => {
                 const link = document.createElement('a')
                 link.href = doc.url
                 link.download = doc.filename

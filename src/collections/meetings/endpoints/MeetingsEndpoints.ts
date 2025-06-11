@@ -473,7 +473,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           url: doc.url as string,
           filename: doc.filename as string,
         }))
-      console.log('------', researchDocuments)
       return createMeetingDataObject(
         meeting,
         stockPresent,
