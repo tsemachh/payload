@@ -13,6 +13,7 @@ import {
   CompanyTableDate,
   FundType,
   MeetingTableDataType,
+  UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
 import { TreeCompanyType } from '@/types/companies'
@@ -238,7 +239,7 @@ function createMeetingDataObject(
   stockValue: StockValue,
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
-  researchDocuments: string[],
+  researchDocuments: UrlFilenameMap[],
 ): MeetingTableDataType {
   return {
     meetingId: meeting.meetingId || '',
@@ -451,18 +452,28 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           .map((c: { companyId: string }) => c.companyId)
           .filter((id: string): id is string => !!id) || []
 
-      const researchDocuments: string[] = (meeting.researchDocuments ?? [])
+      const researchDocuments: UrlFilenameMap[] = (meeting.researchDocuments ?? [])
         .filter(
-          (doc): doc is ResearchDocument => typeof doc === 'object' && doc !== null && 'url' in doc,
+          (doc): doc is ResearchDocument =>
+            typeof doc === 'object' &&
+            doc !== null &&
+            'url' in doc &&
+            'filename' in doc &&
+            typeof doc.url === 'string' &&
+            typeof doc.filename === 'string' &&
+            doc.url !== null &&
+            doc.filename !== null,
         )
         .filter((doc) => {
           const docCompanyIds = doc.companies ?? []
           if (docCompanyIds.length === 0) return true
           return docCompanyIds.some((id) => usersCompanyIds.includes(id))
         })
-        .map((doc) => doc.url)
-        .filter((url): url is string => typeof url === 'string')
-
+        .map((doc) => ({
+          url: doc.url as string,
+          filename: doc.filename as string,
+        }))
+      console.log('------', researchDocuments)
       return createMeetingDataObject(
         meeting,
         stockPresent,

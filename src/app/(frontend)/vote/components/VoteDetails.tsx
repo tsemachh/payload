@@ -97,10 +97,10 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
                 {meetingData.researchDocuments.length > 0 && (
                   <button
                     onClick={() => {
-                      meetingData.researchDocuments.forEach((url, i) => {
+                      meetingData.researchDocuments.forEach((doc, i) => {
                         const link = document.createElement('a')
-                        link.href = url
-                        link.download = `Research_Doc_${i + 1}`
+                        link.href = doc.url
+                        link.download = doc.filename
                         link.style.display = 'none'
                         document.body.appendChild(link)
                         link.click()
