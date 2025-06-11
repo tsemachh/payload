@@ -322,6 +322,8 @@ export const Users: CollectionConfig = {
     afterChange: [
       async ({ doc, req, operation, previousDoc }) => {
         try {
+          if (req.context.from == 'migration')
+            return
           // Case 1: New user created
           if (operation === 'create') {
             await createAdminNotification(

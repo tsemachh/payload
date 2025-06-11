@@ -13,7 +13,7 @@ import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCom
 import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
 import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
-import { processCompaniesMeetings } from '@/collections/companies-meetings/utils/processCompaniesMeetings'
+import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
  * Migrates all collections in the following order:

@@ -286,7 +286,8 @@ export interface Config {
   };
   jobs: {
     tasks: {
-      createCollectionExport: TaskCreateCollectionExport;
+      checkNotifications: TaskCheckNotifications;
+      processMeetingState: TaskProcessMeetingState;
       inline: {
         input: unknown;
         output: unknown;
@@ -860,7 +861,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'createCollectionExport';
+        taskSlug: 'inline' | 'checkNotifications' | 'processMeetingState';
         taskID: string;
         input?:
           | {
@@ -893,7 +894,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'createCollectionExport') | null;
+  taskSlug?: ('inline' | 'checkNotifications' | 'processMeetingState') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1679,31 +1680,18 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCreateCollectionExport".
+ * via the `definition` "TaskCheckNotifications".
  */
-export interface TaskCreateCollectionExport {
-  input: {
-    name?: string | null;
-    format: 'csv' | 'json';
-    limit?: number | null;
-    sort?: string | null;
-    drafts?: ('yes' | 'no') | null;
-    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
-    fields?: string[] | null;
-    collectionSlug: string;
-    where?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    user?: string | null;
-    userCollection?: string | null;
-    exportsCollection?: string | null;
-  };
+export interface TaskCheckNotifications {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskProcessMeetingState".
+ */
+export interface TaskProcessMeetingState {
+  input?: unknown;
   output?: unknown;
 }
 /**

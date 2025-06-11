@@ -1,19 +1,11 @@
 import { PayloadRequest, User } from 'payload'
-import {
-  Company,
-  Meeting,
-  MeetingAgenda,
-  ResearchDocument,
-  Stock,
-  StockValue,
-} from '@/payload-types'
+import { Company, Meeting, MeetingAgenda, Stock, StockValue } from '@/payload-types'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
   CompanyTableDate,
   FundType,
   MeetingTableDataType,
-  UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
 import { SelectType } from 'payload'
 import { TreeCompanyType } from '@/types/companies'
@@ -34,7 +26,6 @@ const MEETING_SELECT_FIELDS: SelectType = {
   meetingDate: true,
   recommendation: true,
   magnaId: true,
-  researchDocuments: true,
   location: true,
   proxyVotingDate: true,
   state: true,
@@ -164,6 +155,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Execute query
     const meetings = await payload.find(query)
     const safeFunds = getSafeFunds(user?.funds)
+
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
 
@@ -207,8 +199,8 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
     const safeFunds = getSafeFunds(user?.funds)
 
+    // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
-
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -239,10 +231,9 @@ function createMeetingDataObject(
   stockValue: StockValue,
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
-  researchDocuments: UrlFilenameMap[],
 ): MeetingTableDataType {
   return {
-    meetingId: meeting.meetingId || '',
+    meetingId: meeting.meetingId,
     agendas,
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
@@ -256,7 +247,6 @@ function createMeetingDataObject(
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
     reference: meeting.magnaId || '-',
-    researchDocuments,
     location: meeting.location || '-',
     holdingsLimit: meeting.holdingsLimit || '-',
     proxyVotingDate: meeting.proxyVotingDate || '-',
@@ -265,7 +255,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
-    meetingInviteUrl: meeting.invitationLink || '',
+    meetingInviteUrl: meeting.invitationLink,
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
@@ -447,39 +437,12 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
 
-      const usersCompanyIds =
-        user?.companies
-          .map((c: { companyId: string }) => c.companyId)
-          .filter((id: string): id is string => !!id) || []
-
-      const researchDocuments: UrlFilenameMap[] = (meeting.researchDocuments ?? [])
-        .filter(
-          (doc): doc is ResearchDocument =>
-            typeof doc === 'object' &&
-            doc !== null &&
-            'url' in doc &&
-            'filename' in doc &&
-            typeof doc.url === 'string' &&
-            typeof doc.filename === 'string' &&
-            doc.url !== null &&
-            doc.filename !== null,
-        )
-        .filter((doc) => {
-          const docCompanyIds = doc.companies ?? []
-          if (docCompanyIds.length === 0) return true
-          return docCompanyIds.some((id) => usersCompanyIds.includes(id))
-        })
-        .map((doc) => ({
-          url: doc.url as string,
-          filename: doc.filename as string,
-        }))
       return createMeetingDataObject(
         meeting,
         stockPresent,
         meeting.stockValue as StockValue,
         agendas,
         companiesArray,
-        researchDocuments,
       )
     }),
   )

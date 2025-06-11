@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { processCompaniesMeetings } from '../../companies-meetings/utils/processCompaniesMeetings'
+import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 import type { Holding } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 

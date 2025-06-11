@@ -20,7 +20,6 @@ export type MeetingTableDataType = {
   meetingDate: string //מועד האסיפה
   reference: string
   meetingState: MeetingState | null
-  researchDocuments: UrlFilenameMap[] //מסמכי מחקר
   location: string //מיקום
   holdingsLimit: string //תאריך קובע
   proxyVotingDate: string //מועד מסירת ההצבעה
@@ -126,9 +125,4 @@ export interface DataTableProps<T extends Record<string, any>> {
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
-}
-
-export interface UrlFilenameMap {
-  url: string
-  filename: string
 }
