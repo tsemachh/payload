@@ -5,6 +5,7 @@ export type VoteDataType = {
   voterNotes: string
   userVotes: UserVote[]
 }
+
 export type GeneralVotingData = {
   isInterested: boolean | null
   isSeniorOfficial: boolean | null
@@ -12,11 +13,13 @@ export type GeneralVotingData = {
   interestedExplanation?: string
   seniorOfficialExplanation?: string
 }
+
 export type UserVote = {
   subjectId: string
   choice: VoteDecision
   questions: AgendaQuestionsType
 }
+
 export type AgendaQuestionsType = {
   hasConflictOfInterest: boolean | null
   isRelatedParty: boolean | null
@@ -26,6 +29,7 @@ export type AgendaQuestionsType = {
   relatedPartyExplanation?: string
   personalInterestExplanation?: string
 }
+
 export type VoteCompanyType = {
   id: string
   name: string
@@ -33,3 +37,30 @@ export type VoteCompanyType = {
   holdingValueInMillions: number
   nominalValue: number
 }
+
+// Utility type עבור שמות שדות ההסבר הכלליים
+export type GeneralExplanationKeys = 'interestedExplanation' | 'seniorOfficialExplanation'
+
+// Utility type עבור שמות שדות ההסבר של סדר יום
+export type AgendaExplanationKeys =
+  | 'conflictOfInterestExplanation'
+  | 'relatedPartyExplanation'
+  | 'personalInterestExplanation'
+
+// Enums חדשים לשמות השדות במקום Type Unions
+export enum GeneralQuestionId {
+  IS_INTERESTED = 'isInterested',
+  IS_SENIOR_OFFICIAL = 'isSeniorOfficial',
+  IS_INSTITUTIONAL_INVESTOR = 'isInstitutionalInvestor',
+}
+
+export enum AgendaQuestionId {
+  HAS_CONFLICT_OF_INTEREST = 'hasConflictOfInterest',
+  IS_RELATED_PARTY = 'isRelatedParty',
+  IS_INVESTMENT_COMMITTEE = 'isInvestmentCommittee',
+  HAS_PERSONAL_INTEREST = 'hasPersonalInterest',
+}
+
+// ניתן להשתמש ב-utility type אם רוצים להגדיר את סוגי המפתחות מתוך ה-enums
+export type GeneralVotingIDs = `${GeneralQuestionId}`
+export type AgendaVotingIDs = `${AgendaQuestionId}`

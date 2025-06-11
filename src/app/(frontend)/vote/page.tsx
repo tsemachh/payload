@@ -20,9 +20,23 @@ import VoteDetails from './components/VoteDetails'
 import VoteCompanySelector from './components/VoteCompanySelector'
 import GeneralQuestions from './components/GeneralQuestions'
 import AgendaQuestions from './components/AgendaQuestions'
-import { AgendaQuestionsType, UserVote, VoteDataType } from '../types/vote'
+import {
+  AgendaQuestionId,
+  AgendaQuestionsType,
+  AgendaVotingIDs,
+  GeneralQuestionId,
+  GeneralVotingData,
+  GeneralVotingIDs,
+  UserVote,
+  VoteDataType,
+} from '../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import {
+  AGENDA_QUESTIONS_CONFIG,
+  GENERAL_QUESTIONS_CONFIG,
+  getExplanationFieldName,
+} from './questionConsts'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
@@ -53,42 +67,39 @@ export default function VotingForm() {
     }
   }, [searchParams])
 
-  const saveData = async (dataType: string, data: any, retryCount = 0): Promise<void> => {
+  const saveDraftData = async (dataType: string, data: any): Promise<void> => {
     try {
       console.log(`=== AUTO SAVE - ${dataType} ===`)
       console.log('Data:', data)
       console.log('Timestamp:', new Date().toISOString())
       console.log('================================')
 
-      // סימולציה של שמירה - כרגע תמיד מצליחה
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100)) // סימולציה
 
       toast({
         title: '✅ נתונים נשמרו',
-        description: `${dataType} נשמר בהצלחה`,
-        duration: 3000,
+        description: ` טיוטה עבור ${dataType} עודכנה בהצלחה`,
+        duration: 2000,
       })
     } catch (error) {
       console.error('Save error:', error)
       toast({
         title: '⚠️ שגיאה בשמירה',
-        description: `לא ניתן לשמור את ${dataType}. אנא נסה שוב מאוחר יותר.`,
+        description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
         variant: 'destructive',
-        duration: 5000,
+        duration: 3000,
       })
     }
   }
 
   const debouncedSave = useCallback(
     (key: string, dataType: string, data: any, delay = 2000) => {
-      // נקה timer קיים אם יש
       if (debounceTimers[key]) {
         clearTimeout(debounceTimers[key])
       }
 
-      // צור timer חדש
       const newTimer = setTimeout(() => {
-        saveData(dataType, data)
+        saveDraftData(dataType, data)
         setDebounceTimers((prev) => {
           const newTimers = { ...prev }
           delete newTimers[key]
@@ -114,100 +125,155 @@ export default function VotingForm() {
   // TODO: Implement company selection logic for auto save
   //   }
 
-  const handleAgendaQuestionsChange = (
-    question:
-      | 'hasConflictOfInterest'
-      | 'isRelatedParty'
-      | 'isInvestmentCommittee'
-      | 'hasPersonalInterest',
-    value: boolean,
-    explanation?: string,
-  ) => {
-    // const newUserVotes = votingData.userVotes.map((vote) =>
-    //   vote.subjectId === subjectId ? { ...vote, questions } : vote,
-    // )
-    // setVotingData((prev) => {
-    //   const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.subjectId === subjectId)
-    //   if (existingVoteIndex !== -1) {
-    //     return {
-    //       ...prev,
-    //       userVotes: newUserVotes,
-    //     }
-    //   } else {
-    //     return {
-    //       ...prev,
-    //       userVotes: [...prev.userVotes, { subjectId, choice: null, questions }],
-    //     }
-    //   }
-    // })
-    // if (explanation !== undefined) {
-    //   debouncedSave(`topic-${question}-explanation`, 'הסבר שאלות כלליות', newGeneralData)
-    // } else {
-    //   saveData('שאלות נושא', { subjectId, questions })
-    // }
-  }
+  // --- פונקציה אחידה לטיפול בשאלות כלליות וגם שאלות סדר יום ---
+  const handleQuestionChange = useCallback(
+    <T extends GeneralQuestionId | AgendaQuestionId>(
+      type: 'general' | 'agenda',
+      questionId: T,
+      value: boolean,
+      explanation?: string,
+      subjectId?: string, // רלוונטי רק לשאלות סדר יום
+    ) => {
+      if (type === 'general') {
+        setVotingData((prev) => {
+          const newState: GeneralVotingData = { ...prev.generalVotingData, [questionId]: value }
+          const generalExplanationFieldName = getExplanationFieldName(
+            questionId as GeneralQuestionId,
+          )
+          if (generalExplanationFieldName) {
+            if (value === true && explanation !== undefined) {
+              newState[generalExplanationFieldName] = explanation
+            } else {
+              newState[generalExplanationFieldName] = undefined
+            }
+          }
 
-  const handleGeneralQuestionChange = (
-    question: 'isInterested' | 'isSeniorOfficial' | 'isInstitutionalInvestor',
-    value: boolean,
-    explanation?: string,
-  ) => {
-    const newGeneralData = {
-      ...votingData.generalVotingData,
-      [question]: value,
-      ...(question === 'isInterested' && explanation !== undefined
-        ? { interestedExplanation: explanation }
-        : {}),
-      ...(question === 'isSeniorOfficial' && explanation !== undefined
-        ? { seniorOfficialExplanation: explanation }
-        : {}),
-    }
+          const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
 
-    setVotingData((prev) => ({
-      ...prev,
-      generalVotingData: newGeneralData,
-    }))
+          if (explanation !== undefined) {
+            // שמירת הסבר ב-debounce
+            debouncedSave(
+              `general-${questionId}-explanation`,
+              config.toastNoteExplanation || config.toastNote,
+              newState,
+            )
+          } else {
+            // שמירת בחירה רגילה (כן/לא)
+            saveDraftData(config.toastNote, newState)
+          }
 
-    if (explanation !== undefined) {
-      debouncedSave(`general-${question}-explanation`, 'הסבר שאלות כלליות', newGeneralData)
-    } else {
-      saveData('שאלות כלליות', newGeneralData)
-    }
-  }
+          return { ...prev, generalVotingData: newState }
+        })
+      } else if (type === 'agenda' && subjectId) {
+        setVotingData((prev) => {
+          const newUserVotes = prev.userVotes.map((vote) => {
+            if (vote.subjectId === subjectId) {
+              const newQuestions: AgendaQuestionsType = { ...vote.questions, [questionId]: value }
+
+              // Explicitly cast questionId to AgendaQuestionId here
+              const agendaExplanationFieldName = getExplanationFieldName(
+                questionId as AgendaQuestionId,
+              )
+              if (agendaExplanationFieldName) {
+                if (value === true && explanation !== undefined) {
+                  newQuestions[agendaExplanationFieldName] = explanation
+                } else {
+                  newQuestions[agendaExplanationFieldName] = undefined
+                }
+              }
+
+              return { ...vote, questions: newQuestions }
+            }
+            return vote
+          })
+
+          // אם עדיין אין הצבעה לנושא הזה, נוסיף אובייקט בסיסי
+          const existingVote = newUserVotes.find((vote) => vote.subjectId === subjectId)
+          if (!existingVote) {
+            const initialAgendaQuestions: AgendaQuestionsType = {
+              hasConflictOfInterest: null,
+              isRelatedParty: null,
+              isInvestmentCommittee: true, // ברירת מחדל 'כן' וללא הסבר
+              hasPersonalInterest: null,
+            }
+
+            const agendaExplanationFieldName = getExplanationFieldName(
+              questionId as AgendaQuestionId,
+            )
+            if (agendaExplanationFieldName && value === true && explanation !== undefined) {
+              initialAgendaQuestions[agendaExplanationFieldName] = explanation
+            }
+
+            newUserVotes.push({
+              subjectId,
+              choice: '----',
+              questions: { ...initialAgendaQuestions, [questionId]: value },
+            })
+          }
+          const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
+
+          if (explanation !== undefined) {
+            debouncedSave(
+              `agenda-${subjectId}-${questionId}-explanation`,
+              config.toastNoteExplanation || config.toastNote,
+              newUserVotes,
+            )
+          } else {
+            saveDraftData(config.toastNote, newUserVotes)
+          }
+
+          return { ...prev, userVotes: newUserVotes }
+        })
+      }
+    },
+    [debouncedSave],
+  )
+
+  // פונקציות עטיפה ספציפיות לרכיבים
+  const handleGeneralQuestionChangeWrapper = useCallback(
+    (questionId: GeneralVotingIDs, value: boolean, explanation?: string) => {
+      handleQuestionChange('general', questionId as GeneralQuestionId, value, explanation)
+    },
+    [handleQuestionChange],
+  )
+
+  const handleAgendaQuestionsChangeWrapper = useCallback(
+    (questionId: AgendaVotingIDs, value: boolean, explanation?: string, subjectId?: string) => {
+      handleQuestionChange('agenda', questionId as AgendaQuestionId, value, explanation, subjectId)
+    },
+    [handleQuestionChange],
+  )
 
   const handleVoteChange = (subjectId: string, choice: UserVote['choice']) => {
-    const newUserVotes = votingData.userVotes.map((vote) =>
-      vote.subjectId === subjectId ? { ...vote, choice } : vote,
-    )
-
     setVotingData((prev) => {
       const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.subjectId === subjectId)
+      let newUserVotes: UserVote[]
+
       if (existingVoteIndex !== -1) {
-        return {
-          ...prev,
-          userVotes: newUserVotes,
-        }
+        newUserVotes = prev.userVotes.map((vote, index) =>
+          index === existingVoteIndex ? { ...vote, choice } : vote,
+        )
       } else {
-        return {
-          ...prev,
-          userVotes: [
-            ...prev.userVotes,
-            {
-              subjectId,
-              choice,
-              questions: {
-                hasConflictOfInterest: false,
-                isRelatedParty: false,
-                isInvestmentCommittee: true,
-                hasPersonalInterest: false,
-              },
+        newUserVotes = [
+          ...prev.userVotes,
+          {
+            subjectId,
+            choice,
+            questions: {
+              hasConflictOfInterest: false,
+              isRelatedParty: false,
+              isInvestmentCommittee: true, // ברירת מחדל 'כן'
+              hasPersonalInterest: false,
             },
-          ],
-        }
+          },
+        ]
+      }
+      saveDraftData('הצבעה ', { subjectId, choice })
+      return {
+        ...prev,
+        userVotes: newUserVotes,
       }
     })
-    // שמירה אוטומטית של ההצבעה
-    saveData('הצבעה', { subjectId, choice })
   }
 
   const handleNotesChange = (notes: string) => {
@@ -215,7 +281,6 @@ export default function VotingForm() {
       ...prev,
       voterNotes: notes,
     }))
-    // השתמש ב-debounce עבור הערות
     if (notes.trim() !== '') {
       debouncedSave('voter-notes', 'הערות המצביע', { notes })
     }
@@ -225,14 +290,14 @@ export default function VotingForm() {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
       setSelectedFiles((prev) => [...prev, ...filesArray])
-      saveData('קבצים מועלים', { files: filesArray.map((f) => f.name) })
+      saveDraftData('קבצים מועלים', { files: filesArray.map((f) => f.name) })
     }
   }
 
   const removeFile = (index: number) => {
     const newFiles = selectedFiles.filter((_, i) => i !== index)
     setSelectedFiles(newFiles)
-    saveData('עדכון קבצים', { files: newFiles.map((f) => f.name) })
+    saveDraftData('עדכון קבצים', { files: newFiles.map((f) => f.name) })
   }
 
   return (
@@ -281,7 +346,7 @@ export default function VotingForm() {
               <CardContent className="p-4">
                 <GeneralQuestions
                   generalVotingData={votingData.generalVotingData}
-                  onQuestionChangeAction={handleGeneralQuestionChange}
+                  onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
                 />
               </CardContent>
             </Card>
@@ -415,7 +480,14 @@ export default function VotingForm() {
                                     hasPersonalInterest: false,
                                   }
                                 }
-                                handleAgendaQuestionsChange={handleAgendaQuestionsChange}
+                                handleAgendaQuestionsChange={(questionId, value, explanation) =>
+                                  handleAgendaQuestionsChangeWrapper(
+                                    questionId,
+                                    value,
+                                    explanation,
+                                    item.id,
+                                  )
+                                }
                               />
                             </div>
                           )}
@@ -444,10 +516,11 @@ export default function VotingForm() {
                       <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
                     </div>
                     <Textarea
+                      placeholder="אפרות הוספת הערות..."
+                      className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
+                      style={{ height: 'calc(100% - 20px)' }}
                       value={votingData.voterNotes}
                       onChange={(e) => handleNotesChange(e.target.value)}
-                      placeholder="הוסף הערות כאן..."
-                      className="min-h-[150px] w-full border-muted bg-background resize-none focus-visible:ring-1"
                     />
                   </div>
 
