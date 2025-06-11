@@ -42,8 +42,50 @@ export const Votes: CollectionConfig = {
           hasMany: true,
           required: true,
           index: true,
+          filterOptions: {
+            type: { equals: 'regular' },
+          },
         },
       ],
+    },
+    {
+      name: 'interested',
+      label: 'בעל עניין',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
+      name: 'interestedExplanation',
+      label: 'הסבר בעל עניין',
+      type: 'textarea',
+      admin: {
+        condition: (_, siblingData) => siblingData.interested === true,
+      },
+    },
+    {
+      name: 'seniorOfficial',
+      label: 'נושא משרה בכירה',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
+      name: 'seniorOfficialExplanation',
+      label: 'הסבר נושא משרה בכירה',
+      type: 'textarea',
+      admin: {
+        condition: (_, siblingData) => siblingData.seniorOfficial === true,
+      },
+    },
+    {
+      name: 'institutionalInvestor',
+      label: 'משקיע מוסדי',
+      type: 'checkbox',
+      defaultValue: true,
+    },
+    {
+      name: 'clientComment',
+      label: 'הערת לקוח',
+      type: 'textarea',
     },
     {
       name: 'votes',
@@ -84,14 +126,18 @@ export const Votes: CollectionConfig = {
           type: 'row',
           fields: [
             {
-              name: 'committee',
+              name: 'investmentCommittee',
               label: 'ועדה',
               type: 'checkbox',
+              defaultValue: false,
             },
             {
-              name: 'conflict',
-              label: 'ניגוד עניינים',
-              type: 'checkbox',
+              name: 'investmentCommitteeExplanation',
+              label: 'הסבר ועדה',
+              type: 'textarea',
+              admin: {
+                condition: (_, siblingData) => siblingData.investmentCommittee === true,
+              },
             },
             {
               name: 'relatedParty',
@@ -99,26 +145,35 @@ export const Votes: CollectionConfig = {
               type: 'checkbox',
             },
             {
+              name: 'relatedPartyExplanation',
+              label: 'הסבר צד קשור',
+              type: 'textarea',
+              defaultValue: false,
+              admin: {
+                condition: (_, siblingData) => siblingData.relatedParty === true,
+              },
+            },
+            {
+              name: 'conflictOfInterest',
+              label: 'ניגוד עניינים',
+              type: 'checkbox',
+              defaultValue: true,
+            },
+            {
               name: 'personalInterest',
               label: 'עניין אישי',
               type: 'checkbox',
+              defaultValue: false,
+            },
+            {
+              name: 'personalInterestExplanation',
+              label: 'הסבר עניין אישי',
+              type: 'textarea',
+              admin: {
+                condition: (_, siblingData) => siblingData.personalInterest === true,
+              },
             },
           ],
-        },
-        {
-          name: 'professionalFactor',
-          label: 'גורם מקצועי',
-          type: 'text',
-        },
-        {
-          name: 'comment',
-          label: 'הערה',
-          type: 'textarea',
-        },
-        {
-          name: 'clientComment',
-          label: 'הערת לקוח',
-          type: 'textarea',
         },
       ],
     },

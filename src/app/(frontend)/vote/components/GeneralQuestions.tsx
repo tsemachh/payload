@@ -1,15 +1,13 @@
+// components/GeneralQuestions.tsx
 'use client'
 
-import { Textarea } from '../../components/ui/textarea'
-import { GeneralVotingData } from '../../types/vote'
+import { GeneralQuestionId, GeneralVotingData, GeneralVotingIDs } from '../../types/vote'
+import { GENERAL_QUESTIONS_CONFIG, getExplanationFieldName } from '../questionConsts'
+import YesNoQuestion from './YesNoQuestion'
 
 interface GeneralQuestionsProps {
   generalVotingData: GeneralVotingData
-  onQuestionChangeAction: (
-    question: 'isInterested' | 'isSeniorOfficial' | 'isInstitutionalInvestor',
-    value: boolean,
-    explanation?: string,
-  ) => void
+  onQuestionChangeAction: (question: GeneralVotingIDs, value: boolean, explanation?: string) => void
 }
 
 export default function GeneralQuestions({
@@ -17,127 +15,32 @@ export default function GeneralQuestions({
   onQuestionChangeAction,
 }: GeneralQuestionsProps) {
   return (
-    <>
-      <div className="space-y-4">
-        {/* שורת השאלות - אחת לצד השנייה */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* שאלה 1: האם הינך בעל עניין? */}
-          <div>
-            <div className="flex items-center">
-              <span className="text-sm font-medium ml-2">האם הינך בעל עניין?</span>
-              <div className="flex bg-muted rounded-full p-0.5 mr-2">
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isInterested', true)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isInterested === true
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  כן
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isInterested', false)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isInterested === false
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  לא
-                </button>
-              </div>
-            </div>
-            {/* תיבת טקסט להסבר - מוצגת רק אם התשובה היא "כן" */}
-            {generalVotingData.isInterested === true && (
-              <div className="mt-2">
-                <Textarea
-                  placeholder="נא לפרט את הסיבה..."
-                  className="min-h-[80px] text-sm"
-                  value={generalVotingData.interestedExplanation || ''}
-                  onChange={(e) => onQuestionChangeAction('isInterested', true, e.target.value)}
-                />
-              </div>
-            )}
-          </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Object.values(GeneralQuestionId).map((questionId) => {
+          const config = GENERAL_QUESTIONS_CONFIG[questionId]
+          const explanationFieldName = getExplanationFieldName(questionId)
 
-          {/* שאלה 2: האם הינך נושא משרה בכירה? */}
-          <div>
-            <div className="flex items-center">
-              <span className="text-sm font-medium ml-2">האם הינך נושא משרה בכירה?</span>
-              <div className="flex bg-muted rounded-full p-0.5 mr-2">
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isSeniorOfficial', true)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isSeniorOfficial === true
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  כן
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isSeniorOfficial', false)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isSeniorOfficial === false
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  לא
-                </button>
-              </div>
-            </div>
-
-            {/* תיבת טקסט להסבר - מוצגת רק אם התשובה היא "כן" */}
-            {generalVotingData.isSeniorOfficial === true && (
-              <div className="mt-2">
-                <Textarea
-                  placeholder="נא לפרט את הסיבה..."
-                  className="min-h-[80px] text-sm"
-                  value={generalVotingData.seniorOfficialExplanation || ''}
-                  onChange={(e) => onQuestionChangeAction('isSeniorOfficial', true, e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* שאלה 3: האם הינך משקיע מוסדי? */}
-          <div>
-            <div className="flex items-center">
-              <span className="text-sm font-medium ml-2">האם הינך משקיע מוסדי?</span>
-              <div className="flex bg-muted rounded-full p-0.5 mr-2">
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isInstitutionalInvestor', true)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isInstitutionalInvestor === true
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  כן
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuestionChangeAction('isInstitutionalInvestor', false)}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    generalVotingData.isInstitutionalInvestor === false
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted-foreground/10'
-                  }`}
-                >
-                  לא
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          return (
+            <YesNoQuestion
+              key={questionId}
+              label={config.label}
+              currentValue={generalVotingData[questionId]}
+              explanationValue={
+                explanationFieldName
+                  ? (generalVotingData[explanationFieldName as keyof GeneralVotingData] as string)
+                  : undefined
+              }
+              explanationPlaceholder={config.explanationPlaceholder}
+              requiresExplanation={config.requiresExplanation}
+              onValueChange={(value, explanation) =>
+                onQuestionChangeAction(questionId, value, explanation)
+              }
+              isAgendaQuestion={false} // זהות לשאלות כלליות
+            />
+          )
+        })}
       </div>
-    </>
+    </div>
   )
 }
