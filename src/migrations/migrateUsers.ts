@@ -254,11 +254,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'users',
             id: existingUser.docs[0].id,
             data: userData,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
           })
         } else {
           // Create new userAuth
           newUser = await payload.create({
             collection: 'users',
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
             // @ts-ignore
             data: {
               ...userData,
@@ -383,13 +391,19 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         isAdmin: true,
         email: 'philc@shefing.com',
       },
+      {
+        name: 'system@shefing.com',
+        isAdmin: true,
+        email: 'system@shefing.com',
+        password: 'system@shefing.com',
+      },
     ]
     const seqMap = await getCompanyIdToSequenceMap(req.payload)
 
     console.log(`Found ${testUsers.length} users in test.users.json`)
     const companies = new Map<string, string[]>([
       ['tsemachh@shefing.com', ['15', '22', '23', '49', '25','17']],
-      ['efrats@shefing.com', ['17', '22', '23', '49', '25','17']],
+      ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
       ['shaked@emdaresearch.co.il', ['17', '22', '23', '49', '25']],
       ['philc@shefing.com', ['1167', '1168', '15','17']],
     ])
@@ -427,6 +441,10 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             collection: 'users',
             id: existingUser.docs[0].id,
             data: userData,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
           })
           updatedCount++
           console.log(`✓ Updated test user ${userData.name} (${userData.email})`)
@@ -435,6 +453,10 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
           await payload.create({
             collection: 'users',
             data: userData as User,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
           })
           createdCount++
           console.log(`✓ Created test user ${userData.name} (${userData.email})`)

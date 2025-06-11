@@ -164,6 +164,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Execute query
     const meetings = await payload.find(query)
     const safeFunds = getSafeFunds(user?.funds)
+
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
 
@@ -208,7 +209,6 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
-
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 

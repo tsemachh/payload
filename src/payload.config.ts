@@ -31,6 +31,9 @@ import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
 import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
+import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
+import { checkNotificationsHandler } from '@/tasks/checkNotifications'
+import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -47,6 +50,40 @@ if (process.env.MONGO_USE_TX !== 'true') {
 export default buildConfig({
   i18n: {
     supportedLanguages: { he, en },
+  },
+  onInit: async (payload) => {
+    // Schedule daily tasks when payload initializes
+    await scheduleDailyTasks(payload)
+  },
+  jobs:{
+    jobsCollectionOverrides: ({ defaultJobsCollection }) => {
+      if (!defaultJobsCollection.admin) {
+        defaultJobsCollection.admin = {};
+      }
+      defaultJobsCollection.admin.hidden = false;
+      return defaultJobsCollection;
+    },
+    deleteJobOnComplete: false,
+    tasks: [
+      {
+        slug: 'checkNotifications',
+        handler: checkNotificationsHandler,
+
+      },
+      {
+        slug: 'processMeetingState',
+        handler: processMeetingStateHandler,
+      },
+    ],
+    // autoRun can optionally be a function that receives payload as an argument
+    autoRun: [
+      {
+        cron: '00 12 * * *', // every day at 22:40
+        limit: 10, // limit jobs to process each run
+        queue: 'daily', // name of the queue
+      },
+      // add as many cron jobs as you want
+    ],
   },
   admin: {
     dateFormat: 'HH:mm dd/MM/yyyy',
