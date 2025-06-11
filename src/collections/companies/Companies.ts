@@ -53,6 +53,9 @@ export const Companies: CollectionConfig = {
                   label: 'שם',
                   type: 'text',
                   required: true,
+                  admin: {
+                    width: '500px',
+                  },
                 },
                 {
                   name: 'active',
@@ -71,6 +74,16 @@ export const Companies: CollectionConfig = {
                   options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'תיק'}],
                   admin: {
                     hidden: false ,width: '120px',
+                  },
+                },
+                {
+                  name: 'passiveFund',
+                  label: 'קרן מחקה',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '150px',
+                    condition: (data) => data?.type == 'fund',
                   },
                 },
                 {
