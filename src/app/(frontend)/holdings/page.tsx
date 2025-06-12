@@ -57,12 +57,15 @@ export default function HoldingsFeedView() {
   }, [user?.funds])
 
   // Warning when user tries to leave the page while in edit mode
-  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
-    if (!editForm) {
-      e.preventDefault()
-      return 'האם להפסיק את הזנת החזקות לפני שמירתן? לצאת ללא שמירה להאשר בהזנות'
-    }
-  }, [editForm, selectedCompanies.length, date, file])
+  const handleBeforeUnload = useCallback(
+    (e: BeforeUnloadEvent) => {
+      if (!editForm) {
+        e.preventDefault()
+        return 'האם להפסיק את הזנת החזקות לפני שמירתן? לצאת ללא שמירה להאשר בהזנות'
+      }
+    },
+    [editForm, selectedCompanies.length, date, file],
+  )
 
   useEffect(() => {
     if (!editForm) {
@@ -72,14 +75,17 @@ export default function HoldingsFeedView() {
   }, [handleBeforeUnload, editForm, selectedCompanies.length, date, file])
 
   // Navigation warning for internal navigation
-  const handleNavigation = useCallback((href: string) => {
-    if (!editForm) {
-      setPendingNavigation(href)
-      setShowNavigationWarning(true)
-      return false
-    }
-    return true
-  }, [editForm, selectedCompanies.length, date, file])
+  const handleNavigation = useCallback(
+    (href: string) => {
+      if (!editForm) {
+        setPendingNavigation(href)
+        setShowNavigationWarning(true)
+        return false
+      }
+      return true
+    },
+    [editForm, selectedCompanies.length, date, file],
+  )
 
   // Expose the navigation handler globally
   useEffect(() => {
@@ -146,6 +152,7 @@ export default function HoldingsFeedView() {
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
+      //todo: FeedValidationResult - change type to get companyname (take from account)
 
       // Upload file with company selection
       const response = await fetch(
@@ -199,6 +206,8 @@ export default function HoldingsFeedView() {
 
     setIsRefreshing(true)
     try {
+      //todo: FeedValidationResult - change type to get companyname (take from account)
+
       const response = await fetch(`/api/holdings/refresh?companies=${selectedCompanies}`, {
         method: 'POST',
         headers: {
@@ -398,7 +407,7 @@ export default function HoldingsFeedView() {
             <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
             <DialogTitle className="text-xl text-amber-600 m-0">הזנת החזקות בתהליך</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <p className="text-center">האם להפסיק את הזנת החזקות לפני שמירתן?</p>
           </div>

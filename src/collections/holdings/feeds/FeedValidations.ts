@@ -234,6 +234,7 @@ export const validateRow = async (
   accountMap: Map<number, string>,
   stockMap: Map<string, string>,
   stockNameMap: Map<string, string>,
+  accountNameMap: Map<number, string>,
   stockActiveMap: Map<string, boolean>,
   silencedStockIds: string[],
 ): Promise<{
@@ -241,6 +242,8 @@ export const validateRow = async (
 }> => {
   const { stockId, quantity, accountId } = row
   const stockName = stockNameMap.get(stockId!)
+  const companyName = accountNameMap.get(Number(accountId))
+
   const lineNumber = index + 1
 
   let status: 'success' | 'error' | 'silenced' = 'success'
@@ -281,6 +284,7 @@ export const validateRow = async (
     stockName,
     quantity,
     accountId,
+    companyName,
     lineNumber,
     status,
     error: errorMessage,
