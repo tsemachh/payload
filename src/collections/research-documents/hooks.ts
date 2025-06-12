@@ -56,6 +56,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     //todo: check if the companies in the research documents match the companies in the meeting
     const docs = researchDocuments.docs as ResearchDocument[]
     docs.forEach((doc) => {
+      if (!doc.companies || doc.companies.length === 0) return
       const unmatchedCompanies = doc.companies!.filter((company) => !companies.includes(company))
       if (unmatchedCompanies.length > 0) {
         validationErrors.push({
