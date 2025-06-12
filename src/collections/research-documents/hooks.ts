@@ -30,6 +30,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       select: {
         id: true,
         companies: true,
+        filename: true,
       },
       depth: 0,
       limit: 0,
@@ -58,7 +59,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       const unmatchedCompanies = doc.companies!.filter((company) => !companies.includes(company))
       if (unmatchedCompanies.length > 0) {
         validationErrors.push({
-          message: ` מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
+          message: `${doc.filename} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
           path: 'researchDocuments',
         })
       }
