@@ -1474,6 +1474,7 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
   error?: T
   stockId?: T
   accountId?: T
+  companyName?: T
   quantity?: T
   lineNumber?: T
   status?: T
