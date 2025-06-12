@@ -705,13 +705,10 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              /*              filterOptions: ({ data }) => {
-                return {
-                  companies: {all: data.companies },
-                }
-              },*/
               hasMany: true,
               admin: {
+                description:
+                  'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
                 components: {
                   Field: '/collections/meetings/components/ResearchUploadDisplay',
                 },
