@@ -17,8 +17,11 @@ export const StocksFeed: CollectionConfig = {
   fields: [
     {
       name: 'comments',
-      type: 'text',
+      type: 'json',
       label: 'הערות',
+      admin: {
+        readOnly: true,
+      },
     },
     {
       name: 'hash',
@@ -31,12 +34,29 @@ export const StocksFeed: CollectionConfig = {
         beforeChange: [
           ({ siblingData }) => {
             // Don't modify the hash if it's already set
-            if (siblingData.hash) return siblingData.hash;
-            return undefined;
+            if (siblingData.hash) return siblingData.hash
+            return undefined
           },
         ],
       },
     },
+    {
+      name: 'durationTime',
+      label: 'זמן התהליך',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'summary',
+      label: 'סיכום',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+    },
   ],
+
   upload: true,
 }

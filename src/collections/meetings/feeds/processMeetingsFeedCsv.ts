@@ -52,8 +52,13 @@ export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
 }
 
 const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
-export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Promise<string[]> => {
+export const processMeetingsFeedCsv = async (
+  req: PayloadRequest,
+  doc: any,
+): Promise<{ errors: string[]; successCount: number; fileLength: number }> => {
   const errors: string[] = []
+  let successCount = 0
+  let fileLength = 0
   try {
     // The file is at req.file as specified in the issue description
 
@@ -61,7 +66,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     if (!file) {
       req.payload.logger.error(`No file found in request`)
       errors.push('לא נמצא קובץ בבקשה')
-      return errors
+      return { errors, successCount, fileLength }
     }
 
     // Read the file content
@@ -88,12 +93,12 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
     })
 
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
-
+    fileLength = rows.length
     // Check for missing columns in the CSV
     const missingColumns = getMissingColumns(rows, requiredFields)
     if (missingColumns.length > 0) {
       errors.push(`בקובץ csv חסרות עמודות שהן חובה  ${missingColumns.join(', ')} (ריק בכל השורות)`)
-      return errors
+      return { errors, successCount, fileLength }
     }
 
     // Create a promise pool with 20 concurrent threads
@@ -112,7 +117,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       },
       limit: 0,
     })
-    const promisePool = new PromisePool(4)
+    const promisePool = new PromisePool(20)
     const promises = []
 
     const stockIdMap = new Map()
@@ -131,14 +136,12 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
       promises.push(
         promisePool.add(async () => {
           try {
-            console.log('Row:', row)
             const missingFields = getMissingFieldsInRow(row, requiredFields)
 
             if (missingFields.length > 0) {
               errors.push(
                 `לאסיפה עם האסמכתא ${row.magnaId} חסרים שדות נדרשים: ${missingFields.join(', ')}`,
               )
-
               return
             }
             const stockData = stockIdMap.get(row.stock)
@@ -193,6 +196,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                   data: row,
                   context: { ...req.context, from: 'migration' },
                 })
+                successCount++
               } catch (e: any) {
                 errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
               }
@@ -203,6 +207,7 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
                   data: row,
                   context: { ...req.context, from: 'migration' },
                 })
+                successCount++
               } catch (e: any) {
                 errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
               }
@@ -223,8 +228,8 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         console.error(`${idx + 1}. ${err}`)
       })
     }
-    return errors
-  } catch (error:any) {
+    return { errors, successCount, fileLength }
+  } catch (error: any) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${error.message}`)
     errors.push(`שגיאה בעיבוד קובץ האסיפות: ${error.message})}`)
 
@@ -234,6 +239,6 @@ export const processMeetingsFeedCsv = async (req: PayloadRequest, doc: any): Pro
         console.error(`${idx + 1}. ${err}`)
       })
     }
-    return errors
+    return { errors, successCount, fileLength }
   }
 }
