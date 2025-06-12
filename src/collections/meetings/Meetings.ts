@@ -107,6 +107,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
+    maxPerDoc: 5
   },
   fields: [
     {

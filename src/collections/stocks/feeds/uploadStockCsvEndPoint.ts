@@ -1,4 +1,6 @@
 import { PayloadRequest } from 'payload'
+import { processStocksFeedCsv } from './processStocksFeedCsv'
+import { format } from 'date-fns'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -31,10 +33,13 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     }
 
     const buffer = Buffer.concat(chunks);
+    const now = new Date()
+    const formattedDate = format(now, 'dd-MM-yyyy')
+    const fileName = `upload_${formattedDate}.csv`
     // Create a file object from the buffer
     const file = {
       data: buffer,
-      name: 'upload.csv',
+      name: fileName,
       size: buffer.length,
       mimetype: 'text/csv'
     }
@@ -44,11 +49,13 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
 
     // Create a new StocksFeed document
     const stocksFeed = await req.payload.create({
-      data:{comments:""},
+      data: { comments: '' },
       collection: 'stocks-feed',
       file: file,
-      req
     })
+
+    // Process the stock feed CSV
+    await processStocksFeedCsv(req, stocksFeed)
 
     return Response.json({
       message: 'Successfully uploaded CSV file',
@@ -56,12 +63,7 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     })
   } catch (error) {
     console.error('Error uploading CSV file:', error)
-    // Provide more detailed error information for debugging
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return Response.json({ 
-      error: 'Error uploading CSV file', 
-      details: errorMessage 
-    }, { status: 500 })
+    return Response.json({ error: 'Error uploading CSV file' }, { status: 500 })
   }
 }
 

@@ -14,15 +14,6 @@ export const StocksFeed: CollectionConfig = {
   access: {
     read: () => true,
   },
-  hooks: {
-    afterChange: [
-      async ({ req, doc  }) => {
-        if (req.context?.from !== 'process') {
-          await processStocksFeedCsv(req, doc)
-        }
-      },
-    ],
-  },
   fields: [
     {
       name: 'comments',
