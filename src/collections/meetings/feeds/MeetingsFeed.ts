@@ -20,6 +20,23 @@ export const MeetingsFeed: CollectionConfig = {
       type: 'textarea',
       label: 'הערות',
     },
+    {
+      name: 'hash',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Don't modify the hash if it's already set
+            if (siblingData.hash) return siblingData.hash;
+            return undefined;
+          },
+        ],
+      },
+    },
   ],
   upload: true,
 }

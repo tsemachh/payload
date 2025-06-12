@@ -1,6 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { format } from 'date-fns'
 import { processMeetingsAgendaFeedCsv } from './processMeetingsAgendaFeedCsv'
+import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
   try {
@@ -46,9 +47,31 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Create a new MeetingsFeed document
+    // Calculate file hash
+    const fileHash = calculateFileHash(buffer);
+
+    // Check if a file with the same hash already exists
+    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
+      req.payload,
+      'meetings-feed',
+      fileHash
+    );
+
+    // If duplicate found, return success with existing document
+    if (isDuplicate && existingDoc) {
+      return Response.json({
+        message: 'File with identical content already exists',
+        stocksFeed: existingDoc,
+        isDuplicate: true
+      }, { status: 200 });
+    }
+
+    // Create a new MeetingsFeed document with hash
     const meetingsFeed = await req.payload.create({
-      data: { comments: '' },
+      data: { 
+        comments: '',
+        hash: fileHash
+      },
       collection: 'meetings-feed',
       file: file,
     })
@@ -65,6 +88,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       message: 'Successfully uploaded CSV file',
       stocksFeed: meetingsFeed,
       errors,
+      isDuplicate: false
     })
   } catch (error) {
     console.error('Error uploading CSV file:', error)

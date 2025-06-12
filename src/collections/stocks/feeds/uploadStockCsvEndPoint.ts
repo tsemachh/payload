@@ -1,6 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { processStocksFeedCsv } from './processStocksFeedCsv'
 import { format } from 'date-fns'
+import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
   try {
@@ -47,9 +48,31 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Create a new StocksFeed document
+    // Calculate file hash
+    const fileHash = calculateFileHash(buffer);
+
+    // Check if a file with the same hash already exists
+    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
+      req.payload,
+      'stocks-feed',
+      fileHash
+    );
+
+    // If duplicate found, return success with existing document
+    if (isDuplicate && existingDoc) {
+      return Response.json({
+        message: 'File with identical content already exists',
+        stocksFeed: existingDoc,
+        isDuplicate: true
+      }, { status: 200 });
+    }
+
+    // Create a new StocksFeed document with hash
     const stocksFeed = await req.payload.create({
-      data: { comments: '' },
+      data: { 
+        comments: '',
+        hash: fileHash
+      },
       collection: 'stocks-feed',
       file: file,
     })
@@ -60,6 +83,7 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     return Response.json({
       message: 'Successfully uploaded CSV file',
       stocksFeed,
+      isDuplicate: false
     })
   } catch (error) {
     console.error('Error uploading CSV file:', error)
