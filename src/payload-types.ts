@@ -553,17 +553,23 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   companies: (string | Company)[];
+  interested?: boolean | null;
+  interestedExplanation?: string | null;
+  seniorOfficial?: boolean | null;
+  seniorOfficialExplanation?: string | null;
+  institutionalInvestor?: boolean | null;
+  clientComment?: string | null;
   votes?:
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
-        committee?: boolean | null;
-        conflict?: boolean | null;
+        investmentCommittee?: boolean | null;
+        investmentCommitteeExplanation?: string | null;
         relatedParty?: boolean | null;
+        relatedPartyExplanation?: string | null;
+        conflictOfInterest?: boolean | null;
         personalInterest?: boolean | null;
-        professionalFactor?: string | null;
-        comment?: string | null;
-        clientComment?: string | null;
+        personalInterestExplanation?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1496,18 +1502,24 @@ export interface SilencedStocksSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   companies?: T;
+  interested?: T;
+  interestedExplanation?: T;
+  seniorOfficial?: T;
+  seniorOfficialExplanation?: T;
+  institutionalInvestor?: T;
+  clientComment?: T;
   votes?:
     | T
     | {
         topicIndex?: T;
         voteDecision?: T;
-        committee?: T;
-        conflict?: T;
+        investmentCommittee?: T;
+        investmentCommitteeExplanation?: T;
         relatedParty?: T;
+        relatedPartyExplanation?: T;
+        conflictOfInterest?: T;
         personalInterest?: T;
-        professionalFactor?: T;
-        comment?: T;
-        clientComment?: T;
+        personalInterestExplanation?: T;
         id?: T;
       };
   creator?: T;

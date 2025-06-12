@@ -192,6 +192,7 @@
     --chart-5: 310 85% 60%;
   }
 }
+
 @layer base {
   * {
     @apply border-border;
@@ -208,4 +209,51 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+
+/* Custom Toast Animations - slide from bottom with enhanced effect */
+@keyframes toast-slide-in-bottom {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+    scale: 0.95;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes toast-slide-out-bottom {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+/* Override any existing toast positioning */
+[data-radix-toast-viewport],
+.toast-viewport {
+  display: none !important;
+}
+
+/* Ensure our custom toast container is always on top */
+.toast-container-custom {
+  position: fixed !important;
+  top: 16px !important;
+  left: 16px !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.toast-container-custom > * {
+  pointer-events: auto !important;
 }
