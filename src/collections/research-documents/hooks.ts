@@ -55,16 +55,30 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     }
     //todo: check if the companies in the research documents match the companies in the meeting
     const docs = researchDocuments.docs as ResearchDocument[]
+    const invalidFilenames: string[] = []
+
     docs.forEach((doc) => {
       if (!doc.companies || doc.companies.length === 0) return
-      const unmatchedCompanies = doc.companies!.filter((company) => !companies.includes(company))
-      if (unmatchedCompanies.length > 0) {
-        validationErrors.push({
-          message: `${doc.filename} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
-          path: 'researchDocuments',
-        })
+      const unmatchedCompanies = doc.companies.filter((company) => !companies.includes(company))
+      if (unmatchedCompanies.length > 0 && doc.filename) {
+        invalidFilenames.push(doc.filename)
       }
     })
+
+    if (invalidFilenames.length === 1) {
+      validationErrors.push({
+        message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
+        path: 'researchDocuments',
+      })
+    } else if (invalidFilenames.length > 1) {
+      const filenamesList = invalidFilenames.map((name) => `- ${name}`).join('\n')
+      const filenamesMessage = `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${filenamesList}`
+
+      validationErrors.push({
+        message: filenamesMessage,
+        path: 'researchDocuments',
+      })
+    }
 
     if (validationErrors.length > 0) {
       throw new ValidationError({ errors: validationErrors })
