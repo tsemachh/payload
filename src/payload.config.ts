@@ -78,7 +78,7 @@ export default buildConfig({
     // autoRun can optionally be a function that receives payload as an argument
     autoRun: [
       {
-        cron: '59 23 * * *', // every day at 22:40
+        cron: '00 08 * * *', // every day at 22:40
         limit: 10, // limit jobs to process each run
         queue: 'daily', // name of the queue
       },
