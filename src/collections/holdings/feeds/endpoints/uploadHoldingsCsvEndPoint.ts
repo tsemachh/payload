@@ -20,8 +20,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Value date is required' }, { status: 400 })
     }
 
-
-
     // Get the ReadableStream from the request body
     const stream = req.body
     if (!stream) {
@@ -31,7 +29,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     const streamStartTime = performance.now()
     const buffer = await getBufferFromStream(stream)
     const streamEndTime = performance.now()
-    req.payload.logger.info(`Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`)
+    req.payload.logger.info(
+      `Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`,
+    )
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
     let extension = 'csv'
@@ -53,7 +53,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     if (!file) {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
-
 
     // Optional companies parameter as JSON string of company IDs
     let selectedCompanies: string[] = []
@@ -84,7 +83,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       isValidationOnly,
     )
     const processingEndTime = performance.now()
-    req.payload.logger.info(`Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`)
+    req.payload.logger.info(
+      `Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`,
+    )
     if (feedResult != null) {
       const endTime = performance.now()
       req.payload.logger.info(`Total holdings upload process completed in ${endTime - startTime}ms`)
@@ -97,7 +98,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
   } catch (error) {
     const endTime = performance.now()
-    req.payload.logger.error(`Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`)
+    req.payload.logger.error(
+      `Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`,
+    )
     console.error('Error uploading holdings file:', error)
     return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
   }

@@ -103,7 +103,6 @@ export const processHoldingsFeedCsv = async (
 
     // Preload accounts
     const accountStartTime = performance.now()
-    //יכול להיות שאצטרך פה להחזיר את שמות החברות כמו שעשיתי במניות.. כי פה יש לי את זה גם מפה  stockMap, stockNameMap,
     const { accountToCompanyMapI: accountToCompanyMap, accountNameMap } =
       await preloadAccountsToCompanyMap(req, doc.selectedCompanies as string[])
     const accountEndTime = performance.now()
