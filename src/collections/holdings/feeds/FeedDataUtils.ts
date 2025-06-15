@@ -99,7 +99,10 @@ export const fetchAllSilencedStocks = async (
 export const preloadAccountsToCompanyMap = async (
   req: PayloadRequest,
   selectedCompanies: string[],
-): Promise<Map<number, string>> => {
+): Promise<{
+  accountToCompanyMapI: Map<number, string>
+  accountNameMap: Map<number, string>
+}> => {
   const companies = await req.payload.find({
     collection: 'companies',
     where: {
@@ -111,21 +114,23 @@ export const preloadAccountsToCompanyMap = async (
     depth: 2,
   })
 
-  const accountToCompanyMap: Map<number, string> = new Map()
+  const accountToCompanyMapI: Map<number, string> = new Map()
+  const accountNameMap: Map<number, string> = new Map()
 
   companies.docs.forEach((company: Company) => {
     const accounts = company?.mainAccount
 
     accounts?.forEach((account) => {
-      accountToCompanyMap.set(parseInt(account?.accountNumber), company?.id)
+      accountToCompanyMapI.set(parseInt(account?.accountNumber), company?.id)
+      accountNameMap.set(parseInt(account?.accountNumber), company?.name)
 
       account?.subAccounts?.forEach((subAccount) => {
-        accountToCompanyMap.set(parseInt(subAccount), company?.id)
+        accountToCompanyMapI.set(parseInt(subAccount), company?.id)
+        accountNameMap.set(parseInt(account?.accountNumber), company?.name)
       })
     })
   })
-
-  return accountToCompanyMap
+  return { accountToCompanyMapI, accountNameMap }
 }
 /**
  * Preload stocks from stock IDs

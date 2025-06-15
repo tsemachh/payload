@@ -152,7 +152,6 @@ export default function HoldingsFeedView() {
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
-
       // Upload file with company selection
       const response = await fetch(
         `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,

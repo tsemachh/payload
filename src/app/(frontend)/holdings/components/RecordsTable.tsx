@@ -12,6 +12,7 @@ interface RecordType {
   lineNumber: string | number
   stockId: string | number
   accountId: string | number
+  companyName?: string | null
   quantity: string | number
   error: string
   id?: string | number
@@ -41,6 +42,14 @@ const holdingColumns: Column<RecordType>[] = [
     filterable: true,
     minWidth: 60,
     width: 60,
+  },
+  {
+    key: 'companyName',
+    header: 'חברה',
+    type: 'string',
+    filterable: true,
+    minWidth: 70,
+    width: 130,
   },
   {
     key: 'quantity',
@@ -109,6 +118,7 @@ export const RecordsTable: React.FC<{
     stockId: holding.stockId ?? 'N/A',
     stockName: holding.stockName ?? 'N/A',
     accountId: holding.accountId ?? 'N/A',
+    companyName: holding.companyName ?? 'N/A',
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))

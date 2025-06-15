@@ -103,10 +103,8 @@ export const processHoldingsFeedCsv = async (
 
     // Preload accounts
     const accountStartTime = performance.now()
-    const accountToCompanyMap = await preloadAccountsToCompanyMap(
-      req,
-      doc.selectedCompanies as string[],
-    )
+    const { accountToCompanyMapI: accountToCompanyMap, accountNameMap } =
+      await preloadAccountsToCompanyMap(req, doc.selectedCompanies as string[])
     const accountEndTime = performance.now()
     req.payload.logger.info(
       `Account preloading completed in ${accountEndTime - accountStartTime}ms, found ${accountToCompanyMap.size} accounts`,
@@ -174,6 +172,7 @@ export const processHoldingsFeedCsv = async (
         accountToCompanyMap,
         stockMap,
         stockNameMap,
+        accountNameMap,
         stockActiveMap,
         silencedStockIds,
       )
