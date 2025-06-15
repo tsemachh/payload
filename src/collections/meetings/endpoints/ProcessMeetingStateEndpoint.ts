@@ -19,7 +19,7 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
       where: {
         meetingDate: { less_than: now },
         state: { equals: 'scheduled' },
-        _status: {equals: 'published'}
+        _status: { equals: 'published' },
       },
       data: {
         state: 'completed',

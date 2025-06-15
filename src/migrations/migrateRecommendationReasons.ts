@@ -5,7 +5,7 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
  */
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting recommendation reasons migration process...')
-  
+
   // Array of recommendation reason texts to insert
   const recommendationReasons = [
     'אנו סבורים כי תנאי התגמול הינם סבירים ביחס לפעילות החברה וביחס לנושאי משרה בחברות דומות.',
@@ -26,7 +26,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     'הגדלת ההון כאמור, נועדה לאפשר לחברה גמישות פיננסית ואפשרות ו/או יכולת של גיוס הון עתידית לחברה, כחלק מהסדר החוב של החברה ובמהלך עסקיה של החברה.',
     'בבחינת שכר טרחה בגין שירותים שאינם ביקורת נמצא כי אינו עולה על גובה שכר טרחה של ביקורת שנתיות, לרבות שירותי מס.',
     'דחייה טכנית למניעת מחיקת ני"ע מהמסחר',
-    'אחר'
+    'אחר',
   ]
 
   let successCount = 0
@@ -64,7 +64,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       console.log(`✓ Created recommendation reason: "${content.substring(0, 30)}..."`)
     } catch (error: any) {
       errorCount++
-      console.error(`✗ Failed to create recommendation reason: "${content.substring(0, 30)}..."`, error.message)
+      console.error(
+        `✗ Failed to create recommendation reason: "${content.substring(0, 30)}..."`,
+        error.message,
+      )
     }
   }
 

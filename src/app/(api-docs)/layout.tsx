@@ -5,11 +5,7 @@ export const metadata = {
   description: 'API documentation for the Emda system',
 }
 
-export default function ApiDocsLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function ApiDocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" dir="ltr" className="light" style={{ colorScheme: 'light' }}>
       <body className="bg-white min-h-screen">

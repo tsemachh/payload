@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { motion } from "framer-motion"
+import { motion } from 'framer-motion'
 
 const dotPositions = [
   { x: 0, y: -19 }, // Top
@@ -16,8 +16,8 @@ export default function LoadingSpinnerDiamond() {
         <div
           className="absolute size-4 rounded-full bg-[#1a237e]"
           style={{
-            bottom: "2px",
-            left: "calc(50% - 0.5rem)",
+            bottom: '2px',
+            left: 'calc(50% - 0.5rem)',
           }}
         />
 
@@ -32,11 +32,11 @@ export default function LoadingSpinnerDiamond() {
               duration: 1.5,
               repeat: Number.POSITIVE_INFINITY,
               delay: index * 0.5,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
             style={{
-              bottom: "2px",
-              left: "calc(50% - 0.5rem)",
+              bottom: '2px',
+              left: 'calc(50% - 0.5rem)',
               x: position.x,
               y: position.y,
             }}
@@ -47,4 +47,3 @@ export default function LoadingSpinnerDiamond() {
     </div>
   )
 }
-

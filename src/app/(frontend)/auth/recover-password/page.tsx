@@ -1,34 +1,41 @@
-"use client"
+'use client'
 
-import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import Link from "next/link"
-import { useAuth } from "@/providers/auth-provider"
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import Link from 'next/link'
+import { useAuth } from '@/providers/auth-provider'
 
 // Client component that uses useSearchParams
 function RecoverPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+  const token = searchParams.get('token')
 
   const [formData, setFormData] = useState({
-    password: "",
-    confirmPassword: "",
+    password: '',
+    confirmPassword: '',
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const { resetPassword } = useAuth()
 
   useEffect(() => {
     if (!token) {
-      setError("חסר טוקן איפוס סיסמה. אנא בקש קישור איפוס חדש.")
+      setError('חסר טוקן איפוס סיסמה. אנא בקש קישור איפוס חדש.')
     }
   }, [token])
 
@@ -36,22 +43,22 @@ function RecoverPasswordContent() {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      setError("הסיסמאות אינן תואמות")
+      setError('הסיסמאות אינן תואמות')
       return
     }
 
     if (formData.password.length < 8) {
-      setError("הסיסמה חייבת להכיל לפחות 8 תווים")
+      setError('הסיסמה חייבת להכיל לפחות 8 תווים')
       return
     }
 
     setIsLoading(true)
-    setError("")
+    setError('')
     setSuccess(false)
 
     try {
       if (!token) {
-        throw new Error("חסר טוקן איפוס סיסמה")
+        throw new Error('חסר טוקן איפוס סיסמה')
       }
 
       await resetPassword({
@@ -63,10 +70,10 @@ function RecoverPasswordContent() {
 
       // Redirect to login page after 3 seconds
       setTimeout(() => {
-        router.push("/auth/signin")
+        router.push('/auth/signin')
       }, 3000)
     } catch (error) {
-      setError(error instanceof Error ? error.message : "אירעה שגיאה באיפוס הסיסמה")
+      setError(error instanceof Error ? error.message : 'אירעה שגיאה באיפוס הסיסמה')
     } finally {
       setIsLoading(false)
     }
@@ -77,9 +84,7 @@ function RecoverPasswordContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">איפוס סיסמה</CardTitle>
-          <CardDescription className="text-center">
-            הזן את הסיסמה החדשה שלך
-          </CardDescription>
+          <CardDescription className="text-center">הזן את הסיסמה החדשה שלך</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -117,13 +122,18 @@ function RecoverPasswordContent() {
                   id="confirmPassword"
                   type="password"
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
                   required
                   disabled={isLoading}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || !token}>
-                {isLoading ? "מאפס סיסמה..." : "אפס סיסמה"}
+                {isLoading ? 'מאפס סיסמה...' : 'אפס סיסמה'}
               </Button>
             </form>
           )}
@@ -141,7 +151,9 @@ function RecoverPasswordContent() {
 // Main component that wraps the content in a Suspense boundary
 export default function RecoverPassword() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen p-4">Loading...</div>}>
+    <Suspense
+      fallback={<div className="flex items-center justify-center min-h-screen p-4">Loading...</div>}
+    >
       <RecoverPasswordContent />
     </Suspense>
   )

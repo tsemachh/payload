@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig } from 'payload'
 
 export const StocksFeed: CollectionConfig = {
   slug: 'stocks-feed',
@@ -33,8 +33,8 @@ export const StocksFeed: CollectionConfig = {
         beforeChange: [
           ({ siblingData }) => {
             // Don't modify the hash if it's already set
-            if (siblingData.hash) return siblingData.hash;
-            return undefined;
+            if (siblingData.hash) return siblingData.hash
+            return undefined
           },
         ],
       },
@@ -58,4 +58,4 @@ export const StocksFeed: CollectionConfig = {
   ],
 
   upload: true,
-};
+}

@@ -15,9 +15,12 @@ export interface Company {
   active?: boolean
   type?: string
   subCompanies?: Array<Company | string>
-  parentCompany?: {
-    docs?: Company[]
-  } | Company[] | Company
+  parentCompany?:
+    | {
+        docs?: Company[]
+      }
+    | Company[]
+    | Company
   mainAccount?: Account[]
   silencedStocks?: string[]
   holdings?: { docs?: any[] }
@@ -53,9 +56,9 @@ export const fetchCompanies = async () => {
         active: {
           equals: true,
         },
-        type:{
-          in: ['parent','regular']
-        }
+        type: {
+          in: ['parent', 'regular'],
+        },
         // Removed type filter to include all company types
       },
       depth: 4,
@@ -109,9 +112,9 @@ export const fetchCompanyById = async (id: string) => {
         mainAccount: true,
         silencedStocks: true,
         meetings: {
-          docs: true
-        }
-      }
+          docs: true,
+        },
+      },
     }
 
     const stringifiedQuery = stringify(query, { addQueryPrefix: true })
@@ -140,12 +143,13 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
   userCompanies.forEach((companyData) => {
     const company = companyData.company
     if (company) {
-      const hasAccount=company.mainAccount && company.mainAccount.length > 0
-      const parentCompany = company?.parentCompany as {docs: Company[]}
-      const hasParent=parentCompany !== undefined && parentCompany !== null && parentCompany.docs.length > 0
-      let hasGrandParent=false
-      if (hasParent){
-        const parentCompanyDocs = parentCompany.docs[0];
+      const hasAccount = company.mainAccount && company.mainAccount.length > 0
+      const parentCompany = company?.parentCompany as { docs: Company[] }
+      const hasParent =
+        parentCompany !== undefined && parentCompany !== null && parentCompany.docs.length > 0
+      let hasGrandParent = false
+      if (hasParent) {
+        const parentCompanyDocs = parentCompany.docs[0]
         if (parentCompanyDocs && parentCompanyDocs.parentCompany) {
           hasGrandParent = true
         }
@@ -158,7 +162,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
         hasParent,
         hasGrandParent,
         companyId: companyData.companyId,
-        type: companyData.company.type as string
+        type: companyData.company.type as string,
       }
       companyMap.set(treeNode.id, treeNode)
     }
@@ -198,7 +202,9 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
             parentNode.children = []
           }
           // Check if a node with the same name already exists in the parent's children
-          const nodeExistsByName = parentNode.children.some(child => child.name === existingNode.name)
+          const nodeExistsByName = parentNode.children.some(
+            (child) => child.name === existingNode.name,
+          )
           if (!nodeExistsByName) {
             parentNode.children.push(existingNode)
           }
@@ -211,9 +217,10 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
             children: [],
             hasAccount: false, // Default to false for subCompanies as we don't have this info
             hasParent: true, // It's a subCompany, so it has a parent
-            companyId: typeof subCompany === 'string' ? undefined : (subCompany.companyId ?? undefined),
+            companyId:
+              typeof subCompany === 'string' ? undefined : (subCompany.companyId ?? undefined),
             hasGrandParent: false,
-            type: typeof subCompany !== 'string' ? (subCompany?.type) as string : 'regular'
+            type: typeof subCompany !== 'string' ? (subCompany?.type as string) : 'regular',
           }
           companyMap.set(subCompanyId, newNode)
           if (!parentNode.children) {
@@ -224,7 +231,11 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
         }
 
         // Recursively process subCompanies of this subCompany if it's an object
-        if (subCompanyObj && subCompanyObj.subCompanies && Array.isArray(subCompanyObj.subCompanies)) {
+        if (
+          subCompanyObj &&
+          subCompanyObj.subCompanies &&
+          Array.isArray(subCompanyObj.subCompanies)
+        ) {
           processSubCompanies(subCompanyObj, nodeToUse)
         }
       })
@@ -280,7 +291,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
             hasParent: false, // Default to false, will be updated if it has a parent
             companyId: parentCompany.companyId ?? undefined,
             hasGrandParent: false,
-            type: companyData.company.type as string
+            type: companyData.company.type as string,
           }
           if (parentNode) {
             companyMap.set(parentId, parentNode)
@@ -293,7 +304,9 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
 
           // Check if child is already in parent's children by ID or name
           const childExistsById = parentNode.children.some((child) => child.id === childNode.id)
-          const childExistsByName = parentNode.children.some((child) => child.name === childNode.name)
+          const childExistsByName = parentNode.children.some(
+            (child) => child.name === childNode.name,
+          )
           if (!childExistsById && !childExistsByName) {
             parentNode.children.push(childNode)
           }

@@ -7,21 +7,13 @@ export type Create = (args: {
   lastName: string
 }) => Promise<User>
 
-export type Login = (args: {
-  email: string
-  password: string
-}) => Promise<User>
+export type Login = (args: { email: string; password: string }) => Promise<User>
 
 export type Logout = () => Promise<void>
 
-export type ForgotPassword = (args: {
-  email: string
-}) => Promise<boolean>
+export type ForgotPassword = (args: { email: string }) => Promise<boolean>
 
-export type ResetPassword = (args: {
-  password: string
-  token: string
-}) => Promise<User>
+export type ResetPassword = (args: { password: string; token: string }) => Promise<User>
 
 export interface AuthContext {
   user: User | null | undefined

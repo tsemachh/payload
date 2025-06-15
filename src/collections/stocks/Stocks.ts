@@ -7,7 +7,7 @@ const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityConditions: { origin: 'TASE', tradable: true ,fromMagna:true},
+  visibilityConditions: { origin: 'TASE', tradable: true, fromMagna: true },
 }
 
 const validateNoFutureMeetings = async (
@@ -47,7 +47,7 @@ export const Stocks: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
-    listSearchableFields: ['symbol', 'stockId', 'name', 'longName','comments'],
+    listSearchableFields: ['symbol', 'stockId', 'name', 'longName', 'comments'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -89,12 +89,12 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label:'שם מלא',
+                  label: 'שם מלא',
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
                   },
-                  index:true,
+                  index: true,
                   hooks: {
                     beforeChange: [
                       async ({ data }) => {
@@ -129,10 +129,10 @@ export const Stocks: CollectionConfig = {
                 {
                   name: 'fromMagna',
                   type: 'checkbox',
-                  admin:{
-                    hidden: true
+                  admin: {
+                    hidden: true,
                   },
-                  defaultValue: false
+                  defaultValue: false,
                 },
                 {
                   name: 'origin',
@@ -202,9 +202,9 @@ export const Stocks: CollectionConfig = {
                   label: 'פיננסי',
                   type: 'checkbox',
                   defaultValue: false,
-                  admin:{
-                    condition:(siblingData)=>siblingData.type == 'מניות'
-                  }
+                  admin: {
+                    condition: (siblingData) => siblingData.type == 'מניות',
+                  },
                 },
               ],
             },
@@ -272,7 +272,9 @@ export const Stocks: CollectionConfig = {
               collection: 'stocks',
               on: 'relatedStock',
               //              _sanitized: true,
-              admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+              admin: {
+                defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+              },
             },
           ],
         },
@@ -289,7 +291,9 @@ export const Stocks: CollectionConfig = {
               collection: 'meetings',
               on: 'stock',
               _sanitized: true,
-              admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+              admin: {
+                defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+              },
             },
           ],
         },

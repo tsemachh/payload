@@ -113,22 +113,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // For each company, create a vote document
             if (companies)
               for (const company of companies) {
-              const mongoCompanyId = companyMap.get(company.fid.toString())
+                const mongoCompanyId = companyMap.get(company.fid.toString())
 
-              if (!mongoCompanyId) {
-                console.log(`Company with ID ${company.fid} not found in MongoDB for meeting ${meeting.id}`)
-                await logMigrationFault({
-                  payload,
-                  type: 'vote',
-                  typeId: `meeting-${meeting.id}-company-${company.fid}`,
-                  comments: `Company with ID ${company.fid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
-                  row: company,
-                })
-                continue
-              }
+                if (!mongoCompanyId) {
+                  console.log(
+                    `Company with ID ${company.fid} not found in MongoDB for meeting ${meeting.id}`,
+                  )
+                  await logMigrationFault({
+                    payload,
+                    type: 'vote',
+                    typeId: `meeting-${meeting.id}-company-${company.fid}`,
+                    comments: `Company with ID ${company.fid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
+                    row: company,
+                  })
+                  continue
+                }
 
-              // Get voting data for this company and meeting
-              const votingResult = await pool?.request().query(`
+                // Get voting data for this company and meeting
+                const votingResult = await pool?.request().query(`
                   SELECT ma.id AS maid,
                          mac.cdecision,
                          mac.comment,
@@ -146,53 +148,53 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   ORDER BY ma.id
               `)
 
-              const votingData = votingResult?.recordset
+                const votingData = votingResult?.recordset
 
-              // Create votes array for MongoDB
-              // First, create a map of agenda item IDs to their positions in the agenda
-              const agendaItemPositions = new Map()
-              agendaItems?.forEach((item, index) => {
-                agendaItemPositions.set(item.id, index + 1)
-              })
+                // Create votes array for MongoDB
+                // First, create a map of agenda item IDs to their positions in the agenda
+                const agendaItemPositions = new Map()
+                agendaItems?.forEach((item, index) => {
+                  agendaItemPositions.set(item.id, index + 1)
+                })
 
-              // Create votes array, preserving the order of agenda topics
-              const votes = votingData?.map((vote) => {
-                const voteDecision = votingResultMap[vote.cdecision.toString()] || null
+                // Create votes array, preserving the order of agenda topics
+                const votes = votingData?.map((vote) => {
+                  const voteDecision = votingResultMap[vote.cdecision.toString()] || null
 
-                // Use the agenda item's position in the agenda as the topicIndex
-                // This preserves the order of topics as they appear in the agenda
-                const topicIndex = agendaItemPositions.get(vote.maid) || vote.maid
+                  // Use the agenda item's position in the agenda as the topicIndex
+                  // This preserves the order of topics as they appear in the agenda
+                  const topicIndex = agendaItemPositions.get(vote.maid) || vote.maid
 
-                return {
-                  topicIndex,
-                  voteDecision,
-                  comment: vote.comment || '',
-                  clientComment: vote.ccomment || '',
-                  committee: vote.committee === 1,
-                  conflict: vote.conflict === 1,
-                  relatedParty: vote.relatedParty === 1,
-                  personalInterest: vote.pInterest === 1,
-                  professionalFactor: vote.profFactor || '',
-                }
-              })
+                  return {
+                    topicIndex,
+                    voteDecision,
+                    comment: vote.comment || '',
+                    clientComment: vote.ccomment || '',
+                    committee: vote.committee === 1,
+                    conflict: vote.conflict === 1,
+                    relatedParty: vote.relatedParty === 1,
+                    personalInterest: vote.pInterest === 1,
+                    professionalFactor: vote.profFactor || '',
+                  }
+                })
 
-              // Create or update vote document in MongoDB
-              const voteData = {
-                meeting: mongoMeetingId,
-                companies: [mongoCompanyId],
-                votes,
-              } as Partial<Vote>
+                // Create or update vote document in MongoDB
+                const voteData = {
+                  meeting: mongoMeetingId,
+                  companies: [mongoCompanyId],
+                  votes,
+                } as Partial<Vote>
 
-              // Create new vote
-              await payload.create({
-                collection: 'votes',
-                data: voteData as Vote,
-                req,
-              })
-              console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
+                // Create new vote
+                await payload.create({
+                  collection: 'votes',
+                  data: voteData as Vote,
+                  req,
+                })
+                console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
 
-              successCount++
-            }
+                successCount++
+              }
           } catch (error: any) {
             errorCount++
             console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)
@@ -204,7 +206,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               row: meeting,
             })
           }
-        })
+        }),
       )
     }
 

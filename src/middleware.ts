@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
   if (!payloadCookie && isFrontendRoute) {
     const url = new URL('/auth/signin', request.url)
     // Use only pathname and search params to avoid hardcoded hostname issues
-    const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
+    const callbackPath = request.nextUrl.pathname + request.nextUrl.search
     url.searchParams.set('callbackUrl', encodeURI(callbackPath))
     return NextResponse.redirect(url)
   }

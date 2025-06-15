@@ -1,28 +1,22 @@
-import payload from 'payload';
+import payload from 'payload'
 
-const privateStocks = [56085, 1159037];
+const privateStocks = [56085, 1159037]
 
 const notActiveStocks = [
-  45609, 601762, 625872, 1082650, 1102458, 1139179, 1141118, 1141712,
-  1142512, 1145598, 1151141, 1181734, 1182583, 3730504, 4220349,
-  5760244, 8230252, 11571556, 32075814, 70105475, 70110254, 70166004,
-  70457460, 70504378, 71408660, 72896020, 75461160, 791233340,
-  892134503, 983134727
-];
+  45609, 601762, 625872, 1082650, 1102458, 1139179, 1141118, 1141712, 1142512, 1145598, 1151141,
+  1181734, 1182583, 3730504, 4220349, 5760244, 8230252, 11571556, 32075814, 70105475, 70110254,
+  70166004, 70457460, 70504378, 71408660, 72896020, 75461160, 791233340, 892134503, 983134727,
+]
 
 const nonTradableStocks = [
-  1095025, 1095942, 1098300, 1099944, 1099951, 1099969, 1100833,
-  1101567, 1102482, 1102854, 1104355, 1107531, 1109180, 1110378,
-  1110980, 1112911, 1113398, 1113562, 1116755, 1118496, 1120740,
-  1120880, 1124346, 1124650, 1125624, 1127679, 1128347, 1128396,
-  1131184, 1131614, 1134394, 1137041, 1138999, 1139575, 1139781,
-  1140136, 1141274, 1142009, 1143270, 1143304, 1162205, 1167212,
-  1169614, 1175868, 1178813, 1179225, 1182963, 1320118, 1790054,
-  1790062, 3180361, 3390044, 3520046, 3570025, 3720075, 3720109,
-  3720117, 3780038, 3780079, 3780087, 3980018, 4150090, 4150124,
-  4550042, 5050240, 5050265, 5740022, 6110365, 6110431, 6110480,
-  6380083, 7509938, 7980154, 7980337
-];
+  1095025, 1095942, 1098300, 1099944, 1099951, 1099969, 1100833, 1101567, 1102482, 1102854, 1104355,
+  1107531, 1109180, 1110378, 1110980, 1112911, 1113398, 1113562, 1116755, 1118496, 1120740, 1120880,
+  1124346, 1124650, 1125624, 1127679, 1128347, 1128396, 1131184, 1131614, 1134394, 1137041, 1138999,
+  1139575, 1139781, 1140136, 1141274, 1142009, 1143270, 1143304, 1162205, 1167212, 1169614, 1175868,
+  1178813, 1179225, 1182963, 1320118, 1790054, 1790062, 3180361, 3390044, 3520046, 3570025, 3720075,
+  3720109, 3720117, 3780038, 3780079, 3780087, 3980018, 4150090, 4150124, 4550042, 5050240, 5050265,
+  5740022, 6110365, 6110431, 6110480, 6380083, 7509938, 7980154, 7980337,
+]
 
 const foreignStocks = [
   { stockId: 1104845, isin: 'IL0012008152' },
@@ -75,8 +69,8 @@ const foreignStocks = [
   { stockId: 555001845, isin: 'IL0011796880' },
   { stockId: 706341910, isin: 'IL0011745804' },
   { stockId: 791233323, isin: 'IL0011691438' },
-  { stockId: 791233423, isin: 'US52661A1088' }
-];
+  { stockId: 791233423, isin: 'US52661A1088' },
+]
 
 export async function seedStockMigrationMapping() {
   try {
@@ -86,9 +80,9 @@ export async function seedStockMigrationMapping() {
         collection: 'stock-migration-mapping',
         data: {
           stockId,
-          type: 'Private'
-        }
-      });
+          type: 'Private',
+        },
+      })
     }
 
     // Create NotActive stocks
@@ -97,9 +91,9 @@ export async function seedStockMigrationMapping() {
         collection: 'stock-migration-mapping',
         data: {
           stockId,
-          type: 'NotActive'
-        }
-      });
+          type: 'NotActive',
+        },
+      })
     }
 
     // Create NonTradable stocks
@@ -108,9 +102,9 @@ export async function seedStockMigrationMapping() {
         collection: 'stock-migration-mapping',
         data: {
           stockId,
-          type: 'NonTradable'
-        }
-      });
+          type: 'NonTradable',
+        },
+      })
     }
 
     // Create Foreign stocks
@@ -120,14 +114,14 @@ export async function seedStockMigrationMapping() {
         data: {
           stockId: stock.stockId,
           type: 'Foreign',
-          isin: stock.isin
-        }
-      });
+          isin: stock.isin,
+        },
+      })
     }
 
-    console.log('Successfully seeded stock-migration-mapping collection');
+    console.log('Successfully seeded stock-migration-mapping collection')
   } catch (error) {
-    console.error('Error seeding stock-migration-mapping:', error);
-    throw error;
+    console.error('Error seeding stock-migration-mapping:', error)
+    throw error
   }
 }

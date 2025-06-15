@@ -150,7 +150,13 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     width: 50,
     isAlwaysVisible: true,
   },
-  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
+  {
+    key: 'stockNumber',
+    header: 'מס׳ נייר',
+    type: 'string',
+    sortKey: 'stockNumber',
+    minWidth: 70,
+  },
   {
     key: 'stockType',
     header: 'סוג נייר',
@@ -192,9 +198,9 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
 
-      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        marketValue / 1_000_000,
-      )
+      return new Intl.NumberFormat('he-IL', {
+        maximumFractionDigits: 0,
+      }).format(marketValue / 1_000_000)
     },
     minWidth: 70,
   },
@@ -420,9 +426,15 @@ export const getDateRange = (option: string): { start: Date; end: Date } => {
     case 'yesterday':
       return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
     case 'lastWeek':
-      return { start: startOfDay(subDays(yesterday, 6)), end: endOfDay(yesterday) }
+      return {
+        start: startOfDay(subDays(yesterday, 6)),
+        end: endOfDay(yesterday),
+      }
     case 'lastMonth':
-      return { start: startOfDay(subDays(yesterday, 29)), end: endOfDay(yesterday) }
+      return {
+        start: startOfDay(subDays(yesterday, 29)),
+        end: endOfDay(yesterday),
+      }
     case 'allPast':
       return { start: new Date(-8640000000000000), end: endOfDay(yesterday) } // Min date
     default:

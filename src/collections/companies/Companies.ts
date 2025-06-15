@@ -1,12 +1,8 @@
-import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload';
-import addSubAccountEndPoint from './addSubAccountEndPoint';
-import detailsEndpoint from './detailsEndpoint';
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import addSubAccountEndPoint from './addSubAccountEndPoint'
+import detailsEndpoint from './detailsEndpoint'
 
-const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({
-  data,
-  operation,
-  req,
-}) => {
+const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
     if (!data.companyId) {
       const response = await req.payload.find({
@@ -16,12 +12,12 @@ const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({
           companyId: true,
         },
         limit: 1,
-      });
-      data.companyId = (response?.docs[0].companyId as number) + 10;
+      })
+      data.companyId = (response?.docs[0].companyId as number) + 10
     }
   }
-  return data;
-};
+  return data
+}
 
 export const Companies: CollectionConfig = {
   slug: 'companies',
@@ -32,13 +28,7 @@ export const Companies: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'name',
-    defaultColumns: [
-      'name',
-      'companyId',
-      'accounts',
-      'parentCompany',
-      'subCompanies',
-    ],
+    defaultColumns: ['name', 'companyId', 'accounts', 'parentCompany', 'subCompanies'],
     listSearchableFields: ['name', 'companyId'],
     pagination: {
       defaultLimit: 100,
@@ -161,15 +151,8 @@ export const Companies: CollectionConfig = {
                   maxDepth: 2,
                   admin: {
                     allowCreate: false,
-                    defaultColumns: [
-                      'name',
-                      'type',
-                      'subCompanies',
-                      'parentCompany',
-                      'companyId',
-                    ],
-                    description:
-                      'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
+                    defaultColumns: ['name', 'type', 'subCompanies', 'parentCompany', 'companyId'],
+                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
                   },
                 },
               ],
@@ -244,10 +227,7 @@ export const Companies: CollectionConfig = {
                     allowCreate: false,
                     defaultColumns: ['filename'],
                     condition: (siblingData) => {
-                      return (
-                        siblingData?.researchDocuments?.showResearchPrivate ===
-                        true
-                      );
+                      return siblingData?.researchDocuments?.showResearchPrivate === true
                     },
                   },
                 },
@@ -340,13 +320,12 @@ export const Companies: CollectionConfig = {
     afterChange: [
       async ({ doc, req, previousDoc }) => {
         // Only proceed if the company is of type 'fund'
-        const isRegular = doc.type === 'regular';
+        const isRegular = doc.type === 'regular'
 
         if (isRegular) {
           try {
             if (
-              JSON.stringify(doc.subCompanies) !=
-                JSON.stringify(previousDoc.subCompanies) ||
+              JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies) ||
               doc.active != previousDoc.active
             ) {
               await req.payload.update({
@@ -363,13 +342,10 @@ export const Companies: CollectionConfig = {
                 data: {
                   funds: [],
                 },
-              });
+              })
             }
           } catch (error) {
-            console.error(
-              'Error updating users after fund company change:',
-              error
-            );
+            console.error('Error updating users after fund company change:', error)
           }
         }
       },
@@ -387,4 +363,4 @@ export const Companies: CollectionConfig = {
       handler: detailsEndpoint,
     },
   ],
-};
+}

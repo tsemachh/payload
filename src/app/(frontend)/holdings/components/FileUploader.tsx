@@ -10,7 +10,11 @@ interface FileUploaderProps {
   disabled?: boolean
 }
 
-export function FileUploader({ onFileChangeAction, className, disabled = false }: FileUploaderProps) {
+export function FileUploader({
+  onFileChangeAction,
+  className,
+  disabled = false,
+}: FileUploaderProps) {
   const [fileName, setFileName] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -48,8 +52,8 @@ export function FileUploader({ onFileChangeAction, className, disabled = false }
         accept=".csv,.xlsx,.xls"
         disabled={disabled}
       />
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         onClick={handleButtonClick}
         disabled={disabled}
         className="min-w-[240px] justify-between"
@@ -58,10 +62,10 @@ export function FileUploader({ onFileChangeAction, className, disabled = false }
           <UploadCloud className="ml-2 h-4 w-4" />
           <span className="truncate" dir={'ltr'}>
             {fileName || 'העלאת קובץ'}
-          </span>     
+          </span>
         </span>
         {fileName && (
-          <span 
+          <span
             onClick={clearSelection}
             className="text-muted-foreground hover:text-foreground ml-2 cursor-pointer"
           >
@@ -69,9 +73,7 @@ export function FileUploader({ onFileChangeAction, className, disabled = false }
           </span>
         )}
       </Button>
-      <p className="mt-1 text-xs text-muted-foreground">
-        ניתן להעלות קבצי CSV או Excel בלבד
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">ניתן להעלות קבצי CSV או Excel בלבד</p>
     </div>
   )
 }
