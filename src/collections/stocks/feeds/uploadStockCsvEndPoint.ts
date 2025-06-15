@@ -90,8 +90,8 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       collection: 'stocks-feed',
       id: stocksFeed.id,
       data: {
-        durationTime: `${durationSeconds}s`,
-        summary: `success: ${processedRows} / ${fileLength} `,
+        duration: `${durationSeconds}s`,
+        summary: `Stocks processed successfully: ${processedRows} / ${fileLength} `,
       },
     })
     return Response.json({

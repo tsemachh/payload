@@ -30,7 +30,7 @@ export const MeetingsFeed: CollectionConfig = {
       },
     },
     {
-      name: 'durationTime',
+      name: 'duration',
       label: 'זמן התהליך',
       type: 'text',
       admin: {
@@ -40,7 +40,7 @@ export const MeetingsFeed: CollectionConfig = {
     {
       name: 'summary',
       label: 'סיכום',
-      type: 'text',
+      type: 'textarea',
       admin: {
         readOnly: true,
       },

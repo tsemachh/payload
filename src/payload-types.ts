@@ -682,7 +682,7 @@ export interface StocksFeed {
     | boolean
     | null;
   hash?: string | null;
-  durationTime?: string | null;
+  duration?: string | null;
   summary?: string | null;
   creator?: string | null;
   updator?: string | null;
@@ -757,7 +757,7 @@ export interface MeetingsFeed {
     | number
     | boolean
     | null;
-  durationTime?: string | null;
+  duration?: string | null;
   summary?: string | null;
   hash?: string | null;
   creator?: string | null;
@@ -1431,7 +1431,7 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
 export interface StocksFeedSelect<T extends boolean = true> {
   comments?: T;
   hash?: T;
-  durationTime?: T;
+  duration?: T;
   summary?: T;
   creator?: T;
   updator?: T;
@@ -1496,7 +1496,7 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
  */
 export interface MeetingsFeedSelect<T extends boolean = true> {
   comments?: T;
-  durationTime?: T;
+  duration?: T;
   summary?: T;
   hash?: T;
   creator?: T;

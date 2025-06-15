@@ -55,10 +55,18 @@ const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'loca
 export const processMeetingsFeedCsv = async (
   req: PayloadRequest,
   doc: any,
-): Promise<{ errors: string[]; successCount: number; fileLength: number }> => {
+): Promise<{
+  errors: string[]
+  successCount: number
+  fileLength: number
+  successPrevCount: number
+  countTotalPrev: number
+}> => {
   const errors: string[] = []
   let successCount = 0
   let fileLength = 0
+  let successPrevCount = 0
+  let countTotalPrev = 0
   try {
     // The file is at req.file as specified in the issue description
 
@@ -66,7 +74,7 @@ export const processMeetingsFeedCsv = async (
     if (!file) {
       req.payload.logger.error(`No file found in request`)
       errors.push('לא נמצא קובץ בבקשה')
-      return { errors, successCount, fileLength }
+      return { errors, successCount, fileLength, successPrevCount, countTotalPrev }
     }
 
     // Read the file content
@@ -98,7 +106,7 @@ export const processMeetingsFeedCsv = async (
     const missingColumns = getMissingColumns(rows, requiredFields)
     if (missingColumns.length > 0) {
       errors.push(`בקובץ csv חסרות עמודות שהן חובה  ${missingColumns.join(', ')} (ריק בכל השורות)`)
-      return { errors, successCount, fileLength }
+      return { errors, successCount, fileLength, successPrevCount, countTotalPrev }
     }
 
     // Create a promise pool with 20 concurrent threads
@@ -161,6 +169,7 @@ export const processMeetingsFeedCsv = async (
             row.stock = stockData
 
             if (row.proofIdPrev) {
+              countTotalPrev++
               const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
               if (prevMeeting && prevMeeting.docs.length > 0) {
                 const { ...dataToUpdate } = row
@@ -174,6 +183,7 @@ export const processMeetingsFeedCsv = async (
                     data: dataToUpdate,
                     context: { ...req.context, from: 'migration' },
                   })
+                  successPrevCount++
                 } catch (e: any) {
                   errors.push(`שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`)
                   req.payload.logger.error(
@@ -228,7 +238,7 @@ export const processMeetingsFeedCsv = async (
         console.error(`${idx + 1}. ${err}`)
       })
     }
-    return { errors, successCount, fileLength }
+    return { errors, successCount, fileLength, successPrevCount, countTotalPrev }
   } catch (error: any) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${error.message}`)
     errors.push(`שגיאה בעיבוד קובץ האסיפות: ${error.message})}`)
@@ -239,6 +249,6 @@ export const processMeetingsFeedCsv = async (
         console.error(`${idx + 1}. ${err}`)
       })
     }
-    return { errors, successCount, fileLength }
+    return { errors, successCount, fileLength, successPrevCount, countTotalPrev }
   }
 }

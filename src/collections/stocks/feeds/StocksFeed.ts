@@ -41,7 +41,7 @@ export const StocksFeed: CollectionConfig = {
       },
     },
     {
-      name: 'durationTime',
+      name: 'duration',
       label: 'זמן התהליך',
       type: 'text',
       admin: {

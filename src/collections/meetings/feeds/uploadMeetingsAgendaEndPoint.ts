@@ -91,7 +91,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         comments: {
           errors,
         },
-        durationTime: `${durationSeconds}s`,
+        duration: `${durationSeconds}s`,
         summary: `success: ${successCount} / ${fileLength} `,
       },
     })
