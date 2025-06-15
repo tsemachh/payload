@@ -7,7 +7,7 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
     if (!req.user) {
-      return Response.json({ error: 'forbidden' }, { status: 403 })
+      return Response.json({ error: 'forbidden user' }, { status: 403 })
     }
 
     // Get current date in ISO format
@@ -19,6 +19,7 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
       where: {
         meetingDate: { less_than: now },
         state: { equals: 'scheduled' },
+        _status: {equals: 'published'}
       },
       data: {
         state: 'completed',

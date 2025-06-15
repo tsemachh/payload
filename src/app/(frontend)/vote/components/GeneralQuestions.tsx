@@ -33,7 +33,7 @@ export default function GeneralQuestions({
               }
               explanationPlaceholder={config.explanationPlaceholder}
               requiresExplanation={config.requiresExplanation}
-              onValueChange={(value, explanation) =>
+              onValueChangeAction={(value, explanation) =>
                 onQuestionChangeAction(questionId, value, explanation)
               }
               isAgendaQuestion={false} // זהות לשאלות כלליות
