@@ -91,7 +91,7 @@ export default function HoldingsView() {
           fund: true,
           holdings: {
             stock: true,
-            fund: true, //TODO: in api the name is: "feedStockNum": "1173699", - for what?? this holding select
+            //fund: true, //TODO: in api the name is: "feedStockNum": "1173699", - for what?? this holding select
             quantity: true,
           },
         },
