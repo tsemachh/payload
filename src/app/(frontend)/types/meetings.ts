@@ -2,6 +2,7 @@ import { MeetingState, StockOrigin } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
 export type MeetingTableDataType = {
+  meetingIdPayload: string // Payload ID of the meeting
   meetingId: string
   agendas: AgendasType[]
   companies: CompanyTableDate[]

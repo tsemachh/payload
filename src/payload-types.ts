@@ -549,7 +549,7 @@ export interface Holding {
 export interface Vote {
   id: string;
   meeting: string | Meeting;
-  companies: (string | Company)[];
+  company: string | Company;
   interested?: boolean | null;
   interestedExplanation?: string | null;
   seniorOfficial?: boolean | null;
@@ -1497,7 +1497,7 @@ export interface SilencedStocksSelect<T extends boolean = true> {
  */
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
-  companies?: T;
+  company?: T;
   interested?: T;
   interestedExplanation?: T;
   seniorOfficial?: T;

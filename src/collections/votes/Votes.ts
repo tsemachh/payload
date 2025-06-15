@@ -2,6 +2,7 @@ import { type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import { isSameDay, addDays } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
+import { getVoteByMeetingAndCompanies, upsertVote } from './voteEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -31,15 +32,16 @@ export const Votes: CollectionConfig = {
           label: 'אסיפה',
           type: 'relationship',
           relationTo: 'meetings',
+          maxDepth: 0,
           required: true,
           index: true,
         },
         {
-          name: 'companies',
+          name: 'company',
           label: 'חברות',
           type: 'relationship',
           relationTo: 'companies',
-          hasMany: true,
+          maxDepth: 0,
           required: true,
           index: true,
           filterOptions: {
@@ -119,6 +121,7 @@ export const Votes: CollectionConfig = {
                 { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
+              defaultValue: '----',
             },
           ],
         },
@@ -143,12 +146,12 @@ export const Votes: CollectionConfig = {
               name: 'relatedParty',
               label: 'צד קשור',
               type: 'checkbox',
+              defaultValue: false,
             },
             {
               name: 'relatedPartyExplanation',
               label: 'הסבר צד קשור',
               type: 'textarea',
-              defaultValue: false,
               admin: {
                 condition: (_, siblingData) => siblingData.relatedParty === true,
               },
@@ -221,4 +224,16 @@ export const Votes: CollectionConfig = {
       },
     ],
   },
+  endpoints: [
+    {
+      path: '/by-meeting-and-companies',
+      method: 'get',
+      handler: getVoteByMeetingAndCompanies,
+    },
+    {
+      path: '/upsert-draft',
+      method: 'post',
+      handler: upsertVote,
+    },
+  ],
 }

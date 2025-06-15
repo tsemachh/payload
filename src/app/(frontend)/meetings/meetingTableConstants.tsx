@@ -14,14 +14,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
   const router = useRouter()
 
   const handleIconClick = (e: any) => {
-    // Stop propagation to prevent the tooltip from interfering
-    e.stopPropagation()
-    const payload = {
-      meeting: row,
-    }
-    const json = JSON.stringify(payload)
-    const encoded = btoa(unescape(encodeURIComponent(json)))
-    router.push(`/vote?data=${encodeURIComponent(encoded)}`)
+    router.push(`/vote?meetingId=${row.meetingId}`)
   }
   if (row.companies.length === 0) return null
   return (
