@@ -20,6 +20,23 @@ export const HoldingsFeed: CollectionConfig = {
   },
   fields: [
     {
+      name: 'hash',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Don't modify the hash if it's already set
+            if (siblingData.hash) return siblingData.hash;
+            return undefined;
+          },
+        ],
+      },
+    },
+    {
       name: 'valueDate',
       label: 'תאריך ערך',
       type: 'date',

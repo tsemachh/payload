@@ -38,9 +38,21 @@ import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-
+const isProduction = process.env.NODE_ENV === 'production'
 const dbArgs: Args = {
   url: process.env.DATABASE_URI || '',
+  ...(isProduction && {
+    connectOptions: {
+      readPreference: 'secondaryPreferred',
+      autoIndex: false,
+      autoCreate: false,
+      maxPoolSize: 50,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+      w: 'majority',
+    },
+  }),
 }
 
 if (process.env.MONGO_USE_TX !== 'true') {
@@ -55,20 +67,19 @@ export default buildConfig({
     // Schedule daily tasks when payload initializes
     await scheduleDailyTasks(payload)
   },
-  jobs:{
+  jobs: {
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
       if (!defaultJobsCollection.admin) {
-        defaultJobsCollection.admin = {};
+        defaultJobsCollection.admin = {}
       }
-      defaultJobsCollection.admin.hidden = false;
-      return defaultJobsCollection;
+      defaultJobsCollection.admin.hidden = false
+      return defaultJobsCollection
     },
     deleteJobOnComplete: false,
     tasks: [
       {
         slug: 'checkNotifications',
         handler: checkNotificationsHandler,
-
       },
       {
         slug: 'processMeetingState',
