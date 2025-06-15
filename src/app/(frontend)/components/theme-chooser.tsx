@@ -12,9 +12,17 @@ import {
 import { Palette } from 'lucide-react'
 
 const themes = [
-  { name: 'Light', value: 'light', color: 'bg-gray-100 border border-gray-300' },
+  {
+    name: 'Light',
+    value: 'light',
+    color: 'bg-gray-100 border border-gray-300',
+  },
   { name: 'Dark', value: 'dark', color: 'bg-gray-900' },
-  { name: 'System', value: 'system', color: 'bg-gradient-to-br from-gray-100 to-gray-900' },
+  {
+    name: 'System',
+    value: 'system',
+    color: 'bg-gradient-to-br from-gray-100 to-gray-900',
+  },
   { name: 'Blue', value: 'blue', color: 'bg-blue-400' },
   { name: 'Red', value: 'red', color: 'bg-red-500' },
   { name: 'Green', value: 'green', color: 'bg-green-500' },

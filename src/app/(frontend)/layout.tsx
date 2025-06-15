@@ -9,7 +9,7 @@ import { CompaniesProvider } from './context/companiesContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'מערכת ניהול אסיפות',
@@ -25,19 +25,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <CompaniesProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-            themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
-          >
-            <div className="flex flex-col h-screen">
-              <HeaderWithNav />
-              <main className="flex-1 py-4">{children}</main>
-            </div>
-            <Notifications />
-          </ThemeProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+              themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
+            >
+              <div className="flex flex-col h-screen">
+                <HeaderWithNav />
+                <main className="flex-1 py-4">{children}</main>
+              </div>
+              <Notifications />
+            </ThemeProvider>
           </CompaniesProvider>
         </AuthProvider>
       </body>

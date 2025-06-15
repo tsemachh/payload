@@ -327,7 +327,9 @@ export function CompanyTreeSelector({
                 ? handleChildSelect(node.id, selectionState !== 'checked')
                 : handleSelect(node.id)
             }
-            style={{ paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined }}
+            style={{
+              paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined,
+            }}
           >
             <div className="flex items-center min-w-0">
               {node.subCompanies && node.subCompanies.length > 0 ? (

@@ -10,12 +10,7 @@ const validateQueryParams = (accountId: string, companyId: string) => {
   return null
 }
 
-
-const createSubAccount = async (
-  req: PayloadRequest,
-  accountNumber: number,
-  companyId: string
-) => {
+const createSubAccount = async (req: PayloadRequest, accountNumber: number, companyId: string) => {
   // Get the company document
   const companyResult = await req.payload.find({
     collection: 'companies',
@@ -64,7 +59,6 @@ const createSubAccount = async (
   return company
 }
 
-
 const addSubAccountEndPoint = async (req: PayloadRequest) => {
   try {
     const { companyId } = req.query as { companyId: string }
@@ -79,7 +73,7 @@ const addSubAccountEndPoint = async (req: PayloadRequest) => {
 
     await createSubAccount(req, Number(accountId), companyId)
 
-    return Response.json({ message: 'OK'  }, { status: 200 })
+    return Response.json({ message: 'OK' }, { status: 200 })
   } catch (error) {
     console.error('Error processing addSubAccount:', error)
     return Response.json({ error: 'Server error' }, { status: 500 })

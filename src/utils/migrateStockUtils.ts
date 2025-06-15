@@ -1,4 +1,4 @@
-import { Stock, StockType } from '@/payload-types'
+import { StockType } from '@/payload-types'
 import { PayloadRequest } from 'payload'
 
 export interface StockRow {
@@ -113,25 +113,23 @@ export function getStockType(rowType: string): StockType {
   return stockTypesMap.get((rowType || '').trim()) || 'אחר'
 }
 
-export function parseDate(dateStr:string) {
-  if (!/^\d{8}$/.test(dateStr)) throw new Error("Invalid date format");
-  const year = parseInt(dateStr.slice(0, 4));
-  const month = parseInt(dateStr.slice(4, 6));
-  const day = parseInt(dateStr.slice(6, 8));
+export function parseDate(dateStr: string) {
+  if (!/^\d{8}$/.test(dateStr)) throw new Error('Invalid date format')
+  const year = parseInt(dateStr.slice(0, 4))
+  const month = parseInt(dateStr.slice(4, 6))
+  const day = parseInt(dateStr.slice(6, 8))
 
-  const date = new Date(year, month - 1, day);
+  const date = new Date(year, month - 1, day)
 
   // Verify the date is valid
-  if (date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day) {
-    throw new Error("Invalid date");
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    throw new Error('Invalid date')
   }
 
-  return date;
+  return date
 }
 
-export async function getStockIdToSequenceMap(req:PayloadRequest){
+export async function getStockIdToSequenceMap(req: PayloadRequest) {
   const stockMap = new Map<string, string>()
   // Prefetch common stocks to reduce database lookups
   console.log('Prefetching common stocks...')
@@ -140,11 +138,11 @@ export async function getStockIdToSequenceMap(req:PayloadRequest){
     limit: 20000,
     select: {
       stockId: true,
-      id:true,
+      id: true,
       relatedStock: true,
     },
     req,
-    depth:1
+    depth: 1,
   })
   for (const stock of stockIdToSequenceMap.docs) {
     if (stock.relatedStock && typeof stock.relatedStock === 'object' && 'id' in stock.relatedStock)

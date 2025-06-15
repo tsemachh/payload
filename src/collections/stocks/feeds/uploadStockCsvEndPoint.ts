@@ -1,7 +1,6 @@
 import { PayloadRequest } from 'payload'
 import { processStocksFeedCsv } from './processStocksFeedCsv'
 import { format } from 'date-fns'
-import { StocksFeed } from './StocksFeed'
 import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
@@ -81,7 +80,9 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       file: file,
     })
     // Process the stock feed CSV
-    const { processedRows, fileLength } = await processStocksFeedCsv(req, { file })
+    const { processedRows, fileLength } = await processStocksFeedCsv(req, {
+      file,
+    })
     const endTime = Date.now()
     const durationMs = endTime - startTime
     const durationSeconds = (durationMs / 1000).toFixed(2)

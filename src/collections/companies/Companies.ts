@@ -1,4 +1,3 @@
-
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import detailsEndpoint from './detailsEndpoint'
@@ -32,10 +31,9 @@ export const Companies: CollectionConfig = {
     defaultColumns: ['name', 'companyId', 'accounts', 'parentCompany', 'subCompanies'],
     listSearchableFields: ['name', 'companyId'],
     pagination: {
-      defaultLimit: 500,
+      defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
-
   },
   versions: {},
   fields: [
@@ -63,7 +61,8 @@ export const Companies: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: true,
                   admin: {
-                    hidden: false ,width: '100px',
+                    hidden: false,
+                    width: '100px',
                   },
                 },
                 {
@@ -71,9 +70,14 @@ export const Companies: CollectionConfig = {
                   label: 'סוג',
                   type: 'select',
                   defaultValue: 'regular',
-                  options: [{value:'regular',label:'רגיל'},{value:'parent','label':'הורה'},{value:'fund',label:'תיק'}],
+                  options: [
+                    { value: 'regular', label: 'רגיל' },
+                    { value: 'parent', label: 'הורה' },
+                    { value: 'fund', label: 'תיק' },
+                  ],
                   admin: {
-                    hidden: false ,width: '120px',
+                    hidden: false,
+                    width: '120px',
                   },
                 },
                 {
@@ -92,7 +96,8 @@ export const Companies: CollectionConfig = {
                   type: 'number',
                   index: true,
                   admin: {
-                    hidden: false ,width: '100px',
+                    hidden: false,
+                    width: '100px',
                   },
                 },
                 {
@@ -101,7 +106,8 @@ export const Companies: CollectionConfig = {
                   type: 'number',
                   index: true,
                   admin: {
-                    hidden: false ,width: '100px',
+                    hidden: false,
+                    width: '100px',
                   },
                 },
                 {
@@ -109,7 +115,8 @@ export const Companies: CollectionConfig = {
                   type: 'number',
                   index: true,
                   admin: {
-                    hidden: false ,width: '100px',
+                    hidden: false,
+                    width: '100px',
                   },
                 },
               ],
@@ -144,18 +151,18 @@ export const Companies: CollectionConfig = {
                   maxDepth: 2,
                   admin: {
                     allowCreate: false,
-                    defaultColumns: ['name', 'type','subCompanies', 'parentCompany', 'companyId'],
+                    defaultColumns: ['name', 'type', 'subCompanies', 'parentCompany', 'companyId'],
                     description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
                   },
                 },
-              ]
+              ],
             },
             {
               name: 'researchDocuments',
               label: 'חוות דעת',
               type: 'group',
-              admin:{
-                condition: (data) => data?.type == 'regular'
+              admin: {
+                condition: (data) => data?.type == 'regular',
               },
               fields: [
                 {
@@ -166,25 +173,25 @@ export const Companies: CollectionConfig = {
                       label: 'אג"ח נאמנות',
                       type: 'checkbox',
                       defaultValue: true,
-                      admin:{
-                        width: '200px'
-                      }
+                      admin: {
+                        width: '200px',
+                      },
                     },
                     {
                       name: 'showResearchBond',
                       label: 'אג"ח',
                       type: 'checkbox',
-                      admin:{
-                        width: '200px'
-                      }
+                      admin: {
+                        width: '200px',
+                      },
                     },
                     {
                       name: 'showResearch',
                       label: 'כללי',
                       type: 'checkbox',
-                      admin:{
-                        width: '200px'
-                      }
+                      admin: {
+                        width: '200px',
+                      },
                     },
                   ],
                 },
@@ -195,17 +202,17 @@ export const Companies: CollectionConfig = {
                       name: 'showResearchPrivate',
                       label: 'מקבל מסמכי מחקר פרטנים',
                       type: 'checkbox',
-                      admin:{
-                        width: '200px'
-                      }
+                      admin: {
+                        width: '200px',
+                      },
                     },
                     {
                       name: 'defaultVotingRecommendation',
                       label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',
-                      admin:{
-                        width: '200px'
-                      }
+                      admin: {
+                        width: '200px',
+                      },
                     },
                   ],
                 },
@@ -219,19 +226,19 @@ export const Companies: CollectionConfig = {
                   admin: {
                     allowCreate: false,
                     defaultColumns: ['filename'],
-                    condition: (siblingData ) => {
+                    condition: (siblingData) => {
                       return siblingData?.researchDocuments?.showResearchPrivate === true
-                    }
+                    },
                   },
                 },
               ],
-            }
+            },
           ],
         },
         {
           label: 'חשבונות',
-          admin:{
-            condition: (data) => data?.type == 'fund'
+          admin: {
+            condition: (data) => data?.type == 'fund',
           },
           fields: [
             {
@@ -250,7 +257,7 @@ export const Companies: CollectionConfig = {
                   label: 'שם חשבון',
                   type: 'text',
                   admin: {
-                    hidden: true
+                    hidden: true,
                   },
                 },
                 {
@@ -260,13 +267,13 @@ export const Companies: CollectionConfig = {
                   hasMany: true,
                 },
               ],
-            }
+            },
           ],
         },
         {
           label: 'פגישות',
-          admin:{
-            condition: (data) => data?.type == 'regular'
+          admin: {
+            condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
@@ -279,8 +286,8 @@ export const Companies: CollectionConfig = {
         },
         {
           label: 'אחזקות',
-          admin:{
-            condition: (data) => data?.type == 'fund'
+          admin: {
+            condition: (data) => data?.type == 'fund',
           },
           fields: [
             {
@@ -293,8 +300,8 @@ export const Companies: CollectionConfig = {
         },
         {
           label: 'ניירות ערך מושתקים',
-          admin:{
-            condition: (data) => data?.type == 'regular'
+          admin: {
+            condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
@@ -311,13 +318,16 @@ export const Companies: CollectionConfig = {
   hooks: {
     beforeChange: [beforeChangeCompanyId],
     afterChange: [
-      async ({ doc, req ,previousDoc}) => {
+      async ({ doc, req, previousDoc }) => {
         // Only proceed if the company is of type 'fund'
-        const isRegular = doc.type === 'regular';
+        const isRegular = doc.type === 'regular'
 
         if (isRegular) {
           try {
-            if (JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies) || doc.active != previousDoc.active){
+            if (
+              JSON.stringify(doc.subCompanies) != JSON.stringify(previousDoc.subCompanies) ||
+              doc.active != previousDoc.active
+            ) {
               await req.payload.update({
                 req: {
                   ...req,
@@ -330,12 +340,12 @@ export const Companies: CollectionConfig = {
                   },
                 },
                 data: {
-                  funds: []
-                }
-              });
+                  funds: [],
+                },
+              })
             }
           } catch (error) {
-            console.error('Error updating users after fund company change:', error);
+            console.error('Error updating users after fund company change:', error)
           }
         }
       },

@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
-import { useAuth } from "@/providers/auth-provider"
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function Logout() {
   const router = useRouter()
@@ -13,7 +13,7 @@ export default function Logout() {
   useEffect(() => {
     const performLogout = async () => {
       await logout()
-      router.push("/auth/signin")
+      router.push('/auth/signin')
     }
 
     performLogout()
@@ -24,9 +24,7 @@ export default function Logout() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">התנתקות</CardTitle>
-          <CardDescription className="text-center">
-            מתנתק מהמערכת...
-          </CardDescription>
+          <CardDescription className="text-center">מתנתק מהמערכת...</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center py-6">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />

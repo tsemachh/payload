@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import {  HoldingFeedLine } from '@/payload-types'
+import { HoldingFeedLine } from '@/payload-types'
 import { SelectParentCompanyTree } from './SelectParentCompanyTree'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { FundType } from '../../types/companies'
@@ -42,7 +42,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
   const companyIdsSet = new Set<string>(companies)
 
   const companyOptions =
-  funds
+    funds
       ?.filter((company): company is FundType => {
         return (
           typeof company === 'object' &&

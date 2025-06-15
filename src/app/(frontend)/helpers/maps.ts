@@ -1,4 +1,4 @@
-import { MeetingState } from "@/payload-types";
+import { MeetingState } from '@/payload-types'
 
 export const meetingStateMap: Record<Exclude<MeetingState, null>, string> = {
   scheduled: 'מתוזמן',

@@ -11,8 +11,8 @@ const sqlConfig: sql.config = {
   port: 1433,
   options: {
     encrypt: false,
-    trustServerCertificate: true
-  }
+    trustServerCertificate: true,
+  },
 }
 
 interface SubAccountRow {
@@ -27,10 +27,13 @@ async function getHoldingsTables(pool: sql.ConnectionPool): Promise<string[]> {
     FROM INFORMATION_SCHEMA.TABLES
     WHERE TABLE_NAME LIKE 'Holdings%accounts'
   `)
-  return result.recordset.map(row => row.TABLE_NAME)
+  return result.recordset.map((row) => row.TABLE_NAME)
 }
 
-async function getSubAccounts(pool: sql.ConnectionPool, tableName: string): Promise<sql.IResult<SubAccountRow>> {
+async function getSubAccounts(
+  pool: sql.ConnectionPool,
+  tableName: string,
+): Promise<sql.IResult<SubAccountRow>> {
   const result = await pool.request().query(`
     SELECT 
       [firm_id] as firmId,
@@ -74,8 +77,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: {
               type: 'account',
               comments: `duplicate accountNumber`,
-              row: JSON.stringify(row)
-            }
+              row: JSON.stringify(row),
+            },
           })
           continue
         }
@@ -89,18 +92,21 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       console.log(`Grouped sub-accounts into ${subAccountsByFirmId.size} firms`)
 
       // Process firms in batches with a promise pool
-      const processFirm = async (firmId: number, firmSubAccounts: SubAccountRow[]): Promise<void> => {
+      const processFirm = async (
+        firmId: number,
+        firmSubAccounts: SubAccountRow[],
+      ): Promise<void> => {
         try {
           // Find the firm
           const companyResult = await payload.find({
             collection: 'companies',
             where: {
               companyId: {
-                equals: firmId
-              }
+                equals: firmId,
+              },
             },
             limit: 1,
-            depth: 0
+            depth: 0,
           })
 
           if (companyResult.docs.length === 0) {
@@ -111,8 +117,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 data: {
                   type: 'account',
                   comments: `No firm found for firmId: ${firmId}`,
-                  row: JSON.stringify(subAccount)
-                }
+                  row: JSON.stringify(subAccount),
+                },
               })
               errorCount++
             }
@@ -132,7 +138,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             try {
               // Find the mainAccount entry for the parent account
               let mainAccountEntry = mainAccount.find(
-                (ma: any) => ma.accountNumber === row.accountIdNew.toString()
+                (ma: any) => ma.accountNumber === row.accountIdNew.toString(),
               )
 
               // If no mainAccount entry exists for the parent account, create one
@@ -140,7 +146,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 mainAccountEntry = {
                   accountNumber: row.accountIdNew.toString(),
                   accountName: `Account ${row.accountIdNew}`,
-                  subAccounts: []
+                  subAccounts: [],
                 }
                 mainAccount.push(mainAccountEntry)
                 updated = true
@@ -153,18 +159,25 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               }
 
               // Check if this subaccount already exists in the array
-              const subAccountExists = mainAccountEntry.subAccounts.includes(row.accountIdOld.toString())
+              const subAccountExists = mainAccountEntry.subAccounts.includes(
+                row.accountIdOld.toString(),
+              )
 
               if (!subAccountExists) {
                 // Add new subaccount
                 mainAccountEntry.subAccounts.push(row.accountIdOld.toString())
                 updated = true
-                console.log(`Added subaccount ${row.accountIdOld} to mainAccount ${row.accountIdNew} for company ${companyId}`)
+                console.log(
+                  `Added subaccount ${row.accountIdOld} to mainAccount ${row.accountIdNew} for company ${companyId}`,
+                )
               }
 
               successCount++
             } catch (error) {
-              console.error(`Error processing sub-account ${row.accountIdOld} for firm ${firmId}:`, error)
+              console.error(
+                `Error processing sub-account ${row.accountIdOld} for firm ${firmId}:`,
+                error,
+              )
               errorCount++
             }
           }
@@ -175,8 +188,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               collection: 'companies',
               id: companyId,
               data: {
-                mainAccount
-              }
+                mainAccount,
+              },
             })
             console.log(`Updated company ${companyId} with all sub-accounts`)
           }
@@ -187,26 +200,28 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
 
       // Create an array of firms to process
-      const firms = Array.from(subAccountsByFirmId.entries());
-      const totalFirms = firms.length;
+      const firms = Array.from(subAccountsByFirmId.entries())
+      const totalFirms = firms.length
 
       // Set up promise pool with size 20
-      const POOL_SIZE = 20;
+      const POOL_SIZE = 20
 
       // Process firms in batches
       for (let i = 0; i < totalFirms; i += POOL_SIZE) {
-        console.log(`Processing batch ${Math.floor(i / POOL_SIZE) + 1}/${Math.ceil(totalFirms / POOL_SIZE)}`);
+        console.log(
+          `Processing batch ${Math.floor(i / POOL_SIZE) + 1}/${Math.ceil(totalFirms / POOL_SIZE)}`,
+        )
 
-        const batch = [];
+        const batch = []
 
         // Create a batch of promises up to POOL_SIZE
         for (let j = 0; j < POOL_SIZE && i + j < totalFirms; j++) {
-          const [firmId, firmSubAccounts] = firms[i + j];
-          batch.push(processFirm(firmId, firmSubAccounts));
+          const [firmId, firmSubAccounts] = firms[i + j]
+          batch.push(processFirm(firmId, firmSubAccounts))
         }
 
         // Wait for all promises in the current batch to complete
-        await Promise.all(batch);
+        await Promise.all(batch)
       }
     }
 
