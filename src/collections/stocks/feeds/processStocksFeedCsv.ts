@@ -12,7 +12,7 @@ import { StocksFeed, StockType } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
 export const processStocksFeedCsv = async (
   req: PayloadRequest,
-  data: StocksFeed,
+  data: any,
 ): Promise<{ processedRows: number; fileLength: number }> => {
   const startTime = Date.now()
   let processedRows = 0
@@ -22,7 +22,7 @@ export const processStocksFeedCsv = async (
     console.time('Total stocks processing time')
 
     // The file is at req.file as specified in the issue description
-    const file = req.file
+    const file = data.file
 
     if (!file) {
       req.payload.logger.error(`No file found in request`)
@@ -58,7 +58,6 @@ export const processStocksFeedCsv = async (
       longName: data.longName || ('' as string),
     }))
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
-
     let stocksCreated = 0
     let processedRows = 0
 
