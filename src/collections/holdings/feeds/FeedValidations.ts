@@ -11,6 +11,7 @@ import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
 export type HoldingFeedLineWithName = HoldingFeedLine & {
   stockName?: string | null
+  companyName?: string | null
 }
 
 /**
