@@ -80,9 +80,8 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       collection: 'stocks-feed',
       file: file,
     })
-
     // Process the stock feed CSV
-    const { processedRows, fileLength } = await processStocksFeedCsv(req, stocksFeed)
+    const { processedRows, fileLength } = await processStocksFeedCsv(req, { file })
     const endTime = Date.now()
     const durationMs = endTime - startTime
     const durationSeconds = (durationMs / 1000).toFixed(2)
