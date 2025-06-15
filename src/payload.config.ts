@@ -38,23 +38,21 @@ import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-
+const isProduction = process.env.NODE_ENV === 'production'
 const dbArgs: Args = {
   url: process.env.DATABASE_URI || '',
-  // connectOptions: {
-  //   // Direct read operations to secondary replicas when available
-  //   readPreference: 'secondaryPreferred',
-  //   // Increase max pool size to handle more connections
-  //   maxPoolSize: 50,
-  //   // Set timeout for operations
-  //   socketTimeoutMS: 30000,
-  //   // Set connection timeout
-  //   connectTimeoutMS: 30000,
-  //   // Enable retry writes
-  //   retryWrites: true,
-  //   // Set write concern to majority to ensure data is written to multiple replicas
-  //   w: 'majority'
-  // }
+  ...(isProduction && {
+    connectOptions: {
+      readPreference: 'secondaryPreferred',
+      autoIndex: false,
+      autoCreate: false,
+      maxPoolSize: 50,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+      w: 'majority',
+    },
+  }),
 }
 
 if (process.env.MONGO_USE_TX !== 'true') {
