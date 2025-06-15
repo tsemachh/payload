@@ -14,21 +14,49 @@ export const StocksFeed: CollectionConfig = {
   access: {
     read: () => true,
   },
-  hooks: {
-    afterChange: [
-      async ({ req, doc  }) => {
-        if (req.context?.from !== 'process') {
-          await processStocksFeedCsv(req, doc)
-        }
-      },
-    ],
-  },
   fields: [
     {
       name: 'comments',
-      type: 'text',
+      type: 'json',
       label: 'הערות',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'hash',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Don't modify the hash if it's already set
+            if (siblingData.hash) return siblingData.hash
+            return undefined
+          },
+        ],
+      },
+    },
+    {
+      name: 'duration',
+      label: 'זמן התהליך',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'summary',
+      label: 'סיכום',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
     },
   ],
+
   upload: true,
 }

@@ -1,9 +1,11 @@
 import { PayloadRequest } from 'payload'
 import { format } from 'date-fns'
 import { processMeetingsAgendaFeedCsv } from './processMeetingsAgendaFeedCsv'
+import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
   try {
+    const startTime = Date.now()
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
@@ -46,25 +48,59 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Create a new MeetingsFeed document
+    // Calculate file hash
+    const fileHash = calculateFileHash(buffer)
+
+    // Check if a file with the same hash already exists
+    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
+      req.payload,
+      'meetings-feed',
+      fileHash,
+    )
+
+    // If duplicate found, return success with existing document
+    if (isDuplicate && existingDoc) {
+      return Response.json(
+        {
+          message: 'File with identical content already exists',
+          stocksFeed: existingDoc,
+          isDuplicate: true,
+        },
+        { status: 200 },
+      )
+    }
+
+    // Create a new MeetingsFeed document with hash
     const meetingsFeed = await req.payload.create({
-      data: { comments: '' },
+      data: {
+        comments: {},
+        hash: fileHash,
+      },
       collection: 'meetings-feed',
       file: file,
     })
-    const errors = await processMeetingsAgendaFeedCsv(req, { file })
-    const formattedErrors = errors.map((err, index) => `${index + 1}. ${err}`).join('\n')
+    const { errors, successCount, fileLength } = await processMeetingsAgendaFeedCsv(req, { file })
+    const endTime = Date.now()
+    const durationMs = endTime - startTime
+    const durationSeconds = (durationMs / 1000).toFixed(2)
+
     await req.payload.update({
       collection: 'meetings-feed',
       id: meetingsFeed.id,
       data: {
-        comments: formattedErrors,
+        comments: {
+          errors,
+        },
+        duration: `${durationSeconds}s`,
+        summary: `success: ${successCount} / ${fileLength} `,
       },
     })
+
     return Response.json({
       message: 'Successfully uploaded CSV file',
       stocksFeed: meetingsFeed,
       errors,
+      isDuplicate: false,
     })
   } catch (error) {
     console.error('Error uploading CSV file:', error)

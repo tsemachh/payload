@@ -41,6 +41,20 @@ const dirname = path.dirname(filename)
 
 const dbArgs: Args = {
   url: process.env.DATABASE_URI || '',
+  // connectOptions: {
+  //   // Direct read operations to secondary replicas when available
+  //   readPreference: 'secondaryPreferred',
+  //   // Increase max pool size to handle more connections
+  //   maxPoolSize: 50,
+  //   // Set timeout for operations
+  //   socketTimeoutMS: 30000,
+  //   // Set connection timeout
+  //   connectTimeoutMS: 30000,
+  //   // Enable retry writes
+  //   retryWrites: true,
+  //   // Set write concern to majority to ensure data is written to multiple replicas
+  //   w: 'majority'
+  // }
 }
 
 if (process.env.MONGO_USE_TX !== 'true') {
@@ -55,20 +69,19 @@ export default buildConfig({
     // Schedule daily tasks when payload initializes
     await scheduleDailyTasks(payload)
   },
-  jobs:{
+  jobs: {
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
       if (!defaultJobsCollection.admin) {
-        defaultJobsCollection.admin = {};
+        defaultJobsCollection.admin = {}
       }
-      defaultJobsCollection.admin.hidden = false;
-      return defaultJobsCollection;
+      defaultJobsCollection.admin.hidden = false
+      return defaultJobsCollection
     },
     deleteJobOnComplete: false,
     tasks: [
       {
         slug: 'checkNotifications',
         handler: checkNotificationsHandler,
-
       },
       {
         slug: 'processMeetingState',
