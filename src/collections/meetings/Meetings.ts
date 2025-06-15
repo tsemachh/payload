@@ -1,4 +1,5 @@
-import { type CollectionConfig, Field, PayloadRequest, SelectFieldSingleValidation } from 'payload'
+import type { TextFieldSingleValidation } from 'payload'
+import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint } from './endpoints/MeetingsEndpoints'
@@ -8,13 +9,13 @@ import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 import {
-  validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
+  validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
-import type { TextFieldSingleValidation } from 'payload'
+
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
@@ -107,7 +108,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
-    maxPerDoc: 5
+    maxPerDoc: 5,
   },
   fields: [
     {

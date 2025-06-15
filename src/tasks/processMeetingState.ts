@@ -14,7 +14,7 @@ export const processMeetingStateHandler: TaskHandler<'processMeetingState'> = as
 
     // Parse the response
     const responseData = await result.json()
-//reschedule the task
+    //reschedule the task
     await scheduleProcessMeetingStateTask(req.payload)
     return {
       output: responseData,

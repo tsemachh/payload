@@ -54,7 +54,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         let newStockSequence = await getSequenceStockId(payload, isin)
         if (!newStockSequence) {
           // Create or update the ISIN stock
-          newStockSequence = await upsertStockFromImport(
+          newStockSequence = (await upsertStockFromImport(
             null,
             {
               stockID: isin,
@@ -68,11 +68,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             'Foreign', // origin
             true, // active
             `Created from foreign stock ${originalStock.stockId}`,
-          ) as string | null
+          )) as string | null
         }
 
         // Update the original stock to point to the new ISIN stock
-        if (newStockSequence){
+        if (newStockSequence) {
           req.payload.update({
             collection: 'stocks',
             id: originalStock.id,

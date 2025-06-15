@@ -126,7 +126,10 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
     if (!parsed.isGeneric && parsed.companyName) {
       const companies = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName }, type: { equals: 'regular' } },
+        where: {
+          name: { like: parsed.companyName },
+          type: { equals: 'regular' },
+        },
       })
       if (companies) {
         const foundCompanies = companies.docs

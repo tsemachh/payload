@@ -55,7 +55,11 @@ const holdingColumns: Column<RecordType>[] = [
   },
 ]
 
-const getInvalidColumnsAdditional = (companies: string[],allRecords:HoldingFeedLine[],onRefresh: (records: any[]) => void): Column<RecordType>[] => [
+const getInvalidColumnsAdditional = (
+  companies: string[],
+  allRecords: HoldingFeedLine[],
+  onRefresh: (records: any[]) => void,
+): Column<RecordType>[] => [
   {
     key: 'error',
     header: 'שגיאה',
@@ -95,10 +99,10 @@ export const RecordsTable: React.FC<{
   records: HoldingFeedLineWithName[]
   invalid?: boolean
   companies: string[]
-  onRefresh?: (records: HoldingFeedLine[]) => void;
+  onRefresh?: (records: HoldingFeedLine[]) => void
   valid?: HoldingFeedLine[]
   silenced?: HoldingFeedLine[]
-}> = ({ records, invalid, companies,onRefresh,valid,silenced }) => {
+}> = ({ records, invalid, companies, onRefresh, valid, silenced }) => {
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
@@ -108,14 +112,11 @@ export const RecordsTable: React.FC<{
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))
-  const allRecords = [
-    ...records,
-    ...(valid ?? []),
-    ...(silenced ?? [])
-  ]
-  const columns = invalid && onRefresh
-    ? [...holdingColumns, ...getInvalidColumnsAdditional(companies, allRecords, onRefresh)]
-    : holdingColumns
+  const allRecords = [...records, ...(valid ?? []), ...(silenced ?? [])]
+  const columns =
+    invalid && onRefresh
+      ? [...holdingColumns, ...getInvalidColumnsAdditional(companies, allRecords, onRefresh)]
+      : holdingColumns
 
   const tableWidth = columns.reduce((sum, column) => {
     return sum + (column.width || column.minWidth) + 25
@@ -128,7 +129,7 @@ export const RecordsTable: React.FC<{
         minWidth: tableWidth + 50 + 'px',
         maxWidth: tableWidth + 80 + columns.length * 100 + 'px',
         width: '100%',
-//        margin: '0 auto',
+        //        margin: '0 auto',
       }}
     >
       <DataTableStatic

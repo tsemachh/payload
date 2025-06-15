@@ -22,16 +22,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         and: [
           {
             type: {
-              equals: 'regular'
-            }
+              equals: 'regular',
+            },
           },
           {
             mainAccount: {
-              exists: true
-            }
-          }
-        ]
-      }
+              exists: true,
+            },
+          },
+        ],
+      },
     })
 
     console.log(`Found ${companiesResult.docs.length} companies with accounts`)
@@ -47,12 +47,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
         // Collect account information from mainAccount and subAccounts
         type AccountInfo = {
-          accountNumber: string;
-          name: string;
+          accountNumber: string
+          name: string
           subAccounts: string[]
-        };
+        }
 
-        const accountInfos: AccountInfo[] = [];
+        const accountInfos: AccountInfo[] = []
 
         // Process mainAccount array if it exists
         if (company.mainAccount && Array.isArray(company.mainAccount)) {
@@ -61,9 +61,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               // Add main account to accountInfos
               accountInfos.push({
                 accountNumber: mainAcc.accountNumber,
-                name: mainAcc.accountName || `Account ${mainAcc.accountNumber}` ,// Use accountName if available, otherwise use default
-                subAccounts: mainAcc.subAccounts || []
-              });
+                name: mainAcc.accountName || `Account ${mainAcc.accountNumber}`, // Use accountName if available, otherwise use default
+                subAccounts: mainAcc.subAccounts || [],
+              })
             }
           }
         }
@@ -111,7 +111,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
         // Rename accounts with duplicate names
         for (const [name, duplicateAccounts] of Object.entries(accountsToRename)) {
-          console.log(`Found ${duplicateAccounts.length + 1} accounts with name "${name}" - renaming`)
+          console.log(
+            `Found ${duplicateAccounts.length + 1} accounts with name "${name}" - renaming`,
+          )
           // Start index from 1
           let index = 1
           for (const accountInfo of duplicateAccounts) {
@@ -121,12 +123,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
         }
 
-
-        const childIds:string[]=[]
+        const childIds: string[] = []
         // Process each account to create a new company
         for (const accountInfo of accountInfos) {
           try {
-            console.log(`Processing account: ${accountInfo.name} (Account Number: ${accountInfo.accountNumber})`)
+            console.log(
+              `Processing account: ${accountInfo.name} (Account Number: ${accountInfo.accountNumber})`,
+            )
 
             // Create a new company with the account name
             const newCompanyData: Partial<Company> = {
@@ -139,9 +142,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 {
                   accountNumber: accountInfo.accountNumber,
                   accountName: accountInfo.name,
-                  subAccounts: accountInfo.subAccounts
-                }
-              ]
+                  subAccounts: accountInfo.subAccounts,
+                },
+              ],
             }
 
             const newCompany = await payload.create({
@@ -153,7 +156,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             childIds.push(newCompany.id)
             processedAccounts++
           } catch (error) {
-            console.error(`Error processing account ${accountInfo.name} (Account Number: ${accountInfo.accountNumber}):`, error)
+            console.error(
+              `Error processing account ${accountInfo.name} (Account Number: ${accountInfo.accountNumber}):`,
+              error,
+            )
             errorCount++
           }
         }
@@ -164,26 +170,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             id: company.id,
             data: {
               subCompanies: childIds,
-              mainAccount: [] // Clear the mainAccount array
+              mainAccount: [], // Clear the mainAccount array
             },
           })
 
           // Verify that the mainAccount array was cleared
           if (updateResult.mainAccount && updateResult.mainAccount.length > 0) {
-            console.error(`Warning: mainAccount array not cleared for company ${company.name} (ID: ${company.id})`)
+            console.error(
+              `Warning: mainAccount array not cleared for company ${company.name} (ID: ${company.id})`,
+            )
 
             // Try again with a direct update
             await payload.update({
               collection: 'companies',
               id: company.id,
               data: {
-                mainAccount: []
+                mainAccount: [],
               },
             })
 
-            console.log(`Attempted second update to clear mainAccount for company ${company.name} (ID: ${company.id})`)
+            console.log(
+              `Attempted second update to clear mainAccount for company ${company.name} (ID: ${company.id})`,
+            )
           } else {
-            console.log(`Successfully cleared mainAccount for company ${company.name} (ID: ${company.id})`)
+            console.log(
+              `Successfully cleared mainAccount for company ${company.name} (ID: ${company.id})`,
+            )
           }
         } catch (error) {
           console.error(`Error updating company ${company.name} (ID: ${company.id}):`, error)
@@ -205,29 +217,33 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         and: [
           {
             type: {
-              equals: 'regular'
-            }
+              equals: 'regular',
+            },
           },
           {
             mainAccount: {
-              exists: true
-            }
+              exists: true,
+            },
           },
           {
             mainAccount: {
-              not_equals: []
-            }
-          }
-        ]
-      }
+              not_equals: [],
+            },
+          },
+        ],
+      },
     })
 
     if (companiesWithAccountsResult.docs.length > 0) {
-      console.log(`Warning: Found ${companiesWithAccountsResult.docs.length} companies that still have accounts after migration`)
+      console.log(
+        `Warning: Found ${companiesWithAccountsResult.docs.length} companies that still have accounts after migration`,
+      )
 
       // Process each company that still has accounts
       for (const company of companiesWithAccountsResult.docs) {
-        console.log(`Company ${company.name} (ID: ${company.id}) still has ${company?.mainAccount?.length} accounts`)
+        console.log(
+          `Company ${company.name} (ID: ${company.id}) still has ${company?.mainAccount?.length} accounts`,
+        )
 
         // Try to clear the mainAccount array again
         try {
@@ -235,12 +251,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'companies',
             id: company.id,
             data: {
-              mainAccount: []
+              mainAccount: [],
             },
           })
           console.log(`Cleared mainAccount for company ${company.name} (ID: ${company.id})`)
         } catch (error) {
-          console.error(`Error clearing mainAccount for company ${company.name} (ID: ${company.id}):`, error)
+          console.error(
+            `Error clearing mainAccount for company ${company.name} (ID: ${company.id}):`,
+            error,
+          )
         }
       }
     } else {
@@ -254,7 +273,6 @@ Migration completed:
 - Errors: ${errorCount}
 - Companies still with accounts: ${companiesWithAccountsResult.docs.length}
     `)
-
   } catch (error) {
     console.error('Migration failed:', error)
     throw error

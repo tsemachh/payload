@@ -1,10 +1,10 @@
-import  { Payload } from 'payload'
+import { Payload } from 'payload'
 
 export const scheduleCheckNotificationsTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
     task: 'checkNotifications',
     queue: 'daily',
-    input: {  }
+    input: {},
   })
 }
 
@@ -12,7 +12,7 @@ export const scheduleProcessMeetingStateTask = async (payload: Payload): Promise
   await payload.jobs.queue({
     task: 'processMeetingState',
     queue: 'daily',
-    input: {  }
+    input: {},
   })
 }
 
@@ -20,14 +20,14 @@ export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
   try {
     await payload.delete({
       collection: 'payload-jobs',
-      where:{
-        taskSlug:{
-          in: ['checkNotifications','processMeetingState']
+      where: {
+        taskSlug: {
+          in: ['checkNotifications', 'processMeetingState'],
         },
-        totalTried:{
-          equals : 0
-        }
-      }
+        totalTried: {
+          equals: 0,
+        },
+      },
     })
     // Schedule the checkNotifications task
     await scheduleCheckNotificationsTask(payload)

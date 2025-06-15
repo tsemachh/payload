@@ -69,12 +69,12 @@ export const fetchAllSilencedStocks = async (
         },
       },
       limit: 0,
-      depth: 0
+      depth: 0,
     })
 
     // Collect all silenced stocks from all companies
     const silencedStocksSet = new Set<string>()
-    result.docs.forEach(company => {
+    result.docs.forEach((company) => {
       const silencedStocks = company.silencedStocks || []
       silencedStocks.forEach((stockId: string) => {
         if (stockId) {
@@ -84,12 +84,12 @@ export const fetchAllSilencedStocks = async (
     })
 
     // Convert to array of objects with stockId property
-    return Array.from(silencedStocksSet).map(stockId => ({ stockId }))
+    return Array.from(silencedStocksSet).map((stockId) => ({ stockId }))
   } catch (error) {
-    console.error('שגיאה בקריאה לניירות מושתקים:', error);
-    return [];
+    console.error('שגיאה בקריאה לניירות מושתקים:', error)
+    return []
   }
-};
+}
 /**
  * Preload accounts from companies
  * @param req The payload request
@@ -136,8 +136,11 @@ export const preloadAccountsToCompanyMap = async (
 export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
-): Promise<{ stockIdMap: Map<string, string>; stockNameMap: Map<string, string>; stockActiveMap: Map<string, boolean> }> => {
-
+): Promise<{
+  stockIdMap: Map<string, string>
+  stockNameMap: Map<string, string>
+  stockActiveMap: Map<string, boolean>
+}> => {
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
     .filter((stockId): stockId is string => typeof stockId === 'string' && stockId !== '')
@@ -194,7 +197,10 @@ export const createHoldings = async (
   valueDate: string,
 ): Promise<void> => {
   // Aggregate records with the same accountId and stockId
-  const aggregatedRecords = new Map<string, { company: string; stock: string; quantity: number ,feedStockNum:string}>()
+  const aggregatedRecords = new Map<
+    string,
+    { company: string; stock: string; quantity: number; feedStockNum: string }
+  >()
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
@@ -222,7 +228,10 @@ export const createHoldings = async (
   }
 
   // Create a map of company -> records holdings
-  const companyRecordsMap = new Map<string, Array<{ stock: string; quantity: number; feedStockNum: string }>>()
+  const companyRecordsMap = new Map<
+    string,
+    Array<{ stock: string; quantity: number; feedStockNum: string }>
+  >()
 
   // Group records by company
   for (const record of aggregatedRecords.values()) {
@@ -239,16 +248,20 @@ export const createHoldings = async (
 
   // Create holdings for each company
   for (const [company, holdings] of companyRecordsMap.entries()) {
-    await req.payload.create({
-      collection: 'holdings',
-      data: {
-        fund: company,
-        holdings,
-        valueDate,
-      },
-    }).catch(error => {
-      req.payload.logger.error(`Error creating holding for company ${company}: ${JSON.stringify(error)}`);
-      return null;
-    });
+    await req.payload
+      .create({
+        collection: 'holdings',
+        data: {
+          fund: company,
+          holdings,
+          valueDate,
+        },
+      })
+      .catch((error) => {
+        req.payload.logger.error(
+          `Error creating holding for company ${company}: ${JSON.stringify(error)}`,
+        )
+        return null
+      })
   }
 }

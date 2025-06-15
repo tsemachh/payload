@@ -26,7 +26,6 @@ const ConditionalReasonText: React.FC<TextFieldClientProps> = (props) => {
         })
         const reasonDoc = await response.json()
         setShouldShow(reasonDoc.content === 'אחר')
-        
       } else if (typeof reasonRef === 'object' && reasonRef?.content) {
         setShouldShow(reasonRef.content === 'אחר')
       } else {

@@ -27,7 +27,10 @@ export default function CompanyTreeView() {
         if (data.docs && Array.isArray(data.docs)) {
           // Transform the flat company structure into a hierarchical tree
           const transformedCompanies = transformCompaniesToTree(
-            data.docs.map((company: Company) => ({ company, companyId: company.companyId })),
+            data.docs.map((company: Company) => ({
+              company,
+              companyId: company.companyId,
+            })),
           )
           setCompanies(transformedCompanies)
         }
@@ -51,7 +54,7 @@ export default function CompanyTreeView() {
     const getCompanyDetails = async () => {
       setIsLoadingDetails(true)
       try {
-        const data= await fetchCompanyById(selectedCompanyId)
+        const data = await fetchCompanyById(selectedCompanyId)
         console.log('Company details:', data)
         setCompanyDetails(data)
       } catch (error) {
@@ -82,17 +85,14 @@ export default function CompanyTreeView() {
       <h1 className="text-2xl font-bold text-center mb-6">עץ חברות</h1>
       <div className="flex flex-row gap-6">
         <div className="w-1/2 border rounded-md p-4">
-          <CompanyTree 
-            companies={companies} 
+          <CompanyTree
+            companies={companies}
             selectedCompanyId={selectedCompanyId}
             onSelectCompany={handleCompanySelect}
           />
         </div>
         <div className="w-1/2 border rounded-md p-4">
-          <CompanyDetails 
-            companyDetails={companyDetails} 
-            isLoading={isLoadingDetails} 
-          />
+          <CompanyDetails companyDetails={companyDetails} isLoading={isLoadingDetails} />
         </div>
       </div>
     </div>
@@ -100,14 +100,14 @@ export default function CompanyTreeView() {
 }
 
 // Component to display the company tree
-function CompanyTree({ 
-  companies, 
-  selectedCompanyId, 
-  onSelectCompany 
-}: { 
-  companies: TreeNode[]; 
-  selectedCompanyId: string | null;
-  onSelectCompany: (companyId: string) => void;
+function CompanyTree({
+  companies,
+  selectedCompanyId,
+  onSelectCompany,
+}: {
+  companies: TreeNode[]
+  selectedCompanyId: string | null
+  onSelectCompany: (companyId: string) => void
 }) {
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -186,7 +186,7 @@ function CompanyTree({
   const toggleExpand = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setExpandedNodes((prev) =>
-      prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId]
+      prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId],
     )
   }
 
@@ -202,15 +202,20 @@ function CompanyTree({
             className={`flex items-center justify-between w-full px-2 py-1.5 hover:bg-gray-100 rounded-sm cursor-pointer ${
               isSelected ? 'bg-blue-100' : ''
             }`}
-            style={{ 
+            style={{
               paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined,
               color: 'black',
-              backgroundColor: isSelected ? 'inherit' : 
-                    node.name.includes('קבוצת') ? 'yellow' : // bg-yellow-300 - Companies with "קבוצת" in their name: yellow
-                    node.type  == 'parent' ? 'orange' : // bg-orange-600/60 - Companies with accounts: orange accent 6
-                      node.type  == 'regular' ? 'lightblue' : // bg-orange-400 - Parent companies with parent: orange
-                        node.type  == 'fund' ? 'peachpuff' : // bg-orange-400 - Parent companies with parent: orange
-                    'inherit'
+              backgroundColor: isSelected
+                ? 'inherit'
+                : node.name.includes('קבוצת')
+                  ? 'yellow' // bg-yellow-300 - Companies with "קבוצת" in their name: yellow
+                  : node.type == 'parent'
+                    ? 'orange' // bg-orange-600/60 - Companies with accounts: orange accent 6
+                    : node.type == 'regular'
+                      ? 'lightblue' // bg-orange-400 - Parent companies with parent: orange
+                      : node.type == 'fund'
+                        ? 'peachpuff' // bg-orange-400 - Parent companies with parent: orange
+                        : 'inherit',
             }}
             onClick={() => onSelectCompany(node.id)}
           >
@@ -253,7 +258,9 @@ function CompanyTree({
                 <div className="w-5" />
               )}
               <div className="flex-1 overflow-hidden">
-                <span className="truncate mr-1 block">{node.name}({node.companyId})</span>
+                <span className="truncate mr-1 block">
+                  {node.name}({node.companyId})
+                </span>
               </div>
             </div>
           </div>
@@ -298,13 +305,13 @@ function CompanyTree({
             className="w-1/3 h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={expandAll}
               className="px-2 py-1 text-sm bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-sm"
             >
               הרחב הכל
             </button>
-            <button 
+            <button
               onClick={collapseAll}
               className="px-2 py-1 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-sm"
             >
@@ -325,12 +332,12 @@ function CompanyTree({
 }
 
 // Component to display company details
-function CompanyDetails({ 
-  companyDetails, 
-  isLoading 
-}: { 
-  companyDetails: Company | null;
-  isLoading: boolean;
+function CompanyDetails({
+  companyDetails,
+  isLoading,
+}: {
+  companyDetails: Company | null
+  isLoading: boolean
 }) {
   if (isLoading) {
     return (
@@ -364,11 +371,15 @@ function CompanyDetails({
             <div>{companyDetails.active ? 'פעיל' : 'לא פעיל'}</div>
 
             <div className="font-medium">סוג חברה:</div>
-            <div>{companyDetails.type === 'regular' ? 'רגיל' : 
-                  companyDetails.type === 'parent' ? 'הורה' : 
-                  companyDetails.type === 'fund' ? 'קרן' : 
-                  companyDetails.type || 'לא זמין'}</div>
-
+            <div>
+              {companyDetails.type === 'regular'
+                ? 'רגיל'
+                : companyDetails.type === 'parent'
+                  ? 'הורה'
+                  : companyDetails.type === 'fund'
+                    ? 'קרן'
+                    : companyDetails.type || 'לא זמין'}
+            </div>
 
             {companyDetails.meetings && (
               <>
@@ -420,16 +431,19 @@ function CompanyDetails({
           <div>
             <h3 className="text-lg font-semibold mb-2">חברת אם</h3>
             <ul className="list-disc list-inside">
-              {(companyDetails.parentCompany as  {docs:Company[]}).docs
-                ? (companyDetails.parentCompany as  {docs:Company[]}).docs.map((parent: Company) => (
-                    <li key={parent.id}>{parent.name}</li>
-                  ))
-                : Array.isArray(companyDetails.parentCompany)
-                  ? companyDetails.parentCompany.map((parent: Company) => (
-                      <li key={parent.id}>{parent.name}</li>
-                    ))
-                  : <li key={(companyDetails.parentCompany as Company).id}>{(companyDetails.parentCompany as Company).name}</li>
-              }
+              {(companyDetails.parentCompany as { docs: Company[] }).docs ? (
+                (companyDetails.parentCompany as { docs: Company[] }).docs.map(
+                  (parent: Company) => <li key={parent.id}>{parent.name}</li>,
+                )
+              ) : Array.isArray(companyDetails.parentCompany) ? (
+                companyDetails.parentCompany.map((parent: Company) => (
+                  <li key={parent.id}>{parent.name}</li>
+                ))
+              ) : (
+                <li key={(companyDetails.parentCompany as Company).id}>
+                  {(companyDetails.parentCompany as Company).name}
+                </li>
+              )}
             </ul>
           </div>
         )}

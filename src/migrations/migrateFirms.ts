@@ -11,8 +11,8 @@ const sqlConfig: sql.config = {
   port: 1433,
   options: {
     encrypt: false,
-    trustServerCertificate: true
-  }
+    trustServerCertificate: true,
+  },
 }
 
 interface FirmRow {
@@ -30,7 +30,6 @@ interface FirmRow {
 }
 
 async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>> {
-
   const result = await pool.request().query(`
     SELECT 
       [id] as firmId,
@@ -82,18 +81,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             showResearchBond: !!row.showResearchBond,
             showResearchTrusteeship: !!row.showResearchTrusteeship,
           },
-        };
-        
+        }
 
         // Check if firm already exists
         const existingCompany = await payload.find({
           collection: 'companies',
           where: {
             companyId: {
-              equals: row.firmId
-            }
+              equals: row.firmId,
+            },
           },
-          limit: 1
+          limit: 1,
         })
 
         if (existingCompany.docs.length > 0) {
@@ -114,7 +112,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         successCount++
-        console.log(`✓ Processed firm: ${row.firmId} (${successCount}/${resultFirms.recordset.length})`)
+        console.log(
+          `✓ Processed firm: ${row.firmId} (${successCount}/${resultFirms.recordset.length})`,
+        )
       } catch (error) {
         errorCount++
         console.error(`✗ Error processing firm ${row.firmId}:`, error)

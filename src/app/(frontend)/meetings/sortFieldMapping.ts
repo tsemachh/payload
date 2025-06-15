@@ -19,9 +19,9 @@ export const sortFieldMapping: Record<string, string> = {
   electronicVotingEnabled: 'electronicVotingEnabled',
   resultsConfirmationStatus: 'resultsConfirmationStatus',
   committeeInitiated: 'committeeInitiated',
-};
+}
 
 // Get the database field name for a frontend field
 export function getDbFieldName(frontendField: string): string {
-  return sortFieldMapping[frontendField] || frontendField;
+  return sortFieldMapping[frontendField] || frontendField
 }
