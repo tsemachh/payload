@@ -480,7 +480,7 @@ export default function VotingForm() {
                                     hasPersonalInterest: false,
                                   }
                                 }
-                                handleAgendaQuestionsChange={(questionId, value, explanation) =>
+                                handleAgendaQuestionsChangeAction={(questionId, value, explanation) =>
                                   handleAgendaQuestionsChangeWrapper(
                                     questionId,
                                     value,

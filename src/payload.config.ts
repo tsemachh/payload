@@ -73,6 +73,9 @@ export default buildConfig({
         defaultJobsCollection.admin = {}
       }
       defaultJobsCollection.admin.hidden = false
+      defaultJobsCollection.admin.defaultColumns=['taskSlug','updatedAt','taskStatus']
+      defaultJobsCollection.admin.group = 'ניהול'
+      defaultJobsCollection.labels ={plural:'תהליכי מערכת',singular:'תהליף מערכת'}
       return defaultJobsCollection
     },
     deleteJobOnComplete: false,

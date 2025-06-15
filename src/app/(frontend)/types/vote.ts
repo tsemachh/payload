@@ -1,4 +1,4 @@
-import { VoteDecision } from '@/payload-types'
+import { VoteDecision } from '../../../payload-types'
 
 export type VoteDataType = {
   generalVotingData: GeneralVotingData

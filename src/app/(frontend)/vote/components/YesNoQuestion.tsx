@@ -1,16 +1,16 @@
 'use client';
 
-import React from 'react';
-import { Textarea } from '../../components/ui/textarea';
+import * as React from 'react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface YesNoQuestionProps {
   label: string;
-  currentValue: boolean | null; 
+  currentValue: boolean | null;
   explanationValue?: string;
-  explanationPlaceholder?: string; 
-  requiresExplanation: boolean; 
-  onValueChange: (value: boolean, explanation?: string) => void;
-  isAgendaQuestion?: boolean; 
+  explanationPlaceholder?: string;
+  requiresExplanation: boolean;
+  onValueChangeAction: (value: boolean, explanation?: string) => void;
+  isAgendaQuestion?: boolean;
 }
 
 export default function YesNoQuestion({
@@ -19,7 +19,7 @@ export default function YesNoQuestion({
   explanationValue,
   explanationPlaceholder,
   requiresExplanation,
-  onValueChange,
+  onValueChangeAction,
   isAgendaQuestion = false,
 }: YesNoQuestionProps) {
   const showExplanation = requiresExplanation && currentValue === true;
@@ -28,12 +28,14 @@ export default function YesNoQuestion({
 
   return (
     <div>
-      <div className={`flex items-center ${isAgendaQuestion ? 'justify-between' : ''}`}>
+      <div
+        className={`flex items-center ${isAgendaQuestion ? 'justify-between' : ''}`}
+      >
         <span className="text-sm font-medium ml-2">{label}</span>
         <div className="flex bg-muted rounded-full p-0.5 mr-2">
           <button
             type="button"
-            onClick={() => onValueChange(true)}
+            onClick={() => onValueChangeAction(true)}
             className={`${isAgendaQuestion ? agendaButtonClasses : commonButtonClasses} ${
               currentValue === true
                 ? 'bg-primary text-primary-foreground shadow-sm'
@@ -44,7 +46,7 @@ export default function YesNoQuestion({
           </button>
           <button
             type="button"
-            onClick={() => onValueChange(false)}
+            onClick={() => onValueChangeAction(false)}
             className={`${isAgendaQuestion ? agendaButtonClasses : commonButtonClasses} ${
               currentValue === false
                 ? 'bg-primary text-primary-foreground shadow-sm'
@@ -57,12 +59,18 @@ export default function YesNoQuestion({
       </div>
 
       {showExplanation && (
-        <div className={isAgendaQuestion ? 'mt-2' : 'mt-2'}> {/* ניתן לשנות כאן מרווחים לפי הצורך */}
+        <div className={isAgendaQuestion ? 'mt-2' : 'mt-2'}>
+          {' '}
+          {/* ניתן לשנות כאן מרווחים לפי הצורך */}
           <Textarea
             placeholder={explanationPlaceholder || 'נא לפרט...'}
-            className={isAgendaQuestion ? 'min-h-[60px] text-xs w-full' : 'min-h-[80px] text-sm'}
+            className={
+              isAgendaQuestion
+                ? 'min-h-[60px] text-xs w-full'
+                : 'min-h-[80px] text-sm'
+            }
             value={explanationValue || ''}
-            onChange={(e) => onValueChange(true, e.target.value)}
+            onChange={(e: any) => onValueChangeAction(true, e.target.value)}
           />
         </div>
       )}
