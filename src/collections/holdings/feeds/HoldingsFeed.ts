@@ -30,8 +30,8 @@ export const HoldingsFeed: CollectionConfig = {
         beforeChange: [
           ({ siblingData }) => {
             // Don't modify the hash if it's already set
-            if (siblingData.hash) return siblingData.hash;
-            return undefined;
+            if (siblingData.hash) return siblingData.hash
+            return undefined
           },
         ],
       },
@@ -119,10 +119,10 @@ export const HoldingsFeed: CollectionConfig = {
             {
               name: 'status',
               type: 'select',
-              options: ['error', 'success','silenced'],
+              options: ['error', 'success', 'silenced'],
             },
           ],
-        }
+        },
       ],
     },
     {

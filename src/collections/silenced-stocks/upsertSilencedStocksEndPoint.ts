@@ -11,11 +11,15 @@ const validateQueryParams = (stockId: string, companiesArray: string[]) => {
     return Response.json({ error: 'Missing or invalid stockId' }, { status: 400 })
   }
   if (!Array.isArray(companiesArray)) {
-    return Response.json({ error: 'Missing or invalid companies' }, { status: 400 });
+    return Response.json({ error: 'Missing or invalid companies' }, { status: 400 })
   }
 }
 
-const updateCompanySilencedStocks = async (req: PayloadRequest, stockId: string, companyId: string) => {
+const updateCompanySilencedStocks = async (
+  req: PayloadRequest,
+  stockId: string,
+  companyId: string,
+) => {
   try {
     // Get the company
     const company = await req.payload.findByID({
@@ -29,7 +33,10 @@ const updateCompanySilencedStocks = async (req: PayloadRequest, stockId: string,
 
     // If the stock is already silenced, no need to update
     if (stockExists) {
-      return { success: true, message: 'Stock already silenced for this company' }
+      return {
+        success: true,
+        message: 'Stock already silenced for this company',
+      }
     }
 
     // Add the stock to the silenced stocks
@@ -54,12 +61,12 @@ const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
     const authError = checkUserAuthorization(req)
     if (authError) return authError
 
-    const { companies } = req.query as {companies: string }
+    const { companies } = req.query as { companies: string }
     // @ts-expect-error req not null
     const stock = await req.json()
-    const stockId=stock.stockId
+    const stockId = stock.stockId
 
-    const companiesArray = companies.split(',');
+    const companiesArray = companies.split(',')
     const queryParamError = validateQueryParams(stockId, companiesArray)
     if (queryParamError) return queryParamError
 

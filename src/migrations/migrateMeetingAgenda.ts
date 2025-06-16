@@ -52,7 +52,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                  LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
         ORDER by a.[mid], a.[id]
     `)
-      console.log(`Retrieved ${result?.recordset?.length} agenda records with recommendations from SQL Server`)
+    console.log(
+      `Retrieved ${result?.recordset?.length} agenda records with recommendations from SQL Server`,
+    )
 
     // Process the results directly
     agendaItems = result.recordset
@@ -96,7 +98,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
-    const seqMap=await getMeetingIdToSequenceMap(req.payload)
+    const seqMap = await getMeetingIdToSequenceMap(req.payload)
     // Process meetings in parallel using the promise pool
     for (const [mid, agendaItems] of meetingAgendaMap.entries()) {
       promises.push(
@@ -139,7 +141,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               id: meetingId,
               data: updatedMeeting,
               req,
-              context: { ...req.context, from: 'migration' }
+              context: { ...req.context, from: 'migration' },
             })
 
             successCount++
@@ -154,7 +156,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               type: 'meetingAgenda',
               typeId: `${mid}`,
               comments: `Failed to update Meeting ${mid} with agenda items: ${updateError.message}`,
-              row: JSON.stringify({ mid, agendaItems, error: updateError.message }),
+              row: JSON.stringify({
+                mid,
+                agendaItems,
+                error: updateError.message,
+              }),
             })
           }
         }),

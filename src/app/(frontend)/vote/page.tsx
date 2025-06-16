@@ -136,7 +136,10 @@ export default function VotingForm() {
     ) => {
       if (type === 'general') {
         setVotingData((prev) => {
-          const newState: GeneralVotingData = { ...prev.generalVotingData, [questionId]: value }
+          const newState: GeneralVotingData = {
+            ...prev.generalVotingData,
+            [questionId]: value,
+          }
           const generalExplanationFieldName = getExplanationFieldName(
             questionId as GeneralQuestionId,
           )
@@ -168,7 +171,10 @@ export default function VotingForm() {
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
             if (vote.subjectId === subjectId) {
-              const newQuestions: AgendaQuestionsType = { ...vote.questions, [questionId]: value }
+              const newQuestions: AgendaQuestionsType = {
+                ...vote.questions,
+                [questionId]: value,
+              }
 
               // Explicitly cast questionId to AgendaQuestionId here
               const agendaExplanationFieldName = getExplanationFieldName(
@@ -480,7 +486,11 @@ export default function VotingForm() {
                                     hasPersonalInterest: false,
                                   }
                                 }
-                                handleAgendaQuestionsChange={(questionId, value, explanation) =>
+                                handleAgendaQuestionsChangeAction={(
+                                  questionId,
+                                  value,
+                                  explanation,
+                                ) =>
                                   handleAgendaQuestionsChangeWrapper(
                                     questionId,
                                     value,

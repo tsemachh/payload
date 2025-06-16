@@ -62,7 +62,9 @@ export function DataTableServer<T extends Record<string, any>>({
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
-  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  const [columnVisibility, setColumnVisibility] = useState<{
+    [key: string]: boolean
+  }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
 
   // Update searchTerm when initialSearchTerm changes

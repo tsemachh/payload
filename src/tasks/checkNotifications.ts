@@ -1,4 +1,4 @@
-import type { TaskHandler  } from 'payload'
+import type { TaskHandler } from 'payload'
 import CheckNotificationsEndpoint from '../collections/admin-notifications/endpoints/CheckNotificationsEndpoint'
 import { sanitizeRequest } from './utils'
 import { scheduleCheckNotificationsTask } from '@/tasks/scheduleDailyTasks'
@@ -14,7 +14,7 @@ export const checkNotificationsHandler: TaskHandler<'checkNotifications'> = asyn
 
     // Parse the response
     const responseData = await result.json()
-//reschedule the task
+    //reschedule the task
     await scheduleCheckNotificationsTask(req.payload)
     console.log('processMeetingStateHandler', responseData)
     return {

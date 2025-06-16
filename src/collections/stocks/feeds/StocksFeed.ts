@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { processStocksFeedCsv } from './processStocksFeedCsv'
 
 export const StocksFeed: CollectionConfig = {
   slug: 'stocks-feed',

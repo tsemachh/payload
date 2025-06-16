@@ -6,8 +6,8 @@ export const sanitizeRequest = async (req: PayloadRequest): Promise<void> => {
     const res = await req.payload.find({
       collection: 'users',
       where: {
-        email: { equals: 'system@shefing.com' }
-      }
+        email: { equals: 'system@shefing.com' },
+      },
     })
     req.user = res.docs[0] as User & { collection: 'users' }
   }

@@ -15,9 +15,8 @@ const ProcessMeetingCompaniesEndPoint = async (req: PayloadRequest) => {
 
     return Response.json({
       success: true,
-      message: 'processCompaniesMeetings ended succesfully'
-
-          })
+      message: 'processCompaniesMeetings ended succesfully',
+    })
   } catch (error) {
     req.payload.logger.error(`Error processing processCompaniesMeetings: ${JSON.stringify(error)}`)
     return Response.json(

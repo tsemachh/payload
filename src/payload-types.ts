@@ -409,6 +409,9 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
+  /**
+   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
+   */
   researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;

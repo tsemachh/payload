@@ -20,12 +20,11 @@ const ImportStocksEndPoint = async (req: PayloadRequest) => {
     const row = rows[i]
     const stock = await getStockByStockId(req.payload, `${row.stockID}` as string)
     const stockSequence = await upsertStockFromImport(stock, row, req, true)
-    if (stockSequence)
-      await upsertStockValueFromImport(stockSequence, row, req)
+    if (stockSequence) await upsertStockValueFromImport(stockSequence, row, req)
   }
 
   return Response.json({
-    message: 'successfully updated rows info , total:'+rows.length+" rows",
+    message: 'successfully updated rows info , total:' + rows.length + ' rows',
   })
 }
 

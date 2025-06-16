@@ -5,6 +5,7 @@ import {
   CollectionBeforeChangeHook,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import { ResearchDocument } from '@/payload-types'
 
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
@@ -12,6 +13,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
 }) => {
   const type = data?.type
   const docIDs = data?.researchDocuments
+  const companies = data?.companies || []
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
     return data
   }
@@ -23,24 +25,24 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       path: 'researchDocuments',
     })
   } else {
+    const query: any = {
+      collection: 'research-documents',
+      select: {
+        id: true,
+        companies: true,
+        filename: true,
+      },
+      depth: 0,
+      limit: 0,
+      where: {
+        id: {
+          in: docIDs,
+        },
+      },
+    }
+
+    const researchDocuments = await req.payload.find(query)
     if (docIDs.length > 1) {
-      const query: any = {
-        collection: 'research-documents',
-        select: {
-          id: true,
-          companies: true,
-        },
-        depth: 0,
-        limit: 0,
-        where: {
-          id: {
-            in: docIDs,
-          },
-        },
-      }
-
-      const researchDocuments = await req.payload.find(query)
-
       const generalDocs = researchDocuments?.docs?.filter(
         (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
       )
@@ -51,15 +53,40 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
         })
       }
     }
-  }
+    //todo: check if the companies in the research documents match the companies in the meeting
+    const docs = researchDocuments.docs as ResearchDocument[]
+    const invalidFilenames: string[] = []
 
-  if (validationErrors.length > 0) {
-    throw new ValidationError({ errors: validationErrors })
-  }
+    docs.forEach((doc) => {
+      if (!doc.companies || doc.companies.length === 0) return
+      const unmatchedCompanies = doc.companies.filter((company) => !companies.includes(company))
+      if (unmatchedCompanies.length > 0 && doc.filename) {
+        invalidFilenames.push(doc.filename)
+      }
+    })
 
-  return data
+    if (invalidFilenames.length === 1) {
+      validationErrors.push({
+        message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
+        path: 'researchDocuments',
+      })
+    } else if (invalidFilenames.length > 1) {
+      const filenamesList = invalidFilenames.map((name) => `- ${name}`).join('\n')
+      const filenamesMessage = `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${filenamesList}`
+
+      validationErrors.push({
+        message: filenamesMessage,
+        path: 'researchDocuments',
+      })
+    }
+
+    if (validationErrors.length > 0) {
+      throw new ValidationError({ errors: validationErrors })
+    }
+
+    return data
+  }
 }
-
 export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
   data,
   req,
@@ -99,8 +126,10 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
     if (!parsed.isGeneric && parsed.companyName) {
       const companies = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName },
-          type: { equals: 'regular' } },
+        where: {
+          name: { like: parsed.companyName },
+          type: { equals: 'regular' },
+        },
       })
       if (companies) {
         const foundCompanies = companies.docs

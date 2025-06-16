@@ -12,7 +12,7 @@ export const SubjectLabel: React.FC = () => {
     if (data?.text) {
       // Store original text for tooltip and convert to uppercase for display
       setOriginalText(data.text)
-      setLabel(`${rowNumber as number + 1}. ${data.text}`)
+      setLabel(`${(rowNumber as number) + 1}. ${data.text}`)
     } else {
       // Default label if header is not present
       setOriginalText('')
@@ -22,14 +22,14 @@ export const SubjectLabel: React.FC = () => {
 
   return (
     <div>
-      <span 
-        title={originalText} 
+      <span
+        title={originalText}
         style={{
           display: 'block',
           maxWidth: '100%',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
-          textOverflow: 'ellipsis'
+          textOverflow: 'ellipsis',
         }}
       >
         {label}
@@ -40,5 +40,11 @@ export const SubjectLabel: React.FC = () => {
 
 export const ArrayLabel: ArrayFieldLabelClientComponent = ({ field, path }) => {
   const { value } = useField<string>({ path: path })
-  return <FieldLabel label={` ${field?.label}${typeof value != 'undefined'?'('+value+')':''}`} path={path} required={field?.required} />
+  return (
+    <FieldLabel
+      label={` ${field?.label}${typeof value != 'undefined' ? '(' + value + ')' : ''}`}
+      path={path}
+      required={field?.required}
+    />
+  )
 }

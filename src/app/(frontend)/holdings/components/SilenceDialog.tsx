@@ -1,18 +1,29 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { HoldingFeedLine } from '@/payload-types'
 
 interface SilenceDialogProps {
   stockId: string | number
   companies: string[]
-  allRecords:HoldingFeedLine[]
-  onRefreshAction: (records: HoldingFeedLine[]) => void;
+  allRecords: HoldingFeedLine[]
+  onRefreshAction: (records: HoldingFeedLine[]) => void
 }
 
-export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,allRecords,onRefreshAction }:SilenceDialogProps) => {
+export const SilenceDialog: React.FC<SilenceDialogProps> = ({
+  stockId,
+  companies,
+  allRecords,
+  onRefreshAction,
+}: SilenceDialogProps) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
@@ -31,7 +42,8 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
         setResultMessage('הנייר הוסף לניירות מושתקים בהצלחה!')
         setTimeout(() => {
           onRefreshAction(allRecords)
-        }, 2000)      } else {
+        }, 2000)
+      } else {
         setResultMessage('נכשל להשתיק את השגיאה.')
       }
     } catch (error) {
@@ -62,11 +74,13 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({ stockId,companies,
         השתקה
       </Button>
 
-
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle className="direction-rtl text-right"> האם בטוח שברצונך להשתיק את נייר הערך?</DialogTitle>
+            <DialogTitle className="direction-rtl text-right">
+              {' '}
+              האם בטוח שברצונך להשתיק את נייר הערך?
+            </DialogTitle>
           </DialogHeader>
 
           {resultMessage ? (
