@@ -8,17 +8,17 @@ import { PromisePool } from '@/utils/promisePool'
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
   '-2': null,
-  '-1': 'הצבעות סותרות',
+  '-1': null, // 'הצבעות סותרות' - not in options
   '0': null,
   '1': 'בעד',
   '2': 'נגד',
   '3': 'דיון',
-  '4': 'הוסר מסדר היום',
+  '4': null, // 'הוסר מסדר היום' - not in options
   '10': 'אין חובת השתתפות',
   '14': 'נמנע',
   '15': 'לא משתתף',
-  '16': 'ללא הצבעה',
-  '17': 'נמכרה אחזקה',
+  '16': null, // 'ללא הצבעה' - not in options
+  '17': 'אין חובת השתתפות',
 }
 
 // SQL Server configuration
@@ -181,19 +181,29 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 // Create or update vote document in MongoDB
                 const voteData = {
                   meeting: mongoMeetingId,
-                  companies: [mongoCompanyId],
+                  company: mongoCompanyId,
                   votes,
                 } as Partial<Vote>
-
-                // Create new vote
-                await payload.create({
-                  collection: 'votes',
-                  data: voteData as Vote,
-                  req,
-                })
-                console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
-
-                successCount++
+                try {
+                  // Create new vote
+                  await payload.create({
+                    collection: 'votes',
+                    data: voteData as Vote,
+                    req,
+                  })
+                  console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
+                  successCount++
+                } catch (error: any) {
+                  errorCount++
+                  console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)
+                  await logMigrationFault({
+                    payload,
+                    type: 'vote',
+                    typeId: `meeting-${meeting.id}`,
+                    comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
+                    row: JSON.stringify(voteData),
+                  })
+                }
               }
           } catch (error: any) {
             errorCount++
