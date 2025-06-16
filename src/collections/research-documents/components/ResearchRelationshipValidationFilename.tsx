@@ -12,7 +12,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   const { value: file } = useField<string>({
     path: `file`,
   })
-  const { meetingCompanies } = useCustomContext()
+  const { meetingCompanies, stockName } = useCustomContext()
 
   const prevValueRef = useRef<string[]>([])
 
@@ -39,19 +39,41 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
     if (!span) {
       span = document.createElement('span')
       span.id = 'research-validation-message'
-      span.style.color = 'red'
       span.style.marginRight = '10px'
       fileAdjustmentsDiv.appendChild(span)
     }
 
+    const setSpanMessage = (text: string, isSuccess = false) => {
+      span!.textContent = text
+      span!.style.color = isSuccess ? 'green' : 'red'
+    }
+
     if (!result.isValid) {
-      span.textContent = result.error || 'שם הקובץ אינו תקין'
+      setSpanMessage(result.error || 'שם הקובץ אינו תקין')
       return
     }
 
     if (result.isGeneric) {
-      span.textContent = `קובץ כללי עבור כל החברות`
+      setSpanMessage(`קובץ כללי עבור כל החברות`, true)
       return
+    }
+
+    let stockNameFromMatch = false
+
+    if (result.stockName) {
+      try {
+        const res = await fetch(`/api/stocks/${stockName}`)
+        const doc = await res.json()
+        const resultStockName = doc?.name || ''
+
+        if (resultStockName === result.stockName) {
+          stockNameFromMatch = true
+        }
+      } catch (err) {
+        console.error('שגיאה בבדיקת נייר הערך:', err)
+        setSpanMessage('אירעה שגיאה בבדיקת נייר הערך')
+        return
+      }
     }
 
     if (result.companyName) {
@@ -82,17 +104,29 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         const res = await fetch(`/api/companies${stringified}`)
         const data = await res.json()
 
-        if (data?.docs?.length > 0) {
-          span.textContent = `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`
+        if (data?.docs?.length > 0 && stockNameFromMatch) {
+          setSpanMessage(
+            `קובץ פרטני עבור החברה "${result.companyName}" ונייר ערך "${result.stockName}"`,
+            true,
+          )
           const companyIds = data.docs.map((doc: any) => doc.id)
-
           setValue(Array.from(companyIds))
+        } else if (data?.docs?.length > 0) {
+          setSpanMessage(
+            `החברה "${result.companyName}" נמצאה, אך נייר הערך "${result.stockName}" לא באסיפה`,
+          )
+        } else if (stockNameFromMatch) {
+          setSpanMessage(
+            `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,
+          )
         } else {
-          span.textContent = `החברה "${result.companyName}" לא נמצאה באסיפה זו`
+          setSpanMessage(
+            `החברה "${result.companyName}" לא משתתפת באסיפה זו וגם נייר הערך "${result.stockName}" לא באסיפה`,
+          )
         }
       } catch (err) {
         console.error('שגיאה בבדיקת החברה:', err)
-        span.textContent = 'אירעה שגיאה בבדיקת החברה'
+        setSpanMessage('אירעה שגיאה בבדיקת החברה')
       }
     }
   }
