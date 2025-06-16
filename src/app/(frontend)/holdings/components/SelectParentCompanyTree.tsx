@@ -1,11 +1,11 @@
-import React from "react"
+import React from 'react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
 
 interface CompanyOption {
   id: string
@@ -18,9 +18,9 @@ interface SelectParentCompanyTreeProps {
 }
 
 export const SelectParentCompanyTree: React.FC<SelectParentCompanyTreeProps> = ({
-                                                                                  companies,
-                                                                                  onSelect,
-                                                                                }) => {
+  companies,
+  onSelect,
+}) => {
   if (!companies || companies.length === 0) {
     return <div className="text-red-600">לא נמצאו חברות.</div>
   }

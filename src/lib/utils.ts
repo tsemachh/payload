@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 export function cn(...inputs: ClassValue[]) {
@@ -10,7 +10,7 @@ export function handleNavigation(
   href: string,
   e: React.MouseEvent,
   pathname: string,
-  router: AppRouterInstance
+  router: AppRouterInstance,
 ) {
   // Check if we're on holdings page and there's a navigation handler
   if (

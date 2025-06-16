@@ -1,0 +1,19 @@
+# Example .prettierignore
+.next/
+.tmp
+**/.git
+**/.hg
+**/.pnp.*
+**/.svn
+**/.yarn/**
+**/build
+**/dist/**
+**/node_modules
+**/temp
+**/docs/**
+tsconfig.json
+src/app/(payload)/**
+**/*.js
+**/*.d.ts
+**/payload-types.ts
+**/tsconfig.tsbuildinfo

@@ -2,7 +2,6 @@ import { PayloadRequest, Where } from 'payload'
 import type { Meeting } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 
-
 async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
@@ -10,8 +9,8 @@ async function processMeeting(
 ): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
-// Cache for holding documents to avoid redundant API calls
-  const holdingDocsCache = new Map<string, any>();
+  // Cache for holding documents to avoid redundant API calls
+  const holdingDocsCache = new Map<string, any>()
 
   // Get holdings for each company
   const holdings = await Promise.all(
@@ -46,10 +45,15 @@ async function processMeeting(
       if (!nearestHoldingsLimitDate) {
         return [] // No holdings found
       }
-      const matchedHoldings =holdingDoc.holdings.filter((holding:any) => {return holding.stock ==getIdOfRelationField(meeting.stock)})
+      const matchedHoldings = holdingDoc.holdings.filter((holding: any) => {
+        return holding.stock == getIdOfRelationField(meeting.stock)
+      })
       if (matchedHoldings.length == 0) return [] // No holdings found for this stock
 
-      return {fund:getIdOfRelationField(holdingDoc.fund) as string,holdings:matchedHoldings}
+      return {
+        fund: getIdOfRelationField(holdingDoc.fund) as string,
+        holdings: matchedHoldings,
+      }
     }),
   )
 
@@ -99,17 +103,17 @@ async function processMeeting(
     const companies = await req.payload.find({
       collection: 'companies',
       depth: 0,
-      select:{
-        parentCompany: true
+      select: {
+        parentCompany: true,
       },
-      where:{
-        id:{
-          in: newFunds
-        }
-      }
+      where: {
+        id: {
+          in: newFunds,
+        },
+      },
     })
-    const compIds=companies.docs.map((comp)=>{
-      if (comp?.parentCompany?.docs){
+    const compIds = companies.docs.map((comp) => {
+      if (comp?.parentCompany?.docs) {
         return comp.parentCompany.docs[0]
       }
     })
@@ -148,7 +152,11 @@ export const processCompaniesMeetings = async (
     req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
-    const where = meetingIds ? { id: { in: meetingIds } } : ({holdingsLimit:{greater_than:new Date('01/01/2024').toISOString()}} as Where)
+    const where = meetingIds
+      ? { id: { in: meetingIds } }
+      : ({
+          holdingsLimit: { greater_than: new Date('01/01/2024').toISOString() },
+        } as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
       limit: 0,
@@ -163,7 +171,8 @@ export const processCompaniesMeetings = async (
       depth: 0,
       limit: 0,
       where: {
-        type:{equals:'fund'}
+        type: { equals: 'fund' },
+        active: { equals: true },
       },
     })
     const funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []

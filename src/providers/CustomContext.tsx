@@ -5,20 +5,26 @@ import { createContext, useContext, PropsWithChildren, useState } from 'react'
 interface ICustomContext {
   meetingCompanies: string[]
   setMeetingCompanies: (value: string[]) => void
+  stockName: string
+  setStockName: (value: string) => void
 }
 export const CustomContext = createContext<ICustomContext>({
   meetingCompanies: [],
   setMeetingCompanies: () => null,
+  stockName: '',
+  setStockName: () => null,
 })
 
 export const CustomContextProvider = ({ children }: PropsWithChildren<{}>) => {
   const [meetingCompanies, setMeetingCompanies] = useState<string[]>([])
-
+  const [stockName, setStockName] = useState<string>('')
   return (
     <CustomContext.Provider
       value={{
         meetingCompanies,
         setMeetingCompanies,
+        stockName,
+        setStockName,
       }}
     >
       {children}

@@ -17,7 +17,7 @@ const stackContextHint = {
 }
 
 export function logtailTransport() {
-  const options:IPinoLogtailOptions ={
+  const options: IPinoLogtailOptions = {
     sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
     options: {
       endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
@@ -84,7 +84,7 @@ export function createPinoBaseConfig() {
 // Create and export the logger instance
 const baseConfig = createPinoBaseConfig()
 const streams = [
-  {level: 'info', stream: logtailTransport()},
-  {level: 'info', stream: process.stdout},
+  { level: 'info', stream: logtailTransport() },
+  { level: 'info', stream: process.stdout },
 ]
-export const logger =pino(baseConfig, pino.multistream(streams))
+export const logger = pino(baseConfig, pino.multistream(streams))

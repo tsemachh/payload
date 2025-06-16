@@ -1,4 +1,4 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
   try {
@@ -7,48 +7,39 @@ const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
     if (!req.user) {
-      return Response.json({ error: 'forbidden' }, { status: 403 })
+      return Response.json({ error: 'forbidden user' }, { status: 403 })
     }
 
     // Get current date in ISO format
     const now = new Date().toISOString()
 
     // Find meetings that should be marked as completed
-    const { docs: scheduledPastMeetings } = await req.payload.find({
+    const { docs: scheduledPastMeetings } = await req.payload.update({
       collection: 'meetings',
       where: {
         meetingDate: { less_than: now },
         state: { equals: 'scheduled' },
+        _status: { equals: 'published' },
       },
-      limit: 1000,
+      data: {
+        state: 'completed',
+      },
+      req: {
+        ...req,
+        context: { ...req.context, from: 'process' },
+      },
     })
 
-    // Process found meetings
-    if (scheduledPastMeetings.length > 0) {
-      await Promise.all(
-        scheduledPastMeetings.map((meeting) =>
-          req.payload.update({
-            collection: 'meetings',
-            id: meeting.id,
-            data: {
-              state: 'completed',
-            },
-          }),
-        ),
-      )
-
-      req.payload.logger.info(
-        `Updated ${scheduledPastMeetings.length} meetings to 'completed' state. Processed IDs: ${scheduledPastMeetings.map((m) => m.id).join(', ')}`,
-      )
-    } else {
-      req.payload.logger.info('No meetings to update during the scheduled process')
-    }
+    req.payload.logger.info(
+      `Updated ${scheduledPastMeetings.length} meetings to 'completed' state. Processed IDs: ${scheduledPastMeetings.map((m) => m.id).join(', ')}`,
+    )
 
     return Response.json({
       success: true,
-      message: scheduledPastMeetings.length > 0 
-        ? `Successfully processed ${scheduledPastMeetings.length} meetings and updated users-meetings collection`
-        : 'No meetings required state update, but users-meetings collection was updated',
+      message:
+        scheduledPastMeetings.length > 0
+          ? `Successfully processed ${scheduledPastMeetings.length} meetings and updated users-meetings collection`
+          : 'No meetings required state update, but users-meetings collection was updated',
       processedIds: scheduledPastMeetings.map((m) => m.id),
     })
   } catch (error) {

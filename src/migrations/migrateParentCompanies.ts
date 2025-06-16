@@ -137,7 +137,7 @@ async function processCompany(
       const createData: Partial<Company> = {
         name: company.name,
         active: true,
-        type: 'parent'
+        type: 'parent',
       }
 
       // Set companyId if provided

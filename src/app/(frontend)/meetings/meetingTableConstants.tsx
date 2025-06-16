@@ -1,6 +1,6 @@
 'use client'
 
-import { BooleanIcon } from '@/components/ui/icons'
+import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
@@ -143,7 +143,13 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     width: 50,
     isAlwaysVisible: true,
   },
-  { key: 'stockNumber', header: 'מס׳ נייר', type: 'string', sortKey: 'stockNumber', minWidth: 70 },
+  {
+    key: 'stockNumber',
+    header: 'מס׳ נייר',
+    type: 'string',
+    sortKey: 'stockNumber',
+    minWidth: 70,
+  },
   {
     key: 'stockType',
     header: 'סוג נייר',
@@ -185,9 +191,9 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
 
-      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        marketValue / 1_000_000,
-      )
+      return new Intl.NumberFormat('he-IL', {
+        maximumFractionDigits: 0,
+      }).format(marketValue / 1_000_000)
     },
     minWidth: 70,
   },
@@ -284,6 +290,42 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 50,
   },
+  {
+    key: 'researchDocuments',
+    header: 'מחקר',
+    type: 'other',
+    filterable: false,
+    minWidth: 50,
+    render: (row) => (
+      <div className="flex gap-2">
+        {row.researchDocuments.length > 0 && (
+          <button
+            onClick={() => {
+              row.researchDocuments.forEach((doc) => {
+                const link = document.createElement('a')
+                link.href = doc.url
+                link.download = doc.filename
+                link.style.display = 'none'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              })
+            }}
+            title={
+              row.researchDocuments.length === 1 ? 'Download document' : 'Download all documents'
+            }
+            className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+          >
+            {row.researchDocuments.length === 1 ? (
+              <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            ) : (
+              <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+            )}
+          </button>
+        )}
+      </div>
+    ),
+  },
   { key: 'location', header: 'מיקום', type: 'string', minWidth: 200 },
   { key: 'comments', header: 'הערות', type: 'string', minWidth: 120 },
   {
@@ -331,6 +373,7 @@ export const defaultVisibleColumns = [
   'comments',
   'electronicVotingEnabled',
   'committeeInitiated',
+  'researchDocuments',
 ]
 
 export const unSortAbleColumnsOnServer = [
@@ -376,9 +419,15 @@ export const getDateRange = (option: string): { start: Date; end: Date } => {
     case 'yesterday':
       return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
     case 'lastWeek':
-      return { start: startOfDay(subDays(yesterday, 6)), end: endOfDay(yesterday) }
+      return {
+        start: startOfDay(subDays(yesterday, 6)),
+        end: endOfDay(yesterday),
+      }
     case 'lastMonth':
-      return { start: startOfDay(subDays(yesterday, 29)), end: endOfDay(yesterday) }
+      return {
+        start: startOfDay(subDays(yesterday, 29)),
+        end: endOfDay(yesterday),
+      }
     case 'allPast':
       return { start: new Date(-8640000000000000), end: endOfDay(yesterday) } // Min date
     default:

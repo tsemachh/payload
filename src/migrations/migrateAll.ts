@@ -13,7 +13,7 @@ import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCom
 import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
 import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
-import { processCompaniesMeetings } from '@/collections/companies-meetings/utils/processCompaniesMeetings'
+import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
  * Migrates all collections in the following order:
@@ -32,7 +32,7 @@ import { processCompaniesMeetings } from '@/collections/companies-meetings/utils
  * 13. Votes
  * 14. Recommendation Reasons
  * 15. Process Companies Meetings
- * 
+ *
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
  */
@@ -40,9 +40,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting migrateAll process...')
 
   try {
-
-
-   // 1. Migrate Stocks
+    // 1. Migrate Stocks
     console.log('\n=== Starting Stocks Migration ===')
     await migrateStocks({ payload, req })
     console.log('=== Stocks Migration Completed ===\n')
@@ -82,13 +80,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateParentCompanies({ payload, req })
     console.log('=== Parent Companies Migration Completed ===\n')
 
-
-
     // 10. Migrate Account Companies To Companies
     console.log('\n=== Starting Account Companies To Companies Migration ===')
     await migrateAccountCompaniesToCompanies({ payload, req })
     console.log('=== Account Companies To Companies Migration Completed ===\n')
-
 
     // 11. Migrate Holdings
     console.log('\n=== Starting Holdings Migration ===')

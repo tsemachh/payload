@@ -29,15 +29,16 @@ export function getMajorityType(label: string): 'regular' | 'privileged' {
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
-): Promise<string[]> => {
+): Promise<{ errors: string[]; successCount: number; fileLength: number }> => {
   const errors: string[] = []
-
+  let successCount = 0
+  let fileLength = 0
   try {
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
       errors.push('לא נמצא קובץ בבקשה')
-      return errors
+      return { errors, successCount, fileLength }
     }
 
     const csvData = iconv.decode(file.data, 'windows-1255')
@@ -62,6 +63,7 @@ export const processMeetingsAgendaFeedCsv = async (
 
     req.payload.logger.info(
       `Processing ${rowsByMagnaId.size} unique meetings from CSV file: ${file.name}`,
+      (fileLength = rowsByMagnaId.size),
     )
     const magnaIds = Array.from(rowsByMagnaId.keys())
     const existingMeetings = await req.payload.find({
@@ -76,7 +78,7 @@ export const processMeetingsAgendaFeedCsv = async (
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
-    const promisePool = new PromisePool(4)
+    const promisePool = new PromisePool(20)
     const promises: Promise<void>[] = []
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
@@ -94,6 +96,7 @@ export const processMeetingsAgendaFeedCsv = async (
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
           })
+          successCount++
         } catch (e: any) {
           errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
@@ -109,10 +112,10 @@ export const processMeetingsAgendaFeedCsv = async (
       })
     }
 
-    return errors
-  } catch (e:any) {
+    return { errors, successCount, fileLength }
+  } catch (e: any) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${e.message})}`)
     errors.push(`שגיאה בעיבוד קובץ האסיפות: ${e.message}`)
-    return errors
+    return { errors, successCount, fileLength }
   }
 }

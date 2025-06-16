@@ -11,16 +11,19 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
   const [uploadsData, setUploadsData] = useState<any[]>([])
 
-  const { setMeetingCompanies } = useCustomContext()
+  const { setMeetingCompanies, setStockName } = useCustomContext()
 
   const documentInfo = useDocumentInfo()
 
   useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
+    const stock = documentInfo.initialData?.stock || []
     if (companies) {
       setMeetingCompanies(companies)
     }
-
+    if (stock) {
+      setStockName(stock)
+    }
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
       ;(chooseExistingBtn as HTMLElement).style.display = 'none'
@@ -84,7 +87,6 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
         newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
 
-        newSpan.style.color = '#006400'
         newSpan.style.marginLeft = '8px'
         newSpan.style.fontFamily = 'Arial, sans-serif'
         newSpan.style.fontStyle = 'italic'

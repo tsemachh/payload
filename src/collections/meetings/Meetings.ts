@@ -1,4 +1,5 @@
-import { type CollectionConfig, Field, PayloadRequest, SelectFieldSingleValidation } from 'payload'
+import type { TextFieldSingleValidation } from 'payload'
+import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
 import { allMeetingsEndpoint, futureMeetingsEndpoint, meetingForVotingEndPoint } from './endpoints/MeetingsEndpoints'
@@ -8,13 +9,13 @@ import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
 import {
-  validateResearchDocsInMeetings,
   afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
+  validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
-import type { TextFieldSingleValidation } from 'payload'
+
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
   iconUrl: '/link.ico', // You'll need to create this icon
@@ -101,12 +102,13 @@ export const Meetings: CollectionConfig = {
       'state',
     ],
     pagination: {
-      defaultLimit: 500,
+      defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
   },
   versions: {
     drafts: true,
+    maxPerDoc: 5,
   },
   fields: [
     {
@@ -649,7 +651,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'companies',
               hasMany: true,
               name: 'funds',
-              label: 'קרנות',
+              label: 'תיקים',
               index: true,
               maxDepth: 0,
               filterOptions: {
@@ -705,13 +707,10 @@ export const Meetings: CollectionConfig = {
               label: 'מסמך מחקר',
               type: 'upload',
               relationTo: 'research-documents',
-              /*              filterOptions: ({ data }) => {
-                return {
-                  companies: {all: data.companies },
-                }
-              },*/
               hasMany: true,
               admin: {
+                description:
+                  'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
                 components: {
                   Field: '/collections/meetings/components/ResearchUploadDisplay',
                 },

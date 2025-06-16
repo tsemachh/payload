@@ -86,8 +86,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 type: 'account',
                 comments: `No firm found for firmId: ${firmId}`,
                 row: JSON.stringify(account),
-                typeId: `${account.accountNumber}`
-              }
+                typeId: `${account.accountNumber}`,
+              },
             })
             errorCount++
           }
@@ -104,7 +104,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         for (const account of accounts) {
           mainAccount.push({
             accountNumber: account.accountNumber.toString(),
-            accountName: account.name || `Account ${account.accountNumber}`
+            accountName: account.name || `Account ${account.accountNumber}`,
           })
           successCount++
         }
@@ -114,16 +114,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           collection: 'companies',
           id: companyId,
           data: {
-            mainAccount
+            mainAccount,
           },
         })
 
         console.log(`Updated company ${companyId} with ${accounts.length} mainAccount entries`)
       } catch (error) {
-        console.error(
-          `Error processing accounts for firm ${firmId}:`,
-          error,
-        )
+        console.error(`Error processing accounts for firm ${firmId}:`, error)
         errorCount += accounts.length
       }
     }

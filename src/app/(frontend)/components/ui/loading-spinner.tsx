@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { motion } from "framer-motion"
+import { motion } from 'framer-motion'
 
 export default function LoadingSpinner() {
   return (
@@ -11,16 +11,16 @@ export default function LoadingSpinner() {
         transition={{
           duration: 2,
           repeat: Number.POSITIVE_INFINITY,
-          ease: "linear",
+          ease: 'linear',
         }}
       >
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className={`absolute size-4 rounded-full ${i === 3 ? "bg-[#1a237e]" : "bg-[#9fa8da]"}`}
+            className={`absolute size-4 rounded-full ${i === 3 ? 'bg-[#1a237e]' : 'bg-[#9fa8da]'}`}
             style={{
-              left: i % 2 === 0 ? 0 : "calc(100% - 1rem)",
-              top: i < 2 ? 0 : "calc(100% - 1rem)",
+              left: i % 2 === 0 ? 0 : 'calc(100% - 1rem)',
+              top: i < 2 ? 0 : 'calc(100% - 1rem)',
             }}
           />
         ))}
@@ -29,4 +29,3 @@ export default function LoadingSpinner() {
     </div>
   )
 }
-

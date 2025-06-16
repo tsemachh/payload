@@ -16,7 +16,15 @@ export type IconLinkFieldProps = IconLinkProps & TextFieldClientProps
  * @returns React component
  */
 const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
-  const { path, urlTemplate, iconUrl,iconOnly, iconAltText, visibilityConditions, ...remainingProps } = props
+  const {
+    path,
+    urlTemplate,
+    iconUrl,
+    iconOnly,
+    iconAltText,
+    visibilityConditions,
+    ...remainingProps
+  } = props
 
   // Main field value
   const { value } = useField<string>({ path: path })
@@ -28,7 +36,7 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
   const conditionFields = visibilityConditions ? Object.keys(visibilityConditions) : []
 
   // Call useField for each condition field at the top level
-  conditionFields.forEach(fieldName => {
+  conditionFields.forEach((fieldName) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { value: fieldValue } = useField<any>({ path: fieldName })
     conditionFieldValues[fieldName] = fieldValue
@@ -42,14 +50,14 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
     if (!value) return false
     if (!visibilityConditions) return true
     return Object.entries(visibilityConditions).every(
-      ([field, expectedValue]) => conditionFieldValues[field] === expectedValue
+      ([field, expectedValue]) => conditionFieldValues[field] === expectedValue,
     )
   }, [value, conditionFieldValues, visibilityConditions])
 
   return (
     <div className="inline-flex items-center">
-    <span className={`flex-grow mr-2 relative ${iconOnly ? "w-[699px]" : ""}`}>
-    <TextField {...remainingProps} path={path} />
+      <span className={`flex-grow mr-2 relative ${iconOnly ? 'w-[699px]' : ''}`}>
+        <TextField {...remainingProps} path={path} />
         {isVisible && (
           <a
             href={linkValue}

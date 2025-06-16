@@ -1,4 +1,9 @@
-import { ACCOUNT_ID_COL, QUANTITY_COL, StandardizedRow, STOCK_ID_COL } from '@/collections/holdings/feeds/FeedTypes'
+import {
+  ACCOUNT_ID_COL,
+  QUANTITY_COL,
+  StandardizedRow,
+  STOCK_ID_COL,
+} from '@/collections/holdings/feeds/FeedTypes'
 import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
 
@@ -12,9 +17,9 @@ export const parseFileContent = (file: any): any[] | undefined => {
 
   if (fileExt === 'csv') {
     let csvData = file.data.toString('utf8')
-    csvData="0,1,2\r\n"+csvData
+    csvData = '0,1,2\r\n' + csvData
     // Parse CSV without using generateHeaderNames which can cause errors
-    return  csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
+    return csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
   } else if (fileExt === 'xlsx' || fileExt === 'xls') {
     const workbook = XLSX.read(file.data, { type: 'buffer' })
     const sheetName = workbook.SheetNames[0]
@@ -22,10 +27,8 @@ export const parseFileContent = (file: any): any[] | undefined => {
 
     const results: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
 
-    return results.filter(row => row.length > 0)
+    return results.filter((row) => row.length > 0)
   }
-  
-
 }
 /**
  * Standardize row data from different file formats

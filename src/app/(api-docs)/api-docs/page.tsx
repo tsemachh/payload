@@ -17,13 +17,13 @@ export default function ApiDocsPage() {
       <header className="mb-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">API Documentation</h1>
-          <Link href="/" className="text-blue-500 hover:underline">← Return to Main Site</Link>
+          <Link href="/" className="text-blue-500 hover:underline">
+            ← Return to Main Site
+          </Link>
         </div>
-        <p className="text-gray-600 mt-2">
-          Documentation for the Import Stocks API.
-        </p>
+        <p className="text-gray-600 mt-2">Documentation for the Import Stocks API.</p>
       </header>
-      
+
       {loading ? (
         <div className="flex justify-center items-center h-[600px]">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
@@ -31,14 +31,14 @@ export default function ApiDocsPage() {
       ) : (
         <div className="bg-white border rounded-lg shadow-lg overflow-hidden">
           {/* Use iframe to completely isolate the API documentation */}
-          <iframe 
-            src="/swagger-ui" 
-            className="w-full h-[700px] border-0" 
+          <iframe
+            src="/swagger-ui"
+            className="w-full h-[700px] border-0"
             title="API Documentation"
           />
         </div>
       )}
-      
+
       <footer className="mt-8 text-center text-gray-500 text-sm">
         <p>API documentation generated with Swagger UI</p>
       </footer>

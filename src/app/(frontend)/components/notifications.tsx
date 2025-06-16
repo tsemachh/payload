@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 // import { useEffect } from "react"
 //TODO: delete!
-import { ToastProvider, ToastViewport } from "@/components/ui/toast"
+import { ToastProvider, ToastViewport } from '@/components/ui/toast'
 // import { useToast } from "@/components/ui/use-toast"
 
 export function Notifications() {
@@ -30,4 +30,3 @@ export function Notifications() {
     </ToastProvider>
   )
 }
-

@@ -31,13 +31,28 @@ import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
 import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
+import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
+import { checkNotificationsHandler } from '@/tasks/checkNotifications'
+import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-
+const isProduction = process.env.NODE_ENV === 'production'
 const dbArgs: Args = {
   url: process.env.DATABASE_URI || '',
+  ...(isProduction && {
+    connectOptions: {
+      readPreference: 'secondaryPreferred',
+      autoIndex: false,
+      autoCreate: false,
+      maxPoolSize: 50,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+      w: 'majority',
+    },
+  }),
 }
 
 if (process.env.MONGO_USE_TX !== 'true') {
@@ -47,6 +62,45 @@ if (process.env.MONGO_USE_TX !== 'true') {
 export default buildConfig({
   i18n: {
     supportedLanguages: { he, en },
+  },
+  onInit: async (payload) => {
+    // Schedule daily tasks when payload initializes
+    await scheduleDailyTasks(payload)
+  },
+  jobs: {
+    jobsCollectionOverrides: ({ defaultJobsCollection }) => {
+      if (!defaultJobsCollection.admin) {
+        defaultJobsCollection.admin = {}
+      }
+      defaultJobsCollection.admin.hidden = false
+      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.admin.group = 'ניהול'
+      defaultJobsCollection.labels = {
+        plural: 'תהליכי מערכת',
+        singular: 'תהליף מערכת',
+      }
+      return defaultJobsCollection
+    },
+    deleteJobOnComplete: false,
+    tasks: [
+      {
+        slug: 'checkNotifications',
+        handler: checkNotificationsHandler,
+      },
+      {
+        slug: 'processMeetingState',
+        handler: processMeetingStateHandler,
+      },
+    ],
+    // autoRun can optionally be a function that receives payload as an argument
+    autoRun: [
+      {
+        cron: '00 09 * * *', // every day at 22:40
+        limit: 10, // limit jobs to process each run
+        queue: 'daily', // name of the queue
+      },
+      // add as many cron jobs as you want
+    ],
   },
   admin: {
     dateFormat: 'HH:mm dd/MM/yyyy',

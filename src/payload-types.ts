@@ -286,6 +286,8 @@ export interface Config {
   };
   jobs: {
     tasks: {
+      checkNotifications: TaskCheckNotifications;
+      processMeetingState: TaskProcessMeetingState;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -407,6 +409,9 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
+  /**
+   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
+   */
   researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
@@ -458,6 +463,7 @@ export interface Company {
   name: string;
   active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
+  passiveFund?: boolean | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
@@ -595,18 +601,18 @@ export interface User {
    * הזן כתובות IP מופרדות בנקודה-פסיק (;)
    */
   userIp?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
   isAdmin?: boolean | null;
   isGeneratorUser?: boolean | null;
   userRoles?: (string | Role)[] | null;
   creator?: string | null;
   updator?: string | null;
   treeCompanies?: string | null;
+  qrCodeData?: {
+    showQr?: boolean | null;
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
   createdAt: string;
   updatedAt: string;
   enableAPIKey?: boolean | null;
@@ -669,7 +675,18 @@ export interface StockMigrationMapping {
  */
 export interface StocksFeed {
   id: string;
-  comments?: string | null;
+  comments?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  hash?: string | null;
+  duration?: string | null;
+  summary?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -690,6 +707,7 @@ export interface StocksFeed {
  */
 export interface HoldingsFeed {
   id: string;
+  hash?: string | null;
   valueDate: string;
   comments?: string | null;
   selectedCompanies?: (string | Company)[] | null;
@@ -733,7 +751,18 @@ export interface HoldingFeedLine {
  */
 export interface MeetingsFeed {
   id: string;
-  comments?: string | null;
+  comments?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  duration?: string | null;
+  summary?: string | null;
+  hash?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -866,7 +895,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'createCollectionExport';
+        taskSlug: 'inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport';
         taskID: string;
         input?:
           | {
@@ -899,7 +928,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'createCollectionExport') | null;
+  taskSlug?: ('inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1215,6 +1244,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   name?: T;
   active?: T;
   type?: T;
+  passiveFund?: T;
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
@@ -1259,6 +1289,12 @@ export interface UsersSelect<T extends boolean = true> {
   lastLogin?: T;
   changePassword?: T;
   userIp?: T;
+  isAdmin?: T;
+  isGeneratorUser?: T;
+  userRoles?: T;
+  creator?: T;
+  updator?: T;
+  treeCompanies?: T;
   qrCodeData?:
     | T
     | {
@@ -1267,12 +1303,6 @@ export interface UsersSelect<T extends boolean = true> {
         lastCodeFailureDate?: T;
         codeFailuresSinceLastSuccess?: T;
       };
-  isAdmin?: T;
-  isGeneratorUser?: T;
-  userRoles?: T;
-  creator?: T;
-  updator?: T;
-  treeCompanies?: T;
   createdAt?: T;
   updatedAt?: T;
   enableAPIKey?: T;
@@ -1403,6 +1433,9 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
  */
 export interface StocksFeedSelect<T extends boolean = true> {
   comments?: T;
+  hash?: T;
+  duration?: T;
+  summary?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1422,6 +1455,7 @@ export interface StocksFeedSelect<T extends boolean = true> {
  * via the `definition` "holdings-feed_select".
  */
 export interface HoldingsFeedSelect<T extends boolean = true> {
+  hash?: T;
   valueDate?: T;
   comments?: T;
   selectedCompanies?: T;
@@ -1465,6 +1499,9 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
  */
 export interface MeetingsFeedSelect<T extends boolean = true> {
   comments?: T;
+  duration?: T;
+  summary?: T;
+  hash?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1691,6 +1728,22 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCheckNotifications".
+ */
+export interface TaskCheckNotifications {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskProcessMeetingState".
+ */
+export interface TaskProcessMeetingState {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskCreateCollectionExport".
  */
 export interface TaskCreateCollectionExport {
@@ -1716,9 +1769,7 @@ export interface TaskCreateCollectionExport {
     userCollection?: string | null;
     exportsCollection?: string | null;
   };
-  output: {
-    success?: boolean | null;
-  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

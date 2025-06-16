@@ -31,9 +31,18 @@ async function computeCompanyTreeAndLeafs(
       },
     },
     where: {
-      id: {
-        in: companyIds,
-      },
+      and: [
+        {
+          id: {
+            in: companyIds,
+          },
+        },
+        {
+          active: {
+            equals: true,
+          },
+        },
+      ],
     },
     limit: 0,
     depth: 1,
@@ -159,7 +168,8 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
-              filterOptions: ({ data, siblingData }) => {
+              filterOptions: ({ data, siblingData, req }) => {
+                if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 const currentId = (siblingData as { companyId?: string })?.companyId
 
                 const selectedIds = Array.isArray(data?.companies)
@@ -170,6 +180,9 @@ export const Users: CollectionConfig = {
                 const query: Where = {
                   type: {
                     equals: 'regular',
+                  },
+                  active: {
+                    equals: true,
                   },
                 }
                 if (selectedIds.length === 0) {
@@ -200,7 +213,7 @@ export const Users: CollectionConfig = {
     },
     {
       name: 'funds',
-      label: 'קרנות',
+      label: 'תיקים',
       type: 'relationship',
       relationTo: 'companies',
       maxDepth: 0,
@@ -246,6 +259,9 @@ export const Users: CollectionConfig = {
       name: 'qrCodeData',
       label: 'נתוני QR',
       type: 'group',
+      admin: {
+        hidden: true,
+      },
       fields: [
         {
           type: 'row',
@@ -306,6 +322,7 @@ export const Users: CollectionConfig = {
     afterChange: [
       async ({ doc, req, operation, previousDoc }) => {
         try {
+          if (req.context.from == 'migration') return
           // Case 1: New user created
           if (operation === 'create') {
             await createAdminNotification(
