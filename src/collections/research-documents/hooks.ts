@@ -48,7 +48,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       )
       if (generalDocs.length > 1) {
         validationErrors.push({
-          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
+          message: 'לא ניתן לצרף יותר ממסמך אחד ללא חברות',
           path: 'researchDocuments',
         })
       }
