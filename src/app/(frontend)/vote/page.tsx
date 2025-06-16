@@ -49,7 +49,6 @@ export default function VotingForm() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
 
-  // שינוי כאן: נאתחל את votingData עם ערכים ריקים, כי השרת יספק את הנתונים
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
       isInterested: null,
@@ -85,13 +84,13 @@ export default function VotingForm() {
     } else {
       console.warn('No meetingId found in URL. Cannot load meeting data.')
       toast({
-          title: '⚠️ שגיאה',
-          description: 'לא נמצא מזהה אסיפה בכתובת.',
-          variant: 'destructive',
-          duration: 5000,
-      });
+        title: '⚠️ שגיאה',
+        description: 'לא נמצא מזהה אסיפה בכתובת.',
+        variant: 'destructive',
+        duration: 5000,
+      })
     }
-  }, [searchParams, toast]) 
+  }, [searchParams, toast])
 
   useEffect(() => {
     if (meetingData) {
@@ -130,7 +129,6 @@ export default function VotingForm() {
       })
       if (!meetingData) return
 
-      // אם יש שגיאה או לא חזרו נתונים, אתחל לערכי ברירת מחדל מלאים
       setVotingData({
         generalVotingData: {
           isInterested: false,
@@ -145,16 +143,13 @@ export default function VotingForm() {
       return
     }
 
-    if (meetingData && fetchedVotes) {
-      // יש נתונים, נשתמש באיבר הראשון כפי שביקשת
+    if (meetingData && fetchedVotes && fetchedVotes.length) {
       const firstVote = fetchedVotes[0]
 
       if (firstVote) {
         const transformedUserVotes = meetingData.agendas.map((agenda) => {
-          // מצא את ההצבעה הספציפית עבור ה-agenda.id הזה
           const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex === agenda.id)
 
-          // אם נמצאה הצבעה, השתמש בנתונים שלה, אחרת צור ברירת מחדל עבור הנושא
           return {
             subjectId: agenda.id,
             choice: voteItem?.voteDecision || '----',
@@ -183,7 +178,6 @@ export default function VotingForm() {
           userVotes: transformedUserVotes,
         })
       } else {
-        // אין הצבעות קיימות בדאטה, צור ערכי ברירת מחדל לכל החברות ולכל הנושאים
         setVotingData({
           generalVotingData: {
             isInterested: false,
@@ -200,9 +194,6 @@ export default function VotingForm() {
   }, [fetchedVotes, error, isSWRLoading, meetingData, toast])
 
   const saveDraftData = async (dataType: string, data: any): Promise<void> => {
-    console.log(`=== AUTO SAVE - ${dataType} ===`)
-    console.log('Data:', data)
-
     try {
       console.log('meetingData', meetingData)
 
@@ -282,14 +273,13 @@ export default function VotingForm() {
   // TODO: Implement company selection logic for auto save
   //   }
 
-  // --- פונקציה אחידה לטיפול בשאלות כלליות וגם שאלות סדר יום ---
   const handleQuestionChange = useCallback(
     <T extends GeneralQuestionId | AgendaQuestionId>(
       type: 'general' | 'agenda',
       questionId: T,
       value: boolean,
       explanation?: string,
-      subjectId?: string, // רלוונטי רק לשאלות סדר יום
+      subjectId?: string, // Relevant only for agenda questions
     ) => {
       if (type === 'general') {
         setVotingData((prev) => {
