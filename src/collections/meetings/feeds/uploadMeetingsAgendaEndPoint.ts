@@ -51,25 +51,6 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
     // Calculate file hash
     const fileHash = calculateFileHash(buffer)
 
-    // Check if a file with the same hash already exists
-    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
-      req.payload,
-      'meetings-feed',
-      fileHash,
-    )
-
-    // If duplicate found, return success with existing document
-    if (isDuplicate && existingDoc) {
-      return Response.json(
-        {
-          message: 'File with identical content already exists',
-          stocksFeed: existingDoc,
-          isDuplicate: true,
-        },
-        { status: 200 },
-      )
-    }
-
     // Create a new MeetingsFeed document with hash
     const meetingsFeed = await req.payload.create({
       data: {
@@ -95,14 +76,24 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         summary: `success: ${successCount} / ${fileLength} `,
       },
     })
-    if (fileLength == 0) {
-      await req.payload.update({
-        collection: 'meetings-feed',
-        id: meetingsFeed.id,
-        data: {
-          hash: '',
+
+    // Check if a file with the same hash already exists
+    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
+      req.payload,
+      'meetings-feed',
+      fileHash,
+    )
+
+    // If duplicate found, return success with existing document
+    if (isDuplicate && existingDoc) {
+      return Response.json(
+        {
+          message: 'File with identical content already exists',
+          stocksFeed: existingDoc,
+          isDuplicate: true,
         },
-      })
+        { status: 200 },
+      )
     }
     return Response.json({
       message: 'Successfully uploaded CSV file',
