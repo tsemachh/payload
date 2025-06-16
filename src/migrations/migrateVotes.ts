@@ -7,18 +7,18 @@ import { PromisePool } from '@/utils/promisePool'
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
-  '-2': null,
-  '-1': null, // 'הצבעות סותרות' - not in options
-  '0': null,
+  '-2': '----',
+  '-1': null, // 'הצבעות סותרות' -
+  '0': '----',
   '1': 'בעד',
   '2': 'נגד',
-  '3': 'דיון',
-  '4': null, // 'הוסר מסדר היום' - not in options
-  '10': 'אין חובת השתתפות',
+  '3': null, //3	דיון
+  '4': null, //הוסר מסדר היום
+  '10': null, // אין חובת השתתפות
   '14': 'נמנע',
   '15': 'לא משתתף',
-  '16': null, // 'ללא הצבעה' - not in options
-  '17': 'אין חובת השתתפות',
+  '16': null, // 'ללא הצבעה' -
+  '17': null, //נמכרה אחזקה
 }
 
 // SQL Server configuration
@@ -156,11 +156,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 agendaItems?.forEach((item, index) => {
                   agendaItemPositions.set(item.id, index + 1)
                 })
-
+                let noParticipantDuty = false
                 // Create votes array, preserving the order of agenda topics
                 const votes = votingData?.map((vote) => {
                   const voteDecision = votingResultMap[vote.cdecision.toString()] || null
-
+                  if (vote.voteDecision == 10 || vote.voteDecision == 14) {
+                    noParticipantDuty = true
+                  }
                   // Use the agenda item's position in the agenda as the topicIndex
                   // This preserves the order of topics as they appear in the agenda
                   const topicIndex = agendaItemPositions.get(vote.maid) || vote.maid
@@ -182,6 +184,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 const voteData = {
                   meeting: mongoMeetingId,
                   company: mongoCompanyId,
+                  noParticipantDuty,
                   votes,
                 } as Partial<Vote>
                 try {

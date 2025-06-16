@@ -51,32 +51,54 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
-      name: 'interested',
-      label: 'בעל עניין',
+      name: 'noParticipantDuty',
+      label: 'אין חובת השתתפות',
       type: 'checkbox',
       defaultValue: false,
     },
     {
-      name: 'interestedExplanation',
-      label: 'הסבר בעל עניין',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.interested === true,
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'interested',
+          label: 'בעל עניין',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            width: '150px',
+          },
+        },
+        {
+          name: 'interestedExplanation',
+          label: 'הסבר בעל עניין',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.interested === true,
+          },
+        },
+      ],
     },
     {
-      name: 'seniorOfficial',
-      label: 'נושא משרה בכירה',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
-      name: 'seniorOfficialExplanation',
-      label: 'הסבר נושא משרה בכירה',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.seniorOfficial === true,
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'seniorOfficial',
+          label: 'נושא משרה בכירה',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            width: '150px',
+          },
+        },
+        {
+          name: 'seniorOfficialExplanation',
+          label: 'הסבר נושא משרה בכירה',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.seniorOfficial === true,
+          },
+        },
+      ],
     },
     {
       name: 'institutionalInvestor',
@@ -119,7 +141,6 @@ export const Votes: CollectionConfig = {
                 { label: 'נגד', value: 'נגד' },
                 { label: 'נמנע', value: 'נמנע' },
                 { label: 'דיון', value: 'דיון' },
-                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
               defaultValue: '----',
