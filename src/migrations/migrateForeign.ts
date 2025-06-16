@@ -1,14 +1,13 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { StockType } from '@/payload-types'
 import { upsertStockFromImport } from '@/utils/migrateUtils'
-import { getSeqeunceStockId } from '@/utils/utils'
+import { getSequenceStockId } from '@/utils/utils'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
     console.log('Starting foreign stocks migration process...')
-
     // Create a map of stockId -> isin
     const stockToIsinMap = new Map<string, string>()
     const foreignStocksData = await payload.find({
@@ -26,7 +25,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const doc = foreignStocksData.docs[i]
       stockToIsinMap.set(`${doc.stockId}`, doc.isin as string)
     }
-    console.log('Isin', stockToIsinMap.toString())
+    console.log('Isin', JSON.stringify(stockToIsinMap))
 
     const foreignStocks = await payload.find({
       collection: 'stocks',
@@ -52,10 +51,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
         // Check if a stock with this ISIN already exists
-        let newStockSequence = await getSeqeunceStockId(payload, isin)
+        let newStockSequence = await getSequenceStockId(payload, isin)
         if (!newStockSequence) {
           // Create or update the ISIN stock
-          newStockSequence = await upsertStockFromImport(
+          newStockSequence = (await upsertStockFromImport(
             null,
             {
               stockID: isin,
@@ -69,41 +68,48 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             'Foreign', // origin
             true, // active
             `Created from foreign stock ${originalStock.stockId}`,
-          )
+          )) as string | null
         }
 
         // Update the original stock to point to the new ISIN stock
-        req.payload.update({
-          collection: 'stocks',
-          id: originalStock.id,
-          data: {
-            relatedStock: newStockSequence,
-            tradable : false
-          },
-        })
-        // Update all stocks that had this stock as related to point to the new ISIN stock
-        const relatedStocks= await req.payload.find({
-          collection: 'stocks',
-          where: {
-            relatedStock: {
-              equals: originalStock.id,
-            },
-          }
-        })
-        relatedStocks.docs.forEach((stock)=>{
+        if (newStockSequence) {
           req.payload.update({
             collection: 'stocks',
-            id: stock.id,
+            id: originalStock.id,
             data: {
-              tradable : false,
               relatedStock: newStockSequence,
+              tradable: false,
             },
           })
-        })
-
-        console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
-      } catch
-        (error) {
+          // Update all stocks that had this stock as related to point to the new ISIN stock
+          req.payload.update({
+            collection: 'stocks',
+            data: {
+              tradable: false,
+              origin: 'Foreign',
+              active: true,
+              relatedStock: newStockSequence,
+            },
+            where: {
+              relatedStock: {
+                equals: originalStock.id,
+              },
+            },
+          })
+          req.payload.update({
+            collection: 'meetings',
+            data: {
+              stock: newStockSequence,
+            },
+            where: {
+              stock: {
+                equals: originalStock.id,
+              },
+            },
+          })
+          console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
+        }
+      } catch (error) {
         await logMigrationFault({
           payload,
           type: 'stock',
@@ -114,8 +120,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     }
 
     console.log('Foreign stocks migration completed successfully')
-  } catch
-    (error) {
+  } catch (error) {
     console.error('Error during foreign stocks migration:', error)
     throw error
   }

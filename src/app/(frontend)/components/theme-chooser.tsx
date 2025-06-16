@@ -11,8 +11,38 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Palette } from 'lucide-react'
 
+const themes = [
+  {
+    name: 'Light',
+    value: 'light',
+    color: 'bg-gray-100 border border-gray-300',
+  },
+  { name: 'Dark', value: 'dark', color: 'bg-gray-900' },
+  {
+    name: 'System',
+    value: 'system',
+    color: 'bg-gradient-to-br from-gray-100 to-gray-900',
+  },
+  { name: 'Blue', value: 'blue', color: 'bg-blue-400' },
+  { name: 'Red', value: 'red', color: 'bg-red-500' },
+  { name: 'Green', value: 'green', color: 'bg-green-500' },
+  { name: 'Purple', value: 'purple', color: 'bg-purple-500' },
+  { name: 'Pink', value: 'pink', color: 'bg-pink-500' },
+]
+
 export function ThemeChooser() {
-  const { setTheme } = useTheme()
+  const { setTheme, theme } = useTheme()
+  const defaultTheme = 'blue'
+
+  React.useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') || defaultTheme
+    setTheme(storedTheme)
+  }, [setTheme])
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+  }
 
   return (
     <div className="ml-3">
@@ -24,38 +54,17 @@ export function ThemeChooser() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => setTheme('light')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-gray-100 border border-gray-300" />
-            <span>Light</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('dark')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-gray-900" />
-            <span>Dark</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('system')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-900" />
-            <span>System</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('blue')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-blue-400" />
-            <span>Blue</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('red')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-red-500" />
-            <span>Red</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('green')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-green-500" />
-            <span>Green</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('purple')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-purple-500" />
-            <span>Purple</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme('pink')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-pink-500" />
-            <span>Pink</span>
-          </DropdownMenuItem>
+          {themes.map(({ name, value, color }) => (
+            <DropdownMenuItem
+              key={value}
+              onClick={() => handleThemeChange(value)}
+              className="flex items-center"
+            >
+              <div className={`mr-2 h-4 w-4 rounded-full ${color}`} />
+              <span>{name}</span>
+              {theme === value && <span className="ml-auto">✔</span>}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

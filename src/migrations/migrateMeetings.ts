@@ -1,8 +1,11 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId,  getSeqeunceStockId } from '@/utils/utils' // Then you can use sql.close() directly
+import { getSequenceMeetingId } from '@/utils/utils' // Then you can use sql.close() directly
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { PromisePool } from '@/utils/promisePool'
+import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
+
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
   [-1, { newType: null, newState: null }],
@@ -25,12 +28,15 @@ const typeMappings = new Map<number, { newType: string | null; newState: string 
 ])
 
 // Function to get newType and newState based on TypeId
-function getTypeAndState(typeId: number): { newType: string | null; newState: string | null } {
-  const mapping = typeMappings.get(typeId);
+function getTypeAndState(typeId: number): {
+  newType: string | null
+  newState: string | null
+} {
+  const mapping = typeMappings.get(typeId)
   if (mapping) {
-    return mapping;
+    return mapping
   } else {
-    throw new Error(`TypeId ${typeId} not found in mappings.`);
+    throw new Error(`TypeId ${typeId} not found in mappings.`)
   }
 }
 
@@ -43,8 +49,8 @@ const sqlConfig: sql.config = {
   port: 1433,
   options: {
     encrypt: false, // For local dev, set to false
-    trustServerCertificate: true // For local dev
-  }
+    trustServerCertificate: true, // For local dev
+  },
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
@@ -61,29 +67,30 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Connect to SQL Server
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
-    if (pool === null){
+    if (pool === null) {
       console.error('Error no pool ,Executing SQL query for meetings.')
       return
     }
     // Query the last 30 days of data
     console.log('Executing SQL query for meetings.')
+    // Using CONVERT to VARCHAR with format 127 (ISO 8601) to prevent automatic conversion to Date objects
+    // This ensures dates are returned as strings without the 'Z' suffix that indicates UTC timezone
     const result = await pool?.request().query(`
         SELECT  [id]
              ,[proofId]
-             ,[mdate]
-             ,[sdate]
-             ,[proxyStatementDate]
+             ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
+             ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
+             ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
              ,[stockID]
-             ,[memourl]
-             ,[link2]
              ,[location]
              ,[mtype]
+             ,[link2]
              ,[comments]
              ,[ResultConfirm]
              ,[ElectronicVoting]
-             ,[mIdConnection]
              ,[CommiteeRequest]
-        FROM [dbEmda].[dbo].[meetings];
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
+            
     `)
     console.log(`Retrieved ${result?.recordset?.length} records from SQL Server`)
 
@@ -92,99 +99,121 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
 
+    // Create a promise pool with 20 concurrent threads
+    const promisePool = new PromisePool(20)
+    const promises = []
+    const stockMap = await getStockIdToSequenceMap(req)
+    // Process each row in parallel using the promise pool
     for (const row of result.recordset) {
-      try {
-        // console.log("Row",JSON.stringify(row, null, 2))
-        row.stockID=`${row.stockID}`
-        //Find stockId
-        const stockId = await getSeqeunceStockId(payload, row.stockID)
-        if (stockId === null){
-          console.log("Stockid can't be found:",row.stockID)
-          await logMigrationFault({
-            payload,
-            type: 'meeting',
-            typeId: `${row.id}`,
-            comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
-            row
-          })
-          continue;
-        }
-        //Find meetingTypeId
-        // eslint-disable-next-line prefer-const
-        let { newType, newState } = getTypeAndState(row.mtype);
-        const meetingDate=new Date(row.mdate)
-        const now = new Date()
-        if (newState == null){
-          newState=(meetingDate > now ? "scheduled":"completed")
-        }
-        switch (newState) {
-          case 'postponed':
-          case 'ongoing':
-            if (meetingDate <  now) {
-              newState= 'completed'
+      promises.push(
+        promisePool.add(async () => {
+          try {
+            // console.log("Row",JSON.stringify(row, null, 2))
+            row.stockID = `${row.stockID}`
+            //Find stockId
+            const stockId = stockMap.get(`${row.stockID}`)
+            if (stockId === undefined) {
+              console.log("Stockid can't be found:", row.stockID)
+              logMigrationFault({
+                payload,
+                type: 'meeting',
+                typeId: `${row.id}`,
+                comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
+                row,
+              })
+              return
             }
-            break
-          case 'on-hold':
-            row.mdate = null
-            break
-        }
+            //Find meetingTypeId
+            // eslint-disable-next-line prefer-const
+            let { newType, newState } = getTypeAndState(row.mtype)
+            // Create Date objects only for comparison purposes
+            const meetingDate = row.mdate ? new Date(row.mdate) : null
+            const now = new Date()
+            if (newState == null) {
+              newState = meetingDate && meetingDate > now ? 'scheduled' : 'completed'
+            }
+            switch (newState) {
+              case 'postponed':
+              case 'ongoing':
+                if (meetingDate && meetingDate < now) {
+                  newState = 'completed'
+                }
+                break
+              case 'on-hold':
+                row.mdate = null
+                break
+            }
 
-        if (row.mdate == null && newState != 'on-hold'){
-          //Here Junie report to migration-fault the error
-          await logMigrationFault({
-            payload,
-            type: 'meeting',
-            typeId: `${row.id}`,
-            comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
-            row
-          })
-          continue
-        }
-        // @ts-ignore
-        const meetingData:Meeting = {
-          meetingId:row.id,
-          stock:stockId as string,
-          magnaId:row.proofId,
-          meetingDate:row.mdate,
-          holdingsLimit:row.sdate,
-          proxyVotingDate:row.proxyStatementDate,
-          location:row.location,
-          type:newType as MeetingType,
-          state:newState as MeetingState,
-          comments:row.comments,
-          resultsConfirmationStatus:!!row.ResultConfirm,
-          electronicVotingEnabled:!!row.ElectronicVoting,
-          committeeInitiated:!!row.CommiteeRequest,
-          _status:"published"
-        }
+            if (row.mdate == null && newState != 'on-hold') {
+              //Here Junie report to migration-fault the error
+              await logMigrationFault({
+                payload,
+                type: 'meeting',
+                typeId: `${row.id}`,
+                comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
+                row,
+              })
+              return
+            }
+            const meetingData: Partial<Meeting> = {
+              meetingId: `${row.id}`,
+              stock: stockId as string,
+              magnaId: row.proofId,
+              meetingDate: row.mdate, // Keep as string instead of converting to Date
+              holdingsLimit: row.sdate, // Keep as string instead of converting to Date
+              proxyVotingDate: row.proxyStatementDate,
+              location: row.location,
+              type: newType as MeetingType,
+              state: newState as MeetingState,
+              comments: row.comments,
+              resultsConfirmationStatus: !!row.ResultConfirm,
+              electronicVotingEnabled: !!row.ElectronicVoting,
+              committeeInitiated: !!row.CommiteeRequest,
+              _status: 'published' as const,
+            }
+            if (!row.proofId && row?.link2?.startsWith('http')) {
+              meetingData.invitationLink = row.link2
+            }
+            //console.log("Data",JSON.stringify(meetingData, null, 2))
+            const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
+            if (id) {
+              // Update Payload CMS
+              await payload.update({
+                collection: 'meetings',
+                id: id,
+                data: meetingData,
+                req: {
+                  ...req,
+                  context: { ...req.context, from: 'migration' },
+                },
+              })
+            } else {
+              // Insert into Payload CMS
+              await payload.create({
+                collection: 'meetings',
+                data: meetingData as Meeting,
+                req: {
+                  ...req,
+                  context: { ...req.context, from: 'migration' },
+                },
+              })
+            }
 
-        //console.log("Data",JSON.stringify(meetingData, null, 2))
-        const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
-        if (id){
-          // Update Payload CMS
-          payload.update({
-            collection: 'meetings',
-            id: id,
-            data: meetingData,
-            req,
-          })
-        }else{
-          // Insert into Payload CMS
-          payload.create({
-            collection: 'meetings',
-            data: meetingData,
-          })
-        }
-
-        successCount++
-        console.log(`✓ Inserted Meeting: ${row.id} (${successCount}/${result.recordset.length})`)
-      } catch (insertError) {
-        console.log("Row",JSON.stringify(row, null, 2))
-        errorCount++
-        console.error(`✗ Failed to insert Meetingds ${row.id}:`, insertError)
-        return;
-      }
+            successCount++
+            console.log(
+              `✓ Inserted/Updated Meeting: ${row.id} (${successCount}/${result.recordset.length})`,
+            )
+          } catch (insertError) {
+            console.log('Row', JSON.stringify(row, null, 2))
+            errorCount++
+            console.error(`✗ Failed to insert Meetingds ${row.id}:`, insertError)
+          }
+        }),
+      )
     }
+
+    // Wait for all promises to complete
+    await promisePool.waitForAll()
 
     console.log('\nMigration Summary:')
     console.log(`Total records processed: ${result.recordset.length}`)

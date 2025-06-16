@@ -3,11 +3,11 @@ info:
   title: Import Stocks API
   description: API for importing stock data into the עמדה system
   version: 1.0.0
-  
+
 servers:
   - url: /api
     description: Current server
-  
+
 paths:
   /stocks/import-stocks:
     post:
@@ -33,7 +33,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "successfully updated rows info , total:42 rows"
+                    example: 'successfully updated rows info , total:42 rows'
         '403':
           description: Authentication error
           content:
@@ -43,12 +43,12 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "forbidden"
+                    example: 'forbidden'
 
 components:
   schemas:
     ImportedStock:
-      description:  אובייקט נייר ערך
+      description: אובייקט נייר ערך
       type: object
       required:
         - stockID
@@ -63,12 +63,12 @@ components:
           example: 1080597
         name:
           type: string
-          description: שם נייר ערך
-          example: "גילת טלקום"
+          description: שם נייר
+          example: 'גילת טלקום'
         symbol:
           type: string
           description: סימול נייר ערך
-          example: "גלטל"
+          example: 'גלטל'
         type:
           type: string
           description: סוג נייר ערך
@@ -102,11 +102,11 @@ components:
           type: string
           format: date-time
           description: תאריך ערך
-          example: "2024-02-25T00:00:00"
+          example: '2024-02-25T00:00:00'
         longName:
           type: string
           description: שם חברה
-          example: "סאטקום מערכות בע״ם"
+          example: 'סאטקום מערכות בע״ם'
 
   securitySchemes:
     userAuth:

@@ -1,10 +1,10 @@
-import { CollectionConfig } from 'payload';
+import { CollectionConfig } from 'payload'
 
 const StockMigrationMapping: CollectionConfig = {
   slug: 'stock-migration-mapping',
   admin: {
     useAsTitle: 'stockId',
-    group:'מיגרציה'
+    group: 'מיגרציה',
   },
   fields: [
     {
@@ -40,11 +40,11 @@ const StockMigrationMapping: CollectionConfig = {
       type: 'text',
       admin: {
         condition: (data) => {
-          return data.type === 'Foreign';
+          return data.type === 'Foreign'
         },
       },
     },
   ],
-};
+}
 
-export default StockMigrationMapping;
+export default StockMigrationMapping

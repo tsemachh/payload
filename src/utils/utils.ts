@@ -1,6 +1,24 @@
-import { BasePayload } from 'payload'
+import { BasePayload, TypeWithID } from 'payload'
+import type { Stock } from '@/payload-types'
+import { TreeCompanyType } from '@/types/companies'
 
-export async function getSeqeunceStockId(payload: BasePayload, stockID: string | null | undefined) {
+export async function getStockIds(stock: Stock) {
+  const stockIds: string[] = []
+  stockIds.push(stock.id)
+  if (stock.relations) {
+    stock.relations.docs?.forEach((stock: Stock | string) => {
+      stockIds.push(getIdOfRelationField(stock) as string)
+    })
+  }
+  return stockIds
+}
+
+export async function getSequenceStockId(payload: BasePayload, stockID: string | null | undefined) {
+  const stock = await getStockByStockId(payload, stockID)
+  return stock ? stock.id : null
+}
+
+export async function getStockByStockId(payload: BasePayload, stockID: string | null | undefined) {
   if (stockID === null) return null
 
   let id = null
@@ -14,7 +32,7 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: string |
         stockId: { equals: stockID },
       },
     })
-    if (stock.docs.length > 0) id = stock.docs[0].id
+    if (stock.docs.length > 0) id = stock.docs[0]
   } catch (error) {
     console.error(error)
   }
@@ -23,7 +41,7 @@ export async function getSeqeunceStockId(payload: BasePayload, stockID: string |
 
 export async function getSequenceStockValueId(
   payload: BasePayload,
-  stockSequence:string,
+  stockSequence: string,
   valueDate: string,
 ) {
   if (stockSequence === null) return null
@@ -36,7 +54,7 @@ export async function getSequenceStockValueId(
       limit: 1,
       depth: 0,
       where: {
-        stockId: { equals: stockSequence},
+        stockId: { equals: stockSequence },
         valueDate: { equals: new Date(valueDate).toISOString() },
       },
     })
@@ -45,6 +63,105 @@ export async function getSequenceStockValueId(
     console.error(error)
   }
   return id
+}
+export async function getMeetingIdToSequenceMap(payload: BasePayload) {
+  const seqMap: Map<string, string> = new Map<string, string>()
+  try {
+    const data = await payload.find({
+      collection: 'meetings',
+      limit: 0,
+      depth: 0,
+      select: {
+        meetingId: true,
+        id: true,
+      },
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc) => seqMap.set(doc.meetingId as string, doc.id))
+    }
+  } catch (error) {
+    console.error('Error in query', error)
+    throw error
+  }
+  return seqMap
+}
+
+export async function getCompanyIdToSequenceMap(payload: BasePayload) {
+  const seqMap: Map<string, string> = new Map<string, string>()
+  try {
+    const data = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      select: {
+        companyId: true,
+        id: true,
+      },
+      where: {
+        companyId: {
+          not_equals: null,
+        },
+      },
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc) => seqMap.set(`${doc.companyId}` as string, doc.id as string))
+    }
+  } catch (error) {
+    console.error('Error in query', error)
+    throw error
+  }
+  return seqMap
+}
+
+export async function getStockIdToSequenceMap(payload: BasePayload) {
+  const seqMap: Map<string, string> = new Map<string, string>()
+  try {
+    const data = await payload.find({
+      collection: 'stocks',
+      limit: 0,
+      depth: 0,
+      select: {
+        stockId: true,
+        id: true,
+      },
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc) => seqMap.set(`${doc.stockId}` as string, doc.id as string))
+    }
+  } catch (error) {
+    console.error('Error in query', error)
+    throw error
+  }
+  return seqMap
+}
+export async function getCompanyIdToChildCompanies(payload: BasePayload) {
+  const seqMap: Map<string, string[]> = new Map<string, string[]>()
+  try {
+    const data = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      select: {
+        companyId: true,
+        id: true,
+        subCompanies: true,
+      },
+      where: {
+        companyId: {
+          not_equals: null,
+        },
+      },
+    })
+    if (data.docs.length > 0) {
+      data.docs.forEach((doc) =>
+        seqMap.set(`${doc.companyId}` as string, doc.subCompanies as string[]),
+      )
+    }
+  } catch (error) {
+    console.error('Error in query', error)
+    throw error
+  }
+  return seqMap
 }
 
 export async function getSequenceMeetingId(payload: BasePayload, meetingId: string | null) {
@@ -63,4 +180,66 @@ export async function getSequenceMeetingId(payload: BasePayload, meetingId: stri
     if (data.docs.length > 0) id = data.docs[0].id
   } catch (error) {}
   return id
+}
+
+export const getCollectionDoc = async (req: any, collectionType: string, id: string, depth = 1) => {
+  try {
+    return await req.payload.findByID({
+      collection: collectionType,
+      id: id,
+      depth: depth,
+    })
+  } catch (error) {
+    console.error(`Error finding document in collection ${collectionType}:`, error)
+    throw error
+  }
+}
+
+export const getIdOfRelationField = (item: TypeWithID | string) => {
+  return typeof item == 'string' ? item : item.id
+}
+
+export function findSubCompanyNameById(
+  parentCompany: TreeCompanyType | undefined,
+  idToFind: string,
+) {
+  if (!parentCompany || !Array.isArray(parentCompany.subCompanies)) return null
+
+  const match = parentCompany.subCompanies.find((sub) => sub.id === idToFind)
+  return match ? match.name : null
+}
+
+/**
+ * Creates a new admin notification in the admin-notifications collection
+ * @param payload - The Payload CMS instance
+ * @param message - The notification message
+ * @param url - Optional URL related to the notification
+ * @param relatedCompany - Optional ID of the related company
+ * @param relatedUser - Optional ID of the related user
+ * @returns The created notification or null if there was an error
+ */
+export async function createAdminNotification(
+  payload: BasePayload,
+  message: string,
+  url?: string,
+  relatedCompany?: string,
+  relatedUser?: string,
+) {
+  try {
+    const notification = await payload.create({
+      collection: 'admin-notifications',
+      data: {
+        message,
+        url,
+        readStatus: false,
+        relatedCompany,
+        relatedUser,
+      },
+    })
+
+    return notification
+  } catch (error) {
+    console.error('Error creating admin notification:', error)
+    return null
+  }
 }

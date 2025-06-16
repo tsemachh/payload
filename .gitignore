@@ -16,7 +16,7 @@
 # next.js
 /.next/
 /out/
-
+/holdings-feed/*
 # production
 /build
 
@@ -40,6 +40,8 @@ yarn-error.log*
 next-env.d.ts
 
 .env
+continue.config.yaml
+
 
 /document
 
@@ -53,3 +55,7 @@ next-env.d.ts
 /scripts/dump
 /scripts/dev/mongo/data
 
+/stocks-feed/*.csv
+/src/uploads/*.csv
+/src/uploads/*.json
+**/.claude/settings.local.json

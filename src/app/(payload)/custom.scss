@@ -1,3 +1,5 @@
+@import './../styles/payloadStyles.css';
+
 .field-type.checkbox .checkbox-input {
   padding-top: 34px;
 }
@@ -47,6 +49,16 @@
   }
 }
 
-.field-type.relationship.subCompanies.relationship--allow-create .relationship--multi-value-label__content {
+.field-type.relationship .relationship--multi-value-label__content {
   max-width:300px;
+}
+
+.field-type.upload.invitationDocument {
+  max-width:200px;
+}
+
+@layer payload-default{
+  .collection-list{
+    overflow: auto;
+  }
 }

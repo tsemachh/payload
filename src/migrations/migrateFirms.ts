@@ -11,11 +11,12 @@ const sqlConfig: sql.config = {
   port: 1433,
   options: {
     encrypt: false,
-    trustServerCertificate: true
-  }
+    trustServerCertificate: true,
+  },
 }
 
 interface FirmRow {
+  //showResearchPrivate: any
   firmId: number
   name: string
   order: number
@@ -28,13 +29,7 @@ interface FirmRow {
   setResearchAsDefaultTrusteeship: boolean
 }
 
-interface GroupToFirmRow {
-  group_id: number
-  firm_id: number
-}
-
 async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>> {
-
   const result = await pool.request().query(`
     SELECT 
       [id] as firmId,
@@ -70,22 +65,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Transform and insert data into Payload CMS
     let successCount = 0
     let errorCount = 0
-    const groupIdToMongoId = new Map<number, string>()
 
     for (const row of resultFirms.recordset) {
       try {
         // Transform the data to match Payload CMS format
-        const companyData:Partial<Company> = {
+        const companyData: Partial<Company> = {
           companyId: row.firmId,
           name: row.name,
           order: row.order,
+          type: 'regular',
           active: !!row.active,
-          showResearch: !!row.showResearch,
-          setResearchAsDefault: !!row.setResearchAsDefault,
-          showResearchBond: !!row.showResearchBond,
-          setResearchAsDefaultBond: !!row.setResearchAsDefaultBond,
-          showResearchTrusteeship: !!row.showResearchTrusteeship,
-          setResearchAsDefaultTrusteeship: !!row.setResearchAsDefaultTrusteeship,
+          researchDocuments: {
+            showResearch: !!row.showResearch,
+            //showResearchPrivate: !!row.showResearchPrivate,
+            showResearchBond: !!row.showResearchBond,
+            showResearchTrusteeship: !!row.showResearchTrusteeship,
+          },
         }
 
         // Check if firm already exists
@@ -93,9 +88,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           collection: 'companies',
           where: {
             companyId: {
-              equals: row.firmId
-            }
-          }
+              equals: row.firmId,
+            },
+          },
+          limit: 1,
         })
 
         if (existingCompany.docs.length > 0) {
@@ -116,7 +112,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         successCount++
-        console.log(`✓ Processed firm: ${row.firmId} (${successCount}/${resultFirms.recordset.length})`)
+        console.log(
+          `✓ Processed firm: ${row.firmId} (${successCount}/${resultFirms.recordset.length})`,
+        )
       } catch (error) {
         errorCount++
         console.error(`✗ Error processing firm ${row.firmId}:`, error)

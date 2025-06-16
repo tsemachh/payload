@@ -24,7 +24,7 @@ export async function logMigrationFault({
   row,
 }: LogMigrationFaultProps): Promise<void> {
   try {
-    await payload.create({
+    payload.create({
       collection: 'migration-faults',
       data: {
         type,
@@ -33,7 +33,7 @@ export async function logMigrationFault({
         comments,
       },
     })
-    console.info(`✗ Migration fault logged for ${type} ${typeId}: ${comments}`)
+    //    console.info(`✗ Migration fault logged for ${type} ${typeId}: ${comments}`)
   } catch (error) {
     console.error(`Failed to log migration fault for ${type} ${typeId}:`, error)
   }

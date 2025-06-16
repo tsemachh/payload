@@ -31,6 +31,14 @@ ARG DATABASE_URI
 ENV DATABASE_URI ${DATABASE_URI}
 ARG PAYLOAD_SECRET
 ENV PAYLOAD_SECRET ${PAYLOAD_SECRET}
+ARG LOGTAIL_SOURCE_TOKEN
+ENV LOGTAIL_SOURCE_TOKEN ${LOGTAIL_SOURCE_TOKEN}
+# ARG GCS_BUCKET
+# ENV GCS_BUCKET ${GCS_BUCKET}
+# ARG GCS_PROJECT_ID
+# ENV GCS_PROJECT_ID ${GCS_PROJECT_ID}
+# ARG GCS_ENDPOINT
+# ENV GCS_ENDPOINT ${GCS_ENDPOINT}
 # Set environment variable to bypass signature check
 ENV COREPACK_INTEGRITY_KEYS=0
 RUN \
@@ -74,7 +82,8 @@ EXPOSE 3000
 RUN chown nextjs:nodejs /app/node_modules
 
 ENV PORT 3000
+ENV HOST ${HOST:-0.0.0.0}
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0"  NODE_OPTIONS='--enable-source-maps=true' node --max-old-space-size=4096 server.js
+CMD HOSTNAME="${HOST}"  NODE_OPTIONS='--enable-source-maps=true' node --max-old-space-size=4096 server.js

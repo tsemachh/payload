@@ -1,5 +1,9 @@
 import type { CollectionConfig } from 'payload'
 
+// Utility to format numbers with thousands separators
+const formatNumber = (value: any) =>
+  typeof value === 'number' ? value.toLocaleString('en-US') : value
+
 export const StockValues: CollectionConfig = {
   slug: 'stock-values',
   labels: {
@@ -10,9 +14,6 @@ export const StockValues: CollectionConfig = {
     hidden: true,
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
-  },
-  versions: {
-    drafts: false,
   },
   fields: [
     {
@@ -48,6 +49,9 @@ export const StockValues: CollectionConfig = {
           name: 'closingRate',
           label: 'שער סגירה',
           type: 'number',
+          hooks: {
+            afterRead: [({ value }) => formatNumber(value)],
+          },
         },
         {
           name: 'marketValue',
@@ -65,7 +69,8 @@ export const StockValues: CollectionConfig = {
             afterRead: [
               ({ data }) => {
                 if (data?.closingRate && data?.registeredValue) {
-                  return (data.closingRate * data.registeredValue) / 100
+                  const value = (data.closingRate * data.registeredValue) / 100
+                  return formatNumber(value)
                 }
                 return null
               },
@@ -76,8 +81,45 @@ export const StockValues: CollectionConfig = {
           name: 'registeredValue',
           label: 'הון רשום',
           type: 'number',
+          hooks: {
+            afterRead: [({ value }) => formatNumber(value)],
+          },
         },
       ],
     },
   ],
+
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        const { stockId, id } = doc
+
+        await req.payload.update({
+          collection: 'meetings',
+          req: {
+            ...req,
+            context: { ...req.context, from: 'process' },
+          },
+          data: {
+            stockValue: id,
+          },
+          where: {
+            and: [
+              { stock: { equals: stockId } },
+              {
+                or: [
+                  {
+                    meetingDate: { greater_than_equal: new Date() },
+                  },
+                  {
+                    meetingDate: { exists: false },
+                  },
+                ],
+              },
+            ],
+          },
+        })
+      },
+    ],
+  },
 }

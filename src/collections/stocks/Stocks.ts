@@ -1,12 +1,40 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
-import { IconLinkProps } from '../../components/link/IconLinkProps'
+import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
+import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
   iconUrl: '/faviconStock.ico',
   iconAltText: 'קישור לבורסה',
-  visibilityField: 'tradable',
+  visibilityConditions: { origin: 'TASE', tradable: true, fromMagna: true },
+}
+
+const validateNoFutureMeetings = async (
+  value: boolean | null | undefined,
+  { req, data, id }: any,
+): Promise<true | string> => {
+  if (value === false) {
+    const stockId = id || data?.id
+    if (!stockId) return true
+
+    const currentDate = new Date()
+    const futureMeetings = await req.payload.find({
+      collection: 'meetings',
+      where: {
+        and: [
+          { stock: { equals: stockId } },
+          { meetingDate: { greater_than: currentDate.toISOString() } },
+          { state: { not_equals: 'cancelled' } },
+        ],
+      },
+    })
+
+    if (futureMeetings.docs.length > 0) {
+      return 'לא ניתן להגדיר נייר ערך כלא פעיל כאשר יש אסיפות עתידיות מתוכננות עבורו'
+    }
+  }
+  return true
 }
 
 export const Stocks: CollectionConfig = {
@@ -15,10 +43,11 @@ export const Stocks: CollectionConfig = {
     plural: 'ניירות ערך',
     singular: 'נייר ערך',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['stockId', 'symbol', 'type', 'longName'],
-    listSearchableFields: ['stockId', 'symbol', 'stockId', 'type', 'name', 'longName', 'origin'],
+    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
+    listSearchableFields: ['symbol', 'stockId', 'name', 'longName', 'comments'],
     pagination: {
       defaultLimit: 500,
       limits: [10, 20, 50, 100, 200, 500],
@@ -40,7 +69,7 @@ export const Stocks: CollectionConfig = {
                 {
                   name: 'stockId',
                   type: 'text',
-                  label: 'מזהה',
+                  label: 'מספר נייר',
                   unique: true,
                   required: true,
                   index: true,
@@ -48,11 +77,11 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     components: {
                       Cell: {
-                        path: '/components/link/IconLinkCell',
+                        path: '/admincomponents/link/IconLinkCell',
                         clientProps: stockLinkProps,
                       },
                       Field: {
-                        path: '/components/link/IconLinkTextField',
+                        path: '/admincomponents/link/IconLinkTextField',
                         clientProps: stockLinkProps,
                       },
                     },
@@ -60,18 +89,16 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: 'מזהה - שם',
-                  type: 'text',
-                  admin: { readOnly: true, hidden: true },
+                  label: 'שם מלא',
+                  type: 'text', // Stored in the database
+                  admin: {
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                  },
+                  index: true,
                   hooks: {
                     beforeChange: [
-                      ({ siblingData }) => {
-                        delete siblingData['fullName']
-                      },
-                    ],
-                    afterRead: [
-                      ({ data }) => {
-                        return `${data?.stockId} ${data?.name}`
+                      async ({ data }) => {
+                        return `${data?.name}(${data?.stockId})`
                       },
                     ],
                   },
@@ -100,6 +127,14 @@ export const Stocks: CollectionConfig = {
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
+                  name: 'fromMagna',
+                  type: 'checkbox',
+                  admin: {
+                    hidden: true,
+                  },
+                  defaultValue: false,
+                },
+                {
                   name: 'origin',
                   label: 'מקור',
                   type: 'select',
@@ -107,7 +142,6 @@ export const Stocks: CollectionConfig = {
                   options: [
                     { label: 'בורסה', value: 'TASE' },
                     { label: 'חו״ל', value: 'Foreign' },
-                    { label: 'לא סחיר', value: 'NonTradable' },
                     { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
@@ -134,9 +168,43 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'active',
-                  label: 'מניה פעילה',
+                  label: 'נייר ערך פעיל',
                   type: 'checkbox',
-                  index: true
+                  index: true,
+                  defaultValue: true,
+                  validate: validateNoFutureMeetings,
+                  access: {
+                    update: ({ doc }) => !doc?.relatedStock,
+                  },
+                  hooks: {
+                    beforeChange: [
+                      async ({ value, originalDoc, req, operation }) => {
+                        // Only run this hook when updating a document
+                        if (operation === 'update') {
+                          // Update all related stocks to be same active status
+                          await req.payload.update({
+                            collection: 'stocks',
+                            data: {
+                              active: value,
+                            },
+                            where: {
+                              relatedStock: { equals: originalDoc.id },
+                            },
+                          })
+                        }
+                        return value
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'isFinancial',
+                  label: 'פיננסי',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    condition: (siblingData) => siblingData.type == 'מניות',
+                  },
                 },
               ],
             },
@@ -154,6 +222,7 @@ export const Stocks: CollectionConfig = {
                   name: 'name',
                   label: 'שם נייר ערך',
                   type: 'text',
+                  index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
@@ -161,7 +230,8 @@ export const Stocks: CollectionConfig = {
                   label: 'שם חברה',
                   type: 'text',
                   admin: {
-                    condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private'
+                    condition: (siblingData) =>
+                      siblingData.tradable || siblingData.origin == 'Private',
                   },
                 },
               ],
@@ -186,9 +256,9 @@ export const Stocks: CollectionConfig = {
             {
               name: 'comments',
               label: 'הערות',
+              index: true,
               type: 'textarea',
             },
-
           ],
         },
         {
@@ -201,14 +271,18 @@ export const Stocks: CollectionConfig = {
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
-              _sanitized: true,
-              admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+              //              _sanitized: true,
+              admin: {
+                defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+              },
             },
           ],
         },
         {
           label: 'אסיפות',
-          admin: { condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private' },
+          admin: {
+            condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private',
+          },
           fields: [
             {
               name: 'meetings',
@@ -217,7 +291,9 @@ export const Stocks: CollectionConfig = {
               collection: 'meetings',
               on: 'stock',
               _sanitized: true,
-              admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+              admin: {
+                defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+              },
             },
           ],
         },
@@ -229,6 +305,11 @@ export const Stocks: CollectionConfig = {
       path: '/import-stocks',
       method: 'post',
       handler: ImportStocksEndPoint,
+    },
+    {
+      path: '/upload-stock-csv',
+      method: 'post',
+      handler: uploadStockCsvEndPoint,
     },
   ],
 }

@@ -1,0 +1,145 @@
+import { PayloadRequest } from 'payload'
+import { processHoldingsFeedCsv } from '../processHoldingsFeedCsv'
+import { HoldingsFeed } from '@/payload-types'
+import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
+import { getBufferFromStream } from '@/utils/dataUtils'
+import { performance } from 'perf_hooks'
+import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
+
+const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
+  const startTime = performance.now()
+  try {
+    req.payload.logger.info('Starting holdings upload process')
+    if (!req.user) {
+      return Response.json({ error: 'forbidden' }, { status: 403 })
+    }
+
+    // Get parameters from the request
+    const { valueDate, companies, validateOnly } = req.query
+    const isValidationOnly = validateOnly === 'true'
+    if (!valueDate) {
+      return Response.json({ error: 'Value date is required' }, { status: 400 })
+    }
+
+    // Get the ReadableStream from the request body
+    const stream = req.body
+    if (!stream) {
+      return Response.json({ error: 'No stream provided' }, { status: 400 })
+    }
+
+    const streamStartTime = performance.now()
+    const buffer = await getBufferFromStream(stream)
+    const streamEndTime = performance.now()
+    req.payload.logger.info(
+      `Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`,
+    )
+
+    // Calculate file hash
+    const fileHash = calculateFileHash(buffer)
+    req.payload.logger.info(`File hash calculated: ${fileHash}`)
+
+    // Check if a file with the same hash already exists
+    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
+      req.payload,
+      'holdings-feed',
+      fileHash,
+    )
+
+    // If duplicate found, return success with existing document
+    if (isDuplicate && existingDoc) {
+      const endTime = performance.now()
+      req.payload.logger.info(
+        `Duplicate file detected. Returning existing document. Process took ${endTime - startTime}ms`,
+      )
+      return Response.json(
+        {
+          message: 'File with identical content already exists',
+          feedResult: {
+            success: true,
+            document: existingDoc,
+            isDuplicate: true,
+          },
+        },
+        { status: 200 },
+      )
+    }
+
+    // Determine the file extension from the content-type header
+    const contentType = req.headers.get('content-type')
+    let extension = 'csv'
+    let mimetype = 'text/csv'
+
+    if (contentType?.includes('excel') || contentType?.includes('spreadsheetml')) {
+      extension = 'xlsx'
+      mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
+
+    // Create a file object from the buffer
+    const file = {
+      data: buffer,
+      name: `holdings-${valueDate}.${extension}`,
+      size: buffer.length,
+      mimetype,
+    }
+
+    if (!file) {
+      return Response.json({ error: 'No file uploaded' }, { status: 400 })
+    }
+
+    // Optional companies parameter as JSON string of company IDs
+    let selectedCompanies: string[] = []
+    if (companies) {
+      try {
+        selectedCompanies = JSON.parse(companies as string)
+      } catch (e) {
+        // If parsing fails, try treating it as a comma-separated string
+        selectedCompanies = (companies as string).split(',')
+      }
+    }
+
+    // Create a new HoldingsFeed document
+    const holdingsFeed = {
+      valueDate,
+      comments: '',
+      selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
+      hash: fileHash, // Add the file hash
+    } as Partial<HoldingsFeed>
+    //Make sure selectedCompanies are IDs
+    req.file = file
+
+    // Process the holdings feed synchronously
+    req.payload.logger.info(`Starting holdings feed processing for ${file.size} bytes`)
+    const processingStartTime = performance.now()
+    const feedResult: FeedValidationResult | undefined = await processHoldingsFeedCsv(
+      req,
+      holdingsFeed,
+      isValidationOnly,
+    )
+    const processingEndTime = performance.now()
+    req.payload.logger.info(
+      `Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`,
+    )
+    if (feedResult != null) {
+      const endTime = performance.now()
+      req.payload.logger.info(`Total holdings upload process completed in ${endTime - startTime}ms`)
+      return Response.json({
+        feedResult: {
+          ...feedResult,
+          isDuplicate: false,
+        },
+      })
+    } else {
+      req.payload.logger.error('Error processing holdings file')
+      return Response.json({ error: 'Error processing holdings file' }, { status: 500 })
+    }
+  } catch (error) {
+    const endTime = performance.now()
+    req.payload.logger.error(
+      `Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`,
+    )
+    console.error('Error uploading holdings file:', error)
+    return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
+  }
+}
+
+export default uploadHoldingsCsvEndPoint

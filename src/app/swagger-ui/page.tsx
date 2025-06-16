@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 // Add TypeScript interface for SwaggerUIBundle
 declare global {
   interface Window {
-    SwaggerUIBundle: any;
+    SwaggerUIBundle: any
   }
 }
 
@@ -15,29 +15,29 @@ export default function SwaggerUIPage() {
     const initSwagger = () => {
       if (window.SwaggerUIBundle) {
         const ui = window.SwaggerUIBundle({
-          url: "/api/openapi-specs",
+          url: '/api/openapi-specs',
           dom_id: '#swagger-ui',
           deepLinking: true,
           presets: [
             window.SwaggerUIBundle.presets.apis,
-            window.SwaggerUIBundle.SwaggerUIStandalonePreset
+            window.SwaggerUIBundle.SwaggerUIStandalonePreset,
           ],
-          layout: "BaseLayout",
-          docExpansion: "list",
+          layout: 'BaseLayout',
+          docExpansion: 'list',
           defaultModelsExpandDepth: 1,
           defaultModelExpandDepth: 1,
           displayRequestDuration: true,
-          filter: true
-        });
+          filter: true,
+        })
       } else {
         // If SwaggerUIBundle is not loaded yet, retry after a delay
-        setTimeout(initSwagger, 100);
+        setTimeout(initSwagger, 100)
       }
-    };
+    }
 
     // Start initialization
-    initSwagger();
-  }, []);
+    initSwagger()
+  }, [])
 
-  return <div id="swagger-ui"></div>;
+  return <div id="swagger-ui"></div>
 }

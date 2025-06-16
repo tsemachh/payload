@@ -1,48 +1,39 @@
 import type { CollectionConfig } from 'payload'
+import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
+import { updateCompaniesMeetingsOnHoldingChange } from '@/collections/holdings/hooks/updateCompaniesMeetings'
+import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
+import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
-    plural: 'אחזקות',
-    singular: 'אחזקה',
+    plural: 'אחזקות יומיות',
+    singular: 'אחזקה יומית',
   },
+  enableQueryPresets: true,
   admin: {
     useAsTitle: 'id',
-    defaultColumns: ['account', 'stock', 'quantity', 'valueDate'],
+    defaultColumns: ['fund', 'valueDate'],
+    group: 'אוספים משניים',
   },
-  versions: {
-    drafts: false,
+  hooks: {
+    afterChange: [
+      async ({ req, doc }) => {
+        if (req.context?.from != 'migration') await updateCompaniesMeetingsOnHoldingChange(req, doc)
+      },
+    ],
   },
   fields: [
     {
       type: 'row',
       fields: [
         {
-          name: 'account',
-          label: 'חשבון',
+          name: 'fund',
+          label: 'תיק',
           type: 'relationship',
-          relationTo: 'accounts',
+          relationTo: 'companies',
           required: true,
           index: true,
-        },
-        {
-          name: 'stock',
-          label: 'נייר ערך',
-          type: 'relationship',
-          relationTo: 'stocks',
-          required: true,
-          index: true,
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'quantity',
-          label: 'כמות',
-          type: 'number',
-          required: true,
         },
         {
           name: 'valueDate',
@@ -58,6 +49,63 @@ export const Holdings: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: 'holdings',
+      label: 'אחזקות',
+      type: 'array',
+      required: true,
+      interfaceName: 'HoldingsPerDay',
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'stock',
+              label: 'נייר ערך',
+              type: 'relationship',
+              relationTo: 'stocks',
+              required: true,
+              filterOptions: ({ req }) => {
+                if (req.context?.from == 'migration') return true
+                return {
+                  active: {
+                    equals: true,
+                  },
+                }
+              },
+            },
+            {
+              name: 'feedStockNum',
+              label: 'מספר נייר ערך באחזקה',
+              type: 'text',
+            },
+            {
+              name: 'quantity',
+              label: 'כמות',
+              type: 'number',
+              required: true,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  endpoints: [
+    {
+      path: '/upload-holdings',
+      method: 'post',
+      handler: uploadHoldingsCsvEndPoint,
+    },
+    {
+      path: '/refresh',
+      method: 'post',
+      handler: refreshEndPoint,
+    },
+    {
+      path: '/dates',
+      method: 'get',
+      handler: getHoldingsDatesEndPoint,
     },
   ],
 }
