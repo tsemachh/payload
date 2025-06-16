@@ -96,7 +96,15 @@ Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev
  `,
       },
     })
-
+    if (fileLength == 0) {
+      await req.payload.update({
+        collection: 'meetings-feed',
+        id: meetingsFeed.id,
+        data: {
+          hash: '',
+        },
+      })
+    }
     return Response.json({
       message: 'Successfully uploaded CSV file',
       stocksFeed: meetingsFeed,

@@ -93,6 +93,15 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
         summary: `Stocks processed successfully: ${processedRows} / ${fileLength} `,
       },
     })
+    if (fileLength == 0) {
+      await req.payload.update({
+        collection: 'stocks-feed',
+        id: stocksFeed.id,
+        data: {
+          hash: '',
+        },
+      })
+    }
     return Response.json({
       message: 'Successfully uploaded CSV file',
       stocksFeed,
