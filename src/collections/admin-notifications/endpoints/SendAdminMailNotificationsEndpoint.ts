@@ -18,12 +18,20 @@ const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
       count: 0,
     }
 
-    // Find all unread admin notifications
+    // Calculate date 24 hours ago
+    const twentyFourHoursAgo = new Date()
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
+    const twentyFourHoursAgoISO = twentyFourHoursAgo.toISOString()
+
+    // Find all unread admin notifications created in the last 24 hours
     const { docs: unreadNotifications } = await req.payload.find({
       collection: 'admin-notifications',
       where: {
         readStatus: {
           equals: false,
+        },
+        createdAt: {
+          greater_than_equal: twentyFourHoursAgoISO,
         },
       },
       limit: 0,
@@ -76,7 +84,7 @@ const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
     )
 
     // Create email content
-    const emailSubject = `עמדה - התראות מערכת (${unreadNotifications.length})`
+    const emailSubject = `עמדה - התראות מערכת ב-24 השעות האחרונות (${unreadNotifications.length})`
     let emailContent = `<!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
@@ -94,7 +102,7 @@ const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
 </head>
 <body>
   <h1>התראות מערכת</h1>
-  <p>להלן רשימת ההתראות שטרם נקראו במערכת:</p>
+  <p>להלן רשימת ההתראות שנוצרו ב-24 השעות האחרונות וטרם נקראו במערכת:</p>
 `
 
     if (holdingsNotifications.length > 0) {
@@ -149,11 +157,41 @@ const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
       }
     }
 
-    return Response.json({
-      success: true,
-      message: `Sent ${emailsSent.count} emails with ${unreadNotifications.length} notifications`,
-      emailsSent,
-    })
+    // Purge old read notifications (older than 30 days)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thirtyDaysAgoISO = thirtyDaysAgo.toISOString()
+
+    try {
+      const { docs } = await req.payload.delete({
+        collection: 'admin-notifications',
+        where: {
+          readStatus: {
+            equals: true,
+          },
+          createdAt: {
+            less_than: thirtyDaysAgoISO,
+          },
+        },
+      })
+
+      req.payload.logger.info(`Purged ${docs.length} old read notifications`)
+
+      return Response.json({
+        success: true,
+        message: `Sent ${emailsSent.count} emails with ${unreadNotifications.length} notifications. Purged ${docs.length} old read notifications.`,
+        emailsSent,
+        purgedNotifications: docs.length,
+      })
+    } catch (purgeError) {
+      req.payload.logger.error(`Error purging old notifications: ${JSON.stringify(purgeError)}`)
+
+      return Response.json({
+        success: true,
+        message: `Sent ${emailsSent.count} emails with ${unreadNotifications.length} notifications. Failed to purge old notifications.`,
+        emailsSent,
+      })
+    }
   } catch (error) {
     req.payload.logger.error(`Error sending admin mail notifications: ${JSON.stringify(error)}`)
     return Response.json(
