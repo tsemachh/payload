@@ -4,7 +4,6 @@ import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { getBufferFromStream } from '@/utils/dataUtils'
 import { performance } from 'perf_hooks'
-import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   const startTime = performance.now()
@@ -33,36 +32,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     req.payload.logger.info(
       `Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`,
     )
-
-    // Calculate file hash
-    const fileHash = calculateFileHash(buffer)
-    req.payload.logger.info(`File hash calculated: ${fileHash}`)
-
-    // Check if a file with the same hash already exists
-    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
-      req.payload,
-      'holdings-feed',
-      fileHash,
-    )
-
-    // If duplicate found, return success with existing document
-    if (isDuplicate && existingDoc) {
-      const endTime = performance.now()
-      req.payload.logger.info(
-        `Duplicate file detected. Returning existing document. Process took ${endTime - startTime}ms`,
-      )
-      return Response.json(
-        {
-          message: 'File with identical content already exists',
-          feedResult: {
-            success: true,
-            document: existingDoc,
-            isDuplicate: true,
-          },
-        },
-        { status: 200 },
-      )
-    }
 
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
@@ -102,7 +71,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       valueDate,
       comments: '',
       selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
-      hash: fileHash, // Add the file hash
     } as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
     req.file = file

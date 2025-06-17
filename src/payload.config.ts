@@ -35,6 +35,7 @@ import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
 import { checkNotificationsHandler } from '@/tasks/checkNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
+import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
@@ -114,6 +115,11 @@ export default buildConfig({
         slug: 'adminMailNotifications',
         handler: adminMailNotificationsHandler,
       },
+      {
+        slug: 'processHoldingsChange',
+        handler: processHoldingsChangeHandler,
+        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
+      },
     ],
     // autoRun can optionally be a function that receives payload as an argument
     autoRun: [
@@ -126,6 +132,11 @@ export default buildConfig({
         cron: '00 22 * * *', // every day at 22:00
         limit: 10, // limit jobs to process each run
         queue: 'daily10pm', // name of the queue
+      },
+      {
+        cron: '*/30 * * * *', // every 30 minutes
+        limit: 100, // limit jobs to process each run
+        queue: 'holdings', // name of the queue
       },
       // add as many cron jobs as you want
     ],

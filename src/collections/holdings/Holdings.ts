@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload'
 import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
-import { updateCompaniesMeetingsOnHoldingChange } from '@/collections/holdings/hooks/updateCompaniesMeetings'
 import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
 import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
+import { scheduleProcessHoldingsChangeTask } from '@/tasks/processHoldingsChange'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
@@ -19,7 +19,11 @@ export const Holdings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc }) => {
-        if (req.context?.from != 'migration') await updateCompaniesMeetingsOnHoldingChange(req, doc)
+        if (req.context?.from != 'migration') {
+          // Schedule a job to process the holding change instead of processing it directly
+          await scheduleProcessHoldingsChangeTask(req.payload, doc.id)
+          req.payload.logger.info(`Scheduled holdings change processing for holding ${doc.id}`)
+        }
       },
     ],
   },
