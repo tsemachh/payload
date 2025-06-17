@@ -35,7 +35,7 @@ import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
 import { checkNotificationsHandler } from '@/tasks/checkNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
-//import { openapi, scalar } from 'payload-oapi'
+import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -203,8 +203,8 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
-    /*    openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
-    scalar({}),*/
+    openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
+    swaggerUI({}),
     addAccess({
       rolesCollection: 'roles',
       permissionsField: 'permissions',
