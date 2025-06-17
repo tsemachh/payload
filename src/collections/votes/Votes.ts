@@ -51,7 +51,7 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
-      name: 'interested',
+      name: 'isInterested',
       label: 'בעל עניין',
       type: 'checkbox',
       defaultValue: false,
@@ -61,11 +61,11 @@ export const Votes: CollectionConfig = {
       label: 'הסבר בעל עניין',
       type: 'textarea',
       admin: {
-        condition: (_, siblingData) => siblingData.interested === true,
+        condition: (_, siblingData) => siblingData.isInterested === true,
       },
     },
     {
-      name: 'seniorOfficial',
+      name: 'isSeniorOfficial',
       label: 'נושא משרה בכירה',
       type: 'checkbox',
       defaultValue: false,
@@ -75,11 +75,11 @@ export const Votes: CollectionConfig = {
       label: 'הסבר נושא משרה בכירה',
       type: 'textarea',
       admin: {
-        condition: (_, siblingData) => siblingData.seniorOfficial === true,
+        condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
       },
     },
     {
-      name: 'institutionalInvestor',
+      name: 'isInstitutionalInvestor',
       label: 'משקיע מוסדי',
       type: 'checkbox',
       defaultValue: true,
@@ -129,21 +129,21 @@ export const Votes: CollectionConfig = {
           type: 'row',
           fields: [
             {
-              name: 'investmentCommittee',
-              label: 'ועדה',
+              name: 'hasConflictOfInterest',
+              label: 'ניגוד עניינים',
               type: 'checkbox',
-              defaultValue: false,
+              defaultValue: true,
             },
             {
-              name: 'investmentCommitteeExplanation',
-              label: 'הסבר ועדה',
+              name: 'conflictOfInterestExplanation',
+              label: 'הסבר צד קשור',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.investmentCommittee === true,
+                condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
               },
             },
             {
-              name: 'relatedParty',
+              name: 'isRelatedParty',
               label: 'צד קשור',
               type: 'checkbox',
               defaultValue: false,
@@ -157,13 +157,13 @@ export const Votes: CollectionConfig = {
               },
             },
             {
-              name: 'conflictOfInterest',
-              label: 'ניגוד עניינים',
+              name: 'isInvestmentCommittee',
+              label: 'ועדה',
               type: 'checkbox',
-              defaultValue: true,
+              defaultValue: false,
             },
             {
-              name: 'personalInterest',
+              name: 'hasPersonalInterest',
               label: 'עניין אישי',
               type: 'checkbox',
               defaultValue: false,
@@ -173,7 +173,7 @@ export const Votes: CollectionConfig = {
               label: 'הסבר עניין אישי',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.personalInterest === true,
+                condition: (_, siblingData) => siblingData.hasPersonalInterest === true,
               },
             },
           ],

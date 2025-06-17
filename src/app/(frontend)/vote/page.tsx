@@ -125,16 +125,18 @@ export default function VotingForm() {
 
       if (firstVote) {
         const transformedUserVotes = meetingData.agendas.map((agenda) => {
-          const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex === agenda.id)
+          const voteItem = (firstVote.votes || []).find(
+            (v: any) => v.topicIndex == agenda.topicIndex,
+          )
 
           return {
-            subjectId: agenda.id,
+            topicIndex: agenda.topicIndex,
             choice: voteItem?.voteDecision || '----',
             questions: {
-              hasConflictOfInterest: voteItem?.conflictOfInterest ?? false,
-              isRelatedParty: voteItem?.relatedParty ?? false,
-              isInvestmentCommittee: voteItem?.investmentCommittee ?? true,
-              hasPersonalInterest: voteItem?.personalInterest ?? false,
+              hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
+              isRelatedParty: voteItem?.isRelatedParty ?? false,
+              isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
+              hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
               conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
               relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
               personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
@@ -174,8 +176,6 @@ export default function VotingForm() {
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
-      // Added currentVotingData parameter
-      console.log(`=== AUTO SAVE - ${dataType} ===`)
 
       if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
         console.warn('Missing data for saveDraftData. Aborting save.', {
@@ -281,7 +281,7 @@ export default function VotingForm() {
       questionId: T,
       value: boolean,
       explanation?: string,
-      subjectId?: string, // Relevant only for agenda questions
+      topicIndex?: number, // Relevant only for agenda questions
     ) => {
       if (type === 'general') {
         setVotingData((prev) => {
@@ -299,25 +299,22 @@ export default function VotingForm() {
           return { ...prev, generalVotingData: newState }
         })
 
-        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
         const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
         if (explanation !== undefined) {
-          // אם זה שדה הסבר
           debouncedSaveFunction(
             `general-${questionId}-explanation`,
             config.toastNoteExplanation || config.toastNote,
           )
         } else {
-          // אם זה צ'קבוקס
           setVotingData((currentVotingData) => {
             saveDraftData(config.toastNote, currentVotingData)
             return currentVotingData
           })
         }
-      } else if (type === 'agenda' && subjectId) {
+      } else if (type === 'agenda' && topicIndex) {
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
-            if (vote.subjectId === subjectId) {
+            if (vote.topicIndex == topicIndex) {
               const newQuestions: AgendaQuestionsType = {
                 ...vote.questions,
                 [questionId]: value,
@@ -338,16 +335,13 @@ export default function VotingForm() {
           return { ...prev, userVotes: newUserVotes }
         })
 
-        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
         const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
         if (explanation !== undefined) {
-          // אם זה שדה הסבר
           debouncedSaveFunction(
-            `agenda-${subjectId}-${questionId}-explanation`,
+            `agenda-${topicIndex}-${questionId}-explanation`,
             config.toastNoteExplanation || config.toastNote,
           )
         } else {
-          // אם זה צ'קבוקס
 
           setVotingData((currentVotingData) => {
             saveDraftData(config.toastNote, currentVotingData)
@@ -356,7 +350,7 @@ export default function VotingForm() {
         }
       }
     },
-    [debouncedSaveFunction, saveDraftData], // תלויות: debouncedSaveFunction ו-saveDraftData
+    [debouncedSaveFunction, saveDraftData],
   )
 
   const handleGeneralQuestionChangeWrapper = useCallback(
@@ -367,15 +361,15 @@ export default function VotingForm() {
   )
 
   const handleAgendaQuestionsChangeWrapper = useCallback(
-    (questionId: AgendaVotingIDs, value: boolean, explanation?: string, subjectId?: string) => {
-      handleQuestionChange('agenda', questionId as AgendaQuestionId, value, explanation, subjectId)
+    (questionId: AgendaVotingIDs, value: boolean, explanation?: string, topicIndex?: number) => {
+      handleQuestionChange('agenda', questionId as AgendaQuestionId, value, explanation, topicIndex)
     },
     [handleQuestionChange],
   )
 
-  const handleVoteChange = (subjectId: string, choice: UserVote['choice']) => {
+  const handleVoteChange = (topicIndex: number, choice: UserVote['choice']) => {
     setVotingData((prev) => {
-      const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.subjectId === subjectId)
+      const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.topicIndex == topicIndex)
       let newUserVotes: UserVote[]
 
       if (existingVoteIndex !== -1) {
@@ -484,7 +478,9 @@ export default function VotingForm() {
               <CardContent className="p-4">
                 <div className="space-y-6">
                   {meetingData.agendas.map((item, index) => {
-                    const userVote = votingData.userVotes.find((v) => v.subjectId === item.id)
+                    const userVote = votingData.userVotes.find(
+                      (v) => v.topicIndex == item.topicIndex,
+                    )
                     const itemNumber = index + 1
                     const isHebrew = /[\u0590-\u05FF]/.test(item.text)
 
@@ -550,7 +546,7 @@ export default function VotingForm() {
                               <Select
                                 value={userVote?.choice || undefined}
                                 onValueChange={(value) =>
-                                  handleVoteChange(item.id, value as UserVote['choice'])
+                                  handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
                               >
                                 <SelectTrigger
@@ -606,7 +602,7 @@ export default function VotingForm() {
                                     questionId,
                                     value,
                                     explanation,
-                                    item.id,
+                                    item.topicIndex,
                                   )
                                 }
                               />

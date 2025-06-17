@@ -555,22 +555,22 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
-  interested?: boolean | null;
+  isInterested?: boolean | null;
   interestedExplanation?: string | null;
-  seniorOfficial?: boolean | null;
+  isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
-  institutionalInvestor?: boolean | null;
+  isInstitutionalInvestor?: boolean | null;
   clientComment?: string | null;
   votes?:
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
-        investmentCommittee?: boolean | null;
-        investmentCommitteeExplanation?: string | null;
-        relatedParty?: boolean | null;
+        hasConflictOfInterest?: boolean | null;
+        conflictOfInterestExplanation?: string | null;
+        isRelatedParty?: boolean | null;
         relatedPartyExplanation?: string | null;
-        conflictOfInterest?: boolean | null;
-        personalInterest?: boolean | null;
+        isInvestmentCommittee?: boolean | null;
+        hasPersonalInterest?: boolean | null;
         personalInterestExplanation?: string | null;
         id?: string | null;
       }[]
@@ -1534,23 +1534,23 @@ export interface SilencedStocksSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
-  interested?: T;
+  isInterested?: T;
   interestedExplanation?: T;
-  seniorOfficial?: T;
+  isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
-  institutionalInvestor?: T;
+  isInstitutionalInvestor?: T;
   clientComment?: T;
   votes?:
     | T
     | {
         topicIndex?: T;
         voteDecision?: T;
-        investmentCommittee?: T;
-        investmentCommitteeExplanation?: T;
-        relatedParty?: T;
+        hasConflictOfInterest?: T;
+        conflictOfInterestExplanation?: T;
+        isRelatedParty?: T;
         relatedPartyExplanation?: T;
-        conflictOfInterest?: T;
-        personalInterest?: T;
+        isInvestmentCommittee?: T;
+        hasPersonalInterest?: T;
         personalInterestExplanation?: T;
         id?: T;
       };

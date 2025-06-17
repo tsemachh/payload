@@ -1,3 +1,4 @@
+import { UserVote } from '@/app/(frontend)/types/vote'
 import { PayloadRequest } from 'payload'
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   try {
@@ -48,28 +49,28 @@ export const upsertVote = async (req: PayloadRequest) => {
     }
 
     const generalFields = {
-      interested: votingData.generalVotingData.isInterested,
-      interestedExplanation: votingData.generalVotingData.interestedExplanation,
-      seniorOfficial: votingData.generalVotingData.isSeniorOfficial,
-      seniorOfficialExplanation: votingData.generalVotingData.seniorOfficialExplanation,
-      institutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
-      clientComment: votingData.voterNotes,
       meeting: meetingId,
+      company: companiesIds[0], //TODO: this is a temporary fix, we need to change the UI to allow multiple companies
+      isInterested: votingData.generalVotingData.isInterested,
+      interestedExplanation: votingData.generalVotingData.interestedExplanation,
+      isSeniorOfficial: votingData.generalVotingData.isSeniorOfficial,
+      seniorOfficialExplanation: votingData.generalVotingData.seniorOfficialExplanation,
+      isInstitutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
+      clientComment: votingData.voterNotes,
     }
 
-    const agendaVotesFormatted = votingData.userVotes.map((userVote: any) => ({
-      topicIndex: userVote.subjectId,
+    const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({
+      topicIndex: userVote.topicIndex,
       voteDecision: userVote.choice,
-      investmentCommittee: userVote.questions.isInvestmentCommittee,
-      investmentCommitteeExplanation: userVote.questions.investmentCommitteeExplanation,
-      relatedParty: userVote.questions.isRelatedParty,
+      hasConflictOfInterest: userVote.questions.hasConflictOfInterest,
+      conflictOfInterestExplanation: userVote.questions.conflictOfInterestExplanation,
+      isRelatedParty: userVote.questions.isRelatedParty,
       relatedPartyExplanation: userVote.questions.relatedPartyExplanation,
-      conflictOfInterest: userVote.questions.hasConflictOfInterest,
-      personalInterest: userVote.questions.hasPersonalInterest,
+      isInvestmentCommittee: userVote.questions.isInvestmentCommittee,
+      hasPersonalInterest: userVote.questions.hasPersonalInterest,
       personalInterestExplanation: userVote.questions.personalInterestExplanation,
     }))
 
-    // חיפוש כל האובייקטים הקיימים בבת אחת
     const existingVotes = await req.payload.find({
       collection: 'votes',
       where: {
@@ -80,7 +81,6 @@ export const upsertVote = async (req: PayloadRequest) => {
       overrideAccess: true,
     })
 
-    // יצירת מפה של חברות קיימות
     const existingCompanyMap = new Map()
     existingVotes.docs.forEach((vote) => {
       const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
@@ -89,7 +89,7 @@ export const upsertVote = async (req: PayloadRequest) => {
       }
     })
 
-    // הכנת arrays עבור bulk operations
+    // create arrays for bulk operations
     const toUpdate: Array<{ id: string; data: any }> = []
     const toCreate: Array<any> = []
 
@@ -97,23 +97,22 @@ export const upsertVote = async (req: PayloadRequest) => {
       const voteData = {
         ...generalFields,
         company: companyId,
+        meetingId: meetingId,
         votes: agendaVotesFormatted,
         _status: 'draft',
       }
 
       if (existingCompanyMap.has(companyId)) {
-        // הוספה לרשימת עדכונים
         toUpdate.push({
           id: existingCompanyMap.get(companyId).id,
           data: voteData,
         })
       } else {
-        // הוספה לרשימת יצירות
         toCreate.push(voteData)
       }
     })
 
-    // ביצוע bulk updates
+    // bulk updates
     if (toUpdate.length > 0) {
       await Promise.all(
         toUpdate.map((updateItem) =>
@@ -125,10 +124,10 @@ export const upsertVote = async (req: PayloadRequest) => {
           }),
         ),
       )
-      req.payload.logger.info(`Updated ${toUpdate.length} existing votes`)
+      req.payload.logger.info(`Updated ${toUpdate.length} companiesIds`)
     }
 
-    // ביצוע bulk creates
+    // bulk creates
     if (toCreate.length > 0) {
       await Promise.all(
         toCreate.map((createData) =>

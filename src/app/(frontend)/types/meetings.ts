@@ -55,6 +55,7 @@ export type FundType = {
 
 export type AgendasType = {
   id: string
+  topicIndex: number
   text: string
   isRemovedFromAgenda: boolean
   privilegedMajority: boolean

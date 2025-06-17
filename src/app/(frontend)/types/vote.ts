@@ -15,7 +15,7 @@ export type GeneralVotingData = {
 }
 
 export type UserVote = {
-  subjectId: string
+  topicIndex: number
   choice: VoteDecision
   questions: AgendaQuestionsType
 }
