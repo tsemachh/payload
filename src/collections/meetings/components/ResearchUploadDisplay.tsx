@@ -9,11 +9,8 @@ import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
-
   const [uploadsData, setUploadsData] = useState<any[]>([])
-
   const { setMeetingCompanies, setStockName } = useCustomContext()
-
   const documentInfo = useDocumentInfo()
 
   const fetchCompanyIsRegular = async (companyName: string): Promise<boolean> => {
@@ -31,9 +28,7 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
     const stringifiedQuery = stringify(query, { addQueryPrefix: true })
     const res = await fetch(`/api/companies${stringifiedQuery}`)
-
     if (!res.ok) return false
-
     const data = await res.json()
     return data?.docs?.length > 0
   }
@@ -81,7 +76,6 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       try {
         const res = await fetch(`/api/research-documents${stringifiedQuery}`)
         const { docs } = await res.json()
-
         const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]))
         const sortedDocs = ids.map((id) => uploadsMap.get(id)).filter(Boolean)
         setUploadsData(sortedDocs)
@@ -96,40 +90,40 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   useEffect(() => {
     if (!uploadsData || uploadsData.length === 0) return
 
-    const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
+    const updateFilenames = async () => {
+      const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
 
-    filenameEls.forEach(async (el, i) => {
-      const upload = uploadsData[i]
-      if (!upload) return
+      for (const [i, el] of Array.from(filenameEls).entries()) {
+        const upload = uploadsData[i]
+        if (!upload) continue
 
-      el.querySelectorAll('.withMeta-span').forEach((span) => span.remove())
+        el.querySelectorAll('.withMeta-span').forEach((span) => span.remove())
 
-      const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
-      const result = parseResearchFilename(upload.filename)
+        const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
+        const result = parseResearchFilename(upload.filename)
 
-      const existingSpan = el.querySelector('.withMeta-span')
+        if (!el.querySelector('.withMeta-span')) {
+          const newSpan = document.createElement('p')
+          newSpan.className = 'withMeta-span'
 
-      if (!existingSpan) {
-        const newSpan = document.createElement('p')
-        newSpan.className = 'withMeta-span'
-        const companyExists = await fetchCompanyIsRegular(result.companyName || '')
-        if (
-          !result.isGeneric &&
-          result.companyName &&
-          companyNames.length === 0 &&
-          !companyExists
-        ) {
-          newSpan.textContent = 'מסמך לחברה לא קיימת'
-        } else {
-          newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
+          const companyExists = await fetchCompanyIsRegular(result.companyName || '')
+          newSpan.textContent =
+            !result.isGeneric && result.companyName && companyNames.length === 0 && !companyExists
+              ? 'מסמך לחברה לא קיימת'
+              : companyNames.length > 0
+                ? companyNames.join(', ')
+                : 'מסמך מחקר כללי'
+
+          newSpan.style.marginLeft = '8px'
+          newSpan.style.fontFamily = 'Arial, sans-serif'
+          newSpan.style.fontStyle = 'italic'
+
+          el.appendChild(newSpan)
         }
-        newSpan.style.marginLeft = '8px'
-        newSpan.style.fontFamily = 'Arial, sans-serif'
-        newSpan.style.fontStyle = 'italic'
-
-        el.appendChild(newSpan)
       }
-    })
+    }
+
+    updateFilenames().catch((err) => console.error('Error updating filenames:', err))
   }, [uploadsData])
 
   return (
