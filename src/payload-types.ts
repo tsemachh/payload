@@ -86,7 +86,7 @@ export type HoldingsPerDay = {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'אין חובת השתתפות' | 'לא משתתף') | null;
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
@@ -557,6 +557,7 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
+  noParticipantDuty?: boolean | null;
   interested?: boolean | null;
   interestedExplanation?: string | null;
   seniorOfficial?: boolean | null;
@@ -1543,6 +1544,7 @@ export interface SilencedStocksSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
+  noParticipantDuty?: T;
   interested?: T;
   interestedExplanation?: T;
   seniorOfficial?: T;
