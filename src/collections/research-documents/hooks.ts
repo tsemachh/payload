@@ -17,7 +17,6 @@ const companyIsNotRegular = async (companyName: string, req: any): Promise<boole
     limit: 1,
     depth: 0,
   })
-  console.log('companyIsNotRegular result', result)
   return result.docs.length === 0
 }
 
@@ -60,27 +59,22 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       filename?: string
     }
     const researchDocuments = await req.payload.find(query)
-    console.log('researchDocuments', researchDocuments)
 
     if (docIDs.length > 1) {
       const generalDocs = researchDocuments?.docs?.filter(
         (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
       )
-      console.log('generalDocs', generalDocs)
 
       const invalidGeneralDocs: string[] = []
 
       for (const doc of generalDocs) {
-        console.log('doc', doc)
         const result = parseResearchFilename((doc as ResearchDoc).filename || '')
-        console.log('result', result)
 
         const companyExists =
           result.isValid &&
           !result.isGeneric &&
           result.companyName &&
           (await companyIsNotRegular(result.companyName, req))
-        console.log('companyExists', companyExists)
 
         if (companyExists) {
           validationErrors.push({
