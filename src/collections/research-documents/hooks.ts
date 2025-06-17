@@ -42,13 +42,16 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     }
 
     const researchDocuments = await req.payload.find(query)
+
+    // בדיקה על כל אחד שאין לו חברות לשלוח את השם שלו לבדיקה ואם זה  לא גנרי ויש שם חברה אז לשלוח ולידציה - לא ניתן לשמור את המסמך הזה ---החברה לא קיימת...
+    // ולהחזיר שגיאה ראשונה לפי זה
     if (docIDs.length > 1) {
       const generalDocs = researchDocuments?.docs?.filter(
         (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
       )
       if (generalDocs.length > 1) {
         validationErrors.push({
-          message: 'לא ניתן לצרף יותר ממסמך אחד ללא חברות',
+          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
           path: 'researchDocuments',
         })
       }

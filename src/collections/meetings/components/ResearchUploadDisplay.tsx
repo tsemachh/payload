@@ -16,6 +16,28 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
   const documentInfo = useDocumentInfo()
 
+  const fetchCompanyIsRegular = async (companyName: string): Promise<boolean> => {
+    const query = {
+      where: {
+        name: { like: companyName },
+        type: { equals: 'regular' },
+      },
+      limit: 1,
+      depth: 0,
+      select: {
+        id: true,
+      },
+    }
+
+    const stringifiedQuery = stringify(query, { addQueryPrefix: true })
+    const res = await fetch(`/api/companies${stringifiedQuery}`)
+
+    if (!res.ok) return false
+
+    const data = await res.json()
+    return data?.docs?.length > 0
+  }
+
   useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
     const stock = documentInfo.initialData?.stock || []
@@ -76,9 +98,11 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
     const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
 
-    filenameEls.forEach((el, i) => {
+    filenameEls.forEach(async (el, i) => {
       const upload = uploadsData[i]
       if (!upload) return
+
+      el.querySelectorAll('.withMeta-span').forEach((span) => span.remove())
 
       const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
       const result = parseResearchFilename(upload.filename)
@@ -88,11 +112,14 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       if (!existingSpan) {
         const newSpan = document.createElement('p')
         newSpan.className = 'withMeta-span'
-
-        if (!result.isGeneric && result.companyName && companyNames.length === 0) {
-          //todo check if when i call regular companies i get true...
+        const companyExists = await fetchCompanyIsRegular(result.companyName || '')
+        if (
+          !result.isGeneric &&
+          result.companyName &&
+          companyNames.length === 0 &&
+          !companyExists
+        ) {
           newSpan.textContent = 'מסמך לחברה לא קיימת'
-          //newSpan.style.color = 'red' todo:decide colors
         } else {
           newSpan.textContent = companyNames.length > 0 ? companyNames.join(', ') : 'מסמך מחקר כללי'
         }
