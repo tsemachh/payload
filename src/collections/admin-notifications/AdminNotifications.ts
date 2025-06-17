@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import CheckNotificationsEndpoint from './endpoints/CheckNotificationsEndpoint'
+import SendAdminMailNotificationsEndpoint from './endpoints/SendAdminMailNotificationsEndpoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const NotificationLinkProps: IconLinkProps = {
@@ -75,6 +76,11 @@ export const AdminNotifications: CollectionConfig = {
       path: '/check-notifications',
       method: 'post',
       handler: CheckNotificationsEndpoint,
+    },
+    {
+      path: '/send-mail-notifications',
+      method: 'post',
+      handler: SendAdminMailNotificationsEndpoint,
     },
   ],
 }

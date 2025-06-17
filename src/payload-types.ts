@@ -288,6 +288,7 @@ export interface Config {
     tasks: {
       checkNotifications: TaskCheckNotifications;
       processMeetingState: TaskProcessMeetingState;
+      adminMailNotifications: TaskAdminMailNotifications;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -895,7 +896,12 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport';
+        taskSlug:
+          | 'inline'
+          | 'checkNotifications'
+          | 'processMeetingState'
+          | 'adminMailNotifications'
+          | 'createCollectionExport';
         taskID: string;
         input?:
           | {
@@ -928,7 +934,9 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport') | null;
+  taskSlug?:
+    | ('inline' | 'checkNotifications' | 'processMeetingState' | 'adminMailNotifications' | 'createCollectionExport')
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1739,6 +1747,14 @@ export interface TaskCheckNotifications {
  * via the `definition` "TaskProcessMeetingState".
  */
 export interface TaskProcessMeetingState {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAdminMailNotifications".
+ */
+export interface TaskAdminMailNotifications {
   input?: unknown;
   output?: unknown;
 }
