@@ -34,6 +34,8 @@ import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
 import { checkNotificationsHandler } from '@/tasks/checkNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
+import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
+//import { openapi, scalar } from 'payload-oapi'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -76,6 +78,7 @@ if (process.env.MONGO_USE_TX !== 'true') {
 }
 
 export default buildConfig({
+  serverURL: process.env.PUBLIC_SERVER_URL || '',
   i18n: {
     supportedLanguages: { he, en },
   },
@@ -107,13 +110,22 @@ export default buildConfig({
         slug: 'processMeetingState',
         handler: processMeetingStateHandler,
       },
+      {
+        slug: 'adminMailNotifications',
+        handler: adminMailNotificationsHandler,
+      },
     ],
     // autoRun can optionally be a function that receives payload as an argument
     autoRun: [
       {
-        cron: '00 09 * * *', // every day at 22:40
+        cron: '00 19 * * *', // every day at 19:00
         limit: 10, // limit jobs to process each run
         queue: 'daily', // name of the queue
+      },
+      {
+        cron: '00 22 * * *', // every day at 22:00
+        limit: 10, // limit jobs to process each run
+        queue: 'daily10pm', // name of the queue
       },
       // add as many cron jobs as you want
     ],
@@ -191,6 +203,8 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
+    /*    openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
+    scalar({}),*/
     addAccess({
       rolesCollection: 'roles',
       permissionsField: 'permissions',
