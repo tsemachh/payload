@@ -7,6 +7,21 @@ import {
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { ResearchDocument } from '@/payload-types'
 
+const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
+  const result = await req.payload.find({
+    collection: 'companies',
+    where: {
+      name: { like: companyName },
+      type: { equals: 'regular' },
+    },
+    limit: 1,
+    depth: 0,
+  })
+  console.log('companyIsNotRegular result', result)
+  // אם לא התקבלה אף תוצאה — זו לא חברה רגילה
+  return result.docs.length === 0
+}
+
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
   req,
@@ -40,23 +55,52 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
         },
       },
     }
-
+    type ResearchDoc = {
+      id: string
+      companies?: string[]
+      filename?: string
+    }
     const researchDocuments = await req.payload.find(query)
+    console.log('researchDocuments', researchDocuments)
 
-    // בדיקה על כל אחד שאין לו חברות לשלוח את השם שלו לבדיקה ואם זה  לא גנרי ויש שם חברה אז לשלוח ולידציה - לא ניתן לשמור את המסמך הזה ---החברה לא קיימת...
-    // ולהחזיר שגיאה ראשונה לפי זה
     if (docIDs.length > 1) {
       const generalDocs = researchDocuments?.docs?.filter(
         (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
       )
-      if (generalDocs.length > 1) {
+      console.log('generalDocs', generalDocs)
+
+      const invalidGeneralDocs: string[] = []
+
+      for (const doc of generalDocs) {
+        console.log('doc', doc)
+        const result = parseResearchFilename((doc as ResearchDoc).filename || '')
+        console.log('result', result)
+
+        const companyExists =
+          result.isValid &&
+          !result.isGeneric &&
+          result.companyName &&
+          (await companyIsNotRegular(result.companyName, req))
+        console.log('companyExists', companyExists)
+
+        if (companyExists) {
+          validationErrors.push({
+            message: `המסמך "${(doc as ResearchDoc).filename}" מתייחס לחברה לא קיימת במערכת`,
+            path: 'researchDocuments',
+          })
+        } else {
+          invalidGeneralDocs.push(doc.id)
+        }
+      }
+
+      if (invalidGeneralDocs.length > 1) {
         validationErrors.push({
-          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
+          message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
           path: 'researchDocuments',
         })
       }
     }
-    //todo: check if the companies in the research documents match the companies in the meeting
+
     const docs = researchDocuments.docs as ResearchDocument[]
     const invalidFilenames: string[] = []
 
