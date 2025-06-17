@@ -29,9 +29,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       return
     }
 
-    const fileName = input.value
-    const result = parseResearchFilename(fileName)
-
     // יצירת או שימוש ב-span קיים
     let span = fileAdjustmentsDiv.querySelector(
       '#research-validation-message',
@@ -47,6 +44,9 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       span!.textContent = text
       span!.style.color = isSuccess ? 'green' : 'red'
     }
+
+    const fileName = input.value
+    const result = parseResearchFilename(fileName)
 
     if (!result.isValid) {
       setSpanMessage(result.error || 'שם הקובץ אינו תקין')

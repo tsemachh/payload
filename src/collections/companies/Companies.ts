@@ -353,7 +353,7 @@ export const Companies: CollectionConfig = {
   },
   endpoints: [
     {
-      path: '/addSubAccount',
+      path: '/add-sub-account',
       method: 'post',
       handler: addSubAccountEndPoint,
     },

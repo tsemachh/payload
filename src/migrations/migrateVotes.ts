@@ -7,18 +7,18 @@ import { PromisePool } from '@/utils/promisePool'
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
-  '-2': null,
-  '-1': 'הצבעות סותרות',
-  '0': null,
+  '-2': '----',
+  '-1': null, // 'הצבעות סותרות' -
+  '0': '----',
   '1': 'בעד',
   '2': 'נגד',
-  '3': 'דיון',
-  '4': 'הוסר מסדר היום',
-  '10': 'אין חובת השתתפות',
+  '3': null, //3	דיון
+  '4': null, //הוסר מסדר היום
+  '10': null, // אין חובת השתתפות
   '14': 'נמנע',
   '15': 'לא משתתף',
-  '16': 'ללא הצבעה',
-  '17': 'נמכרה אחזקה',
+  '16': null, // 'ללא הצבעה' -
+  '17': null, //נמכרה אחזקה
 }
 
 // SQL Server configuration
@@ -156,11 +156,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 agendaItems?.forEach((item, index) => {
                   agendaItemPositions.set(item.id, index + 1)
                 })
-
+                let noParticipantDuty = false
                 // Create votes array, preserving the order of agenda topics
                 const votes = votingData?.map((vote) => {
                   const voteDecision = votingResultMap[vote.cdecision.toString()] || null
-
+                  if (vote.voteDecision == 10 || vote.voteDecision == 14) {
+                    noParticipantDuty = true
+                  }
                   // Use the agenda item's position in the agenda as the topicIndex
                   // This preserves the order of topics as they appear in the agenda
                   const topicIndex = agendaItemPositions.get(vote.maid) || vote.maid
@@ -181,19 +183,30 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 // Create or update vote document in MongoDB
                 const voteData = {
                   meeting: mongoMeetingId,
-                  companies: [mongoCompanyId],
+                  company: mongoCompanyId,
+                  noParticipantDuty,
                   votes,
                 } as Partial<Vote>
-
-                // Create new vote
-                await payload.create({
-                  collection: 'votes',
-                  data: voteData as Vote,
-                  req,
-                })
-                console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
-
-                successCount++
+                try {
+                  // Create new vote
+                  await payload.create({
+                    collection: 'votes',
+                    data: voteData as Vote,
+                    req,
+                  })
+                  console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
+                  successCount++
+                } catch (error: any) {
+                  errorCount++
+                  console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)
+                  await logMigrationFault({
+                    payload,
+                    type: 'vote',
+                    typeId: `meeting-${meeting.id}`,
+                    comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
+                    row: JSON.stringify(voteData),
+                  })
+                }
               }
           } catch (error: any) {
             errorCount++

@@ -2,13 +2,14 @@ import { Args, mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
-import { addAccess } from '@shefing/authorization'
+import { addAccess, Roles } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
+import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
@@ -20,7 +21,6 @@ import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Holdings } from '@/collections/holdings/Holdings'
 import { HoldingsFeed } from '@/collections/holdings/feeds/HoldingsFeed'
-import { Roles } from '@shefing/authorization'
 import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
@@ -34,6 +34,8 @@ import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
 import { checkNotificationsHandler } from '@/tasks/checkNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
+import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
+import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -55,11 +57,28 @@ const dbArgs: Args = {
   }),
 }
 
+const emailArgs: NodemailerAdapterArgs = process.env.SMTP_HOST
+  ? {
+      transportOptions: {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      },
+      defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@emda.org.il',
+      defaultFromName: process.env.EMAIL_FROM_NAME || 'EMDA System',
+    }
+  : ({} as NodemailerAdapterArgs)
+
 if (process.env.MONGO_USE_TX !== 'true') {
   dbArgs.transactionOptions = false
 }
 
 export default buildConfig({
+  serverURL: process.env.PUBLIC_SERVER_URL || '',
   i18n: {
     supportedLanguages: { he, en },
   },
@@ -91,13 +110,22 @@ export default buildConfig({
         slug: 'processMeetingState',
         handler: processMeetingStateHandler,
       },
+      {
+        slug: 'adminMailNotifications',
+        handler: adminMailNotificationsHandler,
+      },
     ],
     // autoRun can optionally be a function that receives payload as an argument
     autoRun: [
       {
-        cron: '00 09 * * *', // every day at 22:40
+        cron: '00 19 * * *', // every day at 19:00
         limit: 10, // limit jobs to process each run
         queue: 'daily', // name of the queue
+      },
+      {
+        cron: '00 22 * * *', // every day at 22:00
+        limit: 10, // limit jobs to process each run
+        queue: 'daily10pm', // name of the queue
       },
       // add as many cron jobs as you want
     ],
@@ -162,6 +190,7 @@ export default buildConfig({
   },
   db: mongooseAdapter(dbArgs as Args),
   logger: logger,
+  email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({
       collections: ['stocks', 'meetings'],
@@ -174,6 +203,8 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
+    openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
+    swaggerUI({}),
     addAccess({
       rolesCollection: 'roles',
       permissionsField: 'permissions',

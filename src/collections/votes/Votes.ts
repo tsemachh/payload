@@ -1,6 +1,6 @@
 import { type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
-import { isSameDay, addDays } from '@/utils/dateUtils'
+import { addDays, isSameDay } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
 import { getVoteByMeetingAndCompanies, upsertVote } from './voteEndPoint'
 
@@ -118,7 +118,7 @@ export const Votes: CollectionConfig = {
                 { label: 'בעד', value: 'בעד' },
                 { label: 'נגד', value: 'נגד' },
                 { label: 'נמנע', value: 'נמנע' },
-                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
+                { label: 'דיון', value: 'דיון' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
               defaultValue: '----',

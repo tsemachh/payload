@@ -86,7 +86,7 @@ export type HoldingsPerDay = {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
@@ -288,6 +288,8 @@ export interface Config {
     tasks: {
       checkNotifications: TaskCheckNotifications;
       processMeetingState: TaskProcessMeetingState;
+      adminMailNotifications: TaskAdminMailNotifications;
+      createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
         output: unknown;
@@ -894,7 +896,12 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'checkNotifications' | 'processMeetingState';
+        taskSlug:
+          | 'inline'
+          | 'checkNotifications'
+          | 'processMeetingState'
+          | 'adminMailNotifications'
+          | 'createCollectionExport';
         taskID: string;
         input?:
           | {
@@ -927,7 +934,9 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'checkNotifications' | 'processMeetingState') | null;
+  taskSlug?:
+    | ('inline' | 'checkNotifications' | 'processMeetingState' | 'adminMailNotifications' | 'createCollectionExport')
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1739,6 +1748,43 @@ export interface TaskCheckNotifications {
  */
 export interface TaskProcessMeetingState {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAdminMailNotifications".
+ */
+export interface TaskAdminMailNotifications {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionExport".
+ */
+export interface TaskCreateCollectionExport {
+  input: {
+    name?: string | null;
+    format: 'csv' | 'json';
+    limit?: number | null;
+    sort?: string | null;
+    drafts?: ('yes' | 'no') | null;
+    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
+    fields?: string[] | null;
+    collectionSlug: string;
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    user?: string | null;
+    userCollection?: string | null;
+    exportsCollection?: string | null;
+  };
   output?: unknown;
 }
 /**
