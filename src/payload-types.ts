@@ -289,6 +289,7 @@ export interface Config {
       checkNotifications: TaskCheckNotifications;
       processMeetingState: TaskProcessMeetingState;
       adminMailNotifications: TaskAdminMailNotifications;
+      processHoldingsChange: TaskProcessHoldingsChange;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -709,7 +710,6 @@ export interface StocksFeed {
  */
 export interface HoldingsFeed {
   id: string;
-  hash?: string | null;
   valueDate: string;
   comments?: string | null;
   selectedCompanies?: (string | Company)[] | null;
@@ -902,6 +902,7 @@ export interface PayloadJob {
           | 'checkNotifications'
           | 'processMeetingState'
           | 'adminMailNotifications'
+          | 'processHoldingsChange'
           | 'createCollectionExport';
         taskID: string;
         input?:
@@ -936,7 +937,14 @@ export interface PayloadJob {
       }[]
     | null;
   taskSlug?:
-    | ('inline' | 'checkNotifications' | 'processMeetingState' | 'adminMailNotifications' | 'createCollectionExport')
+    | (
+        | 'inline'
+        | 'checkNotifications'
+        | 'processMeetingState'
+        | 'adminMailNotifications'
+        | 'processHoldingsChange'
+        | 'createCollectionExport'
+      )
     | null;
   queue?: string | null;
   waitUntil?: string | null;
@@ -1464,7 +1472,6 @@ export interface StocksFeedSelect<T extends boolean = true> {
  * via the `definition` "holdings-feed_select".
  */
 export interface HoldingsFeedSelect<T extends boolean = true> {
-  hash?: T;
   valueDate?: T;
   comments?: T;
   selectedCompanies?: T;
@@ -1758,6 +1765,16 @@ export interface TaskProcessMeetingState {
  */
 export interface TaskAdminMailNotifications {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskProcessHoldingsChange".
+ */
+export interface TaskProcessHoldingsChange {
+  input: {
+    holdingId?: string | null;
+  };
   output?: unknown;
 }
 /**
