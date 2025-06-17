@@ -1,5 +1,5 @@
-import { MeetingTableDataType } from "../types/meetings"
-import { UserVote } from "../types/vote"
+import { MeetingTableDataType } from '../types/meetings'
+import { UserVote } from '../types/vote'
 
 export const fetcherVote = async (url: string) => {
   const res = await fetch(url)
@@ -10,7 +10,9 @@ export const fetcherVote = async (url: string) => {
   return res.json()
 }
 
-export const createDefaultAgendaQuestions = (agendas: MeetingTableDataType['agendas']): UserVote[] => {
+export const createDefaultAgendaQuestions = (
+  agendas: MeetingTableDataType['agendas'],
+): UserVote[] => {
   return agendas.map((agenda) => ({
     subjectId: agenda.id,
     choice: '----',
