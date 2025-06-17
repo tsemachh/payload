@@ -18,7 +18,6 @@ const companyIsNotRegular = async (companyName: string, req: any): Promise<boole
     depth: 0,
   })
   console.log('companyIsNotRegular result', result)
-  // אם לא התקבלה אף תוצאה — זו לא חברה רגילה
   return result.docs.length === 0
 }
 
