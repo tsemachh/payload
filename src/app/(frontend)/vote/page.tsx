@@ -173,14 +173,15 @@ export default function VotingForm() {
   }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast])
 
   const saveDraftData = useCallback(
-    async (dataType: string): Promise<void> => {
+    async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
+      // Added currentVotingData parameter
       console.log(`=== AUTO SAVE - ${dataType} ===`)
 
-      if (!meetingIdPayload || companiesIDs.length === 0 || !votingData || !meetingData) {
+      if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
         console.warn('Missing data for saveDraftData. Aborting save.', {
           meetingIdPayload,
           companiesIDs,
-          votingData,
+          currentVotingData,
           meetingData,
         })
         toast({
@@ -196,7 +197,7 @@ export default function VotingForm() {
         const requestBody = {
           meetingId: meetingIdPayload,
           companiesIds: companiesIDs,
-          votingData: votingData,
+          votingData: currentVotingData,
         }
 
         console.log('Request body:', requestBody)
@@ -235,17 +236,20 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, votingData, meetingData, toast],
+    [meetingIdPayload, companiesIDs, meetingData, toast],
   )
 
-  const debouncedSaveFunction = useCallback(
-    (key: string, dataType: string, delay = 2000) => {
+  const debouncedSave = useCallback(
+    (key: string, dataType: string, delay = 3000) => {
       if (debounceTimers[key]) {
         clearTimeout(debounceTimers[key])
       }
 
       const newTimer = setTimeout(() => {
-        saveDraftData(dataType)
+        setVotingData((currentVotingData) => {
+          saveDraftData(dataType, currentVotingData)
+          return currentVotingData
+        })
         setDebounceTimers((prev) => {
           const newTimers = { ...prev }
           delete newTimers[key]
@@ -289,23 +293,26 @@ export default function VotingForm() {
             questionId as GeneralQuestionId,
           )
           if (generalExplanationFieldName) {
-            newState[generalExplanationFieldName] = value === true ? explanation : undefined
+            if (value === true && explanation !== undefined) {
+              newState[generalExplanationFieldName] = explanation
+            } else {
+              newState[generalExplanationFieldName] = undefined
+            }
           }
+
+          const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
+
+          if (explanation !== undefined) {
+            debouncedSave(
+              `general-${questionId}-explanation`,
+              config.toastNoteExplanation || config.toastNote,
+            )
+          } else {
+            saveDraftData(config.toastNote, { ...prev, generalVotingData: newState })
+          }
+
           return { ...prev, generalVotingData: newState }
         })
-
-        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
-        const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
-        if (explanation !== undefined) {
-          // אם זה שדה הסבר
-          debouncedSaveFunction(
-            `general-${questionId}-explanation`,
-            config.toastNoteExplanation || config.toastNote,
-          )
-        } else {
-          // אם זה צ'קבוקס
-          saveDraftData(config.toastNote) // שמירה מיידית
-        }
       } else if (type === 'agenda' && subjectId) {
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
@@ -314,34 +321,39 @@ export default function VotingForm() {
                 ...vote.questions,
                 [questionId]: value,
               }
+
               const agendaExplanationFieldName = getExplanationFieldName(
                 questionId as AgendaQuestionId,
               )
               if (agendaExplanationFieldName) {
-                newQuestions[agendaExplanationFieldName] = value === true ? explanation : undefined
+                if (value === true && explanation !== undefined) {
+                  newQuestions[agendaExplanationFieldName] = explanation
+                } else {
+                  newQuestions[agendaExplanationFieldName] = undefined
+                }
               }
+
               return { ...vote, questions: newQuestions }
             }
             return vote
           })
+
+          const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
+
+          if (explanation !== undefined) {
+            debouncedSave(
+              `agenda-${subjectId}-${questionId}-explanation`,
+              config.toastNoteExplanation || config.toastNote,
+            )
+          } else {
+            saveDraftData(config.toastNote, { ...prev, userVotes: newUserVotes })
+          }
+
           return { ...prev, userVotes: newUserVotes }
         })
-
-        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
-        const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
-        if (explanation !== undefined) {
-          // אם זה שדה הסבר
-          debouncedSaveFunction(
-            `agenda-${subjectId}-${questionId}-explanation`,
-            config.toastNoteExplanation || config.toastNote,
-          )
-        } else {
-          // אם זה צ'קבוקס
-          saveDraftData(config.toastNote) // שמירה מיידית
-        }
       }
     },
-    [debouncedSaveFunction, saveDraftData], // תלויות: debouncedSaveFunction ו-saveDraftData
+    [debouncedSave, saveDraftData],
   )
 
   const handleGeneralQuestionChangeWrapper = useCallback(
@@ -367,38 +379,50 @@ export default function VotingForm() {
         newUserVotes = prev.userVotes.map((vote, index) =>
           index === existingVoteIndex ? { ...vote, choice } : vote,
         )
+        saveDraftData("",{
+          ...prev,
+          userVotes: newUserVotes,
+        })
+        return {
+          ...prev,
+          userVotes: newUserVotes,
+        }
       } else {
         return prev
       }
-      return {
-        ...prev,
-        userVotes: newUserVotes,
-      }
     })
-    saveDraftData('הצבעה ')
   }
 
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const notes = e.target.value
-    setVotingData((prev) => ({
-      ...prev,
-      voterNotes: notes,
-    }))
-    debouncedSaveFunction('voter-notes', 'הערות המצביע')
+  const handleNotesChange = (notes: string) => {
+    setVotingData((prev) => {
+      const newState = {
+        ...prev,
+        voterNotes: notes,
+      }
+      if (notes.trim() !== '') {
+        debouncedSave('voter-notes', 'הערות המצביע')
+      }
+      return newState
+    })
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
-      setSelectedFiles((prev) => [...prev, ...filesArray])
-      saveDraftData('קבצים מועלים')
+      setSelectedFiles((prev) => {
+        const newState = [...prev, ...filesArray]
+        saveDraftData('קבצים מועלים', votingData)
+        return newState
+      })
     }
   }
 
   const removeFile = (index: number) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index)
-    setSelectedFiles(newFiles)
-    saveDraftData('עדכון קבצים')
+    setSelectedFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index)
+      saveDraftData('עדכון קבצים', votingData)
+      return newFiles
+    })
   }
 
   return (
@@ -618,7 +642,7 @@ export default function VotingForm() {
                       className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
                       style={{ height: 'calc(100% - 20px)' }}
                       value={votingData.voterNotes}
-                      onChange={handleNotesChange}
+                      onChange={(e) => handleNotesChange(e.target.value)}
                     />
                   </div>
 

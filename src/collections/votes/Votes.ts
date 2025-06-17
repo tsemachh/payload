@@ -182,30 +182,30 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeValidate: [
-      async ({ data, operation, req }) => {
-        if (operation === 'create' || operation === 'update') {
-          if (!data) return data
-          const { meeting, company } = data
+    // beforeValidate: [
+    //   async ({ data, operation, req }) => {
+    //     if (operation === 'create' || operation === 'update') {
+    //       if (!data) return data
+    //       const { meeting, company } = data
 
-          if (meeting && company) {
-            const existingVotes = await req.payload.find({
-              collection: 'votes',
-              where: {
-                and: [{ meeting: { equals: meeting } }, { company: { equals: company } }],
-              },
-            })
+    //       if (meeting && company) {
+    //         const existingVotes = await req.payload.find({
+    //           collection: 'votes',
+    //           where: {
+    //             and: [{ meeting: { equals: meeting } }, { company: { equals: company } }],
+    //           },
+    //         })
 
-            const isDuplicate = existingVotes.docs.some((vote) => vote.id !== data.id)
+    //         const isDuplicate = existingVotes.docs.some((vote) => vote.id !== data.id)
 
-            if (isDuplicate) {
-              throw new Error(`כבר קיימת הצבעה עבור האסיפה והחברה האלה.`)
-            }
-          }
-        }
-        return data
-      },
-    ],
+    //         if (isDuplicate) {
+    //           throw new Error(`כבר קיימת הצבעה עבור האסיפה והחברה האלה.`)
+    //         }
+    //       }
+    //     }
+    //     return data
+    //   },
+    // ],
     afterChange: [
       async ({ doc, req }) => {
         if (doc._status === 'published') {
