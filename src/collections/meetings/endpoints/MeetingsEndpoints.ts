@@ -18,12 +18,14 @@ import {
 import { SelectType } from 'payload'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById } from '@/utils/utils'
+import { id } from 'date-fns/locale'
 // Response is available globally from lib.dom.d.ts
 
 /**
  * Common select fields for meetings queries
  */
 const MEETING_SELECT_FIELDS: SelectType = {
+  id: true,
   meetingId: true,
   agenda: true,
   companies: true,
@@ -242,7 +244,8 @@ function createMeetingDataObject(
   researchDocuments: UrlFilenameMap[],
 ): MeetingTableDataType {
   return {
-    meetingId: meeting.meetingId || '',
+    meetingIdPayload: meeting.id,
+    meetingId: meeting.meetingId || '' || '',
     agendas,
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
@@ -270,7 +273,7 @@ function createMeetingDataObject(
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!meeting.committeeInitiated,
-  } as MeetingTableDataType
+  }
 }
 
 /**
@@ -486,4 +489,40 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
 
   // Filter out null values
   return meetingData.filter((item) => item !== null)
+}
+
+export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
+  try {
+    const payload = req.payload
+    const { user } = req
+
+    const meetingId = parseInt((req.query.meetingId as string) || '1')
+
+    const query: any = {
+      collection: 'meetings',
+      select: MEETING_SELECT_FIELDS,
+      limit: 1,
+      where: {
+        and: [
+          {
+            meetingId: { equals: meetingId },
+          },
+          createCompaniesFilter(user?.funds),
+          createPublishedStatusFilter(),
+        ],
+      },
+    }
+
+    // Execute query
+    const meetings = await payload.find(query)
+    const safeFunds = getSafeFunds(user?.funds)
+
+    // Process results to standardized format
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+
+    return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
+  } catch (error) {
+    req.payload.logger.error(`Error in allMeetingsEndpoint: ${JSON.stringify(error)}`)
+    return createErrorResponse(error, 'Failed to fetch meetings')
+  }
 }

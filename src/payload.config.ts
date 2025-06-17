@@ -2,13 +2,14 @@ import { Args, mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
-import { addAccess } from '@shefing/authorization'
+import { addAccess, Roles } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
+import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import { Users } from './collections/Users'
@@ -20,7 +21,6 @@ import { StockValues } from '@/collections/stocks/StockValues'
 import { Meetings } from './collections/meetings/Meetings'
 import { Holdings } from '@/collections/holdings/Holdings'
 import { HoldingsFeed } from '@/collections/holdings/feeds/HoldingsFeed'
-import { Roles } from '@shefing/authorization'
 import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
@@ -54,6 +54,22 @@ const dbArgs: Args = {
     },
   }),
 }
+
+const emailArgs: NodemailerAdapterArgs = process.env.SMTP_HOST
+  ? {
+      transportOptions: {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      },
+      defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@emda.org.il',
+      defaultFromName: process.env.EMAIL_FROM_NAME || 'EMDA System',
+    }
+  : ({} as NodemailerAdapterArgs)
 
 if (process.env.MONGO_USE_TX !== 'true') {
   dbArgs.transactionOptions = false
@@ -162,6 +178,7 @@ export default buildConfig({
   },
   db: mongooseAdapter(dbArgs as Args),
   logger: logger,
+  email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({
       collections: ['stocks', 'meetings'],

@@ -169,7 +169,7 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
         select: {
-          companies: true,
+          company: true,
         },
         where: {
           meeting: {
@@ -186,8 +186,8 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
       // Get companies that have voted
       const votedCompanyIds = new Set()
       votes.forEach((vote: Partial<Vote>) => {
-        if (vote.companies && Array.isArray(vote.companies)) {
-          votedCompanyIds.add(vote.companies as string[])
+        if (vote.company) {
+          votedCompanyIds.add(vote.company as string)
         }
       })
 
