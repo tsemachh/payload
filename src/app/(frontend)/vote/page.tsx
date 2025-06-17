@@ -12,9 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-
 import { useSearchParams } from 'next/navigation'
-import { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import { CompanyTableDate } from '../types/meetings'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import VoteDetails from './components/VoteDetails'
 import VoteCompanySelector from './components/VoteCompanySelector'
@@ -37,98 +36,76 @@ import {
   GENERAL_QUESTIONS_CONFIG,
   getExplanationFieldName,
 } from './questionConsts'
-import { createDefaultAgendaQuestions, fetcherVote } from '../helpers/utils-vote'
+import { createDefaultAgendaQuestions, fetcherVote, fetchMeetingData } from '../helpers/utils-vote'
 import useSWR from 'swr'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [meetingData, setMeetingData] = useState<MeetingTableDataType | null>(null)
-  const [companiesIDs, setCompaniesIDs] = useState<string>('')
-  const [meetingIdPayload, setMeetingIdPayload] = useState<string>('')
+  const meetingIdFromUrl = searchParams.get('meetingId')
+
+  const { data: meetingData, isLoading: isMeetingLoading } = useSWR(
+    meetingIdFromUrl ? `/api/meetings/by-id?meetingId=${meetingIdFromUrl}` : null,
+    fetchMeetingData,
+    {
+      revalidateOnFocus: false,
+      onError: (err) => {
+        console.error('Error fetching meeting data:', err)
+        toast({
+          title: '⚠️ שגיאה',
+          description: 'שגיאה בטעינת נתוני ההצבעה.',
+          variant: 'destructive',
+          duration: 5000,
+        })
+      },
+    },
+  )
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
 
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
-      isInterested: null,
-      isSeniorOfficial: null,
-      isInstitutionalInvestor: null,
+      isInterested: false,
+      isSeniorOfficial: false,
+      isInstitutionalInvestor: true,
     },
     voterNotes: '',
     userVotes: [],
   })
 
-  useEffect(() => {
-    const meetingIdFromUrl = searchParams.get('meetingId')
-    if (meetingIdFromUrl) {
-      const fetchMeetingDetails = async () => {
-        try {
-          const response = await fetch(`/api/meetings/by-id?meetingId=${meetingIdFromUrl}`)
-          if (!response.ok) {
-            throw new Error('Failed to fetch meeting data')
-          }
-          const data = await response.json()
-          setMeetingData(data.data[0])
-        } catch (error) {
-          console.error('Error fetching meeting data:', error)
-          toast({
-            title: '⚠️ שגיאה',
-            description: 'שגיאה בטעינת נתוני האסיפה.',
-            variant: 'destructive',
-            duration: 5000,
-          })
-        }
-      }
-      fetchMeetingDetails()
-    } else {
-      console.warn('No meetingId found in URL. Cannot load meeting data.')
-      toast({
-        title: '⚠️ שגיאה',
-        description: 'לא נמצא מזהה אסיפה בכתובת.',
-        variant: 'destructive',
-        duration: 5000,
-      })
-    }
-  }, [searchParams, toast])
-
-  useEffect(() => {
-    if (meetingData) {
-      const companyIDsTmp =
-        meetingData?.companies.map((comp: CompanyTableDate) => comp.id).join(',') || ''
-      setCompaniesIDs(companyIDsTmp)
-      const meetingIdPayloadTmp = meetingData?.meetingIdPayload || ''
-      setMeetingIdPayload(meetingIdPayloadTmp)
-    }
-  }, [meetingData])
+  const companiesIDs: string[] =
+    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || []
+  const meetingIdPayload = meetingData?.meetingIdPayload || ''
 
   const swrKey =
-    meetingIdPayload && companiesIDs
+    meetingIdPayload && companiesIDs.length > 0
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companyIds=${companiesIDs}`
       : null
 
   const {
     data: fetchedVotes,
-    error,
+    error: votesError,
     isLoading: isSWRLoading,
   } = useSWR(swrKey, fetcherVote, {
     revalidateOnFocus: false,
-  })
-
-  useEffect(() => {
-    if (isSWRLoading) {
-      return
-    }
-    if (error) {
-      console.error('Error fetching vote data with SWR:', error)
+    onError: (err) => {
+      console.error('Error fetching vote data with SWR:', err)
       toast({
         title: '⚠️ שגיאה בטעינה',
-        description: error.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
+        description: err.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
         variant: 'destructive',
         duration: 5000,
       })
-      if (!meetingData) return
+    },
+  })
 
+  useEffect(() => {
+    if (isMeetingLoading || isSWRLoading || !meetingData) {
+      return
+    }
+
+    if (votesError) {
       setVotingData({
         generalVotingData: {
           isInterested: false,
@@ -143,7 +120,7 @@ export default function VotingForm() {
       return
     }
 
-    if (meetingData && fetchedVotes && fetchedVotes.length) {
+    if (fetchedVotes && fetchedVotes.length) {
       const firstVote = fetchedVotes[0]
 
       if (firstVote) {
@@ -163,6 +140,8 @@ export default function VotingForm() {
               personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
               investmentCommitteeExplanation: voteItem?.investmentCommitteeExplanation || undefined,
             },
+            privilegedMajority: agenda.privilegedMajority,
+            isRemovedFromAgenda: agenda.isRemovedFromAgenda,
           }
         })
 
@@ -191,63 +170,82 @@ export default function VotingForm() {
         })
       }
     }
-  }, [fetchedVotes, error, isSWRLoading, meetingData, toast])
+  }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast])
 
-  const saveDraftData = async (dataType: string, data: any): Promise<void> => {
-    try {
-      console.log('meetingData', meetingData)
+  const saveDraftData = useCallback(
+    async (dataType: string): Promise<void> => {
+      console.log(`=== AUTO SAVE - ${dataType} ===`)
 
-      const requestBody = {
-        meetingId: meetingIdPayload,
-        companiesIds: companiesIDs,
-        votingData: votingData,
-      }
-
-      console.log('Request body:', requestBody)
-
-      const response = await fetch(`/api/votes/upsert-draft`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      if (response.ok) {
-        toast({
-          title: '✅ נתונים נשמרו',
-          description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
-          duration: 2000,
+      if (!meetingIdPayload || companiesIDs.length === 0 || !votingData || !meetingData) {
+        console.warn('Missing data for saveDraftData. Aborting save.', {
+          meetingIdPayload,
+          companiesIDs,
+          votingData,
+          meetingData,
         })
-      } else {
-        const errorData = await response.json()
-        console.error('Save error:', errorData)
         toast({
           title: '⚠️ שגיאה בשמירה',
-          description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
+          description: 'נתונים חיוניים חסרים לשמירת הטיוטה. אנא נסה שוב.',
+          variant: 'destructive',
+          duration: 3000,
+        })
+        return
+      }
+
+      try {
+        const requestBody = {
+          meetingId: meetingIdPayload,
+          companiesIds: companiesIDs,
+          votingData: votingData,
+        }
+
+        console.log('Request body:', requestBody)
+
+        const response = await fetch(`/api/votes/upsert-draft`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (response.ok) {
+          toast({
+            title: '✅ נתונים נשמרו',
+            description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
+            duration: 2000,
+          })
+        } else {
+          const errorData = await response.json()
+          console.error('Save error:', errorData)
+          toast({
+            title: '⚠️ שגיאה בשמירה',
+            description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
+            variant: 'destructive',
+            duration: 3000,
+          })
+        }
+      } catch (error) {
+        console.error('Save error:', error)
+        toast({
+          title: '⚠️ שגיאה בשמירה',
+          description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
           variant: 'destructive',
           duration: 3000,
         })
       }
-    } catch (error) {
-      console.error('Save error:', error)
-      toast({
-        title: '⚠️ שגיאה בשמירה',
-        description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
-        variant: 'destructive',
-        duration: 3000,
-      })
-    }
-  }
+    },
+    [meetingIdPayload, companiesIDs, votingData, meetingData, toast],
+  )
 
-  const debouncedSave = useCallback(
-    (key: string, dataType: string, data: any, delay = 2000) => {
+  const debouncedSaveFunction = useCallback(
+    (key: string, dataType: string, delay = 2000) => {
       if (debounceTimers[key]) {
         clearTimeout(debounceTimers[key])
       }
 
       const newTimer = setTimeout(() => {
-        saveDraftData(dataType, data)
+        saveDraftData(dataType)
         setDebounceTimers((prev) => {
           const newTimers = { ...prev }
           delete newTimers[key]
@@ -260,7 +258,7 @@ export default function VotingForm() {
         [key]: newTimer,
       }))
     },
-    [debounceTimers],
+    [saveDraftData, debounceTimers],
   )
 
   //   const handleCompanySelection = (companyId: string, selected: boolean) => {
@@ -291,29 +289,23 @@ export default function VotingForm() {
             questionId as GeneralQuestionId,
           )
           if (generalExplanationFieldName) {
-            if (value === true && explanation !== undefined) {
-              newState[generalExplanationFieldName] = explanation
-            } else {
-              newState[generalExplanationFieldName] = undefined
-            }
+            newState[generalExplanationFieldName] = value === true ? explanation : undefined
           }
-
-          const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
-
-          if (explanation !== undefined) {
-            // שמירת הסבר ב-debounce
-            debouncedSave(
-              `general-${questionId}-explanation`,
-              config.toastNoteExplanation || config.toastNote,
-              newState,
-            )
-          } else {
-            // שמירת בחירה רגילה (כן/לא)
-            saveDraftData(config.toastNote, newState)
-          }
-
           return { ...prev, generalVotingData: newState }
         })
+
+        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
+        const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
+        if (explanation !== undefined) {
+          // אם זה שדה הסבר
+          debouncedSaveFunction(
+            `general-${questionId}-explanation`,
+            config.toastNoteExplanation || config.toastNote,
+          )
+        } else {
+          // אם זה צ'קבוקס
+          saveDraftData(config.toastNote) // שמירה מיידית
+        }
       } else if (type === 'agenda' && subjectId) {
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
@@ -322,67 +314,36 @@ export default function VotingForm() {
                 ...vote.questions,
                 [questionId]: value,
               }
-
-              // Explicitly cast questionId to AgendaQuestionId here
               const agendaExplanationFieldName = getExplanationFieldName(
                 questionId as AgendaQuestionId,
               )
               if (agendaExplanationFieldName) {
-                if (value === true && explanation !== undefined) {
-                  newQuestions[agendaExplanationFieldName] = explanation
-                } else {
-                  newQuestions[agendaExplanationFieldName] = undefined
-                }
+                newQuestions[agendaExplanationFieldName] = value === true ? explanation : undefined
               }
-
               return { ...vote, questions: newQuestions }
             }
             return vote
           })
-
-          // אם עדיין אין הצבעה לנושא הזה, נוסיף אובייקט בסיסי
-          const existingVote = newUserVotes.find((vote) => vote.subjectId === subjectId)
-          if (!existingVote) {
-            const initialAgendaQuestions: AgendaQuestionsType = {
-              hasConflictOfInterest: null,
-              isRelatedParty: null,
-              isInvestmentCommittee: true, // ברירת מחדל 'כן' וללא הסבר
-              hasPersonalInterest: null,
-            }
-
-            const agendaExplanationFieldName = getExplanationFieldName(
-              questionId as AgendaQuestionId,
-            )
-            if (agendaExplanationFieldName && value === true && explanation !== undefined) {
-              initialAgendaQuestions[agendaExplanationFieldName] = explanation
-            }
-
-            newUserVotes.push({
-              subjectId,
-              choice: '----',
-              questions: { ...initialAgendaQuestions, [questionId]: value },
-            })
-          }
-          const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
-
-          if (explanation !== undefined) {
-            debouncedSave(
-              `agenda-${subjectId}-${questionId}-explanation`,
-              config.toastNoteExplanation || config.toastNote,
-              newUserVotes,
-            )
-          } else {
-            saveDraftData(config.toastNote, newUserVotes)
-          }
-
           return { ...prev, userVotes: newUserVotes }
         })
+
+        // הפעלת שמירה עם debounce עבור שדות טקסט/הסבר, או שמירה מיידית עבור צ'קבוקס
+        const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
+        if (explanation !== undefined) {
+          // אם זה שדה הסבר
+          debouncedSaveFunction(
+            `agenda-${subjectId}-${questionId}-explanation`,
+            config.toastNoteExplanation || config.toastNote,
+          )
+        } else {
+          // אם זה צ'קבוקס
+          saveDraftData(config.toastNote) // שמירה מיידית
+        }
       }
     },
-    [debouncedSave],
+    [debouncedSaveFunction, saveDraftData], // תלויות: debouncedSaveFunction ו-saveDraftData
   )
 
-  // פונקציות עטיפה ספציפיות לרכיבים
   const handleGeneralQuestionChangeWrapper = useCallback(
     (questionId: GeneralVotingIDs, value: boolean, explanation?: string) => {
       handleQuestionChange('general', questionId as GeneralQuestionId, value, explanation)
@@ -407,55 +368,42 @@ export default function VotingForm() {
           index === existingVoteIndex ? { ...vote, choice } : vote,
         )
       } else {
-        newUserVotes = [
-          ...prev.userVotes,
-          {
-            subjectId,
-            choice,
-            questions: {
-              hasConflictOfInterest: false,
-              isRelatedParty: false,
-              isInvestmentCommittee: true, // ברירת מחדל 'כן'
-              hasPersonalInterest: false,
-            },
-          },
-        ]
+        return prev
       }
-      saveDraftData('הצבעה ', { subjectId, choice })
       return {
         ...prev,
         userVotes: newUserVotes,
       }
     })
+    saveDraftData('הצבעה ')
   }
 
-  const handleNotesChange = (notes: string) => {
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const notes = e.target.value
     setVotingData((prev) => ({
       ...prev,
       voterNotes: notes,
     }))
-    if (notes.trim() !== '') {
-      debouncedSave('voter-notes', 'הערות המצביע', { notes })
-    }
+    debouncedSaveFunction('voter-notes', 'הערות המצביע')
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
       setSelectedFiles((prev) => [...prev, ...filesArray])
-      saveDraftData('קבצים מועלים', { files: filesArray.map((f) => f.name) })
+      saveDraftData('קבצים מועלים')
     }
   }
 
   const removeFile = (index: number) => {
     const newFiles = selectedFiles.filter((_, i) => i !== index)
     setSelectedFiles(newFiles)
-    saveDraftData('עדכון קבצים', { files: newFiles.map((f) => f.name) })
+    saveDraftData('עדכון קבצים')
   }
 
   return (
     <>
-      {meetingData ? (
+      {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
           {/* Header */}
           {meetingData.meetingInviteUrl ? (
@@ -670,7 +618,7 @@ export default function VotingForm() {
                       className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
                       style={{ height: 'calc(100% - 20px)' }}
                       value={votingData.voterNotes}
-                      onChange={(e) => handleNotesChange(e.target.value)}
+                      onChange={handleNotesChange}
                     />
                   </div>
 
