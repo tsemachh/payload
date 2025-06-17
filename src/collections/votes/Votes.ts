@@ -51,6 +51,12 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
+      name: 'noParticipantDuty',
+      label: 'אין חובת השתתפות',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
       name: 'isInterested',
       label: 'בעל עניין',
       type: 'checkbox',
