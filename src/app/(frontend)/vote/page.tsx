@@ -38,9 +38,11 @@ import {
 } from './questionConsts'
 import { createDefaultAgendaQuestions, fetcherVote, fetchMeetingData } from '../helpers/utils-vote'
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { toast } = useToast()
   const meetingIdFromUrl = searchParams.get('meetingId')
 
@@ -57,6 +59,15 @@ export default function VotingForm() {
           variant: 'destructive',
           duration: 5000,
         })
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          setTimeout(() => {
+            router.back()
+          }, 2000)
+        } else {
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
+        }
       },
     },
   )
