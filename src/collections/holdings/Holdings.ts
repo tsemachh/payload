@@ -14,7 +14,7 @@ export const Holdings: CollectionConfig = {
   admin: {
     useAsTitle: 'id',
     defaultColumns: ['fund', 'valueDate'],
-    group: 'אוספים משניים',
+    group: 'פעילות',
   },
   hooks: {
     afterChange: [

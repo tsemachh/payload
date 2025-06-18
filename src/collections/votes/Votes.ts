@@ -22,6 +22,7 @@ export const Votes: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200],
     },
+    group: 'פעילות',
   },
   fields: [
     {
@@ -38,7 +39,7 @@ export const Votes: CollectionConfig = {
         },
         {
           name: 'company',
-          label: 'חברות',
+          label: 'חברה',
           type: 'relationship',
           relationTo: 'companies',
           maxDepth: 0,
@@ -57,51 +58,35 @@ export const Votes: CollectionConfig = {
       defaultValue: false,
     },
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'interested',
-          label: 'בעל עניין',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: {
-            width: '150px',
-          },
-        },
-        {
-          name: 'interestedExplanation',
-          label: 'הסבר בעל עניין',
-          type: 'textarea',
-          admin: {
-            condition: (_, siblingData) => siblingData.interested === true,
-          },
-        },
-      ],
+      name: 'isInterested',
+      label: 'בעל עניין',
+      type: 'checkbox',
+      defaultValue: false,
     },
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'seniorOfficial',
-          label: 'נושא משרה בכירה',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: {
-            width: '150px',
-          },
-        },
-        {
-          name: 'seniorOfficialExplanation',
-          label: 'הסבר נושא משרה בכירה',
-          type: 'textarea',
-          admin: {
-            condition: (_, siblingData) => siblingData.seniorOfficial === true,
-          },
-        },
-      ],
+      name: 'interestedExplanation',
+      label: 'הסבר בעל עניין',
+      type: 'textarea',
+      admin: {
+        condition: (_, siblingData) => siblingData.isInterested === true,
+      },
     },
     {
-      name: 'institutionalInvestor',
+      name: 'isSeniorOfficial',
+      label: 'נושא משרה בכירה',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
+      name: 'seniorOfficialExplanation',
+      label: 'הסבר נושא משרה בכירה',
+      type: 'textarea',
+      admin: {
+        condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
+      },
+    },
+    {
+      name: 'isInstitutionalInvestor',
       label: 'משקיע מוסדי',
       type: 'checkbox',
       defaultValue: true,
@@ -151,21 +136,21 @@ export const Votes: CollectionConfig = {
           type: 'row',
           fields: [
             {
-              name: 'investmentCommittee',
-              label: 'ועדה',
+              name: 'hasConflictOfInterest',
+              label: 'ניגוד עניינים',
               type: 'checkbox',
-              defaultValue: false,
+              defaultValue: true,
             },
             {
-              name: 'investmentCommitteeExplanation',
-              label: 'הסבר ועדה',
+              name: 'conflictOfInterestExplanation',
+              label: 'הסבר צד קשור',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.investmentCommittee === true,
+                condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
               },
             },
             {
-              name: 'relatedParty',
+              name: 'isRelatedParty',
               label: 'צד קשור',
               type: 'checkbox',
               defaultValue: false,
@@ -179,13 +164,13 @@ export const Votes: CollectionConfig = {
               },
             },
             {
-              name: 'conflictOfInterest',
-              label: 'ניגוד עניינים',
+              name: 'isInvestmentCommittee',
+              label: 'ועדה',
               type: 'checkbox',
-              defaultValue: true,
+              defaultValue: false,
             },
             {
-              name: 'personalInterest',
+              name: 'hasPersonalInterest',
               label: 'עניין אישי',
               type: 'checkbox',
               defaultValue: false,
@@ -195,7 +180,7 @@ export const Votes: CollectionConfig = {
               label: 'הסבר עניין אישי',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.personalInterest === true,
+                condition: (_, siblingData) => siblingData.hasPersonalInterest === true,
               },
             },
           ],
@@ -204,6 +189,30 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
+    // beforeValidate: [
+    //   async ({ data, operation, req }) => {
+    //     if (operation === 'create' || operation === 'update') {
+    //       if (!data) return data
+    //       const { meeting, company } = data
+
+    //       if (meeting && company) {
+    //         const existingVotes = await req.payload.find({
+    //           collection: 'votes',
+    //           where: {
+    //             and: [{ meeting: { equals: meeting } }, { company: { equals: company } }],
+    //           },
+    //         })
+
+    //         const isDuplicate = existingVotes.docs.some((vote) => vote.id !== data.id)
+
+    //         if (isDuplicate) {
+    //           throw new Error(`כבר קיימת הצבעה עבור האסיפה והחברה האלה.`)
+    //         }
+    //       }
+    //     }
+    //     return data
+    //   },
+    // ],
     afterChange: [
       async ({ doc, req }) => {
         if (doc._status === 'published') {
