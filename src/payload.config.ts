@@ -26,6 +26,7 @@ import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
 import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
+import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
 
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -36,6 +37,8 @@ import { checkNotificationsHandler } from '@/tasks/checkNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
 import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
+import { checkCompanyMeetingNotificationsHandler } from '@/tasks/checkCompanyMeetingNotifications'
+import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
@@ -120,6 +123,14 @@ export default buildConfig({
         handler: processHoldingsChangeHandler,
         inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
       },
+      {
+        slug: 'checkCompanyMeetingNotifications',
+        handler: checkCompanyMeetingNotificationsHandler,
+      },
+      {
+        slug: 'sendCompanyMeetingNotifications',
+        handler: sendCompanyMeetingNotificationsHandler,
+      },
     ],
     // autoRun can optionally be a function that receives payload as an argument
     autoRun: [
@@ -138,6 +149,13 @@ export default buildConfig({
         limit: 100, // limit jobs to process each run
         queue: 'holdings', // name of the queue
       },
+      /*
+      {
+        cron: '*!/01 * * * *', // every 30 minutes
+        limit: 2, // limit jobs to process each run
+        queue: 'immediate', // name of the queue
+      },
+*/
       // add as many cron jobs as you want
     ],
   },
@@ -192,6 +210,7 @@ export default buildConfig({
     Votes,
     ResearchDocument,
     AdminNotifications,
+    CompanyMeetingNotifications,
   ],
   globals: [],
   editor: lexicalEditor(),

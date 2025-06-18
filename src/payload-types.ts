@@ -123,6 +123,7 @@ export type RolePermissions =
         | 'votes'
         | 'research-documents'
         | 'admin-notifications'
+        | 'company-meeting-notifications'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
@@ -148,6 +149,11 @@ export type MigrationType =
       | 'company'
     )
   | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UserNotificationType".
+ */
+export type UserNotificationType = 'after-holding-limit' | 'before-voting-end';
 /**
  * Supported timezones in IANA format.
  *
@@ -228,6 +234,7 @@ export interface Config {
     votes: Vote;
     'research-documents': ResearchDocument;
     'admin-notifications': AdminNotification;
+    'company-meeting-notifications': CompanyMeetingNotification;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -268,6 +275,7 @@ export interface Config {
     votes: VotesSelect<false> | VotesSelect<true>;
     'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
     'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
+    'company-meeting-notifications': CompanyMeetingNotificationsSelect<false> | CompanyMeetingNotificationsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -290,6 +298,8 @@ export interface Config {
       processMeetingState: TaskProcessMeetingState;
       adminMailNotifications: TaskAdminMailNotifications;
       processHoldingsChange: TaskProcessHoldingsChange;
+      checkCompanyMeetingNotifications: TaskCheckCompanyMeetingNotifications;
+      sendCompanyMeetingNotifications: TaskSendCompanyMeetingNotifications;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -600,6 +610,7 @@ export interface User {
   funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
+  receiveMailNotification?: boolean | null;
   /**
    * הזן כתובות IP מופרדות בנקודה-פסיק (;)
    */
@@ -810,6 +821,21 @@ export interface AdminNotification {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "company-meeting-notifications".
+ */
+export interface CompanyMeetingNotification {
+  id: string;
+  message: string;
+  notificationType: UserNotificationType;
+  meeting: string | Meeting;
+  company: string | Company;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -903,6 +929,8 @@ export interface PayloadJob {
           | 'processMeetingState'
           | 'adminMailNotifications'
           | 'processHoldingsChange'
+          | 'checkCompanyMeetingNotifications'
+          | 'sendCompanyMeetingNotifications'
           | 'createCollectionExport';
         taskID: string;
         input?:
@@ -943,6 +971,8 @@ export interface PayloadJob {
         | 'processMeetingState'
         | 'adminMailNotifications'
         | 'processHoldingsChange'
+        | 'checkCompanyMeetingNotifications'
+        | 'sendCompanyMeetingNotifications'
         | 'createCollectionExport'
       )
     | null;
@@ -1030,6 +1060,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'admin-notifications';
         value: string | AdminNotification;
+      } | null)
+    | ({
+        relationTo: 'company-meeting-notifications';
+        value: string | CompanyMeetingNotification;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1131,7 +1165,8 @@ export interface PayloadQueryPreset {
     | 'holdings'
     | 'votes'
     | 'research-documents'
-    | 'admin-notifications';
+    | 'admin-notifications'
+    | 'company-meeting-notifications';
   /**
    * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
@@ -1305,6 +1340,7 @@ export interface UsersSelect<T extends boolean = true> {
   funds?: T;
   lastLogin?: T;
   changePassword?: T;
+  receiveMailNotification?: T;
   userIp?: T;
   isAdmin?: T;
   isGeneratorUser?: T;
@@ -1618,6 +1654,20 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "company-meeting-notifications_select".
+ */
+export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
+  message?: T;
+  notificationType?: T;
+  meeting?: T;
+  company?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
@@ -1775,6 +1825,22 @@ export interface TaskProcessHoldingsChange {
   input: {
     holdingId?: string | null;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCheckCompanyMeetingNotifications".
+ */
+export interface TaskCheckCompanyMeetingNotifications {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSendCompanyMeetingNotifications".
+ */
+export interface TaskSendCompanyMeetingNotifications {
+  input?: unknown;
   output?: unknown;
 }
 /**
