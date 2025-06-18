@@ -3,16 +3,14 @@ export const metadata = {
   description: 'Swagger UI API Documentation',
 }
 
-export default function SwaggerLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function SwaggerLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           body {
             margin: 0;
             padding: 0;
@@ -60,12 +58,12 @@ export default function SwaggerLayout({
           .swagger-ui .topbar {
             display: none;
           }
-        `}} />
+        `,
+          }}
+        />
         <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js" async></script>
       </head>
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   )
 }

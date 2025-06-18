@@ -273,7 +273,9 @@ export const Stocks: CollectionConfig = {
               collection: 'stocks',
               on: 'relatedStock',
               //              _sanitized: true,
-              admin: { defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'] },
+              admin: {
+                defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+              },
             },
           ],
         },
@@ -290,7 +292,9 @@ export const Stocks: CollectionConfig = {
               collection: 'meetings',
               on: 'stock',
               _sanitized: true,
-              admin: { defaultColumns: ['meetingId', 'meetingDate', 'meetingType'] },
+              admin: {
+                defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+              },
             },
           ],
         },

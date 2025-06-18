@@ -1,35 +1,42 @@
-"use client"
+'use client'
 
-import { useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Image from "next/image"
-import LogoImage from "@/graphics/Logo/emda_logo.png"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import Link from "next/link"
-import { useAuth } from "@/providers/auth-provider"
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import LogoImage from '@/graphics/Logo/emda_logo.png'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import Link from 'next/link'
+import { useAuth } from '@/providers/auth-provider'
 
 // Client component that uses useSearchParams
 function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
   })
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError("")
+    setError('')
 
     try {
       await login({
@@ -40,7 +47,7 @@ function SignInContent() {
       router.push(callbackUrl)
       router.refresh()
     } catch (error) {
-      setError(error instanceof Error ? error.message : "פרטי התחברות שגויים")
+      setError(error instanceof Error ? error.message : 'פרטי התחברות שגויים')
     } finally {
       setIsLoading(false)
     }
@@ -51,13 +58,7 @@ function SignInContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
-            <Image 
-              src={LogoImage} 
-              alt="Emda Logo" 
-              width={150} 
-              height={150} 
-              priority
-            />
+            <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
           </div>
           <CardTitle className="text-2xl font-bold text-center">התחברות</CardTitle>
           <CardDescription className="text-center">
@@ -87,10 +88,7 @@ function SignInContent() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">סיסמה</Label>
-                <Link 
-                  href="/auth/reset-password" 
-                  className="text-sm text-primary hover:underline"
-                >
+                <Link href="/auth/reset-password" className="text-sm text-primary hover:underline">
                   שכחת סיסמה?
                 </Link>
               </div>
@@ -104,7 +102,7 @@ function SignInContent() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "מתחבר..." : "התחבר"}
+              {isLoading ? 'מתחבר...' : 'התחבר'}
             </Button>
           </form>
         </CardContent>
@@ -121,7 +119,13 @@ function SignInContent() {
 // Main component that wraps the content in a Suspense boundary
 export default function SignIn() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">
+          Loading...
+        </div>
+      }
+    >
       <SignInContent />
     </Suspense>
   )

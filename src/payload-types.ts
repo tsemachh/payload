@@ -86,7 +86,7 @@ export type HoldingsPerDay = {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'לא משתתף') | null;
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
@@ -288,6 +288,8 @@ export interface Config {
     tasks: {
       checkNotifications: TaskCheckNotifications;
       processMeetingState: TaskProcessMeetingState;
+      adminMailNotifications: TaskAdminMailNotifications;
+      processHoldingsChange: TaskProcessHoldingsChange;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -555,7 +557,8 @@ export interface Holding {
 export interface Vote {
   id: string;
   meeting: string | Meeting;
-  companies: (string | Company)[];
+  company: string | Company;
+  noParticipantDuty?: boolean | null;
   interested?: boolean | null;
   interestedExplanation?: string | null;
   seniorOfficial?: boolean | null;
@@ -707,7 +710,6 @@ export interface StocksFeed {
  */
 export interface HoldingsFeed {
   id: string;
-  hash?: string | null;
   valueDate: string;
   comments?: string | null;
   selectedCompanies?: (string | Company)[] | null;
@@ -895,7 +897,13 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport';
+        taskSlug:
+          | 'inline'
+          | 'checkNotifications'
+          | 'processMeetingState'
+          | 'adminMailNotifications'
+          | 'processHoldingsChange'
+          | 'createCollectionExport';
         taskID: string;
         input?:
           | {
@@ -928,7 +936,16 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'checkNotifications' | 'processMeetingState' | 'createCollectionExport') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'checkNotifications'
+        | 'processMeetingState'
+        | 'adminMailNotifications'
+        | 'processHoldingsChange'
+        | 'createCollectionExport'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1455,7 +1472,6 @@ export interface StocksFeedSelect<T extends boolean = true> {
  * via the `definition` "holdings-feed_select".
  */
 export interface HoldingsFeedSelect<T extends boolean = true> {
-  hash?: T;
   valueDate?: T;
   comments?: T;
   selectedCompanies?: T;
@@ -1534,7 +1550,8 @@ export interface SilencedStocksSelect<T extends boolean = true> {
  */
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
-  companies?: T;
+  company?: T;
+  noParticipantDuty?: T;
   interested?: T;
   interestedExplanation?: T;
   seniorOfficial?: T;
@@ -1740,6 +1757,24 @@ export interface TaskCheckNotifications {
  */
 export interface TaskProcessMeetingState {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAdminMailNotifications".
+ */
+export interface TaskAdminMailNotifications {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskProcessHoldingsChange".
+ */
+export interface TaskProcessHoldingsChange {
+  input: {
+    holdingId?: string | null;
+  };
   output?: unknown;
 }
 /**

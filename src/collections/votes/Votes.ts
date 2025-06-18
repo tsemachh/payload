@@ -1,7 +1,8 @@
 import { type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
-import { isSameDay, addDays } from '@/utils/dateUtils'
+import { addDays, isSameDay } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
+import { getVoteByMeetingAndCompanies, upsertVote } from './voteEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -32,15 +33,16 @@ export const Votes: CollectionConfig = {
           label: 'אסיפה',
           type: 'relationship',
           relationTo: 'meetings',
+          maxDepth: 0,
           required: true,
           index: true,
         },
         {
-          name: 'companies',
+          name: 'company',
           label: 'חברות',
           type: 'relationship',
           relationTo: 'companies',
-          hasMany: true,
+          maxDepth: 0,
           required: true,
           index: true,
           filterOptions: {
@@ -50,32 +52,54 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
-      name: 'interested',
-      label: 'בעל עניין',
+      name: 'noParticipantDuty',
+      label: 'אין חובת השתתפות',
       type: 'checkbox',
       defaultValue: false,
     },
     {
-      name: 'interestedExplanation',
-      label: 'הסבר בעל עניין',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.interested === true,
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'interested',
+          label: 'בעל עניין',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            width: '150px',
+          },
+        },
+        {
+          name: 'interestedExplanation',
+          label: 'הסבר בעל עניין',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.interested === true,
+          },
+        },
+      ],
     },
     {
-      name: 'seniorOfficial',
-      label: 'נושא משרה בכירה',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
-      name: 'seniorOfficialExplanation',
-      label: 'הסבר נושא משרה בכירה',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.seniorOfficial === true,
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'seniorOfficial',
+          label: 'נושא משרה בכירה',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            width: '150px',
+          },
+        },
+        {
+          name: 'seniorOfficialExplanation',
+          label: 'הסבר נושא משרה בכירה',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.seniorOfficial === true,
+          },
+        },
+      ],
     },
     {
       name: 'institutionalInvestor',
@@ -117,9 +141,10 @@ export const Votes: CollectionConfig = {
                 { label: 'בעד', value: 'בעד' },
                 { label: 'נגד', value: 'נגד' },
                 { label: 'נמנע', value: 'נמנע' },
-                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
+                { label: 'דיון', value: 'דיון' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
+              defaultValue: '----',
             },
           ],
         },
@@ -144,12 +169,12 @@ export const Votes: CollectionConfig = {
               name: 'relatedParty',
               label: 'צד קשור',
               type: 'checkbox',
+              defaultValue: false,
             },
             {
               name: 'relatedPartyExplanation',
               label: 'הסבר צד קשור',
               type: 'textarea',
-              defaultValue: false,
               admin: {
                 condition: (_, siblingData) => siblingData.relatedParty === true,
               },
@@ -222,4 +247,16 @@ export const Votes: CollectionConfig = {
       },
     ],
   },
+  endpoints: [
+    {
+      path: '/by-meeting-and-companies',
+      method: 'get',
+      handler: getVoteByMeetingAndCompanies,
+    },
+    {
+      path: '/upsert-draft',
+      method: 'post',
+      handler: upsertVote,
+    },
+  ],
 }

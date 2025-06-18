@@ -1,12 +1,13 @@
 'use client'
 
+import * as React from 'react'
 import { AgendaQuestionId, AgendaQuestionsType, AgendaVotingIDs } from '../../types/vote'
 import { AGENDA_QUESTIONS_CONFIG, getExplanationFieldName } from '../questionConsts'
 import YesNoQuestion from './YesNoQuestion'
 
 interface AgendaQuestionsProps {
   questions: AgendaQuestionsType
-  handleAgendaQuestionsChange: (
+  handleAgendaQuestionsChangeAction: (
     subjectId: AgendaVotingIDs,
     value: boolean,
     explanation?: string,
@@ -15,7 +16,7 @@ interface AgendaQuestionsProps {
 
 export default function AgendaQuestions({
   questions,
-  handleAgendaQuestionsChange,
+  handleAgendaQuestionsChangeAction,
 }: AgendaQuestionsProps) {
   return (
     <div className="space-y-3 min-w-[300px]">
@@ -35,8 +36,8 @@ export default function AgendaQuestions({
             }
             explanationPlaceholder={config.explanationPlaceholder}
             requiresExplanation={config.requiresExplanation}
-            onValueChange={(value, explanation) =>
-              handleAgendaQuestionsChange(questionId, value, explanation)
+            onValueChangeAction={(value, explanation) =>
+              handleAgendaQuestionsChangeAction(questionId, value, explanation)
             }
             isAgendaQuestion={true}
           />

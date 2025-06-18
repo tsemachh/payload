@@ -1,6 +1,9 @@
 import { PayloadRequest } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
-import { getWorkingDateBefore, getWorkingDateAfter } from '@/collections/meetings/hooks/ calculateHoldingDate'
+import {
+  getWorkingDateBefore,
+  getWorkingDateAfter,
+} from '@/collections/meetings/hooks/ calculateHoldingDate'
 import { Vote } from '@/payload-types'
 
 /**
@@ -66,19 +69,19 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
     // Find all companies
     const { docs: companies } = await req.payload.find({
       collection: 'companies',
-      select:{
-        name:true
+      select: {
+        name: true,
       },
-      where:{
-        subCompanies:{
-          exists: false
+      where: {
+        subCompanies: {
+          exists: false,
         },
-        active:{
-          equals : true
-        }
+        active: {
+          equals: true,
+        },
       },
       limit: 0,
-      depth: 0
+      depth: 0,
     })
 
     // For each company, check if they have holdings after twoDaysAgo
@@ -135,9 +138,9 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
     // Find meetings happening on the next working day
     const { docs: nextDayMeetings } = await req.payload.find({
       collection: 'meetings',
-      select:{
+      select: {
         companies: true,
-        fullName: true
+        fullName: true,
       },
       where: {
         meetingDate: {
@@ -146,7 +149,7 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         },
       },
       limit: 0,
-      depth: 0
+      depth: 0,
     })
 
     // For each meeting, check which companies should vote but haven't
@@ -165,8 +168,8 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
       // Find votes for this meeting
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
-        select:{
-          companies: true
+        select: {
+          company: true,
         },
         where: {
           meeting: {
@@ -177,14 +180,14 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
           },
         },
         limit: 0,
-        depth : 0
+        depth: 0,
       })
 
       // Get companies that have voted
       const votedCompanyIds = new Set()
-      votes.forEach((vote:Partial<Vote>) => {
-        if (vote.companies && Array.isArray(vote.companies)) {
-          votedCompanyIds.add(vote.companies as string[])
+      votes.forEach((vote: Partial<Vote>) => {
+        if (vote.company) {
+          votedCompanyIds.add(vote.company as string)
         }
       })
 
@@ -196,8 +199,8 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         // Get company details
         const company = await req.payload.findByID({
           collection: 'companies',
-          select:{
-            name: true
+          select: {
+            name: true,
           },
           id: companyId,
         })
@@ -244,9 +247,8 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         },
       },
       limit: 1,
-      depth: 0
+      depth: 0,
     })
-
 
     // Check meetings feed
     const { docs: meetingsFeeds } = await req.payload.find({
@@ -257,26 +259,22 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         },
       },
       limit: 1,
-      depth: 0
+      depth: 0,
     })
 
     // If no feeds found in any collection, create a notification
     if (stocksFeeds.length === 0 || meetingsFeeds.length === 0) {
-      let message = `לא התקבל פיד מ-Predictae ביום העבודה האחרון: `;
+      let message = `לא התקבל פיד מ-Predictae ביום העבודה האחרון: `
 
       if (stocksFeeds.length === 0 && meetingsFeeds.length === 0) {
-        message += `מניות ואסיפות`;
+        message += `מניות ואסיפות`
       } else if (stocksFeeds.length === 0) {
-        message += `מניות`;
+        message += `מניות`
       } else {
-        message += `אסיפות`;
+        message += `אסיפות`
       }
 
-      await createAdminNotification(
-        req.payload,
-        message,
-        `/admin`,
-      )
+      await createAdminNotification(req.payload, message, `/admin`)
       notifications.noFeedFromPredictae = true
     }
   } catch (error) {

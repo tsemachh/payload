@@ -56,7 +56,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Get distinct stockNum and firm from holdings table
     console.log('Fetching distinct stock numbers and firms from holdings...')
     const stockFirmsResult = await getDistinctStockFirms(pool)
-    console.log(`Found ${stockFirmsResult.recordset.length} distinct stock-firm pairs from ${MIN_HOLDINGS_DATE}`)
+    console.log(
+      `Found ${stockFirmsResult.recordset.length} distinct stock-firm pairs from ${MIN_HOLDINGS_DATE}`,
+    )
 
     // Create a map of company ID to silenced stocks
     const companyToStocks = new Map<string, Set<string>>()
@@ -104,7 +106,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
           companyToStocks.get(companyId)?.add(stockId)
 
-/*          // Also add to child companies
+          /*          // Also add to child companies
           const companyChildIds = companyIdToChildCompanies.get(firm)
           if (companyChildIds && companyChildIds.length > 0) {
             for (const childId of companyChildIds) {

@@ -33,7 +33,7 @@ export async function logMigrationFault({
         comments,
       },
     })
-//    console.info(`✗ Migration fault logged for ${type} ${typeId}: ${comments}`)
+    //    console.info(`✗ Migration fault logged for ${type} ${typeId}: ${comments}`)
   } catch (error) {
     console.error(`Failed to log migration fault for ${type} ${typeId}:`, error)
   }

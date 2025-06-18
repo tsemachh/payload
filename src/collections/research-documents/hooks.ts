@@ -7,6 +7,19 @@ import {
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { ResearchDocument } from '@/payload-types'
 
+const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
+  const result = await req.payload.find({
+    collection: 'companies',
+    where: {
+      name: { like: companyName },
+      type: { equals: 'regular' },
+    },
+    limit: 1,
+    depth: 0,
+  })
+  return result.docs.length === 0
+}
+
 export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = async ({
   data,
   req,
@@ -40,20 +53,47 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
         },
       },
     }
-
+    type ResearchDoc = {
+      id: string
+      companies?: string[]
+      filename?: string
+    }
     const researchDocuments = await req.payload.find(query)
+
     if (docIDs.length > 1) {
       const generalDocs = researchDocuments?.docs?.filter(
         (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
       )
-      if (generalDocs.length > 1) {
+
+      const invalidGeneralDocs: string[] = []
+
+      for (const doc of generalDocs) {
+        const result = parseResearchFilename((doc as ResearchDoc).filename || '')
+
+        const companyExists =
+          result.isValid &&
+          !result.isGeneric &&
+          result.companyName &&
+          (await companyIsNotRegular(result.companyName, req))
+
+        if (companyExists) {
+          validationErrors.push({
+            message: `המסמך "${(doc as ResearchDoc).filename}" מתייחס לחברה לא קיימת במערכת`,
+            path: 'researchDocuments',
+          })
+        } else {
+          invalidGeneralDocs.push(doc.id)
+        }
+      }
+
+      if (invalidGeneralDocs.length > 1) {
         validationErrors.push({
-          message: 'לא ניתן לצרף יותר ממסמך כללי אחד',
+          message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
           path: 'researchDocuments',
         })
       }
     }
-    //todo: check if the companies in the research documents match the companies in the meeting
+
     const docs = researchDocuments.docs as ResearchDocument[]
     const invalidFilenames: string[] = []
 
@@ -126,7 +166,10 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
     if (!parsed.isGeneric && parsed.companyName) {
       const companies = await req.payload.find({
         collection: 'companies',
-        where: { name: { like: parsed.companyName }, type: { equals: 'regular' } },
+        where: {
+          name: { like: parsed.companyName },
+          type: { equals: 'regular' },
+        },
       })
       if (companies) {
         const foundCompanies = companies.docs

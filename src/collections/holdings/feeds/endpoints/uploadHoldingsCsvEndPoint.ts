@@ -4,7 +4,6 @@ import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { getBufferFromStream } from '@/utils/dataUtils'
 import { performance } from 'perf_hooks'
-import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   const startTime = performance.now()
@@ -21,8 +20,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Value date is required' }, { status: 400 })
     }
 
-
-
     // Get the ReadableStream from the request body
     const stream = req.body
     if (!stream) {
@@ -32,32 +29,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     const streamStartTime = performance.now()
     const buffer = await getBufferFromStream(stream)
     const streamEndTime = performance.now()
-    req.payload.logger.info(`Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`)
-
-    // Calculate file hash
-    const fileHash = calculateFileHash(buffer);
-    req.payload.logger.info(`File hash calculated: ${fileHash}`);
-
-    // Check if a file with the same hash already exists
-    const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
-      req.payload,
-      'holdings-feed',
-      fileHash
-    );
-
-    // If duplicate found, return success with existing document
-    if (isDuplicate && existingDoc) {
-      const endTime = performance.now();
-      req.payload.logger.info(`Duplicate file detected. Returning existing document. Process took ${endTime - startTime}ms`);
-      return Response.json({
-        message: 'File with identical content already exists',
-        feedResult: {
-          success: true,
-          document: existingDoc,
-          isDuplicate: true
-        }
-      }, { status: 200 });
-    }
+    req.payload.logger.info(
+      `Stream to buffer conversion completed in ${streamEndTime - streamStartTime}ms`,
+    )
 
     // Determine the file extension from the content-type header
     const contentType = req.headers.get('content-type')
@@ -81,7 +55,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-
     // Optional companies parameter as JSON string of company IDs
     let selectedCompanies: string[] = []
     if (companies) {
@@ -98,7 +71,6 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       valueDate,
       comments: '',
       selectedCompanies: selectedCompanies.length > 0 ? selectedCompanies : undefined,
-      hash: fileHash, // Add the file hash
     } as Partial<HoldingsFeed>
     //Make sure selectedCompanies are IDs
     req.file = file
@@ -112,14 +84,16 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       isValidationOnly,
     )
     const processingEndTime = performance.now()
-    req.payload.logger.info(`Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`)
+    req.payload.logger.info(
+      `Holdings feed processing completed in ${processingEndTime - processingStartTime}ms`,
+    )
     if (feedResult != null) {
       const endTime = performance.now()
       req.payload.logger.info(`Total holdings upload process completed in ${endTime - startTime}ms`)
       return Response.json({
         feedResult: {
           ...feedResult,
-          isDuplicate: false
+          isDuplicate: false,
         },
       })
     } else {
@@ -128,7 +102,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     }
   } catch (error) {
     const endTime = performance.now()
-    req.payload.logger.error(`Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`)
+    req.payload.logger.error(
+      `Error uploading holdings file: ${error}. Process took ${endTime - startTime}ms`,
+    )
     console.error('Error uploading holdings file:', error)
     return Response.json({ error: 'Error uploading holdings file' }, { status: 500 })
   }

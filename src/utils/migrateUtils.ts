@@ -72,7 +72,9 @@ export async function getFinancialSecurityIds(pool: sql.ConnectionPool) {
       FROM [dbEmda].[dbo].[FinancialGroupChosen]
   `)
 
-  console.log(`getFinancialSecurityIds - Retrieved ${resultSecurityIds.recordset.length} records from SQL Server`)
+  console.log(
+    `getFinancialSecurityIds - Retrieved ${resultSecurityIds.recordset.length} records from SQL Server`,
+  )
   const securityIds: Set<string> = new Set()
   for (const row of resultSecurityIds.recordset) {
     securityIds.add(`${row.SecurityId}`)
@@ -88,7 +90,7 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
 
   // Validate each logUpdateId in the array
   for (let i = 0; i < logUpdateIds.length; i++) {
-    const id = logUpdateIds[i];
+    const id = logUpdateIds[i]
     if (!id || typeof id !== 'string') {
       throw new Error(`Invalid logUpdateId at index ${i}: ${id}. Expected a non-empty string.`)
     }
@@ -111,7 +113,9 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
       WHERE stocks.logUpdateID in ${inClause}
   `)
 
-  console.log(`getStockIdsByUpdateIds- Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
+  console.log(
+    `getStockIdsByUpdateIds- Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`,
+  )
   const stocks: Set<string> = new Set()
   for (const row of resultStockIds.recordset) {
     stocks.add(`${row.stockID}`)
@@ -132,7 +136,9 @@ export async function getStockIdsByUpdateId(pool: sql.ConnectionPool, logUpdateI
       WHERE stocks.logUpdateID = @logUpdateId
   `)
 
-  console.log(`getStockIdsByUpdateId Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`)
+  console.log(
+    `getStockIdsByUpdateId Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`,
+  )
   const stocks: Set<string> = new Set()
   for (const row of resultStockIds.recordset) {
     stocks.add(`${row.stockID}`)
@@ -166,7 +172,10 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
   return stocks
 }
 
-export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, userId: number): Promise<string> {
+export async function getLatestStockLogIdByUserId(
+  pool: sql.ConnectionPool,
+  userId: number,
+): Promise<string> {
   const request = pool.request()
   request.input('userId', sql.Int, userId)
   const res = await request.query(`
@@ -188,7 +197,10 @@ export async function getLatestStockLogIdByUserId(pool: sql.ConnectionPool, user
   return `${id}`
 }
 
-export async function getAllStockLogIdByUserId(pool: sql.ConnectionPool, userId: number): Promise<string[]> {
+export async function getAllStockLogIdByUserId(
+  pool: sql.ConnectionPool,
+  userId: number,
+): Promise<string[]> {
   const request = pool.request()
   request.input('userId', sql.Int, userId)
   const res = await request.query(`
@@ -294,7 +306,7 @@ export async function upsertStockFromImport(
     origin: origin,
     comments: comments,
     fromMagna: fromMagna,
-    isFinancial: isFinancial
+    isFinancial: isFinancial,
   }
   try {
     if (!stock) {
@@ -317,18 +329,17 @@ export async function upsertStockFromImport(
         await req.payload.update({
           collection: 'stocks',
           id: stock.id,
-          data: { 
-            name: stockData.name, 
+          data: {
+            name: stockData.name,
             longName: stockData.longName,
-            isFinancial: stockData.isFinancial 
+            isFinancial: stockData.isFinancial,
           },
           req,
         })
       }
       return stock.id
     }
-  }
-  catch(error:any){
+  } catch (error: any) {
     console.error(
       `Error processing stock ${stockData?.stockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       error,

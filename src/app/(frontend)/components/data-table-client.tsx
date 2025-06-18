@@ -87,7 +87,9 @@ export function DataTableStatic<T extends Record<string, any>>({
     direction: defaultSortDirection,
   })
   const { companies } = useCompaniesContext()
-  const [columnVisibility, setColumnVisibility] = useState<{ [key: string]: boolean }>({})
+  const [columnVisibility, setColumnVisibility] = useState<{
+    [key: string]: boolean
+  }>({})
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
@@ -167,8 +169,9 @@ export function DataTableStatic<T extends Record<string, any>>({
       }
     })
     setFilters(initialFilters)
-    const initialDateFilters: { [key: string]: { past: string; future: string; empty: boolean } } =
-      {}
+    const initialDateFilters: {
+      [key: string]: { past: string; future: string; empty: boolean }
+    } = {}
     columns.forEach((column) => {
       if (column.type === 'datetime' && column.filterable) {
         initialDateFilters[column.key as string] = {
@@ -489,14 +492,22 @@ export function DataTableStatic<T extends Record<string, any>>({
         // Clear all filters for this column
         setDateFilters((prev) => {
           const newFilters = { ...prev }
-          newFilters[columnKey] = { past: 'allPast', future: 'allFuture', empty: true }
+          newFilters[columnKey] = {
+            past: 'allPast',
+            future: 'allFuture',
+            empty: true,
+          }
           return newFilters
         })
         return
       }
 
       setDateFilters((prev) => {
-        const currentFilter = prev[columnKey] || { past: '', future: '', empty: true }
+        const currentFilter = prev[columnKey] || {
+          past: '',
+          future: '',
+          empty: true,
+        }
         const newFilter = { ...currentFilter }
 
         if (option === 'empty') {
