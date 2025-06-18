@@ -107,21 +107,21 @@ export type RolePermissions =
       entity: (
         | 'stocks'
         | 'stock-values'
+        | 'stock-migration-mapping'
         | 'meetings'
+        | 'votes'
+        | 'research-documents'
+        | 'recommendation-reasons'
+        | 'holdings'
+        | 'silenced-stocks'
+        | 'documents'
         | 'companies'
         | 'users'
         | 'roles'
-        | 'documents'
-        | 'recommendation-reasons'
         | 'migration-faults'
-        | 'holdings'
-        | 'stock-migration-mapping'
         | 'stocks-feed'
-        | 'holdings-feed'
         | 'meetings-feed'
-        | 'silenced-stocks'
-        | 'votes'
-        | 'research-documents'
+        | 'holdings-feed'
         | 'admin-notifications'
         | 'exports'
       )[];
@@ -212,21 +212,21 @@ export interface Config {
   collections: {
     stocks: Stock;
     'stock-values': StockValue;
+    'stock-migration-mapping': StockMigrationMapping;
     meetings: Meeting;
+    votes: Vote;
+    'research-documents': ResearchDocument;
+    'recommendation-reasons': RecommendationReason;
+    holdings: Holding;
+    'silenced-stocks': SilencedStock;
+    documents: Document;
     companies: Company;
     users: User;
     roles: Role;
-    documents: Document;
-    'recommendation-reasons': RecommendationReason;
     'migration-faults': MigrationFault;
-    holdings: Holding;
-    'stock-migration-mapping': StockMigrationMapping;
     'stocks-feed': StocksFeed;
-    'holdings-feed': HoldingsFeed;
     'meetings-feed': MeetingsFeed;
-    'silenced-stocks': SilencedStock;
-    votes: Vote;
-    'research-documents': ResearchDocument;
+    'holdings-feed': HoldingsFeed;
     'admin-notifications': AdminNotification;
     exports: Export;
     'payload-jobs': PayloadJob;
@@ -252,21 +252,21 @@ export interface Config {
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
+    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
+    votes: VotesSelect<false> | VotesSelect<true>;
+    'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
+    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
+    holdings: HoldingsSelect<false> | HoldingsSelect<true>;
+    'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
     companies: CompaniesSelect<false> | CompaniesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    documents: DocumentsSelect<false> | DocumentsSelect<true>;
-    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
-    holdings: HoldingsSelect<false> | HoldingsSelect<true>;
-    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
-    'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
-    'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
-    votes: VotesSelect<false> | VotesSelect<true>;
-    'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
+    'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
     'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -589,6 +589,33 @@ export interface Vote {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping".
+ */
+export interface StockMigrationMapping {
+  id: string;
+  stockId: number;
+  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
+  isin?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "silenced-stocks".
+ */
+export interface SilencedStock {
+  id: string;
+  stockId: string;
+  companies?: (string | Company)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
@@ -660,20 +687,6 @@ export interface MigrationFault {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stock-migration-mapping".
- */
-export interface StockMigrationMapping {
-  id: string;
-  stockId: number;
-  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
-  isin?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stocks-feed".
  */
 export interface StocksFeed {
@@ -690,6 +703,38 @@ export interface StocksFeed {
   hash?: string | null;
   duration?: string | null;
   summary?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "meetings-feed".
+ */
+export interface MeetingsFeed {
+  id: string;
+  comments?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  duration?: string | null;
+  summary?: string | null;
+  hash?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -746,51 +791,6 @@ export interface HoldingFeedLine {
   quantity?: number | null;
   lineNumber?: number | null;
   status?: ('error' | 'success' | 'silenced') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "meetings-feed".
- */
-export interface MeetingsFeed {
-  id: string;
-  comments?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  duration?: string | null;
-  summary?: string | null;
-  hash?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "silenced-stocks".
- */
-export interface SilencedStock {
-  id: string;
-  stockId: string;
-  companies?: (string | Company)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -968,8 +968,36 @@ export interface PayloadLockedDocument {
         value: string | StockValue;
       } | null)
     | ({
+        relationTo: 'stock-migration-mapping';
+        value: string | StockMigrationMapping;
+      } | null)
+    | ({
         relationTo: 'meetings';
         value: string | Meeting;
+      } | null)
+    | ({
+        relationTo: 'votes';
+        value: string | Vote;
+      } | null)
+    | ({
+        relationTo: 'research-documents';
+        value: string | ResearchDocument;
+      } | null)
+    | ({
+        relationTo: 'recommendation-reasons';
+        value: string | RecommendationReason;
+      } | null)
+    | ({
+        relationTo: 'holdings';
+        value: string | Holding;
+      } | null)
+    | ({
+        relationTo: 'silenced-stocks';
+        value: string | SilencedStock;
+      } | null)
+    | ({
+        relationTo: 'documents';
+        value: string | Document;
       } | null)
     | ({
         relationTo: 'companies';
@@ -984,48 +1012,20 @@ export interface PayloadLockedDocument {
         value: string | Role;
       } | null)
     | ({
-        relationTo: 'documents';
-        value: string | Document;
-      } | null)
-    | ({
-        relationTo: 'recommendation-reasons';
-        value: string | RecommendationReason;
-      } | null)
-    | ({
         relationTo: 'migration-faults';
         value: string | MigrationFault;
-      } | null)
-    | ({
-        relationTo: 'holdings';
-        value: string | Holding;
-      } | null)
-    | ({
-        relationTo: 'stock-migration-mapping';
-        value: string | StockMigrationMapping;
       } | null)
     | ({
         relationTo: 'stocks-feed';
         value: string | StocksFeed;
       } | null)
     | ({
-        relationTo: 'holdings-feed';
-        value: string | HoldingsFeed;
-      } | null)
-    | ({
         relationTo: 'meetings-feed';
         value: string | MeetingsFeed;
       } | null)
     | ({
-        relationTo: 'silenced-stocks';
-        value: string | SilencedStock;
-      } | null)
-    | ({
-        relationTo: 'votes';
-        value: string | Vote;
-      } | null)
-    | ({
-        relationTo: 'research-documents';
-        value: string | ResearchDocument;
+        relationTo: 'holdings-feed';
+        value: string | HoldingsFeed;
       } | null)
     | ({
         relationTo: 'admin-notifications';
@@ -1124,13 +1124,13 @@ export interface PayloadQueryPreset {
   relatedCollection:
     | 'stocks'
     | 'meetings'
-    | 'companies'
-    | 'users'
-    | 'documents'
-    | 'migration-faults'
-    | 'holdings'
     | 'votes'
     | 'research-documents'
+    | 'holdings'
+    | 'documents'
+    | 'companies'
+    | 'users'
+    | 'migration-faults'
     | 'admin-notifications';
   /**
    * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
@@ -1175,6 +1175,19 @@ export interface StockValuesSelect<T extends boolean = true> {
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-migration-mapping_select".
+ */
+export interface StockMigrationMappingSelect<T extends boolean = true> {
+  stockId?: T;
+  type?: T;
+  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1252,6 +1265,129 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   vPercentSpecial?: T;
   result?: T;
   id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes_select".
+ */
+export interface VotesSelect<T extends boolean = true> {
+  meeting?: T;
+  company?: T;
+  noParticipantDuty?: T;
+  interested?: T;
+  interestedExplanation?: T;
+  seniorOfficial?: T;
+  seniorOfficialExplanation?: T;
+  institutionalInvestor?: T;
+  clientComment?: T;
+  votes?:
+    | T
+    | {
+        topicIndex?: T;
+        voteDecision?: T;
+        investmentCommittee?: T;
+        investmentCommitteeExplanation?: T;
+        relatedParty?: T;
+        relatedPartyExplanation?: T;
+        conflictOfInterest?: T;
+        personalInterest?: T;
+        personalInterestExplanation?: T;
+        id?: T;
+      };
+  creator?: T;
+  updator?: T;
+  publishDate?: T;
+  publisher?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents_select".
+ */
+export interface ResearchDocumentsSelect<T extends boolean = true> {
+  companies?: T;
+  uploadedAt?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons_select".
+ */
+export interface RecommendationReasonsSelect<T extends boolean = true> {
+  content?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings_select".
+ */
+export interface HoldingsSelect<T extends boolean = true> {
+  fund?: T;
+  valueDate?: T;
+  holdings?: T | HoldingsPerDaySelect<T>;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingsPerDay_select".
+ */
+export interface HoldingsPerDaySelect<T extends boolean = true> {
+  stock?: T;
+  feedStockNum?: T;
+  quantity?: T;
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "silenced-stocks_select".
+ */
+export interface SilencedStocksSelect<T extends boolean = true> {
+  stockId?: T;
+  companies?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents_select".
+ */
+export interface DocumentsSelect<T extends boolean = true> {
+  alt?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1365,10 +1501,27 @@ export interface RolePermissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "documents_select".
+ * via the `definition` "migration-faults_select".
  */
-export interface DocumentsSelect<T extends boolean = true> {
-  alt?: T;
+export interface MigrationFaultsSelect<T extends boolean = true> {
+  type?: T;
+  typeId?: T;
+  row?: T;
+  comments?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stocks-feed_select".
+ */
+export interface StocksFeedSelect<T extends boolean = true> {
+  comments?: T;
+  hash?: T;
+  duration?: T;
+  summary?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1385,74 +1538,13 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons_select".
+ * via the `definition` "meetings-feed_select".
  */
-export interface RecommendationReasonsSelect<T extends boolean = true> {
-  content?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "migration-faults_select".
- */
-export interface MigrationFaultsSelect<T extends boolean = true> {
-  type?: T;
-  typeId?: T;
-  row?: T;
+export interface MeetingsFeedSelect<T extends boolean = true> {
   comments?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings_select".
- */
-export interface HoldingsSelect<T extends boolean = true> {
-  fund?: T;
-  valueDate?: T;
-  holdings?: T | HoldingsPerDaySelect<T>;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingsPerDay_select".
- */
-export interface HoldingsPerDaySelect<T extends boolean = true> {
-  stock?: T;
-  feedStockNum?: T;
-  quantity?: T;
-  id?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stock-migration-mapping_select".
- */
-export interface StockMigrationMappingSelect<T extends boolean = true> {
-  stockId?: T;
-  type?: T;
-  isin?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stocks-feed_select".
- */
-export interface StocksFeedSelect<T extends boolean = true> {
-  comments?: T;
-  hash?: T;
   duration?: T;
   summary?: T;
+  hash?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1508,98 +1600,6 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
   quantity?: T;
   lineNumber?: T;
   status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "meetings-feed_select".
- */
-export interface MeetingsFeedSelect<T extends boolean = true> {
-  comments?: T;
-  duration?: T;
-  summary?: T;
-  hash?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "silenced-stocks_select".
- */
-export interface SilencedStocksSelect<T extends boolean = true> {
-  stockId?: T;
-  companies?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes_select".
- */
-export interface VotesSelect<T extends boolean = true> {
-  meeting?: T;
-  company?: T;
-  noParticipantDuty?: T;
-  interested?: T;
-  interestedExplanation?: T;
-  seniorOfficial?: T;
-  seniorOfficialExplanation?: T;
-  institutionalInvestor?: T;
-  clientComment?: T;
-  votes?:
-    | T
-    | {
-        topicIndex?: T;
-        voteDecision?: T;
-        investmentCommittee?: T;
-        investmentCommitteeExplanation?: T;
-        relatedParty?: T;
-        relatedPartyExplanation?: T;
-        conflictOfInterest?: T;
-        personalInterest?: T;
-        personalInterestExplanation?: T;
-        id?: T;
-      };
-  creator?: T;
-  updator?: T;
-  publishDate?: T;
-  publisher?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "research-documents_select".
- */
-export interface ResearchDocumentsSelect<T extends boolean = true> {
-  companies?: T;
-  uploadedAt?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
