@@ -12,7 +12,7 @@ export const ResearchDocument: CollectionConfig = {
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'company', 'uploadedAt'],
     listSearchableFields: ['filename', 'company'],
-    group: 'אוספים משניים',
+    group: 'פעילות',
   },
   access: {
     admin: ({ req: { user } }) => {
