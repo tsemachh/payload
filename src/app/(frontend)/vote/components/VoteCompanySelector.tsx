@@ -8,47 +8,49 @@ import { useCompaniesContext } from '../../context/companiesContext'
 interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
   meetingCompanies: CompanyTableDate[]
-  onSelectionChangeAction: (selectedCompanyIndex: number) => void
+  companiesIDs: string[]
+  setCompaniesIDs: (selectedCompanyIds: string[]) => void
 }
 
 export default function VoteCompanySelector({
   meetingData,
   meetingCompanies,
-  onSelectionChangeAction,
+  companiesIDs,
+  setCompaniesIDs,
 }: VoteCompanySelectorProps) {
   const { companies: companiesMap } = useCompaniesContext()
-  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(
-    meetingCompanies.length > 1 ? -1 : meetingCompanies.length === 1 ? 0 : -2, //  -1 means "all companies", -2 means "no companies"
+  const [selectedCompanies, setSelectedCompanies] = useState<string>(
+    meetingCompanies.length > 1 ? 'all' : meetingCompanies.length === 1 ? companiesIDs[0] : 'none',
   )
 
   useEffect(() => {
-    if (meetingCompanies.length === 1) {
-      setSelectedCompanyIndex(0)
-      onSelectionChangeAction(0)
-    } else if (meetingCompanies.length > 1) {
-      setSelectedCompanyIndex(-1)
-      onSelectionChangeAction(-1)
+    if (companiesIDs.length > 1) {
+      setSelectedCompanies('all')
+    } else if (companiesIDs.length === 1) {
+      setSelectedCompanies(companiesIDs[0])
     } else {
-      setSelectedCompanyIndex(-2)
+      setSelectedCompanies('none')
     }
-  }, [meetingCompanies, onSelectionChangeAction])
+  }, [companiesIDs])
 
-  const handleCompanyChange = (index: number) => {
-    setSelectedCompanyIndex(index)
-    onSelectionChangeAction(index)
+  const handleCompanyChange = (companyId: string) => {
+    if (companyId === 'all') {
+      setCompaniesIDs(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
+    } else {
+      setCompaniesIDs([companyId])
+    }
   }
 
   const getSummaryText = () => {
-    if (selectedCompanyIndex === -2) {
+    if (selectedCompanies === 'none') {
       return 'אין חברות זמינות להצבעה'
-    } else if (selectedCompanyIndex === -1) {
+    } else if (selectedCompanies === 'all') {
       return 'הצבעה עבור כל החברות'
     } else {
-      const selectedCompany = meetingCompanies[selectedCompanyIndex]
       return (
         <>
           הצבעה עבור חברת:{' '}
-          <i>{companiesMap.find((c) => c.id === selectedCompany?.id)?.name || ''}</i>
+          <i>{companiesMap.find((c) => c.id === selectedCompanies[0])?.name || ''}</i>
         </>
       )
     }
@@ -72,7 +74,7 @@ export default function VoteCompanySelector({
               <TooltipTrigger asChild>
                 <label
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
-                    selectedCompanyIndex === -1
+                    selectedCompanies === 'all'
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}
@@ -80,10 +82,9 @@ export default function VoteCompanySelector({
                   <input
                     type="radio"
                     className="sr-only"
-                    name="company"
                     value="-1"
-                    checked={selectedCompanyIndex === -1}
-                    onChange={() => handleCompanyChange(-1)}
+                    checked={selectedCompanies === 'all'}
+                    onChange={() => handleCompanyChange('all')}
                   />
                   <span>כל החברות</span>
                 </label>
@@ -98,12 +99,12 @@ export default function VoteCompanySelector({
             </Tooltip>
           )}
 
-          {meetingCompanies.map((company, index) => (
-            <Tooltip key={index}>
+          {meetingCompanies.map((company) => (
+            <Tooltip key={company.id}>
               <TooltipTrigger asChild>
                 <label
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
-                    selectedCompanyIndex === index
+                    selectedCompanies === company.id
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}
@@ -111,10 +112,9 @@ export default function VoteCompanySelector({
                   <input
                     type="radio"
                     className="sr-only"
-                    name="company"
-                    value={index}
-                    checked={selectedCompanyIndex === index}
-                    onChange={() => handleCompanyChange(index)}
+                    value={company.id}
+                    checked={selectedCompanies === company.id}
+                    onChange={() => handleCompanyChange(company.id)}
                   />
                   <span>{companiesMap.find((c) => c.id === company?.id)?.name || '-'}</span>
                 </label>

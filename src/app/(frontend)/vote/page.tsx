@@ -53,12 +53,14 @@ export default function VotingForm() {
       revalidateOnFocus: false,
       onError: (err) => {
         console.error('Error fetching meeting data:', err)
-        toast({
-          title: '⚠️ שגיאה',
-          description: 'שגיאה בטעינת נתוני ההצבעה.',
-          variant: 'destructive',
-          duration: 5000,
-        })
+        setTimeout(() => {
+          toast({
+            title: '⚠️ שגיאה',
+            description: 'שגיאה בטעינת נתוני ההצבעה.',
+            variant: 'destructive',
+            duration: 1500,
+          })
+        }, 0)
         if (typeof window !== 'undefined' && window.history.length > 1) {
           setTimeout(() => {
             router.back()
@@ -71,9 +73,11 @@ export default function VotingForm() {
       },
     },
   )
-
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
+  const [companiesIDs, setCompaniesIDs] = useState<string[]>(
+    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || [],
+  )
 
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
@@ -85,8 +89,6 @@ export default function VotingForm() {
     userVotes: [],
   })
 
-  const companiesIDs: string[] =
-    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || []
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
 
   const swrKey =
@@ -106,10 +108,17 @@ export default function VotingForm() {
         title: '⚠️ שגיאה בטעינה',
         description: err.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
         variant: 'destructive',
-        duration: 5000,
+        duration: 2000,
       })
     },
   })
+
+  useEffect(() => {
+    if (meetingData?.companies && companiesIDs.length === 0) {
+      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      setCompaniesIDs(defaultIds)
+    }
+  }, [meetingData])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -198,7 +207,7 @@ export default function VotingForm() {
           title: '⚠️ שגיאה בשמירה',
           description: 'נתונים חיוניים חסרים לשמירת הטיוטה. אנא נסה שוב.',
           variant: 'destructive',
-          duration: 3000,
+          duration: 2000,
         })
         return
       }
@@ -209,9 +218,6 @@ export default function VotingForm() {
           companiesIds: companiesIDs,
           votingData: currentVotingData,
         }
-
-        console.log('Request body:', requestBody)
-
         const response = await fetch(`/api/votes/upsert-draft`, {
           method: 'POST',
           headers: {
@@ -224,7 +230,7 @@ export default function VotingForm() {
           toast({
             title: '✅ נתונים נשמרו',
             description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
-            duration: 2000,
+            duration: 1500,
           })
         } else {
           const errorData = await response.json()
@@ -233,7 +239,7 @@ export default function VotingForm() {
             title: '⚠️ שגיאה בשמירה',
             description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
             variant: 'destructive',
-            duration: 3000,
+            duration: 2000,
           })
         }
       } catch (error) {
@@ -242,7 +248,7 @@ export default function VotingForm() {
           title: '⚠️ שגיאה בשמירה',
           description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
           variant: 'destructive',
-          duration: 3000,
+          duration: 2000,
         })
       }
     },
@@ -274,16 +280,6 @@ export default function VotingForm() {
     },
     [saveDraftData, debounceTimers],
   )
-
-  //   const handleCompanySelection = (companyId: string, selected: boolean) => {
-  //     setVotingData((prev) => ({
-  //       ...prev,
-  //       holdingCompanies: prev.holdingCompanies.map((company) =>
-  //         company.id === companyId ? { ...company, selected } : company,
-  //       ),
-  //     }))
-  // TODO: Implement company selection logic for auto save
-  //   }
 
   const handleQuestionChange = useCallback(
     <T extends GeneralQuestionId | AgendaQuestionId>(
@@ -461,8 +457,8 @@ export default function VotingForm() {
                 <VoteCompanySelector
                   meetingData={meetingData}
                   meetingCompanies={meetingData.companies}
-                  onSelectionChangeAction={() => {}}
-                  //   onSelectionChangeAction={handleCompanySelection}
+                  companiesIDs={companiesIDs}
+                  setCompaniesIDs={setCompaniesIDs}
                 />
               </CardContent>
             </Card>
