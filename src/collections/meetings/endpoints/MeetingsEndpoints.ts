@@ -280,9 +280,10 @@ function createMeetingDataObject(
  * Process agenda items to a standardized format
  */
 function processAgendaItems(agenda: MeetingAgenda | undefined) {
-  return agenda?.map((item) => {
+  return agenda?.map((item, index) => {
     return {
       id: item.id || '',
+      topicIndex: index + 1, // Ensure topicIndex starts from 1
       text: item.text || 'אסיפה ללא נושא',
       isRemovedFromAgenda: item.isRemovedFromAgenda || false,
       privilegedMajority: item?.majorityType == 'privileged' || false,
@@ -496,7 +497,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
     const payload = req.payload
     const { user } = req
 
-    const meetingId = parseInt((req.query.meetingId as string) || '1')
+    const meetingId = (req.query.meetingId as string) || '1'
 
     const query: any = {
       collection: 'meetings',
