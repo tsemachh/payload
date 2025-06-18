@@ -497,7 +497,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
     const payload = req.payload
     const { user } = req
 
-    const meetingId = parseInt((req.query.meetingId as string) || '1')
+    const meetingId = (req.query.meetingId as string) || '1'
 
     const query: any = {
       collection: 'meetings',
