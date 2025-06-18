@@ -2,7 +2,11 @@ import type { TextFieldSingleValidation } from 'payload'
 import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
-import { allMeetingsEndpoint, futureMeetingsEndpoint, meetingForVotingEndPoint } from './endpoints/MeetingsEndpoints'
+import {
+  allMeetingsEndpoint,
+  futureMeetingsEndpoint,
+  meetingForVotingEndPoint,
+} from './endpoints/MeetingsEndpoints'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
@@ -774,7 +778,7 @@ export const Meetings: CollectionConfig = {
     {
       path: '/by-id',
       method: 'get',
-      handler: meetingForVotingEndPoint
-    }
+      handler: meetingForVotingEndPoint,
+    },
   ],
 }
