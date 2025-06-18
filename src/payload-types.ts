@@ -1274,23 +1274,23 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   noParticipantDuty?: T;
-  interested?: T;
+  isInterested?: T;
   interestedExplanation?: T;
-  seniorOfficial?: T;
+  isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
-  institutionalInvestor?: T;
+  isInstitutionalInvestor?: T;
   clientComment?: T;
   votes?:
     | T
     | {
         topicIndex?: T;
         voteDecision?: T;
-        investmentCommittee?: T;
-        investmentCommitteeExplanation?: T;
-        relatedParty?: T;
+        hasConflictOfInterest?: T;
+        conflictOfInterestExplanation?: T;
+        isRelatedParty?: T;
         relatedPartyExplanation?: T;
-        conflictOfInterest?: T;
-        personalInterest?: T;
+        isInvestmentCommittee?: T;
+        hasPersonalInterest?: T;
         personalInterestExplanation?: T;
         id?: T;
       };
@@ -1600,98 +1600,6 @@ export interface HoldingFeedLineSelect<T extends boolean = true> {
   quantity?: T;
   lineNumber?: T;
   status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "meetings-feed_select".
- */
-export interface MeetingsFeedSelect<T extends boolean = true> {
-  comments?: T;
-  duration?: T;
-  summary?: T;
-  hash?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "silenced-stocks_select".
- */
-export interface SilencedStocksSelect<T extends boolean = true> {
-  stockId?: T;
-  companies?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes_select".
- */
-export interface VotesSelect<T extends boolean = true> {
-  meeting?: T;
-  company?: T;
-  noParticipantDuty?: T;
-  isInterested?: T;
-  interestedExplanation?: T;
-  isSeniorOfficial?: T;
-  seniorOfficialExplanation?: T;
-  isInstitutionalInvestor?: T;
-  clientComment?: T;
-  votes?:
-    | T
-    | {
-        topicIndex?: T;
-        voteDecision?: T;
-        hasConflictOfInterest?: T;
-        conflictOfInterestExplanation?: T;
-        isRelatedParty?: T;
-        relatedPartyExplanation?: T;
-        isInvestmentCommittee?: T;
-        hasPersonalInterest?: T;
-        personalInterestExplanation?: T;
-        id?: T;
-      };
-  creator?: T;
-  updator?: T;
-  publishDate?: T;
-  publisher?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "research-documents_select".
- */
-export interface ResearchDocumentsSelect<T extends boolean = true> {
-  companies?: T;
-  uploadedAt?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
