@@ -77,7 +77,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
                             className="py-1 px-2 border-t text-right "
                             style={{ width: '30px', minWidth: '30px' }}
                           >
-                            {index + 1}.
+                            {item.topicIndex}.
                           </td>
                           <td
                             className={`py-1 px-2 border-t ${isRTL(item.text) ? 'text-right' : 'text-left'}`}
