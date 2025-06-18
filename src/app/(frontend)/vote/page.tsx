@@ -176,7 +176,6 @@ export default function VotingForm() {
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
-
       if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
         console.warn('Missing data for saveDraftData. Aborting save.', {
           meetingIdPayload,
@@ -342,7 +341,6 @@ export default function VotingForm() {
             config.toastNoteExplanation || config.toastNote,
           )
         } else {
-
           setVotingData((currentVotingData) => {
             saveDraftData(config.toastNote, currentVotingData)
             return currentVotingData

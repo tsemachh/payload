@@ -10,7 +10,7 @@ export const fetcherVote = async (url: string) => {
   return res.json()
 }
 
-export const fetchMeetingData = async (url: string): Promise<MeetingTableDataType>=> {
+export const fetchMeetingData = async (url: string): Promise<MeetingTableDataType> => {
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error('Failed to fetch meeting data') //TODO: remove this error! navigate to back with meessege
