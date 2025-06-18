@@ -14,7 +14,7 @@ export const Holdings: CollectionConfig = {
   admin: {
     useAsTitle: 'id',
     defaultColumns: ['fund', 'valueDate'],
-    group: 'אוספים משניים',
+    group: 'פעילות',
   },
   hooks: {
     afterChange: [
@@ -56,38 +56,39 @@ export const Holdings: CollectionConfig = {
       type: 'array',
       required: true,
       interfaceName: 'HoldingsPerDay',
-      fields: [{
-        type: 'row',
-        fields: [
-          {
-            name: 'stock',
-            label: 'נייר ערך',
-            type: 'relationship',
-            relationTo: 'stocks',
-            required: true,
-            filterOptions: ({req}) => {
-              if (req.context?.from == 'migration')
-                return true
-              return {
-                active: {
-                  equals: true,
-                },
-              }
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'stock',
+              label: 'נייר ערך',
+              type: 'relationship',
+              relationTo: 'stocks',
+              required: true,
+              filterOptions: ({ req }) => {
+                if (req.context?.from == 'migration') return true
+                return {
+                  active: {
+                    equals: true,
+                  },
+                }
+              },
             },
-          },
-          {
-            name: 'feedStockNum',
-            label: 'מספר נייר ערך באחזקה',
-            type: 'text',
-          },
-          {
-            name: 'quantity',
-            label: 'כמות',
-            type: 'number',
-            required: true,
-          },
-        ],
-      }]
+            {
+              name: 'feedStockNum',
+              label: 'מספר נייר ערך באחזקה',
+              type: 'text',
+            },
+            {
+              name: 'quantity',
+              label: 'כמות',
+              type: 'number',
+              required: true,
+            },
+          ],
+        },
+      ],
     },
   ],
   endpoints: [

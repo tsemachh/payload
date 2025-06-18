@@ -8,7 +8,7 @@ export const RecommendationReasons: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'content',
-    group: 'אוספים משניים',
+    group: 'ניהול',
   },
   fields: [
     {

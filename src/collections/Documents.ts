@@ -10,6 +10,9 @@ export const Documents: CollectionConfig = {
   access: {
     read: () => true,
   },
+  admin: {
+    group: 'פעילות',
+  },
   fields: [
     {
       name: 'alt',

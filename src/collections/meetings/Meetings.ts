@@ -90,6 +90,7 @@ export const Meetings: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
+    group: 'פעילות',
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
@@ -107,7 +108,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
-    maxPerDoc: 5
+    maxPerDoc: 5,
   },
   fields: [
     {
