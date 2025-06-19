@@ -119,6 +119,8 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
           setSpanMessage(
             `החברה "${result.companyName}" נמצאה, אך נייר הערך "${result.stockName}" לא באסיפה`,
           )
+          const companyIds = data.docs.map((doc: any) => doc.id)
+          setValue(Array.from(companyIds))
         } else if (stockNameFromMatch) {
           setSpanMessage(
             `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,
