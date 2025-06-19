@@ -107,29 +107,34 @@ export type RolePermissions =
       entity: (
         | 'stocks'
         | 'stock-values'
-        | 'stock-migration-mapping'
         | 'meetings'
         | 'votes'
         | 'research-documents'
-        | 'recommendation-reasons'
         | 'holdings'
+        | 'holdings-feed'
         | 'silenced-stocks'
         | 'documents'
+        | 'admin-notifications'
+        | 'company-meeting-notifications'
         | 'companies'
         | 'users'
         | 'roles'
-        | 'migration-faults'
         | 'stocks-feed'
         | 'meetings-feed'
-        | 'holdings-feed'
-        | 'admin-notifications'
-        | 'company-meeting-notifications'
+        | 'recommendation-reasons'
+        | 'stock-migration-mapping'
+        | 'migration-faults'
         | 'exports'
       )[];
       type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
   | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UserNotificationType".
+ */
+export type UserNotificationType = 'after-holding-limit' | 'before-voting-end';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -149,11 +154,6 @@ export type MigrationType =
       | 'company'
     )
   | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "UserNotificationType".
- */
-export type UserNotificationType = 'after-holding-limit' | 'before-voting-end';
 /**
  * Supported timezones in IANA format.
  *
@@ -218,23 +218,23 @@ export interface Config {
   collections: {
     stocks: Stock;
     'stock-values': StockValue;
-    'stock-migration-mapping': StockMigrationMapping;
     meetings: Meeting;
     votes: Vote;
     'research-documents': ResearchDocument;
-    'recommendation-reasons': RecommendationReason;
     holdings: Holding;
+    'holdings-feed': HoldingsFeed;
     'silenced-stocks': SilencedStock;
     documents: Document;
+    'admin-notifications': AdminNotification;
+    'company-meeting-notifications': CompanyMeetingNotification;
     companies: Company;
     users: User;
     roles: Role;
-    'migration-faults': MigrationFault;
     'stocks-feed': StocksFeed;
     'meetings-feed': MeetingsFeed;
-    'holdings-feed': HoldingsFeed;
-    'admin-notifications': AdminNotification;
-    'company-meeting-notifications': CompanyMeetingNotification;
+    'recommendation-reasons': RecommendationReason;
+    'stock-migration-mapping': StockMigrationMapping;
+    'migration-faults': MigrationFault;
     exports: Export;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -259,23 +259,23 @@ export interface Config {
   collectionsSelect: {
     stocks: StocksSelect<false> | StocksSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
-    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
     'research-documents': ResearchDocumentsSelect<false> | ResearchDocumentsSelect<true>;
-    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
+    'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
     'silenced-stocks': SilencedStocksSelect<false> | SilencedStocksSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
+    'company-meeting-notifications': CompanyMeetingNotificationsSelect<false> | CompanyMeetingNotificationsSelect<true>;
     companies: CompaniesSelect<false> | CompaniesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
-    'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
-    'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
-    'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
-    'company-meeting-notifications': CompanyMeetingNotificationsSelect<false> | CompanyMeetingNotificationsSelect<true>;
+    'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
+    'stock-migration-mapping': StockMigrationMappingSelect<false> | StockMigrationMappingSelect<true>;
+    'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -599,17 +599,46 @@ export interface Vote {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stock-migration-mapping".
+ * via the `definition` "holdings-feed".
  */
-export interface StockMigrationMapping {
+export interface HoldingsFeed {
   id: string;
-  stockId: number;
-  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
-  isin?: string | null;
+  valueDate: string;
+  comments?: string | null;
+  selectedCompanies?: (string | Company)[] | null;
+  processingStatus?: ('pending' | 'completed' | 'failed') | null;
+  processingResults?:
+    | {
+        line?: HoldingFeedLine;
+        id?: string | null;
+      }[]
+    | null;
+  accountsJson?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingFeedLine".
+ */
+export interface HoldingFeedLine {
+  error?: string | null;
+  stockId?: string | null;
+  accountId?: string | null;
+  quantity?: number | null;
+  lineNumber?: number | null;
+  status?: ('error' | 'success' | 'silenced') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -619,6 +648,22 @@ export interface SilencedStock {
   id: string;
   stockId: string;
   companies?: (string | Company)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications".
+ */
+export interface AdminNotification {
+  id: string;
+  message: string;
+  url?: string | null;
+  readStatus?: boolean | null;
+  relatedCompany?: (string | null) | Company;
+  relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -683,14 +728,14 @@ export interface Role {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "migration-faults".
+ * via the `definition` "company-meeting-notifications".
  */
-export interface MigrationFault {
+export interface CompanyMeetingNotification {
   id: string;
-  type?: MigrationType;
-  typeId?: string | null;
-  row?: string | null;
-  comments?: string | null;
+  message: string;
+  notificationType: UserNotificationType;
+  meeting: string | Meeting;
+  company: string | Company;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -762,73 +807,28 @@ export interface MeetingsFeed {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings-feed".
+ * via the `definition` "stock-migration-mapping".
  */
-export interface HoldingsFeed {
+export interface StockMigrationMapping {
   id: string;
-  valueDate: string;
+  stockId: number;
+  type: 'Foreign' | 'NotActive' | 'Private' | 'NonTradable';
+  isin?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "migration-faults".
+ */
+export interface MigrationFault {
+  id: string;
+  type?: MigrationType;
+  typeId?: string | null;
+  row?: string | null;
   comments?: string | null;
-  selectedCompanies?: (string | Company)[] | null;
-  processingStatus?: ('pending' | 'completed' | 'failed') | null;
-  processingResults?:
-    | {
-        line?: HoldingFeedLine;
-        id?: string | null;
-      }[]
-    | null;
-  accountsJson?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingFeedLine".
- */
-export interface HoldingFeedLine {
-  error?: string | null;
-  stockId?: string | null;
-  accountId?: string | null;
-  quantity?: number | null;
-  lineNumber?: number | null;
-  status?: ('error' | 'success' | 'silenced') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admin-notifications".
- */
-export interface AdminNotification {
-  id: string;
-  message: string;
-  url?: string | null;
-  readStatus?: boolean | null;
-  relatedCompany?: (string | null) | Company;
-  relatedUser?: (string | null) | User;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "company-meeting-notifications".
- */
-export interface CompanyMeetingNotification {
-  id: string;
-  message: string;
-  notificationType: UserNotificationType;
-  meeting: string | Meeting;
-  company: string | Company;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -998,10 +998,6 @@ export interface PayloadLockedDocument {
         value: string | StockValue;
       } | null)
     | ({
-        relationTo: 'stock-migration-mapping';
-        value: string | StockMigrationMapping;
-      } | null)
-    | ({
         relationTo: 'meetings';
         value: string | Meeting;
       } | null)
@@ -1014,12 +1010,12 @@ export interface PayloadLockedDocument {
         value: string | ResearchDocument;
       } | null)
     | ({
-        relationTo: 'recommendation-reasons';
-        value: string | RecommendationReason;
-      } | null)
-    | ({
         relationTo: 'holdings';
         value: string | Holding;
+      } | null)
+    | ({
+        relationTo: 'holdings-feed';
+        value: string | HoldingsFeed;
       } | null)
     | ({
         relationTo: 'silenced-stocks';
@@ -1028,6 +1024,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'documents';
         value: string | Document;
+      } | null)
+    | ({
+        relationTo: 'admin-notifications';
+        value: string | AdminNotification;
+      } | null)
+    | ({
+        relationTo: 'company-meeting-notifications';
+        value: string | CompanyMeetingNotification;
       } | null)
     | ({
         relationTo: 'companies';
@@ -1042,10 +1046,6 @@ export interface PayloadLockedDocument {
         value: string | Role;
       } | null)
     | ({
-        relationTo: 'migration-faults';
-        value: string | MigrationFault;
-      } | null)
-    | ({
         relationTo: 'stocks-feed';
         value: string | StocksFeed;
       } | null)
@@ -1054,16 +1054,16 @@ export interface PayloadLockedDocument {
         value: string | MeetingsFeed;
       } | null)
     | ({
-        relationTo: 'holdings-feed';
-        value: string | HoldingsFeed;
+        relationTo: 'recommendation-reasons';
+        value: string | RecommendationReason;
       } | null)
     | ({
-        relationTo: 'admin-notifications';
-        value: string | AdminNotification;
+        relationTo: 'stock-migration-mapping';
+        value: string | StockMigrationMapping;
       } | null)
     | ({
-        relationTo: 'company-meeting-notifications';
-        value: string | CompanyMeetingNotification;
+        relationTo: 'migration-faults';
+        value: string | MigrationFault;
       } | null)
     | ({
         relationTo: 'exports';
@@ -1162,11 +1162,11 @@ export interface PayloadQueryPreset {
     | 'research-documents'
     | 'holdings'
     | 'documents'
+    | 'admin-notifications'
+    | 'company-meeting-notifications'
     | 'companies'
     | 'users'
-    | 'migration-faults'
-    | 'admin-notifications'
-    | 'company-meeting-notifications';
+    | 'migration-faults';
   /**
    * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
@@ -1210,19 +1210,6 @@ export interface StockValuesSelect<T extends boolean = true> {
   closingRate?: T;
   marketValue?: T;
   registeredValue?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stock-migration-mapping_select".
- */
-export interface StockMigrationMappingSelect<T extends boolean = true> {
-  stockId?: T;
-  type?: T;
-  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1360,17 +1347,6 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons_select".
- */
-export interface RecommendationReasonsSelect<T extends boolean = true> {
-  content?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "holdings_select".
  */
 export interface HoldingsSelect<T extends boolean = true> {
@@ -1391,6 +1367,48 @@ export interface HoldingsPerDaySelect<T extends boolean = true> {
   feedStockNum?: T;
   quantity?: T;
   id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings-feed_select".
+ */
+export interface HoldingsFeedSelect<T extends boolean = true> {
+  valueDate?: T;
+  comments?: T;
+  selectedCompanies?: T;
+  processingStatus?: T;
+  processingResults?:
+    | T
+    | {
+        line?: T | HoldingFeedLineSelect<T>;
+        id?: T;
+      };
+  accountsJson?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingFeedLine_select".
+ */
+export interface HoldingFeedLineSelect<T extends boolean = true> {
+  error?: T;
+  stockId?: T;
+  accountId?: T;
+  quantity?: T;
+  lineNumber?: T;
+  status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1423,6 +1441,35 @@ export interface DocumentsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-notifications_select".
+ */
+export interface AdminNotificationsSelect<T extends boolean = true> {
+  message?: T;
+  url?: T;
+  readStatus?: T;
+  relatedCompany?: T;
+  relatedUser?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "company-meeting-notifications_select".
+ */
+export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
+  message?: T;
+  notificationType?: T;
+  meeting?: T;
+  company?: T;
+  creator?: T;
+  updator?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1537,20 +1584,6 @@ export interface RolePermissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "migration-faults_select".
- */
-export interface MigrationFaultsSelect<T extends boolean = true> {
-  type?: T;
-  typeId?: T;
-  row?: T;
-  comments?: T;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stocks-feed_select".
  */
 export interface StocksFeedSelect<T extends boolean = true> {
@@ -1597,56 +1630,23 @@ export interface MeetingsFeedSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings-feed_select".
+ * via the `definition` "recommendation-reasons_select".
  */
-export interface HoldingsFeedSelect<T extends boolean = true> {
-  valueDate?: T;
-  comments?: T;
-  selectedCompanies?: T;
-  processingStatus?: T;
-  processingResults?:
-    | T
-    | {
-        line?: T | HoldingFeedLineSelect<T>;
-        id?: T;
-      };
-  accountsJson?: T;
+export interface RecommendationReasonsSelect<T extends boolean = true> {
+  content?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
   updatedAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingFeedLine_select".
+ * via the `definition` "stock-migration-mapping_select".
  */
-export interface HoldingFeedLineSelect<T extends boolean = true> {
-  error?: T;
+export interface StockMigrationMappingSelect<T extends boolean = true> {
   stockId?: T;
-  accountId?: T;
-  quantity?: T;
-  lineNumber?: T;
-  status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admin-notifications_select".
- */
-export interface AdminNotificationsSelect<T extends boolean = true> {
-  message?: T;
-  url?: T;
-  readStatus?: T;
-  relatedCompany?: T;
-  relatedUser?: T;
+  type?: T;
+  isin?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
@@ -1654,13 +1654,13 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "company-meeting-notifications_select".
+ * via the `definition` "migration-faults_select".
  */
-export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
-  message?: T;
-  notificationType?: T;
-  meeting?: T;
-  company?: T;
+export interface MigrationFaultsSelect<T extends boolean = true> {
+  type?: T;
+  typeId?: T;
+  row?: T;
+  comments?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

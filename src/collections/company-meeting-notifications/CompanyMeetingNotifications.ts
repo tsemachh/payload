@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
   labels: {
-    plural: 'התראות אסיפות חברה',
-    singular: 'התראת אסיפת חברה',
+    plural: 'התראות משתמשים',
+    singular: 'התראת משתמשים',
   },
   enableQueryPresets: true,
   admin: {

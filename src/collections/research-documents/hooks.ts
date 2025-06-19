@@ -1,8 +1,8 @@
 import {
-  ValidationError,
-  type CollectionBeforeValidateHook,
   type CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
+  type CollectionBeforeValidateHook,
+  ValidationError,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { ResearchDocument } from '@/payload-types'

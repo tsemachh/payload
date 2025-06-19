@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const StocksFeed: CollectionConfig = {
   slug: 'stocks-feed',
   labels: {
-    plural: 'קבצי מניות',
-    singular: 'קובץ מניות',
+    plural: 'הזנות מניות',
+    singular: 'הזנת מניות',
   },
   admin: {
     useAsTitle: 'filename',

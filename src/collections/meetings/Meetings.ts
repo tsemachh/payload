@@ -626,7 +626,7 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
-                defaultColumns: ['companies', 'votes'],
+                defaultColumns: ['company', 'creator', 'updatedAt', 'votes'],
               },
             },
           ],
@@ -732,8 +732,11 @@ export const Meetings: CollectionConfig = {
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
         const stockChanged = previousDoc?.stock !== doc?.stock
-
-        if (holdingsLimitChanged || stockChanged) {
+        const firstPublish =
+          previousDoc._status == 'draft' &&
+          doc._status == 'published' &&
+          (!doc.meetings || doc.meetings.length == 0)
+        if (holdingsLimitChanged || stockChanged || firstPublish) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }

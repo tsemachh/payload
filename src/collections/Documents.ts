@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const Documents: CollectionConfig = {
   slug: 'documents',
   labels: {
-    plural: 'מסמכים',
-    singular: 'מסמך',
+    plural: 'מסמכי משתמשים',
+    singular: 'מסמך משתמש',
   },
   enableQueryPresets: true,
   access: {
