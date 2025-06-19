@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { AlertCircle, CheckCircle2, User } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -32,6 +33,7 @@ export default function AccountPage() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+    receiveMailNotification: true,
   })
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function AccountPage() {
             ...formData,
             name: user.name || '',
             email: user.email || '',
+            receiveMailNotification: user.receiveMailNotification !== undefined ? user.receiveMailNotification : true,
           })
         } catch (error) {
           console.error('Error setting user data:', error)
@@ -94,6 +97,7 @@ export default function AccountPage() {
       // Prepare update data
       const updateData: any = {
         name: formData.name,
+        receiveMailNotification: formData.receiveMailNotification,
       }
 
       // Add password update if provided
@@ -196,6 +200,23 @@ export default function AccountPage() {
               <Label htmlFor="email">אימייל</Label>
               <Input id="email" type="email" value={formData.email} disabled={true} />
               <p className="text-sm text-muted-foreground">לא ניתן לשנות את כתובת האימייל</p>
+            </div>
+
+            <div className="flex items-center space-x-2 space-x-reverse mt-4">
+              <Checkbox 
+                id="receiveMailNotification" 
+                checked={formData.receiveMailNotification}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, receiveMailNotification: checked as boolean })
+                }
+                disabled={isLoading}
+              />
+              <Label 
+                htmlFor="receiveMailNotification" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                קבלת התראות במייל
+              </Label>
             </div>
 
             <div className="pt-4 border-t">
