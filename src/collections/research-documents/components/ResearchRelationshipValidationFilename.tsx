@@ -57,7 +57,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
 
     if (result.stockName) {
       try {
-        console.log('---- ???id', stockId)
         const res = await fetch(`/api/stocks/${stockId}`)
         const doc = await res.json()
         const resultStockName = doc?.name || ''
@@ -72,7 +71,6 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       }
     }
     if (result.isGeneric && result.stockName && result.companyName && stockNameFromMatch) {
-      // קובץ כללי ללא נייר ערך או חברה
       setSpanMessage(`קובץ כללי עבור כל החברות`, true)
       return
     } else if (result.isGeneric) {
