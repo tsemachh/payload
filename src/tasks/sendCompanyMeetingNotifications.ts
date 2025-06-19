@@ -1,5 +1,6 @@
 import { type TaskHandler } from 'payload'
 import { Company } from '@/payload-types'
+import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -186,6 +187,10 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
 
     console.log('Company meeting notifications email sending completed')
     console.log('Summary:', JSON.stringify(results, null, 2))
+
+    // Reschedule the task
+    await scheduleSendCompanyMeetingNotificationsTask(req.payload)
+    console.log('Rescheduled sendCompanyMeetingNotifications task')
 
     return {
       output: {

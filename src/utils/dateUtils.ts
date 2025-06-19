@@ -4,6 +4,17 @@
 import { parse } from 'date-fns'
 
 /**
+ * Sets a date to midnight (00:00:00)
+ * @param date - The date to set to midnight
+ * @returns A new date set to midnight
+ */
+export const setToMidnight = (date: Date): Date => {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+/**
  * Parses a date string in the format "DD/MM/YYYY HH:MM:SS" to a JavaScript Date object
  * Using date-fns library for parsing
  * @param dateStr - The date string to parse (e.g., "30/04/2025 15:00:00")
