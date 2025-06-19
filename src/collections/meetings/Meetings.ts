@@ -618,6 +618,30 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
+              name: 'votesCount',
+              label: 'ספירת הצבעות',
+              type: 'text',
+              admin: { readOnly: true },
+              hooks: {
+                afterRead: [
+                  ({ data }) => `${data?.votes?.length || 0}/${data?.companies?.length || 0}`,
+                ],
+              },
+            },
+            // {
+            //               name: 'votesStatus',
+            //               label: 'סטטוס הצבעות',
+            //               type: 'select',
+            //               options: [
+            //               type: 'text',
+            //               admin: { readOnly: true },
+            //               hooks: {
+            //                 afterRead: [
+            //                   ({ data }) => `${data?.votes?.length || 0}/${data?.companies?.length || 0}`,
+            //                 ],
+            //               },
+            //             },
+            {
               name: 'votes',
               label: 'הצבעות',
               type: 'join',
@@ -625,8 +649,36 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 0,
+              hooks: {
+                afterRead: [
+                  async ({ data, req }) => {
+                    if (data?.votes) {
+                      console.log('-----Fetching votes for meeting:', data.votes)
+                      const votes = await req.payload.find({
+                        collection: 'votes',
+                        where: {
+                          and: [
+                            { id: { in: data.votes.docs } },
+                            { _status: { equals: 'published' } },
+                          ],
+                        },
+                        depth: 0,
+                      })
+                      const votesCount = votes.docs.length
+                      console.log('---- votesCount', votesCount)
+                      data.votesCount = `${votesCount}/${data.companies.length || 0}`
+                      console.log('----- data.votesCount', data.votesCount)
+                      console.log('----- data.votesCount', data.votesCount)
+                      const v1 = votes.docs.map((doc) => doc.id)
+                      data.votes = v1
+                      console.log('----- data.votes', data.votes)
+                    }
+                    return data
+                  },
+                ],
+              },
               admin: {
-                defaultColumns: ['companies', 'votes'],
+                defaultColumns: ['company', 'votes'],
               },
             },
           ],

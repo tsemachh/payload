@@ -216,6 +216,7 @@ export const Votes: CollectionConfig = {
     afterChange: [
       async ({ doc, req }) => {
         if (doc._status === 'published') {
+          //?לכורה כאן הבדיקה ולא אמור להכניס לאסיפה דראפט!?
           try {
             let meeting: Meeting | string = doc.meeting
             if (typeof meeting === 'string')

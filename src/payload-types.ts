@@ -395,6 +395,7 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
+  votesCount?: string | null;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -1215,6 +1216,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
+  votesCount?: T;
   votes?: T;
   companies?: T;
   funds?: T;
