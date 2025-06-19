@@ -33,6 +33,40 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   }
 }
 
+export const getVotedCompanies = async (req: PayloadRequest) => {
+  try {
+    const { meetingId, companyIds } = req.query
+
+    if (!meetingId || !companyIds) {
+      return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
+    }
+
+    const companyIdsArray = (companyIds as string).split(',')
+    const meetingIdString = meetingId as string
+
+    const existingVotes = await req.payload.find({
+      select: { company: true },
+      collection: 'votes',
+      where: {
+        and: [
+          { meeting: { equals: meetingIdString } },
+          { company: { in: companyIdsArray } },
+          { _status: { equals: 'draft' } },
+        ],
+      },
+      depth: 0,
+      limit: companyIdsArray.length,
+    })
+
+    return Response.json(existingVotes.docs, { status: 200 })
+  } catch (error: any) {
+    return Response.json(
+      { error: 'Internal server error', message: error.message },
+      { status: 500 },
+    )
+  }
+}
+
 export const upsertVote = async (req: PayloadRequest) => {
   try {
     let body
@@ -47,10 +81,9 @@ export const upsertVote = async (req: PayloadRequest) => {
     if (!meetingId || !companiesIds || !Array.isArray(companiesIds) || companiesIds.length === 0) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
+    console.log('save -companiesIds', companiesIds)
 
     const generalFields = {
-      meeting: meetingId,
-      company: companiesIds[0], //TODO: this is a temporary fix, we need to change the UI to allow multiple companies
       isInterested: votingData.generalVotingData.isInterested,
       interestedExplanation: votingData.generalVotingData.interestedExplanation,
       isSeniorOfficial: votingData.generalVotingData.isSeniorOfficial,

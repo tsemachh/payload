@@ -1,3 +1,4 @@
+import { Vote } from '@/payload-types'
 import { MeetingTableDataType } from '../types/meetings'
 import { UserVote } from '../types/vote'
 
@@ -22,6 +23,15 @@ export const fetchMeetingData = async (url: string): Promise<MeetingTableDataTyp
   return data.data[0]
 }
 
+export const fetchVotedCompanies = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.message || 'Failed to fetch data')
+  }
+  return res.json()
+}
+
 export const createDefaultAgendaQuestions = (
   agendas: MeetingTableDataType['agendas'],
 ): UserVote[] => {
@@ -36,9 +46,70 @@ export const createDefaultAgendaQuestions = (
       conflictOfInterestExplanation: undefined,
       relatedPartyExplanation: undefined,
       personalInterestExplanation: undefined,
-      investmentCommitteeExplanation: undefined,
     },
     privilegedMajority: agenda.privilegedMajority,
     isRemovedFromAgenda: agenda.isRemovedFromAgenda,
   }))
+}
+
+export function isGeneralVote(votes: Vote[]): boolean {
+  if (!votes || votes.length < 2) return true
+
+  const ref = votes[0]
+  const refVotes = ref.votes ?? []
+
+  for (let i = 1; i < votes.length; i++) {
+    const current = votes[i]
+    const currentVotes = current.votes ?? []
+
+    const generalFieldsToCompare: (keyof typeof ref)[] = [
+      'noParticipantDuty',
+      'isInterested',
+      'interestedExplanation',
+      'isSeniorOfficial',
+      'seniorOfficialExplanation',
+      'isInstitutionalInvestor',
+      'clientComment',
+    ]
+
+    for (const field of generalFieldsToCompare) {
+      if ((ref as any)[field] !== (current as any)[field]) {
+        return false
+      }
+    }
+
+    if (refVotes.length !== currentVotes.length) {
+      return false
+    }
+
+    for (let j = 0; j < refVotes.length; j++) {
+      const a = refVotes[j]
+      const b = currentVotes[j]
+
+      if (a.topicIndex !== b.topicIndex) {
+        return false
+      }
+
+      const voteFieldsToCompare: (keyof typeof a)[] = [
+        'topicIndex',
+        'voteDecision',
+        'hasConflictOfInterest',
+        'isRelatedParty',
+        'isInvestmentCommittee',
+        'hasPersonalInterest',
+        'conflictOfInterestExplanation',
+        'relatedPartyExplanation',
+        'personalInterestExplanation',
+      ]
+
+      for (const field of voteFieldsToCompare) {
+        if ((a as any)[field] !== (b as any)[field]) {
+          console.warn()
+          return false
+        }
+      }
+    }
+  }
+
+  return true
 }

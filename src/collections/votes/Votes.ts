@@ -2,7 +2,7 @@ import { type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import { addDays, isSameDay } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
-import { getVoteByMeetingAndCompanies, upsertVote } from './voteEndPoint'
+import { getVoteByMeetingAndCompanies, getVotedCompanies, upsertVote } from './voteEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -138,7 +138,7 @@ export const Votes: CollectionConfig = {
               name: 'hasConflictOfInterest',
               label: 'ניגוד עניינים',
               type: 'checkbox',
-              defaultValue: true,
+              defaultValue: false,
             },
             {
               name: 'conflictOfInterestExplanation',
@@ -166,7 +166,7 @@ export const Votes: CollectionConfig = {
               name: 'isInvestmentCommittee',
               label: 'ועדה',
               type: 'checkbox',
-              defaultValue: false,
+              defaultValue: true,
             },
             {
               name: 'hasPersonalInterest',
@@ -259,6 +259,11 @@ export const Votes: CollectionConfig = {
       path: '/by-meeting-and-companies',
       method: 'get',
       handler: getVoteByMeetingAndCompanies,
+    },
+    {
+      path: '/voted-copmanies',
+      method: 'get',
+      handler: getVotedCompanies,
     },
     {
       path: '/upsert-draft',
