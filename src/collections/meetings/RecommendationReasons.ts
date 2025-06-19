@@ -3,8 +3,8 @@ import { CollectionConfig } from 'payload'
 export const RecommendationReasons: CollectionConfig = {
   slug: 'recommendation-reasons',
   labels: {
-    singular: 'נימוק',
-    plural: 'נימוקים',
+    singular: 'נימוק המלצה',
+    plural: 'נימוקי המלצה',
   },
   admin: {
     useAsTitle: 'content',

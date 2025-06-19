@@ -192,23 +192,23 @@ export default buildConfig({
   collections: [
     Stocks,
     StockValues,
-    StockMigrationMapping,
     Meetings,
     Votes,
     ResearchDocument,
-    RecommendationReasons,
     Holdings,
+    HoldingsFeed,
     SilencedStocks,
     Documents,
+    AdminNotifications,
+    CompanyMeetingNotifications,
     Companies,
     Users,
     Roles,
-    MigrationFaults,
     StocksFeed,
     MeetingsFeed,
-    HoldingsFeed,
-    AdminNotifications,
-    CompanyMeetingNotifications,
+    RecommendationReasons,
+    StockMigrationMapping,
+    MigrationFaults,
   ],
 
   globals: [],
@@ -224,7 +224,7 @@ export default buildConfig({
     importExportPlugin({
       collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
-        collection.admin.group = 'ניהול'
+        collection.admin.group = false //'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
