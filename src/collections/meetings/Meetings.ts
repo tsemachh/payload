@@ -626,7 +626,7 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
-                defaultColumns: ['companies', 'votes'],
+                defaultColumns: ['company', 'creator', 'updatedAt', 'votes'],
               },
             },
           ],

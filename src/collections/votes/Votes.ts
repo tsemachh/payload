@@ -98,7 +98,7 @@ export const Votes: CollectionConfig = {
     },
     {
       name: 'votes',
-      label: 'הצבעות',
+      label: 'סעיפי הצבעה',
       type: 'array',
       labels: {
         singular: 'הצבעה',
