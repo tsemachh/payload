@@ -10,7 +10,7 @@ import { parseResearchFilename } from '@/utils/parseResearchFilename'
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
   const [uploadsData, setUploadsData] = useState<any[]>([])
-  const { setMeetingCompanies, setStockName } = useCustomContext()
+  const { setMeetingCompanies, setStockId } = useCustomContext()
   const documentInfo = useDocumentInfo()
 
   const fetchCompanyIsRegular = async (companyName: string): Promise<boolean> => {
@@ -40,7 +40,7 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       setMeetingCompanies(companies)
     }
     if (stock) {
-      setStockName(stock)
+      setStockId(stock)
     }
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
