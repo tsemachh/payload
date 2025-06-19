@@ -1,6 +1,19 @@
 import { type TaskHandler } from 'payload'
 import { Company } from '@/payload-types'
 
+// Define interface for company detail
+interface CompanyDetail {
+  companyId: string
+  companyName: string
+  recipientEmails: string[]
+  notificationsSent: {
+    total: number
+    afterHoldingLimit: number
+    beforeVotingEnd: number
+  }
+  emailStatus: string
+}
+
 /**
  * Sends daily email notifications to users who have opted in to receive them.
  * Groups notifications by user and sends a summary email.
@@ -11,6 +24,20 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
   try {
     const payload = req.payload
     console.log('Starting company meeting notifications email sending...')
+
+    // Create a detailed results object
+    const results = {
+      notificationsFound: 0,
+      companiesProcessed: 0,
+      emailsSent: 0,
+      emailErrors: 0,
+      notificationsByType: {
+        afterHoldingLimit: 0,
+        beforeVotingEnd: 0,
+      },
+      companyDetails: [] as CompanyDetail[],
+    }
+
     // Calculate date 24 hours ago
     const twentyFourHoursAgo = new Date()
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
@@ -29,9 +56,16 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
     })
 
     console.log(`Found ${notifications.docs.length} notifications to send`)
+    results.notificationsFound = notifications.docs.length
 
     if (notifications.docs.length === 0) {
-      return { output: { success: true, message: 'No notifications to send' } }
+      return {
+        output: {
+          success: true,
+          message: 'No notifications to send',
+          summary: results,
+        },
+      }
     }
 
     // Group notifications by user
@@ -74,8 +108,19 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
         continue
       }
 
-      // Create email content
-      const subject = `סיכום התראות אסיפות חברה - {companyName}$`
+      results.companiesProcessed++
+
+      const companyDetail: CompanyDetail = {
+        companyId,
+        companyName: '',
+        recipientEmails: usersMails,
+        notificationsSent: {
+          total: companyNotifications.length,
+          afterHoldingLimit: 0,
+          beforeVotingEnd: 0,
+        },
+        emailStatus: 'pending',
+      }
 
       // Group notifications by type
       const afterHoldingLimit = companyNotifications.filter(
@@ -85,7 +130,16 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
         (n) => n.notificationType === 'before-voting-end',
       )
 
+      // Count notifications by type
+      companyDetail.notificationsSent.afterHoldingLimit = afterHoldingLimit.length
+      companyDetail.notificationsSent.beforeVotingEnd = beforeVotingEnd.length
+      results.notificationsByType.afterHoldingLimit += afterHoldingLimit.length
+      results.notificationsByType.beforeVotingEnd += beforeVotingEnd.length
+
       const companyName = (companyNotifications[0].company as Company).name
+      // Create email content
+      const subject = `סיכום התראות אסיפות חברה - ${companyName}`
+      companyDetail.companyName = companyName
       let html = `<div dir="rtl"><h1>שלום ${companyName},</h1>`
       html += '<h2>להלן סיכום התראות אסיפות חברה:</h2>'
 
@@ -119,13 +173,33 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
         })
 
         console.log(`Sent email to ${usersMails}`)
+        results.emailsSent++
+        companyDetail.emailStatus = 'sent'
       } catch (error) {
         console.error(`Error sending email to ${companyName}:`, error)
+        results.emailErrors++
+        companyDetail.emailStatus = 'error'
       }
+
+      results.companyDetails.push(companyDetail)
     }
 
     console.log('Company meeting notifications email sending completed')
-    return { output: { success: true } }
+    console.log('Summary:', JSON.stringify(results, null, 2))
+
+    return {
+      output: {
+        success: true,
+        summary: {
+          notificationsFound: results.notificationsFound,
+          companiesProcessed: results.companiesProcessed,
+          emailsSent: results.emailsSent,
+          emailErrors: results.emailErrors,
+          notificationsByType: results.notificationsByType,
+        },
+        details: results.companyDetails,
+      },
+    }
   } catch (error) {
     console.error('Error sending company meeting notifications:', error)
     return { output: { success: false, error } }
