@@ -1,6 +1,7 @@
 import { type TaskHandler, Where } from 'payload'
-import { addDays, isSameDay } from '@/utils/dateUtils'
+import { addDays, setToMidnight } from '@/utils/dateUtils'
 import { UserNotificationType } from '@/payload-types'
+import { scheduleCheckCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
 
 // Define interface for meeting detail
 interface MeetingDetail {
@@ -16,8 +17,8 @@ interface MeetingDetail {
 
 /**
  * Checks for company meeting notifications based on specific conditions:
- * 1. A company is invited to a meeting, there is no vote yet published, and we are one day after the holding limit date
- * 2. A company is invited to a meeting, there is no vote yet published, and we are one day before the end of vote time
+ * 1. A company is invited to a meeting, there is no vote yet published, and the holding limit date is between yesterday midnight and today midnight
+ * 2. A company is invited to a meeting, there is no vote yet published, and the proxy voting date is between today midnight and tomorrow midnight
  */
 
 export const checkCompanyMeetingNotificationsHandler: TaskHandler<
@@ -39,32 +40,31 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
       meetingDetails: [] as MeetingDetail[],
     }
 
-    // Find meetings that have a holding limit date of yesterday
-    const oneDayAfterHoldingLimit = addDays(today, -1)
-    const twoDaysAfterHoldingLimit = addDays(today, -2)
+    // Set up midnight timestamps for date ranges
+    const todayMidnight = setToMidnight(today)
+    const yesterdayMidnight = setToMidnight(addDays(today, -1))
+    const tomorrowMidnight = setToMidnight(addDays(today, 1))
 
-    // Find meetings that have a proxy voting date of tomorrow
-    const oneDayBeforeVotingEnd = addDays(today, 1)
-    const twoDayBeforeVotingEnd = addDays(today, 2)
+    console.log(`yesterdayMidnight`, yesterdayMidnight)
+    console.log(`todayMidnight`, todayMidnight)
+    console.log(`tomorrowMidnight`, tomorrowMidnight)
 
-    console.log(`oneDayAfterHoldingLimit`, oneDayAfterHoldingLimit)
-    console.log(`oneDayBeforeVotingEnd`, oneDayBeforeVotingEnd)
     const query = {
       and: [
         {
           or: [
             {
-              // Condition 1: One day after holding limit
+              // Condition 1: holdingLimit between yesterday midnight and today midnight
               holdingsLimit: {
-                greater_than_equal: twoDaysAfterHoldingLimit.toISOString(),
-                less_than_equal: oneDayAfterHoldingLimit.toISOString(),
+                greater_than: yesterdayMidnight.toISOString(),
+                less_than: todayMidnight.toISOString(),
               },
             },
             {
-              // Condition 1: One day after holding limit
+              // Condition 2: proxyVotingDate between today midnight and tomorrow midnight
               proxyVotingDate: {
-                greater_than_equal: oneDayBeforeVotingEnd.toISOString(),
-                less_than_equal: twoDayBeforeVotingEnd.toISOString(),
+                greater_than: todayMidnight.toISOString(),
+                less_than: tomorrowMidnight.toISOString(),
               },
             },
           ],
@@ -89,12 +89,14 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
 
     // Process each meeting
     for (const meeting of meetings.docs) {
+      const holdingLimitDate = meeting.holdingsLimit ? new Date(meeting.holdingsLimit) : null
+      const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
+
       const isAfterHoldingLimit =
-        meeting.holdingsLimit && isSameDay(new Date(meeting.holdingsLimit), oneDayAfterHoldingLimit)
+        holdingLimitDate && holdingLimitDate > yesterdayMidnight && holdingLimitDate < todayMidnight
 
       const isAfterVotingEnd =
-        meeting.proxyVotingDate &&
-        isSameDay(new Date(meeting.proxyVotingDate), oneDayBeforeVotingEnd)
+        proxyVotingDate && proxyVotingDate > todayMidnight && proxyVotingDate < tomorrowMidnight
 
       console.log(
         `Meeting:${meeting.id} isAfterHoldingLimit:${isAfterHoldingLimit} isAfterVotingEnd:${isAfterVotingEnd}`,
@@ -111,7 +113,7 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
         notificationsCreated: {
           afterHoldingLimit: 0,
           beforeVotingEnd: 0,
-        }
+        },
       }
 
       const companiesMeetingsIds = meeting.companies as string[]
@@ -188,15 +190,19 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
     console.log('Company meeting notifications check completed')
     console.log('Summary:', JSON.stringify(results, null, 2))
 
+    // Reschedule the task
+    await scheduleCheckCompanyMeetingNotificationsTask(req.payload)
+    console.log('Rescheduled checkCompanyMeetingNotifications task')
+
     return {
-      output: { 
+      output: {
         success: true,
         summary: {
           meetingsProcessed: results.meetingsProcessed,
           companiesChecked: results.companiesChecked,
           notificationsCreated: results.notificationsCreated,
         },
-        details: results.meetingDetails
+        details: results.meetingDetails,
       },
     }
   } catch (error) {

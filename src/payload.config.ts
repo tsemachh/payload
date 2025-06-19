@@ -150,7 +150,7 @@ export default buildConfig({
         queue: 'holdings', // name of the queue
       },
       {
-        cron: '*/05 * * * *', // every 30 minutes
+        cron: '*/02 * * * *', // every 2 minutes
         limit: 100, // limit jobs to process each run
         queue: 'immediate', // name of the queue
       },
