@@ -12,7 +12,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   const { value: file } = useField<string>({
     path: `file`,
   })
-  const { meetingCompanies, stockName } = useCustomContext()
+  const { meetingCompanies, stockId } = useCustomContext()
 
   const prevValueRef = useRef<string[]>([])
 
@@ -53,16 +53,12 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       return
     }
 
-    if (result.isGeneric) {
-      setSpanMessage(`קובץ כללי עבור כל החברות`, true)
-      return
-    }
-
     let stockNameFromMatch = false
 
     if (result.stockName) {
       try {
-        const res = await fetch(`/api/stocks/${stockName}`)
+        console.log('---- ???id', stockId)
+        const res = await fetch(`/api/stocks/${stockId}`)
         const doc = await res.json()
         const resultStockName = doc?.name || ''
 
@@ -74,6 +70,14 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         setSpanMessage('אירעה שגיאה בבדיקת נייר הערך')
         return
       }
+    }
+    if (result.isGeneric && result.stockName && result.companyName && stockNameFromMatch) {
+      // קובץ כללי ללא נייר ערך או חברה
+      setSpanMessage(`קובץ כללי עבור כל החברות`, true)
+      return
+    } else if (result.isGeneric) {
+      setSpanMessage(`קובץ כללי אך נייר הערך "${result.stockName}" לא באסיפה`)
+      return
     }
 
     if (result.companyName) {
