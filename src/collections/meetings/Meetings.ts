@@ -785,11 +785,9 @@ export const Meetings: CollectionConfig = {
           return { reportedVotesCount: '0/0' }
         }
         if (doc?.votes?.docs?.length) {
-          // data.votes.docs מכיל מערך של IDs מה-join
-          const voteIds = doc.votes.docs // מערך של מזהים
+          const voteIds = doc.votes.docs
 
           try {
-            // קריאה לקבלת ההצבעות המלאות לפי IDs
             const votesResponse = await req.payload.find({
               collection: 'votes',
               where: {
@@ -800,19 +798,12 @@ export const Meetings: CollectionConfig = {
                 reported: true,
               },
               depth: 0,
-              //select: ['id', 'reported'], // מגביל לשדות הרלוונטיים
             })
-            console.log('----- votesResponse', votesResponse)
-
-            // ספירת ההצבעות שפורסמו
             const totalVotes = votesResponse.docs.length
-            console.log('----- totalVotes', totalVotes)
 
-            // ספירת ההצבעות שדווחו (reported: true)
             const reportedVotes = votesResponse.docs.filter((vote) => vote.reported === true).length
-            // חישוב הערך כ-X/Y
+
             doc.reportedVotesCount = `${reportedVotes}/${totalVotes}`
-            console.log('----- data.reportedVotesCount', doc.reportedVotesCount)
           } catch (error) {
             console.error('Error fetching votes for reportedVotesCount:', error)
             doc.reportedVotesCount = '0/0'
