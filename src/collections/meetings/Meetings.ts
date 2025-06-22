@@ -621,10 +621,26 @@ export const Meetings: CollectionConfig = {
               name: 'votesCount',
               label: 'ספירת הצבעות',
               type: 'text',
-              admin: { readOnly: true },
+              admin: {
+                readOnly: true,
+                width: '600px',
+                // components: {
+                //   Cell: {
+                //     path: '/admincomponents/VotingCountsStatus',
+                //   },
+                //   Field: {
+                //     path: '/admincomponents/VotingCountsStatus',
+                //   },
+                // },
+              },
               hooks: {
                 afterRead: [
-                  ({ data }) => `${data?.votes?.length || 0}/${data?.companies?.length || 0}`,
+                  ({ data }) => {
+                    // console.log('DATA:', data)
+                    // console.log('VOTES:', data?.votes)
+                    // console.log('COMPANIES:', data?.companies)
+                    return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
+                  },
                 ],
               },
             },
@@ -649,36 +665,36 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 0,
-              hooks: {
-                afterRead: [
-                  async ({ data, req }) => {
-                    if (data?.votes) {
-                      console.log('-----Fetching votes for meeting:', data.votes)
-                      const votes = await req.payload.find({
-                        collection: 'votes',
-                        where: {
-                          and: [
-                            { id: { in: data.votes.docs } },
-                            { _status: { equals: 'published' } },
-                          ],
-                        },
-                        depth: 0,
-                      })
-                      const votesCount = votes.docs.length
-                      console.log('---- votesCount', votesCount)
-                      data.votesCount = `${votesCount}/${data.companies.length || 0}`
-                      console.log('----- data.votesCount', data.votesCount)
-                      console.log('----- data.votesCount', data.votesCount)
-                      const v1 = votes.docs.map((doc) => doc.id)
-                      data.votes = v1
-                      console.log('----- data.votes', data.votes)
-                    }
-                    return data
-                  },
-                ],
-              },
+              // hooks: {
+              //   afterRead: [
+              //     async ({ data, req }) => {
+              //       if (data?.votes) {
+              //         console.log('-----Fetching votes for meeting:', data.votes)
+              //         const votes = await req.payload.find({
+              //           collection: 'votes',
+              //           where: {
+              //             and: [
+              //               { id: { in: data.votes.docs } },
+              //               { _status: { equals: 'published' } },
+              //             ],
+              //           },
+              //           depth: 0,
+              //         })
+              //         const votesCount = votes.docs.length
+              //         console.log('---- votes', votes)
+              //         console.log('---- votesCount', votesCount)
+              //         data.votesCount = `${votesCount}/${data.companies.length || 0}`
+              //         console.log('----- data.votesCount', data.votesCount)
+              //       }
+              //       return data
+              //     },
+              //   ],
+              // },
               admin: {
                 defaultColumns: ['company', 'votes'],
+              },
+              where: {
+                _status: { equals: 'published' },
               },
             },
           ],
