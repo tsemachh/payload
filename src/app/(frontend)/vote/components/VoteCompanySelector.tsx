@@ -4,51 +4,63 @@ import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
 import { useCompaniesContext } from '../../context/companiesContext'
+import { CheckIcon } from 'lucide-react'
 
 interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
   meetingCompanies: CompanyTableDate[]
-  onSelectionChangeAction: (selectedCompanyIndex: number) => void
+  companiesIDs: string[]
+  setCompaniesIDs: (selectedCompanyIds: string[]) => void
+  isGeneralVoteOption: boolean
+  votedCompanies: Set<string>
 }
 
 export default function VoteCompanySelector({
   meetingData,
   meetingCompanies,
-  onSelectionChangeAction,
+  companiesIDs,
+  setCompaniesIDs,
+  isGeneralVoteOption,
+  votedCompanies,
 }: VoteCompanySelectorProps) {
   const { companies: companiesMap } = useCompaniesContext()
-  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number>(
-    meetingCompanies.length > 1 ? -1 : meetingCompanies.length === 1 ? 0 : -2, //  -1 means "all companies", -2 means "no companies"
+  const [selectedCompanies, setSelectedCompanies] = useState<string>(
+    meetingCompanies.length > 1 && isGeneralVoteOption
+      ? 'all'
+      : meetingCompanies.length === 1
+        ? companiesIDs[0]
+        : 'none',
   )
 
   useEffect(() => {
-    if (meetingCompanies.length === 1) {
-      setSelectedCompanyIndex(0)
-      onSelectionChangeAction(0)
-    } else if (meetingCompanies.length > 1) {
-      setSelectedCompanyIndex(-1)
-      onSelectionChangeAction(-1)
+    if (companiesIDs.length > 1 && isGeneralVoteOption) {
+      setSelectedCompanies('all')
+    } else if (companiesIDs.length === 1) {
+      setSelectedCompanies(companiesIDs[0])
     } else {
-      setSelectedCompanyIndex(-2)
+      setSelectedCompanies('none')
     }
-  }, [meetingCompanies, onSelectionChangeAction])
+  }, [companiesIDs])
 
-  const handleCompanyChange = (index: number) => {
-    setSelectedCompanyIndex(index)
-    onSelectionChangeAction(index)
+  const handleCompanyChange = (companyId: string) => {
+    console.log('here', companyId, isGeneralVoteOption)
+
+    if (companyId === 'all' && isGeneralVoteOption) {
+      setCompaniesIDs(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
+    } else {
+      setCompaniesIDs([companyId])
+    }
   }
 
   const getSummaryText = () => {
-    if (selectedCompanyIndex === -2) {
+    if (selectedCompanies === 'none') {
       return 'אין חברות זמינות להצבעה'
-    } else if (selectedCompanyIndex === -1) {
+    } else if (selectedCompanies === 'all') {
       return 'הצבעה עבור כל החברות'
     } else {
-      const selectedCompany = meetingCompanies[selectedCompanyIndex]
       return (
         <>
-          הצבעה עבור חברת:{' '}
-          <i>{companiesMap.find((c) => c.id === selectedCompany?.id)?.name || ''}</i>
+          הצבעה עבור חברת: <i>{companiesMap.find((c) => c.id === selectedCompanies)?.name || ''}</i>
         </>
       )
     }
@@ -71,21 +83,30 @@ export default function VoteCompanySelector({
             <Tooltip>
               <TooltipTrigger asChild>
                 <label
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
-                    selectedCompanyIndex === -1
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm transition-all ${
+                    selectedCompanies === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-sm cursor-pointer'
+                      : isGeneralVoteOption
+                        ? 'bg-muted hover:bg-muted/80 text-foreground cursor-pointer'
+                        : 'bg-muted/50 text-foreground/50 cursor-default'
                   }`}
                 >
                   <input
                     type="radio"
                     className="sr-only"
-                    name="company"
-                    value="-1"
-                    checked={selectedCompanyIndex === -1}
-                    onChange={() => handleCompanyChange(-1)}
+                    value="all"
+                    disabled={!isGeneralVoteOption}
+                    checked={selectedCompanies === 'all'}
+                    onChange={() => handleCompanyChange('all')}
                   />
-                  <span>כל החברות</span>
+                  <span className="flex items-center gap-1">
+                    {isGeneralVoteOption && (
+                      <CheckIcon
+                        className={`w-4 h-4 ${selectedCompanies === 'all' && 'text-primary-foreground '}`}
+                      />
+                    )}
+                    כל החברות
+                  </span>
                 </label>
               </TooltipTrigger>
               <TooltipContent>
@@ -98,12 +119,12 @@ export default function VoteCompanySelector({
             </Tooltip>
           )}
 
-          {meetingCompanies.map((company, index) => (
-            <Tooltip key={index}>
+          {meetingCompanies.map((company) => (
+            <Tooltip key={company.id}>
               <TooltipTrigger asChild>
                 <label
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
-                    selectedCompanyIndex === index
+                    selectedCompanies === company.id
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}
@@ -111,12 +132,18 @@ export default function VoteCompanySelector({
                   <input
                     type="radio"
                     className="sr-only"
-                    name="company"
-                    value={index}
-                    checked={selectedCompanyIndex === index}
-                    onChange={() => handleCompanyChange(index)}
+                    value={company.id}
+                    checked={selectedCompanies === company.id}
+                    onChange={() => handleCompanyChange(company.id)}
                   />
-                  <span>{companiesMap.find((c) => c.id === company?.id)?.name || '-'}</span>
+                  <span className="flex items-center gap-1">
+                    {!isGeneralVoteOption && votedCompanies.has(company.id) && (
+                      <CheckIcon
+                        className={`w-4 h-4 ${selectedCompanies === company.id && 'text-primary-foreground '}`}
+                      />
+                    )}
+                    {companiesMap.find((c) => c.id === company?.id)?.name || '-'}
+                  </span>
                 </label>
               </TooltipTrigger>
               <TooltipContent>

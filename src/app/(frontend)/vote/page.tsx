@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Upload } from 'lucide-react'
@@ -36,7 +36,13 @@ import {
   GENERAL_QUESTIONS_CONFIG,
   getExplanationFieldName,
 } from './questionConsts'
-import { createDefaultAgendaQuestions, fetcherVote, fetchMeetingData } from '../helpers/utils-vote'
+import {
+  createDefaultAgendaQuestions,
+  fetcherVote,
+  fetchMeetingData,
+  fetchVotedCompanies,
+  isGeneralVote,
+} from '../helpers/utils-vote'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 
@@ -53,12 +59,14 @@ export default function VotingForm() {
       revalidateOnFocus: false,
       onError: (err) => {
         console.error('Error fetching meeting data:', err)
-        toast({
-          title: '⚠️ שגיאה',
-          description: 'שגיאה בטעינת נתוני ההצבעה.',
-          variant: 'destructive',
-          duration: 5000,
-        })
+        setTimeout(() => {
+          toast({
+            title: '⚠️ שגיאה',
+            description: 'שגיאה בטעינת נתוני ההצבעה.',
+            variant: 'destructive',
+            duration: 1500,
+          })
+        }, 0)
         if (typeof window !== 'undefined' && window.history.length > 1) {
           setTimeout(() => {
             router.back()
@@ -71,9 +79,11 @@ export default function VotingForm() {
       },
     },
   )
-
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
+  const [companiesIDs, setCompaniesIDs] = useState<string[]>(
+    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || [],
+  )
 
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
@@ -84,10 +94,11 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
+  const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
 
-  const companiesIDs: string[] =
-    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || []
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
+  const meetingCompanies =
+    meetingData?.companies.map((company: CompanyTableDate) => company.id) || []
 
   const swrKey =
     meetingIdPayload && companiesIDs.length > 0
@@ -106,10 +117,57 @@ export default function VotingForm() {
         title: '⚠️ שגיאה בטעינה',
         description: err.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
         variant: 'destructive',
-        duration: 5000,
+        duration: 2000,
       })
     },
   })
+
+  const swrKeyVotedCompanies =
+    meetingIdPayload && meetingCompanies
+      ? `/api/votes/voted-copmanies?meetingId=${meetingIdPayload}&companyIds=${meetingCompanies}`
+      : null
+  const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(
+    swrKeyVotedCompanies,
+    fetchVotedCompanies,
+    {
+      revalidateOnFocus: false,
+    },
+  )
+
+  const votedCompanies = useMemo(() => {
+    if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
+    const votedCompaniesTmp = new Set<string>(
+      votedCompaniesArray.map((vote: any) =>
+        typeof vote.company === 'string' ? vote.company : vote.company.id,
+      ),
+    )
+    return votedCompaniesTmp
+  }, [votedCompaniesArray, isVotedCompaniesArray])
+
+  useEffect(() => {
+    if (meetingData?.companies && companiesIDs.length === 0) {
+      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      setCompaniesIDs(defaultIds)
+    }
+  }, [meetingData])
+
+  useEffect(() => {
+    if (isGeneralVoteOption) {
+      const isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
+      setIsGeneralVoteOption(isGeneralVoteOptionTmp)
+    }
+  }, [fetchedVotes])
+
+  useEffect(() => {
+    if (meetingData?.companies) {
+      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      if (isGeneralVoteOption) {
+        setCompaniesIDs(defaultIds)
+      } else {
+        setCompaniesIDs([defaultIds[0]])
+      }
+    }
+  }, [isGeneralVoteOption, meetingData?.companies])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -125,7 +183,7 @@ export default function VotingForm() {
           interestedExplanation: undefined,
           seniorOfficialExplanation: undefined,
         },
-        voterNotes: '',
+        voterNotes: '----',
         userVotes: createDefaultAgendaQuestions(meetingData.agendas),
       })
       return
@@ -151,7 +209,6 @@ export default function VotingForm() {
               conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
               relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
               personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
-              investmentCommitteeExplanation: voteItem?.investmentCommitteeExplanation || undefined,
             },
             privilegedMajority: agenda.privilegedMajority,
             isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -160,9 +217,9 @@ export default function VotingForm() {
 
         setVotingData({
           generalVotingData: {
-            isInterested: firstVote.interested ?? false,
-            isSeniorOfficial: firstVote.seniorOfficial ?? false,
-            isInstitutionalInvestor: firstVote.institutionalInvestor ?? true,
+            isInterested: firstVote.isInterested ?? false,
+            isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
+            isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
             interestedExplanation: firstVote.interestedExplanation || undefined,
             seniorOfficialExplanation: firstVote.seniorOfficialExplanation || undefined,
           },
@@ -198,20 +255,16 @@ export default function VotingForm() {
           title: '⚠️ שגיאה בשמירה',
           description: 'נתונים חיוניים חסרים לשמירת הטיוטה. אנא נסה שוב.',
           variant: 'destructive',
-          duration: 3000,
+          duration: 2000,
         })
         return
       }
-
       try {
         const requestBody = {
           meetingId: meetingIdPayload,
           companiesIds: companiesIDs,
           votingData: currentVotingData,
         }
-
-        console.log('Request body:', requestBody)
-
         const response = await fetch(`/api/votes/upsert-draft`, {
           method: 'POST',
           headers: {
@@ -224,7 +277,7 @@ export default function VotingForm() {
           toast({
             title: '✅ נתונים נשמרו',
             description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
-            duration: 2000,
+            duration: 1500,
           })
         } else {
           const errorData = await response.json()
@@ -233,7 +286,7 @@ export default function VotingForm() {
             title: '⚠️ שגיאה בשמירה',
             description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
             variant: 'destructive',
-            duration: 3000,
+            duration: 2000,
           })
         }
       } catch (error) {
@@ -242,7 +295,7 @@ export default function VotingForm() {
           title: '⚠️ שגיאה בשמירה',
           description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
           variant: 'destructive',
-          duration: 3000,
+          duration: 2000,
         })
       }
     },
@@ -274,16 +327,6 @@ export default function VotingForm() {
     },
     [saveDraftData, debounceTimers],
   )
-
-  //   const handleCompanySelection = (companyId: string, selected: boolean) => {
-  //     setVotingData((prev) => ({
-  //       ...prev,
-  //       holdingCompanies: prev.holdingCompanies.map((company) =>
-  //         company.id === companyId ? { ...company, selected } : company,
-  //       ),
-  //     }))
-  // TODO: Implement company selection logic for auto save
-  //   }
 
   const handleQuestionChange = useCallback(
     <T extends GeneralQuestionId | AgendaQuestionId>(
@@ -385,17 +428,18 @@ export default function VotingForm() {
         newUserVotes = prev.userVotes.map((vote, index) =>
           index === existingVoteIndex ? { ...vote, choice } : vote,
         )
+        saveDraftData('הצבעה', {
+          ...prev,
+          userVotes: newUserVotes,
+        })
+
+        return {
+          ...prev,
+          userVotes: newUserVotes,
+        }
       } else {
         return prev
       }
-      return {
-        ...prev,
-        userVotes: newUserVotes,
-      }
-    })
-    setVotingData((currentVotingData) => {
-      saveDraftData('הצבעה', currentVotingData)
-      return currentVotingData
     })
   }
 
@@ -461,8 +505,10 @@ export default function VotingForm() {
                 <VoteCompanySelector
                   meetingData={meetingData}
                   meetingCompanies={meetingData.companies}
-                  onSelectionChangeAction={() => {}}
-                  //   onSelectionChangeAction={handleCompanySelection}
+                  companiesIDs={companiesIDs}
+                  setCompaniesIDs={setCompaniesIDs}
+                  isGeneralVoteOption={isGeneralVoteOption}
+                  votedCompanies={votedCompanies}
                 />
               </CardContent>
             </Card>
@@ -557,6 +603,7 @@ export default function VotingForm() {
                                 onValueChange={(value) =>
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
+                                defaultValue={'----'}
                               >
                                 <SelectTrigger
                                   className={`w-full ${
@@ -570,7 +617,6 @@ export default function VotingForm() {
                                   <SelectValue placeholder="בחר הצבעה" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="----">----</SelectItem>
                                   <SelectItem
                                     value="בעד"
                                     className="text-green-700 dark:text-green-400"
@@ -586,6 +632,7 @@ export default function VotingForm() {
                                   <SelectItem value="נמנע">נמנע</SelectItem>
                                   <SelectItem value="אין חובת השתתפות">אין חובת השתתפות</SelectItem>
                                   <SelectItem value="לא משתתף">לא משתתף</SelectItem>
+                                  <SelectItem value="----">----</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
