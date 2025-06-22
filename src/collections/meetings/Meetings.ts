@@ -636,9 +636,6 @@ export const Meetings: CollectionConfig = {
               hooks: {
                 afterRead: [
                   ({ data }) => {
-                    // console.log('DATA:', data)
-                    // console.log('VOTES:', data?.votes)
-                    // console.log('COMPANIES:', data?.companies)
                     return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
                   },
                 ],
@@ -654,7 +651,7 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
-                defaultColumns: ['company', 'votes'],
+                defaultColumns: ['company', 'creator', 'updatedAt', 'votes'],
               },
               where: {
                 _status: { equals: 'published' },
