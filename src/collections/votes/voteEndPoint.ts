@@ -2,13 +2,13 @@ import { UserVote } from '@/app/(frontend)/types/vote'
 import { PayloadRequest } from 'payload'
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   try {
-    const { meetingId, companyIds } = req.query
+    const { meetingId, companiesIds } = req.query
 
-    if (!meetingId || !companyIds) {
+    if (!meetingId || !companiesIds) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
 
-    const companyIdsArray = (companyIds as string).split(',')
+    const companiesIdsArray = (companiesIds as string).split(',')
     const meetingIdString = meetingId as string
 
     const existingVotes = await req.payload.find({
@@ -16,12 +16,12 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
       where: {
         and: [
           { meeting: { equals: meetingIdString } },
-          { company: { in: companyIdsArray } },
+          { company: { in: companiesIdsArray } },
           { _status: { equals: 'draft' } },
         ],
       },
       depth: 0,
-      limit: companyIdsArray.length,
+      limit: companiesIdsArray.length,
     })
 
     return Response.json(existingVotes.docs, { status: 200 })
@@ -35,13 +35,13 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
 
 export const getVotedCompanies = async (req: PayloadRequest) => {
   try {
-    const { meetingId, companyIds } = req.query
+    const { meetingId, companiesIds } = req.query
 
-    if (!meetingId || !companyIds) {
+    if (!meetingId || !companiesIds) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
 
-    const companyIdsArray = (companyIds as string).split(',')
+    const companiesIdsArray = (companiesIds as string).split(',')
     const meetingIdString = meetingId as string
 
     const existingVotes = await req.payload.find({
@@ -50,12 +50,12 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
       where: {
         and: [
           { meeting: { equals: meetingIdString } },
-          { company: { in: companyIdsArray } },
+          { company: { in: companiesIdsArray } },
           { _status: { equals: 'draft' } },
         ],
       },
       depth: 0,
-      limit: companyIdsArray.length,
+      limit: companiesIdsArray.length,
     })
 
     return Response.json(existingVotes.docs, { status: 200 })
@@ -81,7 +81,6 @@ export const upsertVote = async (req: PayloadRequest) => {
     if (!meetingId || !companiesIds || !Array.isArray(companiesIds) || companiesIds.length === 0) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
-    console.log('save -companiesIds', companiesIds)
 
     const generalFields = {
       isInterested: votingData.generalVotingData.isInterested,
@@ -175,6 +174,67 @@ export const upsertVote = async (req: PayloadRequest) => {
     }
 
     return Response.json({ success: true }, { status: 200 })
+  } catch (error: any) {
+    return Response.json(
+      { error: 'Internal server error', message: error.message },
+      { status: 500 },
+    )
+  }
+}
+
+export const publishVotes = async (req: PayloadRequest) => {
+  try {
+    let body
+    if (req.json) {
+      body = await req.json()
+    } else {
+      return Response.json({ error: 'Invalid request format' }, { status: 400 })
+    }
+
+    const { meetingId, companiesIds } = body
+
+    if (!meetingId || !companiesIds || !Array.isArray(companiesIds) || companiesIds.length === 0) {
+      return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
+    }
+
+    const votesToPublish = await req.payload.find({
+      collection: 'votes',
+      where: {
+        and: [
+          { meeting: { equals: meetingId } },
+          { company: { in: companiesIds } },
+          { _status: { equals: 'draft' } },
+        ],
+      },
+      depth: 0,
+      limit: companiesIds.length,
+      overrideAccess: true,
+    })
+
+    if (!votesToPublish.docs.length) {
+      return Response.json(
+        { success: false, message: 'No draft votes found to publish' },
+        { status: 404 },
+      )
+    }
+
+    await Promise.all(
+      votesToPublish.docs.map((vote) =>
+        req.payload.update({
+          collection: 'votes',
+          id: vote.id,
+          data: {
+            _status: 'published',
+          },
+          overrideAccess: true,
+        }),
+      ),
+    )
+
+    return Response.json(
+      { success: true, message: `Published ${votesToPublish.docs.length} vote(s)` },
+      { status: 200 },
+    )
   } catch (error: any) {
     return Response.json(
       { error: 'Internal server error', message: error.message },

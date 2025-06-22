@@ -2,7 +2,12 @@ import { type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import { addDays, isSameDay } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
-import { getVoteByMeetingAndCompanies, getVotedCompanies, upsertVote } from './voteEndPoint'
+import {
+  getVoteByMeetingAndCompanies,
+  getVotedCompanies,
+  publishVotes,
+  upsertVote,
+} from './voteEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -13,7 +18,7 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   versions: {
     drafts: true,
-    maxPerDoc: 1,
+    maxPerDoc: 2,
   },
   admin: {
     useAsTitle: 'meeting',
@@ -270,6 +275,11 @@ export const Votes: CollectionConfig = {
       path: '/upsert-draft',
       method: 'post',
       handler: upsertVote,
+    },
+    {
+      path: '/publish-votes',
+      method: 'post',
+      handler: publishVotes,
     },
   ],
 }

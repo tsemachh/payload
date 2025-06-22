@@ -27,6 +27,7 @@ import {
   GeneralVotingData,
   GeneralVotingIDs,
   UserVote,
+  ValidationError,
   VoteDataType,
 } from '../types/vote'
 import { useToast } from '@/hooks/use-toast'
@@ -84,6 +85,8 @@ export default function VotingForm() {
   const [companiesIDs, setCompaniesIDs] = useState<string[]>(
     meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || [],
   )
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
@@ -94,6 +97,7 @@ export default function VotingForm() {
     voterNotes: '',
     userVotes: [],
   })
+
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
 
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
@@ -102,7 +106,7 @@ export default function VotingForm() {
 
   const swrKey =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companyIds=${companiesIDs}`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}`
       : null
 
   const {
@@ -124,7 +128,7 @@ export default function VotingForm() {
 
   const swrKeyVotedCompanies =
     meetingIdPayload && meetingCompanies
-      ? `/api/votes/voted-copmanies?meetingId=${meetingIdPayload}&companyIds=${meetingCompanies}`
+      ? `/api/votes/voted-copmanies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
       : null
   const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(
     swrKeyVotedCompanies,
@@ -143,6 +147,167 @@ export default function VotingForm() {
     )
     return votedCompaniesTmp
   }, [votedCompaniesArray, isVotedCompaniesArray])
+
+  // Validation function - This function already implements the logic you requested.
+  const validateForm = useCallback((): ValidationError[] => {
+    const errors: ValidationError[] = []
+
+    // Validate general questions
+    const generalData = votingData.generalVotingData
+
+    // Check if explanation is required for general questions
+    if (generalData.isInterested && !generalData.interestedExplanation?.trim()) {
+      errors.push({
+        field: 'interestedExplanation',
+        message: 'נדרש הסבר לעניין אישי',
+        type: 'general',
+      })
+    }
+
+    if (generalData.isSeniorOfficial && !generalData.seniorOfficialExplanation?.trim()) {
+      errors.push({
+        field: 'seniorOfficialExplanation',
+        message: 'נדרש הסבר לנושא תפקיד בכיר',
+        type: 'general',
+      })
+    }
+
+    // Validate agenda items
+    if (meetingData?.agendas) {
+      meetingData.agendas.forEach((agenda) => {
+        if (agenda.isRemovedFromAgenda) return
+
+        const userVote = votingData.userVotes.find((v) => v.topicIndex === agenda.topicIndex)
+
+        // Check if vote choice is selected
+        if (!userVote?.choice) {
+          errors.push({
+            field: 'choice',
+            message: 'יש לבחור הצבעה',
+            type: 'agenda',
+            topicIndex: agenda.topicIndex,
+          })
+        }
+
+        // Check agenda question explanations
+        if (userVote?.questions) {
+          const questions = userVote.questions
+
+          if (questions.hasConflictOfInterest && !questions.conflictOfInterestExplanation?.trim()) {
+            errors.push({
+              field: 'conflictOfInterestExplanation',
+              message: 'נדרש הסבר לניגוד עניינים',
+              type: 'agenda',
+              topicIndex: agenda.topicIndex,
+            })
+          }
+
+          if (questions.isRelatedParty && !questions.relatedPartyExplanation?.trim()) {
+            errors.push({
+              field: 'relatedPartyExplanation',
+              message: 'נדרש הסבר לבעל עניין',
+              type: 'agenda',
+              topicIndex: agenda.topicIndex,
+            })
+          }
+
+          if (questions.hasPersonalInterest && !questions.personalInterestExplanation?.trim()) {
+            errors.push({
+              field: 'personalInterestExplanation',
+              message: 'נדרש הסבר לעניין אישי',
+              type: 'agenda',
+              topicIndex: agenda.topicIndex,
+            })
+          }
+        }
+      })
+    }
+
+    return errors
+  }, [votingData, meetingData])
+
+  const getFieldError = useCallback(
+    (
+      fieldName: string,
+      type: 'general' | 'agenda',
+      topicIndex?: number,
+    ): ValidationError | undefined => {
+      return validationErrors.find(
+        (error) =>
+          error.field === fieldName &&
+          error.type === type &&
+          (type === 'agenda' ? error.topicIndex === topicIndex : true),
+      )
+    },
+    [validationErrors],
+  )
+
+  // MODIFIED: This function is now fully operational and will be called by the button.
+  const handleSubmitVote = useCallback(async () => {
+    // Clear previous errors
+    setValidationErrors([])
+
+    // Validate form
+    const errors = validateForm()
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      // Scroll to the first error
+      const firstError = errors[0]
+      const errorElement = document.querySelector(
+        `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
+      )
+      errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+      toast({
+        title: '⚠️ שגיאות בטופס',
+        description: 'יש למלא את כל השדות החובה המסומנים',
+        variant: 'destructive',
+        duration: 3000,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch('/api/votes/publish-votes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meetingId: meetingIdPayload,
+          companiesIds: companiesIDs,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: '✅ הצבעה נשלחה בהצלחה',
+          description: result.message || 'ההצבעה פורסמה בהצלחה',
+          duration: 3000,
+        })
+        // Optional: redirect or refresh data
+        setTimeout(() => {
+          router.push('/')
+        }, 2000)
+      } else {
+        throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
+      }
+    } catch (error: any) {
+      console.error('Submit error:', error)
+      toast({
+        title: '⚠️ שגיאה בשליחה',
+        description: error.message || 'לא ניתן לשלוח את ההצבעה. אנא נסה שוב.',
+        variant: 'destructive',
+        duration: 3000,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [validateForm, meetingIdPayload, companiesIDs, toast, router])
 
   useEffect(() => {
     if (meetingData?.companies && companiesIDs.length === 0) {
@@ -174,8 +339,10 @@ export default function VotingForm() {
       return
     }
 
+    let initialData: VoteDataType
+
     if (votesError) {
-      setVotingData({
+      initialData = {
         generalVotingData: {
           isInterested: false,
           isSeniorOfficial: false,
@@ -185,19 +352,14 @@ export default function VotingForm() {
         },
         voterNotes: '----',
         userVotes: createDefaultAgendaQuestions(meetingData.agendas),
-      })
-      return
-    }
-
-    if (fetchedVotes && fetchedVotes.length) {
+      }
+    } else if (fetchedVotes && fetchedVotes.length) {
       const firstVote = fetchedVotes[0]
-
       if (firstVote) {
         const transformedUserVotes = meetingData.agendas.map((agenda) => {
           const voteItem = (firstVote.votes || []).find(
             (v: any) => v.topicIndex == agenda.topicIndex,
           )
-
           return {
             topicIndex: agenda.topicIndex,
             choice: voteItem?.voteDecision || '----',
@@ -214,8 +376,7 @@ export default function VotingForm() {
             isRemovedFromAgenda: agenda.isRemovedFromAgenda,
           }
         })
-
-        setVotingData({
+        initialData = {
           generalVotingData: {
             isInterested: firstVote.isInterested ?? false,
             isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
@@ -225,9 +386,9 @@ export default function VotingForm() {
           },
           voterNotes: firstVote.clientComment || '',
           userVotes: transformedUserVotes,
-        })
+        }
       } else {
-        setVotingData({
+        initialData = {
           generalVotingData: {
             isInterested: false,
             isSeniorOfficial: false,
@@ -237,9 +398,22 @@ export default function VotingForm() {
           },
           voterNotes: '',
           userVotes: createDefaultAgendaQuestions(meetingData.agendas),
-        })
+        }
+      }
+    } else {
+      // Default case if no fetched votes and no error
+      initialData = {
+        generalVotingData: {
+          isInterested: false,
+          isSeniorOfficial: false,
+          isInstitutionalInvestor: true,
+        },
+        voterNotes: '',
+        userVotes: createDefaultAgendaQuestions(meetingData.agendas),
       }
     }
+
+    setVotingData(initialData)
   }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast])
 
   const saveDraftData = useCallback(
@@ -336,6 +510,24 @@ export default function VotingForm() {
       explanation?: string,
       topicIndex?: number, // Relevant only for agenda questions
     ) => {
+      // Clear validation errors for this field when user makes changes
+      setValidationErrors((prev) =>
+        prev.filter((error) => {
+          if (type === 'general') {
+            return !(
+              error.field === questionId ||
+              error.field === getExplanationFieldName(questionId as GeneralQuestionId)
+            )
+          } else {
+            return !(
+              error.topicIndex === topicIndex &&
+              (error.field === questionId ||
+                error.field === getExplanationFieldName(questionId as AgendaQuestionId))
+            )
+          }
+        }),
+      )
+
       if (type === 'general') {
         setVotingData((prev) => {
           const newState: GeneralVotingData = {
@@ -364,7 +556,7 @@ export default function VotingForm() {
             return currentVotingData
           })
         }
-      } else if (type === 'agenda' && topicIndex) {
+      } else if (type === 'agenda' && topicIndex !== undefined) {
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
             if (vote.topicIndex == topicIndex) {
@@ -420,6 +612,11 @@ export default function VotingForm() {
   )
 
   const handleVoteChange = (topicIndex: number, choice: UserVote['choice']) => {
+    // Clear validation error for this vote choice
+    setValidationErrors((prev) =>
+      prev.filter((error) => !(error.topicIndex === topicIndex && error.field === 'choice')),
+    )
+
     setVotingData((prev) => {
       const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.topicIndex == topicIndex)
       let newUserVotes: UserVote[]
@@ -747,7 +944,9 @@ export default function VotingForm() {
 
             {/* כפתור שליחת הצבעה */}
             <div className="flex justify-end mt-6">
-              <Button className="px-8">שליחת הצבעה</Button>
+              <Button onClick={handleSubmitVote} disabled={isSubmitting} className="px-8">
+                {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
+              </Button>
             </div>
           </div>
         </div>
