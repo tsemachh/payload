@@ -244,6 +244,12 @@ export const Users: CollectionConfig = {
           type: 'checkbox',
           admin: { hidden: true },
         },
+        {
+          name: 'receiveMailNotification',
+          label: 'קבלת התראות במייל',
+          type: 'checkbox',
+          defaultValue: true,
+        },
       ],
     },
     {

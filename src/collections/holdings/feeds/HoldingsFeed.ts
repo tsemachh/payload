@@ -3,12 +3,12 @@ import type { CollectionConfig } from 'payload'
 export const HoldingsFeed: CollectionConfig = {
   slug: 'holdings-feed',
   labels: {
-    plural: 'קבצי אחזקות',
-    singular: 'קובץ אחזקות',
+    plural: 'הזנות אחזקות',
+    singular: 'הזנת אחזקות',
   },
   admin: {
     useAsTitle: 'filename',
-    group: 'ניהול',
+    group: 'פעילות',
   },
   access: {
     read: () => true,

@@ -142,19 +142,15 @@ const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
 </html>`
 
     // Send email to each admin user
-    for (const user of adminUsers) {
-      if (user.email) {
-        try {
-          await req.payload.sendEmail({
-            to: user.email,
-            subject: emailSubject,
-            html: emailContent,
-          })
-          emailsSent.count++
-        } catch (error) {
-          req.payload.logger.error(`Error sending email to ${user.email}: ${JSON.stringify(error)}`)
-        }
-      }
+    try {
+      await req.payload.sendEmail({
+        to: adminUsers.map((user) => user.email),
+        subject: emailSubject,
+        html: emailContent,
+      })
+      emailsSent.count++
+    } catch (error) {
+      req.payload.logger.error(`Error sending email to Admin users: ${JSON.stringify(error)}`)
     }
 
     // Purge old read notifications (older than 30 days)

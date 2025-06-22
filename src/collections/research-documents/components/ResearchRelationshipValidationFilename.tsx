@@ -12,7 +12,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
   const { value: file } = useField<string>({
     path: `file`,
   })
-  const { meetingCompanies, stockName } = useCustomContext()
+  const { meetingCompanies, stockId } = useCustomContext()
 
   const prevValueRef = useRef<string[]>([])
 
@@ -53,16 +53,11 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       return
     }
 
-    if (result.isGeneric) {
-      setSpanMessage(`קובץ כללי עבור כל החברות`, true)
-      return
-    }
-
     let stockNameFromMatch = false
 
     if (result.stockName) {
       try {
-        const res = await fetch(`/api/stocks/${stockName}`)
+        const res = await fetch(`/api/stocks/${stockId}`)
         const doc = await res.json()
         const resultStockName = doc?.name || ''
 
@@ -74,6 +69,13 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         setSpanMessage('אירעה שגיאה בבדיקת נייר הערך')
         return
       }
+    }
+    if (result.isGeneric && result.stockName && result.companyName && stockNameFromMatch) {
+      setSpanMessage(`קובץ כללי עבור כל החברות`, true)
+      return
+    } else if (result.isGeneric) {
+      setSpanMessage(`קובץ כללי אך נייר הערך "${result.stockName}" לא באסיפה`)
+      return
     }
 
     if (result.companyName) {
@@ -115,6 +117,8 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
           setSpanMessage(
             `החברה "${result.companyName}" נמצאה, אך נייר הערך "${result.stockName}" לא באסיפה`,
           )
+          const companyIds = data.docs.map((doc: any) => doc.id)
+          setValue(Array.from(companyIds))
         } else if (stockNameFromMatch) {
           setSpanMessage(
             `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,

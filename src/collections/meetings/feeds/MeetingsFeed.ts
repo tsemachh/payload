@@ -1,12 +1,10 @@
 import type { CollectionConfig } from 'payload'
-import { processMeetingsFeedCsv } from './processMeetingsFeedCsv'
-import FormattedErrorsCell from './FormattedErrorsCell'
 
 export const MeetingsFeed: CollectionConfig = {
   slug: 'meetings-feed',
   labels: {
-    plural: 'קבצי  אסיפות',
-    singular: 'קובץ אסיפות',
+    plural: 'הזנות אסיפות',
+    singular: 'הזנת אסיפות',
   },
   admin: {
     useAsTitle: 'filename',
