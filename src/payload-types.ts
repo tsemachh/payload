@@ -442,7 +442,7 @@ export interface Meeting {
  */
 export interface Document {
   id: string;
-  הסבר?: string | null;
+  explanation?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1435,7 +1435,7 @@ export interface SilencedStocksSelect<T extends boolean = true> {
  * via the `definition` "documents_select".
  */
 export interface DocumentsSelect<T extends boolean = true> {
-  הסבר?: T;
+  explanation?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

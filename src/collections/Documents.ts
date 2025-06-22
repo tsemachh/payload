@@ -15,7 +15,7 @@ export const Documents: CollectionConfig = {
   },
   fields: [
     {
-      name: 'active',
+      name: 'explanation',
       label: 'הסבר', //todo: this field is required??
       type: 'text',
     },
