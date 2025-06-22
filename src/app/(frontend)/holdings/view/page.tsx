@@ -5,7 +5,6 @@ import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from './columns'
-import { Holding } from '@/payload-types'
 import { ExportButton } from '@/components/export-button'
 import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
@@ -18,7 +17,6 @@ import { fetcher } from '../../helpers/utils-data-table'
 export default function HoldingsView() {
   const { user } = useAuth()
   const [date, setDate] = useState<Date | undefined>(undefined)
-  const [holdingDays, setHoldingDays] = useState<Holding[]>([])
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -137,9 +135,6 @@ export default function HoldingsView() {
           setError('')
         }
 
-        // Store the original holding days data
-        setHoldingDays(data.docs)
-
         // Process the holding days data for display
         const processed = []
         for (const holdingDay of data.docs) {
@@ -178,15 +173,14 @@ export default function HoldingsView() {
           <label className="text-base font-semibold mb-2 block h-100 text-center">תאריך ערך</label>
           <DateSelector
             date={date}
-            markedDates={markedDates}
+            // markedDates={markedDates}
             isDateAlwaysOpen={true}
             onDateChangeAction={handleDateChangeAction}
             className="w-full"
             filterDate={(date) => {
-              const now = new Date()
-              now.setHours(0, 0, 0, 0)
-              const day = date.getDay()
-              return day == 5 || day == 6 || date > now
+              return !markedDates.some((markedDate) => {
+                return markedDate.toDateString() === date.toDateString()
+              })
             }}
           />
         </div>

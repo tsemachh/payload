@@ -61,6 +61,13 @@ export enum AgendaQuestionId {
   HAS_PERSONAL_INTEREST = 'hasPersonalInterest',
 }
 
-// ניתן להשתמש ב-utility type אם רוצים להגדיר את סוגי המפתחות מתוך ה-enums
 export type GeneralVotingIDs = `${GeneralQuestionId}`
 export type AgendaVotingIDs = `${AgendaQuestionId}`
+
+// Types for validation
+export type ValidationError = {
+  field: string
+  message: string
+  type: 'general' | 'agenda'
+  topicIndex?: number
+}
