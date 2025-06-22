@@ -39,23 +39,20 @@ const ReportedVotesStatusCell: React.FC<ReportedVotesStatusCellProps> = ({ cellD
   }
 
   let statusIcon = ''
-  let statusText = ''
 
   if (isValid) {
     if (reportedVotes === 0) {
       statusIcon = '❌'
-      statusText = 'ריק'
     } else if (reportedVotes < totalVotes) {
       statusIcon = '❗'
-      statusText = 'חלקי'
     } else if (reportedVotes === totalVotes && totalVotes > 0) {
       statusIcon = '✅'
-      statusText = 'שלם'
     }
   }
 
-  const tooltipText = isValid ? `דיווחים: ${displayData} - ${statusText}` : 'דיווחים: אין נתונים'
-
+  const tooltipText = isValid
+    ? `${reportedVotes} חברות דווחו לרשות מתוך ${totalVotes} שהצביעו`
+    : 'דיווחים: אין נתונים'
   return (
     <span
       className="inline-flex items-center justify-center w-[26px] h-[26px] text-base cursor-pointer"
