@@ -6,6 +6,8 @@ import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b
 import { default as default_01b6ede7689a44abe9ffe43b59ce999f } from '../../../collections/meetings/components/ConditionalReasonText'
 import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
+import { default as default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e } from '../../../admincomponents/icon/VotingCountsStatusCell'
+import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../admincomponents/icon/VotingCountsStatusTextField'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_410e849e7082a5bf3032ab6c59fb3774 } from '../../../collections/meetings/feeds/FormattedErrorsCell'
@@ -35,6 +37,8 @@ export const importMap = {
   "/collections/meetings/components/ConditionalReasonText#default": default_01b6ede7689a44abe9ffe43b59ce999f,
   "/collections/meetings/components/RowLabel#ArrayLabel": ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
+  "/admincomponents/icon/VotingCountsStatusCell#default": default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e,
+  "/admincomponents/icon/VotingCountsStatusTextField#default": default_adb006445235b2e9a92908681b338c68,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/collections/meetings/feeds/FormattedErrorsCell#default": default_410e849e7082a5bf3032ab6c59fb3774,

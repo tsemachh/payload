@@ -624,14 +624,14 @@ export const Meetings: CollectionConfig = {
               admin: {
                 readOnly: true,
                 width: '600px',
-                // components: {
-                //   Cell: {
-                //     path: '/admincomponents/VotingCountsStatus',
-                //   },
-                //   Field: {
-                //     path: '/admincomponents/VotingCountsStatus',
-                //   },
-                // },
+                components: {
+                  Cell: {
+                    path: '/admincomponents/icon/VotingCountsStatusCell',
+                  },
+                  Field: {
+                    path: '/admincomponents/icon/VotingCountsStatusTextField',
+                  },
+                },
               },
               hooks: {
                 afterRead: [
@@ -644,19 +644,7 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-            // {
-            //               name: 'votesStatus',
-            //               label: 'סטטוס הצבעות',
-            //               type: 'select',
-            //               options: [
-            //               type: 'text',
-            //               admin: { readOnly: true },
-            //               hooks: {
-            //                 afterRead: [
-            //                   ({ data }) => `${data?.votes?.length || 0}/${data?.companies?.length || 0}`,
-            //                 ],
-            //               },
-            //             },
+
             {
               name: 'votes',
               label: 'הצבעות',
@@ -665,31 +653,6 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 0,
-              // hooks: {
-              //   afterRead: [
-              //     async ({ data, req }) => {
-              //       if (data?.votes) {
-              //         console.log('-----Fetching votes for meeting:', data.votes)
-              //         const votes = await req.payload.find({
-              //           collection: 'votes',
-              //           where: {
-              //             and: [
-              //               { id: { in: data.votes.docs } },
-              //               { _status: { equals: 'published' } },
-              //             ],
-              //           },
-              //           depth: 0,
-              //         })
-              //         const votesCount = votes.docs.length
-              //         console.log('---- votes', votes)
-              //         console.log('---- votesCount', votesCount)
-              //         data.votesCount = `${votesCount}/${data.companies.length || 0}`
-              //         console.log('----- data.votesCount', data.votesCount)
-              //       }
-              //       return data
-              //     },
-              //   ],
-              // },
               admin: {
                 defaultColumns: ['company', 'votes'],
               },
