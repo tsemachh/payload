@@ -8,6 +8,8 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e } from '../../../admincomponents/icon/VotingCountsStatusCell'
 import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../admincomponents/icon/VotingCountsStatusTextField'
+import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
+import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../admincomponents/icon/ReportedVotesStatusCell'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
@@ -39,6 +41,8 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/admincomponents/icon/VotingCountsStatusCell#default": default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e,
   "/admincomponents/icon/VotingCountsStatusTextField#default": default_adb006445235b2e9a92908681b338c68,
+  "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
+  "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,

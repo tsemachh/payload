@@ -406,6 +406,8 @@ export interface Meeting {
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
   votesCount?: string | null;
+  participationReport?: (string | null) | Document;
+  reportedVotesCount?: string | null;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -440,7 +442,7 @@ export interface Meeting {
  */
 export interface Document {
   id: string;
-  alt: string;
+  הסבר?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -570,6 +572,7 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   noParticipantDuty?: boolean | null;
+  reported?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1239,6 +1242,8 @@ export interface MeetingsSelect<T extends boolean = true> {
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   votesCount?: T;
+  participationReport?: T;
+  reportedVotesCount?: T;
   votes?: T;
   companies?: T;
   funds?: T;
@@ -1298,6 +1303,7 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   noParticipantDuty?: T;
+  reported?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1429,7 +1435,7 @@ export interface SilencedStocksSelect<T extends boolean = true> {
  * via the `definition` "documents_select".
  */
 export interface DocumentsSelect<T extends boolean = true> {
-  alt?: T;
+  הסבר?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;
