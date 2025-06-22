@@ -618,6 +618,31 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
+              name: 'votesCount',
+              label: 'ספירת הצבעות',
+              type: 'text',
+              admin: {
+                readOnly: true,
+                width: '600px',
+                components: {
+                  Cell: {
+                    path: '/admincomponents/icon/VotingCountsStatusCell',
+                  },
+                  Field: {
+                    path: '/admincomponents/icon/VotingCountsStatusTextField',
+                  },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  ({ data }) => {
+                    return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
+                  },
+                ],
+              },
+            },
+
+            {
               name: 'votes',
               label: 'הצבעות',
               type: 'join',
@@ -627,6 +652,9 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 defaultColumns: ['company', 'creator', 'updatedAt', 'votes'],
+              },
+              where: {
+                _status: { equals: 'published' },
               },
             },
           ],
