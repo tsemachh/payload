@@ -30,11 +30,13 @@ const VotingCountsStatusCell: React.FC<VotingCountsStatusCellProps> = ({ cellDat
       statusIcon = '✅'
     }
   }
-
+  const tooltipText = cellData
+    ? `${votes} חברות שהצביעו מתוך ${companies} שזומנו לאסיפה`
+    : 'אין נתונים'
   return (
     <span
       className="inline-flex items-center justify-center w-[26px] h-[26px] text-base cursor-pointer"
-      title={cellData || 'אין נתונים'}
+      title={tooltipText}
     >
       {statusIcon || '—'}
     </span>

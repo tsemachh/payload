@@ -19,6 +19,7 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { Vote } from '@/payload-types'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -96,15 +97,17 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
+
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
-      'magnaId',
       'invitationLink',
       'holdingsLimit',
-      'proxyVotingDate',
       'meetingDate',
       'state',
+      'comments',
+      'votesCount',
+      'reportedVotesCount',
     ],
     pagination: {
       defaultLimit: 100,
@@ -614,12 +617,13 @@ export const Meetings: CollectionConfig = {
             },
           ],
         },
+
         {
           label: 'הצבעות',
           fields: [
             {
               name: 'votesCount',
-              label: 'ספירת הצבעות',
+              label: 'מצב הצבעות',
               type: 'text',
               admin: {
                 readOnly: true,
@@ -641,7 +645,28 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-
+            {
+              name: 'participationReport',
+              label: 'דוח השתתפות',
+              type: 'upload',
+              relationTo: 'documents',
+              admin: {
+                components: {
+                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
+                },
+              },
+            },
+            {
+              name: 'reportedVotesCount',
+              label: 'מצב דיווחים',
+              type: 'text',
+              admin: {
+                hidden: true, // מסתיר את השדה בטופס העריכה
+                components: {
+                  Cell: { path: '/admincomponents/icon/ReportedVotesStatusCell' },
+                },
+              },
+            },
             {
               name: 'votes',
               label: 'הצבעות',
@@ -651,7 +676,7 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
-                defaultColumns: ['company', 'creator', 'updatedAt', 'votes'],
+                defaultColumns: ['company', 'creator', 'updatedAt', 'votes', 'reported'],
               },
               where: {
                 _status: { equals: 'published' },
@@ -754,7 +779,44 @@ export const Meetings: CollectionConfig = {
       ],
     },
   ],
+
   hooks: {
+    afterRead: [
+      async ({ doc, req }) => {
+        if (!doc) {
+          return { reportedVotesCount: '0/0' }
+        }
+        if (doc?.votes?.docs?.length) {
+          const voteIds = doc.votes.docs
+
+          try {
+            const votesResponse = await req.payload.find({
+              collection: 'votes',
+              where: {
+                and: [{ id: { in: voteIds } }, { _status: { equals: 'published' } }],
+              },
+              select: {
+                id: true,
+                reported: true,
+              },
+              depth: 0,
+              limit: 0,
+            })
+            const totalVotes = votesResponse.docs.length
+
+            const reportedVotes = votesResponse.docs.filter((vote) => vote.reported === true).length
+
+            doc.reportedVotesCount = `${reportedVotes}/${totalVotes}`
+          } catch (error) {
+            console.error('Error fetching votes for reportedVotesCount:', error)
+            doc.reportedVotesCount = '0/0'
+          }
+        } else {
+          doc.reportedVotesCount = '0/0'
+        }
+        return doc
+      },
+    ],
     afterChange: [
       async ({ req, doc, previousDoc }) => {
         const holdingsLimitChanged =
