@@ -798,6 +798,7 @@ export const Meetings: CollectionConfig = {
                 reported: true,
               },
               depth: 0,
+              limit: 0,
             })
             const totalVotes = votesResponse.docs.length
 
