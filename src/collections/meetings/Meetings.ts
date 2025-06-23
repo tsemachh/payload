@@ -97,15 +97,17 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
+
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
-      'magnaId',
       'invitationLink',
       'holdingsLimit',
-      'proxyVotingDate',
       'meetingDate',
       'state',
+      'comments',
+      'votesCount',
+      'reportedVotesCount',
     ],
     pagination: {
       defaultLimit: 100,
@@ -656,7 +658,7 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'reportedVotesCount',
-              label: 'דיווחים',
+              label: 'מצב דיווחים',
               type: 'text',
               admin: {
                 hidden: true, // מסתיר את השדה בטופס העריכה
