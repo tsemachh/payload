@@ -11,6 +11,7 @@ import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../ad
 import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
 import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../admincomponents/icon/ReportedVotesStatusCell'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
+import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
 import { default as default_410e849e7082a5bf3032ab6c59fb3774 } from '../../../collections/meetings/feeds/FormattedErrorsCell'
@@ -44,6 +45,7 @@ export const importMap = {
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
+  "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,
   "/collections/meetings/feeds/FormattedErrorsCell#default": default_410e849e7082a5bf3032ab6c59fb3774,
