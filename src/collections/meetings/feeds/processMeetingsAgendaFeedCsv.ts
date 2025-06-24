@@ -95,6 +95,7 @@ export const processMeetingsAgendaFeedCsv = async (
             id: meeting.id,
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
+            req,
           })
           successCount++
         } catch (e: any) {

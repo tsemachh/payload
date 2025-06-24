@@ -59,7 +59,6 @@ export const processStocksFeedCsv = async (
     }))
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
     let stocksCreated = 0
-    let processedRows = 0
 
     // Create a Promise Pool with concurrency of 20
     const pool = new PromisePool(4)
@@ -100,6 +99,7 @@ export const processStocksFeedCsv = async (
       id: data.id,
       context: { from: 'process' },
       data,
+      req,
     })
 
     // End timing the entire process

@@ -131,6 +131,7 @@ export const publishVotes = async (req: PayloadRequest) => {
           },
           draft: false,
           overrideAccess: true,
+          req,
         }),
       ),
     )
@@ -226,6 +227,7 @@ const upsertVotesInternal = async ({
           data: updateItem.data,
           draft: true,
           overrideAccess: true,
+          req,
         }),
       ),
     )
@@ -239,6 +241,7 @@ const upsertVotesInternal = async ({
           data: createData,
           draft: true,
           overrideAccess: true,
+          req,
         }),
       ),
     )

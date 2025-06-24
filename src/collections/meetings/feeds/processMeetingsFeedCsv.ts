@@ -193,6 +193,7 @@ export const processMeetingsFeedCsv = async (
                     id: prevMeetingId,
                     data: dataToUpdate,
                     context: { ...req.context, from: 'migration' },
+                    req,
                   })
                   successPrevCount++
                 } catch (e: any) {
@@ -216,6 +217,7 @@ export const processMeetingsFeedCsv = async (
                   id: meetingId,
                   data: row,
                   context: { ...req.context, from: 'migration' },
+                  req,
                 })
                 successCount++
               } catch (e: any) {
@@ -227,6 +229,7 @@ export const processMeetingsFeedCsv = async (
                   collection: 'meetings',
                   data: row,
                   context: { ...req.context, from: 'migration' },
+                  req,
                 })
                 successCount++
               } catch (e: any) {

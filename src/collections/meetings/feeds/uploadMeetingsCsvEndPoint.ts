@@ -55,6 +55,7 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
       data: { comments: {} },
       collection: 'meetings-feed',
       file: file,
+      req,
     })
 
     const { errors, successCount, fileLength, successPrevCount, countTotalPrev } =
@@ -75,6 +76,7 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
 Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev}
  `,
       },
+      req,
     })
     // Check if a file with the same hash already exists
     const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
@@ -104,6 +106,7 @@ Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev
         data: {
           hash: fileHash,
         },
+        req,
       })
     }
     return Response.json({

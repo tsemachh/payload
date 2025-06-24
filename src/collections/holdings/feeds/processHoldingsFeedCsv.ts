@@ -224,6 +224,7 @@ export const processHoldingsFeedCsv = async (
       collection: 'holdings-feed',
       data: doc as HoldingsFeed,
       file: file,
+      req,
     })
     const feedCreateEndTime = performance.now()
     req.payload.logger.info(

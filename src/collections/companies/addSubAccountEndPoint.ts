@@ -53,6 +53,7 @@ const createSubAccount = async (req: PayloadRequest, accountNumber: number, comp
       data: {
         mainAccount,
       },
+      req,
     })
   }
 

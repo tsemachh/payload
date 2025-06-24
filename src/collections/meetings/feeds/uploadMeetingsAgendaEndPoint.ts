@@ -58,6 +58,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       },
       collection: 'meetings-feed',
       file: file,
+      req,
     })
     const { errors, successCount, fileLength } = await processMeetingsAgendaFeedCsv(req, { file })
     const endTime = Date.now()
@@ -74,6 +75,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         duration: `${durationSeconds}s`,
         summary: `success: ${successCount} / ${fileLength} `,
       },
+      req,
     })
 
     // Check if a file with the same hash already exists
@@ -104,6 +106,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         data: {
           hash: fileHash,
         },
+        req,
       })
     }
     return Response.json({
