@@ -41,12 +41,6 @@ export const ResearchDocument: CollectionConfig = {
           equals: true,
         },
       },
-      admin: {
-        components: {
-          Field:
-            '/collections/research-documents/components/ResearchRelationshipValidationFilename',
-        },
-      },
     },
     {
       name: 'uploadedAt',
@@ -55,6 +49,10 @@ export const ResearchDocument: CollectionConfig = {
       admin: {
         date: {
           displayFormat: 'dd/MM/yyyy HH:mm',
+        },
+        components: {
+          Field:
+            '/collections/research-documents/components/ResearchRelationshipValidationFilename',
         },
         readOnly: true,
       },

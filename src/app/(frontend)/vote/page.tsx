@@ -11,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { useSearchParams } from 'next/navigation'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CompanyTableDate } from '../types/meetings'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import VoteDetails from './components/VoteDetails'
@@ -45,7 +45,6 @@ import {
   isGeneralVote,
 } from '../helpers/utils-vote'
 import useSWR from 'swr'
-import { useRouter } from 'next/navigation'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
 
 export default function VotingForm() {
@@ -141,7 +140,7 @@ export default function VotingForm() {
 
   const swrKeyVotedCompanies =
     meetingIdPayload && meetingCompanies
-      ? `/api/votes/voted-copmanies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
+      ? `/api/votes/voted-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
       : null
 
   const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(

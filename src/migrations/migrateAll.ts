@@ -13,6 +13,7 @@ import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCom
 import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
 import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
+import { up as unifyMeetings } from './UnifyMeetings'
 import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
@@ -31,7 +32,8 @@ import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCo
  * 12. Meeting Agenda
  * 13. Votes
  * 14. Recommendation Reasons
- * 15. Process Companies Meetings
+ * 15. Unify Meetings (removes duplicate meetings and merges their data)
+ * 16. Process Companies Meetings
  *
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
@@ -110,7 +112,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateRecommendationReasons({ payload, req })
     console.log('=== Recommendation Reasons Migration Completed ===\n')
 
-    // 15. Migrate processCompaniesMeetings
+    // 16. Unify Meetings
+    console.log('\n=== Starting Unify Meetings Migration ===')
+    await unifyMeetings({ payload, req })
+    console.log('=== Unify Meetings Migration Completed ===\n')
+
+    // 17. Migrate processCompaniesMeetings
     console.log('\n=== Starting processCompaniesMeetings ===')
     await processCompaniesMeetings(req)
     console.log('=== processCompaniesMeetings Completed ===\n')

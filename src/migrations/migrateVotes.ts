@@ -148,7 +148,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   ORDER BY ma.id
               `)
 
+                // Get voting orders memo from meetingclients table
+                const meetingClientsResult = await pool?.request().query(`
+                  SELECT [votingOrdersMemo]
+                  FROM [dbEmda].[dbo].[meetingclients]
+                  WHERE mid = ${meeting.id}
+                    AND firmid = ${company.fid}
+                `)
+
                 const votingData = votingResult?.recordset
+                const meetingClientsData = meetingClientsResult?.recordset[0]
+
+                // Extract votingOrdersMemo from meetingClients data
+                const votingOrdersMemo = meetingClientsData?.votingOrdersMemo
 
                 // Create votes array for MongoDB
                 // First, create a map of agenda item IDs to their positions in the agenda
@@ -185,7 +197,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   meeting: mongoMeetingId,
                   company: mongoCompanyId,
                   noParticipantDuty,
+                  reported: !!votingOrdersMemo, // Add the votingOrdersMemo field
                   votes,
+                  _status: 'published',
                 } as Partial<Vote>
                 try {
                   // Create new vote

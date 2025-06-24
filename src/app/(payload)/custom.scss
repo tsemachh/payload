@@ -62,3 +62,9 @@
     overflow: auto;
   }
 }
+
+
+form[action^="/api/research-documents"] .file-field__remove {
+  display: none !important;
+}
+
