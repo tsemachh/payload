@@ -7,11 +7,9 @@ import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { useCustomContext } from '@/providers/CustomContext'
 
 const ResearchRelationshipValidationFilename: React.FC = () => {
-  // Access the 'companies' field to update its value
   const { value: companiesValue, setValue: setCompaniesValue } = useField<string[]>({
     path: 'companies',
   })
-  // Access the 'file' field to get the filename
   const { value: file } = useField<string>({
     path: 'file',
   })
@@ -76,11 +74,9 @@ const ResearchRelationshipValidationFilename: React.FC = () => {
 
     if (result.isGeneric && result.stockName && result.companyName && stockNameFromMatch) {
       setSpanMessage(`קובץ כללי עבור כל החברות`, true)
-      // setCompaniesValue([]) // Clear companies for generic files
       return
     } else if (result.isGeneric) {
       setSpanMessage(`קובץ כללי אך נייר הערך "${result.stockName}" לא באסיפה`)
-      // setCompaniesValue([]) // Clear companies for invalid generic files
       return
     }
 
@@ -129,17 +125,14 @@ const ResearchRelationshipValidationFilename: React.FC = () => {
           setSpanMessage(
             `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,
           )
-          //setCompaniesValue([])
         } else {
           setSpanMessage(
             `החברה "${result.companyName}" לא משתתפת באסיפה זו וגם נייר הערך "${result.stockName}" לא באסיפה`,
           )
-          // setCompaniesValue([])
         }
       } catch (err) {
         console.error('שגיאה בבדיקת החברה:', err)
         setSpanMessage('אירעה שגיאה בבדיקת החברה')
-        // setCompaniesValue([])
       }
     }
   }
@@ -168,9 +161,7 @@ const ResearchRelationshipValidationFilename: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // if (file) {
     validateFile()
-    // }
   }, [file])
 
   useEffect(() => {
