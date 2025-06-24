@@ -78,3 +78,10 @@ background: var(--theme-elevation-100);
 .bulk-upload--actions-bar__navigation {
   display: none !important;
 }
+.bulk-upload--actions-bar__saveButtons {
+  margin-right: auto;
+}
+
+.doc-controls__dots {
+  display: none !important;
+}
