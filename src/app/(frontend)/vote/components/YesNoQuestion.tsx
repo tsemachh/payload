@@ -11,6 +11,7 @@ interface YesNoQuestionProps {
   requiresExplanation: boolean
   onValueChangeAction: (value: boolean, explanation?: string) => void
   isAgendaQuestion?: boolean
+  hasExplanationError?: boolean
 }
 
 export default function YesNoQuestion({
@@ -21,6 +22,7 @@ export default function YesNoQuestion({
   requiresExplanation,
   onValueChangeAction,
   isAgendaQuestion = false,
+  hasExplanationError = false,
 }: YesNoQuestionProps) {
   const showExplanation = requiresExplanation && currentValue === true
   const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
@@ -58,14 +60,20 @@ export default function YesNoQuestion({
 
       {showExplanation && (
         <div className={isAgendaQuestion ? 'mt-2' : 'mt-2'}>
-          {' '}
-          {/* ניתן לשנות כאן מרווחים לפי הצורך */}
           <Textarea
             placeholder={explanationPlaceholder || 'נא לפרט...'}
-            className={isAgendaQuestion ? 'min-h-[60px] text-xs w-full' : 'min-h-[80px] text-sm'}
+            className={`${
+              isAgendaQuestion ? 'min-h-[60px] text-xs w-full' : 'min-h-[80px] text-sm'
+            } ${
+              hasExplanationError
+                ? 'border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500'
+                : 'border-input'
+            }`}
             value={explanationValue || ''}
             onChange={(e: any) => onValueChangeAction(true, e.target.value)}
           />
+
+          {hasExplanationError && <p className="text-red-500 text-xs mt-1">זהו שדה חובה</p>}
         </div>
       )}
     </div>

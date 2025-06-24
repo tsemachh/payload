@@ -276,13 +276,6 @@ export default function VotingForm() {
           `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
         )
         errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-
-        toast({
-          title: '⚠️ שגיאות בטופס',
-          description: 'יש למלא את כל השדות החובה המסומנים',
-          variant: 'destructive',
-          duration: 3000,
-        })
         return
       }
 
@@ -737,7 +730,7 @@ export default function VotingForm() {
     })
   }
 
-  return (
+return (
     <>
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
@@ -795,6 +788,7 @@ export default function VotingForm() {
                 <GeneralQuestions
                   generalVotingData={votingData.generalVotingData}
                   onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
+                  getFieldError={getFieldError}
                 />
               </CardContent>
             </Card>
@@ -811,6 +805,7 @@ export default function VotingForm() {
                     const userVote = votingData.userVotes.find(
                       (v) => v.topicIndex == item.topicIndex,
                     )
+                    const choiceError = getFieldError('choice', 'agenda', item.topicIndex)
                     const itemNumber = index + 1
                     const isHebrew = /[\u0590-\u05FF]/.test(item.text)
 
@@ -882,11 +877,13 @@ export default function VotingForm() {
                               >
                                 <SelectTrigger
                                   className={`w-full ${
-                                    userVote?.choice === 'בעד'
-                                      ? 'border-green-500 bg-green-100 dark:bg-green-950 dark:border-green-800'
-                                      : userVote?.choice === 'נגד'
-                                        ? 'border-red-500 bg-red-100 dark:bg-red-950 dark:border-red-800'
-                                        : 'border-input'
+                                    choiceError
+                                      ? 'border-red-500 ring-1 ring-red-500'
+                                      : userVote?.choice === 'בעד'
+                                        ? 'border-green-500 bg-green-100 dark:bg-green-950 dark:border-green-800'
+                                        : userVote?.choice === 'נגד'
+                                          ? 'border-red-500 bg-red-100 dark:bg-red-950 dark:border-red-800'
+                                          : 'border-input'
                                   }`}
                                 >
                                   <SelectValue placeholder="בחר הצבעה" />
@@ -936,6 +933,8 @@ export default function VotingForm() {
                                     item.topicIndex,
                                   )
                                 }
+                                getFieldError={getFieldError}
+                                topicIndex={item.topicIndex}
                               />
                             </div>
                           )}

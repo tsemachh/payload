@@ -1,7 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { AgendaQuestionId, AgendaQuestionsType, AgendaVotingIDs } from '../../types/vote'
+import {
+  AgendaQuestionId,
+  AgendaQuestionsType,
+  AgendaVotingIDs,
+  ValidationError,
+} from '../../types/vote'
 import { AGENDA_QUESTIONS_CONFIG, getExplanationFieldName } from '../questionConsts'
 import YesNoQuestion from './YesNoQuestion'
 
@@ -12,17 +17,28 @@ interface AgendaQuestionsProps {
     value: boolean,
     explanation?: string,
   ) => void
+  getFieldError: (
+    fieldName: string,
+    type: 'agenda',
+    topicIndex: number,
+  ) => ValidationError | undefined
+  topicIndex: number
 }
 
 export default function AgendaQuestions({
   questions,
   handleAgendaQuestionsChangeAction,
+  getFieldError,
+  topicIndex,
 }: AgendaQuestionsProps) {
   return (
     <div className="space-y-3 min-w-[300px]">
       {Object.values(AgendaQuestionId).map((questionId) => {
         const config = AGENDA_QUESTIONS_CONFIG[questionId]
         const explanationFieldName = getExplanationFieldName(questionId)
+        const hasExplanationError = explanationFieldName
+          ? !!getFieldError(explanationFieldName, 'agenda', topicIndex)
+          : false
 
         return (
           <YesNoQuestion
@@ -40,6 +56,7 @@ export default function AgendaQuestions({
               handleAgendaQuestionsChangeAction(questionId, value, explanation)
             }
             isAgendaQuestion={true}
+            hasExplanationError={hasExplanationError}
           />
         )
       })}
