@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Upload } from 'lucide-react'
+import { Upload } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -46,6 +46,7 @@ import {
 } from '../helpers/utils-vote'
 import useSWR from 'swr'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
+import VoteStatus from './components/Status'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
@@ -741,9 +742,9 @@ export default function VotingForm() {
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
           <div className="mb-3 mt-[-20px]">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-center relative text-center">
-              {/* main title*/}
-              <div className="w-full">
+            <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
+              {/* main title - centered */}
+              <div className="w-full md:w-auto">
                 {meetingData.meetingInviteUrl ? (
                   <a
                     href={meetingData.meetingInviteUrl}
@@ -752,7 +753,6 @@ export default function VotingForm() {
                     className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
                   >
                     אסיפה {meetingData.meetingType} - {meetingData.stockName}
-                    <ExternalLink className="h-4 w-4 mr-2" />
                   </a>
                 ) : (
                   <div className="text-2xl font-bold">
@@ -760,30 +760,12 @@ export default function VotingForm() {
                   </div>
                 )}
               </div>
-
-              {/* published voted details */}
-              {lastPublishedVoteInfo && (
-                <>
-                  {/* תצוגה במסך רחב – שתי שורות בצד שמאל */}
-                  <div className="absolute left-0 text-sm text-muted-foreground text-left leading-tight hidden md:block">
-                    <div className="font-medium text-muted-foreground m-1">
-                      הצבעה נשלחה למערכת עמדה
-                    </div>
-                    <div className="text-xs  text-muted-foreground mx-1">
-                      על ידי {lastPublishedVoteInfo.user}
-                    </div>
-                    <div className="text-xs  text-muted-foreground m-1 mb-3">
-                      בתאריך {new Date(lastPublishedVoteInfo.date).toLocaleString('he-IL')}
-                    </div>
-                  </div>
-
-                  {/* תצוגה במסך צר – שורה אחת מתחת לכותרת */}
-                  <div className="mt-2 text-sm text-muted-foreground md:hidden">
-                    הצבעה נשלחה למערכת עמדה על ידי {lastPublishedVoteInfo.user} בתאריך{' '}
-                    {new Date(lastPublishedVoteInfo.date).toLocaleDateString('he-IL')}
-                  </div>
-                </>
-              )}
+              <VoteStatus
+                isPublished={!isDirty}
+                publishedInfo={lastPublishedVoteInfo}
+                isDraft={fetchedVotes?.length && isDirty}
+                draftInfo={fetchedVotes && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }}
+              />
             </div>
           </div>
 

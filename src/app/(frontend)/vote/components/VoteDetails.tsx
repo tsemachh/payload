@@ -1,4 +1,3 @@
-import { ExternalLink } from 'lucide-react'
 import { formatDateTime } from '../../helpers/utils-data-table'
 import { MeetingTableDataType } from '../../types/meetings'
 import TruncatedText from './TruncatedText'
@@ -22,7 +21,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
 
   return (
     <div className={gridClass}>
-      {/* פרטי האסיפה */}
+      {/*  meeting details */}
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
           <div className="flex justify-between">
@@ -53,7 +52,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
         </div>
       </div>
 
-      {/* פרטי נייר ערך */}
+      {/* stock details */}
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
           <div className="flex justify-between">
@@ -86,7 +85,6 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
                   className="text-blue-700 hover:text-blue-800 hover:underline text-xs flex items-center transition-colors"
                 >
                   <TruncatedText text={meetingData.stockType} className="max-w-[200px]" />
-                  <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
                 </a>
               </div>
             )}
@@ -127,7 +125,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
         </div>
       </div>
 
-      {/* הערות האסיפה */}
+      {/* meeting comment  */}
       {hasComments && (
         <div className="bg-yellow-50 rounded-lg border border-yellow-100 dark:bg-yellow-950 dark:border-yellow-900">
           <div className="flex items-center mb-2 px-3 pt-3">
