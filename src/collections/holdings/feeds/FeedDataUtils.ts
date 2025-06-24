@@ -261,6 +261,7 @@ export const createHoldings = async (
           holdings,
           valueDate,
         },
+        req,
       })
       .catch((error) => {
         req.payload.logger.error(
