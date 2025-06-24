@@ -75,3 +75,6 @@ background: var(--theme-elevation-100);
     color: var(--theme-elevation-400);
 }
 
+.bulk-upload--actions-bar__navigation {
+  display: none !important;
+}
