@@ -54,17 +54,17 @@ export const Votes: CollectionConfig = {
             type: { equals: 'regular' },
           },
         },
+        {
+          name: 'reported',
+          label: 'דווח לרשות',
+          type: 'checkbox',
+          defaultValue: false,
+        },
       ],
     },
     {
       name: 'noParticipantDuty',
       label: 'אין חובת השתתפות',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
-      name: 'reported',
-      label: 'דווח לרשות',
       type: 'checkbox',
       defaultValue: false,
     },
@@ -273,7 +273,7 @@ export const Votes: CollectionConfig = {
       handler: getVoteByMeetingAndCompanies,
     },
     {
-      path: '/voted-copmanies',
+      path: '/voted-companies',
       method: 'get',
       handler: getVotedCompanies,
     },

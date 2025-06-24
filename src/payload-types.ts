@@ -152,6 +152,7 @@ export type MigrationType =
       | 'vote'
       | 'silenced-stock'
       | 'company'
+      | 'meeting-unification'
     )
   | null;
 /**
@@ -571,8 +572,8 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
-  noParticipantDuty?: boolean | null;
   reported?: boolean | null;
+  noParticipantDuty?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1302,8 +1303,8 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
-  noParticipantDuty?: T;
   reported?: T;
+  noParticipantDuty?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;

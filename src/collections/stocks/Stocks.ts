@@ -14,6 +14,10 @@ const validateNoFutureMeetings = async (
   value: boolean | null | undefined,
   { req, data, id }: any,
 ): Promise<true | string> => {
+  if (req.context?.from === 'migration') {
+    return true
+  }
+
   if (value === false) {
     const stockId = id || data?.id
     if (!stockId) return true
@@ -180,6 +184,11 @@ export const Stocks: CollectionConfig = {
                   hooks: {
                     beforeChange: [
                       async ({ value, originalDoc, req, operation }) => {
+                        // Skip processing during migrations
+                        if (req.context?.from === 'migration') {
+                          return value
+                        }
+
                         // Only run this hook when updating a document
                         if (operation === 'update') {
                           // Update all related stocks to be same active status
