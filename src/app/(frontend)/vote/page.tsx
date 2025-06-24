@@ -46,6 +46,7 @@ import {
 } from '../helpers/utils-vote'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
 
 export default function VotingForm() {
   const searchParams = useSearchParams()
@@ -98,7 +99,7 @@ export default function VotingForm() {
     userVotes: [],
   })
 
-  // const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
+  const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
 
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
@@ -151,10 +152,10 @@ export default function VotingForm() {
     },
   )
 
-  // const isDirty = useMemo(() => {
-  //   if (!initialVotingData) return false
-  //   return JSON.stringify(votingData) !== JSON.stringify(initialVotingData)
-  // }, [votingData, initialVotingData])
+  const isDirty = useMemo(() => {
+    if (!initialVotingData) return true
+    return JSON.stringify(votingData) !== JSON.stringify(initialVotingData)
+  }, [votingData, initialVotingData])
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
@@ -260,71 +261,74 @@ export default function VotingForm() {
     [validationErrors],
   )
 
-  // MODIFIED: This function is now fully operational and will be called by the button.
-  const handleSubmitVote = useCallback(async () => {
-    // Clear previous errors
-    setValidationErrors([])
+  const savePublish = useCallback(
+    async (currentVotingData: VoteDataType) => {
+      // Clear previous errors
+      setValidationErrors([])
 
-    // Validate form
-    const errors = validateForm()
-    if (errors.length > 0) {
-      setValidationErrors(errors)
-      // Scroll to the first error
-      const firstError = errors[0]
-      const errorElement = document.querySelector(
-        `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
-      )
-      errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Validate form
+      const errors = validateForm()
+      if (errors.length > 0) {
+        setValidationErrors(errors)
+        // Scroll to the first error
+        const firstError = errors[0]
+        const errorElement = document.querySelector(
+          `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
+        )
+        errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
-      toast({
-        title: '⚠️ שגיאות בטופס',
-        description: 'יש למלא את כל השדות החובה המסומנים',
-        variant: 'destructive',
-        duration: 3000,
-      })
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const response = await fetch('/api/votes/publish-votes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          meetingId: meetingIdPayload,
-          companiesIds: companiesIDs,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
         toast({
-          title: '✅ הצבעה נשלחה בהצלחה',
-          description: result.message || 'ההצבעה פורסמה בהצלחה',
+          title: '⚠️ שגיאות בטופס',
+          description: 'יש למלא את כל השדות החובה המסומנים',
+          variant: 'destructive',
           duration: 3000,
         })
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else {
-        throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
+        return
       }
-    } catch (error: any) {
-      console.error('Submit error:', error)
-      toast({
-        title: '⚠️ שגיאה בשליחה',
-        description: error.message || 'לא ניתן לשלוח את ההצבעה. אנא נסה שוב.',
-        variant: 'destructive',
-        duration: 3000,
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [validateForm, meetingIdPayload, companiesIDs, toast, router])
+
+      setIsSubmitting(true)
+
+      try {
+        const response = await fetch('/api/votes/publish-votes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            meetingId: meetingIdPayload,
+            companiesIds: companiesIDs,
+            votingData: currentVotingData,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          toast({
+            title: '✅ הצבעה נשלחה בהצלחה',
+            description: result.message || 'ההצבעה פורסמה בהצלחה',
+            duration: 3000,
+          })
+          setTimeout(() => {
+            router.push('/')
+          }, 3000)
+        } else {
+          throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
+        }
+      } catch (error: any) {
+        console.error('Submit error:', error)
+        toast({
+          title: '⚠️ שגיאה בשליחה',
+          description: error.message || 'לא ניתן לשלוח את ההצבעה. אנא נסה שוב.',
+          variant: 'destructive',
+          duration: 3000,
+        })
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [validateForm, meetingIdPayload, companiesIDs, toast, router],
+  )
 
   useEffect(() => {
     if (meetingData?.companies && companiesIDs.length === 0) {
@@ -359,6 +363,7 @@ export default function VotingForm() {
       return
     }
     let initialData: VoteDataType
+    let publishedData: VoteDataType | null = null
 
     if (votesError) {
       initialData = {
@@ -441,8 +446,43 @@ export default function VotingForm() {
       }
     }
 
+    if (publishedVotes && publishedVotes.length > 0) {
+      const firstPublishedVote = publishedVotes[0]
+      const transformedPublishedUserVotes = meetingData.agendas.map((agenda) => {
+        const voteItem = (firstPublishedVote.votes || []).find(
+          (v: any) => v.topicIndex == agenda.topicIndex,
+        )
+        return {
+          topicIndex: agenda.topicIndex,
+          choice: voteItem?.voteDecision || '----',
+          questions: {
+            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
+            isRelatedParty: voteItem?.isRelatedParty ?? false,
+            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
+            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
+            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
+          },
+          privilegedMajority: agenda.privilegedMajority,
+          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
+        }
+      })
+      publishedData = {
+        generalVotingData: {
+          isInterested: firstPublishedVote.isInterested ?? false,
+          isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
+          isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
+          interestedExplanation: firstPublishedVote.interestedExplanation || undefined,
+          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || undefined,
+        },
+        voterNotes: firstPublishedVote.clientComment || '',
+        userVotes: transformedPublishedUserVotes,
+      }
+    }
+
     setVotingData(initialData)
-    // setInitialVotingData(structuredClone(initialData))
+    setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
   }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast, publishedVotes])
 
   const saveDraftData = useCallback(
@@ -1001,14 +1041,31 @@ export default function VotingForm() {
 
             {/* כפתור שליחת הצבעה */}
             <div className="flex justify-end mt-6">
-              <Button
-                onClick={handleSubmitVote}
-                // disabled={!isDirty || isSubmitting}
-                disabled={isSubmitting}
-                className="px-8"
-              >
-                {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button
+                        onClick={() =>
+                          setVotingData((currentVotingData) => {
+                            savePublish(currentVotingData)
+                            return currentVotingData
+                          })
+                        }
+                        disabled={!isDirty || isSubmitting}
+                        className="px-8"
+                      >
+                        {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {(!isDirty || isSubmitting) && (
+                    <TooltipContent className="m-1 mx-3">
+                      {!isDirty ? 'אין שינוי מההצבעה שנשלחה לעמדה' : 'הצבעה נשלחת, אנא המתן'}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </div>

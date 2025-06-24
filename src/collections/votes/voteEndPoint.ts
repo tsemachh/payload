@@ -1,6 +1,6 @@
 import { UserVote } from '@/app/(frontend)/types/vote'
-import { Success } from 'node_modules/@payloadcms/ui/dist/providers/ToastContainer/icons/Success'
 import { PayloadRequest } from 'payload'
+
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   try {
     const { meetingId, companiesIds, status } = req.query
@@ -68,111 +68,16 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
 
 export const upsertVote = async (req: PayloadRequest) => {
   try {
-    let body
-    if (req.json) {
-      body = await req.json()
-    } else {
-      return Response.json({ error: 'Invalid request format' }, { status: 400 })
-    }
+    const body = req.json ? await req.json() : null
+    if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
 
     const { meetingId, votingData, companiesIds } = body
 
-    if (!meetingId || !companiesIds || !Array.isArray(companiesIds) || companiesIds.length === 0) {
+    if (!meetingId || !companiesIds?.length) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
 
-    const generalFields = {
-      isInterested: votingData.generalVotingData.isInterested,
-      interestedExplanation: votingData.generalVotingData.interestedExplanation,
-      isSeniorOfficial: votingData.generalVotingData.isSeniorOfficial,
-      seniorOfficialExplanation: votingData.generalVotingData.seniorOfficialExplanation,
-      isInstitutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
-      clientComment: votingData.voterNotes,
-    }
-
-    const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({
-      topicIndex: userVote.topicIndex,
-      voteDecision: userVote.choice,
-      hasConflictOfInterest: userVote.questions.hasConflictOfInterest,
-      conflictOfInterestExplanation: userVote.questions.conflictOfInterestExplanation,
-      isRelatedParty: userVote.questions.isRelatedParty,
-      relatedPartyExplanation: userVote.questions.relatedPartyExplanation,
-      isInvestmentCommittee: userVote.questions.isInvestmentCommittee,
-      hasPersonalInterest: userVote.questions.hasPersonalInterest,
-      personalInterestExplanation: userVote.questions.personalInterestExplanation,
-    }))
-
-    const existingVotes = await req.payload.find({
-      collection: 'votes',
-      where: {
-        and: [{ meeting: { equals: meetingId } }, { company: { in: companiesIds } }],
-      },
-      depth: 0,
-      limit: companiesIds.length,
-      overrideAccess: true,
-    })
-
-    const existingCompanyMap = new Map()
-    existingVotes.docs.forEach((vote) => {
-      const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
-      if (companyId) {
-        existingCompanyMap.set(companyId, vote)
-      }
-    })
-
-    // create arrays for bulk operations
-    const toUpdate: Array<{ id: string; data: any }> = []
-    const toCreate: Array<any> = []
-
-    companiesIds.forEach((companyId) => {
-      const voteData = {
-        ...generalFields,
-        company: companyId,
-        meeting: meetingId,
-        votes: agendaVotesFormatted,
-      }
-
-      if (existingCompanyMap.has(companyId)) {
-        toUpdate.push({
-          id: existingCompanyMap.get(companyId).id,
-          data: voteData,
-        })
-      } else {
-        toCreate.push(voteData)
-      }
-    })
-
-    // bulk updates
-    if (toUpdate.length > 0) {
-      await Promise.all(
-        toUpdate.map((updateItem) =>
-          req.payload.update({
-            collection: 'votes',
-            id: updateItem.id,
-            data: updateItem.data,
-            draft: true,
-            overrideAccess: true,
-          }),
-        ),
-      )
-      req.payload.logger.info(`Updated ${toUpdate.length} companiesIds`)
-    }
-
-    // bulk creates
-    if (toCreate.length > 0) {
-      await Promise.all(
-        toCreate.map((createData) =>
-          req.payload.create({
-            collection: 'votes',
-            data: createData,
-            overrideAccess: true,
-            draft: true,
-          }),
-        ),
-      )
-      req.payload.logger.info(`Created ${toCreate.length} new votes`)
-    }
-
+    await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
     return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
     return Response.json(
@@ -181,18 +86,15 @@ export const upsertVote = async (req: PayloadRequest) => {
     )
   }
 }
+
 export const publishVotes = async (req: PayloadRequest) => {
   try {
-    let body
-    if (req.json) {
-      body = await req.json()
-    } else {
-      return Response.json({ error: 'Invalid request format' }, { status: 400 })
-    }
+    const body = req.json ? await req.json() : null
+    if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
 
-    const { meetingId, companiesIds } = body
+    const { meetingId, companiesIds, votingData } = body
 
-    if (!meetingId || !companiesIds || !Array.isArray(companiesIds) || companiesIds.length === 0) {
+    if (!meetingId || !companiesIds?.length) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
 
@@ -208,10 +110,14 @@ export const publishVotes = async (req: PayloadRequest) => {
     })
 
     if (!votesToPublish.docs.length) {
-      return Response.json(
-        { success: false, message: 'No draft votes found to publish' },
-        { status: 404 },
-      )
+      if (!votingData) {
+        return Response.json(
+          { error: 'Voting data required when creating new votes' },
+          { status: 400 },
+        )
+      }
+      const newVotes = await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
+      votesToPublish.docs = newVotes
     }
 
     await Promise.all(
@@ -230,9 +136,9 @@ export const publishVotes = async (req: PayloadRequest) => {
     )
 
     return Response.json(
-      votesToPublish.docs.length == 1
-        ? { success: true, message: `פורסמה בהצלחה הצבעה אחת` }
-        : { Success: true, message: `פורסמו בהצלחה ${votesToPublish.docs.length} הצבעות` },
+      votesToPublish.docs.length === 1
+        ? { success: true, message: 'פורסמה בהצלחה הצבעה אחת' }
+        : { success: true, message: `פורסמו בהצלחה ${votesToPublish.docs.length} הצבעות` },
       { status: 200 },
     )
   } catch (error: any) {
@@ -241,4 +147,103 @@ export const publishVotes = async (req: PayloadRequest) => {
       { status: 500 },
     )
   }
+}
+
+const upsertVotesInternal = async ({
+  req,
+  meetingId,
+  companiesIds,
+  votingData,
+}: {
+  req: PayloadRequest
+  meetingId: string
+  companiesIds: string[]
+  votingData: any
+}) => {
+  const generalFields = {
+    isInterested: votingData.generalVotingData.isInterested,
+    interestedExplanation: votingData.generalVotingData.interestedExplanation,
+    isSeniorOfficial: votingData.generalVotingData.isSeniorOfficial,
+    seniorOfficialExplanation: votingData.generalVotingData.seniorOfficialExplanation,
+    isInstitutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
+    clientComment: votingData.voterNotes,
+  }
+
+  const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({
+    topicIndex: userVote.topicIndex,
+    voteDecision: userVote.choice,
+    hasConflictOfInterest: userVote.questions.hasConflictOfInterest,
+    conflictOfInterestExplanation: userVote.questions.conflictOfInterestExplanation,
+    isRelatedParty: userVote.questions.isRelatedParty,
+    relatedPartyExplanation: userVote.questions.relatedPartyExplanation,
+    isInvestmentCommittee: userVote.questions.isInvestmentCommittee,
+    hasPersonalInterest: userVote.questions.hasPersonalInterest,
+    personalInterestExplanation: userVote.questions.personalInterestExplanation,
+  }))
+
+  const existingVotes = await req.payload.find({
+    collection: 'votes',
+    where: {
+      and: [{ meeting: { equals: meetingId } }, { company: { in: companiesIds } }],
+    },
+    depth: 0,
+    limit: companiesIds.length,
+    overrideAccess: true,
+  })
+
+  const existingCompanyMap = new Map()
+  existingVotes.docs.forEach((vote) => {
+    const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+    if (companyId) existingCompanyMap.set(companyId, vote)
+  })
+
+  const toUpdate: Array<{ id: string; data: any }> = []
+  const toCreate: Array<any> = []
+
+  companiesIds.forEach((companyId) => {
+    const voteData = {
+      ...generalFields,
+      company: companyId,
+      meeting: meetingId,
+      votes: agendaVotesFormatted,
+    }
+
+    if (existingCompanyMap.has(companyId)) {
+      toUpdate.push({ id: existingCompanyMap.get(companyId).id, data: voteData })
+    } else {
+      toCreate.push(voteData)
+    }
+  })
+
+  const createdVotes: any[] = []
+
+  if (toUpdate.length > 0) {
+    await Promise.all(
+      toUpdate.map((updateItem) =>
+        req.payload.update({
+          collection: 'votes',
+          id: updateItem.id,
+          data: updateItem.data,
+          draft: true,
+          overrideAccess: true,
+        }),
+      ),
+    )
+  }
+
+  if (toCreate.length > 0) {
+    const results = await Promise.all(
+      toCreate.map((createData) =>
+        req.payload.create({
+          collection: 'votes',
+          data: createData,
+          draft: true,
+          overrideAccess: true,
+        }),
+      ),
+    )
+    createdVotes.push(...results)
+  }
+
+  return [...existingVotes.docs, ...createdVotes]
 }
