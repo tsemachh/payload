@@ -982,7 +982,7 @@ export default function VotingForm() {
                       <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
                     </div>
                     <Textarea
-                      placeholder="אפרות הוספת הערות..."
+                      placeholder="אפשרות הוספת הערות..."
                       className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
                       style={{ height: 'calc(100% - 20px)' }}
                       value={votingData.voterNotes}
