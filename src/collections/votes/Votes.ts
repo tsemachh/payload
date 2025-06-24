@@ -59,6 +59,11 @@ export const Votes: CollectionConfig = {
           label: 'דווח לרשות',
           type: 'checkbox',
           defaultValue: false,
+          admin: {
+            components: {
+              Cell: '/admincomponents/cell/YesNoCell',
+            },
+          },
         },
       ],
     },

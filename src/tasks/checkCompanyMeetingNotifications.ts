@@ -2,6 +2,7 @@ import { type TaskHandler, Where } from 'payload'
 import { addDays, setToMidnight } from '@/utils/dateUtils'
 import { UserNotificationType } from '@/payload-types'
 import { scheduleCheckCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
+import { format } from 'date-fns'
 
 // Define interface for meeting detail
 interface MeetingDetail {
@@ -159,14 +160,16 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
         // Determine notification type
         let notificationType: UserNotificationType = 'after-holding-limit'
         let message = ''
-        if (isAfterHoldingLimit) {
+        if (isAfterHoldingLimit && holdingLimitDate) {
           notificationType = 'after-holding-limit'
-          message = `חברה ${company.name} הוזמנה לאסיפה ${meeting.fullName} ואין הצבעה מפורסמת יום אחרי המועד הקובע`
+          const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
+          message = `יש להצביע ב${meeting.fullName},מועד הקובע חלף ב${formattedDate}`
           results.notificationsCreated.afterHoldingLimit++
           meetingDetail.notificationsCreated.afterHoldingLimit++
-        } else if (isAfterVotingEnd) {
+        } else if (isAfterVotingEnd && proxyVotingDate) {
           notificationType = 'before-voting-end'
-          message = `חברה ${company.name} הוזמנה לאסיפה ${meeting.fullName} ואין הצבעה מפורסמת יום לפני מועד מסירת ההצבעות`
+          const formattedDate = format(proxyVotingDate, 'dd/MM/yyyy')
+          message = `יש להצביע ב${meeting.fullName},חברה ${company.name} הוזמנה לאסיפה ואין הצבעה מפורסמת יום לפני מועד מסירת ההצבעות  ב${formattedDate}`
           results.notificationsCreated.beforeVotingEnd++
           meetingDetail.notificationsCreated.beforeVotingEnd++
         }
