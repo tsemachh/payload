@@ -1,25 +1,27 @@
 import { UserVote } from '@/app/(frontend)/types/vote'
+import { Success } from 'node_modules/@payloadcms/ui/dist/providers/ToastContainer/icons/Success'
 import { PayloadRequest } from 'payload'
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   try {
-    const { meetingId, companiesIds } = req.query
+    const { meetingId, companiesIds, status } = req.query
 
-    if (!meetingId || !companiesIds) {
-      return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
+    if (!meetingId || !companiesIds || !status) {
+      return Response.json(
+        { error: 'Meeting ID, Company IDs and Status are required' },
+        { status: 400 },
+      )
     }
 
     const companiesIdsArray = (companiesIds as string).split(',')
     const meetingIdString = meetingId as string
+    const statusString = status as string
 
     const existingVotes = await req.payload.find({
       collection: 'votes',
       where: {
-        and: [
-          { meeting: { equals: meetingIdString } },
-          { company: { in: companiesIdsArray } },
-          { _status: { equals: 'draft' } },
-        ],
+        and: [{ meeting: { equals: meetingIdString } }, { company: { in: companiesIdsArray } }],
       },
+      draft: statusString == 'draft' ? true : false,
       depth: 0,
       limit: companiesIdsArray.length,
     })
@@ -48,12 +50,9 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
       select: { company: true },
       collection: 'votes',
       where: {
-        and: [
-          { meeting: { equals: meetingIdString } },
-          { company: { in: companiesIdsArray } },
-          { _status: { equals: 'draft' } },
-        ],
+        and: [{ meeting: { equals: meetingIdString } }, { company: { in: companiesIdsArray } }],
       },
+      draft: true,
       depth: 0,
       limit: companiesIdsArray.length,
     })
@@ -129,9 +128,8 @@ export const upsertVote = async (req: PayloadRequest) => {
       const voteData = {
         ...generalFields,
         company: companyId,
-        meetingId: meetingId,
+        meeting: meetingId,
         votes: agendaVotesFormatted,
-        _status: 'draft',
       }
 
       if (existingCompanyMap.has(companyId)) {
@@ -152,6 +150,7 @@ export const upsertVote = async (req: PayloadRequest) => {
             collection: 'votes',
             id: updateItem.id,
             data: updateItem.data,
+            draft: true,
             overrideAccess: true,
           }),
         ),
@@ -167,6 +166,7 @@ export const upsertVote = async (req: PayloadRequest) => {
             collection: 'votes',
             data: createData,
             overrideAccess: true,
+            draft: true,
           }),
         ),
       )
@@ -181,7 +181,6 @@ export const upsertVote = async (req: PayloadRequest) => {
     )
   }
 }
-
 export const publishVotes = async (req: PayloadRequest) => {
   try {
     let body
@@ -200,12 +199,9 @@ export const publishVotes = async (req: PayloadRequest) => {
     const votesToPublish = await req.payload.find({
       collection: 'votes',
       where: {
-        and: [
-          { meeting: { equals: meetingId } },
-          { company: { in: companiesIds } },
-          { _status: { equals: 'draft' } },
-        ],
+        and: [{ meeting: { equals: meetingId } }, { company: { in: companiesIds } }],
       },
+      draft: true,
       depth: 0,
       limit: companiesIds.length,
       overrideAccess: true,
@@ -225,14 +221,18 @@ export const publishVotes = async (req: PayloadRequest) => {
           id: vote.id,
           data: {
             _status: 'published',
+            publishedBy: req.user?.email,
           },
+          draft: false,
           overrideAccess: true,
         }),
       ),
     )
 
     return Response.json(
-      { success: true, message: `Published ${votesToPublish.docs.length} vote(s)` },
+      votesToPublish.docs.length == 1
+        ? { success: true, message: `פורסמה בהצלחה הצבעה אחת` }
+        : { Success: true, message: `פורסמו בהצלחה ${votesToPublish.docs.length} הצבעות` },
       { status: 200 },
     )
   } catch (error: any) {

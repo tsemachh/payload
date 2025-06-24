@@ -98,22 +98,34 @@ export default function VotingForm() {
     userVotes: [],
   })
 
+  // const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
+
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
+  const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
 
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
   const meetingCompanies =
     meetingData?.companies.map((company: CompanyTableDate) => company.id) || []
 
-  const swrKey =
+  const swrKeyPublish =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=published`
+      : null
+
+  const { data: publishedVotes } = useSWR(swrKeyPublish, fetcherVote, {
+    revalidateOnFocus: false,
+  })
+
+  const swrKeyDraft =
+    meetingIdPayload && companiesIDs.length > 0
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=draft`
       : null
 
   const {
     data: fetchedVotes,
     error: votesError,
     isLoading: isSWRLoading,
-  } = useSWR(swrKey, fetcherVote, {
+  } = useSWR(swrKeyDraft, fetcherVote, {
     revalidateOnFocus: false,
     onError: (err) => {
       console.error('Error fetching vote data with SWR:', err)
@@ -130,6 +142,7 @@ export default function VotingForm() {
     meetingIdPayload && meetingCompanies
       ? `/api/votes/voted-copmanies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
       : null
+
   const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(
     swrKeyVotedCompanies,
     fetchVotedCompanies,
@@ -137,6 +150,11 @@ export default function VotingForm() {
       revalidateOnFocus: false,
     },
   )
+
+  // const isDirty = useMemo(() => {
+  //   if (!initialVotingData) return false
+  //   return JSON.stringify(votingData) !== JSON.stringify(initialVotingData)
+  // }, [votingData, initialVotingData])
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
@@ -289,10 +307,9 @@ export default function VotingForm() {
           description: result.message || 'ההצבעה פורסמה בהצלחה',
           duration: 3000,
         })
-        // Optional: redirect or refresh data
         setTimeout(() => {
           router.push('/')
-        }, 2000)
+        }, 3000)
       } else {
         throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
       }
@@ -321,7 +338,10 @@ export default function VotingForm() {
       const isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
       setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
-  }, [fetchedVotes])
+    if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
+      setIsGeneralVoteOption(false)
+    }
+  }, [fetchedVotes, companiesIDs])
 
   useEffect(() => {
     if (meetingData?.companies) {
@@ -338,7 +358,6 @@ export default function VotingForm() {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
       return
     }
-
     let initialData: VoteDataType
 
     if (votesError) {
@@ -354,6 +373,15 @@ export default function VotingForm() {
         userVotes: createDefaultAgendaQuestions(meetingData.agendas),
       }
     } else if (fetchedVotes && fetchedVotes.length) {
+      if (!publishedVotes || !publishedVotes.length) {
+        setLastPublishedVoteInfo(undefined)
+      } else {
+        const lastPublishedVoteInfoTmp = {
+          user: publishedVotes[0].publishedBy || 'לא ידוע',
+          date: publishedVotes[0].updatedAt || ' לא ידוע',
+        }
+        setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
+      }
       const firstVote = fetchedVotes[0]
       if (firstVote) {
         const transformedUserVotes = meetingData.agendas.map((agenda) => {
@@ -414,7 +442,8 @@ export default function VotingForm() {
     }
 
     setVotingData(initialData)
-  }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast])
+    // setInitialVotingData(structuredClone(initialData))
+  }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast, publishedVotes])
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
@@ -477,7 +506,7 @@ export default function VotingForm() {
   )
 
   const debouncedSaveFunction = useCallback(
-    (key: string, dataType: string, delay = 3000) => {
+    (key: string, dataType: string, delay = 2000) => {
       if (debounceTimers[key]) {
         clearTimeout(debounceTimers[key])
       }
@@ -672,24 +701,52 @@ export default function VotingForm() {
     <>
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
-          {/* Header */}
-          {meetingData.meetingInviteUrl ? (
-            <div className="mb-3 mt-[-20px] text-center">
-              <a
-                href={meetingData.meetingInviteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
-              >
-                אסיפה {meetingData.meetingType} - {meetingData.stockName}
-                <ExternalLink className="h-4 w-4 mr-2" />
-              </a>
+          <div className="mb-3 mt-[-20px]">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-center relative text-center">
+              {/* main title*/}
+              <div className="w-full">
+                {meetingData.meetingInviteUrl ? (
+                  <a
+                    href={meetingData.meetingInviteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
+                  >
+                    אסיפה {meetingData.meetingType} - {meetingData.stockName}
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                  </a>
+                ) : (
+                  <div className="text-2xl font-bold">
+                    אסיפה {meetingData.meetingType} - {meetingData.stockName}
+                  </div>
+                )}
+              </div>
+
+              {/* published voted details */}
+              {lastPublishedVoteInfo && (
+                <>
+                  {/* תצוגה במסך רחב – שתי שורות בצד שמאל */}
+                  <div className="absolute left-0 text-sm text-muted-foreground text-left leading-tight hidden md:block">
+                    <div className="font-medium text-muted-foreground m-1">
+                      הצבעה נשלחה למערכת עמדה
+                    </div>
+                    <div className="text-xs  text-muted-foreground mx-1">
+                      על ידי {lastPublishedVoteInfo.user}
+                    </div>
+                    <div className="text-xs  text-muted-foreground m-1 mb-3">
+                      בתאריך {new Date(lastPublishedVoteInfo.date).toLocaleString('he-IL')}
+                    </div>
+                  </div>
+
+                  {/* תצוגה במסך צר – שורה אחת מתחת לכותרת */}
+                  <div className="mt-2 text-sm text-muted-foreground md:hidden">
+                    הצבעה נשלחה למערכת עמדה על ידי {lastPublishedVoteInfo.user} בתאריך{' '}
+                    {new Date(lastPublishedVoteInfo.date).toLocaleDateString('he-IL')}
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <div className="mb-3 mt-[-20px] text-center items-center justify-center text-2xl font-bold">
-              אסיפה {meetingData.meetingType} - {meetingData.stockName}
-            </div>
-          )}
+          </div>
 
           {/* Main content */}
           <div className="space-y-6">
@@ -944,7 +1001,12 @@ export default function VotingForm() {
 
             {/* כפתור שליחת הצבעה */}
             <div className="flex justify-end mt-6">
-              <Button onClick={handleSubmitVote} disabled={isSubmitting} className="px-8">
+              <Button
+                onClick={handleSubmitVote}
+                // disabled={!isDirty || isSubmitting}
+                disabled={isSubmitting}
+                className="px-8"
+              >
                 {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
               </Button>
             </div>

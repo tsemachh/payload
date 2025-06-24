@@ -18,7 +18,7 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   versions: {
     drafts: true,
-    maxPerDoc: 2,
+    maxPerDoc: 1,
   },
   admin: {
     useAsTitle: 'meeting',
@@ -197,6 +197,15 @@ export const Votes: CollectionConfig = {
           ],
         },
       ],
+    },
+    {
+      name: 'publishedBy',
+      label: 'פורסם על ידי',
+      type: 'text',
+      required: false,
+      admin: {
+        readOnly: true,
+      },
     },
   ],
   hooks: {
