@@ -1,20 +1,23 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
-import { useField, RelationshipField } from '@payloadcms/ui'
-import { RelationshipFieldClientProps } from 'payload'
+import React, { useEffect, useRef } from 'react'
+import { useField } from '@payloadcms/ui'
 import { stringify } from 'qs-esm'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 import { useCustomContext } from '@/providers/CustomContext'
 
-const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientProps> = (props) => {
-  const { value, setValue } = useField<string[]>()
+const ResearchRelationshipValidationFilename: React.FC = () => {
+  // Access the 'companies' field to update its value
+  const { value: companiesValue, setValue: setCompaniesValue } = useField<string[]>({
+    path: 'companies',
+  })
+  // Access the 'file' field to get the filename
   const { value: file } = useField<string>({
-    path: `file`,
+    path: 'file',
   })
   const { meetingCompanies, stockId } = useCustomContext()
 
-  const prevValueRef = useRef<string[]>([])
+  const prevCompaniesValueRef = useRef<string[]>([])
 
   const validateFile = async () => {
     const fileAdjustmentsDiv = document.querySelector(
@@ -29,7 +32,7 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
       return
     }
 
-    // יצירת או שימוש ב-span קיים
+    // Create or reuse span for validation messages
     let span = fileAdjustmentsDiv.querySelector(
       '#research-validation-message',
     ) as HTMLSpanElement | null
@@ -70,11 +73,14 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         return
       }
     }
+
     if (result.isGeneric && result.stockName && result.companyName && stockNameFromMatch) {
       setSpanMessage(`קובץ כללי עבור כל החברות`, true)
+      // setCompaniesValue([]) // Clear companies for generic files
       return
     } else if (result.isGeneric) {
       setSpanMessage(`קובץ כללי אך נייר הערך "${result.stockName}" לא באסיפה`)
+      // setCompaniesValue([]) // Clear companies for invalid generic files
       return
     }
 
@@ -112,25 +118,28 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
             true,
           )
           const companyIds = data.docs.map((doc: any) => doc.id)
-          setValue(Array.from(companyIds))
+          setCompaniesValue(Array.from(companyIds))
         } else if (data?.docs?.length > 0) {
           setSpanMessage(
             `החברה "${result.companyName}" נמצאה, אך נייר הערך "${result.stockName}" לא באסיפה`,
           )
           const companyIds = data.docs.map((doc: any) => doc.id)
-          setValue(Array.from(companyIds))
+          setCompaniesValue(Array.from(companyIds))
         } else if (stockNameFromMatch) {
           setSpanMessage(
             `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,
           )
+          //setCompaniesValue([])
         } else {
           setSpanMessage(
             `החברה "${result.companyName}" לא משתתפת באסיפה זו וגם נייר הערך "${result.stockName}" לא באסיפה`,
           )
+          // setCompaniesValue([])
         }
       } catch (err) {
         console.error('שגיאה בבדיקת החברה:', err)
         setSpanMessage('אירעה שגיאה בבדיקת החברה')
+        // setCompaniesValue([])
       }
     }
   }
@@ -149,30 +158,29 @@ const ResearchRelationshipValidationFilename: React.FC<RelationshipFieldClientPr
         validateFile()
       }
 
-      // הפסקה בטיחותית אחרי 5 שניות
+      // Safety timeout after 5 seconds
       if (Date.now() - start >= 5000) {
         clearInterval(interval)
       }
-    }, 1000) // בודק כל שנייה
+    }, 1000) // Check every second
 
     return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
+    // if (file) {
     validateFile()
+    // }
   }, [file])
 
   useEffect(() => {
-    if (!Array.isArray(value)) return
+    if (!Array.isArray(companiesValue)) return
 
-    prevValueRef.current = value
-  }, [value])
+    prevCompaniesValueRef.current = companiesValue
+  }, [companiesValue])
 
-  return (
-    <div>
-      <RelationshipField {...props} />
-    </div>
-  )
+  // Render nothing since this component is attached to a date field
+  return null
 }
 
 export default ResearchRelationshipValidationFilename
