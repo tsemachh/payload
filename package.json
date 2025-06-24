@@ -14,8 +14,8 @@
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
-    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation\" payload migrate ",
-    "migrate": "cross-env TZ=\"Asia/Jerusalem\" payload migrate ",
+    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=8192\" payload migrate ",
+    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=8192\" payload migrate ",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "reinstall": "rm -rf node_modules .next && rm -rf .next && rm -rf pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\""

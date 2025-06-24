@@ -24,6 +24,11 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   data,
   req,
 }) => {
+  // Skip validation during migrations
+  if (req.context?.from === 'migration') {
+    return data
+  }
+
   const type = data?.type
   const docIDs = data?.researchDocuments
   const companies = data?.companies || []
@@ -131,6 +136,11 @@ export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook =
   data,
   req,
 }) => {
+  // Skip processing during migrations
+  if (req.context?.from === 'migration') {
+    return data
+  }
+
   const type = data?.type
   const docIDs = data?.researchDocuments
   if (
@@ -181,6 +191,11 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
 }
 
 export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ data, req }) => {
+  // Skip processing during migrations
+  if (req.context?.from === 'migration') {
+    return data
+  }
+
   if (!Array.isArray(data.agenda)) return data
 
   await Promise.all(
@@ -220,6 +235,11 @@ export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
   req,
   previousDoc,
 }) => {
+  // Skip processing during migrations
+  if (req.context?.from === 'migration') {
+    return
+  }
+
   const prev = previousDoc?.researchDocuments || []
   const curr = doc?.researchDocuments || []
   const removed = prev.filter((id: string) => !curr.includes(id))

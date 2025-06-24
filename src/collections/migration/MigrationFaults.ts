@@ -20,6 +20,7 @@ const MigrationFaults: CollectionConfig = {
         'vote',
         'silenced-stock',
         'company',
+        'meeting-unification',
       ],
       interfaceName: 'MigrationType',
     },
