@@ -1,18 +1,28 @@
-// components/GeneralQuestions.tsx
 'use client'
 
-import { GeneralQuestionId, GeneralVotingData, GeneralVotingIDs } from '../../types/vote'
+import {
+  GeneralQuestionId,
+  GeneralVotingData,
+  GeneralVotingIDs,
+  ValidationError,
+} from '../../types/vote'
 import { GENERAL_QUESTIONS_CONFIG, getExplanationFieldName } from '../questionConsts'
 import YesNoQuestion from './YesNoQuestion'
 
 interface GeneralQuestionsProps {
   generalVotingData: GeneralVotingData
   onQuestionChangeAction: (question: GeneralVotingIDs, value: boolean, explanation?: string) => void
+  getFieldError: (
+    fieldName: string,
+    type: 'general',
+    topicIndex?: number,
+  ) => ValidationError | undefined
 }
 
 export default function GeneralQuestions({
   generalVotingData,
   onQuestionChangeAction,
+  getFieldError,
 }: GeneralQuestionsProps) {
   return (
     <div className="space-y-4">
@@ -20,6 +30,9 @@ export default function GeneralQuestions({
         {Object.values(GeneralQuestionId).map((questionId) => {
           const config = GENERAL_QUESTIONS_CONFIG[questionId]
           const explanationFieldName = getExplanationFieldName(questionId)
+          const hasExplanationError = explanationFieldName
+            ? !!getFieldError(explanationFieldName, 'general')
+            : false
 
           return (
             <YesNoQuestion
@@ -37,6 +50,7 @@ export default function GeneralQuestions({
                 onQuestionChangeAction(questionId, value, explanation)
               }
               isAgendaQuestion={false} // זהות לשאלות כלליות
+              hasExplanationError={hasExplanationError}
             />
           )
         })}
