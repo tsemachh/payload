@@ -2,35 +2,13 @@
 
 import { FileCheck, FileEdit } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import moment from 'moment'
+import 'moment/locale/he'
+
+moment.locale('he')
 
 function getRelativeTime(date: string | Date): string {
-  const now = new Date()
-  const past = new Date(date)
-  const diffInMinutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60))
-
-  if (diffInMinutes < 60) {
-    if (diffInMinutes === 0) {
-      return 'לפני פחות מדקה'
-    }
-    if (diffInMinutes === 1) {
-      return 'לפני דקה'
-    }
-    return `לפני ${diffInMinutes} דקות`
-  }
-
-  const hours = Math.floor(diffInMinutes / 60)
-  if (hours < 24) {
-    if (hours === 1) {
-      return 'לפני שעה'
-    }
-    return `לפני ${hours} שעות`
-  }
-
-  const days = Math.floor(hours / 24)
-  if (days === 1) {
-    return 'לפני יום'
-  }
-  return `לפני ${days} ימים`
+  return moment(date).fromNow()
 }
 
 interface VoteInfo {
