@@ -43,8 +43,6 @@ export default function VoteCompanySelector({
   }, [companiesIDs])
 
   const handleCompanyChange = (companyId: string) => {
-    console.log('here', companyId, isGeneralVoteOption)
-
     if (companyId === 'all' && isGeneralVoteOption) {
       setCompaniesIDs(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
     } else {
