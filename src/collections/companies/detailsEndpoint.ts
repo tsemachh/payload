@@ -1,8 +1,9 @@
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 // Using the global Response object for consistent API responses
 
 const detailsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     // Get user from the request
     const { user } = req
 

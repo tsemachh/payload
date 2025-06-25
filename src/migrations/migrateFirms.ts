@@ -1,19 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
+import { sqlConfig } from '@/migrations/utils/utils'
 import { Company } from '@/payload-types'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda', // Use dbEmda database
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-}
 
 interface FirmRow {
   //showResearchPrivate: any

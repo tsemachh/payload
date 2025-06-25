@@ -1,19 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Company } from '@/payload-types'
+import { sqlConfig } from '@/migrations/utils/utils'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda',
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-}
 
 interface AccountRow {
   accountNumber: number
