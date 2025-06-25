@@ -216,7 +216,7 @@ export const Votes: CollectionConfig = {
   hooks: {
     // beforeValidate: [
     //   async ({ data, operation, req }) => {
-    //     if (operation === 'create' || operation === 'update') {
+    //     if (operation === 'create') {
     //       if (!data) return data
     //       const { meeting, company } = data
 
@@ -228,10 +228,8 @@ export const Votes: CollectionConfig = {
     //           },
     //         })
 
-    //         const isDuplicate = existingVotes.docs.some((vote) => vote.id !== data.id)
-
-    //         if (isDuplicate) {
-    //           throw new Error(`כבר קיימת הצבעה עבור האסיפה והחברה האלה.`)
+    //         if (existingVotes.docs.length > 0) {
+    //           throw new Error(` קיימת הצבעה עבור החברה הנתונה באסיפה הנתונה.`)
     //         }
     //       }
     //     }
