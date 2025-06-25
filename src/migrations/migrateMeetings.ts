@@ -5,6 +5,7 @@ import { getSequenceMeetingId } from '@/utils/utils' // Then you can use sql.clo
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
+import { sqlConfig } from '@/migrations/utils/utils'
 
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
@@ -40,18 +41,6 @@ function getTypeAndState(typeId: number): {
   }
 }
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'master', // Change this to your database name once created
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false, // For local dev, set to false
-    trustServerCertificate: true, // For local dev
-  },
-}
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -90,7 +79,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[ElectronicVoting]
              ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
-            
+
     `)
     console.log(`Retrieved ${result?.recordset?.length} records from SQL Server`)
 

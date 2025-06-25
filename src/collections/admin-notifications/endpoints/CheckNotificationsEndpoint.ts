@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import {
   getWorkingDateBefore,
@@ -14,6 +14,7 @@ import { Vote } from '@/payload-types'
  */
 const CheckNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     // Authentication check
     if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })

@@ -1,7 +1,8 @@
 import { UserVote } from '@/app/(frontend)/types/vote'
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
   try {
     const { meetingId, companiesIds, status } = req.query
 
@@ -21,7 +22,7 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
       where: {
         and: [{ meeting: { equals: meetingIdString } }, { company: { in: companiesIdsArray } }],
       },
-      draft: statusString == 'draft' ? true : false,
+      draft: statusString == 'draft',
       depth: 0,
       limit: companiesIdsArray.length,
     })
@@ -36,6 +37,7 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
 }
 
 export const getVotedCompanies = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
   try {
     const { meetingId, companiesIds } = req.query
 
@@ -67,6 +69,7 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
 }
 
 export const upsertVote = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
   try {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
@@ -88,6 +91,7 @@ export const upsertVote = async (req: PayloadRequest) => {
 }
 
 export const publishVotes = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
   try {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
@@ -116,8 +120,7 @@ export const publishVotes = async (req: PayloadRequest) => {
           { status: 400 },
         )
       }
-      const newVotes = await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
-      votesToPublish.docs = newVotes
+      votesToPublish.docs = await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
     }
 
     await Promise.all(

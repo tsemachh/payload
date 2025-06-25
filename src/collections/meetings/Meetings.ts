@@ -183,7 +183,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '100px', disableListFilter: true },
+                  admin: { width: '100px' },
                 },
                 {
                   name: 'fullName',
@@ -647,6 +647,23 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
+              maxDepth: 0,
+              filterOptions: {
+                type: {
+                  equals: 'regular',
+                },
+              },
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
               name: 'votesCount',
               label: 'הצבעות',
               type: 'text',
@@ -713,25 +730,8 @@ export const Meetings: CollectionConfig = {
           ],
         },
         {
-          label: 'חברות',
+          label: 'תיקים',
           fields: [
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-              maxDepth: 0,
-              filterOptions: {
-                type: {
-                  equals: 'regular',
-                },
-              },
-              admin: {
-                readOnly: true,
-              },
-            },
             {
               type: 'relationship',
               relationTo: 'companies',
@@ -917,6 +917,11 @@ export const Meetings: CollectionConfig = {
     },
     {
       path: '/by-id',
+      method: 'get',
+      handler: meetingForVotingEndPoint,
+    },
+    {
+      path: '/voting-report',
       method: 'get',
       handler: meetingForVotingEndPoint,
     },

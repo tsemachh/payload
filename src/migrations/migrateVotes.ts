@@ -4,6 +4,7 @@ import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
+import { sqlConfig } from '@/migrations/utils/utils'
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
@@ -21,18 +22,6 @@ const votingResultMap: Record<string, string | null> = {
   '17': null, //נמכרה אחזקה
 }
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'master', // Change this to your database name once created
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false, // For local dev, set to false
-    trustServerCertificate: true, // For local dev
-  },
-}
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -101,62 +90,59 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             const agendaItems = agendaResult?.recordset
 
-            // Get companies related to this meeting
-            const companiesResult = await pool?.request().query(`
-                SELECT DISTINCT fid
-                FROM [dbEmda].[dbo].[meetingagendaclient]
-                WHERE maid IN (SELECT id FROM [dbEmda].[dbo].[meetingagenda] WHERE mid = ${meeting.id})
-            `)
+            // Get companies related to this meeting using stored procedure
+            const companiesResult = await pool
+              ?.request()
+              .input('mid', sql.Int, meeting.id)
+              .execute('getMeetingFirmsDetails')
 
             const companies = companiesResult?.recordset
+
+            // Collect all company IDs for this meeting
+            const meetingCompanyIds: string[] = []
 
             // For each company, create a vote document
             if (companies)
               for (const company of companies) {
-                const mongoCompanyId = companyMap.get(company.fid.toString())
+                const mongoCompanyId = companyMap.get(company.firmid.toString())
+
+                // Add company ID to the list if it exists
+                if (mongoCompanyId) {
+                  meetingCompanyIds.push(mongoCompanyId)
+                }
 
                 if (!mongoCompanyId) {
                   console.log(
-                    `Company with ID ${company.fid} not found in MongoDB for meeting ${meeting.id}`,
+                    `Company with ID ${company.firmid} not found in MongoDB for meeting ${meeting.id}`,
                   )
                   await logMigrationFault({
                     payload,
                     type: 'vote',
-                    typeId: `meeting-${meeting.id}-company-${company.fid}`,
-                    comments: `Company with ID ${company.fid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
+                    typeId: `meeting-${meeting.id}-company-${company.firmid}`,
+                    comments: `Company with ID ${company.firmid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
                     row: company,
                   })
                   continue
                 }
 
-                // Get voting data for this company and meeting
-                const votingResult = await pool?.request().query(`
-                  SELECT ma.id AS maid,
-                         mac.cdecision,
-                         mac.comment,
-                         mac.ccomment,
-                         mac.committee,
-                         mac.conflict,
-                         mac.relatedParty,
-                         mac.pInterest,
-                         mac.profFactor
-                  FROM [dbEmda].[dbo].[meetingagenda] ma
-                           JOIN
-                       [dbEmda].[dbo].[meetingagendaclient] mac ON ma.id = mac.maid
-                  WHERE ma.mid = ${meeting.id}
-                    AND mac.fid = ${company.fid}
-                  ORDER BY ma.id
-              `)
+                // Get voting data for this company and meeting using stored procedure
+                const votingResult = await pool
+                  ?.request()
+                  .input('mid', sql.Int, meeting.id)
+                  .execute('getMeetingAgendaClients')
 
                 // Get voting orders memo from meetingclients table
                 const meetingClientsResult = await pool?.request().query(`
                   SELECT [votingOrdersMemo]
                   FROM [dbEmda].[dbo].[meetingclients]
                   WHERE mid = ${meeting.id}
-                    AND firmid = ${company.fid}
+                    AND firmid = ${company.firmid}
                 `)
 
-                const votingData = votingResult?.recordset
+                // Filter voting data to get only the votes for the current company
+                const votingData = votingResult?.recordset.filter(
+                  (vote) => vote.fid === company.firmid,
+                )
                 const meetingClientsData = meetingClientsResult?.recordset[0]
 
                 // Extract votingOrdersMemo from meetingClients data
@@ -208,7 +194,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     data: voteData as Vote,
                     req,
                   })
-                  console.log(`✓ Created vote for meeting ${meeting.id} and company ${company.fid}`)
+                  console.log(
+                    `✓ Created vote for meeting ${meeting.id} and company ${company.firmid}`,
+                  )
                   successCount++
                 } catch (error: any) {
                   errorCount++
@@ -222,6 +210,33 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                 }
               }
+
+            // Update the meeting with the collected company IDs
+            try {
+              if (meetingCompanyIds.length > 0) {
+                await payload.update({
+                  collection: 'meetings',
+                  id: mongoMeetingId,
+                  data: {
+                    companies: meetingCompanyIds,
+                  },
+                  req: {
+                    ...req,
+                    context: { ...req.context, from: 'migration' },
+                  },
+                })
+                console.log(`✓ Updated meeting ${meeting.id} with ${meetingCompanyIds.length} companies`)
+              }
+            } catch (updateError: any) {
+              console.error(`✗ Failed to update meeting ${meeting.id} with companies:`, updateError)
+              await logMigrationFault({
+                payload,
+                type: 'meeting',
+                typeId: `meeting-${meeting.id}`,
+                comments: `Failed to update meeting ${meeting.id} with companies: ${updateError.message}`,
+                row: meeting,
+              })
+            }
           } catch (error: any) {
             errorCount++
             console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)
