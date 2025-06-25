@@ -54,38 +54,38 @@ export default function VotingForm() {
   const { toast } = useToast()
   const meetingIdFromUrl = searchParams.get('meetingId')
 
-  const { data: meetingData, isLoading: isMeetingLoading } = useSWR(
+  const {
+    data: meetingData,
+    error: meetingDataError,
+    isLoading: isMeetingLoading,
+  } = useSWR(
     meetingIdFromUrl ? `/api/meetings/by-id?meetingId=${meetingIdFromUrl}` : null,
     fetchMeetingData,
     {
       revalidateOnFocus: false,
-      onError: (err) => {
-        console.error('Error fetching meeting data:', err)
-        setTimeout(() => {
-          toast({
-            title: '⚠️ שגיאה',
-            description: 'שגיאה בטעינת נתוני ההצבעה.',
-            variant: 'destructive',
-            duration: 1500,
-          })
-        }, 0)
-        if (typeof window !== 'undefined' && window.history.length > 1) {
-          setTimeout(() => {
-            router.back()
-          }, 2000)
-        } else {
-          setTimeout(() => {
-            router.push('/')
-          }, 2000)
-        }
-      },
     },
   )
+
+  useEffect(() => {
+    if (meetingDataError) {
+      console.error('Error fetching meeting data:', meetingDataError)
+      toast({
+        title: '⚠️ שגיאה',
+        description: 'שגיאה בטעינת נתוני ההצבעה.',
+        variant: 'destructive',
+        duration: 1500,
+      })
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        setTimeout(() => router.back(), 2000)
+      } else {
+        setTimeout(() => router.push('/'), 2000)
+      }
+    }
+  }, [meetingDataError, toast, router])
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
-  const [companiesIDs, setCompaniesIDs] = useState<string[]>(
-    meetingData?.companies.map((comp: CompanyTableDate) => comp.id) || [],
-  )
+  const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -126,18 +126,22 @@ export default function VotingForm() {
     data: fetchedVotes,
     error: votesError,
     isLoading: isSWRLoading,
+    mutate: mutateDraft,
   } = useSWR(swrKeyDraft, fetcherVote, {
     revalidateOnFocus: false,
-    onError: (err) => {
-      console.error('Error fetching vote data with SWR:', err)
+  })
+
+  useEffect(() => {
+    if (votesError) {
+      console.error('Error fetching vote data with SWR:', votesError)
       toast({
         title: '⚠️ שגיאה בטעינה',
-        description: err.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
+        description: votesError.message || 'לא ניתן לטעון נתוני הצבעה קיימים.',
         variant: 'destructive',
         duration: 2000,
       })
-    },
-  })
+    }
+  }, [votesError, toast])
 
   const swrKeyVotedCompanies =
     meetingIdPayload && meetingCompanies
@@ -167,7 +171,6 @@ export default function VotingForm() {
     return votedCompaniesTmp
   }, [votedCompaniesArray, isVotedCompaniesArray])
 
-  // Validation function - This function already implements the logic you requested.
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
 
@@ -276,6 +279,14 @@ export default function VotingForm() {
           `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
         )
         errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setTimeout(() => {
+          toast({
+            title: '⚠️ שגיאות בטופס',
+            description: 'יש למלא את כל השדות החובה המסומנים',
+            variant: 'destructive',
+            duration: 3000,
+          })
+        }, 0)
         return
       }
 
@@ -328,7 +339,7 @@ export default function VotingForm() {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       setCompaniesIDs(defaultIds)
     }
-  }, [meetingData])
+  }, [meetingData, companiesIDs.length])
 
   useEffect(() => {
     if (isGeneralVoteOption) {
@@ -338,7 +349,7 @@ export default function VotingForm() {
     if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
       setIsGeneralVoteOption(false)
     }
-  }, [fetchedVotes, companiesIDs])
+  }, [fetchedVotes, companiesIDs, isGeneralVoteOption])
 
   useEffect(() => {
     if (meetingData?.companies) {
@@ -349,7 +360,7 @@ export default function VotingForm() {
         setCompaniesIDs([defaultIds[0]])
       }
     }
-  }, [isGeneralVoteOption, meetingData?.companies])
+  }, [isGeneralVoteOption, meetingData?.companies, companiesIDs.length])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -358,19 +369,19 @@ export default function VotingForm() {
     let initialData: VoteDataType
     let publishedData: VoteDataType | null = null
 
-    if (votesError) {
+    if (!fetchedVotes || fetchedVotes.length === 0) {
+      // Default case if no fetched votes or error
       initialData = {
         generalVotingData: {
           isInterested: false,
           isSeniorOfficial: false,
           isInstitutionalInvestor: true,
-          interestedExplanation: undefined,
-          seniorOfficialExplanation: undefined,
         },
         voterNotes: '----',
         userVotes: createDefaultAgendaQuestions(meetingData.agendas),
       }
-    } else if (fetchedVotes && fetchedVotes.length) {
+    } else {
+      // Case where we have fetched votes
       if (!publishedVotes || !publishedVotes.length) {
         setLastPublishedVoteInfo(undefined)
       } else {
@@ -380,62 +391,36 @@ export default function VotingForm() {
         }
         setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
       }
+
       const firstVote = fetchedVotes[0]
-      if (firstVote) {
-        const transformedUserVotes = meetingData.agendas.map((agenda) => {
-          const voteItem = (firstVote.votes || []).find(
-            (v: any) => v.topicIndex == agenda.topicIndex,
-          )
-          return {
-            topicIndex: agenda.topicIndex,
-            choice: voteItem?.voteDecision || '----',
-            questions: {
-              hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
-              isRelatedParty: voteItem?.isRelatedParty ?? false,
-              isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
-              hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-              conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
-              relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
-              personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
-            },
-            privilegedMajority: agenda.privilegedMajority,
-            isRemovedFromAgenda: agenda.isRemovedFromAgenda,
-          }
-        })
-        initialData = {
-          generalVotingData: {
-            isInterested: firstVote.isInterested ?? false,
-            isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
-            isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
-            interestedExplanation: firstVote.interestedExplanation || undefined,
-            seniorOfficialExplanation: firstVote.seniorOfficialExplanation || undefined,
+      const transformedUserVotes = meetingData.agendas.map((agenda) => {
+        const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
+        return {
+          topicIndex: agenda.topicIndex,
+          choice: voteItem?.voteDecision || '----',
+          questions: {
+            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
+            isRelatedParty: voteItem?.isRelatedParty ?? false,
+            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
+            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
+            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
           },
-          voterNotes: firstVote.clientComment || '',
-          userVotes: transformedUserVotes,
+          privilegedMajority: agenda.privilegedMajority,
+          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
         }
-      } else {
-        initialData = {
-          generalVotingData: {
-            isInterested: false,
-            isSeniorOfficial: false,
-            isInstitutionalInvestor: true,
-            interestedExplanation: undefined,
-            seniorOfficialExplanation: undefined,
-          },
-          voterNotes: '',
-          userVotes: createDefaultAgendaQuestions(meetingData.agendas),
-        }
-      }
-    } else {
-      // Default case if no fetched votes and no error
+      })
       initialData = {
         generalVotingData: {
-          isInterested: false,
-          isSeniorOfficial: false,
-          isInstitutionalInvestor: true,
+          isInterested: firstVote.isInterested ?? false,
+          isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
+          isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
+          interestedExplanation: firstVote.interestedExplanation || undefined,
+          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || undefined,
         },
-        voterNotes: '',
-        userVotes: createDefaultAgendaQuestions(meetingData.agendas),
+        voterNotes: firstVote.clientComment || '',
+        userVotes: transformedUserVotes,
       }
     }
 
@@ -476,23 +461,21 @@ export default function VotingForm() {
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [fetchedVotes, votesError, isSWRLoading, meetingData, isMeetingLoading, toast, publishedVotes])
+  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
       if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
-        console.warn('Missing data for saveDraftData. Aborting save.', {
-          meetingIdPayload,
-          companiesIDs,
-          currentVotingData,
-          meetingData,
-        })
-        toast({
-          title: '⚠️ שגיאה בשמירה',
-          description: 'נתונים חיוניים חסרים לשמירת הטיוטה. אנא נסה שוב.',
-          variant: 'destructive',
-          duration: 2000,
-        })
+        console.warn('Missing data for saveDraftData. Aborting save.')
+
+        setTimeout(() => {
+          toast({
+            title: '⚠️ שגיאה בשמירה',
+            description: 'נתונים חיוניים חסרים לשמירת הטיוטה. אנא נסה שוב.',
+            variant: 'destructive',
+            duration: 2000,
+          })
+        }, 0)
         return
       }
       try {
@@ -503,9 +486,7 @@ export default function VotingForm() {
         }
         const response = await fetch(`/api/votes/upsert-draft`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         })
 
@@ -515,6 +496,7 @@ export default function VotingForm() {
             description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
             duration: 1500,
           })
+          mutateDraft()
         } else {
           const errorData = await response.json()
           console.error('Save error:', errorData)
@@ -535,7 +517,7 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast],
+    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
   )
 
   const debouncedSaveFunction = useCallback(
@@ -730,7 +712,7 @@ export default function VotingForm() {
     })
   }
 
-return (
+  return (
     <>
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
