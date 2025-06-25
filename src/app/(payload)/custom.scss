@@ -63,25 +63,22 @@
   }
 }
 
-
 form[action*="/api/research-documents"] .file-field__remove,
-form[action*="/api/research-documents"] .file-details__remove {
+form[action*="/api/research-documents"] .file-details__remove,
+.id-label,
+.doc-controls__dots,
+.relationship-add-new,
+.relationship-add-new {
   display: none !important;
+}
+
+.bulk-upload--actions-bar__navigation {
+  visibility: hidden;
 }
 
 form[action*="/api/research-documents"] .file-field__filename {
   pointer-events: none;
-background: var(--theme-elevation-100);
-    color: var(--theme-elevation-400);
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-400);
 }
 
-.bulk-upload--actions-bar__navigation {
-  display: none !important;
-}
-.bulk-upload--actions-bar__saveButtons {
-  margin-right: auto;
-}
-
-.doc-controls__dots {
-  display: none !important;
-}
