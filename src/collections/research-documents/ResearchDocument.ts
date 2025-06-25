@@ -33,6 +33,9 @@ export const ResearchDocument: CollectionConfig = {
       relationTo: 'companies',
       index: true,
       hasMany: true,
+      admin: {
+        allowCreate: false,
+      },
       filterOptions: {
         type: {
           equals: 'regular',
@@ -50,6 +53,7 @@ export const ResearchDocument: CollectionConfig = {
         date: {
           displayFormat: 'dd/MM/yyyy HH:mm',
         },
+
         components: {
           Field:
             '/collections/research-documents/components/ResearchRelationshipValidationFilename',

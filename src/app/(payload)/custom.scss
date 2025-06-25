@@ -66,9 +66,7 @@
 form[action*="/api/research-documents"] .file-field__remove,
 form[action*="/api/research-documents"] .file-details__remove,
 .id-label,
-.doc-controls__dots,
-.relationship-add-new,
-.relationship-add-new {
+.doc-controls__dots {
   display: none !important;
 }
 
