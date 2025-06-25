@@ -156,6 +156,7 @@ export const processCompaniesMeetings = async (
       ? { id: { in: meetingIds } }
       : ({
           holdingsLimit: { greater_than: new Date('01/01/2024').toISOString() },
+          state: { not_equals: 'completed' },
         } as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
