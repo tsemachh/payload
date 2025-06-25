@@ -360,7 +360,7 @@ export default function VotingForm() {
         setCompaniesIDs([defaultIds[0]])
       }
     }
-  }, [isGeneralVoteOption, meetingData?.companies, companiesIDs.length])
+  }, [isGeneralVoteOption, meetingData?.companies])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -739,7 +739,10 @@ export default function VotingForm() {
                 isPublished={!isDirty}
                 publishedInfo={lastPublishedVoteInfo}
                 isDraft={fetchedVotes?.length && isDirty}
-                draftInfo={fetchedVotes && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }}
+                draftInfo={
+                  fetchedVotes?.length &&
+                  fetchedVotes[0].updatedAt && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }
+                }
               />
             </div>
           </div>
