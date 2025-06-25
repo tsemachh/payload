@@ -236,7 +236,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'invitationLink',
-                  label: 'קישור לזימון',
+                  label: 'זימון',
                   type: 'text',
                   index: true,
                   admin: {
