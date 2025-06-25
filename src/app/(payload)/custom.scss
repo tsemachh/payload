@@ -63,8 +63,20 @@
   }
 }
 
-
-form[action*="/api/research-documents"] .file-field__remove {
+form[action*="/api/research-documents"] .file-field__remove,
+form[action*="/api/research-documents"] .file-details__remove,
+.id-label,
+.doc-controls__dots {
   display: none !important;
+}
+
+.bulk-upload--actions-bar__navigation {
+  visibility: hidden;
+}
+
+form[action*="/api/research-documents"] .file-field__filename {
+  pointer-events: none;
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-400);
 }
 
