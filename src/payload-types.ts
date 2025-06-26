@@ -420,6 +420,7 @@ export interface Meeting {
     | {
         fund?: string | null;
         quantity?: number | null;
+        ownedQuantity?: number | null;
         feedStockNum?: string | null;
         id?: string | null;
       }[]
@@ -1254,6 +1255,7 @@ export interface MeetingsSelect<T extends boolean = true> {
     | {
         fund?: T;
         quantity?: T;
+        ownedQuantity?: T;
         feedStockNum?: T;
         id?: T;
       };

@@ -108,6 +108,14 @@ export const Meetings: CollectionConfig = {
       'votesCount',
       'reportedVotesCount',
     ],
+    components: {
+      beforeListTable: [
+        {
+          path: '/admincomponents/btn/CustomBeforeListButton',
+        },
+      ],
+    },
+
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
