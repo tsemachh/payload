@@ -119,7 +119,31 @@ export const Meetings: CollectionConfig = {
         {
           path: '/admincomponents/filters/DateFilter',
           clientProps: {
+            preset: 'yesterday',
+          },
+        },
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
+            preset: 'thisWeek',
+          },
+        },
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
+            preset: 'lastWeek',
+          },
+        },
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
             preset: 'thisMonth',
+          },
+        },
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
+            preset: 'lastMonth',
           },
         },
       ],

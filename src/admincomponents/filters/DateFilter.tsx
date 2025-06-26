@@ -1,28 +1,35 @@
 'use client'
 import React from 'react'
 import { useListQuery } from '@payloadcms/ui'
-import { Button } from '@payloadcms/ui/elements/Button'
-import { Pill, useTableColumns } from '@payloadcms/ui'
+import { Pill } from '@payloadcms/ui'
 
-type Preset = 'today' | 'thisMonth'
+type Preset = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth'
 
 const DateFilter = ({ preset }: { preset: Preset }) => {
   const { refineListData } = useListQuery()
 
   const handleClick = async () => {
     const now = new Date()
-    let start: Date, end: Date
+    let start: Date | undefined, end: Date | undefined
 
-    if (preset === 'today') {
-      // טווח של היום בלבד
-      start = new Date(now)
-      start.setHours(0, 0, 0, 0)
-      end = new Date(start)
-      end.setDate(start.getDate() + 1)
-    } else {
-      // טווח של החודש
-      start = new Date(now.getFullYear(), now.getMonth(), 1)
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const clone = (date: Date) => new Date(date.getTime())
+
+    switch (preset) {
+      case 'today':
+        start = new Date(now)
+        start.setHours(0, 0, 0, 0)
+        end = clone(start)
+        end.setDate(end.getDate() + 1)
+        break
+      case 'thisMonth':
+        start = new Date(now.getFullYear(), now.getMonth(), 1)
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        break
+    }
+
+    if (!start || !end) {
+      // Optionally handle error or return early
+      return
     }
 
     await refineListData({
