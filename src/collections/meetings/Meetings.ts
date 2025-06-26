@@ -919,23 +919,6 @@ export const Meetings: CollectionConfig = {
         return doc
       },
     ],
-    afterChange: [
-      async ({ req, doc, previousDoc }) => {
-        const holdingsLimitChanged =
-          previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const stockChanged = previousDoc?.stock !== doc?.stock
-        const firstPublish =
-          previousDoc._status == 'draft' &&
-          doc._status == 'published' &&
-          (!doc.meetings || doc.meetings.length == 0)
-        if (holdingsLimitChanged || stockChanged || firstPublish) {
-          if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
-            await updateCompaniesMeetingsOnMeetingChange(req, doc)
-          }
-        }
-      },
-      afterChangeDeleteResearchDocs,
-    ],
 
     beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
