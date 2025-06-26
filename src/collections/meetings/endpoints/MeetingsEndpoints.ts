@@ -290,7 +290,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
       isRemovedFromAgenda: item.isRemovedFromAgenda || false,
       privilegedMajority: item?.majorityType == 'privileged' || false,
       recommendation: {
-        votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
+        votingRecommendation: item.recommendation?.votingRecommendation || '',
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
     }

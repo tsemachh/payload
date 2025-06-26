@@ -130,7 +130,6 @@ export const publishVotes = async (req: PayloadRequest) => {
           id: vote.id,
           data: {
             _status: 'published',
-            publishedBy: req.user?.email,
           },
           draft: false,
           overrideAccess: true,
