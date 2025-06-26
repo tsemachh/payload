@@ -109,11 +109,7 @@ export const Meetings: CollectionConfig = {
       'reportedVotesCount',
     ],
     components: {
-      beforeListTable: [
-        {
-          path: '/admincomponents/btn/CustomBeforeListButton',
-        },
-      ],
+      listMenuItems: [{ path: '/admincomponents/filters/DateFilter' }],
     },
 
     pagination: {
