@@ -32,8 +32,8 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
 
     // Notification type mapping
     const notificationTypeLabels: Record<string, string> = {
-      'after-holding-limit': 'יום אחרי מועד קובע',
-      'before-voting-end': 'יום לפני סיום הצבעה',
+      'after-holding-limit': 'מועד קובע',
+      'before-voting-end': 'סגירת הצבעה',
     }
 
     // Transform notifications to the required format
