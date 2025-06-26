@@ -200,7 +200,7 @@ export function UserNotificationComponent() {
               ) : filteredNotifications.length === 0 ? (
                 <div className="p-8 text-right text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>{showUnreadOnly ? 'אין התראות שלא נקראו' : 'אין התראות להציג'}</p>
+                  <p>{showUnreadOnly ? 'כל ההתראות נקראו' : 'אין התראות להציג'}</p>
                 </div>
               ) : (
                 <div className="divide-y">
