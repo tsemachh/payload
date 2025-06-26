@@ -595,7 +595,6 @@ export interface Vote {
         id?: string | null;
       }[]
     | null;
-  publishedBy?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1328,7 +1327,6 @@ export interface VotesSelect<T extends boolean = true> {
         personalInterestExplanation?: T;
         id?: T;
       };
-  publishedBy?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;

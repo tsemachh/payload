@@ -35,13 +35,16 @@ export default function VoteStatus({
 
   if (isPublished && publishedInfo) {
     const relativeTime = getRelativeTime(publishedInfo.date)
-    const tooltipText = `ההצבעה נשלחה על ידי ${publishedInfo.user} ${relativeTime}`
+    const tooltipText =
+      publishedInfo.user === ''
+        ? `ההצבעה נשלחה ${relativeTime}`
+        : `ההצבעה נשלחה על ידי ${publishedInfo.user} ${relativeTime}`
 
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="cursor-help mx-1">
+            <div className="mx-1">
               <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full border border-green-200">
                 <FileCheck className="h-4 w-4 text-green-600" />
               </div>
@@ -57,13 +60,13 @@ export default function VoteStatus({
 
   if (isDraft && draftInfo) {
     const relativeTime = getRelativeTime(draftInfo.date)
-    const tooltipText = `עודכן ${relativeTime}`
+    const tooltipText = `טיוטה עודכנה ${relativeTime}`
 
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="cursor-help mx-1">
+            <div className="mx-1">
               <div className="flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full border border-orange-200">
                 <FileEdit className="h-4 w-4 text-orange-600" />
               </div>
