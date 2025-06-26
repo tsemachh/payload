@@ -8,6 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { Checkbox } from '@/components/ui/checkbox'
+
 import moment from 'moment'
 import 'moment/locale/he'
 
@@ -25,10 +27,14 @@ export function UserNotificationComponent() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [markingAllAsRead, setMarkingAllAsRead] = useState(false)
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
+  const filteredNotifications = showUnreadOnly
+    ? notifications.filter((n) => !n.isRead)
+    : notifications
 
   // Fetch notifications on component mount
   useEffect(() => {
@@ -154,6 +160,16 @@ export function UserNotificationComponent() {
           <div className="absolute left-0 top-full mt-2 w-[39rem] bg-background border rounded-lg shadow-lg z-50">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold text-lg text-left">התראות</h3>
+              <div className="flex items-center space-x-3 space-x-reverse justify-start">
+                <Checkbox
+                  id="unread-filter"
+                  checked={showUnreadOnly}
+                  onCheckedChange={(checked) => setShowUnreadOnly(checked === true)}
+                />
+                <label htmlFor="unread-filter" className="text-sm font-medium cursor-pointer mr-4">
+                  הצג לא נקראו
+                </label>
+              </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <Button
@@ -178,17 +194,17 @@ export function UserNotificationComponent() {
               </div>
             </div>
 
-            <ScrollArea className="max-h-[70vh]">
+            <ScrollArea className="max-h-[70vh] overflow-y-auto">
               {loading ? (
                 <div className="p-4 text-right text-muted-foreground">טוען התראות...</div>
-              ) : notifications.length === 0 ? (
+              ) : filteredNotifications.length === 0 ? (
                 <div className="p-8 text-right text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>אין התראות להציג</p>
+                  <p>{showUnreadOnly ? 'אין התראות שלא נקראו' : 'אין התראות להציג'}</p>
                 </div>
               ) : (
                 <div className="divide-y">
-                  {notifications.map((notification) => (
+                  {filteredNotifications.map((notification) => (
                     <div
                       key={notification.id}
                       className={cn(
@@ -197,7 +213,7 @@ export function UserNotificationComponent() {
                       )}
                       onClick={() => handleNotificationClick(notification)}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-end gap-3">
                         <div className="flex-1 min-w-0 text-right">
                           <div className="flex items-center gap-2 mb-1 justify-end">
                             {!notification.isRead && (
