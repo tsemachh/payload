@@ -1,4 +1,7 @@
 import type { CollectionConfig } from 'payload'
+import MarkReadEndpoint from './endpoints/MarkReadEndpoint'
+import MarkAllReadEndpoint from './endpoints/MarkAllReadEndpoint'
+import UserNotificationsEndpoint from './endpoints/UserNotificationsEndpoint'
 
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
@@ -30,6 +33,12 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       required: true,
     },
     {
+      name: 'readStatus',
+      label: 'סטטוס קריאה',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
       name: 'meeting',
       label: 'אסיפה',
       type: 'relationship',
@@ -42,6 +51,23 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       type: 'relationship',
       relationTo: 'companies',
       required: true,
+    },
+  ],
+  endpoints: [
+    {
+      path: '/mark-read/:id',
+      method: 'post',
+      handler: MarkReadEndpoint,
+    },
+    {
+      path: '/mark-all-read',
+      method: 'post',
+      handler: MarkAllReadEndpoint,
+    },
+    {
+      path: '/user-notifications',
+      method: 'get',
+      handler: UserNotificationsEndpoint,
     },
   ],
 }

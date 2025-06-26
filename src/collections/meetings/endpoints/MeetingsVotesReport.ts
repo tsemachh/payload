@@ -1,4 +1,4 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import fs from 'fs'
 import path from 'path'
 
@@ -6,7 +6,7 @@ import path from 'path'
  * Endpoint to fetch all meetings where companies.length != votes.length
  * and generate a report file
  */
-export const meetingsVotesReportEndpoint = async (req: PayloadRequest) => {
+export const MeetingsVotesReportEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
@@ -59,7 +59,7 @@ export const meetingsVotesReportEndpoint = async (req: PayloadRequest) => {
       data: reportData,
     })
   } catch (error) {
-    req.payload.logger.error(`Error in meetingsvotesReportEndpoint: ${JSON.stringify(error)}`)
+    req.payload.logger.error(`Error in meetingsVotesReportEndpoint: ${JSON.stringify(error)}`)
     return Response.json(
       {
         success: false,
@@ -71,4 +71,4 @@ export const meetingsVotesReportEndpoint = async (req: PayloadRequest) => {
   }
 }
 
-export default meetingsVotesReportEndpoint
+export default MeetingsVotesReportEndpoint

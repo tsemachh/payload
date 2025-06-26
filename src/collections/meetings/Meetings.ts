@@ -720,7 +720,6 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 disableListFilter: true,
-
                 defaultColumns: ['company', 'creator', 'updatedAt', 'votes', 'reported'],
               },
               where: {

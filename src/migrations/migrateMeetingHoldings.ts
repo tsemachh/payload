@@ -199,12 +199,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
 
       // Import the endpoint handler
-      const { meetingsVotesReportEndpoint } = await import(
+      const { MeetingsVotesReportEndpoint } = await import(
         '@/collections/meetings/endpoints/MeetingsVotesReport'
       )
 
       // Call the endpoint
-      const response = await meetingsVotesReportEndpoint(mockReq as any)
+      const response = await MeetingsVotesReportEndpoint(mockReq as any)
       const responseData = await response.json()
 
       if (responseData.success) {

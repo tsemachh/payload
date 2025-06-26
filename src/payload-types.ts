@@ -740,6 +740,7 @@ export interface CompanyMeetingNotification {
   id: string;
   message: string;
   notificationType: UserNotificationType;
+  readStatus?: boolean | null;
   meeting: string | Meeting;
   company: string | Company;
   creator?: string | null;
@@ -1475,6 +1476,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
   message?: T;
   notificationType?: T;
+  readStatus?: T;
   meeting?: T;
   company?: T;
   creator?: T;
