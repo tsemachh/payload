@@ -59,3 +59,5 @@ continue.config.yaml
 /src/uploads/*.csv
 /src/uploads/*.json
 **/.claude/settings.local.json
+/docs/**
+/research-documents/**
