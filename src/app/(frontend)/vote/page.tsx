@@ -385,7 +385,7 @@ export default function VotingForm() {
         setLastPublishedVoteInfo(undefined)
       } else {
         const lastPublishedVoteInfoTmp = {
-          user: publishedVotes[0].publishedBy || '',
+          user: publishedVotes[0].publisher || '',
           date: publishedVotes[0].updatedAt || ' לא ידוע',
         }
         setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)

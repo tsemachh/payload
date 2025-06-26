@@ -203,15 +203,6 @@ export const Votes: CollectionConfig = {
         },
       ],
     },
-    {
-      name: 'publishedBy',
-      label: 'פורסם על ידי',
-      type: 'text',
-      required: false,
-      admin: {
-        readOnly: true,
-      },
-    },
   ],
   hooks: {
     // beforeValidate: [
