@@ -25,6 +25,31 @@ const DateFilter = ({ preset }: { preset: Preset }) => {
         start = new Date(now.getFullYear(), now.getMonth(), 1)
         end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
         break
+      case 'yesterday':
+        start = new Date(now)
+        start.setHours(0, 0, 0, 0)
+        start.setDate(start.getDate() - 1)
+        end = clone(start)
+        end.setDate(end.getDate() + 1)
+        break
+      case 'thisWeek':
+        start = new Date(now)
+        start.setDate(start.getDate() - start.getDay())
+        start.setHours(0, 0, 0, 0)
+        end = clone(start)
+        end.setDate(end.getDate() + 7)
+        break
+      case 'lastWeek':
+        start = new Date(now)
+        start.setDate(start.getDate() - start.getDay() - 7)
+        start.setHours(0, 0, 0, 0)
+        end = clone(start)
+        end.setDate(end.getDate() + 7)
+        break
+      case 'lastMonth':
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        end = new Date(now.getFullYear(), now.getMonth(), 1)
+        break
     }
 
     if (!start || !end) {
