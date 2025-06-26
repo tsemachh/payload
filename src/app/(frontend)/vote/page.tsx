@@ -759,7 +759,7 @@ export default function VotingForm() {
                   meetingData={meetingData}
                   meetingCompanies={meetingData.companies}
                   companiesIDs={companiesIDs}
-                  setCompaniesIDs={setCompaniesIDs}
+                  setCompaniesIDsAction={setCompaniesIDs}
                   isGeneralVoteOption={isGeneralVoteOption}
                   votedCompanies={votedCompanies}
                 />
@@ -773,7 +773,7 @@ export default function VotingForm() {
                 <GeneralQuestions
                   generalVotingData={votingData.generalVotingData}
                   onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
-                  getFieldError={getFieldError}
+                  getFieldErrorAction={getFieldError}
                 />
               </CardContent>
             </Card>
@@ -918,7 +918,7 @@ export default function VotingForm() {
                                     item.topicIndex,
                                   )
                                 }
-                                getFieldError={getFieldError}
+                                getFieldErrorAction={getFieldError}
                                 topicIndex={item.topicIndex}
                               />
                             </div>
