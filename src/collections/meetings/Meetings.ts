@@ -109,7 +109,20 @@ export const Meetings: CollectionConfig = {
       'reportedVotesCount',
     ],
     components: {
-      listMenuItems: [{ path: '/admincomponents/filters/DateFilter' }],
+      beforeListTable: [
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
+            preset: 'today',
+          },
+        },
+        {
+          path: '/admincomponents/filters/DateFilter',
+          clientProps: {
+            preset: 'thisMonth',
+          },
+        },
+      ],
     },
 
     pagination: {

@@ -2,6 +2,7 @@
 import React from 'react'
 import { useListQuery } from '@payloadcms/ui'
 import { Button } from '@payloadcms/ui/elements/Button'
+import { Pill, useTableColumns } from '@payloadcms/ui'
 
 type Preset = 'today' | 'thisMonth'
 
@@ -12,8 +13,17 @@ const DateFilter = ({ preset }: { preset: Preset }) => {
     const now = new Date()
     let start: Date, end: Date
 
-    start = new Date(now.getFullYear(), now.getMonth(), 1)
-    end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    if (preset === 'today') {
+      // טווח של היום בלבד
+      start = new Date(now)
+      start.setHours(0, 0, 0, 0)
+      end = new Date(start)
+      end.setDate(start.getDate() + 1)
+    } else {
+      // טווח של החודש
+      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    }
 
     await refineListData({
       where: {
@@ -26,7 +36,11 @@ const DateFilter = ({ preset }: { preset: Preset }) => {
     })
   }
 
-  return <Button onClick={handleClick}>{preset === 'today' ? 'היום' : 'החודש'}</Button>
+  return (
+    <>
+      <Pill onClick={handleClick}>{preset === 'today' ? 'היום' : 'החודש'}</Pill>{' '}
+    </>
+  )
 }
 
 export default DateFilter
