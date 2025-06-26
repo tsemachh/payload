@@ -5,57 +5,48 @@ import { Pill } from '@payloadcms/ui'
 
 type Preset = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth'
 
-const DateFilter = ({ preset }: { preset: Preset }) => {
+const DateFilter = ({ preset, ...otherProps }: { preset: Preset }) => {
   const { refineListData } = useListQuery()
 
   const handleClick = async () => {
     const now = new Date()
-    let start: Date | undefined, end: Date | undefined
+    let start: Date | undefined
+    let end: Date | undefined
 
-    const clone = (date: Date) => new Date(date.getTime())
+    const clone = (date: Date): Date => new Date(date.getTime())
 
-    switch (preset) {
-      case 'today':
-        start = new Date(now)
-        start.setHours(0, 0, 0, 0)
-        end = clone(start)
-        end.setDate(end.getDate() + 1)
-        break
-      case 'thisMonth':
-        start = new Date(now.getFullYear(), now.getMonth(), 1)
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-        break
-      case 'yesterday':
-        start = new Date(now)
-        start.setHours(0, 0, 0, 0)
-        start.setDate(start.getDate() - 1)
-        end = clone(start)
-        end.setDate(end.getDate() + 1)
-        break
-      case 'thisWeek':
-        start = new Date(now)
-        start.setDate(start.getDate() - start.getDay())
-        start.setHours(0, 0, 0, 0)
-        end = clone(start)
-        end.setDate(end.getDate() + 7)
-        break
-      case 'lastWeek':
-        start = new Date(now)
-        start.setDate(start.getDate() - start.getDay() - 7)
-        start.setHours(0, 0, 0, 0)
-        end = clone(start)
-        end.setDate(end.getDate() + 7)
-        break
-      case 'lastMonth':
-        start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        end = new Date(now.getFullYear(), now.getMonth(), 1)
-        break
+    if (preset === 'today') {
+      start = new Date(now)
+      start.setHours(0, 0, 0, 0)
+      end = clone(start)
+      end.setDate(end.getDate() + 1)
+    } else if (preset === 'yesterday') {
+      start = new Date(now)
+      start.setHours(0, 0, 0, 0)
+      start.setDate(start.getDate() - 1)
+      end = clone(start)
+      end.setDate(end.getDate() + 1)
+    } else if (preset === 'thisWeek') {
+      start = new Date(now)
+      start.setDate(start.getDate() - start.getDay())
+      start.setHours(0, 0, 0, 0)
+      end = clone(start)
+      end.setDate(end.getDate() + 7)
+    } else if (preset === 'lastWeek') {
+      start = new Date(now)
+      start.setDate(start.getDate() - start.getDay() - 7)
+      start.setHours(0, 0, 0, 0)
+      end = clone(start)
+      end.setDate(end.getDate() + 7)
+    } else if (preset === 'thisMonth') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    } else if (preset === 'lastMonth') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      end = new Date(now.getFullYear(), now.getMonth(), 1)
     }
 
-    if (!start || !end) {
-      // Optionally handle error or return early
-      return
-    }
+    if (!start || !end) return
 
     await refineListData({
       where: {

@@ -868,6 +868,22 @@ export const Meetings: CollectionConfig = {
   ],
 
   hooks: {
+    beforeRead: [
+      async ({ doc }) => {
+        if (doc.fundsWithHolding) {
+          // המר את fundsWithHolding לנתונים פשוטים
+          doc.fundsWithHolding = doc.fundsWithHolding.map(
+            (item: { fund: any; quantity: any; ownedQuantity: any; feedStockNum: any }) => ({
+              fund: String(item.fund), // ודא ש-fund הוא מחרוזת
+              quantity: item.quantity,
+              ownedQuantity: item.ownedQuantity,
+              feedStockNum: item.feedStockNum,
+            }),
+          )
+        }
+        return doc
+      },
+    ],
     afterRead: [
       async ({ doc, req }) => {
         if (!doc) {
