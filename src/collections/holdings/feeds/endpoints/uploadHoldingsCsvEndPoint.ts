@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { processHoldingsFeedCsv } from '../processHoldingsFeedCsv'
 import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
@@ -8,6 +8,7 @@ import { performance } from 'perf_hooks'
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   const startTime = performance.now()
   try {
+    await addDataAndFileToRequest(req)
     req.payload.logger.info('Starting holdings upload process')
     if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })

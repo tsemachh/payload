@@ -10,7 +10,7 @@ interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
   meetingCompanies: CompanyTableDate[]
   companiesIDs: string[]
-  setCompaniesIDs: (selectedCompanyIds: string[]) => void
+  setCompaniesIDsAction: (selectedCompanyIds: string[]) => void
   isGeneralVoteOption: boolean
   votedCompanies: Set<string>
 }
@@ -19,7 +19,7 @@ export default function VoteCompanySelector({
   meetingData,
   meetingCompanies,
   companiesIDs,
-  setCompaniesIDs,
+  setCompaniesIDsAction,
   isGeneralVoteOption,
   votedCompanies,
 }: VoteCompanySelectorProps) {
@@ -43,12 +43,10 @@ export default function VoteCompanySelector({
   }, [companiesIDs])
 
   const handleCompanyChange = (companyId: string) => {
-    console.log('here', companyId, isGeneralVoteOption)
-
     if (companyId === 'all' && isGeneralVoteOption) {
-      setCompaniesIDs(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
+      setCompaniesIDsAction(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
     } else {
-      setCompaniesIDs([companyId])
+      setCompaniesIDsAction([companyId])
     }
   }
 

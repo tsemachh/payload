@@ -1,6 +1,7 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
 const getHoldingsDatesEndPoint = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
   const payload = req.payload
   const { user } = req
 

@@ -1,10 +1,11 @@
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { format } from 'date-fns'
 import { processMeetingsAgendaFeedCsv } from './processMeetingsAgendaFeedCsv'
 import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
   try {
+    addDataAndFileToRequest(req)
     const startTime = Date.now()
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })

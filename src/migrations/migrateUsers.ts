@@ -3,19 +3,8 @@ import sql from 'mssql'
 import { Company, User } from '@/payload-types'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap } from '@/utils/utils'
+import { sqlConfig } from '@/migrations/utils/utils'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda',
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-}
 
 // Migration script for users from SQL Server to Payload CMS
 // Handles:

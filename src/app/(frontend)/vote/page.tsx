@@ -281,9 +281,8 @@ export default function VotingForm() {
         errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         setTimeout(() => {
           toast({
-            title: '⚠️ שגיאות בטופס',
+            title: '⚠️  נדרש מידע נוסף',
             description: 'יש למלא את כל השדות החובה המסומנים',
-            variant: 'destructive',
             duration: 3000,
           })
         }, 0)
@@ -360,7 +359,7 @@ export default function VotingForm() {
         setCompaniesIDs([defaultIds[0]])
       }
     }
-  }, [isGeneralVoteOption, meetingData?.companies, companiesIDs.length])
+  }, [isGeneralVoteOption, meetingData?.companies])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -386,7 +385,7 @@ export default function VotingForm() {
         setLastPublishedVoteInfo(undefined)
       } else {
         const lastPublishedVoteInfoTmp = {
-          user: publishedVotes[0].publishedBy || 'לא ידוע',
+          user: publishedVotes[0].publisher || '',
           date: publishedVotes[0].updatedAt || ' לא ידוע',
         }
         setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
@@ -739,7 +738,10 @@ export default function VotingForm() {
                 isPublished={!isDirty}
                 publishedInfo={lastPublishedVoteInfo}
                 isDraft={fetchedVotes?.length && isDirty}
-                draftInfo={fetchedVotes && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }}
+                draftInfo={
+                  fetchedVotes?.length &&
+                  fetchedVotes[0].updatedAt && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }
+                }
               />
             </div>
           </div>
@@ -756,7 +758,7 @@ export default function VotingForm() {
                   meetingData={meetingData}
                   meetingCompanies={meetingData.companies}
                   companiesIDs={companiesIDs}
-                  setCompaniesIDs={setCompaniesIDs}
+                  setCompaniesIDsAction={setCompaniesIDs}
                   isGeneralVoteOption={isGeneralVoteOption}
                   votedCompanies={votedCompanies}
                 />
@@ -770,7 +772,7 @@ export default function VotingForm() {
                 <GeneralQuestions
                   generalVotingData={votingData.generalVotingData}
                   onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
-                  getFieldError={getFieldError}
+                  getFieldErrorAction={getFieldError}
                 />
               </CardContent>
             </Card>
@@ -915,7 +917,7 @@ export default function VotingForm() {
                                     item.topicIndex,
                                   )
                                 }
-                                getFieldError={getFieldError}
+                                getFieldErrorAction={getFieldError}
                                 topicIndex={item.topicIndex}
                               />
                             </div>

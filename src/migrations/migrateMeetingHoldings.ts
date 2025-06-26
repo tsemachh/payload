@@ -3,19 +3,7 @@ import sql from 'mssql'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { Stock } from '@/payload-types'
-
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda', // Use the actual database name
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-}
+import { sqlConfig } from '@/migrations/utils/utils'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -91,28 +79,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               return
             }
 
-            // Calculate set of firmIds for this company
-            const firmIds = new Set(filteredHoldings.map((row) => row.firmid))
-
-            // Find companies with these firmIds
-            const companies = await payload.find({
-              collection: 'companies',
-              select: {
-                id: true,
-                companyId: true,
-              },
-              where: {
-                companyId: {
-                  in: Array.from(firmIds),
-                },
-                type: {
-                  equals: 'regular',
-                },
-              },
-              depth: 0,
-              limit: 0,
-            })
-
             // Find funds (companies of type 'fund') where parent company is one of the firmIds
             // and main account is the accountNum
             const fundsPromises = []
@@ -177,7 +143,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             // Update the meeting with companies, funds, and fundsWithHolding
             const updatedMeeting = {
-              companies: companies.docs.map((company) => company.id),
               funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
               fundsWithHolding: fundsWithHolding,
             }
@@ -193,7 +158,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             successCount++
             console.log(
-              `✓ Updated Meeting: ${meetingSeq} with ${companies.docs.length} companies, ${updatedMeeting.funds.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
+              `✓ Updated Meeting: ${meetingSeq} with  ${updatedMeeting.funds.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
             )
           } catch (updateError: any) {
             errorCount++
@@ -222,6 +187,37 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Failed updates: ${errorCount}`)
     console.log(`Skipped (no holdings or invalid data): ${skippedCount}`)
     console.log('Migration completed successfully.')
+
+    // Generate holdings report
+    console.log('\nGenerating holdings report...')
+    try {
+      // Create a mock request object
+      const mockReq = {
+        payload,
+        query: {},
+        context: { from: 'migration' },
+      }
+
+      // Import the endpoint handler
+      const { MeetingsVotesReportEndpoint } = await import(
+        '@/collections/meetings/endpoints/MeetingsVotesReport'
+      )
+
+      // Call the endpoint
+      const response = await MeetingsVotesReportEndpoint(mockReq as any)
+      const responseData = await response.json()
+
+      if (responseData.success) {
+        console.log(`Holdings report generated successfully: ${responseData.filePath}`)
+        console.log(
+          `Found ${responseData.data.length} meetings with mismatched holdings and companies`,
+        )
+      } else {
+        console.error('Failed to generate holdings report:', responseData.message)
+      }
+    } catch (error) {
+      console.error('Error generating holdings report:', error)
+    }
   } catch (error) {
     console.error('Critical error during migration:', error)
     throw error // Re-throw to ensure migration is marked as failed

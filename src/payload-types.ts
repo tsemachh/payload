@@ -406,6 +406,7 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
+  companies?: (string | Company)[] | null;
   votesCount?: string | null;
   participationReport?: (string | null) | Document;
   reportedVotesCount?: string | null;
@@ -414,7 +415,6 @@ export interface Meeting {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  companies?: (string | Company)[] | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?:
     | {
@@ -595,7 +595,6 @@ export interface Vote {
         id?: string | null;
       }[]
     | null;
-  publishedBy?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -741,6 +740,7 @@ export interface CompanyMeetingNotification {
   id: string;
   message: string;
   notificationType: UserNotificationType;
+  readStatus?: boolean | null;
   meeting: string | Meeting;
   company: string | Company;
   creator?: string | null;
@@ -1244,11 +1244,11 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
+  companies?: T;
   votesCount?: T;
   participationReport?: T;
   reportedVotesCount?: T;
   votes?: T;
-  companies?: T;
   funds?: T;
   fundsWithHolding?:
     | T
@@ -1328,7 +1328,6 @@ export interface VotesSelect<T extends boolean = true> {
         personalInterestExplanation?: T;
         id?: T;
       };
-  publishedBy?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1477,6 +1476,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
   message?: T;
   notificationType?: T;
+  readStatus?: T;
   meeting?: T;
   company?: T;
   creator?: T;

@@ -128,3 +128,14 @@ export const fetcher = async (url: string) => {
   }
   return res.json()
 }
+
+
+export const getVotingRecommendationColor = (recommendation: string) => {
+  if (recommendation === 'בעד') {
+    return 'text-green-600'
+  } else if (recommendation === 'נגד') {
+    return 'text-red-600'
+  } else {
+    return 'text-gray-900'
+  }
+}

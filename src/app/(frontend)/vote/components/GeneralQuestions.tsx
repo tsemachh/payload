@@ -12,7 +12,7 @@ import YesNoQuestion from './YesNoQuestion'
 interface GeneralQuestionsProps {
   generalVotingData: GeneralVotingData
   onQuestionChangeAction: (question: GeneralVotingIDs, value: boolean, explanation?: string) => void
-  getFieldError: (
+  getFieldErrorAction: (
     fieldName: string,
     type: 'general',
     topicIndex?: number,
@@ -22,7 +22,7 @@ interface GeneralQuestionsProps {
 export default function GeneralQuestions({
   generalVotingData,
   onQuestionChangeAction,
-  getFieldError,
+  getFieldErrorAction,
 }: GeneralQuestionsProps) {
   return (
     <div className="space-y-4">
@@ -31,7 +31,7 @@ export default function GeneralQuestions({
           const config = GENERAL_QUESTIONS_CONFIG[questionId]
           const explanationFieldName = getExplanationFieldName(questionId)
           const hasExplanationError = explanationFieldName
-            ? !!getFieldError(explanationFieldName, 'general')
+            ? !!getFieldErrorAction(explanationFieldName, 'general')
             : false
 
           return (

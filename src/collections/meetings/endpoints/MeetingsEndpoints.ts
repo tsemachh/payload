@@ -1,4 +1,4 @@
-import { PayloadRequest, User } from 'payload'
+import { PayloadRequest, User, addDataAndFileToRequest } from 'payload'
 import {
   Company,
   Meeting,
@@ -120,6 +120,7 @@ function createSuccessResponse(
  */
 export const allMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     const payload = req.payload
     const { user } = req
 
@@ -182,6 +183,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
  */
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     const payload = req.payload
     const { user } = req
 
@@ -288,7 +290,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
       isRemovedFromAgenda: item.isRemovedFromAgenda || false,
       privilegedMajority: item?.majorityType == 'privileged' || false,
       recommendation: {
-        votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
+        votingRecommendation: item.recommendation?.votingRecommendation || '',
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
     }
@@ -494,6 +496,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
 
 export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     const payload = req.payload
     const { user } = req
 

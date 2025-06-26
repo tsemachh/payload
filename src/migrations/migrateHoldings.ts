@@ -2,20 +2,8 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql, { IResult } from 'mssql'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
+import { sqlConfig } from '@/migrations/utils/utils'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda',
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-  requestTimeout: 3600000, // Increase timeout globally to 120 seconds
-}
 
 const START_DATE_TO_IMPORT: string = '01-05-2025'
 

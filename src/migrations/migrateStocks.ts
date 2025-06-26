@@ -26,20 +26,8 @@ import {
 import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 import { PayloadRequest } from 'payload'
 import { PromisePool } from '@/utils/promisePool'
+import { sqlConfig } from '@/migrations/utils/utils'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'master', // Change this to your database name once created
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false, // For local dev, set to false
-    trustServerCertificate: true, // For local dev
-  },
-  requestTimeout: 120000, // Increase timeout globally to 120 seconds
-}
 
 async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
   try {

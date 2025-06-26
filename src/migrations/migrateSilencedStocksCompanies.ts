@@ -2,20 +2,8 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToChildCompanies, getCompanyIdToSequenceMap } from '@/utils/utils'
+import { sqlConfig } from '@/migrations/utils/utils'
 
-// SQL Server configuration
-const sqlConfig: sql.config = {
-  user: 'sa',
-  password: 'dockerStrongPwd123',
-  database: 'dbEmda',
-  server: 'localhost',
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-  requestTimeout: 120000, // 2 minutes timeout
-}
 
 // Minimum date for holdings (January 1, 2024)
 const MIN_HOLDINGS_DATE = '2024-01-01'
