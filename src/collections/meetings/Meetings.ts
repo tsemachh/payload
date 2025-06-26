@@ -104,9 +104,9 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'meetingDate',
       'state',
-      'comments',
       'votesCount',
       'reportedVotesCount',
+      'comments',
     ],
     components: {
       beforeListTable: [
