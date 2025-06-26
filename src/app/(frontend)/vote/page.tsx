@@ -281,9 +281,8 @@ export default function VotingForm() {
         errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         setTimeout(() => {
           toast({
-            title: '⚠️ שגיאות בטופס',
+            title: '⚠️  נדרש מידע נוסף',
             description: 'יש למלא את כל השדות החובה המסומנים',
-            variant: 'destructive',
             duration: 3000,
           })
         }, 0)
@@ -386,7 +385,7 @@ export default function VotingForm() {
         setLastPublishedVoteInfo(undefined)
       } else {
         const lastPublishedVoteInfoTmp = {
-          user: publishedVotes[0].publishedBy || 'לא ידוע',
+          user: publishedVotes[0].publishedBy || '',
           date: publishedVotes[0].updatedAt || ' לא ידוע',
         }
         setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
