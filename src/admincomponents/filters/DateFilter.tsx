@@ -43,9 +43,17 @@ const DateFilter = ({ preset }: { preset: Preset }) => {
     })
   }
 
+  const labels: Record<Preset, string> = {
+    today: 'היום',
+    yesterday: 'אתמול',
+    thisWeek: 'השבוע',
+    lastWeek: 'שבוע שעבר',
+    thisMonth: 'החודש',
+    lastMonth: 'חודש שעבר',
+  }
   return (
     <>
-      <Pill onClick={handleClick}>{preset === 'today' ? 'היום' : 'החודש'}</Pill>{' '}
+      <Pill onClick={handleClick}>{labels[preset]}</Pill>{' '}
     </>
   )
 }
