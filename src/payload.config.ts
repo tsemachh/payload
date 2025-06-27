@@ -82,7 +82,9 @@ if (process.env.MONGO_USE_TX !== 'true') {
 }
 
 export default buildConfig({
-  serverURL: process.env.PUBLIC_SERVER_URL || '',
+  serverURL:
+    process.env.PUBLIC_SERVER_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
   i18n: {
     supportedLanguages: { he, en },
   },
