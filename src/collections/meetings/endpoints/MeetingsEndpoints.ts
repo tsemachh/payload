@@ -508,7 +508,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
       where: {
         and: [
           {
-            meetingId: { equals: meetingId },
+            id: { equals: meetingId },
           },
           createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
