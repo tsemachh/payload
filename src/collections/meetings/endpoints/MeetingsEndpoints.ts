@@ -1,4 +1,4 @@
-import { PayloadRequest, User, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'payload'
 import {
   Company,
   Meeting,
@@ -15,10 +15,8 @@ import {
   MeetingTableDataType,
   UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
-import { SelectType } from 'payload'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById } from '@/utils/utils'
-import { id } from 'date-fns/locale'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -169,7 +167,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -212,7 +210,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
     const safeFunds = getSafeFunds(user?.funds)
 
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
     const pageSize = parseInt((req.query.pageSize as string) || '25')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
@@ -522,7 +520,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
