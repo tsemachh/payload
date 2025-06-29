@@ -64,7 +64,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   }
   type ResearchDoc = {
     id: string
-    companies?: string[]
+    companies?: (string | { id: string })[]
     filename?: string
   }
   const researchDocuments = await req.payload.find(query)
@@ -110,24 +110,29 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   for (const doc of docs) {
     // Check companies' permission for private research documents
     if (doc.companies && doc.companies.length > 0) {
-      const companiesWithPermission = await Promise.all(
-        doc.companies.map((company) => {
-          const companyId = typeof company === 'string' ? company : company.id
-          if (!companyId) {
-            throw new Error(`Invalid company ID for document ${doc.id}`)
-          }
-          return req.payload.findByID({
-            collection: 'companies',
-            id: companyId,
-            depth: 0,
-          })
-        }),
-      )
-
-      const unauthorizedCompanies = companiesWithPermission
-        .filter((company) => !company?.researchDocuments?.showResearchPrivate)
-        .map((company) => company?.id)
+      const companyIds = doc.companies
+        .map((company) => (typeof company === 'string' ? company : company.id))
         .filter((id): id is string => !!id)
+
+      const companiesWithPermission = await req.payload.find({
+        collection: 'companies',
+        where: {
+          id: {
+            in: companyIds,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          researchDocuments: true,
+        },
+        depth: 0,
+      })
+
+      const unauthorizedCompanies = companiesWithPermission.docs
+        .filter((company) => !company?.researchDocuments?.showResearchPrivate)
+        .map((company) => company?.name)
+        .filter((name): name is string => !!name)
 
       if (unauthorizedCompanies.length > 0) {
         invalidCompanies.push(...unauthorizedCompanies)
@@ -140,7 +145,9 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
 
     // Existing validation for unmatched companies
     if (doc.companies && doc.companies.length > 0) {
-      const unmatchedCompanies = doc.companies.filter((company) => !companies.includes(company))
+      const unmatchedCompanies = doc.companies
+        .map((company) => (typeof company === 'string' ? company : company.id))
+        .filter((companyId) => !companies.includes(companyId))
       if (unmatchedCompanies.length > 0 && doc.filename) {
         invalidFilenames.push(doc.filename)
       }
