@@ -5,7 +5,7 @@ import {
   ValidationError,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-import { ResearchDocument } from '@/payload-types'
+import { Company, ResearchDocument } from '@/payload-types'
 
 const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
   const result = await req.payload.find({
@@ -45,95 +45,128 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     if (validationErrors.length > 0) {
       throw new ValidationError({ errors: validationErrors })
     }
-  } else {
-    const query: any = {
-      collection: 'research-documents',
-      select: {
-        id: true,
-        companies: true,
-        filename: true,
-      },
-      depth: 0,
-      limit: 0,
-      where: {
-        id: {
-          in: docIDs,
-        },
-      },
-    }
-    type ResearchDoc = {
-      id: string
-      companies?: string[]
-      filename?: string
-    }
-    const researchDocuments = await req.payload.find(query)
+  }
 
-    if (docIDs.length > 1) {
-      const generalDocs = researchDocuments?.docs?.filter(
-        (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
+  const query: any = {
+    collection: 'research-documents',
+    select: {
+      id: true,
+      companies: true,
+      filename: true,
+    },
+    depth: 0,
+    limit: 0,
+    where: {
+      id: {
+        in: docIDs,
+      },
+    },
+  }
+  type ResearchDoc = {
+    id: string
+    companies?: string[]
+    filename?: string
+  }
+  const researchDocuments = await req.payload.find(query)
+
+  if (docIDs.length > 1) {
+    const generalDocs = researchDocuments?.docs?.filter(
+      (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
+    )
+
+    const invalidGeneralDocs: string[] = []
+
+    for (const doc of generalDocs) {
+      const result = parseResearchFilename((doc as ResearchDoc).filename || '')
+
+      const companyExists =
+        result.isValid &&
+        !result.isGeneric &&
+        result.companyName &&
+        (await companyIsNotRegular(result.companyName, req))
+
+      if (companyExists) {
+        validationErrors.push({
+          message: `המסמך "${(doc as ResearchDoc).filename}" מתייחס לחברה לא קיימת במערכת`,
+          path: 'researchDocuments',
+        })
+      } else {
+        invalidGeneralDocs.push(doc.id)
+      }
+    }
+
+    if (invalidGeneralDocs.length > 1) {
+      validationErrors.push({
+        message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
+        path: 'researchDocuments',
+      })
+    }
+  }
+
+  const docs = researchDocuments.docs as ResearchDocument[]
+  const invalidFilenames: string[] = []
+  const invalidCompanies: string[] = []
+
+  for (const doc of docs) {
+    // Check companies' permission for private research documents
+    if (doc.companies && doc.companies.length > 0) {
+      const companiesWithPermission = await Promise.all(
+        doc.companies.map((company) => {
+          const companyId = typeof company === 'string' ? company : company.id
+          if (!companyId) {
+            throw new Error(`Invalid company ID for document ${doc.id}`)
+          }
+          return req.payload.findByID({
+            collection: 'companies',
+            id: companyId,
+            depth: 0,
+          })
+        }),
       )
 
-      const invalidGeneralDocs: string[] = []
+      const unauthorizedCompanies = companiesWithPermission
+        .filter((company) => !company?.researchDocuments?.showResearchPrivate)
+        .map((company) => company?.id)
+        .filter((id): id is string => !!id)
 
-      for (const doc of generalDocs) {
-        const result = parseResearchFilename((doc as ResearchDoc).filename || '')
-
-        const companyExists =
-          result.isValid &&
-          !result.isGeneric &&
-          result.companyName &&
-          (await companyIsNotRegular(result.companyName, req))
-
-        if (companyExists) {
-          validationErrors.push({
-            message: `המסמך "${(doc as ResearchDoc).filename}" מתייחס לחברה לא קיימת במערכת`,
-            path: 'researchDocuments',
-          })
-        } else {
-          invalidGeneralDocs.push(doc.id)
-        }
-      }
-
-      if (invalidGeneralDocs.length > 1) {
+      if (unauthorizedCompanies.length > 0) {
+        invalidCompanies.push(...unauthorizedCompanies)
         validationErrors.push({
-          message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
+          message: `חברות אלו אינן רשאיות לקבל מסמכי מחקר פרטניים: ${unauthorizedCompanies.join(', ')}`,
           path: 'researchDocuments',
         })
       }
     }
 
-    const docs = researchDocuments.docs as ResearchDocument[]
-    const invalidFilenames: string[] = []
-
-    docs.forEach((doc) => {
-      if (!doc.companies || doc.companies.length === 0) return
+    // Existing validation for unmatched companies
+    if (doc.companies && doc.companies.length > 0) {
       const unmatchedCompanies = doc.companies.filter((company) => !companies.includes(company))
       if (unmatchedCompanies.length > 0 && doc.filename) {
         invalidFilenames.push(doc.filename)
       }
-    })
-
-    if (invalidFilenames.length === 1) {
-      validationErrors.push({
-        message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
-        path: 'researchDocuments',
-      })
-    } else if (invalidFilenames.length > 1) {
-      const filenamesList = invalidFilenames.map((name) => `- ${name}`).join('\n')
-      const filenamesMessage = `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${filenamesList}`
-
-      validationErrors.push({
-        message: filenamesMessage,
-        path: 'researchDocuments',
-      })
     }
-
-    if (validationErrors.length > 0) {
-      throw new ValidationError({ errors: validationErrors })
-    }
-
-    return data
   }
+
+  if (invalidFilenames.length === 1) {
+    validationErrors.push({
+      message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
+      path: 'researchDocuments',
+    })
+  } else if (invalidFilenames.length > 1) {
+    const filenamesList = invalidFilenames.map((name) => `- ${name}`).join('\n')
+    const filenamesMessage = `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${filenamesList}`
+
+    validationErrors.push({
+      message: filenamesMessage,
+      path: 'researchDocuments',
+    })
+  }
+
+  if (validationErrors.length > 0) {
+    throw new ValidationError({ errors: validationErrors })
+  }
+
+  return data
 }
 export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
   data,
