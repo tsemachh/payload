@@ -12,13 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { CompanyTableDate } from '../types/meetings'
-import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-import VoteDetails from './components/VoteDetails'
-import VoteCompanySelector from './components/VoteCompanySelector'
-import GeneralQuestions from './components/GeneralQuestions'
-import AgendaQuestions from './components/AgendaQuestions'
+import { useRouter } from 'next/navigation'
+import { CompanyTableDate } from '../../types/meetings'
+import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
+import VoteDetails from '../components/VoteDetails'
+import VoteCompanySelector from '../components/VoteCompanySelector'
+import GeneralQuestions from '../components/GeneralQuestions'
+import AgendaQuestions from '../components/AgendaQuestions'
 import {
   AgendaQuestionId,
   AgendaQuestionsType,
@@ -29,30 +29,37 @@ import {
   UserVote,
   ValidationError,
   VoteDataType,
-} from '../types/vote'
+} from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import {
   AGENDA_QUESTIONS_CONFIG,
   GENERAL_QUESTIONS_CONFIG,
   getExplanationFieldName,
-} from './questionConsts'
+} from '../questionConsts'
 import {
   createDefaultAgendaQuestions,
   fetcherVote,
   fetchMeetingData,
   fetchVotedCompanies,
   isGeneralVote,
-} from '../helpers/utils-vote'
+} from '../../helpers/utils-vote'
 import useSWR from 'swr'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
-import VoteStatus from './components/Status'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip'
+import VoteStatus from '../components/Status'
+import { useParams } from 'next/navigation'
 
 export default function VotingForm() {
-  const searchParams = useSearchParams()
+  const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const meetingIdFromUrl = searchParams.get('meetingId')
+
+  const meetingIdFromUrl = params?.id || '-'
 
   const {
     data: meetingData,
@@ -376,7 +383,7 @@ export default function VotingForm() {
           isSeniorOfficial: false,
           isInstitutionalInvestor: true,
         },
-        voterNotes: '----',
+        voterNotes: '',
         userVotes: createDefaultAgendaQuestions(meetingData.agendas),
       }
     } else {
