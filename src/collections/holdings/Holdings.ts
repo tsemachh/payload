@@ -16,6 +16,7 @@ export const Holdings: CollectionConfig = {
     defaultColumns: ['fund', 'valueDate'],
     group: 'פעילות',
   },
+  disableBulkEdit: true,
   hooks: {
     afterChange: [
       async ({ req, doc }) => {
