@@ -247,6 +247,7 @@ function createMeetingDataObject(
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
+    votingPercentage: null, // mean have no data yet.
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
     stockType: stockPresent?.type || '-',

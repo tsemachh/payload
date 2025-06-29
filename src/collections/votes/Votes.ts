@@ -8,6 +8,7 @@ import {
   publishVotes,
   upsertVote,
 } from './voteEndPoint'
+import { getVotingPercentages } from './votingPercentagesEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -289,6 +290,11 @@ export const Votes: CollectionConfig = {
       path: '/publish-votes',
       method: 'post',
       handler: publishVotes,
+    },
+    {
+      path: '/voting-percentages',
+      method: 'post', // it get method use post for boy
+      handler: getVotingPercentages,
     },
   ],
 }

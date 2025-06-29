@@ -55,14 +55,14 @@ export type MeetingAgenda =
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       recommendation?: {
-        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        votingRecommendation?: ('בעד' | 'נגד' | 'נמנע') | null;
         reasonRef?: (string | null) | RecommendationReason;
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
         showExceptional?: boolean | null;
         companies?: (string | Company)[] | null;
-        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
+        votingRecommendation?: ('בעד' | 'נגד' | 'נמנע') | null;
         reasonRef?: (string | null) | RecommendationReason;
         reasonText?: string | null;
       };
