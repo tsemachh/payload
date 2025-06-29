@@ -61,7 +61,7 @@ export const processStocksFeedCsv = async (
     let stocksCreated = 0
 
     // Create a Promise Pool with concurrency of 20
-    const pool = new PromisePool(4)
+    const pool = new PromisePool(20)
     // Get the stockMap using the helper function
     const stockMap = await createStocksMap(req, 'TASE')
     // Process each row
