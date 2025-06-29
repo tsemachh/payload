@@ -82,7 +82,9 @@ if (process.env.MONGO_USE_TX !== 'true') {
 }
 
 export default buildConfig({
-  serverURL: process.env.PUBLIC_SERVER_URL || '',
+  serverURL:
+    process.env.PUBLIC_SERVER_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
   i18n: {
     supportedLanguages: { he, en },
   },
@@ -150,9 +152,9 @@ export default buildConfig({
         queue: 'holdings', // name of the queue
       },
       {
-        cron: '*/02 * * * *', // every 2 minutes
+        cron: '*/02 * * * *', // every 1 minutes
         limit: 100, // limit jobs to process each run
-        queue: 'immediate', // name of the queue
+        queue: 'now', // name of the queue
       },
       // add as many cron jobs as you want
     ],

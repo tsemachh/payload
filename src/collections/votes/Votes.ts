@@ -30,6 +30,7 @@ export const Votes: CollectionConfig = {
     },
     group: 'פעילות',
   },
+  disableBulkEdit: true,
   fields: [
     {
       type: 'row',

@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
 /**
  * Endpoint to send email notifications for admin notifications
@@ -9,6 +9,7 @@ import { PayloadRequest } from 'payload'
  */
 const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     // Authentication check
     if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })

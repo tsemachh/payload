@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 
 const validateQueryParams = (accountId: string, companyId: string) => {
   if (!companyId) {
@@ -62,6 +62,7 @@ const createSubAccount = async (req: PayloadRequest, accountNumber: number, comp
 
 const addSubAccountEndPoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     const { companyId } = req.query as { companyId: string }
 
     // @ts-expect-error req not null

@@ -5,12 +5,9 @@ import { PromisePool } from '@/utils/promisePool'
 
 export type TopicType = 'reporting' | 'decision'
 
-export const topicTypesMap: Map<string, TopicType> = new Map([
-  ['לדיווח בלבד', 'reporting'],
-  ['להחלטה', 'decision'],
-])
+
 export function getAgendaType(rowType: string): TopicType {
-  return topicTypesMap.get((rowType || '').trim()) || 'decision'
+  return rowType === 'reporting' || rowType === 'decision' ? (rowType as TopicType) : 'decision'
 }
 
 export const majorityTypesMap: Map<string, 'regular' | 'privileged'> = new Map([
@@ -49,7 +46,7 @@ export const processMeetingsAgendaFeedCsv = async (
     results.forEach((data) => {
       const row = {
         text: data.topic || '',
-        topicType: getAgendaType(data.MeetingType || '') as TopicType,
+        topicType: getAgendaType(data.topicType || '') as TopicType,
         magnaId: data.ProofId || '',
         majorityType: getMajorityType(data.MajorityRequired) || '',
       }

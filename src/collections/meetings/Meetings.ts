@@ -19,7 +19,6 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
-import { Vote } from '@/payload-types'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -184,7 +183,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '100px', disableListFilter: true },
+                  admin: { width: '100px' },
                 },
                 {
                   name: 'fullName',
@@ -236,7 +235,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'invitationLink',
-                  label: 'קישור לזימון',
+                  label: 'זימון',
                   type: 'text',
                   index: true,
                   admin: {
@@ -648,6 +647,23 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
+              maxDepth: 0,
+              filterOptions: {
+                type: {
+                  equals: 'regular',
+                },
+              },
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
               name: 'votesCount',
               label: 'הצבעות',
               type: 'text',
@@ -713,25 +729,8 @@ export const Meetings: CollectionConfig = {
           ],
         },
         {
-          label: 'חברות',
+          label: 'תיקים',
           fields: [
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-              maxDepth: 0,
-              filterOptions: {
-                type: {
-                  equals: 'regular',
-                },
-              },
-              admin: {
-                readOnly: true,
-              },
-            },
             {
               type: 'relationship',
               relationTo: 'companies',
@@ -752,22 +751,37 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'fundsWithHolding',
-              type: 'array',
+              label: 'תיקים עם אחזקות',
               admin: {
-                hidden: true,
+                readOnly: true,
               },
+              labels: { plural: 'תיקים עם אחזקות', singular: 'תיק עם אחזקות' },
+              type: 'array',
               fields: [
                 {
-                  name: 'fund',
-                  type: 'text',
-                },
-                {
-                  name: 'quantity',
-                  type: 'number',
-                },
-                {
-                  name: 'feedStockNum',
-                  type: 'text',
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'fund',
+                      label: 'מזהה תיק',
+                      type: 'text',
+                    },
+                    {
+                      name: 'quantity',
+                      label: 'כמות',
+                      type: 'number',
+                    },
+                    {
+                      name: 'ownedQuantity',
+                      label: 'כמות בבעלות',
+                      type: 'number',
+                    },
+                    {
+                      name: 'feedStockNum',
+                      label: 'מספר נייר ערך',
+                      type: 'text',
+                    },
+                  ],
                 },
               ],
             },
@@ -902,6 +916,11 @@ export const Meetings: CollectionConfig = {
     },
     {
       path: '/by-id',
+      method: 'get',
+      handler: meetingForVotingEndPoint,
+    },
+    {
+      path: '/voting-report',
       method: 'get',
       handler: meetingForVotingEndPoint,
     },

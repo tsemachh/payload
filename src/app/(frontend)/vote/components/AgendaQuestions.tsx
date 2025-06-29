@@ -17,7 +17,7 @@ interface AgendaQuestionsProps {
     value: boolean,
     explanation?: string,
   ) => void
-  getFieldError: (
+  getFieldErrorAction: (
     fieldName: string,
     type: 'agenda',
     topicIndex: number,
@@ -28,7 +28,7 @@ interface AgendaQuestionsProps {
 export default function AgendaQuestions({
   questions,
   handleAgendaQuestionsChangeAction,
-  getFieldError,
+  getFieldErrorAction,
   topicIndex,
 }: AgendaQuestionsProps) {
   return (
@@ -37,7 +37,7 @@ export default function AgendaQuestions({
         const config = AGENDA_QUESTIONS_CONFIG[questionId]
         const explanationFieldName = getExplanationFieldName(questionId)
         const hasExplanationError = explanationFieldName
-          ? !!getFieldError(explanationFieldName, 'agenda', topicIndex)
+          ? !!getFieldErrorAction(explanationFieldName, 'agenda', topicIndex)
           : false
 
         return (

@@ -118,6 +118,7 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
       }
 
       const companiesMeetingsIds = meeting.companies as string[]
+      if (!companiesMeetingsIds) break
       const { docs: companiesMeetings } = await payload.find({
         collection: 'companies',
         select: {
