@@ -19,6 +19,11 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
 
     const userCompanyIds = user?.companies?.map((c) => c?.companyId)
 
+    // Calculate date one month before current date
+    const currentDate = new Date()
+    const monthBefore = new Date(currentDate)
+    monthBefore.setMonth(currentDate.getMonth() - 1)
+
     // Find notifications for the user's companies
     const { docs: notifications } = await req.payload.find({
       collection: 'company-meeting-notifications',
@@ -26,8 +31,12 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
         company: {
           in: userCompanyIds,
         },
+        createdAt: {
+          greater_than_equal: monthBefore.toISOString(),
+        },
       },
       depth: 0, // To get meeting data
+      limit: 0,
     })
 
     // Notification type mapping
