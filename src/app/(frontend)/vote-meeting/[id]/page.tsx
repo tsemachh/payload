@@ -43,6 +43,7 @@ import {
   fetchMeetingData,
   fetchVotedCompanies,
   isGeneralVote,
+  shouldShowDefaultRecommendations,
 } from '../../helpers/utils-vote'
 import useSWR from 'swr'
 import {
@@ -137,6 +138,36 @@ export default function VotingForm() {
   } = useSWR(swrKeyDraft, fetcherVote, {
     revalidateOnFocus: false,
   })
+
+  const allCompanyIds = useMemo(() => {
+    if (!meetingData?.companies) return []
+    return meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+  }, [meetingData?.companies])
+
+  const swrKeyCompanies =
+    allCompanyIds.length > 0
+      ? `/api/companies/voting-recommendations?companiesIds=${allCompanyIds.join(',')}`
+      : null
+
+  const { data: fetchedCompanies } = useSWR(swrKeyCompanies, fetcherVote, {
+    revalidateOnFocus: false,
+  })
+
+  const recommendationMap = useMemo(() => {
+    const map = new Map<string, boolean>()
+
+    if (fetchedCompanies?.data && Array.isArray(fetchedCompanies.data)) {
+      for (const company of fetchedCompanies.data) {
+        map.set(company.id, true)
+      }
+    }
+
+    return map
+  }, [fetchedCompanies])
+
+  const showDefaultRecommendations = useMemo(() => {
+    return shouldShowDefaultRecommendations(companiesIDs, recommendationMap)
+  }, [companiesIDs, recommendationMap])
 
   useEffect(() => {
     if (votesError) {
@@ -384,7 +415,7 @@ export default function VotingForm() {
           isInstitutionalInvestor: true,
         },
         voterNotes: '',
-        userVotes: createDefaultAgendaQuestions(meetingData.agendas),
+        userVotes: createDefaultAgendaQuestions(meetingData.agendas, showDefaultRecommendations),
       }
     } else {
       // Case where we have fetched votes
@@ -403,7 +434,7 @@ export default function VotingForm() {
         const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '----',
+          choice: voteItem?.voteDecision || '',
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
@@ -438,7 +469,7 @@ export default function VotingForm() {
         )
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '----',
+          choice: voteItem?.voteDecision || '',
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
@@ -865,7 +896,6 @@ export default function VotingForm() {
                                 onValueChange={(value) =>
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
-                                defaultValue={'----'}
                               >
                                 <SelectTrigger
                                   className={`w-full ${

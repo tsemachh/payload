@@ -111,7 +111,6 @@ export default function VoteCompanySelector({
                 <div className="text-sm">
                   <p>ע׳ נקוב {meetingData.nominalValue.toLocaleString()}</p>
                   <p>{meetingData.percentageHolding}%</p>
-                  <p>{meetingData.holdingValueInMillions} מליון ש״ח</p>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -147,8 +146,7 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 <div className="text-sm">
                   <p>ע׳ נקוב {company.nominalValue.toLocaleString()}</p>
-                  <p>{company.percentageHolding}%</p>
-                  <p>{company.holdingValueInMillions} מליון ש״ח</p>
+                  <p>{Math.round(company.percentageHolding)}%</p>
                 </div>
               </TooltipContent>
             </Tooltip>
