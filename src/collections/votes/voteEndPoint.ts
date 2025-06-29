@@ -20,9 +20,13 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
     const existingVotes = await req.payload.find({
       collection: 'votes',
       where: {
-        and: [{ meeting: { equals: meetingIdString } }, { company: { in: companiesIdsArray } }],
+        and: [
+          { meeting: { equals: meetingIdString } },
+          { company: { in: companiesIdsArray } },
+          statusString === 'draft' ? {} : { _status: { equals: statusString } },
+        ],
       },
-      draft: statusString == 'draft',
+      draft: statusString === 'draft' ? true : false,
       depth: 0,
       limit: companiesIdsArray.length,
     })

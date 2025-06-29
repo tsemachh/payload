@@ -481,9 +481,9 @@ export const Meetings: CollectionConfig = {
                             disableListFilter: true,
                           },
                           options: [
-                            { label: 'בעד', value: 'for' },
-                            { label: 'נגד', value: 'against' },
-                            { label: 'נמנע', value: 'abstain' },
+                            { label: 'בעד', value: 'בעד' },
+                            { label: 'נגד', value: 'נגד' },
+                            { label: 'נמנע', value: 'נמנע' },
                           ],
                         },
                         {
@@ -565,9 +565,9 @@ export const Meetings: CollectionConfig = {
                             disableListFilter: true,
                           },
                           options: [
-                            { label: 'בעד', value: 'for' },
-                            { label: 'נגד', value: 'against' },
-                            { label: 'נמנע', value: 'abstain' },
+                            { label: 'בעד', value: 'בעד' },
+                            { label: 'נגד', value: 'נגד' },
+                            { label: 'נמנע', value: 'נמנע' },
                           ],
                         },
                         {
@@ -704,7 +704,7 @@ export const Meetings: CollectionConfig = {
               label: 'דיווחים',
               type: 'text',
               admin: {
-                hidden: true, // מסתיר את השדה בטופס העריכה
+                hidden: true,
                 components: {
                   Cell: { path: '/admincomponents/icon/ReportedVotesStatusCell' },
                 },

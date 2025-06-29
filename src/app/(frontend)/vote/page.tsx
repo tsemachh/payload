@@ -737,6 +737,7 @@ export default function VotingForm() {
               <VoteStatus
                 isPublished={!isDirty}
                 publishedInfo={lastPublishedVoteInfo}
+                isFirstDraft={!!lastPublishedVoteInfo}
                 isDraft={fetchedVotes?.length && isDirty}
                 draftInfo={
                   fetchedVotes?.length &&
@@ -846,7 +847,7 @@ export default function VotingForm() {
                                       ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
                                       : item.recommendation.votingRecommendation === 'נגד'
                                         ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                        : 'bg-muted text-muted-foreground border-border'
+                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900'
                                   }`}
                                 >
                                   המלצה: {item.recommendation.votingRecommendation}
