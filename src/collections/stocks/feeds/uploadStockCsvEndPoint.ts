@@ -10,9 +10,9 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
-    /*   if (!req.user) {
+    if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
-    }*/
+    }
     // Get the ReadableStream from the request body
     const stream = req.body
 
