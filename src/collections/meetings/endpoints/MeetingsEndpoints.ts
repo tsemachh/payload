@@ -124,7 +124,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Get query parameters
     const page = parseInt((req.query.page as string) || '1')
-    const pageSize = parseInt((req.query.pageSize as string) || '25')
+    const pageSize = parseInt((req.query.pageSize as string) || '50')
     const sortField = (req.query.sortField as string) || 'meetingDate'
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
@@ -197,9 +197,6 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
               {
                 meetingDate: { greater_than_equal: new Date() },
               },
-              {
-                meetingDate: { exists: false },
-              },
             ],
           },
           createCompaniesFilter(user?.funds),
@@ -211,7 +208,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
-    const pageSize = parseInt((req.query.pageSize as string) || '25')
+    const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)

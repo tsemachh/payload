@@ -1,9 +1,9 @@
 import { isWithinInterval } from 'date-fns'
 import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
-import { Company, StockValue } from '@/payload-types'
+import { StockValue } from '@/payload-types'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
-  if (!originDate) return '-'
+  if (!originDate) return ' '
   const date = new Date(originDate)
   if (isNaN(date.getTime())) return '-'
   const newDate = new Intl.DateTimeFormat('he-IL', {
