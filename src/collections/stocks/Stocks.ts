@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
+import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
@@ -320,6 +321,11 @@ export const Stocks: CollectionConfig = {
       path: '/upload-stock-csv',
       method: 'post',
       handler: uploadStockCsvEndPoint,
+    },
+    {
+      path: '/fix-stock-relations',
+      method: 'post',
+      handler: fixStockRelationsEndPoint,
     },
   ],
 }
