@@ -28,7 +28,6 @@ import { PayloadRequest } from 'payload'
 import { PromisePool } from '@/utils/promisePool'
 import { sqlConfig } from '@/migrations/utils/utils'
 
-
 async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
   try {
     // Check if a silenced stock with this stockId already exists
@@ -303,7 +302,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const relatedStock = stockIdTOSequence.get(id2)
           const theStockToUpdate = stockIdTOSequence.get(id1)
 
-          if (theStockToUpdate && relatedStock) {
+          if (theStockToUpdate && relatedStock && !predictaStocks.has(id1)) {
             try {
               await payload.update({
                 collection: 'stocks',
