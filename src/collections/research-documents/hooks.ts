@@ -42,6 +42,9 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) -אחד בלבד.',
       path: 'researchDocuments',
     })
+    if (validationErrors.length > 0) {
+      throw new ValidationError({ errors: validationErrors })
+    }
   } else {
     const query: any = {
       collection: 'research-documents',

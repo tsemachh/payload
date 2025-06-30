@@ -19,8 +19,8 @@ import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus
 function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
   const router = useRouter()
 
-  const handleIconClick = (e: any) => {
-    router.push(`/vote?meetingId=${row.meetingId}`)
+  const handleIconClick = () => {
+    router.push(`/vote-meeting/${row.meetingIdPayload}`)
   }
   if (row.companies.length === 0) return null
   return (
