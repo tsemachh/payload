@@ -70,12 +70,6 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
-      name: 'noParticipantDuty',
-      label: 'אין חובת השתתפות',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
       name: 'isInterested',
       label: 'בעל עניין',
       type: 'checkbox',
@@ -153,6 +147,12 @@ export const Votes: CollectionConfig = {
         {
           type: 'row',
           fields: [
+            {
+              name: 'noParticipantDuty',
+              label: 'אין חובת השתתפות',
+              type: 'checkbox',
+              defaultValue: false,
+            },
             {
               name: 'hasConflictOfInterest',
               label: 'ניגוד עניינים',

@@ -122,7 +122,7 @@ export const Meetings: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',
@@ -202,7 +202,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${data?.type}-${stockName}`
+                        return `${stockName}-${data?.type}`
                       },
                     ],
                   },
@@ -477,32 +477,40 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצת הצבעה',
                           type: 'select',
                           admin: {
-                            width: '10%',
+                            width: '100px',
                             disableListFilter: true,
                           },
                           options: [
+                            { label: '----', value: '----' },
                             { label: 'בעד', value: 'בעד' },
                             { label: 'נגד', value: 'נגד' },
                             { label: 'נמנע', value: 'נמנע' },
+                            { label: 'דיון', value: 'דיון' },
                           ],
                         },
                         {
                           name: 'reasonRef',
                           label: 'נימוק מוכן',
-                          type: 'relationship',
-                          relationTo: 'recommendation-reasons',
+                          type: 'text',
+                          defaultValue: 'אחר',
                           admin: {
-                            disableListFilter: true,
-                            width: '50%',
+                            components: {
+                              Field: '/collections/meetings/components/RecommendationReasonSelect',
+                            },
                           },
                         },
+                      ],
+                    },
+                    {
+                      type: 'row',
+                      fields: [
                         {
                           name: 'reasonText',
                           label: 'נימוק חופשי',
                           type: 'text',
                           admin: {
                             disableListFilter: true,
-                            width: '40%',
+                            width: '100%',
                             components: {
                               Field: '/collections/meetings/components/ConditionalReasonText',
                             },
@@ -578,6 +586,9 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             disableListFilter: true,
                             width: '50%',
+                            components: {
+                              Field: '/collections/meetings/components/RecommendationReasonSelect',
+                            },
                           },
                         },
                         {

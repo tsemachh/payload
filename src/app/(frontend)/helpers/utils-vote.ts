@@ -66,7 +66,6 @@ export function isGeneralVote(votes: Vote[]): boolean {
     const currentVotes = current.votes ?? []
 
     const generalFieldsToCompare: (keyof typeof ref)[] = [
-      'noParticipantDuty',
       'isInterested',
       'interestedExplanation',
       'isSeniorOfficial',

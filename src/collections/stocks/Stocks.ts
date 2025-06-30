@@ -66,7 +66,7 @@ export const Stocks: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',

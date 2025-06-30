@@ -55,8 +55,8 @@ export type MeetingAgenda =
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       recommendation?: {
-        votingRecommendation?: ('בעד' | 'נגד' | 'נמנע') | null;
-        reasonRef?: (string | null) | RecommendationReason;
+        votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
+        reasonRef?: string | null;
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
@@ -461,18 +461,6 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons".
- */
-export interface RecommendationReason {
-  id: string;
-  content: string;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "companies".
  */
 export interface Company {
@@ -567,6 +555,18 @@ export interface Holding {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "votes".
  */
 export interface Vote {
@@ -574,7 +574,6 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   reported?: boolean | null;
-  noParticipantDuty?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -585,6 +584,7 @@ export interface Vote {
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
+        noParticipantDuty?: boolean | null;
         hasConflictOfInterest?: boolean | null;
         conflictOfInterestExplanation?: string | null;
         isRelatedParty?: boolean | null;
@@ -717,6 +717,13 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
   password?: string | null;
 }
 /**
@@ -1307,7 +1314,6 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   reported?: T;
-  noParticipantDuty?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1319,6 +1325,7 @@ export interface VotesSelect<T extends boolean = true> {
     | {
         topicIndex?: T;
         voteDecision?: T;
+        noParticipantDuty?: T;
         hasConflictOfInterest?: T;
         conflictOfInterestExplanation?: T;
         isRelatedParty?: T;
@@ -1564,6 +1571,13 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
