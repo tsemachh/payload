@@ -42,7 +42,7 @@ export const Companies: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',
