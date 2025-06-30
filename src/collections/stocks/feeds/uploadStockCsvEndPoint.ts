@@ -1,17 +1,18 @@
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { processStocksFeedCsv } from './processStocksFeedCsv'
 import { format } from 'date-fns'
 import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
     const startTime = Date.now()
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
-    if (!req.user) {
+    /*   if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
-    }
+    }*/
     // Get the ReadableStream from the request body
     const stream = req.body
 
@@ -61,9 +62,13 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       req,
     })
     // Process the stock feed CSV
-    const { processedRows, fileLength } = await processStocksFeedCsv(req, {
-      file,
-    })
+    const { processedRows, fileLength } = await processStocksFeedCsv(
+      req,
+      {
+        file,
+      },
+      stocksFeed,
+    )
     const endTime = Date.now()
     const durationMs = endTime - startTime
     const durationSeconds = (durationMs / 1000).toFixed(2)
