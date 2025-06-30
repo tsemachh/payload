@@ -1,18 +1,19 @@
 import { PayloadRequest } from 'payload'
 import {
+  createStocksMap,
   upsertStockFromImport,
   upsertStockValueFromImport,
-  createStocksMap,
 } from '@/utils/migrateUtils'
 import csvToJson from 'convert-csv-to-json'
 import { getStockType, parseDate } from '@/utils/migrateStockUtils'
 import iconv from 'iconv-lite'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { StocksFeed, StockType } from '@/payload-types'
-import { PromisePool } from '@/utils/promisePool'
+
 export const processStocksFeedCsv = async (
   req: PayloadRequest,
   data: any,
+  stockFeed: StocksFeed,
 ): Promise<{ processedRows: number; fileLength: number }> => {
   const startTime = Date.now()
   let processedRows = 0
@@ -32,6 +33,7 @@ export const processStocksFeedCsv = async (
     // Read the file content
     const csvData = iconv.decode(file.data, 'windows-1255')
     //const csvData = file.data.toString('utf8')
+
     // Parse the CSV file using csvToJson as specified in the issue description
     const results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
     const valueDate = parseDate(results[0].stockID)
@@ -58,29 +60,43 @@ export const processStocksFeedCsv = async (
       longName: data.longName || ('' as string),
     }))
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
+
     let stocksCreated = 0
 
-    // Create a Promise Pool with concurrency of 20
-    const pool = new PromisePool(20)
     // Get the stockMap using the helper function
     const stockMap = await createStocksMap(req, 'TASE')
     // Process each row
+    await req.payload.delete({
+      collection: 'stock-values',
+      where: {
+        valueDate: { equals: new Date(valueDate).toISOString() },
+      },
+    })
+
     for (let i = 0; i < rows.length; i++) {
       try {
         const row = rows[i]
 
-        // Add the upsertStockValueFromImport call to the Promise Pool
-        pool.add(async () => {
-          //const valueStartTime = Date.now();
-          const stock = stockMap.get(`${row.stockID}` as string)
-          if (stock == null) stocksCreated++
-          const stockSequence = await upsertStockFromImport(stock || null, row, req, true)
-          if (stockSequence) await upsertStockValueFromImport(stockSequence, row, req)
-          //const valueEndTime = Date.now();
-          //const valueProcessingTime = valueEndTime - valueStartTime;
-          //console.log(`Stock value for record ${i+1}/${rows.length} (ID: ${row.stockID}) processed in ${valueProcessingTime}ms`);
-        })
+        // Check if stockId is not numeric or symbol is empty
+        if (isNaN(Number(row.stockID)) || row.symbol.trim() === '') {
+          const errorMsg = `Invalid row data at index ${i}: stockId=${row.stockID}, symbol=${row.symbol}`
+          console.error(errorMsg)
+          console.error('InvalidRowData', JSON.stringify(row))
+          continue // Skip to the next row
+        }
+        const stock = stockMap.get(`${row.stockID}` as string)
+
+        if (stock == null) stocksCreated++
+        const stockSequence = await upsertStockFromImport(stock || null, row, req, true)
+        if (stockSequence) await upsertStockValueFromImport(stockSequence, row, req)
+
         processedRows++
+        // Notify progress every 10 stocks
+        if (processedRows % 100 === 0) {
+          const progressMsg = `Progress: ${processedRows}/${rows.length} stocks processed (${Math.round((processedRows / rows.length) * 100)}%)`
+          console.log(progressMsg)
+          req.payload.logger.info(progressMsg)
+        }
       } catch (rowError) {
         req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`, rowError)
         // Continue with the next row
@@ -88,19 +104,12 @@ export const processStocksFeedCsv = async (
     }
 
     // Wait for all stock value upserts to complete
-    await pool.waitForAll()
-    data.comments = `processed ${processedRows} stocks out of ${rows.length}, ${stocksCreated} stocks created`
+    //    await pool.waitForAll()
+    stockFeed.summary = `processed ${processedRows} stocks out of ${rows.length}, ${stocksCreated} stocks created`
     req.payload.logger.info(
       `Successfully processed ${processedRows} out of ${rows.length} rows from CSV file: ${file.name}`,
     )
     fileLength = rows.length
-    req.payload.update({
-      collection: 'stocks-feed',
-      id: data.id,
-      context: { from: 'process' },
-      data,
-      req,
-    })
 
     // End timing the entire process
     const endTime = Date.now()

@@ -57,5 +57,5 @@ export const StocksFeed: CollectionConfig = {
     },
   ],
 
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

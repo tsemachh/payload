@@ -477,7 +477,7 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצת הצבעה',
                           type: 'select',
                           admin: {
-                            width: '100px',
+                            width: '150px',
                             disableListFilter: true,
                           },
                           options: [
