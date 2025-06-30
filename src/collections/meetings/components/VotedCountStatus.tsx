@@ -36,13 +36,10 @@ export default function VotedCountStatus({
   companiesNum,
 }: VotedCountStatusProps) {
   const getStatusText = () => {
-    if (!votingPercentage) {
-      return 'לא ניתן לחשב את אחוז ההצבעות'
-    }
     if (votingPercentage === 100) {
       return 'ההצבעות התקבלו בעמדה'
-    } else if (votingPercentage > 0) {
-      return `התקבלו ${(companiesNum * votingPercentage) / 100}/${companiesNum} מההצבעות`
+    } else if (votingPercentage && votingPercentage > 0) {
+      return `התקבלו ${Math.round(companiesNum * votingPercentage) / 100}/${companiesNum} מההצבעות`
     } else {
       return 'ההצבעות טרם התקבלו בעמדה'
     }

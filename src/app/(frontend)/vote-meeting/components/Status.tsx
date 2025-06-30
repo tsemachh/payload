@@ -62,7 +62,7 @@ export default function VoteStatus({
 
   if (isDraft && draftInfo) {
     const relativeTime = getRelativeTime(draftInfo.date)
-    const tooltipText = `טיוטה ${isFirstDraft && 'נוספת'} עודכנה ${relativeTime}`
+    const tooltipText = `טיוטה ${isFirstDraft ? 'נוספת' : ''} עודכנה ${relativeTime}`
 
     return (
       <TooltipProvider>

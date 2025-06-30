@@ -1,6 +1,6 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
-import detailsEndpoint from './detailsEndpoint'
+import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -362,6 +362,11 @@ export const Companies: CollectionConfig = {
       path: '/details',
       method: 'get',
       handler: detailsEndpoint,
+    },
+    {
+      path: '/voting-recommendations',
+      method: 'get',
+      handler: getVotingRecommendation,
     },
   ],
 }

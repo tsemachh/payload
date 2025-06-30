@@ -143,7 +143,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'סדר היום',
     noHeader: true,
     type: 'other',
-    filterable: true,
     isAlwaysVisible: true,
     positionCenter: true,
     render: (row) => {
@@ -207,7 +206,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
-
       return new Intl.NumberFormat('he-IL', {
         maximumFractionDigits: 0,
       }).format(marketValue / 1_000_000)
