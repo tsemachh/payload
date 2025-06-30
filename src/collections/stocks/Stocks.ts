@@ -185,7 +185,7 @@ export const Stocks: CollectionConfig = {
                     beforeChange: [
                       async ({ value, originalDoc, req, operation }) => {
                         // Skip processing during migrations
-                        if (req.context?.from === 'migration') {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process') {
                           return value
                         }
 
