@@ -68,7 +68,7 @@ export const processStocksFeedCsv = async (
     for (let i = 0; i < rows.length; i++) {
       try {
         const row = rows[i]
-
+        console.log('row', row)
         // Add the upsertStockValueFromImport call to the Promise Pool
         pool.add(async () => {
           //const valueStartTime = Date.now();
@@ -81,6 +81,7 @@ export const processStocksFeedCsv = async (
           //console.log(`Stock value for record ${i+1}/${rows.length} (ID: ${row.stockID}) processed in ${valueProcessingTime}ms`);
         })
         processedRows++
+        console.log('processedRows', processedRows)
       } catch (rowError) {
         req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`, rowError)
         // Continue with the next row
