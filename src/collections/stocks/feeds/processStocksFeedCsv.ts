@@ -14,10 +14,11 @@ export const processStocksFeedCsv = async (
   req: PayloadRequest,
   data: any,
   stockFeed: StocksFeed,
-): Promise<{ processedRows: number; fileLength: number }> => {
+): Promise<{ processedRows: number; fileLength: number; errors: string[] }> => {
   const startTime = Date.now()
   let processedRows = 0
   let fileLength = 0
+  const errors: string[] = []
   try {
     // Start timing the entire process
     console.time('Total stocks processing time')
@@ -27,7 +28,8 @@ export const processStocksFeedCsv = async (
 
     if (!file) {
       req.payload.logger.error(`No file found in request`)
-      return { processedRows: 0, fileLength }
+      errors.push(`No file found in request`)
+      return { processedRows: 0, fileLength, errors }
     }
 
     // Read the file content
@@ -77,12 +79,16 @@ export const processStocksFeedCsv = async (
       try {
         const row = rows[i]
 
-        // Check if stockId is not numeric or symbol is empty
-        if (isNaN(Number(row.stockID)) || row.symbol.trim() === '') {
-          const errorMsg = `Invalid row data at index ${i}: stockId=${row.stockID}, symbol=${row.symbol}`
-          console.error(errorMsg)
+        if (isNaN(Number(row.stockID))) {
           console.error('InvalidRowData', JSON.stringify(row))
-          continue // Skip to the next row
+          errors.push(`Invalid stockID at index ${i}: stockID="${row.stockID}"`)
+          continue
+        }
+
+        if (row.symbol.trim() === '') {
+          console.error('InvalidRowData', JSON.stringify(row))
+          errors.push(`Missing symbol at index ${i}: stockID="${row.stockID}`)
+          continue
         }
         const stock = stockMap.get(`${row.stockID}` as string)
 
@@ -116,7 +122,7 @@ export const processStocksFeedCsv = async (
     const totalProcessingTime = endTime - startTime
     console.log(`Total processing time: ${totalProcessingTime}ms`)
     console.timeEnd('Total stocks processing time')
-    return { processedRows, fileLength }
+    return { processedRows, fileLength, errors }
   } catch (error) {
     req.payload.logger.error(`Error processing stock feed CSV: ${JSON.stringify(error)}`)
 
@@ -125,6 +131,6 @@ export const processStocksFeedCsv = async (
     const totalProcessingTime = endTime - startTime
     console.log(`Total processing time (with error): ${totalProcessingTime}ms`)
     console.timeEnd('Total stocks processing time')
-    return { processedRows, fileLength }
+    return { processedRows, fileLength, errors }
   }
 }

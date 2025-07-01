@@ -62,7 +62,7 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       req,
     })
     // Process the stock feed CSV
-    const { processedRows, fileLength } = await processStocksFeedCsv(
+    const { processedRows, fileLength, errors } = await processStocksFeedCsv(
       req,
       {
         file,
@@ -76,6 +76,9 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
       collection: 'stocks-feed',
       id: stocksFeed.id,
       data: {
+        comments: {
+          errors,
+        },
         duration: `${durationSeconds}s`,
         summary: `Stocks processed successfully: ${processedRows} / ${fileLength} `,
       },
