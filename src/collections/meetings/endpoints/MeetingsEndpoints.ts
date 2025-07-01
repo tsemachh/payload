@@ -461,7 +461,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           'id' in company &&
           usersCompanyIds.includes(String((company as Company).id)),
       )
-      // Build researchPermissions
       const researchPermissions = {
         showResearch: commonCompanies.some(
           (company) => company.researchDocuments?.showResearch === true,
