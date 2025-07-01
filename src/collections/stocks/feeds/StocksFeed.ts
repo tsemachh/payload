@@ -22,7 +22,7 @@ export const StocksFeed: CollectionConfig = {
         readOnly: true,
         components: {
           Cell: {
-            path: '/collections/meetings/feeds/FormattedErrorsCell',
+            path: '/components/FormattedErrorsCell',
           },
         },
       },
