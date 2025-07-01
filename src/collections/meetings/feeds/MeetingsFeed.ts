@@ -22,7 +22,7 @@ export const MeetingsFeed: CollectionConfig = {
         readOnly: true,
         components: {
           Cell: {
-            path: '/components/FormattedErrorsCell',
+            path: '/admincomponents/cell/FormattedErrorsCell',
           },
         },
       },
