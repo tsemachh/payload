@@ -18,7 +18,7 @@ import {
   handleRecommendationReason,
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
-import { getCollectionDoc } from '@/utils/utils'
+import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -137,6 +137,11 @@ const votingRecommendation = [
     ],
   },
 ]
+const votingRecommendationExceptional = JSON.parse(JSON.stringify(votingRecommendation))
+votingRecommendationExceptional.forEach((row: Field) => {
+  row.admin = { condition: (_, siblingData) => siblingData?.showExceptional === true }
+})
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -525,7 +530,42 @@ export const Meetings: CollectionConfig = {
                   type: 'group',
                   name: 'exceptionalRecommendation',
                   label: 'המלצה חריגה',
-                  fields: votingRecommendation as Field[],
+                  fields: [
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'showExceptional',
+                          label: 'האם יש המלצה חריגה?',
+                          type: 'checkbox',
+                          admin: {
+                            width: '20%',
+                            disableListFilter: true,
+                          },
+                        },
+                        {
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
+                          filterOptions: ({ data }) => {
+                            return {
+                              id: {
+                                in: data?.companies?.map(getIdOfRelationField) || [],
+                              },
+                            }
+                          },
+                          admin: {
+                            disableListFilter: true,
+                            width: '80%',
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                        },
+                      ],
+                    },
+                    ...(votingRecommendationExceptional as Field[]),
+                  ],
                 },
                 {
                   name: 'vpercent',

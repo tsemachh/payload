@@ -60,6 +60,8 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
@@ -1293,6 +1295,8 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
+        showExceptional?: T;
+        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
