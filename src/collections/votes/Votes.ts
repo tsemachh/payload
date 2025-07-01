@@ -207,28 +207,6 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    // beforeValidate: [
-    //   async ({ data, operation, req }) => {
-    //     if (operation === 'create') {
-    //       if (!data) return data
-    //       const { meeting, company } = data
-
-    //       if (meeting && company) {
-    //         const existingVotes = await req.payload.find({
-    //           collection: 'votes',
-    //           where: {
-    //             and: [{ meeting: { equals: meeting } }, { company: { equals: company } }],
-    //           },
-    //         })
-
-    //         if (existingVotes.docs.length > 0) {
-    //           throw new Error(` קיימת הצבעה עבור החברה הנתונה באסיפה הנתונה.`)
-    //         }
-    //       }
-    //     }
-    //     return data
-    //   },
-    // ],
     afterChange: [
       async ({ doc, req }) => {
         if (doc._status === 'published') {
@@ -298,4 +276,10 @@ export const Votes: CollectionConfig = {
       handler: getVotingPercentages,
     },
   ],
+  indexes: [
+    {
+      fields: ['meeting', 'company'],
+      unique: true,
+    }
+  ]
 }
