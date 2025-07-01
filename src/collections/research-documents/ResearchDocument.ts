@@ -44,6 +44,7 @@ export const ResearchDocument: CollectionConfig = {
         active: {
           equals: true,
         },
+        'researchDocuments.showResearchPrivate': { equals: true }, //
       },
     },
     {

@@ -24,157 +24,127 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   data,
   req,
 }) => {
-  // Skip validation during migrations
-  if (req.context?.from === 'migration') {
-    return data
-  }
-
+  if (req.context?.from === 'migration') return data
   const type = data?.type
   const docIDs = data?.researchDocuments
   const companies = data?.companies || []
-  if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) {
-    return data
-  }
+  if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) return data
   const validationErrors: { message: string; path: string }[] = []
-
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
-      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) -אחד בלבד.',
+      message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) אחד בלבד.',
       path: 'researchDocuments',
     })
-    if (validationErrors.length > 0) {
-      throw new ValidationError({ errors: validationErrors })
-    }
+    throw new ValidationError({ errors: validationErrors })
   }
-
-  const query: any = {
+  // הבאת מסמכי המחקר הרלוונטיים
+  const { docs: researchDocs } = await req.payload.find({
     collection: 'research-documents',
-    select: {
-      id: true,
-      companies: true,
-      filename: true,
-    },
+    select: { id: true, companies: true, filename: true },
     depth: 0,
     limit: 0,
-    where: {
-      id: {
-        in: docIDs,
-      },
-    },
-  }
-  type ResearchDoc = {
-    id: string
-    companies?: (string | { id: string })[]
-    filename?: string
-  }
-  const researchDocuments = await req.payload.find(query)
-
+    where: { id: { in: docIDs } },
+  })
+  type ResearchDoc = { id: string; companies?: string[]; filename?: string }
+  const docs = researchDocs as ResearchDoc[]
+  // --- בדיקות על מסמכים כלליים ---
   if (docIDs.length > 1) {
-    const generalDocs = researchDocuments?.docs?.filter(
-      (doc) => !('companies' in doc) || (doc.companies && doc.companies.length === 0),
-    )
-
-    const invalidGeneralDocs: string[] = []
-
+    const generalDocs = docs.filter((doc) => !doc.companies || doc.companies.length === 0)
+    const invalidGeneral: string[] = []
     for (const doc of generalDocs) {
-      const result = parseResearchFilename((doc as ResearchDoc).filename || '')
-
+      const filename = doc.filename || ''
+      const result = parseResearchFilename(filename)
       const companyExists =
         result.isValid &&
         !result.isGeneric &&
         result.companyName &&
         (await companyIsNotRegular(result.companyName, req))
-
       if (companyExists) {
         validationErrors.push({
-          message: `המסמך "${(doc as ResearchDoc).filename}" מתייחס לחברה לא קיימת במערכת`,
+          message: `המסמך "${filename}" מתייחס לחברה לא קיימת במערכת`,
           path: 'researchDocuments',
         })
       } else {
-        invalidGeneralDocs.push(doc.id)
+        invalidGeneral.push(doc.id)
       }
     }
-
-    if (invalidGeneralDocs.length > 1) {
+    if (invalidGeneral.length > 1) {
       validationErrors.push({
         message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
         path: 'researchDocuments',
       })
     }
   }
-
-  const docs = researchDocuments.docs as ResearchDocument[]
+  // --- בדיקת חברות שאינן מוזמנות לפגישה זו ---
   const invalidFilenames: string[] = []
-  const invalidCompanies: string[] = []
-
-  for (const doc of docs) {
-    // Check companies' permission for private research documents
-    if (doc.companies && doc.companies.length > 0) {
-      const companyIds = doc.companies
-        .map((company) => (typeof company === 'string' ? company : company.id))
-        .filter((id): id is string => !!id)
-
-      const companiesWithPermission = await req.payload.find({
-        collection: 'companies',
-        where: {
-          id: {
-            in: companyIds,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          researchDocuments: true,
-        },
-        depth: 0,
-      })
-
-      const unauthorizedCompanies = companiesWithPermission.docs
-        .filter((company) => !company?.researchDocuments?.showResearchPrivate)
-        .map((company) => company?.name)
-        .filter((name): name is string => !!name)
-
-      if (unauthorizedCompanies.length > 0) {
-        invalidCompanies.push(...unauthorizedCompanies)
-        validationErrors.push({
-          message: `חברות אלו אינן רשאיות לקבל מסמכי מחקר פרטניים: ${unauthorizedCompanies.join(', ')}`,
-          path: 'researchDocuments',
-        })
-      }
+  docs.forEach((doc) => {
+    if (!doc.companies || doc.companies.length === 0) return
+    const unmatched = doc.companies.filter((c) => !companies.includes(c))
+    if (unmatched.length > 0 && doc.filename) {
+      invalidFilenames.push(doc.filename)
     }
-
-    // Existing validation for unmatched companies
-    if (doc.companies && doc.companies.length > 0) {
-      const unmatchedCompanies = doc.companies
-        .map((company) => (typeof company === 'string' ? company : company.id))
-        .filter((companyId) => !companies.includes(companyId))
-      if (unmatchedCompanies.length > 0 && doc.filename) {
-        invalidFilenames.push(doc.filename)
-      }
-    }
-  }
-
+  })
   if (invalidFilenames.length === 1) {
     validationErrors.push({
       message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
       path: 'researchDocuments',
     })
   } else if (invalidFilenames.length > 1) {
-    const filenamesList = invalidFilenames.map((name) => `- ${name}`).join('\n')
-    const filenamesMessage = `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${filenamesList}`
-
+    const list = invalidFilenames.map((f) => `- ${f}`).join('\n')
     validationErrors.push({
-      message: filenamesMessage,
+      message: `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${list}`,
       path: 'researchDocuments',
     })
   }
-
+  // --- בדיקת כפילות חברות בין המסמכים ---
+  const companyToDocsMap: Record<string, string[]> = {}
+  docs.forEach((doc) => {
+    const name = doc.filename || 'מסמך ללא שם'
+    doc.companies?.forEach((cid) => {
+      if (!companyToDocsMap[cid]) companyToDocsMap[cid] = []
+      companyToDocsMap[cid].push(name)
+    })
+  })
+  const duplicates = Object.entries(companyToDocsMap).filter(([, files]) => files.length > 1)
+  if (duplicates.length > 0) {
+    // שליפת שמות החברות לפי ID
+    const dupIds = duplicates.map(([cid]) => cid)
+    const { docs: companyDocs } = await req.payload.find({
+      collection: 'companies',
+      select: { id: true, name: true },
+      depth: 0,
+      where: { id: { in: dupIds } },
+    })
+    const idToName = Object.fromEntries(
+      (companyDocs as { id: string; name?: string }[]).map((c) => [c.id, c.name || c.id]),
+    )
+    if (duplicates.length === 1) {
+      const [cid, files] = duplicates[0]
+      const list = files.map((f) => `- ${f}`).join('\n')
+      validationErrors.push({
+        message: `החברה "${idToName[cid]}" מופיעה ביותר ממסמך אחד:\n${list}`,
+        path: 'researchDocuments',
+      })
+    } else {
+      const groups = duplicates
+        .map(([cid, files]) => {
+          const header = `החברה "${idToName[cid]}" מופיעה ב־${files.length} מסמכים:`
+          const list = files.map((f) => `  - ${f}`).join('\n')
+          return `${header}\n${list}`
+        })
+        .join('\n\n')
+      validationErrors.push({
+        message: `החברות הבאות מופיעות ביותר ממסמך אחד:\n\n${groups}`,
+        path: 'researchDocuments',
+      })
+    }
+  }
   if (validationErrors.length > 0) {
     throw new ValidationError({ errors: validationErrors })
   }
-
   return data
 }
+
 export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
   data,
   req,
@@ -222,6 +192,7 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
         where: {
           name: { like: parsed.companyName },
           type: { equals: 'regular' },
+          'researchDocuments.showResearchPrivate': { equals: true },
         },
       })
       if (companies) {
