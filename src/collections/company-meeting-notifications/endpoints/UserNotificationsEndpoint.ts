@@ -51,14 +51,23 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       const meetingId = (notification.meeting as string) || ''
       const notificationType = notification.notificationType as string
       const notificationTypeLabel = notificationTypeLabels[notificationType] || notificationType
-
+      let route = ''
+      switch (notificationType) {
+        case 'before-voting-end':
+        case 'after-voting-end':
+          route = meetingId ? `/vote-meeting/${meetingId}` : ''
+          break
+        case 'holdings-not-fed':
+          route = '/holdings'
+          break
+      }
       return {
         id: notification.id,
         title: notificationTypeLabel,
         message: notification.message,
         isRead: notification.readStatus || false,
         createdAt: notification.createdAt,
-        route: meetingId ? `/vote-meeting/${meetingId}` : '',
+        route,
       }
     })
 
