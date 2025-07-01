@@ -5,7 +5,7 @@ import {
   ValidationError,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-import { Company, ResearchDocument } from '@/payload-types'
+import { ResearchDocument } from '@/payload-types'
 
 const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
   const result = await req.payload.find({
@@ -245,26 +245,21 @@ export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ d
     data.agenda.map(async (item) => {
       // המלצה רגילה
       if (item.recommendation.reasonRef) {
-        const reason = await req.payload.findByID({
-          collection: 'recommendation-reasons',
-          id: item.recommendation.reasonRef,
-        })
-
-        if (reason?.content !== 'אחר' && reason?.content) {
-          item.recommendation.reasonText = reason.content
+        // Check if reasonRef is a string (text field) or an ID (relationship field)
+        if (
+          typeof item.recommendation.reasonRef === 'string' &&
+          item.recommendation.reasonRef !== 'אחר'
+        ) {
+          // If it's a string and not 'אחר', it might be the content itself
+          item.recommendation.reasonText = item.recommendation.reasonRef
         }
       }
 
       // המלצה חריגה
       const exceptional = item?.exceptionalRecommendation
       if (exceptional?.showExceptional && exceptional?.reasonRef) {
-        const exceptionalReason = await req.payload.findByID({
-          collection: 'recommendation-reasons',
-          id: exceptional.reasonRef,
-        })
-
-        if (exceptionalReason?.content !== 'אחר' && exceptionalReason?.content) {
-          exceptional.reasonText = exceptionalReason.content
+        if (exceptional?.reasonRef !== 'אחר') {
+          exceptional.reasonText = exceptional.reasonRef
         }
       }
     }),

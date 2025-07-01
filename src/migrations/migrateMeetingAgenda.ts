@@ -12,7 +12,8 @@ const recommendationMap = new Map<number, string | null>([
   [1, 'בעד'],
   [2, 'נגד'],
   [3, 'דיון'],
-  [4, 'הוסר מסדר היום'],
+  [4, '----'], // Changed from 'הוסר מסדר היום' to '----' to align with schema options
+  [5, 'נמנע'], // Added mapping for 'נמנע' (abstain)
 ])
 
 // Function to get the voting recommendation based on the recommendation code
