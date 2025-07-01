@@ -210,7 +210,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   required: true,
                   admin: {
-                    width: '30%',
+                    width: '330px',
                     disableListFilter: true,
                   },
                 },
@@ -230,7 +230,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
                   ],
                   admin: {
-                    width: '15%',
+                    width: '10%',
                   },
                 },
                 {
@@ -239,53 +239,15 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '100px' },
+                  admin: { width: '10%' },
                 },
-                {
-                  name: 'fullName',
-                  label: 'שם',
-                  type: 'text', // Stored in the database
-                  admin: {
-                    hidden: true, // Hide in admin UI to prevent manual edits
-                    disableListFilter: true,
-                  },
-                  index: true,
-                  hooks: {
-                    beforeChange: [
-                      async ({ data, req }) => {
-                        let stockName = ''
-                        if (typeof data?.stock == 'string') {
-                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
-                          stockName = stock.fullName
-                        }
-                        return `${stockName}-${data?.type}`
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
                 {
                   name: 'magnaId',
                   label: 'אסמכתא',
                   type: 'text',
                   index: true,
                   admin: {
-                    width: '200px',
-                    disableListFilter: true,
-                  },
-                },
-                {
-                  name: 'invitationDocument',
-                  label: 'מסמך זימון',
-                  type: 'upload',
-                  relationTo: 'documents',
-                  admin: {
-                    className: 'invitationDocument',
-                    width: '200px',
+                    width: '150px',
                     disableListFilter: true,
                   },
                 },
@@ -295,7 +257,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   index: true,
                   admin: {
-                    width: '600px',
+                    width: '300px',
                     disableListFilter: true,
                     components: {
                       Cell: {
@@ -330,49 +292,37 @@ export const Meetings: CollectionConfig = {
                     ],
                   },
                 },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
                 {
-                  name: 'holdingsLimit',
-                  label: 'מועד קובע',
-                  type: 'date',
-                  index: true,
+                  name: 'invitationDocument',
+                  label: 'מסמך זימון',
+                  type: 'upload',
+                  relationTo: 'documents',
                   admin: {
-                    date: {
-                      displayFormat: 'dd/MM/yyyy',
-                      pickerAppearance: 'default',
-                    },
-                  },
-                },
-                {
-                  name: 'proxyVotingDate',
-                  label: 'מועד מסירת ההצבעות',
-                  type: 'date',
-                  index: true,
-                  admin: {
+                    className: 'invitationDocument',
+                    width: '220px',
                     disableListFilter: true,
-                    date: {
-                      displayFormat: 'HH:mm dd/MM/yyyy',
-                      pickerAppearance: 'dayAndTime',
-                    },
-                  },
-                  hooks: {
-                    beforeChange: [calculateHoldingDateHook],
                   },
                 },
                 {
-                  name: 'meetingDate',
-                  label: 'מועד האסיפה',
-                  type: 'date',
-                  index: true,
+                  name: 'fullName',
+                  label: 'שם',
+                  type: 'text', // Stored in the database
                   admin: {
-                    date: {
-                      displayFormat: 'HH:mm dd/MM/yyyy',
-                      pickerAppearance: 'dayAndTime',
-                    },
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                    disableListFilter: true,
+                  },
+                  index: true,
+                  hooks: {
+                    beforeChange: [
+                      async ({ data, req }) => {
+                        let stockName = ''
+                        if (typeof data?.stock == 'string') {
+                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
+                          stockName = stock.fullName
+                        }
+                        return `${stockName}-${data?.type}`
+                      },
+                    ],
                   },
                 },
               ],
@@ -380,12 +330,6 @@ export const Meetings: CollectionConfig = {
             {
               type: 'row',
               fields: [
-                {
-                  name: 'location',
-                  label: 'כתובת',
-                  type: 'text',
-                  admin: { disableListFilter: true },
-                },
                 {
                   name: 'state',
                   label: 'מצב',
@@ -410,14 +354,77 @@ export const Meetings: CollectionConfig = {
                     { label: 'נמשכת', value: 'ongoing' },
                     { label: 'בוטלה', value: 'cancelled' },
                   ],
+                  admin: {
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'holdingsLimit',
+                  label: 'מועד קובע',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '200px',
+                    date: {
+                      displayFormat: 'dd/MM/yyyy',
+                      pickerAppearance: 'default',
+                    },
+                  },
+                },
+                {
+                  name: 'proxyVotingDate',
+                  label: 'מועד מסירת ההצבעות',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '220px',
+                    disableListFilter: true,
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
+                  hooks: {
+                    beforeChange: [calculateHoldingDateHook],
+                  },
+                },
+                {
+                  name: 'meetingDate',
+                  label: 'מועד האסיפה',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '220px',
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
                 },
               ],
             },
             {
-              name: 'comments',
-              label: 'הערות',
-              type: 'textarea',
-              admin: { disableListFilter: true },
+              type: 'row',
+              fields: [
+                {
+                  name: 'location',
+                  label: 'כתובת',
+                  type: 'text',
+                  admin: {
+                    width: '50%',
+                    disableListFilter: true,
+                  },
+                },
+                {
+                  name: 'comments',
+                  label: 'הערות',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    disableListFilter: true,
+                  },
+                },
+              ],
             },
             {
               type: 'row',
@@ -427,6 +434,7 @@ export const Meetings: CollectionConfig = {
                   label: 'אימות תוצאות',
                   type: 'checkbox',
                   admin: {
+                    width: 'auto',
                     condition: (siblingData) => siblingData.state === 'completed',
                     disableListFilter: true,
                   },
@@ -435,13 +443,13 @@ export const Meetings: CollectionConfig = {
                   name: 'electronicVotingEnabled',
                   label: 'האם מופיעה במערכת האלק׳?',
                   type: 'checkbox',
-                  admin: { disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: true },
                 },
                 {
                   name: 'committeeInitiated',
                   label: 'האם פיננסי דורש ועדה?',
                   type: 'checkbox',
-                  admin: { disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: true },
                 },
               ],
             },

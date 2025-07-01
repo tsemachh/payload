@@ -55,25 +55,27 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
   }, [value, conditionFieldValues, visibilityConditions])
 
   return (
-    <div className="inline-flex items-center">
-      <span className={`flex-grow mr-2 relative ${iconOnly ? 'w-[699px]' : ''}`}>
-        <TextField {...remainingProps} path={path} />
-        {isVisible && (
-          <a
-            href={linkValue}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute top-[32px] left-[9px] w-[26px] h-[26px] flex items-center justify-center bg-white rounded-full border border-gray-300 shadow-sm cursor-pointer"
-            title={linkValue}
-            onClick={(e) => {
-              // Prevent PayloadCMS form navigation warning
-              e.stopPropagation()
-            }}
-          >
-            <img src={iconUrl} alt={iconAltText} className="" />
-          </a>
-        )}
-      </span>
+    <div className="field-type text w-[400px]">
+      <div className="inline-flex items-center">
+        <span className={`flex-grow mr-2 relative ${iconOnly ? 'w-[auto]' : ''}`}>
+          <TextField {...remainingProps} path={path} />
+          {isVisible && (
+            <a
+              href={linkValue}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute top-[32px] left-[9px] w-[26px] h-[26px] flex items-center justify-center bg-white rounded-full border border-gray-300 shadow-sm cursor-pointer"
+              title={linkValue}
+              onClick={(e) => {
+                // Prevent PayloadCMS form navigation warning
+                e.stopPropagation()
+              }}
+            >
+              <img src={iconUrl} alt={iconAltText} className="" />
+            </a>
+          )}
+        </span>
+      </div>
     </div>
   )
 }
