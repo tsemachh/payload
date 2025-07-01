@@ -94,6 +94,7 @@ const ResearchRelationshipValidationFilename: React.FC = () => {
                 in: meetingCompanies,
               },
             },
+            { 'researchDocuments.showResearchPrivate': { equals: true } },
           ],
         },
         limit: 0,
