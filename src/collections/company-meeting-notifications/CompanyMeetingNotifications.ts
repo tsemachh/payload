@@ -51,6 +51,9 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       label: 'חברה',
       type: 'relationship',
       relationTo: 'companies',
+      filterOptions: {
+        type: { equals: 'regular' },
+      },
       required: true,
     },
   ],
