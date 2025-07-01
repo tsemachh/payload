@@ -28,7 +28,6 @@ export const checkCompanyNotificationsHandler: TaskHandler<'checkCompanyNotifica
   req,
 }) => {
   try {
-    const payload = req.payload
     console.log('Starting company notifications check...')
     const today = new Date()
 
@@ -269,10 +268,11 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
       collection: 'companies',
       select: {
         name: true,
+        subCompanies: true,
       },
       where: {
-        subCompanies: {
-          exists: false,
+        type: {
+          equals: 'regular',
         },
         active: {
           equals: true,
@@ -286,23 +286,35 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
     // For each company, check if they have holdings after workingDaysAgo
     for (const company of companies) {
-      // Find the latest holding feed for this company
-      const { docs: holdingsFeeds } = await payload.find({
-        collection: 'holdings-feed',
-        where: {
-          selectedCompanies: {
-            contains: company.id,
-          },
-          valueDate: {
-            greater_than_equal: workingDaysAgoISO,
-          },
-        },
-        sort: '-valueDate',
-        limit: 1,
-      })
+      let hasHoldings = true
+      if (company && company.subCompanies && Array.isArray(company.subCompanies)) {
+        // Add each subCompany as a child
+        const funds = company.subCompanies
+        for (const fund of funds) {
+          // Find the latest holding feed for this fund
+          const { docs: holdingsFeeds } = await payload.find({
+            collection: 'holdings',
+            where: {
+              fund: {
+                equals: fund,
+              },
+              valueDate: {
+                greater_than_equal: workingDaysAgoISO,
+              },
+            },
+            sort: '-valueDate',
+            limit: 1,
+          })
+          if (holdingsFeeds.length === 0) {
+            //If one of the funds is missing holdings then we notify user
+            hasHoldings = false
+            break
+          }
+        }
+      }
 
       // If no holdings feed found, create a notification
-      if (holdingsFeeds.length === 0) {
+      if (!hasHoldings) {
         const message = `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         await payload.create({
@@ -321,6 +333,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
     console.log(`Created ${results.notificationsCreated.holdingsNotFed} holdings notifications`)
   } catch (error) {
+    console.error(error)
     console.error(`Error checking holdings feeds: ${JSON.stringify(error)}`)
   }
 }
