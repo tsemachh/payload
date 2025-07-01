@@ -1,4 +1,4 @@
-import type { TextFieldSingleValidation } from 'payload'
+import type { Field, TextFieldSingleValidation } from 'payload'
 import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -85,6 +85,62 @@ const validateMeetingState: SelectFieldSingleValidation = (
   // Ensure we always return a valid value
   return true
 }
+
+const votingRecommendation = [
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'votingRecommendation',
+        label: 'המלצת הצבעה',
+        type: 'select',
+        admin: {
+          width: '150px',
+          disableListFilter: true,
+        },
+        options: [
+          { label: '----', value: '----' },
+          { label: 'בעד', value: 'בעד' },
+          { label: 'נגד', value: 'נגד' },
+          { label: 'נמנע', value: 'נמנע' },
+          { label: 'דיון', value: 'דיון' },
+        ],
+      },
+      {
+        name: 'reasonRef',
+        label: 'נימוק מוכן',
+        type: 'text',
+        defaultValue: 'אחר',
+        admin: {
+          components: {
+            Field: '/collections/meetings/components/RecommendationReasonSelect',
+          },
+        },
+      },
+    ],
+  },
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'reasonText',
+        label: 'נימוק חופשי',
+        type: 'text',
+        admin: {
+          disableListFilter: true,
+          width: '100%',
+          components: {
+            Field: '/collections/meetings/components/ConditionalReasonText',
+          },
+        },
+      },
+    ],
+  },
+]
+const votingRecommendationExceptional = JSON.parse(JSON.stringify(votingRecommendation))
+votingRecommendationExceptional.forEach((row: Field) => {
+  row.admin = { condition: (_, siblingData) => siblingData?.showExceptional === true }
+})
 
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
@@ -468,57 +524,7 @@ export const Meetings: CollectionConfig = {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'group',
-                  fields: [
-                    {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'votingRecommendation',
-                          label: 'המלצת הצבעה',
-                          type: 'select',
-                          admin: {
-                            width: '150px',
-                            disableListFilter: true,
-                          },
-                          options: [
-                            { label: '----', value: '----' },
-                            { label: 'בעד', value: 'בעד' },
-                            { label: 'נגד', value: 'נגד' },
-                            { label: 'נמנע', value: 'נמנע' },
-                            { label: 'דיון', value: 'דיון' },
-                          ],
-                        },
-                        {
-                          name: 'reasonRef',
-                          label: 'נימוק מוכן',
-                          type: 'text',
-                          defaultValue: 'אחר',
-                          admin: {
-                            components: {
-                              Field: '/collections/meetings/components/RecommendationReasonSelect',
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'reasonText',
-                          label: 'נימוק חופשי',
-                          type: 'text',
-                          admin: {
-                            disableListFilter: true,
-                            width: '100%',
-                            components: {
-                              Field: '/collections/meetings/components/ConditionalReasonText',
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  ],
+                  fields: votingRecommendation as Field[],
                 },
                 {
                   type: 'group',
@@ -558,53 +564,7 @@ export const Meetings: CollectionConfig = {
                         },
                       ],
                     },
-                    {
-                      admin: {
-                        condition: (_, siblingData) => siblingData?.showExceptional === true,
-                      },
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'votingRecommendation',
-                          label: 'המלצת הצבעה',
-                          type: 'select',
-                          admin: {
-                            width: '10%',
-                            disableListFilter: true,
-                          },
-                          options: [
-                            { label: 'בעד', value: 'בעד' },
-                            { label: 'נגד', value: 'נגד' },
-                            { label: 'נמנע', value: 'נמנע' },
-                          ],
-                        },
-                        {
-                          name: 'reasonRef',
-                          label: 'נימוק מוכן',
-                          type: 'relationship',
-                          relationTo: 'recommendation-reasons',
-                          admin: {
-                            disableListFilter: true,
-                            width: '50%',
-                            components: {
-                              Field: '/collections/meetings/components/RecommendationReasonSelect',
-                            },
-                          },
-                        },
-                        {
-                          name: 'reasonText',
-                          label: 'נימוק חופשי',
-                          type: 'text',
-                          admin: {
-                            disableListFilter: true,
-                            width: '40%',
-                            components: {
-                              Field: '/collections/meetings/components/ConditionalReasonText',
-                            },
-                          },
-                        },
-                      ],
-                    },
+                    ...(votingRecommendationExceptional as Field[]),
                   ],
                 },
                 {
