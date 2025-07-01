@@ -125,7 +125,7 @@ export const shouldShowDefaultRecommendations = (
   }
 
   if (selectedCompanies.length > 1) {
-    return selectedCompanies.length === companiesWithDefaultRecommendationIds.size
+    return true
   }
 
   if (selectedCompanies.length === 1) {

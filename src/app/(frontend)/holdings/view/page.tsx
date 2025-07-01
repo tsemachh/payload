@@ -203,7 +203,7 @@ export default function HoldingsView() {
                 data={processedHoldings}
                 idField="id"
                 defaultSortField="lastUpdated"
-                defaultSortDirection="desc"
+                defaultSortDirection="asc"
                 tableId="holdings-view-table"
                 columnsOption={false}
                 tableHeightOffset={280}

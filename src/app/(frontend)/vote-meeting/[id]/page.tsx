@@ -54,6 +54,7 @@ import {
 } from '../../components/ui/tooltip'
 import VoteStatus from '../components/Status'
 import { useParams } from 'next/navigation'
+import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 
 export default function VotingForm() {
   const params = useParams()
@@ -111,6 +112,7 @@ export default function VotingForm() {
 
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
+  const [publishSuccess, setPublishSuccess] = useState(false)
 
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
   const meetingCompanies =
@@ -121,7 +123,7 @@ export default function VotingForm() {
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=published`
       : null
 
-  const { data: publishedVotes } = useSWR(swrKeyPublish, fetcherVote, {
+  const { data: publishedVotes, mutate: mutatePublish } = useSWR(swrKeyPublish, fetcherVote, {
     revalidateOnFocus: false,
   })
 
@@ -345,14 +347,9 @@ export default function VotingForm() {
         const result = await response.json()
 
         if (response.ok) {
-          toast({
-            title: '✅ הצבעה נשלחה בהצלחה',
-            description: result.message || 'ההצבעה פורסמה בהצלחה',
-            duration: 3000,
-          })
-          setTimeout(() => {
-            router.push('/')
-          }, 3000)
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          setPublishSuccess(true)
+          mutatePublish()
         } else {
           throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
         }
@@ -1079,6 +1076,7 @@ export default function VotingForm() {
         </div>
       )}
       <Toaster />
+      <PublishSuccessPopup isOpen={publishSuccess} onClose={() => setPublishSuccess(false)} />
     </>
   )
 }
