@@ -82,6 +82,7 @@ if (process.env.MONGO_USE_TX !== 'true') {
 }
 
 export default buildConfig({
+  debug: process.env.NODE_ENV === 'development',
   serverURL:
     process.env.PUBLIC_SERVER_URL ||
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
@@ -135,29 +136,31 @@ export default buildConfig({
       },
     ],
     // autoRun can optionally be a function that receives payload as an argument
-    autoRun: [
-      {
-        cron: '00 19 * * *', // every day at 19:00
-        limit: 10, // limit jobs to process each run
-        queue: 'daily', // name of the queue
-      },
-      {
-        cron: '00 22 * * *', // every day at 22:00
-        limit: 10, // limit jobs to process each run
-        queue: 'daily10pm', // name of the queue
-      },
-      {
-        cron: '*/30 * * * *', // every 30 minutes
-        limit: 100, // limit jobs to process each run
-        queue: 'holdings', // name of the queue
-      },
-      {
-        cron: '*/02 * * * *', // every 1 minutes
-        limit: 100, // limit jobs to process each run
-        queue: 'now', // name of the queue
-      },
-      // add as many cron jobs as you want
-    ],
+    autoRun: process.env.NOJOBS
+      ? []
+      : [
+          {
+            cron: '00 19 * * *', // every day at 19:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily', // name of the queue
+          },
+          {
+            cron: '00 22 * * *', // every day at 22:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily10pm', // name of the queue
+          },
+          {
+            cron: '*/30 * * * *', // every 30 minutes
+            limit: 100, // limit jobs to process each run
+            queue: 'holdings', // name of the queue
+          },
+          {
+            cron: '*/02 * * * *', // every 1 minutes
+            limit: 100, // limit jobs to process each run
+            queue: 'now', // name of the queue
+          },
+          // add as many cron jobs as you want
+        ],
   },
   admin: {
     dateFormat: 'HH:mm dd/MM/yyyy',

@@ -170,7 +170,7 @@ export const checkCompanyMeetingNotificationsHandler: TaskHandler<
         } else if (isAfterVotingEnd && proxyVotingDate) {
           notificationType = 'before-voting-end'
           const formattedDate = format(proxyVotingDate, 'dd/MM/yyyy')
-          message = `יש להצביע ב${meeting.fullName},חברה ${company.name} הוזמנה לאסיפה ואין הצבעה מפורסמת יום לפני מועד מסירת ההצבעות  ב${formattedDate}`
+          message = `יש להצביע ב${meeting.fullName},חברה ${company.name} הוזמנה לאסיפה ואין הצבעה יום לפני מועד מסירת ההצבעות  ב${formattedDate}`
           results.notificationsCreated.beforeVotingEnd++
           meetingDetail.notificationsCreated.beforeVotingEnd++
         }

@@ -8,6 +8,7 @@ import {
   publishVotes,
   upsertVote,
 } from './voteEndPoint'
+import { getVotingPercentages } from './votingPercentagesEndPoint'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -67,12 +68,6 @@ export const Votes: CollectionConfig = {
           },
         },
       ],
-    },
-    {
-      name: 'noParticipantDuty',
-      label: 'אין חובת השתתפות',
-      type: 'checkbox',
-      defaultValue: false,
     },
     {
       name: 'isInterested',
@@ -152,6 +147,12 @@ export const Votes: CollectionConfig = {
         {
           type: 'row',
           fields: [
+            {
+              name: 'noParticipantDuty',
+              label: 'אין חובת השתתפות',
+              type: 'checkbox',
+              defaultValue: false,
+            },
             {
               name: 'hasConflictOfInterest',
               label: 'ניגוד עניינים',
@@ -290,6 +291,11 @@ export const Votes: CollectionConfig = {
       path: '/publish-votes',
       method: 'post',
       handler: publishVotes,
+    },
+    {
+      path: '/voting-percentages',
+      method: 'post', // it get method use post for boy
+      handler: getVotingPercentages,
     },
   ],
 }

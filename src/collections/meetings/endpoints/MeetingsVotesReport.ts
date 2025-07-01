@@ -15,7 +15,6 @@ export const MeetingsVotesReportEndpoint = async (req: PayloadRequest) => {
     const meetings = await payload.find({
       collection: 'meetings',
       select: {
-        id: true,
         fullName: true,
         meetingId: true,
         companies: true,

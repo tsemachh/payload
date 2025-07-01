@@ -20,6 +20,11 @@ export const StocksFeed: CollectionConfig = {
       label: 'הערות',
       admin: {
         readOnly: true,
+        components: {
+          Cell: {
+            path: '/collections/meetings/feeds/FormattedErrorsCell',
+          },
+        },
       },
     },
     {
@@ -57,5 +62,5 @@ export const StocksFeed: CollectionConfig = {
     },
   ],
 
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

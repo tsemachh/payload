@@ -73,7 +73,6 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
     const { docs: users } = await payload.find({
       collection: 'users',
       select: {
-        id: true,
         companies: true,
         email: true,
       },

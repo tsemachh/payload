@@ -20,5 +20,5 @@ export const Documents: CollectionConfig = {
       type: 'text',
     },
   ],
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

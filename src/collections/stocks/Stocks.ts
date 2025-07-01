@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
+import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
@@ -66,7 +67,7 @@ export const Stocks: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',
@@ -185,7 +186,7 @@ export const Stocks: CollectionConfig = {
                     beforeChange: [
                       async ({ value, originalDoc, req, operation }) => {
                         // Skip processing during migrations
-                        if (req.context?.from === 'migration') {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process') {
                           return value
                         }
 
@@ -320,6 +321,11 @@ export const Stocks: CollectionConfig = {
       path: '/upload-stock-csv',
       method: 'post',
       handler: uploadStockCsvEndPoint,
+    },
+    {
+      path: '/fix-stock-relations',
+      method: 'post',
+      handler: fixStockRelationsEndPoint,
     },
   ],
 }

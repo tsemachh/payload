@@ -12,13 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { CompanyTableDate } from '../types/meetings'
-import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-import VoteDetails from './components/VoteDetails'
-import VoteCompanySelector from './components/VoteCompanySelector'
-import GeneralQuestions from './components/GeneralQuestions'
-import AgendaQuestions from './components/AgendaQuestions'
+import { useRouter } from 'next/navigation'
+import { CompanyTableDate } from '../../types/meetings'
+import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
+import VoteDetails from '../components/VoteDetails'
+import VoteCompanySelector from '../components/VoteCompanySelector'
+import GeneralQuestions from '../components/GeneralQuestions'
+import AgendaQuestions from '../components/AgendaQuestions'
 import {
   AgendaQuestionId,
   AgendaQuestionsType,
@@ -29,30 +29,38 @@ import {
   UserVote,
   ValidationError,
   VoteDataType,
-} from '../types/vote'
+} from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import {
   AGENDA_QUESTIONS_CONFIG,
   GENERAL_QUESTIONS_CONFIG,
   getExplanationFieldName,
-} from './questionConsts'
+} from '../questionConsts'
 import {
   createDefaultAgendaQuestions,
   fetcherVote,
   fetchMeetingData,
   fetchVotedCompanies,
   isGeneralVote,
-} from '../helpers/utils-vote'
+  shouldShowDefaultRecommendations,
+} from '../../helpers/utils-vote'
 import useSWR from 'swr'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
-import VoteStatus from './components/Status'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip'
+import VoteStatus from '../components/Status'
+import { useParams } from 'next/navigation'
 
 export default function VotingForm() {
-  const searchParams = useSearchParams()
+  const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const meetingIdFromUrl = searchParams.get('meetingId')
+
+  const meetingIdFromUrl = params?.id || '-'
 
   const {
     data: meetingData,
@@ -130,6 +138,36 @@ export default function VotingForm() {
   } = useSWR(swrKeyDraft, fetcherVote, {
     revalidateOnFocus: false,
   })
+
+  const allCompanyIds = useMemo(() => {
+    if (!meetingData?.companies) return []
+    return meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+  }, [meetingData?.companies])
+
+  const swrKeyCompanies =
+    allCompanyIds.length > 0
+      ? `/api/companies/voting-recommendations?companiesIds=${allCompanyIds.join(',')}`
+      : null
+
+  const { data: fetchedCompanies } = useSWR(swrKeyCompanies, fetcherVote, {
+    revalidateOnFocus: false,
+  })
+
+  const recommendationMap = useMemo(() => {
+    const map = new Map<string, boolean>()
+
+    if (fetchedCompanies?.data && Array.isArray(fetchedCompanies.data)) {
+      for (const company of fetchedCompanies.data) {
+        map.set(company.id, true)
+      }
+    }
+
+    return map
+  }, [fetchedCompanies])
+
+  const showDefaultRecommendations = useMemo(() => {
+    return shouldShowDefaultRecommendations(companiesIDs, recommendationMap)
+  }, [companiesIDs, recommendationMap])
 
   useEffect(() => {
     if (votesError) {
@@ -376,8 +414,8 @@ export default function VotingForm() {
           isSeniorOfficial: false,
           isInstitutionalInvestor: true,
         },
-        voterNotes: '----',
-        userVotes: createDefaultAgendaQuestions(meetingData.agendas),
+        voterNotes: '',
+        userVotes: createDefaultAgendaQuestions(meetingData.agendas, showDefaultRecommendations),
       }
     } else {
       // Case where we have fetched votes
@@ -396,7 +434,7 @@ export default function VotingForm() {
         const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '----',
+          choice: voteItem?.voteDecision || '',
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
@@ -431,7 +469,7 @@ export default function VotingForm() {
         )
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '----',
+          choice: voteItem?.voteDecision || '',
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
@@ -737,6 +775,7 @@ export default function VotingForm() {
               <VoteStatus
                 isPublished={!isDirty}
                 publishedInfo={lastPublishedVoteInfo}
+                isFirstDraft={!!lastPublishedVoteInfo}
                 isDraft={fetchedVotes?.length && isDirty}
                 draftInfo={
                   fetchedVotes?.length &&
@@ -846,7 +885,7 @@ export default function VotingForm() {
                                       ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
                                       : item.recommendation.votingRecommendation === 'נגד'
                                         ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                        : 'bg-muted text-muted-foreground border-border'
+                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900'
                                   }`}
                                 >
                                   המלצה: {item.recommendation.votingRecommendation}
@@ -857,7 +896,6 @@ export default function VotingForm() {
                                 onValueChange={(value) =>
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
-                                defaultValue={'----'}
                               >
                                 <SelectTrigger
                                   className={`w-full ${

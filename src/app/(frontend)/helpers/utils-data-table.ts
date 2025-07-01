@@ -129,6 +129,22 @@ export const fetcher = async (url: string) => {
   return res.json()
 }
 
+export const postFetcher = async ([url, bodyData]: [string, object]) => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bodyData),
+  })
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while posting the data.')
+    ;(error as any).info = await response.json()
+    ;(error as any).status = response.status
+    throw error
+  }
+
+  return response.json()
+}
 
 export const getVotingRecommendationColor = (recommendation: string) => {
   if (recommendation === 'בעד') {

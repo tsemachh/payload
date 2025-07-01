@@ -21,6 +21,7 @@ interface VoteStatusProps {
   publishedInfo?: VoteInfo
   isDraft: boolean
   draftInfo?: VoteInfo
+  isFirstDraft: boolean
 }
 
 export default function VoteStatus({
@@ -28,6 +29,7 @@ export default function VoteStatus({
   publishedInfo,
   isDraft,
   draftInfo,
+  isFirstDraft,
 }: VoteStatusProps) {
   if ((isPublished && !publishedInfo) || (isDraft && !draftInfo)) {
     return null
@@ -60,7 +62,7 @@ export default function VoteStatus({
 
   if (isDraft && draftInfo) {
     const relativeTime = getRelativeTime(draftInfo.date)
-    const tooltipText = `טיוטה עודכנה ${relativeTime}`
+    const tooltipText = `טיוטה ${isFirstDraft ? 'נוספת' : ''} עודכנה ${relativeTime}`
 
     return (
       <TooltipProvider>
