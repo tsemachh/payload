@@ -33,11 +33,11 @@ import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
 import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
-import { checkNotificationsHandler } from '@/tasks/checkNotifications'
+import { checkAdminNotificationsHandler } from '@/tasks/checkAdminNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
 import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
-import { checkCompanyMeetingNotificationsHandler } from '@/tasks/checkCompanyMeetingNotifications'
+import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
@@ -110,8 +110,8 @@ export default buildConfig({
     deleteJobOnComplete: false,
     tasks: [
       {
-        slug: 'checkNotifications',
-        handler: checkNotificationsHandler,
+        slug: 'checkAdminNotifications',
+        handler: checkAdminNotificationsHandler,
       },
       {
         slug: 'processMeetingState',
@@ -127,8 +127,8 @@ export default buildConfig({
         inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
       },
       {
-        slug: 'checkCompanyMeetingNotifications',
-        handler: checkCompanyMeetingNotificationsHandler,
+        slug: 'checkCompanyNotifications',
+        handler: checkCompanyNotificationsHandler,
       },
       {
         slug: 'sendCompanyMeetingNotifications',

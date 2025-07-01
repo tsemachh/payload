@@ -29,6 +29,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       options: [
         { label: 'יום אחרי מועד קובע', value: 'after-holding-limit' },
         { label: 'יום לפני סיום הצבעה', value: 'before-voting-end' },
+        { label: 'אחזקות לא דווחו', value: 'holdings-not-fed' },
       ],
       required: true,
     },
@@ -43,7 +44,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       label: 'אסיפה',
       type: 'relationship',
       relationTo: 'meetings',
-      required: true,
+      required: false,
     },
     {
       name: 'company',
