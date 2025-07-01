@@ -111,6 +111,7 @@ export default function VotingForm() {
   const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
 
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
+  const [generalVoted, setGeneralVoted] = useState()
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
 
@@ -376,25 +377,34 @@ export default function VotingForm() {
   }, [meetingData, companiesIDs.length])
 
   useEffect(() => {
-    if (isGeneralVoteOption) {
-      const isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
-      setIsGeneralVoteOption(isGeneralVoteOptionTmp)
-    }
-    if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
-      setIsGeneralVoteOption(false)
-    }
-  }, [fetchedVotes, companiesIDs, isGeneralVoteOption])
-
-  useEffect(() => {
-    if (meetingData?.companies) {
+    if (meetingData?.companies.length && fetchedVotes?.length) {
+      console.log(companiesIDs)
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      if (isGeneralVoteOption) {
-        setCompaniesIDs(defaultIds)
-      } else {
+      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
+        setIsGeneralVoteOption(false)
         setCompaniesIDs([defaultIds[0]])
+      } else {
+        let isGeneralVoteOptionTmp
+        if (fetchedVotes?.length == 1 && generalVoted && meetingData?.companies.length > 1) {
+          isGeneralVoteOptionTmp = isGeneralVote([...(fetchedVotes || []), ...(generalVoted || [])])
+        } else {
+          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
+        }
+        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
+        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
+          if (isGeneralVoteOptionTmp) {
+            setCompaniesIDs(defaultIds)
+          } else {
+            setCompaniesIDs([defaultIds[0]])
+          }
+        }
       }
     }
-  }, [isGeneralVoteOption, meetingData?.companies])
+
+    if (!generalVoted && fetchedVotes?.length > 1) {
+      setGeneralVoted(fetchedVotes)
+    }
+  }, [fetchedVotes, meetingData?.companies, generalVoted])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -495,7 +505,14 @@ export default function VotingForm() {
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
+  }, [
+    fetchedVotes,
+    isSWRLoading,
+    meetingData,
+    isMeetingLoading,
+    publishedVotes,
+    showDefaultRecommendations,
+  ])
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
