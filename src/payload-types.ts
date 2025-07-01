@@ -134,7 +134,7 @@ export type RolePermissions =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
-export type UserNotificationType = 'after-holding-limit' | 'before-voting-end';
+export type UserNotificationType = 'after-holding-limit' | 'before-voting-end' | 'holdings-not-fed';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -295,11 +295,11 @@ export interface Config {
   };
   jobs: {
     tasks: {
-      checkNotifications: TaskCheckNotifications;
+      checkAdminNotifications: TaskCheckAdminNotifications;
       processMeetingState: TaskProcessMeetingState;
       adminMailNotifications: TaskAdminMailNotifications;
       processHoldingsChange: TaskProcessHoldingsChange;
-      checkCompanyMeetingNotifications: TaskCheckCompanyMeetingNotifications;
+      checkCompanyNotifications: TaskCheckCompanyNotifications;
       sendCompanyMeetingNotifications: TaskSendCompanyMeetingNotifications;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
@@ -741,7 +741,7 @@ export interface CompanyMeetingNotification {
   message: string;
   notificationType: UserNotificationType;
   readStatus?: boolean | null;
-  meeting: string | Meeting;
+  meeting?: (string | null) | Meeting;
   company: string | Company;
   creator?: string | null;
   updator?: string | null;
@@ -932,11 +932,11 @@ export interface PayloadJob {
         completedAt: string;
         taskSlug:
           | 'inline'
-          | 'checkNotifications'
+          | 'checkAdminNotifications'
           | 'processMeetingState'
           | 'adminMailNotifications'
           | 'processHoldingsChange'
-          | 'checkCompanyMeetingNotifications'
+          | 'checkCompanyNotifications'
           | 'sendCompanyMeetingNotifications'
           | 'createCollectionExport';
         taskID: string;
@@ -974,11 +974,11 @@ export interface PayloadJob {
   taskSlug?:
     | (
         | 'inline'
-        | 'checkNotifications'
+        | 'checkAdminNotifications'
         | 'processMeetingState'
         | 'adminMailNotifications'
         | 'processHoldingsChange'
-        | 'checkCompanyMeetingNotifications'
+        | 'checkCompanyNotifications'
         | 'sendCompanyMeetingNotifications'
         | 'createCollectionExport'
       )
@@ -1808,9 +1808,9 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCheckNotifications".
+ * via the `definition` "TaskCheckAdminNotifications".
  */
-export interface TaskCheckNotifications {
+export interface TaskCheckAdminNotifications {
   input?: unknown;
   output?: unknown;
 }
@@ -1842,9 +1842,9 @@ export interface TaskProcessHoldingsChange {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCheckCompanyMeetingNotifications".
+ * via the `definition` "TaskCheckCompanyNotifications".
  */
-export interface TaskCheckCompanyMeetingNotifications {
+export interface TaskCheckCompanyNotifications {
   input?: unknown;
   output?: unknown;
 }
