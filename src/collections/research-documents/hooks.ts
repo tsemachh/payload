@@ -144,7 +144,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   }
   return data
 }
-
+//
 export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook = async ({
   data,
   req,
