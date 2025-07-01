@@ -38,7 +38,7 @@ export default function VoteStatus({
   if (isPublished && publishedInfo) {
     const relativeTime = getRelativeTime(publishedInfo.date)
     const tooltipText =
-      publishedInfo.user === ''
+      publishedInfo.user === '' || publishedInfo.user === 'system'
         ? `ההצבעה נשלחה ${relativeTime}`
         : `ההצבעה נשלחה על ידי ${publishedInfo.user} ${relativeTime}`
 

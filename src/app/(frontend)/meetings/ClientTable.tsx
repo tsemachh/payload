@@ -68,7 +68,7 @@ export function MeetingsTableClient() {
       isLoading={isLoadingMeetings}
       idField="meetingId"
       defaultSortField={'meetingDate' as keyof MeetingTableDataType}
-      defaultSortDirection="desc"
+      defaultSortDirection="asc"
       tableId="meetings-table"
       renderRowActions={renderMeetingActions}
       pastDateFilterOptions={pastDateFilterOptions}

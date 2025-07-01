@@ -59,7 +59,7 @@ export function DataTableServer<T extends Record<string, any>>({
   const { companies } = useCompaniesContext()
 
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
-  const [pageSize, setPageSize] = useState(pagination?.pageSize || 25)
+  const [pageSize, setPageSize] = useState(pagination?.pageSize || 50)
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [columnVisibility, setColumnVisibility] = useState<{
@@ -373,7 +373,10 @@ export function DataTableServer<T extends Record<string, any>>({
                               )
                             : column.render
                               ? column.render(row)
-                              : highlightText(String(row[column.key] ?? ''), searchTerm)}
+                              : highlightText(
+                                  String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
+                                  searchTerm,
+                                )}
                         </TableCell>
                       ))}
                       {renderRowActions && (
