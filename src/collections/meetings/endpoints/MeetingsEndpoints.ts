@@ -454,6 +454,27 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           .map((c: { companyId: string }) => c.companyId)
           .filter((id: string): id is string => !!id) || []
 
+      const commonCompanies = (meeting.companies ?? []).filter(
+        (company): company is Company =>
+          company != null &&
+          typeof company === 'object' &&
+          'id' in company &&
+          usersCompanyIds.includes(String((company as Company).id)),
+      )
+      const researchPermissions = {
+        showResearch: commonCompanies.some(
+          (company) => company.researchDocuments?.showResearch === true,
+        ),
+        showResearchBond: commonCompanies.some(
+          (company) => company.researchDocuments?.showResearchBond === true,
+        ),
+        showResearchTrusteeship: commonCompanies.some(
+          (company) => company.researchDocuments?.showResearchTrusteeship === true,
+        ),
+        showResearchPrivate: commonCompanies.some(
+          (company) => company.researchDocuments?.showResearchPrivate === true,
+        ),
+      }
       const researchDocuments: UrlFilenameMap[] = (meeting.researchDocuments ?? [])
         .filter(
           (doc): doc is ResearchDocument =>
@@ -468,8 +489,18 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         )
         .filter((doc) => {
           const docCompanyIds = doc.companies ?? []
-          if (docCompanyIds.length === 0) return true
-          return docCompanyIds.some((id) => usersCompanyIds.includes(id))
+          const hasCompanies = docCompanyIds.length > 0
+          const userHasAccessToDocCompanies = hasCompanies
+            ? docCompanyIds.some((id) => usersCompanyIds.includes(id))
+            : true
+          switch (meeting.type) {
+            case 'אג"ח':
+              return researchPermissions.showResearchBond
+            case 'אג"ח כהונת נאמן':
+              return researchPermissions.showResearchTrusteeship
+            default:
+              return hasCompanies ? userHasAccessToDocCompanies : researchPermissions.showResearch
+          }
         })
         .map((doc) => ({
           url: doc.url as string,

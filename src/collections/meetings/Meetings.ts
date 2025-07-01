@@ -624,7 +624,7 @@ export const Meetings: CollectionConfig = {
               name: 'companies',
               label: 'חברות',
               index: true,
-              maxDepth: 0,
+              maxDepth: 1,
               filterOptions: {
                 type: {
                   equals: 'regular',
