@@ -1,4 +1,4 @@
-import { Vote } from '@/payload-types'
+import { Vote, VoteDecision } from '@/payload-types'
 import { MeetingTableDataType } from '../types/meetings'
 import { UserVote } from '../types/vote'
 
@@ -34,18 +34,21 @@ export const fetchVotedCompanies = async (url: string) => {
 
 export const createDefaultAgendaQuestions = (
   agendas: MeetingTableDataType['agendas'],
+  showDefaultRecommendations: boolean,
 ): UserVote[] => {
   return agendas.map((agenda) => ({
     topicIndex: agenda.topicIndex,
-    choice: '----',
+    choice: (agenda.recommendation.votingRecommendation && showDefaultRecommendations
+      ? agenda.recommendation.votingRecommendation
+      : '----') as VoteDecision,
     questions: {
       hasConflictOfInterest: false,
       isRelatedParty: false,
       isInvestmentCommittee: true,
       hasPersonalInterest: false,
-      conflictOfInterestExplanation: undefined,
-      relatedPartyExplanation: undefined,
-      personalInterestExplanation: undefined,
+      conflictOfInterestExplanation: '',
+      relatedPartyExplanation: '',
+      personalInterestExplanation: '',
     },
     privilegedMajority: agenda.privilegedMajority,
     isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -63,7 +66,6 @@ export function isGeneralVote(votes: Vote[]): boolean {
     const currentVotes = current.votes ?? []
 
     const generalFieldsToCompare: (keyof typeof ref)[] = [
-      'noParticipantDuty',
       'isInterested',
       'interestedExplanation',
       'isSeniorOfficial',
@@ -74,11 +76,13 @@ export function isGeneralVote(votes: Vote[]): boolean {
 
     for (const field of generalFieldsToCompare) {
       if ((ref as any)[field] !== (current as any)[field]) {
+        console.log('-------', (ref as any)[field], ' - ', (current as any)[field])
         return false
       }
     }
 
     if (refVotes.length !== currentVotes.length) {
+      console.log('-------', refVotes.length, ' - ', currentVotes.length)
       return false
     }
 
@@ -87,6 +91,8 @@ export function isGeneralVote(votes: Vote[]): boolean {
       const b = currentVotes[j]
 
       if (a.topicIndex !== b.topicIndex) {
+        console.log('-------', a.topicIndex, ' - ', b.topicIndex)
+
         return false
       }
 
@@ -105,6 +111,8 @@ export function isGeneralVote(votes: Vote[]): boolean {
       for (const field of voteFieldsToCompare) {
         if ((a as any)[field] !== (b as any)[field]) {
           console.warn()
+          console.log('-------', (a as any)[field], ' - ', (b as any)[field])
+
           return false
         }
       }
@@ -112,4 +120,24 @@ export function isGeneralVote(votes: Vote[]): boolean {
   }
 
   return true
+}
+
+export const shouldShowDefaultRecommendations = (
+  selectedCompanies: string[],
+  companiesWithDefaultRecommendationIds: Map<string, boolean>,
+): boolean => {
+  if (selectedCompanies.length === 0 || companiesWithDefaultRecommendationIds.size === 0) {
+    return false
+  }
+
+  if (selectedCompanies.length > 1) {
+    return true
+  }
+
+  if (selectedCompanies.length === 1) {
+    const singleCompanyId = selectedCompanies[0]
+    return companiesWithDefaultRecommendationIds.has(singleCompanyId)
+  }
+
+  return false
 }

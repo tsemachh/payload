@@ -19,6 +19,11 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
 
     const userCompanyIds = user?.companies?.map((c) => c?.companyId)
 
+    // Calculate date one month before current date
+    const currentDate = new Date()
+    const monthBefore = new Date(currentDate)
+    monthBefore.setMonth(currentDate.getMonth() - 1)
+
     // Find notifications for the user's companies
     const { docs: notifications } = await req.payload.find({
       collection: 'company-meeting-notifications',
@@ -26,14 +31,19 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
         company: {
           in: userCompanyIds,
         },
+        createdAt: {
+          greater_than_equal: monthBefore.toISOString(),
+        },
       },
       depth: 0, // To get meeting data
+      limit: 0,
     })
 
     // Notification type mapping
     const notificationTypeLabels: Record<string, string> = {
       'after-holding-limit': 'מועד קובע',
       'before-voting-end': 'סגירת הצבעה',
+      'holdings-not-fed': 'דיווח אחזקה',
     }
 
     // Transform notifications to the required format
@@ -41,14 +51,23 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       const meetingId = (notification.meeting as string) || ''
       const notificationType = notification.notificationType as string
       const notificationTypeLabel = notificationTypeLabels[notificationType] || notificationType
-
+      let route = ''
+      switch (notificationType) {
+        case 'before-voting-end':
+        case 'after-voting-end':
+          route = meetingId ? `/vote-meeting/${meetingId}` : ''
+          break
+        case 'holdings-not-fed':
+          route = '/holdings'
+          break
+      }
       return {
         id: notification.id,
         title: notificationTypeLabel,
         message: notification.message,
         isRead: notification.readStatus || false,
         createdAt: notification.createdAt,
-        route: meetingId ? `/vote-meeting/${meetingId}` : '',
+        route,
       }
     })
 

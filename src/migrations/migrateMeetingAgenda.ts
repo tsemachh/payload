@@ -5,6 +5,22 @@ import { PromisePool } from '@/utils/promisePool'
 import { sqlConfig } from '@/migrations/utils/utils'
 import { getMeetingIdToSequenceMap } from '@/utils/utils'
 
+// Map recommendation codes to their corresponding display values
+const recommendationMap = new Map<number, string | null>([
+  [-2, '----'],
+  [0, null],
+  [1, 'בעד'],
+  [2, 'נגד'],
+  [3, 'דיון'],
+  [4, '----'], // Changed from 'הוסר מסדר היום' to '----' to align with schema options
+  [5, 'נמנע'], // Added mapping for 'נמנע' (abstain)
+])
+
+// Function to get the voting recommendation based on the recommendation code
+function getVotingRecommendation(rec: number): string | null | undefined | number {
+  return recommendationMap.has(rec) ? recommendationMap.get(rec) : rec
+}
+
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
@@ -35,6 +51,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              , a.[vPercentSpecial]
              , a.[vtype]
              , a.[dealChanged]
+             , a.[rec]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
                  LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
@@ -70,7 +87,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         vpercent: row.vpercent,
         vPercentSpecial: row.vPercentSpecial,
         dealChanged: row.dealChanged === 1, // Convert to boolean
-        recommendation: row.Recommendation || '',
+        recommendation: {
+          votingRecommendation: getVotingRecommendation(row.rec),
+          reasonText: row.Recommendation || '',
+          reasonRef: 'אחר',
+        },
         originalResult: originalResult, // Store the original result value for later use
       }
 

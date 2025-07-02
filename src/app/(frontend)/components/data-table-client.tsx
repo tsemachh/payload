@@ -66,7 +66,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   futureDateFilterOptions = [],
   idField,
   defaultSortField,
-  defaultSortDirection = 'desc',
+  defaultSortDirection = 'asc',
   tableId = 'default-table',
   renderRowActions,
   searchPlaceholder = 'חיפוש כללי...',
@@ -177,7 +177,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         initialDateFilters[column.key as string] = {
           past: 'allPast',
           future: 'allFuture',
-          empty: true,
+          empty: false,
         }
       }
     })
@@ -222,6 +222,10 @@ export function DataTableStatic<T extends Record<string, any>>({
           meetingStateMap[item.meetingState as Exclude<MeetingState, null>] ||
           String(item.meetingState)
         )
+      }
+
+      if (item[columnKey] == '-') {
+        return '' //empty value
       }
       return String(item[columnKey] || '')
     },
@@ -495,7 +499,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           newFilters[columnKey] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: true,
+            empty: false,
           }
           return newFilters
         })
@@ -506,7 +510,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         const currentFilter = prev[columnKey] || {
           past: '',
           future: '',
-          empty: true,
+          empty: false,
         }
         const newFilter = { ...currentFilter }
 
@@ -549,7 +553,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: true,
+            empty: false,
           }
         }
       })
@@ -573,7 +577,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: true,
+            empty: false,
           }
         }
       })
@@ -616,7 +620,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     const column = columns.find((col) => col.key === columnKey)
     if (column?.key == 'meetingDate' && onlyFuture) {
       const dateFilter = dateFilters[columnKey]
-      if (dateFilter?.future === 'allFuture' && dateFilter?.empty) {
+      if (dateFilter?.future === 'allFuture' && !dateFilter?.empty) {
         return <ChevronDown />
       }
     }
@@ -625,7 +629,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       if (
         dateFilter?.past === 'allPast' &&
         dateFilter?.future === 'allFuture' &&
-        dateFilter?.empty
+        !dateFilter?.empty
       ) {
         return <ChevronDown />
       } else {

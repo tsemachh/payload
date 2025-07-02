@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useState, useEffect } from 'react' // 👈 ADD THIS IMPORT
 import { Textarea } from '@/components/ui/textarea'
 
 interface YesNoQuestionProps {
@@ -24,6 +25,19 @@ export default function YesNoQuestion({
   isAgendaQuestion = false,
   hasExplanationError = false,
 }: YesNoQuestionProps) {
+  // 1. Add local state to manage the textarea's value internally.
+  const [localExplanation, setLocalExplanation] = useState(explanationValue || '')
+
+  // 2. Sync the local state if the initial value from the parent changes.
+  useEffect(() => {
+    // This handles cases where the initial data is loaded after the component mounts.
+    if (explanationValue !== localExplanation) {
+      setLocalExplanation(explanationValue || '')
+    }
+    // We only want this effect to run when the prop `explanationValue` changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explanationValue])
+
   const showExplanation = requiresExplanation && currentValue === true
   const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
   const agendaButtonClasses = 'px-2 py-0.5 text-xs rounded-full transition-all'
@@ -69,8 +83,10 @@ export default function YesNoQuestion({
                 ? 'border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500'
                 : 'border-input'
             }`}
-            value={explanationValue || ''}
-            onChange={(e: any) => onValueChangeAction(true, e.target.value)}
+            // 3. Use the new local state and handlers.
+            value={localExplanation}
+            onChange={(e) => setLocalExplanation(e.target.value)} // Update local state on every keystroke.
+            onBlur={() => onValueChangeAction(true, localExplanation)} // Send final value to parent on blur.
           />
 
           {hasExplanationError && <p className="text-red-500 text-xs mt-1">זהו שדה חובה</p>}

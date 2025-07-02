@@ -117,5 +117,5 @@ export const HoldingsFeed: CollectionConfig = {
       },
     },
   ],
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

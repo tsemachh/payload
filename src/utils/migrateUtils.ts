@@ -315,6 +315,7 @@ export async function upsertStockFromImport(
         collection: 'stocks',
         data: stockData as Stock,
         req,
+        context: { from: 'process' },
       })
       return newStock.id
     } else {
@@ -330,10 +331,13 @@ export async function upsertStockFromImport(
           collection: 'stocks',
           id: stock.id,
           data: {
+            active: stockData.active,
+            comments: stockData.comments,
             name: stockData.name,
             longName: stockData.longName,
             isFinancial: stockData.isFinancial,
           },
+          context: { from: 'process' },
           req,
         })
       }
@@ -352,6 +356,7 @@ export async function upsertStockValueFromImport(
   stockSequence: string,
   row: ImportStock,
   req: PayloadRequest,
+  newStockValue: boolean = false,
 ) {
   const stockValue: Partial<StockValue> | null = {
     stockId: stockSequence as string,
@@ -361,7 +366,9 @@ export async function upsertStockValueFromImport(
     registeredValue: row.registeredValue || null,
   }
 
-  const valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
+  let valueId = null
+  if (!newStockValue)
+    valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
     req.payload.update({

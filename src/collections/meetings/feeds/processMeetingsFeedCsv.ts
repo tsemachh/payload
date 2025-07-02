@@ -125,7 +125,6 @@ export const processMeetingsFeedCsv = async (
     const stocks = await req.payload.find({
       collection: 'stocks',
       select: {
-        id: true,
         active: true,
         stockId: true,
       },

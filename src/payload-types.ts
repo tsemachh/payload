@@ -55,15 +55,15 @@ export type MeetingAgenda =
       topicType: 'reporting' | 'decision';
       majorityType?: ('regular' | 'privileged') | null;
       recommendation?: {
-        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-        reasonRef?: (string | null) | RecommendationReason;
+        votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
+        reasonRef?: string | null;
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
         showExceptional?: boolean | null;
         companies?: (string | Company)[] | null;
-        votingRecommendation?: ('for' | 'against' | 'abstain') | null;
-        reasonRef?: (string | null) | RecommendationReason;
+        votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
+        reasonRef?: string | null;
         reasonText?: string | null;
       };
       vpercent?: number | null;
@@ -134,7 +134,7 @@ export type RolePermissions =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
-export type UserNotificationType = 'after-holding-limit' | 'before-voting-end';
+export type UserNotificationType = 'after-holding-limit' | 'before-voting-end' | 'holdings-not-fed';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -295,11 +295,11 @@ export interface Config {
   };
   jobs: {
     tasks: {
-      checkNotifications: TaskCheckNotifications;
+      checkAdminNotifications: TaskCheckAdminNotifications;
       processMeetingState: TaskProcessMeetingState;
       adminMailNotifications: TaskAdminMailNotifications;
       processHoldingsChange: TaskProcessHoldingsChange;
-      checkCompanyMeetingNotifications: TaskCheckCompanyMeetingNotifications;
+      checkCompanyNotifications: TaskCheckCompanyNotifications;
       sendCompanyMeetingNotifications: TaskSendCompanyMeetingNotifications;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
@@ -392,15 +392,15 @@ export interface Meeting {
   stock: string | Stock;
   type?: MeetingType;
   meetingId?: string | null;
-  fullName?: string | null;
   magnaId?: string | null;
-  invitationDocument?: (string | null) | Document;
   invitationLink?: string | null;
+  invitationDocument?: (string | null) | Document;
+  fullName?: string | null;
+  state?: MeetingState;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
   location?: string | null;
-  state?: MeetingState;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
@@ -458,18 +458,6 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "recommendation-reasons".
- */
-export interface RecommendationReason {
-  id: string;
-  content: string;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -574,7 +562,6 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   reported?: boolean | null;
-  noParticipantDuty?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -585,6 +572,7 @@ export interface Vote {
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
+        noParticipantDuty?: boolean | null;
         hasConflictOfInterest?: boolean | null;
         conflictOfInterestExplanation?: string | null;
         isRelatedParty?: boolean | null;
@@ -748,7 +736,7 @@ export interface CompanyMeetingNotification {
   message: string;
   notificationType: UserNotificationType;
   readStatus?: boolean | null;
-  meeting: string | Meeting;
+  meeting?: (string | null) | Meeting;
   company: string | Company;
   creator?: string | null;
   updator?: string | null;
@@ -818,6 +806,18 @@ export interface MeetingsFeed {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recommendation-reasons".
+ */
+export interface RecommendationReason {
+  id: string;
+  content: string;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -939,11 +939,11 @@ export interface PayloadJob {
         completedAt: string;
         taskSlug:
           | 'inline'
-          | 'checkNotifications'
+          | 'checkAdminNotifications'
           | 'processMeetingState'
           | 'adminMailNotifications'
           | 'processHoldingsChange'
-          | 'checkCompanyMeetingNotifications'
+          | 'checkCompanyNotifications'
           | 'sendCompanyMeetingNotifications'
           | 'createCollectionExport';
         taskID: string;
@@ -981,11 +981,11 @@ export interface PayloadJob {
   taskSlug?:
     | (
         | 'inline'
-        | 'checkNotifications'
+        | 'checkAdminNotifications'
         | 'processMeetingState'
         | 'adminMailNotifications'
         | 'processHoldingsChange'
-        | 'checkCompanyMeetingNotifications'
+        | 'checkCompanyNotifications'
         | 'sendCompanyMeetingNotifications'
         | 'createCollectionExport'
       )
@@ -1237,15 +1237,15 @@ export interface MeetingsSelect<T extends boolean = true> {
   stock?: T;
   type?: T;
   meetingId?: T;
-  fullName?: T;
   magnaId?: T;
-  invitationDocument?: T;
   invitationLink?: T;
+  invitationDocument?: T;
+  fullName?: T;
+  state?: T;
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
   location?: T;
-  state?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
@@ -1314,7 +1314,6 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   reported?: T;
-  noParticipantDuty?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1326,6 +1325,7 @@ export interface VotesSelect<T extends boolean = true> {
     | {
         topicIndex?: T;
         voteDecision?: T;
+        noParticipantDuty?: T;
         hasConflictOfInterest?: T;
         conflictOfInterestExplanation?: T;
         isRelatedParty?: T;
@@ -1822,9 +1822,9 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCheckNotifications".
+ * via the `definition` "TaskCheckAdminNotifications".
  */
-export interface TaskCheckNotifications {
+export interface TaskCheckAdminNotifications {
   input?: unknown;
   output?: unknown;
 }
@@ -1856,9 +1856,9 @@ export interface TaskProcessHoldingsChange {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCheckCompanyMeetingNotifications".
+ * via the `definition` "TaskCheckCompanyNotifications".
  */
-export interface TaskCheckCompanyMeetingNotifications {
+export interface TaskCheckCompanyNotifications {
   input?: unknown;
   output?: unknown;
 }

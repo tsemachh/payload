@@ -1,7 +1,7 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 // Using the global Response object for consistent API responses
 
-const detailsEndpoint = async (req: PayloadRequest) => {
+export const detailsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     // Get user from the request
@@ -51,4 +51,44 @@ const detailsEndpoint = async (req: PayloadRequest) => {
   }
 }
 
-export default detailsEndpoint
+export const getVotingRecommendation = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
+    const { companiesIds } = req.query
+
+    if (!companiesIds) {
+      return Response.json({ error: 'Company IDs is required' }, { status: 400 })
+    }
+
+    const companiesIdsArray = (companiesIds as string).split(',')
+
+    const query: any = {
+      collection: 'companies',
+      select: {
+        id: true,
+        'researchDocuments.defaultVotingRecommendation': true,
+      },
+      depth: 0,
+      limit: 0,
+      where: {
+        and: [
+          {
+            id: {
+              in: companiesIdsArray,
+            },
+          },
+          { 'researchDocuments.defaultVotingRecommendation': { equals: true } },
+        ],
+      },
+    }
+
+    const companies = await req.payload.find(query)
+
+    return Response.json({
+      data: companies.docs,
+    })
+  } catch (error) {
+    console.error('Error in companies details endpoint:', error)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

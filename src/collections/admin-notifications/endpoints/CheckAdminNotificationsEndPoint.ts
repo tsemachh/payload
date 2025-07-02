@@ -1,9 +1,9 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import {
-  getWorkingDateBefore,
   getWorkingDateAfter,
-} from '@/collections/meetings/hooks/ calculateHoldingDate'
+  getWorkingDateBefore,
+} from '@/collections/meetings/hooks/calculateHoldingDate'
 import { Vote } from '@/payload-types'
 
 /**
@@ -12,7 +12,7 @@ import { Vote } from '@/payload-types'
  * 2. Companies not voting on meetings happening in the next working day
  * 3. No feed from Predictae (stocks or meetings) in the past working day
  */
-const CheckNotificationsEndpoint = async (req: PayloadRequest) => {
+const CheckAdminNotificationsEndPoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     // Authentication check
@@ -283,4 +283,4 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
   }
 }
 
-export default CheckNotificationsEndpoint
+export default CheckAdminNotificationsEndPoint

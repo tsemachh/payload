@@ -4,12 +4,12 @@ import { useState, useMemo } from 'react'
 import useSWR from 'swr'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
-import { MeetingTableDataType } from '../../types/meetings'
-import { fetcher } from '../../helpers/utils-data-table'
+import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
+import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(25)
+  const [pageSize, setPageSize] = useState(50)
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -25,10 +25,48 @@ export function MeetingsTableServer() {
     return `/api/meetings/all-meetings?${params.toString()}`
   }, [currentPage, pageSize, sortField, sortDirection, searchTerm])
 
-  const { data, isLoading } = useSWR(query, fetcher, {
+  const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
+
+  const meetingsForPercentagesQuery = useMemo(() => {
+    if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
+      return null
+    }
+
+    const meetingsPayload = meetingsResponse?.data.map((meeting: MeetingTableDataType) => ({
+      meetingId: meeting.meetingIdPayload,
+      companyIds: meeting.companies.map((company: CompanyTableDate) => company.id),
+    }))
+
+    return { meetings: meetingsPayload }
+  }, [meetingsResponse?.data])
+
+  const swrKeyForPercentages = meetingsForPercentagesQuery
+    ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
+    : null
+
+  const { data: percentagesResponse } = useSWR(swrKeyForPercentages, postFetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+
+  const votingPercentagesMap = percentagesResponse?.percentages
+
+  const dataWithPercentages = useMemo(() => {
+    if (!meetingsResponse?.data) return []
+
+    if (!votingPercentagesMap) return meetingsResponse?.data
+
+    return meetingsResponse?.data.map((meeting: MeetingTableDataType) => {
+      const percentageData = votingPercentagesMap[meeting.meetingIdPayload]
+      return {
+        ...meeting,
+        votingPercentage: percentageData ? percentageData.votingPercentage : null,
+      }
+    })
+  }, [meetingsResponse?.data, votingPercentagesMap])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -52,7 +90,7 @@ export function MeetingsTableServer() {
 
   return (
     <DataTableServer
-      data={data?.data || []}
+      data={dataWithPercentages}
       columns={meetingColumns}
       idField="meetingId"
       defaultSortField={sortField as keyof MeetingTableDataType}
@@ -61,8 +99,8 @@ export function MeetingsTableServer() {
       renderRowActions={renderMeetingActions}
       pagination={{
         pageSize,
-        totalItems: data?.totalItems || 0,
-        totalPages: data?.totalPages || 0,
+        totalItems: meetingsResponse?.totalItems || 0,
+        totalPages: meetingsResponse?.totalPages || 0,
         currentPage,
         onPageChange: handlePageChange,
         onPageSizeChange: handlePageSizeChange,

@@ -14,12 +14,13 @@ import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus'
 
 function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
   const router = useRouter()
 
-  const handleIconClick = (e: any) => {
-    router.push(`/vote?meetingId=${row.meetingId}`)
+  const handleIconClick = () => {
+    router.push(`/vote-meeting/${row.meetingIdPayload}`)
   }
   if (row.companies.length === 0) return null
   return (
@@ -50,16 +51,10 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
             className="flex flex-col gap-2"
           >
             {/* Vote Status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
-              ></div>
-              <span className="font-medium text-sm px-2">
-                {Number.parseInt(row.meetingId) % 2 === 0
-                  ? 'ההצבעות התקבלו בעמדה'
-                  : 'ההצבעות טרם התקבלו בעמדה'}
-              </span>
-            </div>
+            <VotedCountStatus
+              votingPercentage={row.votingPercentage}
+              companiesNum={row.companies.length}
+            />
 
             {/* Comments Section */}
             {row.comments && row.comments != '-' && (
@@ -148,7 +143,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'סדר היום',
     noHeader: true,
     type: 'other',
-    filterable: true,
     isAlwaysVisible: true,
     positionCenter: true,
     render: (row) => {
@@ -212,7 +206,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
-
       return new Intl.NumberFormat('he-IL', {
         maximumFractionDigits: 0,
       }).format(marketValue / 1_000_000)

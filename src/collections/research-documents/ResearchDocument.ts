@@ -24,6 +24,7 @@ export const ResearchDocument: CollectionConfig = {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/pdf',
     ],
+    skipSafeFetch: true,
   },
   fields: [
     {
@@ -43,6 +44,7 @@ export const ResearchDocument: CollectionConfig = {
         active: {
           equals: true,
         },
+        'researchDocuments.showResearchPrivate': { equals: true }, //
       },
     },
     {
