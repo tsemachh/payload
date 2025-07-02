@@ -1,4 +1,4 @@
-import type { TextFieldSingleValidation } from 'payload'
+import type { Field, TextFieldSingleValidation } from 'payload'
 import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -11,7 +11,7 @@ import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
-import { calculateHoldingDateHook } from './hooks/ calculateHoldingDate'
+import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
@@ -86,6 +86,62 @@ const validateMeetingState: SelectFieldSingleValidation = (
   return true
 }
 
+const votingRecommendation = [
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'votingRecommendation',
+        label: 'המלצת הצבעה',
+        type: 'select',
+        admin: {
+          width: '150px',
+          disableListFilter: true,
+        },
+        options: [
+          { label: '----', value: '----' },
+          { label: 'בעד', value: 'בעד' },
+          { label: 'נגד', value: 'נגד' },
+          { label: 'נמנע', value: 'נמנע' },
+          { label: 'דיון', value: 'דיון' },
+        ],
+      },
+      {
+        name: 'reasonRef',
+        label: 'נימוק מוכן',
+        type: 'text',
+        defaultValue: 'אחר',
+        admin: {
+          components: {
+            Field: '/collections/meetings/components/RecommendationReasonSelect',
+          },
+        },
+      },
+    ],
+  },
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'reasonText',
+        label: 'נימוק חופשי',
+        type: 'text',
+        admin: {
+          disableListFilter: true,
+          width: '100%',
+          components: {
+            Field: '/collections/meetings/components/ConditionalReasonText',
+          },
+        },
+      },
+    ],
+  },
+]
+const votingRecommendationExceptional = JSON.parse(JSON.stringify(votingRecommendation))
+votingRecommendationExceptional.forEach((row: Field) => {
+  row.admin = { condition: (_, siblingData) => siblingData?.showExceptional === true }
+})
+
 export const Meetings: CollectionConfig = {
   slug: 'meetings',
   labels: {
@@ -154,7 +210,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   required: true,
                   admin: {
-                    width: '30%',
+                    width: '330px',
                     disableListFilter: true,
                   },
                 },
@@ -174,7 +230,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
                   ],
                   admin: {
-                    width: '15%',
+                    width: '150px',
                   },
                 },
                 {
@@ -186,50 +242,12 @@ export const Meetings: CollectionConfig = {
                   admin: { width: '100px' },
                 },
                 {
-                  name: 'fullName',
-                  label: 'שם',
-                  type: 'text', // Stored in the database
-                  admin: {
-                    hidden: true, // Hide in admin UI to prevent manual edits
-                    disableListFilter: true,
-                  },
-                  index: true,
-                  hooks: {
-                    beforeChange: [
-                      async ({ data, req }) => {
-                        let stockName = ''
-                        if (typeof data?.stock == 'string') {
-                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
-                          stockName = stock.fullName
-                        }
-                        return `${stockName}-${data?.type}`
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
-                {
                   name: 'magnaId',
                   label: 'אסמכתא',
                   type: 'text',
                   index: true,
                   admin: {
-                    width: '200px',
-                    disableListFilter: true,
-                  },
-                },
-                {
-                  name: 'invitationDocument',
-                  label: 'מסמך זימון',
-                  type: 'upload',
-                  relationTo: 'documents',
-                  admin: {
-                    className: 'invitationDocument',
-                    width: '200px',
+                    width: '150px',
                     disableListFilter: true,
                   },
                 },
@@ -239,7 +257,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   index: true,
                   admin: {
-                    width: '600px',
+                    width: '200px',
                     disableListFilter: true,
                     components: {
                       Cell: {
@@ -274,49 +292,37 @@ export const Meetings: CollectionConfig = {
                     ],
                   },
                 },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
                 {
-                  name: 'holdingsLimit',
-                  label: 'מועד קובע',
-                  type: 'date',
-                  index: true,
+                  name: 'invitationDocument',
+                  label: 'מסמך זימון',
+                  type: 'upload',
+                  relationTo: 'documents',
                   admin: {
-                    date: {
-                      displayFormat: 'dd/MM/yyyy',
-                      pickerAppearance: 'default',
-                    },
-                  },
-                },
-                {
-                  name: 'proxyVotingDate',
-                  label: 'מועד מסירת ההצבעות',
-                  type: 'date',
-                  index: true,
-                  admin: {
+                    className: 'invitationDocument',
+                    width: '220px',
                     disableListFilter: true,
-                    date: {
-                      displayFormat: 'HH:mm dd/MM/yyyy',
-                      pickerAppearance: 'dayAndTime',
-                    },
-                  },
-                  hooks: {
-                    beforeChange: [calculateHoldingDateHook],
                   },
                 },
                 {
-                  name: 'meetingDate',
-                  label: 'מועד האסיפה',
-                  type: 'date',
-                  index: true,
+                  name: 'fullName',
+                  label: 'שם',
+                  type: 'text', // Stored in the database
                   admin: {
-                    date: {
-                      displayFormat: 'HH:mm dd/MM/yyyy',
-                      pickerAppearance: 'dayAndTime',
-                    },
+                    hidden: true, // Hide in admin UI to prevent manual edits
+                    disableListFilter: true,
+                  },
+                  index: true,
+                  hooks: {
+                    beforeChange: [
+                      async ({ data, req }) => {
+                        let stockName = ''
+                        if (typeof data?.stock == 'string') {
+                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
+                          stockName = stock.fullName
+                        }
+                        return `${stockName}-${data?.type}`
+                      },
+                    ],
                   },
                 },
               ],
@@ -324,12 +330,6 @@ export const Meetings: CollectionConfig = {
             {
               type: 'row',
               fields: [
-                {
-                  name: 'location',
-                  label: 'כתובת',
-                  type: 'text',
-                  admin: { disableListFilter: true },
-                },
                 {
                   name: 'state',
                   label: 'מצב',
@@ -354,14 +354,82 @@ export const Meetings: CollectionConfig = {
                     { label: 'נמשכת', value: 'ongoing' },
                     { label: 'בוטלה', value: 'cancelled' },
                   ],
+                  admin: {
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'holdingsLimit',
+                  label: 'מועד קובע',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '200px',
+                    date: {
+                      displayFormat: 'dd/MM/yyyy',
+                      pickerAppearance: 'default',
+                    },
+                  },
+                },
+                {
+                  name: 'proxyVotingDate',
+                  label: 'מועד מסירת ההצבעות',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '220px',
+                    disableListFilter: true,
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
+                  hooks: {
+                    beforeChange: [calculateHoldingDateHook],
+                  },
+                },
+                {
+                  name: 'meetingDate',
+                  label: 'מועד האסיפה',
+                  type: 'date',
+                  index: true,
+                  admin: {
+                    width: '220px',
+                    date: {
+                      displayFormat: 'HH:mm dd/MM/yyyy',
+                      pickerAppearance: 'dayAndTime',
+                    },
+                  },
                 },
               ],
             },
             {
-              name: 'comments',
-              label: 'הערות',
-              type: 'textarea',
-              admin: { disableListFilter: true },
+              type: 'row',
+              fields: [
+                {
+                  name: 'location',
+                  label: 'כתובת',
+                  type: 'text',
+                  admin: {
+                    width: '50%',
+                    disableListFilter: true,
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'comments',
+                  label: 'הערות',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    disableListFilter: true,
+                  },
+                },
+              ],
             },
             {
               type: 'row',
@@ -371,6 +439,7 @@ export const Meetings: CollectionConfig = {
                   label: 'אימות תוצאות',
                   type: 'checkbox',
                   admin: {
+                    width: 'auto',
                     condition: (siblingData) => siblingData.state === 'completed',
                     disableListFilter: true,
                   },
@@ -379,13 +448,13 @@ export const Meetings: CollectionConfig = {
                   name: 'electronicVotingEnabled',
                   label: 'האם מופיעה במערכת האלק׳?',
                   type: 'checkbox',
-                  admin: { disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: true },
                 },
                 {
                   name: 'committeeInitiated',
                   label: 'האם פיננסי דורש ועדה?',
                   type: 'checkbox',
-                  admin: { disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: true },
                 },
               ],
             },
@@ -468,57 +537,7 @@ export const Meetings: CollectionConfig = {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'group',
-                  fields: [
-                    {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'votingRecommendation',
-                          label: 'המלצת הצבעה',
-                          type: 'select',
-                          admin: {
-                            width: '100px',
-                            disableListFilter: true,
-                          },
-                          options: [
-                            { label: '----', value: '----' },
-                            { label: 'בעד', value: 'בעד' },
-                            { label: 'נגד', value: 'נגד' },
-                            { label: 'נמנע', value: 'נמנע' },
-                            { label: 'דיון', value: 'דיון' },
-                          ],
-                        },
-                        {
-                          name: 'reasonRef',
-                          label: 'נימוק מוכן',
-                          type: 'text',
-                          defaultValue: 'אחר',
-                          admin: {
-                            components: {
-                              Field: '/collections/meetings/components/RecommendationReasonSelect',
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'reasonText',
-                          label: 'נימוק חופשי',
-                          type: 'text',
-                          admin: {
-                            disableListFilter: true,
-                            width: '100%',
-                            components: {
-                              Field: '/collections/meetings/components/ConditionalReasonText',
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  ],
+                  fields: votingRecommendation as Field[],
                 },
                 {
                   type: 'group',
@@ -558,53 +577,7 @@ export const Meetings: CollectionConfig = {
                         },
                       ],
                     },
-                    {
-                      admin: {
-                        condition: (_, siblingData) => siblingData?.showExceptional === true,
-                      },
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'votingRecommendation',
-                          label: 'המלצת הצבעה',
-                          type: 'select',
-                          admin: {
-                            width: '10%',
-                            disableListFilter: true,
-                          },
-                          options: [
-                            { label: 'בעד', value: 'בעד' },
-                            { label: 'נגד', value: 'נגד' },
-                            { label: 'נמנע', value: 'נמנע' },
-                          ],
-                        },
-                        {
-                          name: 'reasonRef',
-                          label: 'נימוק מוכן',
-                          type: 'relationship',
-                          relationTo: 'recommendation-reasons',
-                          admin: {
-                            disableListFilter: true,
-                            width: '50%',
-                            components: {
-                              Field: '/collections/meetings/components/RecommendationReasonSelect',
-                            },
-                          },
-                        },
-                        {
-                          name: 'reasonText',
-                          label: 'נימוק חופשי',
-                          type: 'text',
-                          admin: {
-                            disableListFilter: true,
-                            width: '40%',
-                            components: {
-                              Field: '/collections/meetings/components/ConditionalReasonText',
-                            },
-                          },
-                        },
-                      ],
-                    },
+                    ...(votingRecommendationExceptional as Field[]),
                   ],
                 },
                 {
@@ -664,7 +637,7 @@ export const Meetings: CollectionConfig = {
               name: 'companies',
               label: 'חברות',
               index: true,
-              maxDepth: 0,
+              maxDepth: 1,
               filterOptions: {
                 type: {
                   equals: 'regular',

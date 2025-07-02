@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
+import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
@@ -9,7 +10,22 @@ const stockLinkProps: IconLinkProps = {
   iconAltText: 'קישור לבורסה',
   visibilityConditions: { origin: 'TASE', tradable: true, fromMagna: true },
 }
+const validateTradableRelations = async (
+  value: boolean | null | undefined,
+  { req, data, id }: any,
+): Promise<true | string> => {
+  if (req.context?.from === 'migration') {
+    return true
+  }
 
+  if (value === true && data?.relatedStock)
+    return 'אין אפשרות להפוך לסחיר נייר שיש לו נייר ערך ראשי'
+  if (value === false && data?.relations?.docs.length > 0) {
+    return 'אין אפשרות להפוך ללא סחיר נייר שיש לו נירות עוקבים'
+  }
+
+  return true
+}
 const validateNoFutureMeetings = async (
   value: boolean | null | undefined,
   { req, data, id }: any,
@@ -157,6 +173,10 @@ export const Stocks: CollectionConfig = {
                   name: 'tradable',
                   label: 'האם נסחר',
                   type: 'checkbox',
+                  validate: validateTradableRelations,
+                  access: {
+                    update: ({ doc }) => !doc?.fromMagna,
+                  },
                 },
                 {
                   name: 'relatedStock',
@@ -185,7 +205,7 @@ export const Stocks: CollectionConfig = {
                     beforeChange: [
                       async ({ value, originalDoc, req, operation }) => {
                         // Skip processing during migrations
-                        if (req.context?.from === 'migration') {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process') {
                           return value
                         }
 
@@ -320,6 +340,11 @@ export const Stocks: CollectionConfig = {
       path: '/upload-stock-csv',
       method: 'post',
       handler: uploadStockCsvEndPoint,
+    },
+    {
+      path: '/fix-stock-relations',
+      method: 'post',
+      handler: fixStockRelationsEndPoint,
     },
   ],
 }

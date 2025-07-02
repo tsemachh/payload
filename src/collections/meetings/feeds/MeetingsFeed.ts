@@ -22,7 +22,7 @@ export const MeetingsFeed: CollectionConfig = {
         readOnly: true,
         components: {
           Cell: {
-            path: '/collections/meetings/feeds/FormattedErrorsCell',
+            path: '/admincomponents/cell/FormattedErrorsCell',
           },
         },
       },
@@ -61,5 +61,5 @@ export const MeetingsFeed: CollectionConfig = {
       },
     },
   ],
-  upload: true,
+  upload: { skipSafeFetch: true },
 }
