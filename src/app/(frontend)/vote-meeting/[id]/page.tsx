@@ -195,7 +195,6 @@ export default function VotingForm() {
 
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
-      console.log(companiesIDs)
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
         setIsGeneralVoteOption(false)
