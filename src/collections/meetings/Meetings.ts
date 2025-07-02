@@ -533,51 +533,45 @@ export const Meetings: CollectionConfig = {
                     },
                   ],
                 },
+
                 {
                   name: 'recommendation',
                   label: 'המלצה',
                   type: 'group',
                   fields: votingRecommendation as Field[],
                 },
+                ...(votingRecommendationExceptional as Field[]),
                 {
-                  type: 'group',
-                  name: 'exceptionalRecommendation',
-                  label: 'המלצה חריגה',
+                  type: 'row',
                   fields: [
                     {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'showExceptional',
-                          label: 'האם יש המלצה חריגה?',
-                          type: 'checkbox',
-                          admin: {
-                            width: '20%',
-                            disableListFilter: true,
-                          },
-                        },
-                        {
-                          name: 'companies',
-                          label: 'חברות',
-                          type: 'relationship',
-                          relationTo: 'companies',
-                          hasMany: true,
-                          filterOptions: ({ data }) => {
-                            return {
-                              id: {
-                                in: data?.companies?.map(getIdOfRelationField) || [],
-                              },
-                            }
-                          },
-                          admin: {
-                            disableListFilter: true,
-                            width: '80%',
-                            condition: (_, siblingData) => siblingData?.showExceptional === true,
-                          },
-                        },
-                      ],
+                      name: 'showExceptional',
+                      label: 'המלצה חריגה?',
+                      type: 'checkbox',
+                      admin: {
+                        width: '20%',
+                        disableListFilter: true,
+                      },
                     },
-                    ...(votingRecommendationExceptional as Field[]),
+                    {
+                      name: 'companies',
+                      label: 'חברות',
+                      type: 'relationship',
+                      relationTo: 'companies',
+                      hasMany: true,
+                      filterOptions: ({ data }) => {
+                        return {
+                          id: {
+                            in: data?.companies?.map(getIdOfRelationField) || [],
+                          },
+                        }
+                      },
+                      admin: {
+                        disableListFilter: true,
+                        width: '80%',
+                        condition: (_, siblingData) => siblingData?.showExceptional === true,
+                      },
+                    },
                   ],
                 },
                 {
