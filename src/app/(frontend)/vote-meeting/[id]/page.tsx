@@ -63,6 +63,25 @@ export default function VotingForm() {
 
   const meetingIdFromUrl = params?.id || '-'
 
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [localVoterNotes, setLocalVoterNotes] = useState<string>('')
+  const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [votingData, setVotingData] = useState<VoteDataType>({
+    generalVotingData: {
+      isInterested: false,
+      isSeniorOfficial: false,
+      isInstitutionalInvestor: true,
+    },
+    voterNotes: '',
+    userVotes: [],
+  })
+  const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
+  const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
+  const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
+  const [publishSuccess, setPublishSuccess] = useState(false)
+
   const {
     data: meetingData,
     error: meetingDataError,
@@ -91,28 +110,6 @@ export default function VotingForm() {
       }
     }
   }, [meetingDataError, toast, router])
-
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [localVoterNotes, setLocalVoterNotes] = useState<string>('')
-  const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const [votingData, setVotingData] = useState<VoteDataType>({
-    generalVotingData: {
-      isInterested: false,
-      isSeniorOfficial: false,
-      isInstitutionalInvestor: true,
-    },
-    voterNotes: '',
-    userVotes: [],
-  })
-
-  const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
-
-  const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
-  const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
-  const [publishSuccess, setPublishSuccess] = useState(false)
 
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
   const meetingCompanies =
@@ -219,6 +216,154 @@ export default function VotingForm() {
     )
     return votedCompaniesTmp
   }, [votedCompaniesArray, isVotedCompaniesArray])
+
+  useEffect(() => {
+    if (meetingData?.companies && companiesIDs.length === 0) {
+      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      setCompaniesIDs(defaultIds)
+    }
+  }, [meetingData, companiesIDs.length])
+
+  useEffect(() => {
+    if (meetingData?.companies.length && fetchedVotes?.length) {
+      console.log(companiesIDs)
+      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
+        setIsGeneralVoteOption(false)
+        setCompaniesIDs([defaultIds[0]])
+      } else {
+        let isGeneralVoteOptionTmp
+        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
+          isGeneralVoteOptionTmp = isGeneralVote([
+            ...(fetchedVotes || []),
+            ...(fetchedVotesAll || []),
+          ])
+        } else {
+          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
+        }
+        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
+        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
+          if (isGeneralVoteOptionTmp) {
+            setCompaniesIDs(defaultIds)
+          } else {
+            setCompaniesIDs([defaultIds[0]])
+          }
+        }
+      }
+    }
+  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
+
+  useEffect(() => {
+    if (isMeetingLoading || isSWRLoading || !meetingData) {
+      return
+    }
+    let initialData: VoteDataType
+    let publishedData: VoteDataType | null = null
+
+    if (!fetchedVotes || fetchedVotes.length === 0) {
+      // Default case if no fetched votes or error
+      initialData = {
+        generalVotingData: {
+          isInterested: false,
+          isSeniorOfficial: false,
+          isInstitutionalInvestor: true,
+        },
+        voterNotes: '',
+        userVotes: createDefaultAgendaQuestions(meetingData.agendas, showDefaultRecommendations),
+      }
+    } else {
+      // Case where we have fetched votes
+      if (!publishedVotes || !publishedVotes.length) {
+        setLastPublishedVoteInfo(undefined)
+      } else {
+        const lastPublishedVoteInfoTmp = {
+          user: publishedVotes[0].publisher || '',
+          date: publishedVotes[0].updatedAt || ' לא ידוע',
+        }
+        setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
+      }
+
+      const firstVote = fetchedVotes[0]
+      const transformedUserVotes = meetingData.agendas.map((agenda) => {
+        const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
+        return {
+          topicIndex: agenda.topicIndex,
+          choice: voteItem?.voteDecision || '',
+          questions: {
+            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
+            isRelatedParty: voteItem?.isRelatedParty ?? false,
+            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
+            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
+          },
+          privilegedMajority: agenda.privilegedMajority,
+          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
+        }
+      })
+      initialData = {
+        generalVotingData: {
+          isInterested: firstVote.isInterested ?? false,
+          isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
+          isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
+          interestedExplanation: firstVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || '',
+        },
+        voterNotes: firstVote.clientComment || '',
+        userVotes: transformedUserVotes,
+      }
+    }
+
+    if (publishedVotes && publishedVotes.length > 0) {
+      const firstPublishedVote = publishedVotes[0]
+      const transformedPublishedUserVotes = meetingData.agendas.map((agenda) => {
+        const voteItem = (firstPublishedVote.votes || []).find(
+          (v: any) => v.topicIndex == agenda.topicIndex,
+        )
+        return {
+          topicIndex: agenda.topicIndex,
+          choice: voteItem?.voteDecision || '',
+          questions: {
+            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
+            isRelatedParty: voteItem?.isRelatedParty ?? false,
+            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
+            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
+          },
+          privilegedMajority: agenda.privilegedMajority,
+          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
+        }
+      })
+      publishedData = {
+        generalVotingData: {
+          isInterested: firstPublishedVote.isInterested ?? false,
+          isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
+          isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
+          interestedExplanation: firstPublishedVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || '',
+        },
+        voterNotes: firstPublishedVote.clientComment || '',
+        userVotes: transformedPublishedUserVotes,
+      }
+    }
+
+    setVotingData(initialData)
+    setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
+  }, [
+    fetchedVotes,
+    isSWRLoading,
+    meetingData,
+    isMeetingLoading,
+    publishedVotes,
+    showDefaultRecommendations,
+  ])
+
+  useEffect(() => {
+    setLocalVoterNotes(votingData.voterNotes || '')
+  }, [votingData.voterNotes])
 
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
@@ -376,154 +521,6 @@ export default function VotingForm() {
     },
     [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
   )
-
-  useEffect(() => {
-    if (meetingData?.companies && companiesIDs.length === 0) {
-      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      setCompaniesIDs(defaultIds)
-    }
-  }, [meetingData, companiesIDs.length])
-
-  useEffect(() => {
-    if (meetingData?.companies.length && fetchedVotes?.length) {
-      console.log(companiesIDs)
-      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
-        setIsGeneralVoteOption(false)
-        setCompaniesIDs([defaultIds[0]])
-      } else {
-        let isGeneralVoteOptionTmp
-        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
-          isGeneralVoteOptionTmp = isGeneralVote([
-            ...(fetchedVotes || []),
-            ...(fetchedVotesAll || []),
-          ])
-        } else {
-          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
-        }
-        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
-        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
-          if (isGeneralVoteOptionTmp) {
-            setCompaniesIDs(defaultIds)
-          } else {
-            setCompaniesIDs([defaultIds[0]])
-          }
-        }
-      }
-    }
-  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
-
-  useEffect(() => {
-    if (isMeetingLoading || isSWRLoading || !meetingData) {
-      return
-    }
-    let initialData: VoteDataType
-    let publishedData: VoteDataType | null = null
-
-    if (!fetchedVotes || fetchedVotes.length === 0) {
-      // Default case if no fetched votes or error
-      initialData = {
-        generalVotingData: {
-          isInterested: false,
-          isSeniorOfficial: false,
-          isInstitutionalInvestor: true,
-        },
-        voterNotes: '',
-        userVotes: createDefaultAgendaQuestions(meetingData.agendas, showDefaultRecommendations),
-      }
-    } else {
-      // Case where we have fetched votes
-      if (!publishedVotes || !publishedVotes.length) {
-        setLastPublishedVoteInfo(undefined)
-      } else {
-        const lastPublishedVoteInfoTmp = {
-          user: publishedVotes[0].publisher || '',
-          date: publishedVotes[0].updatedAt || ' לא ידוע',
-        }
-        setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
-      }
-
-      const firstVote = fetchedVotes[0]
-      const transformedUserVotes = meetingData.agendas.map((agenda) => {
-        const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
-        return {
-          topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '',
-          questions: {
-            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
-            isRelatedParty: voteItem?.isRelatedParty ?? false,
-            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
-            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
-            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
-          },
-          privilegedMajority: agenda.privilegedMajority,
-          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
-        }
-      })
-      initialData = {
-        generalVotingData: {
-          isInterested: firstVote.isInterested ?? false,
-          isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
-          isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstVote.interestedExplanation || '',
-          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || '',
-        },
-        voterNotes: firstVote.clientComment || '',
-        userVotes: transformedUserVotes,
-      }
-    }
-
-    if (publishedVotes && publishedVotes.length > 0) {
-      const firstPublishedVote = publishedVotes[0]
-      const transformedPublishedUserVotes = meetingData.agendas.map((agenda) => {
-        const voteItem = (firstPublishedVote.votes || []).find(
-          (v: any) => v.topicIndex == agenda.topicIndex,
-        )
-        return {
-          topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '',
-          questions: {
-            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
-            isRelatedParty: voteItem?.isRelatedParty ?? false,
-            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
-            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
-            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
-          },
-          privilegedMajority: agenda.privilegedMajority,
-          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
-        }
-      })
-      publishedData = {
-        generalVotingData: {
-          isInterested: firstPublishedVote.isInterested ?? false,
-          isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
-          isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstPublishedVote.interestedExplanation || '',
-          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || '',
-        },
-        voterNotes: firstPublishedVote.clientComment || '',
-        userVotes: transformedPublishedUserVotes,
-      }
-    }
-
-    setVotingData(initialData)
-    setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [
-    fetchedVotes,
-    isSWRLoading,
-    meetingData,
-    isMeetingLoading,
-    publishedVotes,
-    showDefaultRecommendations,
-  ])
-
-  useEffect(() => {
-    setLocalVoterNotes(votingData.voterNotes || '')
-  }, [votingData.voterNotes])
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
