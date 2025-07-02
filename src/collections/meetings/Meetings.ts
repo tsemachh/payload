@@ -230,7 +230,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
                   ],
                   admin: {
-                    width: '10%',
+                    width: '150px',
                   },
                 },
                 {
@@ -239,7 +239,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '10%' },
+                  admin: { width: '100px' },
                 },
                 {
                   name: 'magnaId',
@@ -257,7 +257,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   index: true,
                   admin: {
-                    width: '300px',
+                    width: '200px',
                     disableListFilter: true,
                     components: {
                       Cell: {
@@ -415,6 +415,11 @@ export const Meetings: CollectionConfig = {
                     disableListFilter: true,
                   },
                 },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
                 {
                   name: 'comments',
                   label: 'הערות',

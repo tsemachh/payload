@@ -55,7 +55,7 @@ const IconLinkTextField: React.FC<IconLinkFieldProps> = (props) => {
   }, [value, conditionFieldValues, visibilityConditions])
 
   return (
-    <div className="field-type text w-[400px]">
+    <div className="field-type text w-[200px]">
       <div className="inline-flex items-center">
         <span className={`flex-grow mr-2 relative ${iconOnly ? 'w-[auto]' : ''}`}>
           <TextField {...remainingProps} path={path} />

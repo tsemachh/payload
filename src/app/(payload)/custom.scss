@@ -81,3 +81,22 @@ form[action*="/api/research-documents"] .file-field__filename {
   color: var(--theme-elevation-400);
 }
 
+.field-type.upload.invitationDocument .upload__dropzoneAndUpload {
+  .btn.upload__listToggler.btn--icon-style-without-border.btn--size-small.btn--withoutPopup.btn--style-pill.btn--withoutPopup {
+    display: none;
+  }
+  .upload__dropzoneContent__orText{
+    display: none;
+  }
+  .upload__dragAndDropText{
+    position: absolute;
+    right: 100px;
+  }
+  .dropzone.dropzoneStyle--default{
+    padding: 7px;
+  }
+}
+
+:root{
+  --nav-width: 180px;
+}
