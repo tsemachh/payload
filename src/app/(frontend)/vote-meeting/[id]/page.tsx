@@ -111,7 +111,6 @@ export default function VotingForm() {
   const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
 
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
-  const [generalVoted, setGeneralVoted] = useState()
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
 
@@ -139,6 +138,15 @@ export default function VotingForm() {
     isLoading: isSWRLoading,
     mutate: mutateDraft,
   } = useSWR(swrKeyDraft, fetcherVote, {
+    revalidateOnFocus: false,
+  })
+
+  const swrKeyDraftAll =
+    meetingIdPayload && companiesIDs.length > 0
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=draft`
+      : null
+
+  const { data: fetchedVotesAll } = useSWR(swrKeyDraftAll, fetcherVote, {
     revalidateOnFocus: false,
   })
 
@@ -385,8 +393,11 @@ export default function VotingForm() {
         setCompaniesIDs([defaultIds[0]])
       } else {
         let isGeneralVoteOptionTmp
-        if (fetchedVotes?.length == 1 && generalVoted && meetingData?.companies.length > 1) {
-          isGeneralVoteOptionTmp = isGeneralVote([...(fetchedVotes || []), ...(generalVoted || [])])
+        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
+          isGeneralVoteOptionTmp = isGeneralVote([
+            ...(fetchedVotes || []),
+            ...(fetchedVotesAll || []),
+          ])
         } else {
           isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
         }
@@ -400,11 +411,7 @@ export default function VotingForm() {
         }
       }
     }
-
-    if (!generalVoted && fetchedVotes?.length > 1) {
-      setGeneralVoted(fetchedVotes)
-    }
-  }, [fetchedVotes, meetingData?.companies, generalVoted])
+  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -447,9 +454,9 @@ export default function VotingForm() {
             isRelatedParty: voteItem?.isRelatedParty ?? false,
             isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
             hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
-            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -460,8 +467,8 @@ export default function VotingForm() {
           isInterested: firstVote.isInterested ?? false,
           isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
           isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstVote.interestedExplanation || undefined,
-          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || undefined,
+          interestedExplanation: firstVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || '',
         },
         voterNotes: firstVote.clientComment || '',
         userVotes: transformedUserVotes,
@@ -482,9 +489,9 @@ export default function VotingForm() {
             isRelatedParty: voteItem?.isRelatedParty ?? false,
             isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
             hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
-            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -495,8 +502,8 @@ export default function VotingForm() {
           isInterested: firstPublishedVote.isInterested ?? false,
           isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
           isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstPublishedVote.interestedExplanation || undefined,
-          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || undefined,
+          interestedExplanation: firstPublishedVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || '',
         },
         voterNotes: firstPublishedVote.clientComment || '',
         userVotes: transformedPublishedUserVotes,
@@ -616,7 +623,7 @@ export default function VotingForm() {
             questionId as GeneralQuestionId,
           )
           if (generalExplanationFieldName) {
-            newGeneralData[generalExplanationFieldName] = value === true ? explanation : undefined
+            newGeneralData[generalExplanationFieldName] = value === true ? explanation || '' : ''
           }
 
           const updatedVotingData = { ...prev, generalVotingData: newGeneralData }
@@ -641,7 +648,7 @@ export default function VotingForm() {
                 questionId as AgendaQuestionId,
               )
               if (agendaExplanationFieldName) {
-                newQuestions[agendaExplanationFieldName] = value === true ? explanation : undefined
+                newQuestions[agendaExplanationFieldName] = value === true ? explanation || '' : ''
               }
               return { ...vote, questions: newQuestions }
             }
