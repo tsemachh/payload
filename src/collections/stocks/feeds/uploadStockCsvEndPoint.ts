@@ -37,7 +37,7 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     const buffer = Buffer.concat(chunks)
     const now = new Date()
     const formattedDate = format(now, 'dd-MM-yyyy')
-    const fileName = `upload_${formattedDate}.csv`
+    const fileName = `upload_stocks_${formattedDate}.csv`
     // Create a file object from the buffer
     const file = {
       data: buffer,
