@@ -124,6 +124,7 @@ export const processStocksFeedCsv = async (
     console.timeEnd('Total stocks processing time')
     return { processedRows, fileLength, errors }
   } catch (error) {
+    console.error(error)
     req.payload.logger.error(`Error processing stock feed CSV: ${JSON.stringify(error)}`)
 
     // End timing even if there's an error

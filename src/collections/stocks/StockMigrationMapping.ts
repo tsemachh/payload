@@ -6,6 +6,10 @@ const StockMigrationMapping: CollectionConfig = {
     useAsTitle: 'stockId',
     group: 'מיגרציה',
   },
+  labels: {
+    plural: 'מיפויי מניות',
+    singular: 'מיפוי מניות',
+  },
   fields: [
     {
       name: 'stockId',
