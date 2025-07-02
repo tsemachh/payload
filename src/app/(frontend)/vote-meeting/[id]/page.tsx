@@ -93,7 +93,7 @@ export default function VotingForm() {
   }, [meetingDataError, toast, router])
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [debounceTimers, setDebounceTimers] = useState<Record<string, NodeJS.Timeout>>({})
+  const [localVoterNotes, setLocalVoterNotes] = useState<string>('')
   const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -138,6 +138,15 @@ export default function VotingForm() {
     isLoading: isSWRLoading,
     mutate: mutateDraft,
   } = useSWR(swrKeyDraft, fetcherVote, {
+    revalidateOnFocus: false,
+  })
+
+  const swrKeyDraftAll =
+    meetingIdPayload && companiesIDs.length > 0
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=draft`
+      : null
+
+  const { data: fetchedVotesAll } = useSWR(swrKeyDraftAll, fetcherVote, {
     revalidateOnFocus: false,
   })
 
@@ -365,7 +374,7 @@ export default function VotingForm() {
         setIsSubmitting(false)
       }
     },
-    [validateForm, meetingIdPayload, companiesIDs, toast, router],
+    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
   )
 
   useEffect(() => {
@@ -376,25 +385,33 @@ export default function VotingForm() {
   }, [meetingData, companiesIDs.length])
 
   useEffect(() => {
-    if (isGeneralVoteOption) {
-      const isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
-      setIsGeneralVoteOption(isGeneralVoteOptionTmp)
-    }
-    if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
-      setIsGeneralVoteOption(false)
-    }
-  }, [fetchedVotes, companiesIDs, isGeneralVoteOption])
-
-  useEffect(() => {
-    if (meetingData?.companies) {
+    if (meetingData?.companies.length && fetchedVotes?.length) {
+      console.log(companiesIDs)
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      if (isGeneralVoteOption) {
-        setCompaniesIDs(defaultIds)
-      } else {
+      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
+        setIsGeneralVoteOption(false)
         setCompaniesIDs([defaultIds[0]])
+      } else {
+        let isGeneralVoteOptionTmp
+        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
+          isGeneralVoteOptionTmp = isGeneralVote([
+            ...(fetchedVotes || []),
+            ...(fetchedVotesAll || []),
+          ])
+        } else {
+          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
+        }
+        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
+        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
+          if (isGeneralVoteOptionTmp) {
+            setCompaniesIDs(defaultIds)
+          } else {
+            setCompaniesIDs([defaultIds[0]])
+          }
+        }
       }
     }
-  }, [isGeneralVoteOption, meetingData?.companies])
+  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -437,9 +454,9 @@ export default function VotingForm() {
             isRelatedParty: voteItem?.isRelatedParty ?? false,
             isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
             hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
-            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -450,8 +467,8 @@ export default function VotingForm() {
           isInterested: firstVote.isInterested ?? false,
           isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
           isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstVote.interestedExplanation || undefined,
-          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || undefined,
+          interestedExplanation: firstVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || '',
         },
         voterNotes: firstVote.clientComment || '',
         userVotes: transformedUserVotes,
@@ -472,9 +489,9 @@ export default function VotingForm() {
             isRelatedParty: voteItem?.isRelatedParty ?? false,
             isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
             hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || undefined,
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || undefined,
-            personalInterestExplanation: voteItem?.personalInterestExplanation || undefined,
+            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
+            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
+            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -485,8 +502,8 @@ export default function VotingForm() {
           isInterested: firstPublishedVote.isInterested ?? false,
           isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
           isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstPublishedVote.interestedExplanation || undefined,
-          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || undefined,
+          interestedExplanation: firstPublishedVote.interestedExplanation || '',
+          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || '',
         },
         voterNotes: firstPublishedVote.clientComment || '',
         userVotes: transformedPublishedUserVotes,
@@ -495,7 +512,18 @@ export default function VotingForm() {
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
+  }, [
+    fetchedVotes,
+    isSWRLoading,
+    meetingData,
+    isMeetingLoading,
+    publishedVotes,
+    showDefaultRecommendations,
+  ])
+
+  useEffect(() => {
+    setLocalVoterNotes(votingData.voterNotes || '')
+  }, [votingData.voterNotes])
 
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
@@ -554,32 +582,6 @@ export default function VotingForm() {
     [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
   )
 
-  const debouncedSaveFunction = useCallback(
-    (key: string, dataType: string, delay = 2000) => {
-      if (debounceTimers[key]) {
-        clearTimeout(debounceTimers[key])
-      }
-
-      const newTimer = setTimeout(() => {
-        setVotingData((currentVotingData) => {
-          saveDraftData(dataType, currentVotingData)
-          return currentVotingData
-        })
-        setDebounceTimers((prev) => {
-          const newTimers = { ...prev }
-          delete newTimers[key]
-          return newTimers
-        })
-      }, delay)
-
-      setDebounceTimers((prev) => ({
-        ...prev,
-        [key]: newTimer,
-      }))
-    },
-    [saveDraftData, debounceTimers],
-  )
-
   const handleQuestionChange = useCallback(
     <T extends GeneralQuestionId | AgendaQuestionId>(
       type: 'general' | 'agenda',
@@ -596,19 +598,24 @@ export default function VotingForm() {
               error.field === questionId ||
               error.field === getExplanationFieldName(questionId as GeneralQuestionId)
             )
-          } else {
-            return !(
-              error.topicIndex === topicIndex &&
-              (error.field === questionId ||
-                error.field === getExplanationFieldName(questionId as AgendaQuestionId))
-            )
           }
+          return !(
+            error.topicIndex === topicIndex &&
+            (error.field === questionId ||
+              error.field === getExplanationFieldName(questionId as AgendaQuestionId))
+          )
         }),
       )
 
       if (type === 'general') {
+        const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
+        const dataType =
+          explanation !== undefined
+            ? config.toastNoteExplanation || config.toastNote
+            : config.toastNote
+
         setVotingData((prev) => {
-          const newState: GeneralVotingData = {
+          const newGeneralData: GeneralVotingData = {
             ...prev.generalVotingData,
             [questionId]: value,
           }
@@ -616,25 +623,20 @@ export default function VotingForm() {
             questionId as GeneralQuestionId,
           )
           if (generalExplanationFieldName) {
-            newState[generalExplanationFieldName] = value === true ? explanation : undefined
+            newGeneralData[generalExplanationFieldName] = value === true ? explanation || '' : ''
           }
 
-          return { ...prev, generalVotingData: newState }
+          const updatedVotingData = { ...prev, generalVotingData: newGeneralData }
+          saveDraftData(dataType, updatedVotingData)
+          return updatedVotingData
         })
-
-        const config = GENERAL_QUESTIONS_CONFIG[questionId as GeneralQuestionId]
-        if (explanation !== undefined) {
-          debouncedSaveFunction(
-            `general-${questionId}-explanation`,
-            config.toastNoteExplanation || config.toastNote,
-          )
-        } else {
-          setVotingData((currentVotingData) => {
-            saveDraftData(config.toastNote, currentVotingData)
-            return currentVotingData
-          })
-        }
       } else if (type === 'agenda' && topicIndex !== undefined) {
+        const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
+        const dataType =
+          explanation !== undefined
+            ? config.toastNoteExplanation || config.toastNote
+            : config.toastNote
+
         setVotingData((prev) => {
           const newUserVotes = prev.userVotes.map((vote) => {
             if (vote.topicIndex == topicIndex) {
@@ -642,37 +644,24 @@ export default function VotingForm() {
                 ...vote.questions,
                 [questionId]: value,
               }
-
               const agendaExplanationFieldName = getExplanationFieldName(
                 questionId as AgendaQuestionId,
               )
               if (agendaExplanationFieldName) {
-                newQuestions[agendaExplanationFieldName] = value === true ? explanation : undefined
+                newQuestions[agendaExplanationFieldName] = value === true ? explanation || '' : ''
               }
-
               return { ...vote, questions: newQuestions }
             }
             return vote
           })
 
-          return { ...prev, userVotes: newUserVotes }
+          const updatedVotingData = { ...prev, userVotes: newUserVotes }
+          saveDraftData(dataType, updatedVotingData)
+          return updatedVotingData
         })
-
-        const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
-        if (explanation !== undefined) {
-          debouncedSaveFunction(
-            `agenda-${topicIndex}-${questionId}-explanation`,
-            config.toastNoteExplanation || config.toastNote,
-          )
-        } else {
-          setVotingData((currentVotingData) => {
-            saveDraftData(config.toastNote, currentVotingData)
-            return currentVotingData
-          })
-        }
       }
     },
-    [debouncedSaveFunction, saveDraftData],
+    [saveDraftData],
   )
 
   const handleGeneralQuestionChangeWrapper = useCallback(
@@ -703,28 +692,25 @@ export default function VotingForm() {
         newUserVotes = prev.userVotes.map((vote, index) =>
           index === existingVoteIndex ? { ...vote, choice } : vote,
         )
-        saveDraftData('הצבעה', {
-          ...prev,
-          userVotes: newUserVotes,
-        })
-
-        return {
+        const updatedVotingData = {
           ...prev,
           userVotes: newUserVotes,
         }
-      } else {
-        return prev
+        saveDraftData('הצבעה', updatedVotingData)
+
+        return updatedVotingData
       }
+      return prev
     })
   }
-
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const notes = e.target.value
-    setVotingData((prev) => ({
-      ...prev,
-      voterNotes: notes,
-    }))
-    debouncedSaveFunction('voter-notes', 'הערות המצביע')
+  const handleNotesChange = () => {
+    if (votingData.voterNotes !== localVoterNotes) {
+      setVotingData((prev) => {
+        const updatedVotingData = { ...prev, voterNotes: localVoterNotes }
+        saveDraftData('הערות המצביע', updatedVotingData)
+        return updatedVotingData
+      })
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -732,7 +718,10 @@ export default function VotingForm() {
       const filesArray = Array.from(e.target.files)
       setSelectedFiles((prev) => {
         const newState = [...prev, ...filesArray]
-        saveDraftData('קבצים מועלים', votingData)
+        setVotingData((currentVotingData) => {
+          saveDraftData('קבצים מועלים', currentVotingData)
+          return currentVotingData
+        })
         return newState
       })
     }
@@ -741,7 +730,10 @@ export default function VotingForm() {
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => {
       const newFiles = prev.filter((_, i) => i !== index)
-      saveDraftData('עדכון קבצים', votingData)
+      setVotingData((currentVotingData) => {
+        saveDraftData('עדכון קבצים', currentVotingData)
+        return currentVotingData
+      })
       return newFiles
     })
   }
@@ -985,8 +977,9 @@ export default function VotingForm() {
                       placeholder="אפשרות הוספת הערות..."
                       className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
                       style={{ height: 'calc(100% - 20px)' }}
-                      value={votingData.voterNotes}
-                      onChange={handleNotesChange}
+                      value={localVoterNotes}
+                      onChange={(e) => setLocalVoterNotes(e.target.value)}
+                      onBlur={handleNotesChange}
                     />
                   </div>
 
