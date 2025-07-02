@@ -43,7 +43,6 @@ import {
   fetchMeetingData,
   fetchVotedCompanies,
   isGeneralVote,
-  shouldShowDefaultRecommendations,
 } from '../../helpers/utils-vote'
 import useSWR from 'swr'
 import {
@@ -147,36 +146,6 @@ export default function VotingForm() {
     revalidateOnFocus: false,
   })
 
-  const allCompanyIds = useMemo(() => {
-    if (!meetingData?.companies) return []
-    return meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-  }, [meetingData?.companies])
-
-  const swrKeyCompanies =
-    allCompanyIds.length > 0
-      ? `/api/companies/voting-recommendations?companiesIds=${allCompanyIds.join(',')}`
-      : null
-
-  const { data: fetchedCompanies } = useSWR(swrKeyCompanies, fetcherVote, {
-    revalidateOnFocus: false,
-  })
-
-  const recommendationMap = useMemo(() => {
-    const map = new Map<string, boolean>()
-
-    if (fetchedCompanies?.data && Array.isArray(fetchedCompanies.data)) {
-      for (const company of fetchedCompanies.data) {
-        map.set(company.id, true)
-      }
-    }
-
-    return map
-  }, [fetchedCompanies])
-
-  const showDefaultRecommendations = useMemo(() => {
-    return shouldShowDefaultRecommendations(companiesIDs, recommendationMap)
-  }, [companiesIDs, recommendationMap])
-
   useEffect(() => {
     if (votesError) {
       console.error('Error fetching vote data with SWR:', votesError)
@@ -269,7 +238,10 @@ export default function VotingForm() {
           isInstitutionalInvestor: true,
         },
         voterNotes: '',
-        userVotes: createDefaultAgendaQuestions(meetingData.agendas, showDefaultRecommendations),
+        userVotes: createDefaultAgendaQuestions(
+          meetingData.agendas,
+          meetingData.defaultVotingRecommendation,
+        ),
       }
     } else {
       // Case where we have fetched votes
@@ -358,7 +330,6 @@ export default function VotingForm() {
     meetingData,
     isMeetingLoading,
     publishedVotes,
-    showDefaultRecommendations,
   ])
 
   useEffect(() => {
@@ -864,19 +835,20 @@ export default function VotingForm() {
 
                           {!item.isRemovedFromAgenda && (
                             <div className="flex flex-col items-center gap-2 min-w-[200px] border-r px-4  pl-0">
-                              {item.recommendation.votingRecommendation && (
-                                <span
-                                  className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
-                                    item.recommendation.votingRecommendation === 'בעד'
-                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
-                                      : item.recommendation.votingRecommendation === 'נגד'
-                                        ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900'
-                                  }`}
-                                >
-                                  המלצה: {item.recommendation.votingRecommendation}
-                                </span>
-                              )}
+                              {item.recommendation.votingRecommendation &&
+                                meetingData?.displayVotingRecommendation && (
+                                  <span
+                                    className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
+                                      item.recommendation.votingRecommendation === 'בעד'
+                                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
+                                        : item.recommendation.votingRecommendation === 'נגד'
+                                          ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
+                                          : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900'
+                                    }`}
+                                  >
+                                    המלצה: {item.recommendation.votingRecommendation}
+                                  </span>
+                                )}
                               <Select
                                 value={userVote?.choice || undefined}
                                 onValueChange={(value) =>
