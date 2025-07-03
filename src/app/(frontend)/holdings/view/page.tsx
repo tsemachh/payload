@@ -9,14 +9,13 @@ import { ExportButton } from '@/components/export-button'
 import { DateSelector } from '../components/DateSelector'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import useSWR from 'swr'
 import { fetcher } from '../../helpers/utils-data-table'
 
 export default function HoldingsView() {
   const { user } = useAuth()
-  const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -43,7 +42,7 @@ export default function HoldingsView() {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    if (dateFormUrl && !date) {
+    if (dateFormUrl) {
       try {
         const dateTmp = new Date(`${dateFormUrl}T00:00:00`)
         setDate(dateTmp)
@@ -100,27 +99,10 @@ export default function HoldingsView() {
     return response
   }
 
-  // Update URL when date changes
-  const updateUrlWithDate = (newDate: Date | undefined) => {
-    const params = new URLSearchParams(searchParams.toString())
-
-    if (newDate) {
-      // Format date as YYYY-MM-DD
-      const formattedDate = format(newDate, 'yyyy-MM-dd')
-      params.set('date', formattedDate)
-    } else {
-      params.delete('date')
-    }
-
-    // Update URL without causing a page reload
-    router.push(`?${params.toString()}`, { scroll: false })
-  }
-
   // Create an action to update the date
   const handleDateChangeAction = async (newDate: Date | undefined) => {
     setDate(newDate)
     setError('')
-    updateUrlWithDate(newDate)
   }
 
   const fetchHoldings = async () => {
