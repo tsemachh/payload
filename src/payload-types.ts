@@ -486,6 +486,7 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+    displayVotingRecommendation?: boolean | null;
     defaultVotingRecommendation?: boolean | null;
     researchDocuments?: {
       docs?: (string | ResearchDocument)[];
@@ -568,6 +569,7 @@ export interface Vote {
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
   clientComment?: string | null;
+  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -1313,6 +1315,7 @@ export interface VotesSelect<T extends boolean = true> {
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
   clientComment?: T;
+  voteDocuments?: T;
   votes?:
     | T
     | {
@@ -1505,6 +1508,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+        displayVotingRecommendation?: T;
         defaultVotingRecommendation?: T;
         researchDocuments?: T;
       };

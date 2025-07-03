@@ -6,6 +6,8 @@ export type MeetingTableDataType = {
   meetingId: string
   agendas: AgendasType[] // סדר היום של האסיפה
   votingPercentage: number | null // אחוז ההצבעה של המשתש מתוך חברות המשתמש
+  displayVotingRecommendation: boolean
+  defaultVotingRecommendation: boolean
   companies: CompanyTableDate[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
