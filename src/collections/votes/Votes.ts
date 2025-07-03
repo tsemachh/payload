@@ -109,6 +109,13 @@ export const Votes: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'voteDocuments',
+      label: 'מסמכים מצורפים',
+      type: 'relationship',
+      relationTo: 'documents',
+      hasMany: true,
+    },
+    {
       name: 'votes',
       label: 'סעיפי הצבעה',
       type: 'array',
@@ -280,6 +287,6 @@ export const Votes: CollectionConfig = {
     {
       fields: ['meeting', 'company'],
       unique: true,
-    }
-  ]
+    },
+  ],
 }

@@ -54,6 +54,7 @@ import {
 import VoteStatus from '../components/Status'
 import { useParams } from 'next/navigation'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
+import { Document } from '@/payload-types'
 
 export default function VotingForm() {
   const params = useParams()
@@ -62,7 +63,9 @@ export default function VotingForm() {
 
   const meetingIdFromUrl = params?.id || '-'
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [uploadedDocs, setUploadedDocs] = useState<Document[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+
   const [localVoterNotes, setLocalVoterNotes] = useState<string>('')
   const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
@@ -75,6 +78,7 @@ export default function VotingForm() {
     },
     voterNotes: '',
     userVotes: [],
+    voteDocuments: [],
   })
   const [initialVotingData, setInitialVotingData] = useState<VoteDataType | null>(null)
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
@@ -173,8 +177,16 @@ export default function VotingForm() {
 
   const isDirty = useMemo(() => {
     if (!initialVotingData) return true
-    return JSON.stringify(votingData) !== JSON.stringify(initialVotingData)
-  }, [votingData, initialVotingData])
+    const currentDataForComparison = {
+      ...votingData,
+      voteDocuments: uploadedDocs.map((doc) => doc.id).sort(),
+    }
+    const initialDataForComparison = {
+      ...initialVotingData,
+      voteDocuments: (initialVotingData.voteDocuments || []).sort(),
+    }
+    return JSON.stringify(currentDataForComparison) !== JSON.stringify(initialDataForComparison)
+  }, [votingData, initialVotingData, uploadedDocs])
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
@@ -195,6 +207,8 @@ export default function VotingForm() {
 
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
+      console.log('-----fetchedVotes', fetchedVotes)
+
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
         setIsGeneralVoteOption(false)
@@ -241,7 +255,9 @@ export default function VotingForm() {
           meetingData.agendas,
           meetingData.defaultVotingRecommendation,
         ),
+        voteDocuments: [],
       }
+      setUploadedDocs([])
     } else {
       // Case where we have fetched votes
       if (!publishedVotes || !publishedVotes.length) {
@@ -255,6 +271,13 @@ export default function VotingForm() {
       }
 
       const firstVote = fetchedVotes[0]
+      if (firstVote.voteDocuments && Array.isArray(firstVote.voteDocuments)) {
+        setUploadedDocs(
+          firstVote.voteDocuments.filter((doc: { id: any }) => typeof doc === 'object' && doc.id),
+        )
+      } else {
+        setUploadedDocs([])
+      }
       const transformedUserVotes = meetingData.agendas.map((agenda) => {
         const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
         return {
@@ -283,6 +306,9 @@ export default function VotingForm() {
         },
         voterNotes: firstVote.clientComment || '',
         userVotes: transformedUserVotes,
+        voteDocuments: Array.isArray(firstVote.voteDocuments)
+          ? firstVote.voteDocuments.map((doc: { id: any }) => doc.id)
+          : [],
       }
     }
 
@@ -318,18 +344,15 @@ export default function VotingForm() {
         },
         voterNotes: firstPublishedVote.clientComment || '',
         userVotes: transformedPublishedUserVotes,
+        voteDocuments: Array.isArray(firstPublishedVote.voteDocuments)
+          ? firstPublishedVote.voteDocuments.map((doc: { id: any }) => doc.id)
+          : [],
       }
     }
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [
-    fetchedVotes,
-    isSWRLoading,
-    meetingData,
-    isMeetingLoading,
-    publishedVotes,
-  ])
+  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
 
   useEffect(() => {
     setLocalVoterNotes(votingData.voterNotes || '')
@@ -456,6 +479,7 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
+        console.log('-----currentVotingData', currentVotingData)
         const response = await fetch('/api/votes/publish-votes', {
           method: 'POST',
           headers: {
@@ -465,6 +489,10 @@ export default function VotingForm() {
             meetingId: meetingIdPayload,
             companiesIds: companiesIDs,
             votingData: currentVotingData,
+            // {
+            //   ...currentVotingData,
+            //   voteDocuments: uploadedDocs.map((doc) => doc.id),
+            // },
           }),
         })
 
@@ -489,7 +517,7 @@ export default function VotingForm() {
         setIsSubmitting(false)
       }
     },
-    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
+    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish, uploadedDocs],
   )
 
   const saveDraftData = useCallback(
@@ -508,6 +536,8 @@ export default function VotingForm() {
         return
       }
       try {
+        console.log('----- currentVotingData', currentVotingData)
+
         const requestBody = {
           meetingId: meetingIdPayload,
           companiesIds: companiesIDs,
@@ -546,7 +576,7 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
+    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, uploadedDocs],
   )
 
   const handleQuestionChange = useCallback(
@@ -680,35 +710,81 @@ export default function VotingForm() {
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
-      setSelectedFiles((prev) => {
-        const newState = [...prev, ...filesArray]
-        setVotingData((currentVotingData) => {
-          saveDraftData('קבצים מועלים', currentVotingData)
-          return currentVotingData
+      if (filesArray.length === 0) return
+
+      setIsUploading(true)
+      try {
+        const uploadPromises = filesArray.map((file) => {
+          const formData = new FormData()
+          formData.append('file', file)
+          // You can add other fields to the 'documents' collection here if needed
+          // formData.append('alt', 'A description for the file');
+          return fetch('/api/documents', {
+            method: 'POST',
+            body: formData,
+          }).then((res) => {
+            if (!res.ok) throw new Error('File upload failed')
+            return res.json()
+          })
         })
-        return newState
-      })
+
+        const results = await Promise.all(uploadPromises)
+        const newDocs = results.map((result) => result.doc)
+
+        setUploadedDocs((prev) => {
+          const updatedDocs = [...prev, ...newDocs]
+          setVotingData((currentVotingData) => {
+            const updatedVotingData = {
+              ...currentVotingData,
+              voteDocuments: updatedDocs.map((d) => d.id),
+            }
+            saveDraftData('קובץ', updatedVotingData)
+            return updatedVotingData
+          })
+          return updatedDocs
+        })
+      } catch (error) {
+        console.error('Upload error:', error)
+        toast({
+          title: '⚠️ שגיאה בהעלאת קובץ',
+          description: 'לא ניתן היה להעלות את הקובץ. נסה שוב',
+          variant: 'destructive',
+          duration: 2000,
+        })
+      } finally {
+        setIsUploading(false)
+        // Reset file input
+        e.target.value = ''
+      }
     }
   }
 
-  const removeFile = (index: number) => {
-    setSelectedFiles((prev) => {
-      const newFiles = prev.filter((_, i) => i !== index)
+  const removeFile = (docIdToRemove: string) => {
+    setUploadedDocs((prev) => {
+      const newDocs = prev.filter((doc) => doc.id !== docIdToRemove)
       setVotingData((currentVotingData) => {
-        saveDraftData('עדכון קבצים', currentVotingData)
-        return currentVotingData
+        const updatedVotingData = {
+          ...currentVotingData,
+          voteDocuments: newDocs.map((d) => d.id),
+        }
+        saveDraftData('עדכון קבצים', updatedVotingData)
+        return updatedVotingData
       })
-      return newFiles
+      // Optionally, you could add a call here to DELETE the document from the server
+      // fetch(`/api/documents/${docIdToRemove}`, { method: 'DELETE' });
+      return newDocs
     })
   }
+  // END: New file upload and removal handlers
 
   return (
     <>
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
+          {/* ... (header section is unchanged) ... */}
           <div className="mb-3 mt-[-20px]">
             <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
               {/* main title - centered */}
@@ -950,8 +1026,6 @@ export default function VotingForm() {
                       onBlur={handleNotesChange}
                     />
                   </div>
-
-                  {/* העלאת קבצים - חלק קטן */}
                   <div>
                     <div className="flex items-center mb-2">
                       <h3 className="text-xs font-medium text-muted-foreground">העלאת קבצים</h3>
@@ -964,27 +1038,37 @@ export default function VotingForm() {
                           multiple
                           onChange={handleFileChange}
                           className="sr-only"
+                          disabled={isUploading}
                         />
                         <label
                           htmlFor="file-upload"
-                          className="flex items-center gap-2 bg-background border border-input rounded-md p-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                          className={`flex items-center gap-2 bg-background border border-input rounded-md p-2 transition-colors ${isUploading ? 'cursor-not-allowed bg-muted/50' : 'cursor-pointer hover:bg-muted/50'}`}
                         >
                           <Upload className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">בחר קובץ/קבצים</span>
+                          <span className="text-sm text-muted-foreground">
+                            {isUploading ? 'מעלה קבצים...' : 'בחר קובץ/קבצים'}
+                          </span>
                         </label>
                       </div>
 
-                      {selectedFiles.length > 0 && (
+                      {uploadedDocs.length > 0 && (
                         <div className="space-y-1 mt-2">
-                          {selectedFiles.map((file, index) => (
+                          {uploadedDocs.map((doc) => (
                             <div
-                              key={index}
+                              key={doc.id}
                               className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5 text-xs"
                             >
-                              <span className="truncate max-w-[150px]">{file.name}</span>
+                              <a
+                                href={doc.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate max-w-[150px] hover:underline"
+                              >
+                                {doc.filename}
+                              </a>
                               <button
                                 type="button"
-                                onClick={() => removeFile(index)}
+                                onClick={() => removeFile(doc.id)}
                                 className="text-muted-foreground hover:text-destructive ml-2"
                               >
                                 הסר
@@ -1012,16 +1096,20 @@ export default function VotingForm() {
                             return currentVotingData
                           })
                         }
-                        disabled={!isDirty || isSubmitting}
+                        disabled={!isDirty || isSubmitting || isUploading}
                         className="px-8"
                       >
                         {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  {(!isDirty || isSubmitting) && (
+                  {(!isDirty || isSubmitting || isUploading) && (
                     <TooltipContent className="m-1 mx-3">
-                      {!isDirty ? 'אין שינוי מההצבעה שנשלחה לעמדה' : 'הצבעה נשלחת, אנא המתן'}
+                      {!isDirty
+                        ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                        : isUploading
+                          ? 'אנא המתן לסיום העלאת הקבצים'
+                          : 'הצבעה נשלחת, אנא המתן'}
                     </TooltipContent>
                   )}
                 </Tooltip>

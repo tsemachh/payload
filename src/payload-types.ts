@@ -569,6 +569,7 @@ export interface Vote {
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
   clientComment?: string | null;
+  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -1314,6 +1315,7 @@ export interface VotesSelect<T extends boolean = true> {
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
   clientComment?: T;
+  voteDocuments?: T;
   votes?:
     | T
     | {
