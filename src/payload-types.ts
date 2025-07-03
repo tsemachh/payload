@@ -59,12 +59,13 @@ export type MeetingAgenda =
         reasonRef?: string | null;
         reasonText?: string | null;
       };
-      votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
-      reasonRef?: string | null;
-      reasonText?: string | null;
-      showExceptional?: boolean | null;
-      companies?: (string | Company)[] | null;
-      vpercent?: number | null;
+      exceptionalRecommendation?: {
+        votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
+        reasonRef?: string | null;
+        reasonText?: string | null;
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
+      };
       vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
       id?: string | null;
@@ -1290,12 +1291,15 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
         reasonRef?: T;
         reasonText?: T;
       };
-  votingRecommendation?: T;
-  reasonRef?: T;
-  reasonText?: T;
-  showExceptional?: T;
-  companies?: T;
-  vpercent?: T;
+  exceptionalRecommendation?:
+    | T
+    | {
+        votingRecommendation?: T;
+        reasonRef?: T;
+        reasonText?: T;
+        showExceptional?: T;
+        companies?: T;
+      };
   vPercentSpecial?: T;
   result?: T;
   id?: T;

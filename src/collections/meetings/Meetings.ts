@@ -110,7 +110,8 @@ const votingRecommendation = [
         name: 'reasonRef',
         label: 'נימוק מוכן',
         type: 'text',
-        defaultValue: 'אחר',
+        defaultValue: null,
+        hasEmptyOption: true,
         admin: {
           components: {
             Field: '/collections/meetings/components/RecommendationReasonSelect',
@@ -536,56 +537,48 @@ export const Meetings: CollectionConfig = {
 
                 {
                   name: 'recommendation',
-                  label: 'המלצה',
                   type: 'group',
                   fields: votingRecommendation as Field[],
                 },
-                ...(votingRecommendationExceptional as Field[]),
                 {
-                  type: 'row',
+                  type: 'group',
+                  name: 'exceptionalRecommendation',
                   fields: [
+                    ...(votingRecommendationExceptional as Field[]),
                     {
-                      name: 'showExceptional',
-                      label: 'המלצה חריגה?',
-                      type: 'checkbox',
-                      admin: {
-                        width: '20%',
-                        disableListFilter: true,
-                      },
-                    },
-                    {
-                      name: 'companies',
-                      label: 'חברות',
-                      type: 'relationship',
-                      relationTo: 'companies',
-                      hasMany: true,
-                      filterOptions: ({ data }) => {
-                        return {
-                          id: {
-                            in: data?.companies?.map(getIdOfRelationField) || [],
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'showExceptional',
+                          label: 'המלצה חריגה',
+                          type: 'checkbox',
+                          admin: {
+                            width: '20%',
+                            disableListFilter: true,
                           },
-                        }
-                      },
-                      admin: {
-                        disableListFilter: true,
-                        width: '80%',
-                        condition: (_, siblingData) => siblingData?.showExceptional === true,
-                      },
+                        },
+                        {
+                          name: 'companies',
+                          label: 'חברות',
+                          type: 'relationship',
+                          relationTo: 'companies',
+                          hasMany: true,
+                          filterOptions: ({ data }) => {
+                            return {
+                              id: {
+                                in: data?.companies?.map(getIdOfRelationField) || [],
+                              },
+                            }
+                          },
+                          admin: {
+                            disableListFilter: true,
+                            width: '80%',
+                            condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                        },
+                      ],
                     },
                   ],
-                },
-                {
-                  name: 'vpercent',
-                  label: 'אחוז הצבעה',
-                  type: 'number',
-                  admin: {
-                    disableListFilter: true,
-                    hidden: true,
-                    step: 0.01,
-                    condition: (_, siblingData) =>
-                      siblingData.topicType === 'decision' &&
-                      siblingData.majorityType === 'regular',
-                  },
                 },
                 {
                   name: 'vPercentSpecial',
