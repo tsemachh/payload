@@ -95,7 +95,7 @@ const votingRecommendation = [
         label: 'המלצת הצבעה',
         type: 'select',
         admin: {
-          width: '150px',
+          width: '10%',
           disableListFilter: true,
         },
         options: [
@@ -113,23 +113,19 @@ const votingRecommendation = [
         defaultValue: null,
         hasEmptyOption: true,
         admin: {
+          width: '40%',
           components: {
             Field: '/collections/meetings/components/RecommendationReasonSelect',
           },
         },
       },
-    ],
-  },
-  {
-    type: 'row',
-    fields: [
       {
         name: 'reasonText',
         label: 'נימוק חופשי',
         type: 'text',
         admin: {
           disableListFilter: true,
-          width: '100%',
+          width: '50%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
           },
