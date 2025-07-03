@@ -60,13 +60,12 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
-        showExceptional?: boolean | null;
-        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
       };
-      vpercent?: number | null;
       vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
       id?: string | null;
@@ -707,6 +706,13 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
   password?: string | null;
 }
 /**
@@ -1290,13 +1296,12 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
-        showExceptional?: T;
-        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
+        showExceptional?: T;
+        companies?: T;
       };
-  vpercent?: T;
   vPercentSpecial?: T;
   result?: T;
   id?: T;
@@ -1568,6 +1573,13 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

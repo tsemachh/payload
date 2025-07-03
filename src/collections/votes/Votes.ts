@@ -58,7 +58,7 @@ export const Votes: CollectionConfig = {
         },
         {
           name: 'reported',
-          label: 'דווח לרשות',
+          label: 'דווח',
           type: 'checkbox',
           defaultValue: false,
           admin: {
