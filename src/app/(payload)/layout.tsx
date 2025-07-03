@@ -6,8 +6,10 @@ import type { ServerFunctionClient } from 'payload'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'
 import './custom.scss'
-
 import { importMap } from './admin/importMap.js'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 type Args = {
   children: React.ReactNode
@@ -23,7 +25,12 @@ const serverFunction: ServerFunctionClient = async function (args) {
 }
 
 const Layout = ({ children }: Args) => (
-  <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
+  <RootLayout
+    config={config}
+    importMap={importMap}
+    htmlProps={{ className: inter.className }}
+    serverFunction={serverFunction}
+  >
     {children}
   </RootLayout>
 )

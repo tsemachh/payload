@@ -36,6 +36,9 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  custom: {
+    filterList: ['type', 'active', 'passiveFund'],
+  },
   versions: {},
   fields: [
     {

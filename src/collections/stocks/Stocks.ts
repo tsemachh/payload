@@ -63,6 +63,9 @@ export const Stocks: CollectionConfig = {
     plural: 'ניירות ערך',
     singular: 'נייר ערך',
   },
+  custom: {
+    filterList: ['type', 'origin', 'tradable', 'active'],
+  },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
@@ -149,6 +152,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fromMagna',
+                  label: 'ממגנא',
                   type: 'checkbox',
                   admin: {
                     hidden: true,

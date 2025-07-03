@@ -8,12 +8,10 @@ import {
   meetingForVotingEndPoint,
 } from './endpoints/MeetingsEndpoints'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
-import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
-  afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
   validateResearchDocsInMeetings,
@@ -148,6 +146,9 @@ export const Meetings: CollectionConfig = {
     plural: 'אסיפות',
     singular: 'אסיפה',
   },
+  custom: {
+    filterList: ['holdingsLimit', 'meetingDate', 'state', '_status'],
+  },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
@@ -164,47 +165,6 @@ export const Meetings: CollectionConfig = {
       'reportedVotesCount',
       'comments',
     ],
-    components: {
-      beforeListTable: [
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'today',
-          },
-        },
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'yesterday',
-          },
-        },
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'thisWeek',
-          },
-        },
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'lastWeek',
-          },
-        },
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'thisMonth',
-          },
-        },
-        {
-          path: '/admincomponents/filters/DateFilter',
-          clientProps: {
-            preset: 'lastMonth',
-          },
-        },
-      ],
-    },
-
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],

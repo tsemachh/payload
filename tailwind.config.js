@@ -1,7 +1,7 @@
 import { isolateForComponents, scopedPreflightStyles } from 'tailwindcss-scoped-preflight'
 
 const config = {
-  darkMode: ['class', 'selector'],
+  darkMode: ['selector', '[data-theme="dark"]', '.dark'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
