@@ -101,6 +101,9 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     group: 'ניהול',
   },
+  custom: {
+    filterList: ['active', 'isAdmin', 'createdAt', 'enableAPIKey', 'receiveMailNotification'],
+  },
   auth: {
     useSessions: true,
     useAPIKey: true,

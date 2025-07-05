@@ -1,57 +1,127 @@
 'use client'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useListQuery } from '@payloadcms/ui'
+import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import { DateFilter } from '@/plugins/filter/filters/components/date-filter'
 import { SelectFilter } from '@/plugins/filter/filters/components/select-filter'
 import { CheckboxFilter } from '@/plugins/filter/filters/components/checkbox-filter'
-import { Field } from 'payload'
 import type {
   CheckboxFilterState,
   DateFilterValue,
   Locale,
   SelectFilterValue,
 } from '@/types/filter-types'
+import { ClientField, FieldAffectingData, type SelectField } from 'payload'
+import { getTranslation } from '@payloadcms/translations'
+import { SmallSelectFilter } from '@/plugins/filter/filters/components/small-select-filter'
 
-const DirectFilter = ({ filterList }: { filterList: Field[] }) => {
+// Recursive function to find fields by name
+function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
+  const results: ClientField[] = []
+
+  function recursiveSearch(fields: ClientField[]) {
+    const filteredFields = fields.filter(
+      (field) => 'name' in field && fieldNames.includes(field.name as string),
+    )
+    results.push(...filteredFields)
+
+    fields.forEach((item) => {
+      if (
+        (item.type === 'array' || item.type === 'row' || item.type === 'collapsible') &&
+        'fields' in item &&
+        Array.isArray(item.fields)
+      ) {
+        recursiveSearch(item.fields)
+      }
+      if (item.type === 'tabs' && 'tabs' in item && Array.isArray(item.tabs)) {
+        item.tabs.forEach((tab) => {
+          if ('fields' in tab && Array.isArray(tab.fields)) {
+            recursiveSearch(tab.fields)
+          }
+        })
+      }
+      if (item.type === 'blocks' && 'blocks' in item && Array.isArray(item.blocks)) {
+        item.blocks.forEach((block) => {
+          if ('fields' in block && Array.isArray(block.fields)) {
+            recursiveSearch(block.fields)
+          }
+        })
+      }
+    })
+  }
+
+  recursiveSearch(fields)
+
+  return results
+}
+
+const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[] }) => {
   const [fields, setFields] = useState<any[]>([])
   const { refineListData } = useListQuery()
   const [filterValues, setFilterValues] = useState<Record<string, any>>({})
   const [locale, setLocale] = useState<Locale>({ code: 'he', direction: 'rtl' })
+  const { getEntityConfig } = useConfig()
+  const { t, i18n } = useTranslation()
 
   useEffect(() => {
+    // Now you can access any property from the collection configuration
+    const collection = getEntityConfig({ collectionSlug: slug }) // The collection slug
     // Get the fields from the collection's custom.filterList
-    if (filterList && Array.isArray(filterList)) {
-      setFields(filterList)
-    }
+    // Use the global findFieldsByName function defined at the top of the file
+    const fields = findFieldsByName(collection?.fields, filterList as string[])
+    //Extract only name label type options from fields
+    const simplifiedFields = fields.map((field) => {
+      const label = (field as FieldAffectingData).label
+      // Get the translation utilities
+
+      // If you have a label defined as a string or object with locale keys
+      const translatedLabel = getTranslation(label as string, i18n)
+
+      return {
+        name: (field as FieldAffectingData).name,
+        label: translatedLabel,
+        type: field.type,
+        options: (field as SelectField).options,
+      }
+    })
+
+    // Sort the simplified fields to match the order in filterList
+    const sortedFields = (filterList as string[])
+      .map((fieldName) => simplifiedFields.find((field) => field.name === fieldName))
+      .filter(Boolean)
+
+    setFields(sortedFields)
   }, [])
 
   // This function will be called by each filter component when its value changes
-  const updateFilterValue = useCallback(
-    (fieldName: string, value: any) => {
-      setFilterValues((prev) => {
-        const newValues = { ...prev, [fieldName]: value }
+  const updateFilterValue = useCallback((fieldName: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [fieldName]: value }))
+  }, [])
 
-        // Apply all filters at once
-        const where: Record<string, any> = {}
+  // Use useEffect to handle the side effect of calling refineListData
+  useEffect(() => {
+    // Only run if we have actual filter values to apply
+    const hasFilters = Object.values(filterValues).some((val) => val !== undefined)
 
-        // Build the where clause from all filter values
-        Object.entries(newValues).forEach(([key, val]) => {
-          if (val !== undefined) {
-            where[key] = val
-          }
-        })
+    if (!hasFilters) {
+      refineListData({ where: {} }, true)
+    }
 
-        // Call refineListData with the combined where clause
-        refineListData({
-          where,
-          page: '1',
-        })
+    // Apply all filters at once
+    const where: Record<string, any> = {}
 
-        return newValues
-      })
-    },
-    [refineListData],
-  )
+    // Build the where clause from all filter values
+    Object.entries(filterValues).forEach(([key, val]) => {
+      if (val !== undefined) {
+        where[key] = val
+      }
+    })
+
+    // Call refineListData with the combined where clause
+    refineListData({
+      where,
+      page: '1',
+    })
+  }, [filterValues])
 
   // Convert DateFilterValue to Payload where clause
   const handleDateFilterChange = useCallback(
@@ -122,10 +192,11 @@ const DirectFilter = ({ filterList }: { filterList: Field[] }) => {
   )
 
   if (!fields.length) return null
-
+  const userLocale = { code: i18n.language, direction: 'rtl' }
+  //console.log('userLocale', userLocale)
   return (
     <div className="filter-container">
-      <div className={`grid gap-6 md:grid-cols-1 lg:grid-cols-${fields.length}`}>
+      <div className={`grid gap-6 md:grid-cols-1 lg:grid-cols-6`}>
         {fields.map((field) => {
           // Render the appropriate filter component based on field type
           switch (field.type) {
@@ -136,10 +207,24 @@ const DirectFilter = ({ filterList }: { filterList: Field[] }) => {
                   value={field.value}
                   key={field.name}
                   onChange={(value) => handleDateFilterChange(field.name, value)}
-                  locale={locale}
+                  locale={userLocale as Locale}
                 />
               )
             case 'select':
+              if (field.options.length <= 3) {
+                return (
+                  <SmallSelectFilter
+                    label={field.label}
+                    key={field.name}
+                    options={(field.options || []).map((option: any) => ({
+                      label: option.label,
+                      value: option.value,
+                    }))}
+                    onChange={(value) => handleSelectFilterChange(field.name, value)}
+                    locale={userLocale as Locale}
+                  />
+                )
+              }
               return (
                 <SelectFilter
                   label={field.label}
@@ -149,7 +234,7 @@ const DirectFilter = ({ filterList }: { filterList: Field[] }) => {
                     value: option.value,
                   }))}
                   onChange={(value) => handleSelectFilterChange(field.name, value)}
-                  locale={locale}
+                  locale={userLocale as Locale}
                 />
               )
             case 'checkbox':
@@ -159,7 +244,7 @@ const DirectFilter = ({ filterList }: { filterList: Field[] }) => {
                   key={field.name}
                   onChange={(state) => handleCheckboxFilterChange(field.name, state)}
                   checkboxLabel={''}
-                  locale={locale}
+                  locale={userLocale as Locale}
                 />
               )
             default:

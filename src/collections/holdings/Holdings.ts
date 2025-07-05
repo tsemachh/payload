@@ -16,6 +16,9 @@ export const Holdings: CollectionConfig = {
     defaultColumns: ['fund', 'valueDate'],
     group: 'פעילות',
   },
+  custom: {
+    filterList: ['valueDate'],
+  },
   disableBulkEdit: true,
   hooks: {
     afterChange: [

@@ -21,6 +21,9 @@ export const AdminNotifications: CollectionConfig = {
     useAsTitle: 'message',
     group: 'ניהול',
   },
+  custom: {
+    filterList: ['createdAt', 'readStatus'],
+  },
   fields: [
     {
       name: 'message',

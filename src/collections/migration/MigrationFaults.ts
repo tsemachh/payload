@@ -3,6 +3,9 @@ import type { CollectionConfig } from 'payload'
 const MigrationFaults: CollectionConfig = {
   slug: 'migration-faults',
   versions: false,
+  custom: {
+    filterList: ['createdAt', 'type'],
+  },
   fields: [
     {
       type: 'select',

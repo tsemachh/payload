@@ -134,75 +134,83 @@ export function SelectFilter({
         <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
       )}
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between bg-transparent relative"
-          >
-            <span className="truncate">{getDisplayText()}</span>
-            <div className="flex items-center gap-1">
-              {selectedValues.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-muted-foreground/20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClearAll()
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
+      <div className="relative">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between bg-transparent relative"
+            >
+              <span className="truncate">{getDisplayText()}</span>
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-            </div>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-          <Command>
-            {showSearch && <CommandInput placeholder={labels.search} />}
-            <CommandList>
-              <CommandEmpty>{labels.noResults}</CommandEmpty>
-              <CommandGroup>
-                {showSelectAll && (
-                  <CommandItem onSelect={handleToggleSelectAll}>
-                    <div className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}>
-                      <Checkbox checked={allSelected} className={cn(isHebrew ? 'ml-2' : 'mr-2')} />
-                      <span className={cn(isHebrew && 'text-right flex-1')}>
-                        {allSelected ? labels.deselectAll : labels.selectAll}
-                      </span>
-                    </div>
-                  </CommandItem>
-                )}
-                {options.map((option) => (
-                  <CommandItem key={option.value} onSelect={() => handleToggleOption(option.value)}>
-                    <div className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}>
-                      {multiSelect ? (
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0" align="start">
+            <Command>
+              {showSearch && <CommandInput placeholder={labels.search} />}
+              <CommandList>
+                <CommandEmpty>{labels.noResults}</CommandEmpty>
+                <CommandGroup>
+                  {showSelectAll && (
+                    <CommandItem onSelect={handleToggleSelectAll}>
+                      <div
+                        className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}
+                      >
                         <Checkbox
-                          checked={selectedValues.includes(option.value)}
+                          checked={allSelected}
                           className={cn(isHebrew ? 'ml-2' : 'mr-2')}
                         />
-                      ) : (
-                        <Check
-                          className={cn(
-                            'h-4 w-4',
-                            isHebrew ? 'ml-2' : 'mr-2',
-                            selectedValues.includes(option.value) ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                      )}
-                      <span className={cn(isHebrew && 'text-right flex-1')}>{option.label}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+                        <span className={cn(isHebrew && 'text-right flex-1')}>
+                          {allSelected ? labels.deselectAll : labels.selectAll}
+                        </span>
+                      </div>
+                    </CommandItem>
+                  )}
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      onSelect={() => handleToggleOption(option.value)}
+                    >
+                      <div
+                        className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}
+                      >
+                        {multiSelect ? (
+                          <Checkbox
+                            checked={selectedValues.includes(option.value)}
+                            className={cn(isHebrew ? 'ml-2' : 'mr-2')}
+                          />
+                        ) : (
+                          <Check
+                            className={cn(
+                              'h-4 w-4',
+                              isHebrew ? 'ml-2' : 'mr-2',
+                              selectedValues.includes(option.value) ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                        )}
+                        <span className={cn(isHebrew && 'text-right flex-1')}>{option.label}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {selectedValues.length > 0 && (
+          <button
+            className="absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleClearAll()
+            }}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
 
       {multiSelect && selectedValues.length > 0 && selectedValues.length < options.length && (
         <div className="flex flex-wrap gap-1 mt-2">

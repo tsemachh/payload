@@ -174,190 +174,192 @@ export function DateFilter({
   }
 
   return (
-    <div className={cn('space-y-2 w-80', className)} dir={locale.direction}>
+    <div className={cn('space-y-2 w-70', className)} dir={locale.direction}>
       {label && (
         <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
       )}
 
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={isOpen}
-            className="w-full justify-between bg-transparent relative min-w-80"
-          >
-            <span className="truncate">{getDisplayValue()}</span>
-            <div className="flex items-center gap-1">
-              {hasValue() && (
+      <div className="relative">
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={isOpen}
+              className="w-full justify-between bg-transparent relative min-w-70"
+            >
+              <span className="truncate">{getDisplayValue()}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0" align="end">
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Future Options - Left column */}
+                <div className="space-y-1">
+                  <div
+                    className={cn(
+                      'text-sm font-semibold text-muted-foreground mb-2',
+                      isHebrew && 'text-right',
+                    )}
+                  >
+                    {labels.future}
+                  </div>
+                  <div className="space-y-0.5">
+                    {futureOptions.map((option) => (
+                      <div key={option.value}>{renderOptionWithDate(option)}</div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Past Options - Right column */}
+                <div className="space-y-1">
+                  <div
+                    className={cn(
+                      'text-sm font-semibold text-muted-foreground mb-2',
+                      isHebrew && 'text-right',
+                    )}
+                  >
+                    {labels.past}
+                  </div>
+                  <div className="space-y-0.5">
+                    {pastOptions.map((option) => (
+                      <div key={option.value}>{renderOptionWithDate(option)}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Custom Option */}
+              <div className="space-y-3">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-muted-foreground/20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClearAll()
-                  }}
+                  className={cn(
+                    'w-full justify-start h-auto py-2 px-2',
+                    (showCustom || internalValue?.type === 'custom') && 'bg-accent',
+                    isHebrew && 'justify-end text-right',
+                  )}
+                  onClick={handleCustomSelect}
                 >
-                  <X className="h-3 w-3" />
+                  {labels.custom}
                 </Button>
-              )}
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-            </div>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="end">
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Future Options - Left column */}
-              <div className="space-y-1">
-                <div
-                  className={cn(
-                    'text-sm font-semibold text-muted-foreground mb-2',
-                    isHebrew && 'text-right',
-                  )}
-                >
-                  {labels.future}
-                </div>
-                <div className="space-y-0.5">
-                  {futureOptions.map((option) => (
-                    <div key={option.value}>{renderOptionWithDate(option)}</div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Past Options - Right column */}
-              <div className="space-y-1">
-                <div
-                  className={cn(
-                    'text-sm font-semibold text-muted-foreground mb-2',
-                    isHebrew && 'text-right',
-                  )}
-                >
-                  {labels.past}
-                </div>
-                <div className="space-y-0.5">
-                  {pastOptions.map((option) => (
-                    <div key={option.value}>{renderOptionWithDate(option)}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
+                {/* Custom Date Range - appears next to custom label */}
+                {showCustom && (
+                  <div className="space-y-3 pl-2">
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* From Date */}
+                      <div
+                        className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}
+                      >
+                        <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
+                          {labels.from}
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                'w-[60%] justify-start text-left font-normal text-xs h-8',
+                                !customRange.from && 'text-muted-foreground',
+                              )}
+                            >
+                              <CalendarIcon className="mr-1 h-3 w-3" />
+                              <span dir="ltr">
+                                {customRange.from
+                                  ? formatDate(customRange.from, 'dd/MM/yyyy')
+                                  : labels.selectDate}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customRange.from}
+                              onSelect={(date) =>
+                                handleCustomRangeChange({ ...customRange, from: date })
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
 
-            <Separator className="my-4" />
+                      {/* To Date */}
+                      <div
+                        className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}
+                      >
+                        <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
+                          {labels.to}
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                'w-[60%] justify-start text-left font-normal text-xs h-8',
+                                !customRange.to && 'text-muted-foreground',
+                              )}
+                            >
+                              <CalendarIcon className="mr-1 h-3 w-3" />
+                              <span dir="ltr">
+                                {customRange.to
+                                  ? formatDate(customRange.to, 'dd/MM/yyyy')
+                                  : labels.selectDate}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customRange.to}
+                              onSelect={(date) =>
+                                handleCustomRangeChange({ ...customRange, to: date })
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
 
-            {/* Custom Option */}
-            <div className="space-y-3">
-              <Button
-                variant="ghost"
-                className={cn(
-                  'w-full justify-start h-auto py-2 px-2',
-                  (showCustom || internalValue?.type === 'custom') && 'bg-accent',
-                  isHebrew && 'justify-end text-right',
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleApplyCustomRange}
+                        className="flex-1 text-xs h-8"
+                        disabled={!customRange.from && !customRange.to}
+                      >
+                        {labels.apply}
+                      </Button>
+                      <Button
+                        onClick={handleCancelCustomRange}
+                        variant="outline"
+                        className="flex-1 bg-transparent text-xs h-8"
+                      >
+                        {labels.cancel}
+                      </Button>
+                    </div>
+                  </div>
                 )}
-                onClick={handleCustomSelect}
-              >
-                {labels.custom}
-              </Button>
-
-              {/* Custom Date Range - appears next to custom label */}
-              {showCustom && (
-                <div className="space-y-3 pl-2">
-                  <div className="grid grid-cols-1 gap-3">
-                    {/* From Date */}
-                    <div className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}>
-                      <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
-                        {labels.from}
-                      </Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-[60%] justify-start text-left font-normal text-xs h-8',
-                              !customRange.from && 'text-muted-foreground',
-                            )}
-                          >
-                            <CalendarIcon className="mr-1 h-3 w-3" />
-                            <span dir="ltr">
-                              {customRange.from
-                                ? formatDate(customRange.from, 'dd/MM/yyyy')
-                                : labels.selectDate}
-                            </span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={customRange.from}
-                            onSelect={(date) =>
-                              handleCustomRangeChange({ ...customRange, from: date })
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* To Date */}
-                    <div className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}>
-                      <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
-                        {labels.to}
-                      </Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-[60%] justify-start text-left font-normal text-xs h-8',
-                              !customRange.to && 'text-muted-foreground',
-                            )}
-                          >
-                            <CalendarIcon className="mr-1 h-3 w-3" />
-                            <span dir="ltr">
-                              {customRange.to
-                                ? formatDate(customRange.to, 'dd/MM/yyyy')
-                                : labels.selectDate}
-                            </span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={customRange.to}
-                            onSelect={(date) =>
-                              handleCustomRangeChange({ ...customRange, to: date })
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleApplyCustomRange}
-                      className="flex-1 text-xs h-8"
-                      disabled={!customRange.from && !customRange.to}
-                    >
-                      {labels.apply}
-                    </Button>
-                    <Button
-                      onClick={handleCancelCustomRange}
-                      variant="outline"
-                      className="flex-1 bg-transparent text-xs h-8"
-                    >
-                      {labels.cancel}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+        {hasValue() && (
+          <button
+            className="absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleClearAll()
+            }}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

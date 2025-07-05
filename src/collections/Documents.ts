@@ -13,6 +13,9 @@ export const Documents: CollectionConfig = {
   admin: {
     group: 'פעילות',
   },
+  custom: {
+    filterList: ['createdAt'],
+  },
   fields: [
     {
       name: 'alt',
