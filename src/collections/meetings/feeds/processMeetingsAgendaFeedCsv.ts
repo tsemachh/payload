@@ -5,7 +5,6 @@ import { PromisePool } from '@/utils/promisePool'
 
 export type TopicType = 'reporting' | 'decision'
 
-
 export function getAgendaType(rowType: string): TopicType {
   return rowType === 'reporting' || rowType === 'decision' ? (rowType as TopicType) : 'decision'
 }
@@ -37,18 +36,26 @@ export const processMeetingsAgendaFeedCsv = async (
       errors.push('לא נמצא קובץ בבקשה')
       return { errors, successCount, fileLength }
     }
-
-    const csvData = iconv.decode(file.data, 'windows-1255')
-    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
+    const jsonData = JSON.parse(file.data.toString('utf8'))
+    const schema = Object.keys(jsonData.schema)
+    const dataRows = jsonData.data
 
     const rowsByMagnaId = new Map<string, any[]>()
 
-    results.forEach((data) => {
+    dataRows.forEach((rowArray: any[]) => {
+      const rowObj = schema.reduce(
+        (acc, key, index) => {
+          acc[key] = rowArray[index]
+          return acc
+        },
+        {} as Record<string, any>,
+      )
+
       const row = {
-        text: data.topic || '',
-        topicType: getAgendaType(data.topicType || '') as TopicType,
-        magnaId: data.ProofId || '',
-        majorityType: getMajorityType(data.MajorityRequired) || '',
+        text: rowObj.topic || '',
+        topicType: getAgendaType(rowObj.topicType || '') as TopicType,
+        magnaId: rowObj.ProofId || '',
+        majorityType: getMajorityType(rowObj.MajorityRequired) || '',
       }
       console.log('row', row)
       const magnaId = row.magnaId
@@ -65,6 +72,9 @@ export const processMeetingsAgendaFeedCsv = async (
     const magnaIds = Array.from(rowsByMagnaId.keys())
     const existingMeetings = await req.payload.find({
       collection: 'meetings',
+      select:{
+        magnaId: true
+      },
       where: {
         magnaId: {
           in: magnaIds,
@@ -72,11 +82,11 @@ export const processMeetingsAgendaFeedCsv = async (
       },
       limit: 0,
     })
+    req.payload.logger.info({existingMeetings},"Getting meetings from CSV file")
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
     const promisePool = new PromisePool(20)
-    const promises: Promise<void>[] = []
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
       const meeting = meetingsMap.get(magnaId)
@@ -93,9 +103,12 @@ export const processMeetingsAgendaFeedCsv = async (
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
             req,
+          }).catch((e) => {
+            req.payload.logger.info({agendaRows},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           })
           successCount++
         } catch (e: any) {
+          req.payload.logger.error({agendaRows},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
       })
@@ -104,9 +117,9 @@ export const processMeetingsAgendaFeedCsv = async (
     await promisePool.waitForAll()
     req.payload.logger.info(`Finished processing file: ${file.name}`)
     if (errors.length > 0) {
-      console.error(`\nFinished with ${errors.length} errors:`)
+      req.payload.logger.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
-        console.error(`${idx + 1}. ${err}`)
+        req.payload.logger.error(`${idx + 1}. ${err}`)
       })
     }
 

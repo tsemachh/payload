@@ -191,9 +191,14 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => !siblingData.tradable,
                   },
-                  filterOptions: () => ({
-                    tradable: { equals: true },
-                  }),
+                  filterOptions: ({ req }: any) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      tradable: { equals: true },
+                    }
+                  },
                 },
                 {
                   name: 'active',

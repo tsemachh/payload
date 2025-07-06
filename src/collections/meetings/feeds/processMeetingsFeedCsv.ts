@@ -51,6 +51,16 @@ export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
 }
 
 const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
+const convertDataToObjects = (jsonData: any) => {
+  const keys = Object.keys(jsonData.schema)
+  return jsonData.data.map((row: any[]) => {
+    const obj: any = {}
+    keys.forEach((key, index) => {
+      obj[key] = row[index]
+    })
+    return obj
+  })
+}
 export const processMeetingsFeedCsv = async (
   req: PayloadRequest,
   doc: any,
@@ -83,10 +93,11 @@ export const processMeetingsFeedCsv = async (
     }
 
     // Read the file content
-    const csvData = iconv.decode(file.data, 'windows-1255')
-
-    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
-    const rows: any[] = results.map((data) => {
+    let jsonData: any[] = []
+    const fileContent = file.data.toString('utf8')
+    jsonData = JSON.parse(fileContent)
+    const rawRows = convertDataToObjects(jsonData)
+    const rows: any[] = rawRows.map((data: any) => {
       try {
         return {
           type: getMeetingType(data.MeetingType || '') as MeetingType,
@@ -121,7 +132,7 @@ export const processMeetingsFeedCsv = async (
     }
 
     // Create a promise pool with 20 concurrent threads
-    const stockIds = [...new Set(rows.map((row) => row.stock))]
+    const stockIds = [...new Set(rows.map((row) => String(row.stock)))]
     const stocks = await req.payload.find({
       collection: 'stocks',
       select: {
@@ -141,10 +152,7 @@ export const processMeetingsFeedCsv = async (
     const stockIdMap = new Map()
 
     for (const stock of stocks.docs) {
-      stockIdMap.set(stock.stockId, {
-        id: stock.id,
-        active: stock.active,
-      })
+      stockIdMap.set(String(stock.stockId), { id: stock.id, active: stock.active })
     }
     // Process each row in parallel using the promise pool
     for (let i = 0; i < rows.length; i++) {
@@ -162,7 +170,7 @@ export const processMeetingsFeedCsv = async (
               )
               return
             }
-            const stockData = stockIdMap.get(row.stock)
+            const stockData = stockIdMap.get(String(row.stock))
             if (stockData === null || stockData === undefined) {
               errors.push(
                 `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שלא נמצא ולא ייובא — האסיפה הזו לא תיווצר`,
