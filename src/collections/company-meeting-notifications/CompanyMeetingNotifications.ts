@@ -51,8 +51,13 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       label: 'חברה',
       type: 'relationship',
       relationTo: 'companies',
-      filterOptions: {
-        type: { equals: 'regular' },
+      filterOptions: ({ req }: any) => {
+        if (req.context?.from == 'migration' || req.context?.from == 'process') {
+          return true
+        }
+        return {
+          type: { equals: 'regular' },
+        }
       },
       required: true,
     },
