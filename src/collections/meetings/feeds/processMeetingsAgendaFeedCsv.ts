@@ -54,11 +54,10 @@ export const processMeetingsAgendaFeedCsv = async (
       const row = {
         text: rowObj.topic || '',
         topicType: getAgendaType(rowObj.topicType || '') as TopicType,
-        magnaId: rowObj.ProofId || '',
         majorityType: getMajorityType(rowObj.MajorityRequired) || '',
       }
       console.log('row', row)
-      const magnaId = row.magnaId
+      const magnaId = rowObj.ProofId || ''
       if (!rowsByMagnaId.has(magnaId)) {
         rowsByMagnaId.set(magnaId, [])
       }
@@ -104,11 +103,11 @@ export const processMeetingsAgendaFeedCsv = async (
             context: { ...req.context, from: 'migration' },
             req,
           }).catch((e) => {
-            req.payload.logger.info({agendaRows},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+            req.payload.logger.info({agendaRows,meeting},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           })
           successCount++
         } catch (e: any) {
-          req.payload.logger.error({agendaRows},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+          req.payload.logger.error({agendaRows,meeting},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
       })
