@@ -64,6 +64,10 @@ const config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    scopedPreflightStyles({
+      isolationStrategy: isolateForComponents('.useTw'),
+    }),
+  ],
 }
 export default config
