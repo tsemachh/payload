@@ -211,6 +211,14 @@ export const Companies: CollectionConfig = {
                       },
                     },
                     {
+                      name: 'displayVotingRecommendation',
+                      label: 'הצגת המלצת הצבעה',
+                      type: 'checkbox',
+                      admin: {
+                        width: '200px',
+                      },
+                    },
+                    {
                       name: 'defaultVotingRecommendation',
                       label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',

@@ -17,7 +17,7 @@ const ConditionalReasonText: React.FC<TextFieldClientProps> = (props) => {
 
   useEffect(() => {
     const checkReason = () => {
-      if (!reasonRef || reasonRef == 'אחר') {
+      if (reasonRef === 'אחר') {
         setShouldShow(true)
       } else {
         setShouldShow(false)

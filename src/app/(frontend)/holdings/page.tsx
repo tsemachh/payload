@@ -255,11 +255,7 @@ export default function HoldingsFeedView() {
         },
       )
       if (response.ok) {
-        const payload = {
-          date: date.toISOString(),
-        }
-        const encoded = btoa(JSON.stringify(payload))
-        router.push(`/holdings/view?data=${encodeURIComponent(encoded)}`)
+        router.push(`/holdings/view?date=${format(date, 'yyyy-MM-dd')}`)
       } else {
         setSaveError(true)
       }

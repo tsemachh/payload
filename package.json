@@ -13,26 +13,25 @@
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "lint:fix": "cross-env NODE_OPTIONS=--no-deprecation next lint --fix",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
-    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=8192\" payload migrate ",
-    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=8192\" payload migrate ",
+    "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "reinstall": "rm -rf node_modules .next && rm -rf .next && rm -rf pnpm-lock.yaml && cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\""
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",
     "@logtail/pino": "^0.4.22",
     "@logtail/types": "^0.5.2",
-    "@payloadcms/db-mongodb": "^3.44.0",
-    "@payloadcms/email-nodemailer": "^3.44.0",
-    "@payloadcms/next": "^3.44.0",
-    "@payloadcms/payload-cloud": "^3.44.0",
-    "@payloadcms/plugin-import-export": "^3.44.0",
-    "@payloadcms/richtext-lexical": "^3.44.0",
-    "@payloadcms/storage-gcs": "^3.44.0",
-    "@payloadcms/translations": "^3.44.0",
-    "@payloadcms/ui": "^3.44.0",
+    "@payloadcms/db-mongodb": "^3.45.0",
+    "@payloadcms/email-nodemailer": "^3.45.0",
+    "@payloadcms/next": "^3.45.0",
+    "@payloadcms/payload-cloud": "^3.45.0",
+    "@payloadcms/plugin-import-export": "^3.45.0",
+    "@payloadcms/richtext-lexical": "^3.45.0",
+    "@payloadcms/storage-gcs": "^3.45.0",
+    "@payloadcms/translations": "^3.45.0",
+    "@payloadcms/ui": "^3.45.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -83,11 +82,11 @@
     "moment": "^2.30.1",
     "mongodb": "^6.13.0",
     "mssql": "^11.0.1",
-    "next": "15.3.2",
+    "next": "15.3.3",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.4",
     "nodemailer": "^7.0.3",
-    "payload": "^3.44.0",
+    "payload": "^3.45.0",
     "payload-oapi": "0.2.4-b.0",
     "pino": "^9.5.0",
     "pino-abstract-transport": "^1.0.0",
@@ -130,6 +129,14 @@
     "typescript": "5.7.3"
   },
   "engines": {
-    "node": "^18.20.2 || >=20.9.0"
+    "node": "^18.20.2 || >=20.9.0",
+    "pnpm": "^9 || ^10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }

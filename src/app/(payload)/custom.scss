@@ -81,6 +81,14 @@ form[action*="/api/research-documents"] .file-field__filename {
   color: var(--theme-elevation-400);
 }
 
+
+
+#field-agenda .group-field__header .field-label[for*="recommendation"],
+#field-agenda .group-field__header .field-label[for*="exceptionalRecommendation"] {
+  display: none;
+}
+
+
 .field-type.upload.invitationDocument .upload__dropzoneAndUpload {
   .btn.upload__listToggler.btn--icon-style-without-border.btn--size-small.btn--withoutPopup.btn--style-pill.btn--withoutPopup {
     display: none;

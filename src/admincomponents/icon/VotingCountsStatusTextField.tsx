@@ -41,7 +41,7 @@ const VotingCountsStatus: React.FC<VotingCountsStatusProps> = ({ path }) => {
       <span>{value || 'אין נתונים'}</span>
       {value && (
         <span className="font-semibold flex items-center gap-1">
-          הצביעו <span className="text-2xl">{statusIcon}</span>
+          הצביעו <span className="text-2xl mr-2"> {statusIcon}</span>
         </span>
       )}
     </div>

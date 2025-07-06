@@ -76,13 +76,11 @@ export function isGeneralVote(votes: Vote[]): boolean {
 
     for (const field of generalFieldsToCompare) {
       if ((ref as any)[field] !== (current as any)[field]) {
-        console.log('-------', (ref as any)[field], ' - ', (current as any)[field])
         return false
       }
     }
 
     if (refVotes.length !== currentVotes.length) {
-      console.log('-------', refVotes.length, ' - ', currentVotes.length)
       return false
     }
 
@@ -91,8 +89,6 @@ export function isGeneralVote(votes: Vote[]): boolean {
       const b = currentVotes[j]
 
       if (a.topicIndex !== b.topicIndex) {
-        console.log('-------', a.topicIndex, ' - ', b.topicIndex)
-
         return false
       }
 
@@ -111,8 +107,6 @@ export function isGeneralVote(votes: Vote[]): boolean {
       for (const field of voteFieldsToCompare) {
         if ((a as any)[field] !== (b as any)[field]) {
           console.warn()
-          console.log('-------', (a as any)[field], ' - ', (b as any)[field])
-
           return false
         }
       }
@@ -120,24 +114,4 @@ export function isGeneralVote(votes: Vote[]): boolean {
   }
 
   return true
-}
-
-export const shouldShowDefaultRecommendations = (
-  selectedCompanies: string[],
-  companiesWithDefaultRecommendationIds: Map<string, boolean>,
-): boolean => {
-  if (selectedCompanies.length === 0 || companiesWithDefaultRecommendationIds.size === 0) {
-    return false
-  }
-
-  if (selectedCompanies.length > 1) {
-    return true
-  }
-
-  if (selectedCompanies.length === 1) {
-    const singleCompanyId = selectedCompanies[0]
-    return companiesWithDefaultRecommendationIds.has(singleCompanyId)
-  }
-
-  return false
 }

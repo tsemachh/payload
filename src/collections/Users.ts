@@ -105,7 +105,7 @@ export const Users: CollectionConfig = {
     filterList: ['active', 'isAdmin', 'createdAt', 'enableAPIKey', 'receiveMailNotification'],
   },
   auth: {
-    useSessions: true,
+    useSessions: false,
     useAPIKey: true,
     tokenExpiration: process.env.NODE_ENV == 'production' ? 43200 : 432000, // 12 hours in prod, 5 days in dev timeout
   },
