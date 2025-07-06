@@ -113,7 +113,7 @@ const votingRecommendation = [
         defaultValue: null,
         hasEmptyOption: true,
         admin: {
-          width: '40%',
+          width: '90%',
           components: {
             Field: '/collections/meetings/components/RecommendationReasonSelect',
           },
