@@ -185,8 +185,8 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
-                  filterOptions: ({ siblingData ,options }: any) => {
-                    if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
+                  filterOptions: ({ siblingData ,req }: any) => {
+                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
                       return true
                     }
                     if (!siblingData?.meetingDate)
@@ -563,7 +563,7 @@ export const Meetings: CollectionConfig = {
                           relationTo: 'companies',
                           hasMany: true,
                           filterOptions: ({ data ,req}) => {
-                            if (req.context.from == 'migration' || req.context.from == 'process' || data?.companies?.length == 0) {
+                            if (req?.context?.from == 'migration' || req?.context?.from == 'process' || data?.companies?.length == 0) {
                               return true
                             }
                             return {
@@ -628,7 +628,7 @@ export const Meetings: CollectionConfig = {
               index: true,
               maxDepth: 1,
               filterOptions: ({ req}) => {
-                if (req.context.from == 'migration' || req.context.from == 'process')
+                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
                   return true
 
                   return {
@@ -719,7 +719,7 @@ export const Meetings: CollectionConfig = {
               index: true,
               maxDepth: 0,
               filterOptions: ({ req}) => {
-                if (req.context.from == 'migration' || req.context.from == 'process')
+                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
                   return true
                 return {
                   type: {
