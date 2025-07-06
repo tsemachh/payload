@@ -279,6 +279,7 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+/*
         {
           label: 'פגישות',
           admin: {
@@ -293,6 +294,8 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+*/
+/*
         {
           label: 'אחזקות',
           admin: {
@@ -307,6 +310,7 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+*/
         {
           label: 'ניירות ערך מושתקים',
           admin: {
