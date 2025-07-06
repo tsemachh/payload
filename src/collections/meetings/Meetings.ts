@@ -108,7 +108,7 @@ const votingRecommendation = [
       },
       {
         name: 'reasonRef',
-        label: 'נימוק מוכן',
+        label: 'נימוק מערכת',
         type: 'text',
         defaultValue: null,
         hasEmptyOption: true,
@@ -617,8 +617,8 @@ export const Meetings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               hasMany: true,
-              name: 'companies',
-              label: 'חברות',
+              name: 'companies', //companiesNotYetVoted
+              label: 'חברות שטרם הצביעו',
               index: true,
               maxDepth: 1,
               filterOptions: {
@@ -628,6 +628,48 @@ export const Meetings: CollectionConfig = {
               },
               admin: {
                 readOnly: true,
+                components: {
+                  Field: {
+                    path: '/admincomponents/fields/CompaniesRelationshipField',
+                  },
+                },
+              },
+              hooks: {
+                //יכול להיות שכדאי להוסיף שדה של כל החברות שמוזמנות לאסיפה שיראו אותו רק ברשימת האסיפות?
+                //ואז פה לעדכן את data.companies = nonVotedCompanies
+                afterRead: [
+                  async ({ data, req }) => {
+                    console.log('afterRead companies', data)
+                    console.log('afterRead data?.votes?.docs', data?.votes?.docs)
+                    console.log('afterRead data?.companies', data?.companies)
+
+                    if (!data?.votes?.docs || !data?.companies) {
+                      return []
+                    }
+                    //זה יביא לי את כל החברות שכן הצביעו ואז אני אפלטר על החברות ואביא רק מי שלא שם ואותו אחזיר!
+                    const votes = await req.payload.find({
+                      collection: 'votes',
+                      select: {
+                        company: true,
+                      },
+                      where: {
+                        id: {
+                          in: data?.votes?.docs,
+                        },
+                      },
+                      limit: 0,
+                      depth: 1,
+                    })
+                    console.log('----votes', votes)
+                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
+                    const nonVotedCompanies = data.companies.filter(
+                      (companyId: string) => !votedCompanyIds.includes(companyId),
+                    )
+                    console.log('----nonVotedCompanies', nonVotedCompanies)
+
+                    return nonVotedCompanies
+                  },
+                ],
               },
             },
             {
