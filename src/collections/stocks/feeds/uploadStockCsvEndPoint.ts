@@ -5,7 +5,7 @@ import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
   try {
-    await addDataAndFileToRequest(req)
+    //await addDataAndFileToRequest(req)
     const startTime = Date.now()
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
@@ -37,13 +37,13 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     const buffer = Buffer.concat(chunks)
     const now = new Date()
     const formattedDate = format(now, 'dd-MM-yyyy')
-    const fileName = `upload_stocks_${formattedDate}.csv`
+    const fileName = `upload_stocks_${formattedDate}.json`
     // Create a file object from the buffer
     const file = {
       data: buffer,
       name: fileName,
       size: buffer.length,
-      mimetype: 'text/csv',
+      mimetype: 'application/json',
     }
     if (!file) {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })

@@ -8,7 +8,7 @@ export const YesNoCell: React.FC<DefaultCellComponentProps<CheckboxFieldClient>>
 }) => {
   return (
     <code>
-      <span>{cellData ? 'כן' : 'לא'}</span>
+      <span>{cellData ? '✅' : '❌'}</span>
     </code>
   )
 }

@@ -672,6 +672,7 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'documents',
               admin: {
+                hidden: true,
                 components: {
                   Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
                 },
@@ -698,7 +699,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 disableListFilter: true,
-                defaultColumns: ['company', 'creator', 'updatedAt', 'votes', 'reported'],
+                defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
               },
               where: {
                 _status: { equals: 'published' },
