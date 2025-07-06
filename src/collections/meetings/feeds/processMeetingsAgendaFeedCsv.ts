@@ -1,7 +1,4 @@
 import { PayloadRequest } from 'payload'
-import csvToJson from 'convert-csv-to-json'
-import iconv from 'iconv-lite'
-import { PromisePool } from '@/utils/promisePool'
 
 export type TopicType = 'reporting' | 'decision'
 
@@ -85,7 +82,6 @@ export const processMeetingsAgendaFeedCsv = async (
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
-    const promisePool = new PromisePool(20)
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
       const meeting = meetingsMap.get(magnaId)
@@ -94,26 +90,22 @@ export const processMeetingsAgendaFeedCsv = async (
         continue
       }
 
-      promisePool.add(async () => {
-        try {
-          await req.payload.update({
-            collection: 'meetings',
-            id: meeting.id,
-            data: { agenda: agendaRows },
-            context: { ...req.context, from: 'migration' },
-            req,
-          }).catch((e) => {
-            req.payload.logger.info({agendaRows,meeting},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
-          })
-          successCount++
-        } catch (e: any) {
-          req.payload.logger.error({agendaRows,meeting},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
-          errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
-        }
-      })
+      try {
+        await req.payload.update({
+          collection: 'meetings',
+          id: meeting.id,
+          data: { agenda: agendaRows },
+          context: { ...req.context, from: 'migration' },
+          req,
+        }).catch((e) => {
+          req.payload.logger.info({agendaRows,meeting},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+        })
+        successCount++
+      } catch (e: any) {
+        req.payload.logger.error({agendaRows,meeting},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+        errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+      }
     }
-
-    await promisePool.waitForAll()
     req.payload.logger.info(`Finished processing file: ${file.name}`)
     if (errors.length > 0) {
       req.payload.logger.error(`\nFinished with ${errors.length} errors:`)
