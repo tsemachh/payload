@@ -5,7 +5,6 @@ import { useField, EditIcon, useDocumentDrawer } from '@payloadcms/ui'
 import { stringify } from 'qs-esm'
 import { Building2, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 
 type CompanyWithName = {
   id: string
@@ -27,13 +26,11 @@ const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }
     <>
       <DocumentDrawerToggler
         drawerSlug={`${drawerSlug}-${company.id}`}
-        className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 transition-colors duration-150"
+        className="flex items-center gap-3 p-3 rounded-md hover:bg-muted/50 transition-colors duration-150"
       >
-        <div className="p-1 bg-slate-100 rounded">
-          <Building2 className="h-3 w-3 text-slate-600" />
-        </div>
-        <span className="text-sm text-slate-700">{company.name}</span>
-        <EditIcon className="h-4 w-4 text-slate-600" />
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+        <span className="text-base font-medium text-foreground">{company.name}</span>
+        <EditIcon className="h-4 w-4 text-muted-foreground" />
       </DocumentDrawerToggler>
       <DocumentDrawer drawerSlug={`${drawerSlug}-${company.id}`} />
     </>
@@ -94,36 +91,28 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
   }, [value, collectionSlug])
 
   if (loading) {
-    return <div className="text-center text-sm text-slate-600">טוען...</div>
+    return <div className="text-center text-base text-muted-foreground">טוען...</div>
   }
 
   if (error) {
-    return <div className="text-center text-sm text-red-600">שגיאה: {error}</div>
+    return <div className="text-center text-base text-destructive">שגיאה: {error}</div>
   }
 
   if (!companies.length) {
-    return
+    return <div className="text-center text-base text-muted-foreground">כל החברות הצביעו</div>
   }
 
   return (
-    <div className="w-full max-w-xl mx-auto p-2" dir="rtl">
-      <Card className="border border-slate-200 shadow-sm">
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <div className="p-1 bg-orange-50 rounded">
-              <Clock className="h-3.5 w-3.5 text-orange-600" />
-            </div>
-            חברות שטרם הצביעו
-            <Badge
-              variant="secondary"
-              className="mr-auto text-xs px-2 py-0.5 bg-slate-100 text-slate-600"
-            >
-              {companies.length}
-            </Badge>
+    <div className="w-full max-w-xl p-2" dir="rtl">
+      <Card className="border border-border shadow-sm bg-card">
+        <CardHeader className="pb-3 pt-4 px-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-bold text-foreground">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            חברות שטרם הצביעו ({companies.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 px-3 pb-3">
-          <div className="space-y-1">
+        <CardContent className="pt-0 px-4 pb-4">
+          <div className="space-y-2">
             {companies.map((company) => (
               <CompanyItem key={company.id} company={company} collectionSlug={collectionSlug} />
             ))}
