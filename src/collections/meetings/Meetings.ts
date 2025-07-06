@@ -185,7 +185,10 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
-                  filterOptions: ({ siblingData }: any) => {
+                  filterOptions: ({ siblingData ,options }: any) => {
+                    if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
+                      return true
+                    }
                     if (!siblingData?.meetingDate)
                       return {
                         active: {
@@ -559,7 +562,10 @@ export const Meetings: CollectionConfig = {
                           type: 'relationship',
                           relationTo: 'companies',
                           hasMany: true,
-                          filterOptions: ({ data }) => {
+                          filterOptions: ({ data ,req}) => {
+                            if (req.context.from == 'migration' || req.context.from == 'process' || data?.companies?.length == 0) {
+                              return true
+                            }
                             return {
                               id: {
                                 in: data?.companies?.map(getIdOfRelationField) || [],
@@ -621,10 +627,15 @@ export const Meetings: CollectionConfig = {
               label: 'חברות',
               index: true,
               maxDepth: 1,
-              filterOptions: {
-                type: {
-                  equals: 'regular',
-                },
+              filterOptions: ({ req}) => {
+                if (req.context.from == 'migration' || req.context.from == 'process')
+                  return true
+
+                  return {
+                    type: {
+                      equals: 'regular',
+                    },
+                  }
               },
               admin: {
                 readOnly: true,
@@ -707,10 +718,13 @@ export const Meetings: CollectionConfig = {
               label: 'תיקים',
               index: true,
               maxDepth: 0,
-              filterOptions: {
-                type: {
-                  equals: 'fund',
-                },
+              filterOptions: ({ req}) => {
+                if (req.context.from == 'migration' || req.context.from == 'process')
+                  return true
+                return {
+                  type: {
+                    equals: 'fund',
+                  }}
               },
               admin: {
                 disableListFilter: true,
