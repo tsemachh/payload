@@ -5,7 +5,6 @@ import { PromisePool } from '@/utils/promisePool'
 
 export type TopicType = 'reporting' | 'decision'
 
-
 export function getAgendaType(rowType: string): TopicType {
   return rowType === 'reporting' || rowType === 'decision' ? (rowType as TopicType) : 'decision'
 }
@@ -37,18 +36,26 @@ export const processMeetingsAgendaFeedCsv = async (
       errors.push('לא נמצא קובץ בבקשה')
       return { errors, successCount, fileLength }
     }
-
-    const csvData = iconv.decode(file.data, 'windows-1255')
-    const results = csvToJson.fieldDelimiter('\t').csvStringToJson(csvData)
+    const jsonData = JSON.parse(file.data.toString('utf8'))
+    const schema = Object.keys(jsonData.schema)
+    const dataRows = jsonData.data
 
     const rowsByMagnaId = new Map<string, any[]>()
 
-    results.forEach((data) => {
+    dataRows.forEach((rowArray: any[]) => {
+      const rowObj = schema.reduce(
+        (acc, key, index) => {
+          acc[key] = rowArray[index]
+          return acc
+        },
+        {} as Record<string, any>,
+      )
+
       const row = {
-        text: data.topic || '',
-        topicType: getAgendaType(data.topicType || '') as TopicType,
-        magnaId: data.ProofId || '',
-        majorityType: getMajorityType(data.MajorityRequired) || '',
+        text: rowObj.topic || '',
+        topicType: getAgendaType(rowObj.topicType || '') as TopicType,
+        magnaId: rowObj.ProofId || '',
+        majorityType: getMajorityType(rowObj.MajorityRequired) || '',
       }
       console.log('row', row)
       const magnaId = row.magnaId
@@ -93,9 +100,12 @@ export const processMeetingsAgendaFeedCsv = async (
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
             req,
+          }).catch((e) => {
+            req.payload.logger.info({agendaRows},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           })
           successCount++
         } catch (e: any) {
+          req.payload.logger.error({agendaRows},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
       })

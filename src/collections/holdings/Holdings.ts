@@ -72,7 +72,7 @@ export const Holdings: CollectionConfig = {
               relationTo: 'stocks',
               required: true,
               filterOptions: ({ req }) => {
-                if (req.context?.from == 'migration') return true
+                if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 return {
                   active: {
                     equals: true,
