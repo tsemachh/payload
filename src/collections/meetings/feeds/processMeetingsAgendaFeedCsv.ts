@@ -72,6 +72,9 @@ export const processMeetingsAgendaFeedCsv = async (
     const magnaIds = Array.from(rowsByMagnaId.keys())
     const existingMeetings = await req.payload.find({
       collection: 'meetings',
+      select:{
+        magnaId: true
+      },
       where: {
         magnaId: {
           in: magnaIds,
@@ -79,11 +82,11 @@ export const processMeetingsAgendaFeedCsv = async (
       },
       limit: 0,
     })
+    req.payload.logger.info({existingMeetings},"Getting meetings from CSV file")
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
     const promisePool = new PromisePool(20)
-    const promises: Promise<void>[] = []
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
       const meeting = meetingsMap.get(magnaId)
@@ -114,9 +117,9 @@ export const processMeetingsAgendaFeedCsv = async (
     await promisePool.waitForAll()
     req.payload.logger.info(`Finished processing file: ${file.name}`)
     if (errors.length > 0) {
-      console.error(`\nFinished with ${errors.length} errors:`)
+      req.payload.logger.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
-        console.error(`${idx + 1}. ${err}`)
+        req.payload.logger.error(`${idx + 1}. ${err}`)
       })
     }
 
