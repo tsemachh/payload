@@ -60,13 +60,12 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
-        showExceptional?: boolean | null;
-        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
       };
-      vpercent?: number | null;
       vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
       id?: string | null;
@@ -486,6 +485,7 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+    displayVotingRecommendation?: boolean | null;
     defaultVotingRecommendation?: boolean | null;
     researchDocuments?: {
       docs?: (string | ResearchDocument)[];
@@ -568,6 +568,7 @@ export interface Vote {
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
   clientComment?: string | null;
+  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -1288,13 +1289,12 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
-        showExceptional?: T;
-        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
+        showExceptional?: T;
+        companies?: T;
       };
-  vpercent?: T;
   vPercentSpecial?: T;
   result?: T;
   id?: T;
@@ -1313,6 +1313,7 @@ export interface VotesSelect<T extends boolean = true> {
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
   clientComment?: T;
+  voteDocuments?: T;
   votes?:
     | T
     | {
@@ -1505,6 +1506,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+        displayVotingRecommendation?: T;
         defaultVotingRecommendation?: T;
         researchDocuments?: T;
       };

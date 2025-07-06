@@ -95,7 +95,7 @@ const votingRecommendation = [
         label: 'המלצת הצבעה',
         type: 'select',
         admin: {
-          width: '150px',
+          width: '10%',
           disableListFilter: true,
         },
         options: [
@@ -110,25 +110,22 @@ const votingRecommendation = [
         name: 'reasonRef',
         label: 'נימוק מוכן',
         type: 'text',
-        defaultValue: 'אחר',
+        defaultValue: null,
+        hasEmptyOption: true,
         admin: {
+          width: '40%',
           components: {
             Field: '/collections/meetings/components/RecommendationReasonSelect',
           },
         },
       },
-    ],
-  },
-  {
-    type: 'row',
-    fields: [
       {
         name: 'reasonText',
         label: 'נימוק חופשי',
         type: 'text',
         admin: {
           disableListFilter: true,
-          width: '100%',
+          width: '50%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
           },
@@ -533,23 +530,23 @@ export const Meetings: CollectionConfig = {
                     },
                   ],
                 },
+
                 {
                   name: 'recommendation',
-                  label: 'המלצה',
                   type: 'group',
                   fields: votingRecommendation as Field[],
                 },
                 {
                   type: 'group',
                   name: 'exceptionalRecommendation',
-                  label: 'המלצה חריגה',
                   fields: [
+                    ...(votingRecommendationExceptional as Field[]),
                     {
                       type: 'row',
                       fields: [
                         {
                           name: 'showExceptional',
-                          label: 'האם יש המלצה חריגה?',
+                          label: 'המלצה חריגה',
                           type: 'checkbox',
                           admin: {
                             width: '20%',
@@ -577,21 +574,7 @@ export const Meetings: CollectionConfig = {
                         },
                       ],
                     },
-                    ...(votingRecommendationExceptional as Field[]),
                   ],
-                },
-                {
-                  name: 'vpercent',
-                  label: 'אחוז הצבעה',
-                  type: 'number',
-                  admin: {
-                    disableListFilter: true,
-                    hidden: true,
-                    step: 0.01,
-                    condition: (_, siblingData) =>
-                      siblingData.topicType === 'decision' &&
-                      siblingData.majorityType === 'regular',
-                  },
                 },
                 {
                   name: 'vPercentSpecial',
