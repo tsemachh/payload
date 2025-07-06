@@ -4,7 +4,6 @@ import {
   upsertStockFromImport,
   upsertStockValueFromImport,
 } from '@/utils/migrateUtils'
-import csvToJson from 'convert-csv-to-json'
 import { getStockType, parseDate } from '@/utils/migrateStockUtils'
 import iconv from 'iconv-lite'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
@@ -33,24 +32,38 @@ export const processStocksFeedCsv = async (
     }
 
     // Read the file content
-    const csvData = iconv.decode(file.data, 'windows-1255')
-    //const csvData = file.data.toString('utf8')
+    const jsonData = JSON.parse(file.data.toString('utf8'))
 
-    // Parse the CSV file using csvToJson as specified in the issue description
-    const results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
-    const valueDate = parseDate(results[0].stockID)
-    // Convert JSON data to ImportStock format
-    results.shift()
-    results.pop()
-    // Trim all string values in each object of the results array
-    results.forEach((item) => {
+    // extract metadata
+    const metadata = jsonData.metadata
+
+    // extract data rows
+    const Stocksdata = jsonData.data
+
+    // convert each data row (array) to object according to schema keys
+    const schemaKeys = Object.keys(jsonData.schema)
+
+    const results = Stocksdata.map((row: any[]) => {
+      const obj: any = {}
+      schemaKeys.forEach((key, index) => {
+        obj[key] = row[index]
+      })
+      return obj
+    })
+
+    const valueDate = parseDate(metadata[1])
+
+    results.forEach((item: any) => {
       Object.keys(item).forEach((key) => {
         if (typeof item[key] === 'string') {
           item[key] = item[key].trim()
         }
       })
     })
-    const rows: ImportStock[] = results.map((data) => ({
+
+    console.log(results)
+
+    const rows: ImportStock[] = results.map((data: any) => ({
       stockID: data.stockID || ('' as string),
       name: data.name || ('' as string),
       symbol: data.symbol || ('' as string),
