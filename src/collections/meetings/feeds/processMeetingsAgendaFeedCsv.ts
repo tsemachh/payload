@@ -100,9 +100,12 @@ export const processMeetingsAgendaFeedCsv = async (
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
             req,
+          }).catch((e) => {
+            req.payload.logger.info({agendaRows},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           })
           successCount++
         } catch (e: any) {
+          req.payload.logger.error({agendaRows},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
         }
       })
