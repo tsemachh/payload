@@ -13,6 +13,7 @@ interface YesNoQuestionProps {
   onValueChangeAction: (value: boolean, explanation?: string) => void
   isAgendaQuestion?: boolean
   hasExplanationError?: boolean
+  isReadOnly?: boolean
 }
 
 export default function YesNoQuestion({
@@ -24,18 +25,14 @@ export default function YesNoQuestion({
   onValueChangeAction,
   isAgendaQuestion = false,
   hasExplanationError = false,
+  isReadOnly = false,
 }: YesNoQuestionProps) {
-  // 1. Add local state to manage the textarea's value internally.
   const [localExplanation, setLocalExplanation] = useState(explanationValue || '')
 
-  // 2. Sync the local state if the initial value from the parent changes.
   useEffect(() => {
-    // This handles cases where the initial data is loaded after the component mounts.
     if (explanationValue !== localExplanation) {
       setLocalExplanation(explanationValue || '')
     }
-    // We only want this effect to run when the prop `explanationValue` changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [explanationValue])
 
   const showExplanation = requiresExplanation && currentValue === true
@@ -83,10 +80,10 @@ export default function YesNoQuestion({
                 ? 'border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500'
                 : 'border-input'
             }`}
-            // 3. Use the new local state and handlers.
             value={localExplanation}
-            onChange={(e) => setLocalExplanation(e.target.value)} // Update local state on every keystroke.
-            onBlur={() => onValueChangeAction(true, localExplanation)} // Send final value to parent on blur.
+            disabled={isReadOnly}
+            onChange={(e) => setLocalExplanation(e.target.value)}
+            onBlur={() => onValueChangeAction(true, localExplanation)}
           />
 
           {hasExplanationError && <p className="text-red-500 text-xs mt-1">זהו שדה חובה</p>}

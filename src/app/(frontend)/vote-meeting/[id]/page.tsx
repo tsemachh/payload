@@ -63,6 +63,8 @@ export default function VotingForm() {
 
   const meetingIdFromUrl = params?.id || '-'
 
+  const [isReadOnly, setIsReadOnly] = useState(false); // New state for read-only mode
+
   const [uploadedDocs, setUploadedDocs] = useState<Document[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
@@ -96,6 +98,17 @@ export default function VotingForm() {
       revalidateOnFocus: false,
     },
   )
+    
+  useEffect(() => {
+    if (meetingData?.meetingDate) {
+      const meetingDate = new Date(meetingData.meetingDate);
+      const now = new Date();
+      if (meetingDate < now) {
+        setIsReadOnly(true);
+      }
+    }
+  }, [meetingData]);
+
 
   useEffect(() => {
     if (meetingDataError) {
