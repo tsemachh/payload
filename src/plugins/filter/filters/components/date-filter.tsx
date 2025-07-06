@@ -117,7 +117,7 @@ export function DateFilter({
     if (internalValue?.type === 'custom' && internalValue.customRange) {
       const { from, to } = internalValue.customRange
       if (from && to) {
-        return `${formatDate(from, 'dd/MM/yyyy')} - ${formatDate(to, 'dd/MM/yyyy')}`
+        return `${formatDate(from, 'dd/MM/yyyy')}-${formatDate(to, 'dd/MM/yyyy')}`
       } else if (from) {
         return `${labels.from}: ${formatDate(from, 'dd/MM/yyyy')}`
       } else if (to) {
@@ -142,7 +142,7 @@ export function DateFilter({
       // Split by " - " and reverse the order for RTL
       const parts = description.replace(/[()]/g, '').split(' - ')
       if (parts.length === 2) {
-        return `(${parts[1]} - ${parts[0]})`
+        return `(${parts[1]}-${parts[0]})`
       }
     }
     return description
