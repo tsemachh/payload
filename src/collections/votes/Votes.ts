@@ -52,8 +52,13 @@ export const Votes: CollectionConfig = {
           maxDepth: 0,
           required: true,
           index: true,
-          filterOptions: {
-            type: { equals: 'regular' },
+          filterOptions: ({ req }: any) => {
+            if (req.context?.from == 'migration' || req.context?.from == 'process') {
+              return true
+            }
+            return {
+              type: { equals: 'regular' },
+            }
           },
         },
         {
