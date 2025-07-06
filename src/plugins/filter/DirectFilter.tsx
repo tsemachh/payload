@@ -195,7 +195,7 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
   const userLocale = { code: i18n.language, direction: 'rtl' }
   //console.log('userLocale', userLocale)
   return (
-    <div className="filter-container">
+    <div className="useTw filter-container">
       <div className={`grid gap-6 md:grid-cols-1 lg:grid-cols-6`}>
         {fields.map((field) => {
           // Render the appropriate filter component based on field type
