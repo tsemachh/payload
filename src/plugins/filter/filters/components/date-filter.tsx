@@ -157,15 +157,15 @@ export function DateFilter({
         key={option.value}
         variant="ghost"
         className={cn(
-          'w-full h-auto py-1 px-2 text-xs leading-tight',
-          isHebrew ? 'justify-end text-right' : 'justify-start text-left',
+          ' w-full h-auto py-1 px-2 text-xs leading-tight',
+          isHebrew ? 'justify-start text-right' : 'justify-end text-left',
           internalValue?.predefinedValue === option.value && 'bg-accent',
         )}
         onClick={() => handlePredefinedSelect(option.value)}
       >
-        <div className={cn('flex flex-col', isHebrew && 'items-end')}>
+        <div className={cn('flex flex-col')}>
           <span className="font-medium">{option.label}</span>
-          <span className="text-[10px] text-muted-foreground" dir="ltr">
+          <span className="text-[10px] text-muted-foreground" dir={locale.direction}>
             {formattedDescription}
           </span>
         </div>
@@ -174,25 +174,29 @@ export function DateFilter({
   }
 
   return (
-    <div className={cn('space-y-2 w-70', className)} dir={locale.direction}>
+    <div className={cn('useTw space-y-2 w-70', className)} dir={locale.direction}>
       {label && (
-        <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
+        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+          {label}
+        </Label>
       )}
 
       <div className="relative useTw">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger asChild className="useTw">
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={isOpen}
-              className="w-full justify-between bg-transparent relative min-w-70"
+              className="useTw w-full justify-between bg-transparent relative min-w-70"
             >
-              <span className="useTw truncate">{getDisplayValue()}</span>
+              <span className={`useTw truncate ${isHebrew && 'text-right'}`}>
+                {getDisplayValue()}
+              </span>
               <ChevronDown className="useTw h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="end">
+          <PopoverContent className="useTw w-80 p-0">
             <div className="p-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Future Options - Left column */}
@@ -237,9 +241,9 @@ export function DateFilter({
                 <Button
                   variant="ghost"
                   className={cn(
-                    'w-full justify-start h-auto py-2 px-2',
+                    'useTw w-full justify-start h-auto py-2 px-2',
                     (showCustom || internalValue?.type === 'custom') && 'bg-accent',
-                    isHebrew && 'justify-end text-right',
+                    isHebrew && 'justify-start text-right',
                   )}
                   onClick={handleCustomSelect}
                 >
@@ -252,29 +256,34 @@ export function DateFilter({
                     <div className="grid grid-cols-1 gap-3">
                       {/* From Date */}
                       <div
-                        className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}
+                        className={cn('flex items-center gap-2', !isHebrew && 'flex-row-reverse')}
                       >
-                        <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
+                        <Label
+                          className={cn(
+                            'useTw text-xs w-[20%]',
+                            isHebrew && 'text-right text-start',
+                          )}
+                        >
                           {labels.from}
                         </Label>
                         <Popover>
-                          <PopoverTrigger asChild>
+                          <PopoverTrigger asChild className="useTw">
                             <Button
                               variant="outline"
                               className={cn(
-                                'w-[60%] justify-start text-left font-normal text-xs h-8',
+                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8',
                                 !customRange.from && 'text-muted-foreground',
                               )}
                             >
-                              <CalendarIcon className="mr-1 h-3 w-3" />
-                              <span dir="ltr">
+                              <CalendarIcon className="useTw mr-1 h-3 w-3" />
+                              <span dir={locale.direction}>
                                 {customRange.from
                                   ? formatDate(customRange.from, 'dd/MM/yyyy')
                                   : labels.selectDate}
                               </span>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="useTw w-auto p-0" align="start">
                             <Calendar
                               mode="single"
                               selected={customRange.from}
@@ -282,6 +291,7 @@ export function DateFilter({
                                 handleCustomRangeChange({ ...customRange, from: date })
                               }
                               initialFocus
+                              className="useTw"
                             />
                           </PopoverContent>
                         </Popover>
@@ -289,29 +299,34 @@ export function DateFilter({
 
                       {/* To Date */}
                       <div
-                        className={cn('flex items-center gap-2', isHebrew && 'flex-row-reverse')}
+                        className={cn('flex items-center gap-2', !isHebrew && 'flex-row-reverse')}
                       >
-                        <Label className={cn('text-xs w-[20%]', isHebrew && 'text-right text-end')}>
+                        <Label
+                          className={cn(
+                            'useTw useTw text-xs w-[20%]',
+                            isHebrew && 'text-right text-strat',
+                          )}
+                        >
                           {labels.to}
                         </Label>
                         <Popover>
-                          <PopoverTrigger asChild>
+                          <PopoverTrigger asChild className="useTw">
                             <Button
                               variant="outline"
                               className={cn(
-                                'w-[60%] justify-start text-left font-normal text-xs h-8',
+                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8',
                                 !customRange.to && 'text-muted-foreground',
                               )}
                             >
-                              <CalendarIcon className="mr-1 h-3 w-3" />
-                              <span dir="ltr">
+                              <CalendarIcon className="useTw mr-1 h-3 w-3" />
+                              <span dir={locale.direction}>
                                 {customRange.to
                                   ? formatDate(customRange.to, 'dd/MM/yyyy')
                                   : labels.selectDate}
                               </span>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="useTw w-auto p-0" align="start">
                             <Calendar
                               mode="single"
                               selected={customRange.to}
@@ -319,6 +334,7 @@ export function DateFilter({
                                 handleCustomRangeChange({ ...customRange, to: date })
                               }
                               initialFocus
+                              className="useTw"
                             />
                           </PopoverContent>
                         </Popover>
@@ -329,7 +345,7 @@ export function DateFilter({
                     <div className="flex gap-2">
                       <Button
                         onClick={handleApplyCustomRange}
-                        className="flex-1 text-xs h-8"
+                        className="useTw flex-1 text-xs h-8"
                         disabled={!customRange.from && !customRange.to}
                       >
                         {labels.apply}
@@ -337,7 +353,7 @@ export function DateFilter({
                       <Button
                         onClick={handleCancelCustomRange}
                         variant="outline"
-                        className="flex-1 bg-transparent text-xs h-8"
+                        className="useTw flex-1 bg-transparent text-xs h-8"
                       >
                         {labels.cancel}
                       </Button>
@@ -350,13 +366,13 @@ export function DateFilter({
         </Popover>
         {hasValue() && (
           <button
-            className="absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
+            className="useTw absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()
             }}
           >
-            <X className="h-3 w-3" />
+            <X className="useTw h-3 w-3" />
           </button>
         )}
       </div>

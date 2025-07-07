@@ -103,7 +103,9 @@ export function SmallSelectFilter({
   return (
     <div className={cn('space-y-2', className)} dir={locale.direction}>
       {label && (
-        <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
+        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+          {label}
+        </Label>
       )}
 
       <div
