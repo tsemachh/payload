@@ -157,8 +157,8 @@ export function DateFilter({
         key={option.value}
         variant="ghost"
         className={cn(
-          ' w-full h-auto py-1 px-2 text-xs leading-tight',
-          isHebrew ? 'justify-start text-right' : 'justify-end text-left',
+          ' w-full h-auto py-1 px-2 text-xs leading-tight justify-start',
+          isHebrew ? ' text-right' : ' text-left',
           internalValue?.predefinedValue === option.value && 'bg-accent',
         )}
         onClick={() => handlePredefinedSelect(option.value)}
@@ -255,9 +255,7 @@ export function DateFilter({
                   <div className="space-y-3 pl-2">
                     <div className="grid grid-cols-1 gap-3">
                       {/* From Date */}
-                      <div
-                        className={cn('flex items-center gap-2', !isHebrew && 'flex-row-reverse')}
-                      >
+                      <div className={cn('flex items-center gap-2')}>
                         <Label
                           className={cn(
                             'useTw text-xs w-[20%]',
@@ -298,9 +296,7 @@ export function DateFilter({
                       </div>
 
                       {/* To Date */}
-                      <div
-                        className={cn('flex items-center gap-2', !isHebrew && 'flex-row-reverse')}
-                      >
+                      <div className={cn('flex items-center gap-2')}>
                         <Label
                           className={cn(
                             'useTw useTw text-xs w-[20%]',

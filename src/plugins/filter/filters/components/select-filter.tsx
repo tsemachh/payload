@@ -158,13 +158,16 @@ export function SelectFilter({
                   {showSelectAll && (
                     <CommandItem onSelect={handleToggleSelectAll}>
                       <div
-                        className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}
+                        className={cn(
+                          'useTw flex items-center w-full justify-between',
+                          isHebrew && 'flex-row-reverse',
+                        )}
                       >
                         <Checkbox
                           checked={allSelected}
-                          className={cn(isHebrew ? 'ml-2' : 'mr-2')}
+                          className={cn(isHebrew ? 'useTw ml-2' : 'useTw mr-2')}
                         />
-                        <span className={cn(isHebrew && 'text-right flex-1')}>
+                        <span className={cn(isHebrew && 'useTw text-right flex-1 mr-2')}>
                           {allSelected ? labels.deselectAll : labels.selectAll}
                         </span>
                       </div>
@@ -176,17 +179,20 @@ export function SelectFilter({
                       onSelect={() => handleToggleOption(option.value)}
                     >
                       <div
-                        className={cn('flex items-center w-full', isHebrew && 'flex-row-reverse')}
+                        className={cn(
+                          'flex items-center w-full justify-between',
+                          isHebrew && 'flex-row-reverse',
+                        )}
                       >
                         {multiSelect ? (
                           <Checkbox
                             checked={selectedValues.includes(option.value)}
-                            className={cn(isHebrew ? 'ml-2' : 'mr-2')}
+                            className={cn(isHebrew ? 'useTw ml-2' : 'useTw mx-2')}
                           />
                         ) : (
                           <Check
                             className={cn(
-                              'h-4 w-4',
+                              'useTw h-4 w-4',
                               isHebrew ? 'ml-2' : 'mr-2',
                               selectedValues.includes(option.value) ? 'opacity-100' : 'opacity-0',
                             )}
@@ -203,7 +209,7 @@ export function SelectFilter({
         </Popover>
         {selectedValues.length > 0 && (
           <button
-            className="absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
+            className={`useTw absolute ${isHebrew ? 'left-8': 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `} 
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()
