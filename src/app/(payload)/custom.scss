@@ -108,54 +108,65 @@ form[action*="/api/research-documents"] .file-field__filename {
 :root{
   --nav-width: 180px;
 }
+
+//votes in meeting
 #field-votes .table.table--appearance-condensed th:nth-child(1),
 #field-votes .table.table--appearance-condensed td:nth-child(1) {
   display: none;
 }
+
 #field-votes .field-label[for="field-votes"] {
   font-weight: 700;
   font-size: 1.5rem;
 }
 
-.collapsible__content .field-label {
+.custom-style-wrapper {  
+
+  .field-label {
   margin: 0 0 4px 0 !important;
   padding: 0 !important;
   line-height: 1.2 !important;
 }
-.collapsible__content .render-fields,
-.collapsible__content .group-field__wrap,
-.collapsible__content .field-type__wrap,
-.collapsible__content .row__fields {
-  margin: 0 0 8px 0 !important;
-  padding: 0 !important;
+  /* רווחים כלליים */
+  .render-fields,
+  .group-field__wrap,
+  .field-type__wrap,
+  .row__fields {
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+  }
+
+  /* רווחים לקבוצות קטנות */
+  .render-fields--margins-small,
+  .render-fields--margins-none {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ריווח עיקרי */
+  .collapsible__content {
+    padding-top: 4px !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* צ׳קבוקסים */
+  .checkbox-input,
+  .checkbox-input * {
+    padding: 0 !important;
+    line-height: 1 !important;
+  }
+
+  /* group-field פנימיים */
+  .group-field--within-collapsible.group-field--within-tab {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .group-field__header {
+    display: none !important;
+  }
 }
-
-.collapsible__content .render-fields--margins-small,
-.collapsible__content .render-fields--margins-none {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-
-
-.collapsible__content {
-  padding-bottom: 0 !important;
-}
-
-.checkbox-input,
-.checkbox-input * {
-  padding: 0 !important;
-  line-height: 1 !important;
-}
-
-.field-type.group-field.group-field--within-collapsible.group-field--within-tab {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-.group-field__header {
-  display: none !important;
-}
-
+//???
 .collapsible__content {
   padding-top: 4px !important;
 }
@@ -176,4 +187,3 @@ form[action*="/api/research-documents"] .file-field__filename {
 #field-agenda__0__recommendation .group-field__header {
   display: none !important;
 }
-
