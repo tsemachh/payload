@@ -102,7 +102,7 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
   }
 
   return (
-    <div className="w-full max-w-xl p-2" dir="rtl">
+    <div className="w-full max-w-xl p-2 mb-6" dir="rtl">
       <div>
         <div className="pb-3">
           <h2 className="flex items-center gap-3 text-lg font-bold text-foreground">
