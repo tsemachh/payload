@@ -730,6 +730,7 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
+                allowCreate: false,
                 disableListFilter: true,
                 defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
               },
