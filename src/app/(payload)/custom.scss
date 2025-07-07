@@ -116,3 +116,43 @@ form[action*="/api/research-documents"] .file-field__filename {
   font-weight: 700;
   font-size: 1.5rem;
 }
+
+.collapsible__content .field-label {
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+}
+.collapsible__content .render-fields,
+.collapsible__content .group-field__wrap,
+.collapsible__content .field-type__wrap,
+.collapsible__content .row__fields {
+  margin: 0 0 8px 0 !important;
+  padding: 0 !important;
+}
+
+.collapsible__content .render-fields--margins-small,
+.collapsible__content .render-fields--margins-none {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+
+
+.collapsible__content {
+  padding-bottom: 0 !important;
+}
+
+.checkbox-input,
+.checkbox-input * {
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.field-type.group-field.group-field--within-collapsible.group-field--within-tab {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.group-field__header {
+  display: none !important;
+}
+

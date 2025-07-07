@@ -125,7 +125,7 @@ const votingRecommendation = [
         type: 'text',
         admin: {
           disableListFilter: true,
-          width: '50%',
+          width: '100%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
           },
