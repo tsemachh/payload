@@ -98,7 +98,7 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
   }
 
   if (!companies.length) {
-    return <div className="text-center text-base text-muted-foreground">כל החברות הצביעו</div>
+    return <></>
   }
 
   return (

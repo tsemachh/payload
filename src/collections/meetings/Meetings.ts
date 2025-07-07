@@ -614,6 +614,31 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
+              name: 'votesCount',
+              label: 'הצבעות',
+              type: 'text',
+              admin: {
+                disableListFilter: true,
+                readOnly: true,
+                width: '600px',
+                components: {
+                  Cell: {
+                    path: '/admincomponents/icon/VotingCountsStatusCell',
+                  },
+                  Field: {
+                    path: '/admincomponents/icon/VotingCountsStatusTextField',
+                  },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  ({ data }) => {
+                    return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
+                  },
+                ],
+              },
+            },
+            {
               type: 'relationship',
               relationTo: 'companies',
               hasMany: true,
@@ -672,31 +697,7 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-            {
-              name: 'votesCount',
-              label: 'הצבעות',
-              type: 'text',
-              admin: {
-                disableListFilter: true,
-                readOnly: true,
-                width: '600px',
-                components: {
-                  Cell: {
-                    path: '/admincomponents/icon/VotingCountsStatusCell',
-                  },
-                  Field: {
-                    path: '/admincomponents/icon/VotingCountsStatusTextField',
-                  },
-                },
-              },
-              hooks: {
-                afterRead: [
-                  ({ data }) => {
-                    return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
-                  },
-                ],
-              },
-            },
+
             {
               name: 'participationReport',
               label: 'דוח השתתפות',
