@@ -681,7 +681,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 components: {
                   Field: {
-                    path: '/admincomponents/fields/CompaniesRelationshipField',
+                    path: '/collections/meetings/components/CompaniesRelationshipField',
                   },
                 },
               },
