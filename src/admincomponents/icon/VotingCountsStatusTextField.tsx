@@ -38,7 +38,7 @@ const VotingCountsStatus: React.FC<VotingCountsStatusProps> = ({ path }) => {
 
   return (
     <div className="p-2 mb-2">
-      <div className="inline-flex items-center gap-4 p-4 rounded-xl bg-gray-50 text-gray-800 shadow-sm">
+      <div className="inline-flex items-center gap-4 p-4 rounded-xl bg-gray-100/60 text-gray-800 shadow-sm">
         <span className="flex items-center gap-2 text-3xl font-semibold text-gray-800">
           {value || 'אין נתונים'}
         </span>
