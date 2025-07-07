@@ -738,7 +738,7 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'votes',
-              label: 'רשימת הצבעות',
+              label: 'הצבעות',
               type: 'join',
               collection: 'votes',
               on: 'meeting',
@@ -748,7 +748,6 @@ export const Meetings: CollectionConfig = {
                 allowCreate: false,
                 disableListFilter: true,
                 defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
-                className: 'votesInMeeting',
               },
               where: {
                 _status: { equals: 'published' },
