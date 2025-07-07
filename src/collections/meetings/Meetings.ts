@@ -653,7 +653,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'companies',
               hasMany: true,
               name: 'companies',
-              label: 'חברות שטרם הצביעו',
+              label: 'חברות',
               index: true,
               maxDepth: 1,
               filterOptions: ({ req }) => {
@@ -667,7 +667,19 @@ export const Meetings: CollectionConfig = {
                 }
               },
               admin: {
+                hidden: true,
                 readOnly: true,
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companiesNotYetVoted',
+              label: 'חברות שטרם הצביעו',
+              admin: {
+                readOnly: true,
+                hidden: true,
                 components: {
                   Field: {
                     path: '/admincomponents/fields/CompaniesRelationshipField',

@@ -405,6 +405,7 @@ export interface Meeting {
   agenda?: MeetingAgenda;
   votesCount?: string | null;
   companies?: (string | Company)[] | null;
+  companiesNotYetVoted?: (string | Company)[] | null;
   participationReport?: (string | null) | Document;
   reportedVotesCount?: string | null;
   votes?: {
@@ -1235,6 +1236,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   votesCount?: T;
   companies?: T;
+  companiesNotYetVoted?: T;
   participationReport?: T;
   reportedVotesCount?: T;
   votes?: T;
