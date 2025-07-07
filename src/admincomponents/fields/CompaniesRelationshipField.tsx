@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { RelationshipFieldClientComponent } from 'payload'
 import { useField, EditIcon, useDocumentDrawer } from '@payloadcms/ui'
 import { stringify } from 'qs-esm'
-import { Building2, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 type CompanyWithName = {
   id: string
@@ -21,16 +21,19 @@ const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }
   })
 
   return (
-    <DocumentDrawerToggler
-      drawerSlug={`${drawerSlug}-${company.id}`}
-      className="flex items-center gap-3 p-2 rounded-md "
-    >
-      <Building2 className="h-4 w-4 text-muted-foreground" />
-      <span className="text-base font-medium text-foreground hover:font-bold hover:text-foreground/90 transition-all duration-300">
-        {company.name}
-      </span>
+    <>
+      <DocumentDrawerToggler
+        drawerSlug={`${drawerSlug}-${company.id}`}
+        className="flex items-center gap-3 p-2 rounded-md "
+      >
+        <div className="h-4 w-4" />
+        <span className="text-base font-medium text-foreground hover:font-bold hover:text-foreground/90 transition-all duration-300">
+          {company.name}
+        </span>
+        <EditIcon className="h-6 w-6 text-muted-foreground" />
+      </DocumentDrawerToggler>
       <DocumentDrawer drawerSlug={`${drawerSlug}-${company.id}`} />
-    </DocumentDrawerToggler>
+    </>
   )
 }
 
@@ -105,8 +108,8 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
         <div className="pb-3">
           <h2 className="flex items-center gap-3 text-lg font-bold text-foreground">
             <Clock className="h-5 w-5 text-muted-foreground" />
-            חברות שטרם הצביעו
-            <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold text-gray-700 bg-gray-100/60 rounded-full">
+            חברות שטרם הצביעו ❗
+            <span className="inline-flex items-center justify-center w-7 h-7 text-[12px] font-semibold text-gray-700 bg-gray-100/60 rounded-full">
               {companies.length}
             </span>
           </h2>

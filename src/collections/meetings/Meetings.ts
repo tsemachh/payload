@@ -748,6 +748,7 @@ export const Meetings: CollectionConfig = {
                 allowCreate: false,
                 disableListFilter: true,
                 defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
+                className: 'votesInMeeting',
               },
               where: {
                 _status: { equals: 'published' },
