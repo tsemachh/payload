@@ -208,6 +208,14 @@ export const Companies: CollectionConfig = {
                       },
                     },
                     {
+                      name: 'displayVotingRecommendation',
+                      label: 'הצגת המלצת הצבעה',
+                      type: 'checkbox',
+                      admin: {
+                        width: '200px',
+                      },
+                    },
+                    {
                       name: 'defaultVotingRecommendation',
                       label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',
@@ -271,6 +279,7 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+/*
         {
           label: 'פגישות',
           admin: {
@@ -285,6 +294,8 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+*/
+/*
         {
           label: 'אחזקות',
           admin: {
@@ -299,6 +310,7 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+*/
         {
           label: 'ניירות ערך מושתקים',
           admin: {

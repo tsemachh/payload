@@ -37,14 +37,19 @@ export const ResearchDocument: CollectionConfig = {
       admin: {
         allowCreate: false,
       },
-      filterOptions: {
-        type: {
-          equals: 'regular',
-        },
-        active: {
-          equals: true,
-        },
-        'researchDocuments.showResearchPrivate': { equals: true }, //
+      filterOptions: ({ req }: any) => {
+        if (req.context?.from == 'migration' || req.context?.from == 'process') {
+          return true
+        }
+        return {
+          type: {
+            equals: 'regular',
+          },
+          active: {
+            equals: true,
+          },
+          'researchDocuments.showResearchPrivate': { equals: true }, //
+        }
       },
     },
     {

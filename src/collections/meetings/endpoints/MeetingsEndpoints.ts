@@ -239,12 +239,16 @@ function createMeetingDataObject(
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
   researchDocuments: UrlFilenameMap[],
+  displayVotingRecommendation: boolean,
+  defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
   return {
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
     votingPercentage: null, // mean have no data yet.
+    displayVotingRecommendation,
+    defaultVotingRecommendation,
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
     stockType: stockPresent?.type || '-',
@@ -507,6 +511,22 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           url: doc.url as string,
           filename: doc.filename as string,
         }))
+
+      const displayVotingRecommendation = user?.companies.some(
+        (userCompany: { companyId: string }) => {
+          const companies = meeting?.companies?.filter((c): c is Company => typeof c !== 'string')
+          const fullCompany = companies?.find((c) => c.id === userCompany?.companyId)
+          return fullCompany?.researchDocuments?.displayVotingRecommendation === true
+        },
+      )
+      const defaultVotingRecommendation = user?.companies.some(
+        (userCompany: { companyId: string }) => {
+          const companies = meeting?.companies?.filter((c): c is Company => typeof c !== 'string')
+          const fullCompany = companies?.find((c) => c.id === userCompany?.companyId)
+          return fullCompany?.researchDocuments?.defaultVotingRecommendation === true
+        },
+      )
+
       return createMeetingDataObject(
         meeting,
         stockPresent,
@@ -514,6 +534,8 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         agendas,
         companiesArray,
         researchDocuments,
+        displayVotingRecommendation,
+        defaultVotingRecommendation,
       )
     }),
   )

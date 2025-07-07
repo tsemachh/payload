@@ -78,12 +78,14 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
                       <th className="py-2 px-2 border-b text-center font-medium text-gray-700 text-[0.8rem]">
                         נושא ההצבעה
                       </th>
-                      <th
-                        className="py-2 px-2 border-b text-center font-medium text-gray-700 text-[0.8rem]"
-                        style={{ width: '100px', minWidth: '100px' }}
-                      >
-                        המלצת הצבעה
-                      </th>
+                      {row.displayVotingRecommendation && (
+                        <th
+                          className="py-2 px-2 border-b text-center font-medium text-gray-700 text-[0.8rem]"
+                          style={{ width: '100px', minWidth: '100px' }}
+                        >
+                          המלצת הצבעה
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -111,12 +113,14 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
                               {item.text}
                             </div>
                           </td>
-                          <td
-                            className={`py-1 px-2 border-t text-right font-medium ${getVotingRecommendationColor(item.recommendation.votingRecommendation)}`}
-                            style={{ width: '100px', minWidth: '100px' }}
-                          >
-                            {item.recommendation.votingRecommendation}
-                          </td>
+                          {row.displayVotingRecommendation && (
+                            <td
+                              className={`py-1 px-2 border-t text-right font-medium ${getVotingRecommendationColor(item.recommendation.votingRecommendation)}`}
+                              style={{ width: '100px', minWidth: '100px' }}
+                            >
+                              {item.recommendation.votingRecommendation}
+                            </td>
+                          )}
                         </tr>
                       ))
                     ) : (

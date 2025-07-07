@@ -5,7 +5,7 @@ import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
 
 const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
   try {
-    addDataAndFileToRequest(req)
+    //addDataAndFileToRequest(req)
     const startTime = Date.now()
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
@@ -37,13 +37,13 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
     const buffer = Buffer.concat(chunks)
     const now = new Date()
     const formattedDate = format(now, 'dd-MM-yyyy')
-    const fileName = `upload_agenda_${formattedDate}.csv`
+    const fileName = `upload_agenda_${formattedDate}.json`
     // Create a file object from the buffer
     const file = {
       data: buffer,
       name: fileName,
       size: buffer.length,
-      mimetype: 'text/csv',
+      mimetype: 'application/json',
     }
     if (!file) {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
@@ -61,6 +61,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       file: file,
       req,
     })
+    req.payload.logger.info({meetingsFeed},"meetingsFeed was uploaded successfully")
     const { errors, successCount, fileLength } = await processMeetingsAgendaFeedCsv(req, { file })
     const endTime = Date.now()
     const durationMs = endTime - startTime
@@ -117,7 +118,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       isDuplicate: false,
     })
   } catch (error) {
-    console.error('Error uploading CSV file:', error)
+    req.payload.logger.error('Error uploading CSV file:', error)
     return Response.json({ error: 'Error uploading CSV file' }, { status: 500 })
   }
 }

@@ -73,6 +73,11 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
  */
 export type HoldingsPerDay = {
@@ -81,11 +86,6 @@ export type HoldingsPerDay = {
   quantity: number;
   id?: string | null;
 }[];
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VoteDecision".
- */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
@@ -252,8 +252,6 @@ export interface Config {
     companies: {
       parentCompany: 'companies';
       'researchDocuments.researchDocuments': 'research-documents';
-      meetings: 'meetings';
-      holdings: 'holdings';
     };
   };
   collectionsSelect: {
@@ -485,6 +483,7 @@ export interface Company {
     showResearchBond?: boolean | null;
     showResearch?: boolean | null;
     showResearchPrivate?: boolean | null;
+    displayVotingRecommendation?: boolean | null;
     defaultVotingRecommendation?: boolean | null;
     researchDocuments?: {
       docs?: (string | ResearchDocument)[];
@@ -500,16 +499,6 @@ export interface Company {
         id?: string | null;
       }[]
     | null;
-  meetings?: {
-    docs?: (string | Meeting)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  holdings?: {
-    docs?: (string | Holding)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   silencedStocks?: string[] | null;
   creator?: string | null;
   updator?: string | null;
@@ -540,20 +529,6 @@ export interface ResearchDocument {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  fund: string | Company;
-  valueDate: string;
-  holdings: HoldingsPerDay;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "votes".
  */
 export interface Vote {
@@ -567,6 +542,7 @@ export interface Vote {
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
   clientComment?: string | null;
+  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -589,6 +565,20 @@ export interface Vote {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  fund: string | Company;
+  valueDate: string;
+  holdings: HoldingsPerDay;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -704,13 +694,6 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
   password?: string | null;
 }
 /**
@@ -1318,6 +1301,7 @@ export interface VotesSelect<T extends boolean = true> {
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
   clientComment?: T;
+  voteDocuments?: T;
   votes?:
     | T
     | {
@@ -1510,6 +1494,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         showResearchBond?: T;
         showResearch?: T;
         showResearchPrivate?: T;
+        displayVotingRecommendation?: T;
         defaultVotingRecommendation?: T;
         researchDocuments?: T;
       };
@@ -1521,8 +1506,6 @@ export interface CompaniesSelect<T extends boolean = true> {
         subAccounts?: T;
         id?: T;
       };
-  meetings?: T;
-  holdings?: T;
   silencedStocks?: T;
   creator?: T;
   updator?: T;
@@ -1569,13 +1552,6 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
