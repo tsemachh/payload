@@ -58,7 +58,6 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
   const [fields, setFields] = useState<any[]>([])
   const { refineListData } = useListQuery()
   const [filterValues, setFilterValues] = useState<Record<string, any>>({})
-  const [locale, setLocale] = useState<Locale>({ code: 'he', direction: 'rtl' })
   const { getEntityConfig } = useConfig()
   const { t, i18n } = useTranslation()
 
