@@ -652,7 +652,7 @@ export const Meetings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               hasMany: true,
-              name: 'companies', //companiesNotYetVoted  //לפתוח עוד שדה משביל החישוב שנהרס!!!
+              name: 'companies',
               label: 'חברות שטרם הצביעו',
               index: true,
               maxDepth: 1,
