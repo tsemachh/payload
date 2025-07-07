@@ -108,12 +108,12 @@ const votingRecommendation = [
       },
       {
         name: 'reasonRef',
-        label: 'נימוק מוכן',
+        label: 'נימוק מערכת',
         type: 'text',
         defaultValue: null,
         hasEmptyOption: true,
         admin: {
-          width: '40%',
+          width: '90%',
           components: {
             Field: '/collections/meetings/components/RecommendationReasonSelect',
           },
@@ -185,7 +185,7 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
-                  filterOptions: ({ siblingData ,req }: any) => {
+                  filterOptions: ({ siblingData, req }: any) => {
                     if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
                       return true
                     }
@@ -562,8 +562,12 @@ export const Meetings: CollectionConfig = {
                           type: 'relationship',
                           relationTo: 'companies',
                           hasMany: true,
-                          filterOptions: ({ data ,req}) => {
-                            if (req?.context?.from == 'migration' || req?.context?.from == 'process' || data?.companies?.length == 0) {
+                          filterOptions: ({ data, req }) => {
+                            if (
+                              req?.context?.from == 'migration' ||
+                              req?.context?.from == 'process' ||
+                              data?.companies?.length == 0
+                            ) {
                               return true
                             }
                             return {
@@ -620,28 +624,6 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-              maxDepth: 1,
-              filterOptions: ({ req}) => {
-                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
-                  return true
-
-                  return {
-                    type: {
-                      equals: 'regular',
-                    },
-                  }
-              },
-              admin: {
-                readOnly: true,
-              },
-            },
-            {
               name: 'votesCount',
               label: 'הצבעות',
               type: 'text',
@@ -662,6 +644,71 @@ export const Meetings: CollectionConfig = {
                 afterRead: [
                   ({ data }) => {
                     return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
+                  },
+                ],
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
+              maxDepth: 1,
+              filterOptions: ({ req }) => {
+                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
+                  return true
+
+                return {
+                  type: {
+                    equals: 'regular',
+                  },
+                }
+              },
+              admin: {
+                hidden: true,
+                readOnly: true,
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companiesNotYetVoted',
+              label: 'חברות שטרם הצביעו',
+              virtual: true,
+              admin: {
+                components: {
+                  Field: {
+                    path: '/admincomponents/fields/CompaniesRelationshipField',
+                  },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data, req }) => {
+                    if (!data?.votes?.docs || !data?.companies) {
+                      return []
+                    }
+                    const votes = await req.payload.find({
+                      collection: 'votes',
+                      select: {
+                        company: true,
+                      },
+                      where: {
+                        id: {
+                          in: data?.votes?.docs,
+                        },
+                      },
+                      limit: 0,
+                      depth: 1,
+                    })
+                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
+                    const nonVotedCompanies = data.companies.filter(
+                      (companyId: string) => !votedCompanyIds.includes(companyId),
+                    )
+                    return nonVotedCompanies
                   },
                 ],
               },
@@ -698,8 +745,10 @@ export const Meetings: CollectionConfig = {
               defaultLimit: 0,
               maxDepth: 0,
               admin: {
+                allowCreate: false,
                 disableListFilter: true,
                 defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
+                className: 'votesInMeeting',
               },
               where: {
                 _status: { equals: 'published' },
@@ -718,13 +767,14 @@ export const Meetings: CollectionConfig = {
               label: 'תיקים',
               index: true,
               maxDepth: 0,
-              filterOptions: ({ req}) => {
+              filterOptions: ({ req }) => {
                 if (req?.context?.from == 'migration' || req?.context?.from == 'process')
                   return true
                 return {
                   type: {
                     equals: 'fund',
-                  }}
+                  },
+                }
               },
               admin: {
                 disableListFilter: true,

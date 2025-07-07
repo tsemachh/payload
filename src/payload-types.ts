@@ -403,8 +403,9 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
-  companies?: (string | Company)[] | null;
   votesCount?: string | null;
+  companies?: (string | Company)[] | null;
+  companiesNotYetVoted?: (string | Company)[] | null;
   participationReport?: (string | null) | Document;
   reportedVotesCount?: string | null;
   votes?: {
@@ -1233,8 +1234,9 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
-  companies?: T;
   votesCount?: T;
+  companies?: T;
+  companiesNotYetVoted?: T;
   participationReport?: T;
   reportedVotesCount?: T;
   votes?: T;
