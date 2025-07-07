@@ -30,7 +30,7 @@ const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }
       >
         <Building2 className="h-4 w-4 text-muted-foreground" />
         <span className="text-base font-medium text-foreground">{company.name}</span>
-        <EditIcon className="h-4 w-4 text-muted-foreground" />
+        {/* <EditIcon className="h-4 w-4 text-muted-foreground" /> */}
       </DocumentDrawerToggler>
       <DocumentDrawer drawerSlug={`${drawerSlug}-${company.id}`} />
     </>
