@@ -624,28 +624,6 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-              maxDepth: 1,
-              filterOptions: ({ req }) => {
-                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
-                  return true
-
-                return {
-                  type: {
-                    equals: 'regular',
-                  },
-                }
-              },
-              admin: {
-                readOnly: true,
-              },
-            },
-            {
               name: 'votesCount',
               label: 'הצבעות',
               type: 'text',
@@ -678,10 +656,15 @@ export const Meetings: CollectionConfig = {
               label: 'חברות שטרם הצביעו',
               index: true,
               maxDepth: 1,
-              filterOptions: {
-                type: {
-                  equals: 'regular',
-                },
+              filterOptions: ({ req }) => {
+                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
+                  return true
+
+                return {
+                  type: {
+                    equals: 'regular',
+                  },
+                }
               },
               admin: {
                 readOnly: true,
@@ -729,7 +712,6 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-
             {
               name: 'participationReport',
               label: 'דוח השתתפות',
