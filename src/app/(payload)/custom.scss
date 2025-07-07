@@ -156,3 +156,24 @@ form[action*="/api/research-documents"] .file-field__filename {
   display: none !important;
 }
 
+.collapsible__content {
+  padding-top: 4px !important;
+}
+
+#field-agenda__0__recommendation {
+  margin-right: 0 !important;
+  border: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+#field-agenda__0__recommendation .group-field__wrap {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+#field-agenda__0__recommendation .group-field__header {
+  display: none !important;
+}
+
