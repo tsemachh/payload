@@ -4,7 +4,6 @@ import { RelationshipFieldClientComponent } from 'payload'
 import { useField, EditIcon, useDocumentDrawer } from '@payloadcms/ui'
 import { stringify } from 'qs-esm'
 import { Building2, Clock } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 type CompanyWithName = {
   id: string
@@ -23,17 +22,17 @@ const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }
   })
 
   return (
-    <>
-      <DocumentDrawerToggler
-        drawerSlug={`${drawerSlug}-${company.id}`}
-        className="flex items-center gap-3 p-3 rounded-md hover:bg-muted/50 transition-colors duration-150"
-      >
-        <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-base font-medium text-foreground">{company.name}</span>
-        {/* <EditIcon className="h-4 w-4 text-muted-foreground" /> */}
-      </DocumentDrawerToggler>
+    <DocumentDrawerToggler
+      drawerSlug={`${drawerSlug}-${company.id}`}
+      className="flex items-center gap-3 p-2 rounded-md "
+    >
+      <Building2 className="h-4 w-4 text-muted-foreground" />
+      <span className="text-base font-medium text-foreground hover:font-bold hover:text-foreground/90 transition-all duration-300">
+        {company.name}
+      </span>
+      {/* <EditIcon className="h-4 w-4 text-muted-foreground" /> */}
       <DocumentDrawer drawerSlug={`${drawerSlug}-${company.id}`} />
-    </>
+    </DocumentDrawerToggler>
   )
 }
 
@@ -104,21 +103,24 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
 
   return (
     <div className="w-full max-w-xl p-2" dir="rtl">
-      <Card className="border border-border shadow-sm bg-card">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-bold text-foreground">
+      <div>
+        <div className="pb-3">
+          <h2 className="flex items-center gap-3 text-lg font-bold text-foreground">
             <Clock className="h-5 w-5 text-muted-foreground" />
-            חברות שטרם הצביעו ({companies.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-4">
-          <div className="space-y-2">
+            חברות שטרם הצביעו
+            <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold text-gray-700 bg-gray-100/60 rounded-full">
+              {companies.length}
+            </span>
+          </h2>
+        </div>
+        <div>
+          <div>
             {companies.map((company) => (
               <CompanyItem key={company.id} company={company} collectionSlug={collectionSlug} />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
