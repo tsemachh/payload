@@ -675,18 +675,11 @@ export const Meetings: CollectionConfig = {
                 },
               },
               hooks: {
-                //יכול להיות שכדאי להוסיף שדה של כל החברות שמוזמנות לאסיפה שיראו אותו רק ברשימת האסיפות?
-                //ואז פה לעדכן את data.companies = nonVotedCompanies
                 afterRead: [
                   async ({ data, req }) => {
-                    console.log('afterRead companies', data)
-                    console.log('afterRead data?.votes?.docs', data?.votes?.docs)
-                    console.log('afterRead data?.companies', data?.companies)
-
                     if (!data?.votes?.docs || !data?.companies) {
                       return []
                     }
-                    //זה יביא לי את כל החברות שכן הצביעו ואז אני אפלטר על החברות ואביא רק מי שלא שם ואותו אחזיר!
                     const votes = await req.payload.find({
                       collection: 'votes',
                       select: {
@@ -700,13 +693,10 @@ export const Meetings: CollectionConfig = {
                       limit: 0,
                       depth: 1,
                     })
-                    console.log('----votes', votes)
                     const votedCompanyIds = votes.docs.map((vote) => vote.company)
                     const nonVotedCompanies = data.companies.filter(
                       (companyId: string) => !votedCompanyIds.includes(companyId),
                     )
-                    console.log('----nonVotedCompanies', nonVotedCompanies)
-
                     return nonVotedCompanies
                   },
                 ],

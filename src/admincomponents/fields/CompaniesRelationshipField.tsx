@@ -10,7 +10,6 @@ type CompanyWithName = {
   name: string
 }
 
-// רכיב עזר לטיפול בפריט בודד
 const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }> = ({
   company,
   collectionSlug,
@@ -30,7 +29,6 @@ const CompanyItem: React.FC<{ company: CompanyWithName; collectionSlug: string }
       <span className="text-base font-medium text-foreground hover:font-bold hover:text-foreground/90 transition-all duration-300">
         {company.name}
       </span>
-      {/* <EditIcon className="h-4 w-4 text-muted-foreground" /> */}
       <DocumentDrawer drawerSlug={`${drawerSlug}-${company.id}`} />
     </DocumentDrawerToggler>
   )
