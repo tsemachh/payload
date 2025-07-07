@@ -22,7 +22,12 @@ const VoteHeader = ({
 }: MeetingHeaderProps) => {
   return (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
-      <div className="mb-3 mt-[-20px]">
+      <div className="mb-3 mt-[-30px]">
+        {isReadOnly && (
+          <div className="text-center mb-2 mt-[-50px]">
+            <div className="text-xl font-bold font-semibold text-gray-900">האסיפה נעולה להצבעה</div>
+          </div>
+        )}
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
           <div className="w-full md:w-auto">
             {meetingData.meetingInviteUrl ? (
@@ -56,11 +61,6 @@ const VoteHeader = ({
             }
           />
         </div>
-        {isReadOnly && (
-          <div className="text-center mt-2">
-            <div className="text-lg font-semibold text-gray-800">האסיפה נעולה להצבעה</div>
-          </div>
-        )}
       </div>
     </div>
   )

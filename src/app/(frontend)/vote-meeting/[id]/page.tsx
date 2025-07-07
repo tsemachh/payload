@@ -793,7 +793,7 @@ export default function VotingForm() {
 
           {/* Main content */}
           <div className="space-y-6">
-            <VoteDetails meetingData={meetingData} />
+            <VoteDetails meetingData={meetingData} isReadOnly={isReadOnly} />
             <Card>
               <CardHeader className="bg-primary/10 py-1.5 px-3">
                 <h2 className="text-sm font-medium text-primary">בחירת חברה</h2>
