@@ -179,7 +179,7 @@ export function DateFilter({
         <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
       )}
 
-      <div className="relative">
+      <div className="relative useTw">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -188,8 +188,8 @@ export function DateFilter({
               aria-expanded={isOpen}
               className="w-full justify-between bg-transparent relative min-w-70"
             >
-              <span className="truncate">{getDisplayValue()}</span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <span className="useTw truncate">{getDisplayValue()}</span>
+              <ChevronDown className="useTw h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-0" align="end">
