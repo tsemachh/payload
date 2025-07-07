@@ -677,9 +677,8 @@ export const Meetings: CollectionConfig = {
               hasMany: true,
               name: 'companiesNotYetVoted',
               label: 'חברות שטרם הצביעו',
+              virtual: true,
               admin: {
-                readOnly: true,
-                hidden: true,
                 components: {
                   Field: {
                     path: '/admincomponents/fields/CompaniesRelationshipField',
