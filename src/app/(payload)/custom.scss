@@ -1,10 +1,8 @@
 @import './../styles/payloadStyles.css';
 
-
 .field-type.checkbox .checkbox-input {
   padding-top: 34px;
 }
-
 .link-from-relation {
   padding-top: 0;
   display: inline-flex;
@@ -14,18 +12,15 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
-
   &:hover {
     opacity: 0.8;
   }
-
   img {
     width: 32px;
     height: 32px;
     vertical-align: middle;
   }
 }
-
 .icon-link {
   padding-top: 0;
   display: inline-flex;
@@ -34,36 +29,29 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
-
   &:hover {
     opacity: 0.8;
   }
-
   span {
     vertical-align: middle;
   }
-
   img {
     width: 24px;
     height: 24px;
     vertical-align: middle;
   }
 }
-
 .field-type.relationship .relationship--multi-value-label__content {
   max-width:300px;
 }
-
 .field-type.upload.invitationDocument {
   max-width:300px;
 }
-
 @layer payload-default{
   .collection-list{
     overflow: auto;
   }
 }
-
 form[action*="/api/research-documents"] .file-field__remove,
 form[action*="/api/research-documents"] .file-details__remove,
 .id-label,
@@ -71,25 +59,18 @@ form[action*="/api/research-documents"] .file-details__remove,
 .doc-controls__dots {
   display: none !important;
 }
-
 .bulk-upload--actions-bar__navigation {
   visibility: hidden;
 }
-
 form[action*="/api/research-documents"] .file-field__filename {
   pointer-events: none;
   background: var(--theme-elevation-100);
   color: var(--theme-elevation-400);
 }
-
-
-
 #field-agenda .group-field__header .field-label[for*="recommendation"],
 #field-agenda .group-field__header .field-label[for*="exceptionalRecommendation"] {
   display: none;
 }
-
-
 .field-type.upload.invitationDocument .upload__dropzoneAndUpload {
   .btn.upload__listToggler.btn--icon-style-without-border.btn--size-small.btn--withoutPopup.btn--style-pill.btn--withoutPopup {
     display: none;
@@ -105,7 +86,6 @@ form[action*="/api/research-documents"] .file-field__filename {
     padding: 7px;
   }
 }
-
 :root{
   --nav-width: 180px;
 }

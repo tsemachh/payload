@@ -208,6 +208,7 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
                   key={field.name}
                   onChange={(value) => handleDateFilterChange(field.name, value)}
                   locale={userLocale as Locale}
+                  className="useTw"
                 />
               )
             case 'select':
@@ -222,6 +223,7 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
                     }))}
                     onChange={(value) => handleSelectFilterChange(field.name, value)}
                     locale={userLocale as Locale}
+                    className="useTw"
                   />
                 )
               }
@@ -235,6 +237,7 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
                   }))}
                   onChange={(value) => handleSelectFilterChange(field.name, value)}
                   locale={userLocale as Locale}
+                  className="useTw"
                 />
               )
             case 'checkbox':
@@ -245,6 +248,7 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
                   onChange={(state) => handleCheckboxFilterChange(field.name, state)}
                   checkboxLabel={''}
                   locale={userLocale as Locale}
+                  className="useTw"
                 />
               )
             default:

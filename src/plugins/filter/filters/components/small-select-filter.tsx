@@ -88,7 +88,7 @@ export function SmallSelectFilter({
 
   const getButtonColor = (optionValue: string, index: number) => {
     if (!isOptionSelected(optionValue)) {
-      return 'bg-white text-gray-600 hover:bg-gray-50'
+      return 'useTw bg-white text-gray-600 hover:bg-gray-50'
     }
 
     // Different colors for different options when selected
@@ -143,7 +143,7 @@ export function SmallSelectFilter({
             )}
             onClick={handleClear}
           >
-            <X className="h-3 w-3" />
+            <X className="useTw h-3 w-3" />
           </Button>
         )}
       </div>
