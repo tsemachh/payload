@@ -479,7 +479,7 @@ export const Meetings: CollectionConfig = {
                   RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
                   Label: '/collections/meetings/components/RowLabel#ArrayLabel',
                 },
-                className: 'custom-style-wrapper',
+                className: 'agenda-style-wrapper',
               },
               fields: [
                 {

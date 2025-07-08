@@ -109,7 +109,7 @@ form[action*="/api/research-documents"] .file-field__filename {
   --nav-width: 180px;
 }
 
-//votes in meeting
+//votes in meeting   
 .field-type.join .table.table--appearance-condensed th:nth-child(1),
 .field-type.join .table.table--appearance-condensed td:nth-child(1) {
   display: none;
@@ -121,7 +121,7 @@ form[action*="/api/research-documents"] .file-field__filename {
   padding: 0;
 }
 
-.custom-style-wrapper {  
+.agenda-style-wrapper {  
 
   .field-type.group-field[id*="__recommendation"] {
     margin: 0 !important;
