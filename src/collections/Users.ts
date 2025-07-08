@@ -305,7 +305,7 @@ export const Users: CollectionConfig = {
         if (req.context.from == 'migration' || req.context.from == 'process') {
           return data
         }
-        if (data?.companies && data.companies.length > 0) {
+        if (data?.companies) {
           const companiesChanged =
             originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
