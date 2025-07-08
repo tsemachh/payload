@@ -8,10 +8,12 @@ import {
   meetingForVotingEndPoint,
 } from './endpoints/MeetingsEndpoints'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
+import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
+  afterChangeDeleteResearchDocs,
   clearCompaniesInSingleBondResearchDoc,
   handleRecommendationReason,
   validateResearchDocsInMeetings,
@@ -144,7 +146,17 @@ export const Meetings: CollectionConfig = {
     singular: 'אסיפה',
   },
   custom: {
-    filterList: ['holdingsLimit', 'meetingDate', 'proxyVotingDate', 'state', 'type', 'resultsConfirmationStatus', 'electronicVotingEnabled', 'committeeInitiated', '_status'],
+    filterList: [
+      'holdingsLimit',
+      'meetingDate',
+      'proxyVotingDate',
+      'state',
+      'type',
+      'resultsConfirmationStatus',
+      'electronicVotingEnabled',
+      'committeeInitiated',
+      '_status',
+    ],
   },
   enableQueryPresets: true,
   admin: {
@@ -859,22 +871,6 @@ export const Meetings: CollectionConfig = {
   ],
 
   hooks: {
-    beforeRead: [
-      async ({ doc }) => {
-        if (doc.fundsWithHolding) {
-          // המר את fundsWithHolding לנתונים פשוטים
-          doc.fundsWithHolding = doc.fundsWithHolding.map(
-            (item: { fund: any; quantity: any; ownedQuantity: any; feedStockNum: any }) => ({
-              fund: String(item.fund), // ודא ש-fund הוא מחרוזת
-              quantity: item.quantity,
-              ownedQuantity: item.ownedQuantity,
-              feedStockNum: item.feedStockNum,
-            }),
-          )
-        }
-        return doc
-      },
-    ],
     afterRead: [
       async ({ doc, req }) => {
         if (!doc) {
@@ -910,6 +906,23 @@ export const Meetings: CollectionConfig = {
         }
         return doc
       },
+    ],
+    afterChange: [
+      async ({ req, doc, previousDoc }) => {
+        const holdingsLimitChanged =
+          previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
+        const stockChanged = previousDoc?.stock !== doc?.stock
+        const firstPublish =
+          previousDoc._status == 'draft' &&
+          doc._status == 'published' &&
+          (!doc.meetings || doc.meetings.length == 0)
+        if (holdingsLimitChanged || stockChanged || firstPublish) {
+          if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
+            await updateCompaniesMeetingsOnMeetingChange(req, doc)
+          }
+        }
+      },
+      afterChangeDeleteResearchDocs,
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
