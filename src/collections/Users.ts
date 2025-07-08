@@ -311,7 +311,7 @@ export const Users: CollectionConfig = {
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
             const companyIds = data?.companies.map((company: any) =>
-              getIdOfRelationField(company),
+              company.companyId,
             )
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
