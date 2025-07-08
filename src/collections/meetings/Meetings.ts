@@ -748,7 +748,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 allowCreate: false,
                 disableListFilter: true,
-                defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
+                defaultColumns: ['title', 'creator', 'updatedAt', 'reported'],
               },
               where: {
                 _status: { equals: 'published' },
