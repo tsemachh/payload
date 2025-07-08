@@ -108,3 +108,74 @@ form[action*="/api/research-documents"] .file-field__filename {
 :root{
   --nav-width: 180px;
 }
+
+//votes in meeting   
+.field-type.join .table.table--appearance-condensed th:nth-child(1),
+.field-type.join .table.table--appearance-condensed td:nth-child(1) {
+  display: none;
+}
+.field-type.join .field-label[for="field-votes"] {
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.agenda-style-wrapper {  
+
+  .field-type.group-field[id*="__recommendation"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__wrap {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__header {
+    display: none !important;
+  }
+  .field-label {
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+}
+  .render-fields,
+  .group-field__wrap,
+  .field-type__wrap,
+  .row__fields {
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+  }
+
+  .render-fields--margins-small,
+  .render-fields--margins-none {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .collapsible__content {
+    padding-top: 4px !important;
+    padding-bottom: 0 !important;
+  }
+
+  .checkbox-input,
+  .checkbox-input * {
+    padding: 0 !important;
+    line-height: 1 !important;
+  }
+
+  .group-field--within-collapsible.group-field--within-tab {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .group-field__header {
+    display: none !important;
+  }
+}
+
+

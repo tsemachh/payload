@@ -106,7 +106,7 @@ const CompaniesRelationshipField: RelationshipFieldClientComponent = (props) => 
     <div className="w-full max-w-xl p-2 mb-6" dir="rtl">
       <div>
         <div className="pb-3">
-          <h2 className="flex items-center gap-3 text-lg font-bold text-foreground">
+          <h2 className="flex items-center gap-3 text-2xl font-bold text-foreground">
             <Clock className="h-5 w-5 text-muted-foreground" />
             חברות שטרם הצביעו ❗
             <span className="inline-flex items-center justify-center w-7 h-7 text-[12px] font-semibold text-gray-700 bg-gray-100/60 rounded-full">

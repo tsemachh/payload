@@ -125,7 +125,7 @@ const votingRecommendation = [
         type: 'text',
         admin: {
           disableListFilter: true,
-          width: '50%',
+          width: '100%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
           },
@@ -479,6 +479,7 @@ export const Meetings: CollectionConfig = {
                   RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
                   Label: '/collections/meetings/components/RowLabel#ArrayLabel',
                 },
+                className: 'agenda-style-wrapper',
               },
               fields: [
                 {
@@ -681,7 +682,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 components: {
                   Field: {
-                    path: '/admincomponents/fields/CompaniesRelationshipField',
+                    path: '/collections/meetings/components/CompaniesRelationshipField',
                   },
                 },
               },
@@ -738,7 +739,7 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'votes',
-              label: 'רשימת הצבעות',
+              label: 'הצבעות',
               type: 'join',
               collection: 'votes',
               on: 'meeting',
@@ -748,7 +749,6 @@ export const Meetings: CollectionConfig = {
                 allowCreate: false,
                 disableListFilter: true,
                 defaultColumns: ['company', 'creator', 'updatedAt', 'reported'],
-                className: 'votesInMeeting',
               },
               where: {
                 _status: { equals: 'published' },
