@@ -100,50 +100,43 @@ export const Votes: CollectionConfig = {
       ],
     },
     {
-      name: 'isInterested',
-      label: 'בעל עניין',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
-      name: 'interestedExplanation',
-      label: 'הסבר בעל עניין',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.isInterested === true,
-      },
-    },
-    {
-      name: 'isSeniorOfficial',
-      label: 'נושא משרה בכירה',
-      type: 'checkbox',
-      defaultValue: false,
-    },
-    {
-      name: 'seniorOfficialExplanation',
-      label: 'הסבר נושא משרה בכירה',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
-      },
-    },
-    {
-      name: 'isInstitutionalInvestor',
-      label: 'משקיע מוסדי',
-      type: 'checkbox',
-      defaultValue: true,
-    },
-    {
-      name: 'clientComment',
-      label: 'הערת לקוח',
-      type: 'textarea',
-    },
-    {
-      name: 'voteDocuments',
-      label: 'מסמכים מצורפים',
-      type: 'relationship',
-      relationTo: 'documents',
-      hasMany: true,
+      type: 'row',
+      fields: [
+        {
+          name: 'isInterested',
+          label: 'בעל עניין',
+          type: 'checkbox',
+          defaultValue: false,
+        },
+        {
+          name: 'interestedExplanation',
+          label: 'הסבר בעל עניין',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.isInterested === true,
+          },
+        },
+        {
+          name: 'isSeniorOfficial',
+          label: 'נושא משרה בכירה',
+          type: 'checkbox',
+          defaultValue: false,
+        },
+        {
+          name: 'seniorOfficialExplanation',
+          label: 'הסבר נושא משרה בכירה',
+          type: 'textarea',
+          admin: {
+            condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
+          },
+        },
+        {
+          name: 'isInstitutionalInvestor',
+          label: 'משקיע מוסדי',
+          type: 'checkbox',
+          defaultValue: true,
+        },
+      ],
     },
     {
       name: 'votes',
@@ -239,6 +232,23 @@ export const Votes: CollectionConfig = {
               },
             },
           ],
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'voteDocuments',
+          label: 'מסמכים מצורפים',
+          type: 'relationship',
+          relationTo: 'documents',
+          hasMany: true,
+        },
+        {
+          name: 'clientComment',
+          label: 'הערת לקוח',
+          type: 'textarea',
         },
       ],
     },

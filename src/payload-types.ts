@@ -543,8 +543,6 @@ export interface Vote {
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  clientComment?: string | null;
-  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -560,6 +558,8 @@ export interface Vote {
         id?: string | null;
       }[]
     | null;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1304,8 +1304,6 @@ export interface VotesSelect<T extends boolean = true> {
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  clientComment?: T;
-  voteDocuments?: T;
   votes?:
     | T
     | {
@@ -1321,6 +1319,8 @@ export interface VotesSelect<T extends boolean = true> {
         personalInterestExplanation?: T;
         id?: T;
       };
+  voteDocuments?: T;
+  clientComment?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
