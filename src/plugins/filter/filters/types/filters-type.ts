@@ -110,3 +110,16 @@ export interface FilterState {
     | SmallSelectFilterValue
     | undefined
 }
+
+export type FilterDetaild = {
+  name: string;
+  label: string;
+  type: any;
+  options?: Array<any>; // Replace `any` with a more specific type if known
+  row?: number|undefined;
+};
+
+export interface FilterRow {
+  rowNumber: number
+  filters: FilterDetaild[]
+}

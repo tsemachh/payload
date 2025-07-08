@@ -1,24 +1,24 @@
-import type { FilterConfig, FilterRow } from "../types/filter-types"
+import { FilterDetaild, FilterRow } from "../types/filters-type"
 
-export function groupFiltersByRow(filters: FilterConfig[]): FilterRow[] {
+export function groupFiltersByRow(filters: FilterDetaild[]): FilterRow[] {
   // Group filters by row number
   const groupedFilters = filters.reduce(
     (acc, filter) => {
-      const rowNumber = filter.row
+      const rowNumber = filter.row ?? 0
       if (!acc[rowNumber]) {
         acc[rowNumber] = []
       }
       acc[rowNumber].push(filter)
       return acc
     },
-    {} as Record<number, FilterConfig[]>,
+    {} as Record<number, FilterDetaild[]>,
   )
 
   // Convert to array and sort filters within each row by order
   const rows: FilterRow[] = Object.entries(groupedFilters)
     .map(([rowNumber, filters]) => ({
       rowNumber: Number.parseInt(rowNumber),
-      filters: (filters as FilterConfig[]).sort((a, b) => (a.order || 0) - (b.order || 0)),
+      filters: filters,
     }))
     .sort((a, b) => a.rowNumber - b.rowNumber)
 
@@ -60,4 +60,17 @@ export function getGridColumnsClass(filtersCount: number): string {
     default:
       return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
   }
+}
+
+export function getColClass(length: number): string {
+  const classes: Record<number, string> = {
+    1: 'lg:grid-cols-1',
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+    5: 'lg:grid-cols-5',
+    6: 'lg:grid-cols-6',
+  }
+
+  return classes[length] || 'lg:grid-cols-1'
 }
