@@ -1,6 +1,7 @@
 'use client'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
+import { rtlLanguages } from '@payloadcms/translations'
 import { DateFilter } from '@/plugins/filter/filters/components/date-filter'
 import { SelectFilter } from '@/plugins/filter/filters/components/select-filter'
 import { CheckboxFilter } from '@/plugins/filter/filters/components/checkbox-filter'
@@ -59,7 +60,11 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
   const { refineListData } = useListQuery()
   const [filterValues, setFilterValues] = useState<Record<string, any>>({})
   const { getEntityConfig } = useConfig()
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const localeLang = i18n.language
+  const isRTL = (rtlLanguages as readonly string[]).includes(localeLang)
+  const direction = isRTL ? 'rtl' : 'ltr'
+  const userLocale = { code: localeLang, direction }
 
   useEffect(() => {
     // Now you can access any property from the collection configuration
@@ -191,8 +196,6 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
   )
 
   if (!fields.length) return null
-  const userLocale = { code: i18n.language, direction: 'rtl' }
-  console.log('userLocale', userLocale)
   return (
     <div className="filter-container useTw">
       <div className={`grid gap-6 md:grid-cols-1 lg:grid-cols-6`}>

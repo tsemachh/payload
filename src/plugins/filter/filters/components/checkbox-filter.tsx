@@ -53,7 +53,9 @@ export function CheckboxFilter({
   return (
     <div className={cn('space-y-2', className)} dir={locale.direction}>
       {label && (
-        <Label className={cn('text-sm font-medium', isHebrew && 'text-right block')}>{label}</Label>
+        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+          {label}
+        </Label>
       )}
 
       <div
@@ -131,7 +133,7 @@ export function CheckboxFilter({
         {checkboxLabel && (
           <Label
             className={cn(
-              'cursor-pointer select-none text-sm',
+              'useTw cursor-pointer select-none text-sm',
               isHebrew && 'text-right',
               locale.direction === 'rtl' && 'order-2',
             )}
