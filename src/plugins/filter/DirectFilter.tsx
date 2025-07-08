@@ -208,8 +208,8 @@ const DirectFilter = ({
   return (
     <div className="filter-container useTw">
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-6">
-        {fields.map((field) => (
-          <FilterField key={field.id} field={field} />
+        {fields.map((field, index) => (
+          <FilterField key={index} field={field} />
         ))}
       </div>
     </div>
