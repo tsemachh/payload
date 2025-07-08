@@ -14,6 +14,7 @@ import type {
 import { ClientField, FieldAffectingData, type SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
 import { SmallSelectFilter } from '@/plugins/filter/filters/components/small-select-filter'
+import FilterField from './FilterField'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -55,7 +56,13 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
   return results
 }
 
-const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[] }) => {
+const DirectFilter = ({
+  slug,
+  filterList,
+}: {
+  slug: string
+  filterList: { name: string; row?: number; order?: number }[]
+}) => {
   const [fields, setFields] = useState<any[]>([])
   const { refineListData } = useListQuery()
   const [filterValues, setFilterValues] = useState<Record<string, any>>({})
@@ -71,26 +78,28 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
     const collection = getEntityConfig({ collectionSlug: slug }) // The collection slug
     // Get the fields from the collection's custom.filterList
     // Use the global findFieldsByName function defined at the top of the file
-    const fields = findFieldsByName(collection?.fields, filterList as string[])
-    //Extract only name label type options from fields
+    const fieldNames = filterList.map((f) => f.name)
+    const fields = findFieldsByName(collection?.fields, fieldNames)
+
+    // Extract name, label, type, options, row, order
     const simplifiedFields = fields.map((field) => {
       const label = (field as FieldAffectingData).label
-      // Get the translation utilities
-
-      // If you have a label defined as a string or object with locale keys
       const translatedLabel = getTranslation(label as string, i18n)
+
+      const filterConfig = filterList.find((f) => f.name === (field as FieldAffectingData).name)
 
       return {
         name: (field as FieldAffectingData).name,
         label: translatedLabel,
         type: field.type,
         options: (field as SelectField).options,
+        row: filterConfig?.row ?? undefined,
+        order: filterConfig?.order ?? undefined,
       }
     })
 
-    // Sort the simplified fields to match the order in filterList
-    const sortedFields = (filterList as string[])
-      .map((fieldName) => simplifiedFields.find((field) => field.name === fieldName))
+    const sortedFields = (filterList as { name: string; row?: number; order?: number }[])
+      .map((filterItem) => simplifiedFields.find((f) => f.name === filterItem.name))
       .filter(Boolean)
 
     setFields(sortedFields)
@@ -198,65 +207,10 @@ const DirectFilter = ({ slug, filterList }: { slug: string; filterList: string[]
   if (!fields.length) return null
   return (
     <div className="filter-container useTw">
-      <div className={`grid gap-6 md:grid-cols-1 lg:grid-cols-6`}>
-        {fields.map((field) => {
-          // Render the appropriate filter component based on field type
-          switch (field.type) {
-            case 'date':
-              return (
-                <DateFilter
-                  label={field.label}
-                  value={field.value}
-                  key={field.name}
-                  onChange={(value) => handleDateFilterChange(field.name, value)}
-                  locale={userLocale as Locale}
-                  className="useTw"
-                />
-              )
-            case 'select':
-              if (field.options.length <= 3) {
-                return (
-                  <SmallSelectFilter
-                    label={field.label}
-                    key={field.name}
-                    options={(field.options || []).map((option: any) => ({
-                      label: option.label,
-                      value: option.value,
-                    }))}
-                    onChange={(value) => handleSelectFilterChange(field.name, value)}
-                    locale={userLocale as Locale}
-                    className="useTw"
-                  />
-                )
-              }
-              return (
-                <SelectFilter
-                  label={field.label}
-                  key={field.name}
-                  options={(field.options || []).map((option: any) => ({
-                    label: option.label,
-                    value: option.value,
-                  }))}
-                  onChange={(value) => handleSelectFilterChange(field.name, value)}
-                  locale={userLocale as Locale}
-                  className="useTw"
-                />
-              )
-            case 'checkbox':
-              return (
-                <CheckboxFilter
-                  label={field.label}
-                  key={field.name}
-                  onChange={(state) => handleCheckboxFilterChange(field.name, state)}
-                  checkboxLabel={''}
-                  locale={userLocale as Locale}
-                  className="useTw"
-                />
-              )
-            default:
-              return null
-          }
-        })}
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-6">
+        {fields.map((field) => (
+          <FilterField key={field.id} field={field} />
+        ))}
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: ['createdAt', 'notificationType', 'readStatus'],
+    filterList: [{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }],
   },
   fields: [
     {

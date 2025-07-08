@@ -7,7 +7,7 @@ const StockMigrationMapping: CollectionConfig = {
     group: 'מיגרציה',
   },
   custom: {
-    filterList: ['type'],
+    filterList: [{ name:'type'}],
   },
   labels: {
     plural: 'מיפויי מניות',

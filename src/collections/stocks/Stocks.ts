@@ -64,7 +64,14 @@ export const Stocks: CollectionConfig = {
     singular: 'נייר ערך',
   },
   custom: {
-    filterList: ['type', 'origin', 'tradable', 'active', 'fromMagna', 'isFinancial'],
+    filterList: [
+      { name: 'type' },
+      { name: 'origin' },
+      { name: 'tradable' },
+      { name: 'active' },
+      { name: 'fromMagna' },
+      { name: 'isFinancial' },
+    ],
   },
   enableQueryPresets: true,
   admin: {
