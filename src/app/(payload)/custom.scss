@@ -122,12 +122,26 @@ form[action*="/api/research-documents"] .file-field__filename {
 
 .custom-style-wrapper {  
 
+  .field-type.group-field[id*="__recommendation"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__wrap {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__header {
+    display: none !important;
+  }
   .field-label {
   margin: 0 0 4px 0 !important;
   padding: 0 !important;
   line-height: 1.2 !important;
 }
-  /* רווחים כלליים */
   .render-fields,
   .group-field__wrap,
   .field-type__wrap,
@@ -136,27 +150,23 @@ form[action*="/api/research-documents"] .file-field__filename {
     padding: 0 !important;
   }
 
-  /* רווחים לקבוצות קטנות */
   .render-fields--margins-small,
   .render-fields--margins-none {
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* ריווח עיקרי */
   .collapsible__content {
     padding-top: 4px !important;
     padding-bottom: 0 !important;
   }
 
-  /* צ׳קבוקסים */
   .checkbox-input,
   .checkbox-input * {
     padding: 0 !important;
     line-height: 1 !important;
   }
 
-  /* group-field פנימיים */
   .group-field--within-collapsible.group-field--within-tab {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
@@ -166,24 +176,5 @@ form[action*="/api/research-documents"] .file-field__filename {
     display: none !important;
   }
 }
-//???
-.collapsible__content {
-  padding-top: 4px !important;
-}
 
-#field-agenda__0__recommendation {
-  margin-right: 0 !important;
-  border: none !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
 
-#field-agenda__0__recommendation .group-field__wrap {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-}
-
-#field-agenda__0__recommendation .group-field__header {
-  display: none !important;
-}
