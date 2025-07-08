@@ -34,7 +34,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           equals: 'Foreign',
         },
       },
-      limit: 1000,
+      limit: 0,
     })
     console.log('foreignStocks.docs.length', foreignStocks.docs.length)
     // Process each foreign stock
@@ -80,6 +80,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               relatedStock: newStockSequence,
               tradable: false,
             },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
           })
           // Update all stocks that had this stock as related to point to the new ISIN stock
           req.payload.update({
@@ -95,6 +99,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 equals: originalStock.id,
               },
             },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
           })
           req.payload.update({
             collection: 'meetings',
@@ -105,6 +113,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stock: {
                 equals: originalStock.id,
               },
+            },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
             },
           })
           console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)

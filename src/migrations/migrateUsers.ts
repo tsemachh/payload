@@ -334,8 +334,14 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     // Read the test.users.json file
     const testUsers: Partial<User>[] = [
       {
+        name: 'system@shefing.com',
+        isAdmin: true,
+        email: 'system@shefing.com',
+        password: 'system@shefing.com',
+      },
+      {
         name: 'amosp@praedicta.com',
-        isAdmin: false,
+        isAdmin: true, //TODO Change to userRoles
         userRoles: [],
         enableAPIKey: true,
         apiKey: '3dbb49cb-ce8f-4032-a3df-4ed088d4234c',
@@ -379,12 +385,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         isAdmin: true,
         email: 'philc@shefing.com',
       },
-      {
-        name: 'system@shefing.com',
-        isAdmin: true,
-        email: 'system@shefing.com',
-        password: 'system@shefing.com',
-      },
+
     ]
     const seqMap = await getCompanyIdToSequenceMap(req.payload)
 
@@ -423,6 +424,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             }
           })
         }
+
         if (existingUser.docs.length > 0) {
           // Update existing user
           await payload.update({

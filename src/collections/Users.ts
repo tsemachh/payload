@@ -302,13 +302,16 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-        if (data?.companies) {
+        if (req.context.from == 'migration' || req.context.from == 'process') {
+          return data
+        }
+        if (data?.companies && data.companies.length > 0) {
           const companiesChanged =
             originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
             const companyIds = data?.companies.map((company: any) =>
-              getIdOfRelationField(company.companyId),
+              getIdOfRelationField(company),
             )
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
