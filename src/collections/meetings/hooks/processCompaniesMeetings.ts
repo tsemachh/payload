@@ -103,6 +103,7 @@ async function processMeeting(
     const companies = await req.payload.find({
       collection: 'companies',
       depth: 0,
+      limit: 0,
       select: {
         parentCompany: true,
       },
