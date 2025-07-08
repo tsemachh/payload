@@ -22,7 +22,7 @@ export const Votes: CollectionConfig = {
     maxPerDoc: 1,
   },
   admin: {
-    useAsTitle: 'meeting',
+    useAsTitle: 'title',
     defaultColumns: ['meeting', 'companies'],
     pagination: {
       defaultLimit: 100,
@@ -59,6 +59,31 @@ export const Votes: CollectionConfig = {
             return {
               type: { equals: 'regular' },
             }
+          },
+        },
+        {
+          name: 'title',
+          label: 'כותרת',
+          type: 'text', // Stored in the database
+          admin: {
+            hidden: true, // Hide in admin UI to prevent manual edits
+          },
+          hooks: {
+            afterRead: [
+              async ({ data, req }) => {
+                if (data?.company && typeof data.company === 'string') {
+                  const company = await req.payload.findByID({
+                    collection: 'companies',
+                    select: {
+                      name: true,
+                    },
+                    id: data.company,
+                    depth: 0,
+                  })
+                  return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                }
+              },
+            ],
           },
         },
         {

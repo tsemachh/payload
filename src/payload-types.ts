@@ -536,6 +536,7 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
+  title?: string | null;
   reported?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
@@ -1296,6 +1297,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
+  title?: T;
   reported?: T;
   isInterested?: T;
   interestedExplanation?: T;
