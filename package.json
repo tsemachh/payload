@@ -17,7 +17,9 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\"",
+    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=8192\" payload migrate ",
+    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=8192\" payload migrate "
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",

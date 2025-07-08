@@ -44,7 +44,10 @@ async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
       await req.payload.create({
         collection: 'silenced-stocks',
         data: { stockId },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, from: 'migration' },
+        },
       })
     }
   } catch (e) {
@@ -310,7 +313,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 data: {
                   relatedStock: relatedStock as Stock['id'],
                 },
-                req,
+                req: {
+                  ...req,
+                  context: { ...req.context, from: 'migration' },
+                },
               })
               successCount++
               //console.log(`✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`)
