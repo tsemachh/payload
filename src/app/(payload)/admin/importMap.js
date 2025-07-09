@@ -10,7 +10,7 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e } from '../../../admincomponents/icon/VotingCountsStatusCell'
 import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../admincomponents/icon/VotingCountsStatusTextField'
-import { default as default_8dca75f76f50e54da254a6c67ed2f74f } from '../../../admincomponents/fields/CompaniesRelationshipField'
+import { default as default_a24640827b8631aabe9555dec2cee5cd } from '../../../collections/meetings/components/CompaniesRelationshipField'
 import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
 import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../admincomponents/icon/ReportedVotesStatusCell'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
@@ -47,7 +47,7 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/admincomponents/icon/VotingCountsStatusCell#default": default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e,
   "/admincomponents/icon/VotingCountsStatusTextField#default": default_adb006445235b2e9a92908681b338c68,
-  "/admincomponents/fields/CompaniesRelationshipField#default": default_8dca75f76f50e54da254a6c67ed2f74f,
+  "/collections/meetings/components/CompaniesRelationshipField#default": default_a24640827b8631aabe9555dec2cee5cd,
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,

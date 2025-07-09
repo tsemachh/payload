@@ -112,6 +112,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       collection: 'companies',
       select: { id: true, name: true },
       depth: 0,
+      limit: 0,
       where: { id: { in: dupIds } },
     })
     const idToName = Object.fromEntries(
@@ -193,6 +194,7 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
           type: { equals: 'regular' },
           'researchDocuments.showResearchPrivate': { equals: true },
         },
+        limit: 0,
       })
       if (companies) {
         const foundCompanies = companies.docs

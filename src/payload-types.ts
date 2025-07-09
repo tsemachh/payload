@@ -536,14 +536,13 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
+  title?: string | null;
   reported?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  clientComment?: string | null;
-  voteDocuments?: (string | Document)[] | null;
   votes?:
     | {
         topicIndex: number;
@@ -559,6 +558,8 @@ export interface Vote {
         id?: string | null;
       }[]
     | null;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1296,14 +1297,13 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
+  title?: T;
   reported?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  clientComment?: T;
-  voteDocuments?: T;
   votes?:
     | T
     | {
@@ -1319,6 +1319,8 @@ export interface VotesSelect<T extends boolean = true> {
         personalInterestExplanation?: T;
         id?: T;
       };
+  voteDocuments?: T;
+  clientComment?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
