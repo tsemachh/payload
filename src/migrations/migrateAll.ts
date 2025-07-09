@@ -1,16 +1,11 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { up as migrateStocks } from './migrateStocks'
 import { up as migrateForeign } from './migrateForeign'
-import { up as migrateMeetings } from './migrateMeetings'
-import { up as migrateFirms } from './migrateFirms'
+import { up as migrateFullMeetings } from './migrateFullMeeting'
 import { up as migrateUsers } from './migrateUsers'
-import { up as migrateAccounts } from './migrateAccounts'
-import { up as migrateSubAccounts } from './migrateSubAccounts'
 import { up as migrateHoldings } from './migrateHoldings'
-import { up as migrateParentCompanies } from './migrateParentCompanies'
-import { up as migrateAccountCompaniesToCompanies } from './migrateAccountCompaniesToCompanies'
-import { up as migrateSilencedStocksCompanies } from './migrateSilencedStocksCompanies'
-import { up as migrateMeetingAgenda } from './migrateMeetingAgenda'
+import { up as migrateFullFirms } from './migrateFullFirms'
+
 import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
 import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
@@ -20,29 +15,26 @@ import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCo
  * Migrates all collections in the following order:
  * 1. Stocks
  * 2. Foreign
- * 3. Meetings
+ * 3. Meetings (includes Silenced Stocks Companies migration)
  * 4. Firms
  * 5. Users
- * 6. Accounts
- * 7. Sub Accounts
- * 8. Holdings
- * 9. Parent Companies
- * 10. Account Companies To Companies
- * 11. Silenced Stocks Companies (stores silenced stocks directly in companies collection)
- * 12. Meeting Agenda
- * 13. Votes
- * 14. Recommendation Reasons
- * 15. Unify Meetings (removes duplicate meetings and merges their data)
- * 16. Meeting Holdings (updates meetings with holdings data from MSSQL)
- * 17. Process Companies Meetings
+  * 8. Holdings
+ * 12. Votes
+ * 13. Recommendation Reasons
+ * 14. Unify Meetings (removes duplicate meetings and merges their data)
+ * 15. Meeting Holdings (updates meetings with holdings data from MSSQL)
+ * 16. Process Companies Meetings
  *
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
+ * The Silenced Stocks Companies migration (which stores silenced stocks directly in companies collection)
+ * is now part of the Meetings migration.
  */
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting migrateAll process...')
 
   try {
+
     // 1. Migrate Stocks
     console.log('\n=== Starting Stocks Migration ===')
     await migrateStocks({ payload, req })
@@ -50,58 +42,28 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // 2. Migrate Meetings
     console.log('\n=== Starting Meetings Migration ===')
-    await migrateMeetings({ payload, req })
+    await migrateFullMeetings({ payload, req })
     console.log('=== Meetings Migration Completed ===\n')
+
+// 2. Migrate Firsm
+    console.log('\n=== Starting Firms Migration ===')
+    await migrateFullFirms({ payload, req })
+    console.log('=== Meetings Firms Completed ===\n')
 
     // 3. Migrate Foreign
     console.log('\n=== Starting Foreign Stocks Migration ===')
     await migrateForeign({ payload, req })
     console.log('=== Foreign Stocks Migration Completed ===\n')
 
-    // 4. Migrate Firms
-    console.log('\n=== Starting Firms Migration ===')
-    await migrateFirms({ payload, req })
-    console.log('=== Firms Migration Completed ===\n')
-
     // 5. Migrate Users
     console.log('\n=== Starting Users Migration ===')
     await migrateUsers({ payload, req })
     console.log('=== Users Migration Completed ===\n')
 
-    // 6. Migrate Accounts
-    console.log('\n=== Starting Accounts Migration ===')
-    await migrateAccounts({ payload, req })
-    console.log('=== Accounts Migration Completed ===\n')
-
-    // 7. Migrate Sub Accounts
-    console.log('\n=== Starting Sub Accounts Migration ===')
-    await migrateSubAccounts({ payload, req })
-    console.log('=== Sub Accounts Migration Completed ===\n')
-
-    // 9. Migrate Parent Companies
-    console.log('\n=== Starting Parent Companies Migration ===')
-    await migrateParentCompanies({ payload, req })
-    console.log('=== Parent Companies Migration Completed ===\n')
-
-    // 10. Migrate Account Companies To Companies
-    console.log('\n=== Starting Account Companies To Companies Migration ===')
-    await migrateAccountCompaniesToCompanies({ payload, req })
-    console.log('=== Account Companies To Companies Migration Completed ===\n')
-
     // 11. Migrate Holdings
     console.log('\n=== Starting Holdings Migration ===')
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
-
-    //  12. Process silenced stocks - match them to companies and store in companies collection
-    console.log('\n=== Starting Silenced Stocks Companies Migration ===')
-    await migrateSilencedStocksCompanies({ payload, req })
-    console.log('=== Silenced Stocks Companies Migration Completed ===\n')
-
-    // 13. Migrate Meeting Agenda
-    console.log('\n=== Starting Meeting Agenda Migration ===')
-    await migrateMeetingAgenda({ payload, req })
-    console.log('=== Meeting Agenda Migration Completed ===\n')
 
     // 17. Migrate Meeting Holdings
     console.log('\n=== Starting Meeting Holdings Migration ===')

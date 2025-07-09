@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId } from '@/utils/utils' // Then you can use sql.close() directly
+import { getSequenceMeetingId } from '@/utils/utils'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
@@ -41,30 +41,41 @@ function getTypeAndState(typeId: number): {
   }
 }
 
+// Map recommendation codes to their corresponding display values
+const recommendationMap = new Map<number, string | null>([
+  [-2, '----'],
+  [0, null],
+  [1, 'בעד'],
+  [2, 'נגד'],
+  [3, 'דיון'],
+  [4, '----'], // Changed from 'הוסר מסדר היום' to '----' to align with schema options
+  [5, 'נמנע'], // Added mapping for 'נמנע' (abstain)
+])
+
+// Function to get the voting recommendation based on the recommendation code
+function getVotingRecommendation(rec: number): string | null | undefined | number {
+  return recommendationMap.has(rec) ? recommendationMap.get(rec) : rec
+}
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
-    /*    await payload.delete({
-          collection: 'meetings',
-          where: {},
-        });*/
-    console.log('Starting migration process...')
+    console.log('Starting full meeting migration process (meetings with agenda)...')
     console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
     // Connect to SQL Server
     pool = await sql.connect(sqlConfig)
     console.log('Successfully connected to SQL Server')
+
     if (pool === null) {
-      console.error('Error no pool ,Executing SQL query for meetings.')
+      console.error('Error no pool, Executing SQL query for meetings.')
       return
     }
-    // Query the last 30 days of data
+
+    // Get meetings data
     console.log('Executing SQL query for meetings.')
-    // Using CONVERT to VARCHAR with format 127 (ISO 8601) to prevent automatic conversion to Date objects
-    // This ensures dates are returned as strings without the 'Z' suffix that indicates UTC timezone
-    const result = await pool?.request().query(`
+    const meetingsQuery = `
         SELECT  [id]
              ,[proofId]
              ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
@@ -79,27 +90,82 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[ElectronicVoting]
              ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
+    `
+    const meetingsResult = await pool.request().query(meetingsQuery)
+    console.log(`Retrieved ${meetingsResult?.recordset?.length} meeting records from SQL Server`)
 
-    `)
-    console.log(`Retrieved ${result?.recordset?.length} records from SQL Server`)
+    // Get agenda data
+    console.log('Executing SQL query for meeting agenda and recommendations.')
+    const agendaQuery = `
+        SELECT a.[id]
+             , a.[mid]
+             , a.[topic]
+             , a.[result]
+             , a.[vpercent]
+             , a.[vPercentSpecial]
+             , a.[vtype]
+             , a.[dealChanged]
+             , a.[rec]
+             , r.[Recommendation]
+        FROM [dbEmda].[dbo].[meetingagenda] a
+                 LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
+        ORDER by a.[mid], a.[id]
+    `
+    const agendaResult = await pool.request().query(agendaQuery)
+    console.log(`Retrieved ${agendaResult?.recordset?.length} agenda records from SQL Server`)
+
+    // Create a map of meeting ID to agenda items
+    const meetingAgendaMap = new Map<number, any[]>()
+    for (const row of agendaResult.recordset) {
+      if (!meetingAgendaMap.has(row.mid)) {
+        meetingAgendaMap.set(row.mid, [])
+      }
+
+      // Store the original result value before mapping
+      const originalResult = row.result
+
+      const agendaItem = {
+        id: row.id,
+        text: row.topic,
+        topicType: row.result === 3 ? 'reporting' : 'decision', // Set to reporting if result is 3 (דיון), otherwise decision
+        majorityType: row.vtype === 1 ? 'privileged' : 'regular', // Assuming vtype=1 means privileged majority
+        result: row.result
+          ? row.result === -2 || row.result === 4
+            ? '0'
+            : row.result.toString()
+          : '0', // Map -2 and 4 to 0, otherwise use string representation
+        vpercent: row.vpercent,
+        vPercentSpecial: row.vPercentSpecial,
+        dealChanged: row.dealChanged === 1, // Convert to boolean
+        recommendation: {
+          votingRecommendation: getVotingRecommendation(row.rec),
+          reasonText: row.Recommendation || '',
+          reasonRef: 'אחר',
+        },
+        isRemovedFromAgenda: originalResult === 4, // Set to true if original result is 4 (הוסר מסדר היום)
+      }
+
+      meetingAgendaMap.get(row.mid)?.push(agendaItem)
+    }
 
     // Transform and insert data into Payload CMS
     console.log('Starting data transformation and insertion into Payload CMS...')
     let successCount = 0
     let errorCount = 0
+    let skippedCount = 0
 
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
     const stockMap = await getStockIdToSequenceMap(req)
-    // Process each row in parallel using the promise pool
-    for (const row of result.recordset) {
+
+    // Process each meeting in parallel using the promise pool
+    for (const row of meetingsResult.recordset) {
       promises.push(
         promisePool.add(async () => {
           try {
-            // console.log("Row",JSON.stringify(row, null, 2))
             row.stockID = `${row.stockID}`
-            //Find stockId
+            // Find stockId
             const stockId = stockMap.get(`${row.stockID}`)
             if (stockId === undefined) {
               console.log("Stockid can't be found:", row.stockID)
@@ -110,17 +176,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
                 row,
               })
+              skippedCount++
               return
             }
-            //Find meetingTypeId
-            // eslint-disable-next-line prefer-const
-            let { newType, newState } = getTypeAndState(row.mtype)
+
+            // Find meetingTypeId
+            const { newType } = getTypeAndState(row.mtype)
+            let { newState } = getTypeAndState(row.mtype)
+
             // Create Date objects only for comparison purposes
             const meetingDate = row.mdate ? new Date(row.mdate) : null
             const now = new Date()
+
             if (newState == null) {
               newState = meetingDate && meetingDate > now ? 'scheduled' : 'completed'
             }
+
             switch (newState) {
               case 'postponed':
               case 'ongoing':
@@ -134,7 +205,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             }
 
             if (row.mdate == null && newState != 'on-hold') {
-              //Here Junie report to migration-fault the error
               await logMigrationFault({
                 payload,
                 type: 'meeting',
@@ -142,8 +212,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
                 row,
               })
+              skippedCount++
               return
             }
+
+            // Get agenda items for this meeting
+            const agendaItems = meetingAgendaMap.get(row.id) || []
+
+            // Prepare meeting data with agenda
             const meetingData: Partial<Meeting> = {
               meetingId: `${row.id}`,
               stock: stockId as string,
@@ -159,11 +235,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               electronicVotingEnabled: !!row.ElectronicVoting,
               committeeInitiated: !!row.CommiteeRequest,
               _status: 'published' as const,
+              agenda: agendaItems.map((item) => ({
+                text: item.text,
+                topicType: item.topicType,
+                majorityType: item.majorityType,
+                result: item.result,
+                vpercent: item.vpercent,
+                vPercentSpecial: item.vPercentSpecial,
+                dealChanged: item.dealChanged,
+                recommendation: item.recommendation,
+                isRemovedFromAgenda: item.isRemovedFromAgenda,
+              })),
             }
+
             if (!row.proofId && row?.link2?.startsWith('http')) {
               meetingData.invitationLink = row.link2
             }
-            //console.log("Data",JSON.stringify(meetingData, null, 2))
+
             const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
             if (id) {
               // Update Payload CMS
@@ -190,12 +278,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             successCount++
             console.log(
-              `✓ Inserted/Updated Meeting: ${row.id} (${successCount}/${result.recordset.length})`,
+              `✓ Inserted/Updated Meeting: ${row.id} with ${agendaItems.length} agenda items (${successCount}/${meetingsResult.recordset.length})`,
             )
           } catch (insertError) {
             console.log('Row', JSON.stringify(row, null, 2))
             errorCount++
-            console.error(`✗ Failed to insert Meetingds ${row.id}:`, insertError)
+            console.error(`✗ Failed to insert Meeting ${row.id}:`, insertError)
+            logMigrationFault({
+              payload,
+              type: 'meeting',
+              typeId: `${row.id}`,
+              comments: `Failed to insert/update Meeting ${row.id}: ${insertError}`,
+              row,
+            })
           }
         }),
       )
@@ -204,11 +299,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Wait for all promises to complete
     await promisePool.waitForAll()
 
-    console.log('\nMigration Summary:')
-    console.log(`Total records processed: ${result.recordset.length}`)
-    console.log(`Successfully inserted: ${successCount}`)
-    console.log(`Failed insertions: ${errorCount}`)
-    console.log('Migration completed successfully.')
+    console.log('\nMeetings Migration Summary:')
+    console.log(`Total meetings processed: ${meetingsResult.recordset.length}`)
+    console.log(`Successfully inserted/updated: ${successCount}`)
+    console.log(`Failed insertions/updates: ${errorCount}`)
+    console.log(`Skipped meetings: ${skippedCount}`)
+    console.log('Meetings migration completed successfully.')
+
+
   } catch (error) {
     console.error('Critical error during migration:', error)
     throw error // Re-throw to ensure migration is marked as failed
