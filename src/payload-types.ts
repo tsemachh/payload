@@ -399,6 +399,7 @@ export interface Meeting {
   meetingDate?: string | null;
   location?: string | null;
   comments?: string | null;
+  agendaTexts?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
@@ -535,6 +536,8 @@ export interface ResearchDocument {
 export interface Vote {
   id: string;
   meeting: string | Meeting;
+  agendaTexts?: string | null;
+  comments?: string | null;
   company: string | Company;
   title?: string | null;
   reported?: boolean | null;
@@ -1231,6 +1234,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   meetingDate?: T;
   location?: T;
   comments?: T;
+  agendaTexts?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
@@ -1296,6 +1300,8 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
  */
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
+  agendaTexts?: T;
+  comments?: T;
   company?: T;
   title?: T;
   reported?: T;

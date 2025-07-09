@@ -45,6 +45,18 @@ export const Votes: CollectionConfig = {
           index: true,
         },
         {
+          name: 'agendaTexts',
+          label: 'תוכן הנושא',
+          type: 'textarea',
+          virtual: 'meeting.agendaTexts',
+        },
+        {
+          name: 'comments',
+          label: 'הערות',
+          type: 'textarea',
+          virtual: 'meeting.comments',
+        },
+        {
           name: 'company',
           label: 'חברה',
           type: 'relationship',
@@ -143,8 +155,15 @@ export const Votes: CollectionConfig = {
       label: 'סעיפי הצבעה',
       type: 'array',
       labels: {
-        singular: 'הצבעה',
-        plural: 'הצבעות',
+        singular: 'נושא',
+        plural: 'נושאים',
+      },
+      admin: {
+        components: {
+          RowLabel: {
+            path: '/admincomponents/label/RowLabel',
+          },
+        },
       },
       fields: [
         {
