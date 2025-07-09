@@ -143,8 +143,15 @@ export const Votes: CollectionConfig = {
       label: 'סעיפי הצבעה',
       type: 'array',
       labels: {
-        singular: 'הצבעה',
-        plural: 'הצבעות',
+        singular: 'נושא',
+        plural: 'נושאים',
+      },
+      admin: {
+        components: {
+          RowLabel: {
+            path: '/collections/votes/components/RowLabel',
+          },
+        },
       },
       fields: [
         {
