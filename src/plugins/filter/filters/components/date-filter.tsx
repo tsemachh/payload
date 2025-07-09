@@ -362,7 +362,7 @@ export function DateFilter({
         </Popover>
         {hasValue() && (
           <button
-            className="useTw absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10"
+            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `}
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()

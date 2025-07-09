@@ -11,7 +11,7 @@ export const StocksFeed: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: ['createdAt'],
+    filterList: [{ name:'createdAt'}],
   },
   access: {
     read: () => true,

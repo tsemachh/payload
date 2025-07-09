@@ -4,7 +4,7 @@ const MigrationFaults: CollectionConfig = {
   slug: 'migration-faults',
   versions: false,
   custom: {
-    filterList: ['createdAt', 'type'],
+    filterList: [{ name: 'createdAt' }, { name: 'type' }],
   },
   fields: [
     {
