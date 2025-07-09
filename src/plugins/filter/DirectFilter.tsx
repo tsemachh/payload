@@ -6,7 +6,7 @@ import { ClientField, FieldAffectingData, type SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
 import { FilterDetaild, FilterRow } from './filters/types/filters-type'
-import { getColClass, groupFiltersByRow } from './filters/utils/layout-helpers'
+import { groupFiltersByRow } from './filters/utils/layout-helpers'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -99,7 +99,7 @@ const DirectFilter = ({
     <div className="filter-container useTw">
       {filterRows.map((row) => (
         <div key={row.rowNumber}>
-          <div className={`grid gap-6 md:grid-cols-1 ${getColClass(row.filters.length)}`}>
+          <div className="flex flex-wrap gap-6 mb-4">
             {row.filters.map((field, index) => (
               <FilterField key={index} field={field} />
             ))}

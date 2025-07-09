@@ -174,7 +174,7 @@ export function DateFilter({
   }
 
   return (
-    <div className={cn('useTw space-y-2 w-70', className)} dir={locale.direction}>
+    <div className={cn('useTw space-y-1', className)} dir={locale.direction}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}

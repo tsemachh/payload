@@ -51,7 +51,7 @@ export function CheckboxFilter({
   }
 
   return (
-    <div className={cn('space-y-2', className)} dir={locale.direction}>
+    <div className={cn('space-y-1', className)} dir={locale.direction}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}
