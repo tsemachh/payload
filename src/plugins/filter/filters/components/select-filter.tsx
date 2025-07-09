@@ -129,7 +129,7 @@ export function SelectFilter({
   }
 
   return (
-    <div className={cn('space-y-2 w-70', className)} dir={locale.direction}>
+    <div className={cn('space-y-1', className)} dir={locale.direction}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}
@@ -209,7 +209,7 @@ export function SelectFilter({
         </Popover>
         {selectedValues.length > 0 && (
           <button
-            className={`useTw absolute ${isHebrew ? 'left-8': 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `} 
+            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `}
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()

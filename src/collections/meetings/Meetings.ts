@@ -147,22 +147,21 @@ export const Meetings: CollectionConfig = {
   },
   custom: {
     filterList: [
-      { name: 'holdingsLimit', row: 1 },
-      { name: 'meetingDate', row: 1 },
-      { name: 'proxyVotingDate', row: 1 },
-      { name: 'state', row: 3 },
-      { name: 'type', row: 3 },
-      { name: 'resultsConfirmationStatus', row: 2 },
-      { name: 'electronicVotingEnabled', row: 2 },
-      { name: 'committeeInitiated', row: 2 },
-      { name: '_status', row: 2 },
+      { name: 'holdingsLimit', row: 1, width: '300px' },
+      { name: 'meetingDate', row: 1, width: '300px' },
+      { name: 'proxyVotingDate', row: 1, width: '300px' },
+      { name: 'state', row: 1, width: '300px' },
+      { name: 'type', row: 1, width: '300px' },
+      { name: 'resultsConfirmationStatus', row: 2, width: '300px' },
+      { name: 'electronicVotingEnabled', row: 2, width: '300px' },
+      { name: 'committeeInitiated', row: 2, width: '300px' },
+      { name: '_status', row: 2, width: '300px' },
     ],
   },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',

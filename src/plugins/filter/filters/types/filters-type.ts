@@ -112,12 +112,13 @@ export interface FilterState {
 }
 
 export type FilterDetaild = {
-  name: string;
-  label: string;
-  type: any;
-  options?: Array<any>; // Replace `any` with a more specific type if known
-  row?: number|undefined;
-};
+  name: string
+  label: string
+  type: any
+  options?: Array<any> // Replace `any` with a more specific type if known
+  row?: number | undefined
+  width?: string
+}
 
 export interface FilterRow {
   rowNumber: number

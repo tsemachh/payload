@@ -1,4 +1,4 @@
-import { FilterDetaild, FilterRow } from "../types/filters-type"
+import { FilterDetaild, FilterRow } from '../types/filters-type'
 
 export function groupFiltersByRow(filters: FilterDetaild[]): FilterRow[] {
   // Group filters by row number
@@ -27,50 +27,37 @@ export function groupFiltersByRow(filters: FilterDetaild[]): FilterRow[] {
 
 export function getFilterWidthClass(width?: string): string {
   switch (width) {
-    case "sm":
-      return "w-full max-w-xs"
-    case "md":
-      return "w-full max-w-sm"
-    case "lg":
-      return "w-full max-w-md"
-    case "xl":
-      return "w-full max-w-lg"
-    case "full":
-      return "w-full"
-    case "auto":
+    case 'sm':
+      return 'w-full max-w-xs'
+    case 'md':
+      return 'w-full max-w-sm'
+    case 'lg':
+      return 'w-full max-w-md'
+    case 'xl':
+      return 'w-full max-w-lg'
+    case 'full':
+      return 'w-full'
+    case 'auto':
     default:
-      return "w-auto min-w-fit"
+      return 'w-auto min-w-fit'
   }
 }
 
 export function getGridColumnsClass(filtersCount: number): string {
   switch (filtersCount) {
     case 1:
-      return "grid-cols-1"
+      return 'grid-cols-1'
     case 2:
-      return "grid-cols-1 md:grid-cols-2"
+      return 'grid-cols-1 md:grid-cols-2'
     case 3:
-      return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
     case 4:
-      return "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
     case 5:
-      return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
     case 6:
-      return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
     default:
-      return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
   }
-}
-
-export function getColClass(length: number): string {
-  const classes: Record<number, string> = {
-    1: 'lg:grid-cols-1',
-    2: 'lg:grid-cols-2',
-    3: 'lg:grid-cols-3',
-    4: 'lg:grid-cols-4',
-    5: 'lg:grid-cols-5',
-    6: 'lg:grid-cols-6',
-  }
-
-  return classes[length] || 'lg:grid-cols-1'
 }

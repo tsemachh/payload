@@ -130,7 +130,7 @@ const FilterField = ({ field }: { field: any }) => {
           key={field.name}
           onChange={(value) => handleDateFilterChange(field.name, value)}
           locale={userLocale as Locale}
-          className="useTw"
+          className={` w-[${field.width || '250px'}]`}
         />
       )
     case 'select':
@@ -145,7 +145,7 @@ const FilterField = ({ field }: { field: any }) => {
             }))}
             onChange={(value) => handleSelectFilterChange(field.name, value)}
             locale={userLocale as Locale}
-            className="useTw"
+            className={` w-[${field.width || '250px'}]`}
           />
         )
       }
@@ -159,7 +159,7 @@ const FilterField = ({ field }: { field: any }) => {
           }))}
           onChange={(value) => handleSelectFilterChange(field.name, value)}
           locale={userLocale as Locale}
-          className="useTw"
+          className={` w-[${field.width || '250px'}]`}
         />
       )
     case 'checkbox':
@@ -170,7 +170,7 @@ const FilterField = ({ field }: { field: any }) => {
           onChange={(state) => handleCheckboxFilterChange(field.name, state)}
           checkboxLabel={''}
           locale={userLocale as Locale}
-          className="useTw"
+          className={` w-[${field.width || '250px'}]`}
         />
       )
     default:
