@@ -438,23 +438,18 @@ export const Meetings: CollectionConfig = {
                   hooks: {
                     afterRead: [
                       async ({ data, req }) => {
-                        console.log('====data', data)
                         if (data?.agenda && Array.isArray(data.agenda)) {
-                          console.log('====data?.agenda', data?.agenda)
-                          console.log('====Array.isArray(data.agenda)', Array.isArray(data.agenda))
-                          console.log('====data?.agenda[0].text', data?.agenda[0].text)
-
                           return data.agenda.map((item) => item.text).join(' ## ')
                         } else {
                           if (data?.id) {
                             const meeting = await req.payload.findByID({
                               collection: 'meetings',
                               id: data.id,
-                              depth: 1, // מביא את הנתונים המלאים של האסיפה
+                              depth: 0,
                             })
-                            return meeting.agendaTexts || 'vv'
+                            return meeting.agendaTexts || ''
                           }
-                          return 'aaaa'
+                          return ''
                         }
                       },
                     ],
