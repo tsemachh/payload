@@ -49,12 +49,7 @@ export const Votes: CollectionConfig = {
           label: 'תוכן הנושא',
           type: 'textarea',
           virtual: 'meeting.agendaTexts',
-        },
-        {
-          name: 'comments',
-          label: 'הערות',
-          type: 'textarea',
-          virtual: 'meeting.comments',
+          admin: { hidden: true },
         },
         {
           name: 'company',

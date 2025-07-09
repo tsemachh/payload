@@ -3,25 +3,23 @@ import { useRowLabel, useFormFields } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 
 const RowLabel: React.FC = () => {
-  const { data, rowNumber } = useRowLabel<{ agendaTexts: any }>()
-  const agendaTexts = useFormFields(([fields, dispatch]) => fields.agendaTexts)
+  const { rowNumber } = useRowLabel()
+  const agendaTexts = useFormFields(([fields]) => fields.agendaTexts?.value)
 
-  const [label, setLabel] = useState(`Variant ${rowNumber}`)
+  const [label, setLabel] = useState('')
 
   useEffect(() => {
-    console.log('RowLabel data', data)
-    console.log('-==agendaTexts ', agendaTexts)
+    if (agendaTexts && typeof agendaTexts === 'string' && typeof rowNumber === 'number') {
+      const textsArray = agendaTexts.split(' ## ').filter(Boolean)
+      const topicIndex = rowNumber
 
-    if (agendaTexts) {
-      console.log('!!!agendaTexts', agendaTexts)
-
-      // Assuming data.header contains the title you want to use
-      setLabel(typeof agendaTexts?.value === 'string' ? agendaTexts.value : `Section ${rowNumber}`) //api to meeting סדק יום נושאים לפי המספר..
-    } else {
-      // Default label if header is not present
-      setLabel(`Section ${rowNumber}`)
+      if (textsArray[topicIndex]) {
+        setLabel(`${(rowNumber as number) + 1}. ${textsArray[topicIndex]}`)
+      } else {
+        setLabel(`${rowNumber}נושא `)
+      }
     }
-  }, [data, rowNumber])
+  }, [agendaTexts, rowNumber])
 
   return (
     <div>
@@ -29,4 +27,5 @@ const RowLabel: React.FC = () => {
     </div>
   )
 }
+
 export default RowLabel

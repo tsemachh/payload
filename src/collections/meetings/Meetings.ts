@@ -434,6 +434,7 @@ export const Meetings: CollectionConfig = {
                   label: 'תוכן הנושא',
                   type: 'textarea',
                   virtual: true,
+                  hidden: true,
                   hooks: {
                     afterRead: [
                       async ({ data, req }) => {
