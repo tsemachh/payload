@@ -156,7 +156,7 @@ export const Votes: CollectionConfig = {
       admin: {
         components: {
           RowLabel: {
-            path: '/admincomponents/label/RowLabel',
+            path: '/collections/votes/components/RowLabel',
           },
         },
       },
