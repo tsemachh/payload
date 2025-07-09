@@ -429,32 +429,6 @@ export const Meetings: CollectionConfig = {
                     disableListFilter: true,
                   },
                 },
-                {
-                  name: 'agendaTexts',
-                  label: 'תוכן הנושא',
-                  type: 'textarea',
-                  virtual: true,
-                  hidden: true,
-                  hooks: {
-                    afterRead: [
-                      async ({ data, req }) => {
-                        if (data?.agenda && Array.isArray(data.agenda)) {
-                          return data.agenda.map((item) => item.text).join(' ## ')
-                        } else {
-                          if (data?.id) {
-                            const meeting = await req.payload.findByID({
-                              collection: 'meetings',
-                              id: data.id,
-                              depth: 0,
-                            })
-                            return meeting.agendaTexts || ''
-                          }
-                          return ''
-                        }
-                      },
-                    ],
-                  },
-                },
               ],
             },
             {

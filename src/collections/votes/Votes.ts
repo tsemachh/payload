@@ -45,13 +45,6 @@ export const Votes: CollectionConfig = {
           index: true,
         },
         {
-          name: 'agendaTexts',
-          label: 'תוכן הנושא',
-          type: 'textarea',
-          virtual: 'meeting.agendaTexts',
-          admin: { hidden: true },
-        },
-        {
           name: 'company',
           label: 'חברה',
           type: 'relationship',
