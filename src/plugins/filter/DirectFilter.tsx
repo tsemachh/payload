@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
-import { ClientField, FieldAffectingData, type SelectField, type OptionObject } from 'payload'
+import { ClientField, FieldAffectingData, type OptionObject, type SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
 import {
@@ -115,7 +115,7 @@ const DirectFilter = ({
 }) => {
   const [fields, setFields] = useState<FilterDetaild[]>([])
   const [filterRows, setFilterRows] = useState<FilterRow[]>([])
-  const [showFilters, setShowFilters] = useState(true)
+  const [showFilters, setShowFilters] = useState(false)
 
   const { refineListData } = useListQuery()
   const { getEntityConfig } = useConfig()
@@ -207,7 +207,7 @@ const DirectFilter = ({
 
   return (
     <div className="filter-container useTw">
-      <div style={{ position: 'relative', top: '-23px', height: '0px' }}>
+      <div style={{ position: 'relative', top: '-22px', height: '0px' }}>
         <Button
           variant="outline"
           size="sm"
@@ -219,7 +219,14 @@ const DirectFilter = ({
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
-      {showFilters && memoizedFilterRows}
+      {showFilters && (
+        <div
+          className={'p-4 pb-2'}
+          style={{ border: '5px solid', borderColor: 'rgb(245, 245, 245)' }}
+        >
+          {memoizedFilterRows}
+        </div>
+      )}
     </div>
   )
 }

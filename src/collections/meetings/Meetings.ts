@@ -96,7 +96,7 @@ const votingRecommendation = [
         type: 'select',
         admin: {
           width: '10%',
-          disableListFilter: true,
+          disableListFilter: false,
         },
         options: [
           { label: '----', value: '----' },
@@ -124,7 +124,7 @@ const votingRecommendation = [
         label: 'נימוק חופשי',
         type: 'text',
         admin: {
-          disableListFilter: true,
+          disableListFilter: false,
           width: '100%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
@@ -223,7 +223,7 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '330px',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
                 {
@@ -260,7 +260,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '150px',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
                 {
@@ -270,7 +270,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '200px',
-                    disableListFilter: true,
+                    disableListFilter: false,
                     components: {
                       Cell: {
                         path: '/admincomponents/link/IconLinkCell',
@@ -312,7 +312,7 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     className: 'invitationDocument',
                     width: '220px',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
                 {
@@ -321,7 +321,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                   index: true,
                   hooks: {
@@ -390,7 +390,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '220px',
-                    disableListFilter: true,
+                    disableListFilter: false,
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
@@ -424,7 +424,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   admin: {
                     width: '50%',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
               ],
@@ -438,7 +438,7 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   admin: {
                     width: '50%',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
               ],
@@ -453,20 +453,20 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: 'auto',
                     condition: (siblingData) => siblingData.state === 'completed',
-                    disableListFilter: true,
+                    disableListFilter: false,
                   },
                 },
                 {
                   name: 'electronicVotingEnabled',
                   label: 'האם מופיעה במערכת האלק׳?',
                   type: 'checkbox',
-                  admin: { width: 'auto', disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: false },
                 },
                 {
                   name: 'committeeInitiated',
                   label: 'האם פיננסי דורש ועדה?',
                   type: 'checkbox',
-                  admin: { width: 'auto', disableListFilter: true },
+                  admin: { width: 'auto', disableListFilter: false },
                 },
               ],
             },
@@ -485,7 +485,7 @@ export const Meetings: CollectionConfig = {
                 plural: 'נושאים',
               },
               admin: {
-                disableListFilter: true,
+                disableListFilter: false,
                 initCollapsed: true,
                 components: {
                   RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
@@ -500,7 +500,7 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   required: true,
                   admin: {
-                    disableListFilter: true,
+                    disableListFilter: false,
                     className: 'agendaText',
                     style: { minHeight: '37px' },
                   },
@@ -512,7 +512,7 @@ export const Meetings: CollectionConfig = {
                       name: 'isRemovedFromAgenda',
                       label: 'הוסר מסדר היום',
                       type: 'checkbox',
-                      admin: { width: '200px', disableListFilter: true },
+                      admin: { width: '200px', disableListFilter: false },
                     },
                     {
                       name: 'topicType',
@@ -525,7 +525,7 @@ export const Meetings: CollectionConfig = {
                       ],
                       admin: {
                         width: '200px',
-                        disableListFilter: true,
+                        disableListFilter: false,
                       },
                     },
                     {
@@ -538,7 +538,7 @@ export const Meetings: CollectionConfig = {
                       ],
                       admin: {
                         width: '200px',
-                        disableListFilter: true,
+                        disableListFilter: false,
                         condition: (_, siblingData) => {
                           return siblingData.topicType === 'decision'
                         },
@@ -566,7 +566,7 @@ export const Meetings: CollectionConfig = {
                           type: 'checkbox',
                           admin: {
                             width: '20%',
-                            disableListFilter: true,
+                            disableListFilter: false,
                           },
                         },
                         {
@@ -590,7 +590,7 @@ export const Meetings: CollectionConfig = {
                             }
                           },
                           admin: {
-                            disableListFilter: true,
+                            disableListFilter: false,
                             width: '80%',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
@@ -604,7 +604,7 @@ export const Meetings: CollectionConfig = {
                   label: 'אחוז הצבעה מיוחד',
                   type: 'number',
                   admin: {
-                    disableListFilter: true,
+                    disableListFilter: false,
                     hidden: true,
                     step: 0.01,
                     condition: (_, siblingData) =>
@@ -623,7 +623,7 @@ export const Meetings: CollectionConfig = {
                     { label: 'דיון', value: '3' },
                   ],
                   admin: {
-                    disableListFilter: true,
+                    disableListFilter: false,
                     hidden: true,
                     condition: (_, siblingData) => siblingData.topicType === 'decision',
                   },
@@ -641,7 +641,7 @@ export const Meetings: CollectionConfig = {
               label: 'הצבעות',
               type: 'text',
               admin: {
-                disableListFilter: true,
+                disableListFilter: false,
                 readOnly: true,
                 width: '600px',
                 components: {
@@ -680,7 +680,6 @@ export const Meetings: CollectionConfig = {
                 }
               },
               admin: {
-                hidden: true,
                 readOnly: true,
               },
             },
@@ -759,7 +758,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 allowCreate: false,
-                disableListFilter: true,
+                disableListFilter: false,
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported'],
               },
               where: {
@@ -789,7 +788,7 @@ export const Meetings: CollectionConfig = {
                 }
               },
               admin: {
-                disableListFilter: true,
+                disableListFilter: false,
                 readOnly: true,
               },
             },
@@ -836,7 +835,7 @@ export const Meetings: CollectionConfig = {
               hasMany: false,
               admin: {
                 hidden: true,
-                disableListFilter: true,
+                disableListFilter: false,
               },
               maxDepth: 1,
             },
@@ -855,7 +854,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'research-documents',
               hasMany: true,
               admin: {
-                disableListFilter: true,
+                disableListFilter: false,
                 description:
                   'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
                 components: {
