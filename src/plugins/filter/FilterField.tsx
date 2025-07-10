@@ -1,118 +1,49 @@
+// FilterField.tsx (הקובץ המתוקן)
+
 'use client'
-import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { useListQuery, useTranslation } from '@payloadcms/ui'
+import React, { useCallback } from 'react'
+import { useTranslation } from '@payloadcms/ui'
 import { rtlLanguages } from '@payloadcms/translations'
 import { DateFilter } from '@/plugins/filter/filters/components/date-filter'
 import { SelectFilter } from '@/plugins/filter/filters/components/select-filter'
 import { CheckboxFilter } from '@/plugins/filter/filters/components/checkbox-filter'
-import type {
-  CheckboxFilterState,
-  DateFilterValue,
-  Locale,
-  SelectFilterValue,
-} from '@/types/filter-types'
+import type { Locale } from '@/types/filter-types'
 import { SmallSelectFilter } from '@/plugins/filter/filters/components/small-select-filter'
 
-const FilterField = ({ field }: { field: any }) => {
-  const { refineListData } = useListQuery()
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({})
+const FilterField = ({
+  field,
+  onFilterChange,
+  value: controlledValue,
+}: {
+  field: any
+  onFilterChange: (fieldName: string, value: any) => void
+  value: any
+}) => {
   const { i18n } = useTranslation()
-
-  const isInitialMount = useRef(true)
-
   const localeLang = i18n.language
   const isRTL = (rtlLanguages as readonly string[]).includes(localeLang)
   const direction = isRTL ? 'rtl' : 'ltr'
   const userLocale = { code: localeLang, direction }
 
-  const updateFilterValue = useCallback((fieldName: string, value: any) => {
-    setFilterValues((prev) => ({ ...prev, [fieldName]: value }))
-  }, [])
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-
-    const where: Record<string, any> = {}
-
-    Object.entries(filterValues).forEach(([key, val]) => {
-      if (val !== undefined) {
-        where[key] = val
-      }
-    })
-
-    refineListData({
-      where,
-      page: '1',
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues])
-
   const handleDateFilterChange = useCallback(
-    (fieldName: string, value: DateFilterValue | undefined) => {
-      if (!value || !value.customRange || (!value.customRange.from && !value.customRange.to)) {
-        updateFilterValue(fieldName, undefined)
-        return
-      }
-
-      const { from, to } = value.customRange
-      const filter: any = {}
-
-      if (from) {
-        filter.greater_than_equal = from.toISOString()
-      }
-
-      if (to) {
-        filter.less_than = to.toISOString()
-      }
-
-      updateFilterValue(fieldName, Object.keys(filter).length > 0 ? filter : undefined)
+    (value: any) => {
+      onFilterChange(field.name, value)
     },
-    [updateFilterValue],
+    [onFilterChange, field.name],
   )
 
   const handleSelectFilterChange = useCallback(
-    (fieldName: string, value: SelectFilterValue | undefined) => {
-      if (
-        !value ||
-        value.type === 'none' ||
-        !value.selectedValues ||
-        value.selectedValues.length === 0
-      ) {
-        updateFilterValue(fieldName, undefined)
-        return
-      }
-
-      if (value.selectedValues.length === 1) {
-        updateFilterValue(fieldName, {
-          equals: value.selectedValues[0],
-        })
-      } else {
-        updateFilterValue(fieldName, {
-          in: value.selectedValues,
-        })
-      }
+    (value: any) => {
+      onFilterChange(field.name, value)
     },
-    [updateFilterValue],
+    [onFilterChange, field.name],
   )
 
   const handleCheckboxFilterChange = useCallback(
-    (fieldName: string, state: CheckboxFilterState | undefined) => {
-      if (state === 'unchecked') {
-        updateFilterValue(fieldName, {
-          equals: false,
-        })
-      } else if (state === 'checked') {
-        updateFilterValue(fieldName, {
-          equals: true,
-        })
-      } else {
-        updateFilterValue(fieldName, undefined)
-      }
+    (state: any) => {
+      onFilterChange(field.name, state)
     },
-    [updateFilterValue],
+    [onFilterChange, field.name],
   )
 
   switch (field.type) {
@@ -120,9 +51,9 @@ const FilterField = ({ field }: { field: any }) => {
       return (
         <DateFilter
           label={field.label}
-          value={field.value}
+          value={controlledValue} 
           key={field.name}
-          onChange={(value) => handleDateFilterChange(field.name, value)}
+          onChange={handleDateFilterChange}
           locale={userLocale as Locale}
           className={` w-[${field.width || '250px'}]`}
         />
@@ -137,7 +68,8 @@ const FilterField = ({ field }: { field: any }) => {
               label: option.label,
               value: option.value,
             }))}
-            onChange={(value) => handleSelectFilterChange(field.name, value)}
+            onChange={handleSelectFilterChange}
+            value={controlledValue}
             locale={userLocale as Locale}
             className={` w-[${field.width || '250px'}]`}
           />
@@ -151,7 +83,8 @@ const FilterField = ({ field }: { field: any }) => {
             label: option.label,
             value: option.value,
           }))}
-          onChange={(value) => handleSelectFilterChange(field.name, value)}
+          onChange={handleSelectFilterChange} 
+          value={controlledValue}
           locale={userLocale as Locale}
           className={` w-[${field.width || '250px'}]`}
         />
@@ -161,7 +94,8 @@ const FilterField = ({ field }: { field: any }) => {
         <CheckboxFilter
           label={field.label}
           key={field.name}
-          onChange={(state) => handleCheckboxFilterChange(field.name, state)}
+          onChange={handleCheckboxFilterChange}
+          value={controlledValue}
           checkboxLabel={''}
           locale={userLocale as Locale}
           className={` w-[${field.width || '250px'}]`}
