@@ -9,6 +9,8 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
+import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -94,6 +96,43 @@ export const Votes: CollectionConfig = {
           admin: {
             components: {
               Cell: '/admincomponents/cell/YesNoCell',
+            },
+          },
+        },
+        {
+          name: 'reportedBy',
+          label: 'דווח על ידי',
+          type: 'text',
+          admin: {
+            readOnly: true,
+          },
+        },
+        {
+          name: 'reportedTime',
+          label: 'תאריך דיווח',
+          type: 'date',
+          admin: {
+            readOnly: true,
+          },
+        },
+        {
+          name: 'subTitle',
+          label: 'כותרת משנה',
+          type: 'text',
+          virtual: true,
+          hooks: {
+            afterRead: [
+              ({ data }) => {
+                if (data?.reported && data.reportedBy && data.reportedTime) {
+                  return `${data.reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(data.reportedTime), { locale: he })}`
+                }
+                return 'לא דווח'
+              },
+            ],
+          },
+          admin: {
+            components: {
+              Field: '/collections/votes/components/Subtitle',
             },
           },
         },
@@ -304,6 +343,21 @@ export const Votes: CollectionConfig = {
             console.error('Error creating notification for published vote:', error)
           }
         }
+      },
+    ],
+    beforeChange: [
+      async ({ data, req, originalDoc }) => {
+        // בדוק אם reported הופך ל-true
+        console.log('--- da - ta', data)
+        console.log('--- req', req)
+
+        if (data._status === 'published' && data.reported && !originalDoc?.reported) {
+          // שמור את המייל של המשתמש הנוכחי ואת הזמן
+          data.reportedBy = data.updator || 'לא ידוע'
+          data.reportedTime = data.updatedAt //new Date().toISOString()
+          console.log('2 --- da - ta', data)
+        }
+        return data
       },
     ],
   },
