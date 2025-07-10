@@ -55,13 +55,7 @@ export const checkCompanyNotifications = async (req: any) => {
   console.log(`tomorrowMidnight`, tomorrowMidnight)
 
   // 1. Check for meeting notifications
-  await checkMeetingNotifications(
-    req,
-    results,
-    todayMidnight,
-    yesterdayMidnight,
-    tomorrowMidnight,
-  )
+  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight, tomorrowMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
@@ -329,6 +323,17 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
       if (!hasHoldings) {
         const message = `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
+        // Delete any existing notifications for this company and type
+        await payload.delete({
+          collection: 'company-meeting-notifications',
+          where: {
+            company: { equals: company.id },
+            message: { equals: message },
+            notificationType: { equals: 'holdings-not-fed' },
+          },
+        })
+
+        // Create new notification
         await payload.create({
           collection: 'company-meeting-notifications',
           data: {
