@@ -349,7 +349,9 @@ export const Votes: CollectionConfig = {
       async ({ data, req, originalDoc }) => {
         // בדוק אם reported הופך ל-true
         console.log('--- da - ta', data)
-        console.log('--- req', req)
+        console.log('--- data._status', data._status)
+        console.log('--- data.reported', data.reported)
+        console.log('--- !originalDoc?.reported ', !originalDoc?.reported)
 
         if (data._status === 'published' && data.reported && !originalDoc?.reported) {
           // שמור את המייל של המשתמש הנוכחי ואת הזמן
