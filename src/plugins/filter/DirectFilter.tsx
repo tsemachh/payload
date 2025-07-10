@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useConfig, useTranslation } from '@payloadcms/ui'
 import { ClientField, FieldAffectingData, type SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
@@ -96,11 +96,23 @@ const DirectFilter = ({
     setFilterRows(filterRowsTmp)
   }, [])
 
-  if (!fields.length) return null
+  const memoizedFilterRows = useMemo(() => {
+    return filterRows.map((row) => (
+      <div key={row.rowNumber}>
+        <div className="flex flex-wrap gap-6 mb-4">
+          {row.filters.map((field, index) => (
+            <FilterField key={index} field={field} />
+          ))}
+        </div>
+      </div>
+    ))
+  }, [filterRows])
 
   const toggleFilters = () => {
     setShowFilters((prev) => !prev)
   }
+
+  if (!fields.length) return null
 
   return (
     <div className="filter-container useTw">
@@ -118,16 +130,7 @@ const DirectFilter = ({
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
-      {showFilters &&
-        filterRows.map((row) => (
-          <div key={row.rowNumber}>
-            <div className="flex flex-wrap gap-6 mb-4">
-              {row.filters.map((field, index) => (
-                <FilterField key={index} field={field} />
-              ))}
-            </div>
-          </div>
-        ))}
+      {showFilters && memoizedFilterRows}
     </div>
   )
 }

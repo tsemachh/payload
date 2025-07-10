@@ -1,5 +1,5 @@
 'use client'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useListQuery, useTranslation } from '@payloadcms/ui'
 import { rtlLanguages } from '@payloadcms/translations'
 import { DateFilter } from '@/plugins/filter/filters/components/date-filter'
@@ -17,46 +17,42 @@ const FilterField = ({ field }: { field: any }) => {
   const { refineListData } = useListQuery()
   const [filterValues, setFilterValues] = useState<Record<string, any>>({})
   const { i18n } = useTranslation()
+
+  const isInitialMount = useRef(true)
+
   const localeLang = i18n.language
   const isRTL = (rtlLanguages as readonly string[]).includes(localeLang)
   const direction = isRTL ? 'rtl' : 'ltr'
   const userLocale = { code: localeLang, direction }
 
-  // This function will be called by each filter component when its value changes
   const updateFilterValue = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => ({ ...prev, [fieldName]: value }))
   }, [])
 
-  // Use useEffect to handle the side effect of calling refineListData
   useEffect(() => {
-    // Only run if we have actual filter values to apply
-    const hasFilters = Object.values(filterValues).some((val) => val !== undefined)
-
-    if (!hasFilters) {
-      refineListData({ where: {} }, true)
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
     }
 
-    // Apply all filters at once
     const where: Record<string, any> = {}
 
-    // Build the where clause from all filter values
     Object.entries(filterValues).forEach(([key, val]) => {
       if (val !== undefined) {
         where[key] = val
       }
     })
 
-    // Call refineListData with the combined where clause
     refineListData({
       where,
       page: '1',
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterValues])
 
-  // Convert DateFilterValue to Payload where clause
   const handleDateFilterChange = useCallback(
-    (fieldName: string, value: DateFilterValue) => {
-      if (!value || !value.customRange) {
+    (fieldName: string, value: DateFilterValue | undefined) => {
+      if (!value || !value.customRange || (!value.customRange.from && !value.customRange.to)) {
         updateFilterValue(fieldName, undefined)
         return
       }
@@ -77,9 +73,8 @@ const FilterField = ({ field }: { field: any }) => {
     [updateFilterValue],
   )
 
-  // Convert SelectFilterValue to Payload where clause
   const handleSelectFilterChange = useCallback(
-    (fieldName: string, value: SelectFilterValue) => {
+    (fieldName: string, value: SelectFilterValue | undefined) => {
       if (
         !value ||
         value.type === 'none' ||
@@ -103,9 +98,8 @@ const FilterField = ({ field }: { field: any }) => {
     [updateFilterValue],
   )
 
-  // Convert CheckboxFilterState to Payload where clause
   const handleCheckboxFilterChange = useCallback(
-    (fieldName: string, state: CheckboxFilterState) => {
+    (fieldName: string, state: CheckboxFilterState | undefined) => {
       if (state === 'unchecked') {
         updateFilterValue(fieldName, {
           equals: false,
