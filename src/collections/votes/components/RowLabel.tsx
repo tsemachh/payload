@@ -34,7 +34,6 @@ const RowLabel: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      console.log('---value', topicIndex)
       const data = await response.json()
       const agenda = data.docs[0]?.agenda || []
       const text = agenda[rowNumber as number]?.text || 'ללא תיאור'
