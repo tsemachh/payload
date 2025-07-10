@@ -96,6 +96,7 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   access: { update: () => false },
                   admin: {
+                    width: '200px',
                     components: {
                       Cell: {
                         path: '/admincomponents/link/IconLinkCell',
@@ -145,7 +146,10 @@ export const Stocks: CollectionConfig = {
                     { label: 'שטרי הון', value: 'שטרי הון' },
                   ],
                   index: true,
-                  admin: { condition: (siblingData) => siblingData.tradable },
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable,
+                    width: '200px',
+                  },
                 },
                 {
                   name: 'fromMagna',
@@ -168,11 +172,17 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   required: true,
                   defaultValue: 'TASE',
+                  admin: {
+                    width: '150px',
+                  }
                 },
                 {
                   name: 'tradable',
                   label: 'האם נסחר',
                   type: 'checkbox',
+                  admin:{
+                    width: '150px',
+                  },
                   validate: validateTradableRelations,
                   access: {
                     update: ({ doc }) => !doc?.fromMagna,
@@ -185,6 +195,7 @@ export const Stocks: CollectionConfig = {
                   relationTo: 'stocks',
                   index: true,
                   admin: {
+                    width: '400px',
                     condition: (siblingData) => !siblingData.tradable,
                   },
                   filterOptions: ({ req }: any) => {
@@ -205,6 +216,9 @@ export const Stocks: CollectionConfig = {
                   validate: validateNoFutureMeetings,
                   access: {
                     update: ({ doc }) => !doc?.relatedStock,
+                  },
+                  admin:{
+                    width: '150px',
                   },
                   hooks: {
                     beforeChange: [
@@ -238,7 +252,36 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
+                    width: '100px',
                     condition: (siblingData) => siblingData.type == 'מניות',
+                  },
+                },
+                {
+                  name: 'isDual',
+                  label: 'דואלית',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '100px',
+                    condition: (siblingData) => siblingData.fromMagna,
+                  },
+                },
+                {
+                  name: 'dualStock',
+                  label: 'נייר ערך דואלי',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  admin: {
+                    condition: (siblingData) => siblingData.isDual,
+                    width: '400px',
+                  },
+                  filterOptions: ({ req }: any) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      origin: { equals: 'Foreign' },
+                    }
                   },
                 },
               ],

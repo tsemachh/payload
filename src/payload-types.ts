@@ -340,6 +340,8 @@ export interface Stock {
   relatedStock?: (string | null) | Stock;
   active?: boolean | null;
   isFinancial?: boolean | null;
+  isDual?: boolean | null;
+  dualStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -1186,6 +1188,8 @@ export interface StocksSelect<T extends boolean = true> {
   relatedStock?: T;
   active?: T;
   isFinancial?: T;
+  isDual?: T;
+  dualStock?: T;
   symbol?: T;
   name?: T;
   longName?: T;
