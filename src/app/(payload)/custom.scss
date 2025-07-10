@@ -178,4 +178,13 @@ form[action*="/api/research-documents"] .file-field__filename {
   }
 }
 
+.field-type.textarea textarea {
+  min-height: 42px;
+  padding: 0;
+  resize: vertical;
+  box-sizing: border-box;
+}
 
+.array-field .voteDecision.field-type.select {
+  margin-left: 50px;
+}

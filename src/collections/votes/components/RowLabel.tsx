@@ -1,11 +1,15 @@
 'use client'
-import { useRowLabel, useFormFields } from '@payloadcms/ui'
+import { useRowLabel, useFormFields, useField } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 import { stringify } from 'qs-esm'
 
 const RowLabel: React.FC = () => {
   const { rowNumber } = useRowLabel()
   const meetingId = useFormFields(([fields]) => fields.meeting?.value)
+
+  const { value: topicIndex } = useField<number>({
+    path: `votes.${rowNumber}.topicIndex`,
+  })
 
   const [label, setLabel] = useState('')
 
@@ -30,14 +34,13 @@ const RowLabel: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       const agenda = data.docs[0]?.agenda || []
       const text = agenda[rowNumber as number]?.text || 'ללא תיאור'
-      setLabel(`נושא ${(rowNumber as number) + 1}: ${text}`)
+      setLabel(`נושא ${topicIndex}: ${text}`)
     } catch (err) {
       console.error('Error fetching meeting:', err)
-      setLabel(`נושא ${rowNumber}: שגיאה בטעינת נתונים`)
+      setLabel(`נושא ${topicIndex}: שגיאה בטעינת נתונים`)
     }
   }
 
