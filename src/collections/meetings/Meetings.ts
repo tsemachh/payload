@@ -620,7 +620,29 @@ export const Meetings: CollectionConfig = {
             },
           ],
         },
-
+        {
+          label: 'מסמכי מחקר',
+          admin: {
+            condition: (data) => data?.companies?.length > 0,
+          },
+          fields: [
+            {
+              name: 'researchDocuments',
+              label: 'מסמך מחקר',
+              type: 'upload',
+              relationTo: 'research-documents',
+              hasMany: true,
+              admin: {
+                disableListFilter: true,
+                description:
+                  'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
+                components: {
+                  Field: '/collections/meetings/components/ResearchUploadDisplay',
+                },
+              },
+            },
+          ],
+        },
         {
           label: 'הצבעות',
           fields: [
@@ -827,29 +849,6 @@ export const Meetings: CollectionConfig = {
                 disableListFilter: true,
               },
               maxDepth: 1,
-            },
-          ],
-        },
-        {
-          label: 'מסמכי מחקר',
-          admin: {
-            condition: (data) => data?.companies?.length > 0,
-          },
-          fields: [
-            {
-              name: 'researchDocuments',
-              label: 'מסמך מחקר',
-              type: 'upload',
-              relationTo: 'research-documents',
-              hasMany: true,
-              admin: {
-                disableListFilter: true,
-                description:
-                  'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
-                components: {
-                  Field: '/collections/meetings/components/ResearchUploadDisplay',
-                },
-              },
             },
           ],
         },

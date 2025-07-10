@@ -75,7 +75,7 @@ export type MeetingAgenda =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
@@ -403,6 +403,10 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
+  /**
+   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
+   */
+  researchDocuments?: (string | ResearchDocument)[] | null;
   votesCount?: string | null;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
@@ -424,10 +428,6 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
-  /**
-   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
-   */
-  researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -547,13 +547,12 @@ export interface Vote {
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
-        noParticipantDuty?: boolean | null;
         hasConflictOfInterest?: boolean | null;
-        relatedPartyExplanation?: string | null;
         isRelatedParty?: boolean | null;
-        conflictOfInterestExplanation?: string | null;
         isInvestmentCommittee?: boolean | null;
         hasPersonalInterest?: boolean | null;
+        relatedPartyExplanation?: string | null;
+        conflictOfInterestExplanation?: string | null;
         personalInterestExplanation?: string | null;
         id?: string | null;
       }[]
@@ -1235,6 +1234,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
+  researchDocuments?: T;
   votesCount?: T;
   companies?: T;
   companiesNotYetVoted?: T;
@@ -1252,7 +1252,6 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
-  researchDocuments?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1309,13 +1308,12 @@ export interface VotesSelect<T extends boolean = true> {
     | {
         topicIndex?: T;
         voteDecision?: T;
-        noParticipantDuty?: T;
         hasConflictOfInterest?: T;
-        relatedPartyExplanation?: T;
         isRelatedParty?: T;
-        conflictOfInterestExplanation?: T;
         isInvestmentCommittee?: T;
         hasPersonalInterest?: T;
+        relatedPartyExplanation?: T;
+        conflictOfInterestExplanation?: T;
         personalInterestExplanation?: T;
         id?: T;
       };

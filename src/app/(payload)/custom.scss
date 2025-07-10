@@ -178,4 +178,11 @@ form[action*="/api/research-documents"] .file-field__filename {
   }
 }
 
+.field-type.textarea textarea {
+  min-height: 42px !important; /* גובה התחלתי קטן */
+  padding: 0 !important; 
+  resize: vertical !important; /* שיהיה אפשר להגדיל ידנית */
+  box-sizing: border-box !important;
+}
+
 

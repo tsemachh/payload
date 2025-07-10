@@ -162,7 +162,7 @@ export const Votes: CollectionConfig = {
               label: 'מספר נושא',
               type: 'number',
               required: true,
-              admin: { width: '100px' },
+              admin: { width: '100px', hidden: true },
             },
             {
               name: 'voteDecision',
@@ -174,16 +174,41 @@ export const Votes: CollectionConfig = {
                 { label: 'בעד', value: 'בעד' },
                 { label: 'נגד', value: 'נגד' },
                 { label: 'נמנע', value: 'נמנע' },
+                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
                 { label: 'דיון', value: 'דיון' },
                 { label: 'לא משתתף', value: 'לא משתתף' },
               ],
               defaultValue: '----',
+              admin: { width: '15%' },
             },
             {
-              name: 'noParticipantDuty',
-              label: 'אין חובת השתתפות',
+              name: 'hasConflictOfInterest',
+              label: 'ניגוד עניינים',
               type: 'checkbox',
               defaultValue: false,
+              admin: { width: '11%' },
+            },
+            {
+              name: 'isRelatedParty',
+              label: 'צד קשור',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: { width: '11%' },
+            },
+
+            {
+              name: 'isInvestmentCommittee',
+              label: 'ועדה',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: { width: '11%' },
+            },
+            {
+              name: 'hasPersonalInterest',
+              label: 'עניין אישי',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: { width: '11%' },
             },
           ],
         },
@@ -191,24 +216,13 @@ export const Votes: CollectionConfig = {
           type: 'row',
           fields: [
             {
-              name: 'hasConflictOfInterest',
-              label: 'ניגוד עניינים',
-              type: 'checkbox',
-              defaultValue: false,
-            },
-            {
               name: 'relatedPartyExplanation',
               label: 'הסבר ניגוד עניינים',
               type: 'textarea',
               admin: {
                 condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
+                width: '33%',
               },
-            },
-            {
-              name: 'isRelatedParty',
-              label: 'צד קשור',
-              type: 'checkbox',
-              defaultValue: false,
             },
             {
               name: 'conflictOfInterestExplanation',
@@ -216,19 +230,8 @@ export const Votes: CollectionConfig = {
               type: 'textarea',
               admin: {
                 condition: (_, siblingData) => siblingData.isRelatedParty === true,
+                width: '33%',
               },
-            },
-            {
-              name: 'isInvestmentCommittee',
-              label: 'ועדה',
-              type: 'checkbox',
-              defaultValue: true,
-            },
-            {
-              name: 'hasPersonalInterest',
-              label: 'עניין אישי',
-              type: 'checkbox',
-              defaultValue: false,
             },
             {
               name: 'personalInterestExplanation',
@@ -236,6 +239,7 @@ export const Votes: CollectionConfig = {
               type: 'textarea',
               admin: {
                 condition: (_, siblingData) => siblingData.hasPersonalInterest === true,
+                width: '33%',
               },
             },
           ],
