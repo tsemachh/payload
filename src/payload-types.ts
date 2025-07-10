@@ -549,9 +549,9 @@ export interface Vote {
         voteDecision?: VoteDecision;
         noParticipantDuty?: boolean | null;
         hasConflictOfInterest?: boolean | null;
-        conflictOfInterestExplanation?: string | null;
-        isRelatedParty?: boolean | null;
         relatedPartyExplanation?: string | null;
+        isRelatedParty?: boolean | null;
+        conflictOfInterestExplanation?: string | null;
         isInvestmentCommittee?: boolean | null;
         hasPersonalInterest?: boolean | null;
         personalInterestExplanation?: string | null;
@@ -1311,9 +1311,9 @@ export interface VotesSelect<T extends boolean = true> {
         voteDecision?: T;
         noParticipantDuty?: T;
         hasConflictOfInterest?: T;
-        conflictOfInterestExplanation?: T;
-        isRelatedParty?: T;
         relatedPartyExplanation?: T;
+        isRelatedParty?: T;
+        conflictOfInterestExplanation?: T;
         isInvestmentCommittee?: T;
         hasPersonalInterest?: T;
         personalInterestExplanation?: T;

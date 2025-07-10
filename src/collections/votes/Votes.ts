@@ -179,17 +179,17 @@ export const Votes: CollectionConfig = {
               ],
               defaultValue: '----',
             },
-          ],
-        },
-        {
-          type: 'row',
-          fields: [
             {
               name: 'noParticipantDuty',
               label: 'אין חובת השתתפות',
               type: 'checkbox',
               defaultValue: false,
             },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
             {
               name: 'hasConflictOfInterest',
               label: 'ניגוד עניינים',
@@ -197,8 +197,8 @@ export const Votes: CollectionConfig = {
               defaultValue: false,
             },
             {
-              name: 'conflictOfInterestExplanation',
-              label: 'הסבר צד קשור',
+              name: 'relatedPartyExplanation',
+              label: 'הסבר ניגוד עניינים',
               type: 'textarea',
               admin: {
                 condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
@@ -211,11 +211,11 @@ export const Votes: CollectionConfig = {
               defaultValue: false,
             },
             {
-              name: 'relatedPartyExplanation',
+              name: 'conflictOfInterestExplanation',
               label: 'הסבר צד קשור',
               type: 'textarea',
               admin: {
-                condition: (_, siblingData) => siblingData.relatedParty === true,
+                condition: (_, siblingData) => siblingData.isRelatedParty === true,
               },
             },
             {
