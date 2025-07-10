@@ -846,7 +846,9 @@ export default function VotingForm() {
                         <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,auto] gap-4 pl-3 pr-3">
                           <div>
                             <div className="flex items-start">
-                              <span className="text-primary font-bold ml-2 mt-0.5 min-w-[24px]">
+                              <span
+                                className={`text-primary font-bold ml-2 mt-0.5 min-w-[24px] ${isReadOnly && 'text-primary/70'}  `}
+                              >
                                 {itemNumber}.
                               </span>
                               <div className={`flex-1 ${isHebrew ? 'text-right' : 'text-left'}`}>
@@ -855,7 +857,7 @@ export default function VotingForm() {
                                     item.isRemovedFromAgenda
                                       ? 'line-through text-muted-foreground'
                                       : ''
-                                  }`}
+                                  } ${isReadOnly && 'text-primary/70'}`}
                                   dir={isHebrew ? 'rtl' : 'ltr'}
                                 >
                                   {item.text}
