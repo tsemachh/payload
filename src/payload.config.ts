@@ -238,12 +238,21 @@ export default buildConfig({
     }),
     payloadCloudPlugin(),
     DynamicFieldOverrides({
-      fieldType: 'checkbox',
-      componentPath: '/admincomponents/cell/YesNoCell',
+      overrides: [
+        {
+          fieldTypes: ['checkbox'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/YesNoCell',
+              },
+            },
+          },
+        },
+      ],
       excludedCollections: [],
-      excludedGlobals: [],
-      componentType: 'Cell',
     }),
+
     openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
     swaggerUI({}),
     addAccess({
