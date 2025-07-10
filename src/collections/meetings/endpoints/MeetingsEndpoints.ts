@@ -195,7 +195,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
           {
             or: [
               {
-                meetingDate: { greater_than_equal: new Date() },
+                state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] },
               },
             ],
           },
