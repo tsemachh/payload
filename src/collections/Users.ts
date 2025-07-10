@@ -38,9 +38,9 @@ async function computeCompanyTreeAndLeafs(
           },
         },
         {
-          active: {
-            equals: true,
-          },
+          // active: {
+          //   equals: true,
+          // },
         },
       ],
     },
