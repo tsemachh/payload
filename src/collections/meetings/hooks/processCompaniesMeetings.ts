@@ -103,6 +103,7 @@ async function processMeeting(
     const companies = await req.payload.find({
       collection: 'companies',
       depth: 0,
+      limit: 0,
       select: {
         parentCompany: true,
       },
@@ -155,7 +156,7 @@ export const processCompaniesMeetings = async (
     const where = meetingIds
       ? { id: { in: meetingIds } }
       : ({
-          holdingsLimit: { greater_than: new Date('01/01/2024').toISOString() },
+          holdingsLimit: { greater_than: new Date().toISOString() },
           state: { not_equals: 'completed' },
         } as Where)
     const { docs: meetings } = await req.payload.find({
