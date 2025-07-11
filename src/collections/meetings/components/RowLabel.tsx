@@ -5,7 +5,7 @@ import type { ArrayFieldLabelClientComponent } from 'payload'
 
 export const SubjectLabel: React.FC = () => {
   const { data, rowNumber } = useRowLabel<{ text: string }>()
-  const [label, setLabel] = useState(`${rowNumber} נןשא`)
+  const [label, setLabel] = useState(`${rowNumber} נושא`)
   const [originalText, setOriginalText] = useState('')
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export const SubjectLabel: React.FC = () => {
     } else {
       // Default label if header is not present
       setOriginalText('')
-      setLabel(`${rowNumber}נןשא `)
+      setLabel(`${rowNumber}נושא `)
     }
   }, [data, rowNumber])
 

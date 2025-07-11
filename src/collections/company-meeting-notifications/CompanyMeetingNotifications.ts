@@ -2,6 +2,8 @@ import type { CollectionConfig } from 'payload'
 import MarkReadEndpoint from './endpoints/MarkReadEndpoint'
 import MarkAllReadEndpoint from './endpoints/MarkAllReadEndpoint'
 import UserNotificationsEndpoint from './endpoints/UserNotificationsEndpoint'
+import  SendCompanyMeetingNotificationsEndpoint  from './endpoints/SendCompanyMeetingNotificationsEndpoint'
+import { CheckCompanyNotificationsEndpoint } from './endpoints/CheckCompanyNotificationsEndpoint'
 
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
@@ -80,6 +82,16 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       path: '/user-notifications',
       method: 'get',
       handler: UserNotificationsEndpoint,
+    },
+    {
+      path: '/send-notifications',
+      method: 'post',
+      handler: SendCompanyMeetingNotificationsEndpoint,
+    },
+    {
+      path: '/check-notifications',
+      method: 'post',
+      handler: CheckCompanyNotificationsEndpoint,
     },
   ],
 }

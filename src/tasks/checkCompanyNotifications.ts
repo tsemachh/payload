@@ -24,63 +24,69 @@ interface MeetingDetail {
  * 3. A company has not fed holdings for more than 5 working days
  */
 
+/**
+ * Core function to check company notifications
+ * This function contains the core logic for checking company notifications
+ * It is used by both the task handler and the endpoint
+ */
+export const checkCompanyNotifications = async (req: any) => {
+  console.log('Starting company notifications check...')
+  const today = new Date()
+
+  // Create a detailed results object to track what happened
+  const results = {
+    meetingsProcessed: 0,
+    companiesChecked: 0,
+    notificationsCreated: {
+      afterHoldingLimit: 0,
+      beforeVotingEnd: 0,
+      holdingsNotFed: 0,
+    },
+    meetingDetails: [] as MeetingDetail[],
+  }
+
+  // Set up midnight timestamps for date ranges
+  const todayMidnight = setToMidnight(today)
+  const yesterdayMidnight = setToMidnight(addDays(today, -1))
+  const tomorrowMidnight = setToMidnight(addDays(today, 1))
+
+  console.log(`yesterdayMidnight`, yesterdayMidnight)
+  console.log(`todayMidnight`, todayMidnight)
+  console.log(`tomorrowMidnight`, tomorrowMidnight)
+
+  // 1. Check for meeting notifications
+  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight, tomorrowMidnight)
+
+  // 2. Check for holdings feed notifications
+  await checkCompanyHoldingsFeeds(req, results)
+
+  console.log('Company notifications check completed')
+  console.log('Summary:', JSON.stringify(results, null, 2))
+
+  return {
+    success: true,
+    summary: {
+      meetingsProcessed: results.meetingsProcessed,
+      companiesChecked: results.companiesChecked,
+      notificationsCreated: results.notificationsCreated,
+    },
+    details: results.meetingDetails,
+  }
+}
+
 export const checkCompanyNotificationsHandler: TaskHandler<'checkCompanyNotifications'> = async ({
   req,
 }) => {
   try {
-    console.log('Starting company notifications check...')
-    const today = new Date()
-
-    // Create a detailed results object to track what happened
-    const results = {
-      meetingsProcessed: 0,
-      companiesChecked: 0,
-      notificationsCreated: {
-        afterHoldingLimit: 0,
-        beforeVotingEnd: 0,
-        holdingsNotFed: 0,
-      },
-      meetingDetails: [] as MeetingDetail[],
-    }
-
-    // Set up midnight timestamps for date ranges
-    const todayMidnight = setToMidnight(today)
-    const yesterdayMidnight = setToMidnight(addDays(today, -1))
-    const tomorrowMidnight = setToMidnight(addDays(today, 1))
-
-    console.log(`yesterdayMidnight`, yesterdayMidnight)
-    console.log(`todayMidnight`, todayMidnight)
-    console.log(`tomorrowMidnight`, tomorrowMidnight)
-
-    // 1. Check for meeting notifications
-    await checkMeetingNotifications(
-      req,
-      results,
-      todayMidnight,
-      yesterdayMidnight,
-      tomorrowMidnight,
-    )
-
-    // 2. Check for holdings feed notifications
-    await checkCompanyHoldingsFeeds(req, results)
-
-    console.log('Company notifications check completed')
-    console.log('Summary:', JSON.stringify(results, null, 2))
+    // Call the core function
+    const result = await checkCompanyNotifications(req)
 
     // Reschedule the task
     await scheduleCheckCompanyNotificationsTask(req.payload)
     console.log('Rescheduled checkCompanyNotifications task')
 
     return {
-      output: {
-        success: true,
-        summary: {
-          meetingsProcessed: results.meetingsProcessed,
-          companiesChecked: results.companiesChecked,
-          notificationsCreated: results.notificationsCreated,
-        },
-        details: results.meetingDetails,
-      },
+      output: result,
     }
   } catch (error) {
     console.error('Error checking company notifications:', error)
@@ -317,6 +323,17 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
       if (!hasHoldings) {
         const message = `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
+        // Delete any existing notifications for this company and type
+        await payload.delete({
+          collection: 'company-meeting-notifications',
+          where: {
+            company: { equals: company.id },
+            message: { equals: message },
+            notificationType: { equals: 'holdings-not-fed' },
+          },
+        })
+
+        // Create new notification
         await payload.create({
           collection: 'company-meeting-notifications',
           data: {
