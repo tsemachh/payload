@@ -14,7 +14,9 @@ export const Documents: CollectionConfig = {
     group: 'פעילות',
   },
   custom: {
-    filterList: ['createdAt'],
+    filterList: [
+      ['createdAt']
+    ],
   },
   fields: [
     {

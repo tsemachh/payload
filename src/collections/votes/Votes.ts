@@ -18,7 +18,10 @@ export const Votes: CollectionConfig = {
   },
   enableQueryPresets: true,
   custom: {
-    filterList: [{ name:'meeting'},{ name:'company'}, { name:'reported'}, { name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}],
+    filterList: [
+      [{ name:'meeting'}, { name:'company'}, { name:'reported'}],
+      [{ name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}]
+    ],
   },
   versions: {
     drafts: true,

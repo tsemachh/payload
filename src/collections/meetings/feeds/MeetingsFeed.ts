@@ -11,7 +11,9 @@ export const MeetingsFeed: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: [{ name:'createdAt'}],
+    filterList: [
+      [{ name:'createdAt'}]
+    ],
   },
   access: {
     read: () => true,

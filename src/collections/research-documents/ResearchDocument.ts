@@ -15,7 +15,9 @@ export const ResearchDocument: CollectionConfig = {
     group: 'פעילות',
   },
   custom: {
-    filterList: [{ name:'uploadedAt'}],
+    filterList: [
+      [{ name:'uploadedAt'}]
+    ],
   },
   access: {
     admin: ({ req: { user } }) => {

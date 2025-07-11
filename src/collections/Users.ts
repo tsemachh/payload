@@ -102,7 +102,10 @@ export const Users: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: ['active', 'isAdmin', 'createdAt', 'enableAPIKey', 'receiveMailNotification'],
+    filterList: [
+      ['active', 'isAdmin', 'createdAt'],
+      ['enableAPIKey', 'receiveMailNotification']
+    ],
   },
   auth: {
     useSessions: false,

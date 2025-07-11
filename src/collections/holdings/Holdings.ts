@@ -17,7 +17,9 @@ export const Holdings: CollectionConfig = {
     group: 'פעילות',
   },
   custom: {
-    filterList: [{ name:'valueDate'}],
+    filterList: [
+      [{ name:'valueDate'}]
+    ],
   },
   disableBulkEdit: true,
   hooks: {

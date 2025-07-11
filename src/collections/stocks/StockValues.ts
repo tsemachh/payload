@@ -16,7 +16,9 @@ export const StockValues: CollectionConfig = {
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
   },
   custom: {
-    filterList: [{ name:'valueDate'}],
+    filterList: [
+      [{ name:'valueDate'}]
+    ],
   },
   fields: [
     {
