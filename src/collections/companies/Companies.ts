@@ -36,6 +36,9 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  custom: {
+    filterList: ['type', 'active', 'passiveFund'],
+  },
   versions: {},
   fields: [
     {
@@ -279,7 +282,7 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
-/*
+        /*
         {
           label: 'פגישות',
           admin: {
@@ -295,7 +298,6 @@ export const Companies: CollectionConfig = {
           ],
         },
 */
-/*
         {
           label: 'אחזקות',
           admin: {
@@ -310,7 +312,6 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
-*/
         {
           label: 'ניירות ערך מושתקים',
           admin: {

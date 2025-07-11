@@ -16,6 +16,9 @@ export const CompanyMeetingNotifications: CollectionConfig = {
     useAsTitle: 'message',
     group: 'ניהול',
   },
+  custom: {
+    filterList: [{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }],
+  },
   fields: [
     {
       name: 'message',

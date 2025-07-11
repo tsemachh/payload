@@ -10,6 +10,9 @@ export const MeetingsFeed: CollectionConfig = {
     useAsTitle: 'filename',
     group: 'ניהול',
   },
+  custom: {
+    filterList: [{ name:'createdAt'}],
+  },
   access: {
     read: () => true,
   },

@@ -17,6 +17,9 @@ export const Votes: CollectionConfig = {
     singular: 'הצבעה',
   },
   enableQueryPresets: true,
+  custom: {
+    filterList: [{ name:'meeting'},{ name:'company'}, { name:'reported'}, { name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}],
+  },
   versions: {
     drafts: true,
     maxPerDoc: 1,

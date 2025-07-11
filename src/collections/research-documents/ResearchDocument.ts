@@ -14,6 +14,9 @@ export const ResearchDocument: CollectionConfig = {
     listSearchableFields: ['filename', 'company'],
     group: 'פעילות',
   },
+  custom: {
+    filterList: [{ name:'uploadedAt'}],
+  },
   access: {
     admin: ({ req: { user } }) => {
       return Boolean(user)

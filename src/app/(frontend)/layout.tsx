@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`useTw ${inter.className}`} suppressHydrationWarning>
         <AuthProvider>
           <CompaniesProvider>
             <ThemeProvider

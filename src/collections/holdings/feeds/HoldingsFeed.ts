@@ -10,6 +10,9 @@ export const HoldingsFeed: CollectionConfig = {
     useAsTitle: 'filename',
     group: 'פעילות',
   },
+  custom: {
+    filterList: [{ name:'valueDate'}, { name:'processingStatus'}],
+  },
   access: {
     read: () => true,
   },
