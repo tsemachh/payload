@@ -22,7 +22,9 @@ export const AdminNotifications: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: ['createdAt', 'readStatus'],
+    filterList: [
+      ['createdAt', 'readStatus']
+    ],
   },
   fields: [
     {

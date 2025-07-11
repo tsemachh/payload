@@ -65,12 +65,8 @@ export const Stocks: CollectionConfig = {
   },
   custom: {
     filterList: [
-      { name: 'type' },
-      { name: 'origin' },
-      { name: 'tradable' },
-      { name: 'active' },
-      { name: 'fromMagna' },
-      { name: 'isFinancial' },
+      [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }],
     ],
   },
   enableQueryPresets: true,

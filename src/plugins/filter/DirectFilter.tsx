@@ -111,7 +111,7 @@ const DirectFilter = ({
   filterList,
 }: {
   slug: string
-  filterList: { name: string; row?: number; order?: number }[]
+  filterList: (string | { name: string })[][]
 }) => {
   const [fields, setFields] = useState<FilterDetaild[]>([])
   const [filterRows, setFilterRows] = useState<FilterRow[]>([])
@@ -126,24 +126,55 @@ const DirectFilter = ({
 
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
-    const fieldNames = filterList.map((f) => f.name)
+
+    // Flatten the array of arrays and extract field names
+    const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) => 
+      row.map((field, fieldIndex) => ({
+        field,
+        rowIndex,
+        fieldIndex
+      }))
+    )
+
+    const fieldNames = flattenedFieldConfigs.map(({ field }) => 
+      typeof field === 'string' ? field : field.name
+    )
+
     const matchedFields = findFieldsByName(collection?.fields || [], fieldNames)
 
     const simplifiedFields: FilterDetaild[] = matchedFields.map((field) => {
       const label = (field as FieldAffectingData).label
       const translatedLabel = getTranslation(label as string, i18n)
-      const filterConfig = filterList.find((f) => f.name === (field as FieldAffectingData).name)
+      const fieldName = (field as FieldAffectingData).name as string
+
+      // Find the corresponding field config with row and order information
+      const fieldConfig = flattenedFieldConfigs.find(({ field: f }) => 
+        typeof f === 'string' 
+          ? f === fieldName
+          : f.name === fieldName
+      )
+
       return {
-        name: (field as FieldAffectingData).name as string,
+        name: fieldName,
         label: translatedLabel as string,
         type: field.type,
         options: (field as SelectField).options as OptionObject[],
-        row: filterConfig?.row ?? undefined,
+        row: fieldConfig ? fieldConfig.rowIndex : 0,
       }
     })
 
-    const sortedFields = filterList
-      .map((filterItem) => simplifiedFields.find((f) => f.name === filterItem.name))
+    // Sort fields by their original order in the filterList
+    const sortedFields = flattenedFieldConfigs
+      .map(({ field, rowIndex, fieldIndex }) => {
+        const fieldName = typeof field === 'string' ? field : field.name
+        const matchedField = simplifiedFields.find(f => f.name === fieldName)
+
+        // If we found a matching field, return it
+        if (matchedField) {
+          return matchedField
+        }
+        return null
+      })
       .filter((f): f is FilterDetaild => !!f)
 
     setFields(sortedFields)

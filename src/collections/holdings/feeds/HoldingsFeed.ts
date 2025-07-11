@@ -11,7 +11,9 @@ export const HoldingsFeed: CollectionConfig = {
     group: 'פעילות',
   },
   custom: {
-    filterList: [{ name:'valueDate'}, { name:'processingStatus'}],
+    filterList: [
+      [{ name:'valueDate'}, { name:'processingStatus'}]
+    ],
   },
   access: {
     read: () => true,
