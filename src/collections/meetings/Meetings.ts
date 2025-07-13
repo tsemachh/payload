@@ -145,6 +145,23 @@ export const Meetings: CollectionConfig = {
     plural: 'אסיפות',
     singular: 'אסיפה',
   },
+  custom: {
+    filterList: [
+      [
+        { name: 'holdingsLimit' },
+        { name: 'meetingDate' },
+        { name: 'proxyVotingDate' },
+        { name: 'state' },
+        { name: 'type' }
+      ],
+      [
+        { name: 'resultsConfirmationStatus' },
+        { name: 'electronicVotingEnabled' },
+        { name: 'committeeInitiated' },
+        { name: '_status' }
+      ]
+    ],
+  },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',

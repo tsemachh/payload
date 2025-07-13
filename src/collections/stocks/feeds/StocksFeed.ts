@@ -10,6 +10,11 @@ export const StocksFeed: CollectionConfig = {
     useAsTitle: 'filename',
     group: 'ניהול',
   },
+  custom: {
+    filterList: [
+      [{ name:'createdAt'}]
+    ],
+  },
   access: {
     read: () => true,
   },

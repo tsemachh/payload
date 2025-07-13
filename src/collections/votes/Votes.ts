@@ -19,6 +19,12 @@ export const Votes: CollectionConfig = {
     singular: 'הצבעה',
   },
   enableQueryPresets: true,
+  custom: {
+    filterList: [
+      [{ name:'meeting'}, { name:'company'}, { name:'reported'}],
+      [{ name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}]
+    ],
+  },
   versions: {
     drafts: true,
     maxPerDoc: 1,
@@ -93,11 +99,6 @@ export const Votes: CollectionConfig = {
           label: 'דווח',
           type: 'checkbox',
           defaultValue: false,
-          admin: {
-            components: {
-              Cell: '/admincomponents/cell/YesNoCell',
-            },
-          },
         },
         {
           name: 'reportedBy',

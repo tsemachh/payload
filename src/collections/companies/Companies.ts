@@ -36,6 +36,9 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  custom: {
+    filterList: [['type', 'active', 'passiveFund']],
+  },
   versions: {},
   fields: [
     {
@@ -279,23 +282,35 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
-/*
         {
-          label: 'פגישות',
+          label: 'משתמשים',
           admin: {
             condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
+              label: 'משתמשים בהרשאת כתיבה',
               type: 'join',
-              collection: 'meetings',
-              on: 'companies',
-              name: 'meetings',
+              collection: 'users',
+              on: 'companies.companyId',
+              name: 'usersWrite',
+              where: {
+                'companies.permission': { equals: 'write' },
+              },
+            },
+            {
+              label: 'משתמשים בהרשאת קריאה',
+              type: 'join',
+              collection: 'users',
+              on: 'companies.companyId',
+              name: 'usersRead',
+              where: {
+                'companies.permission': { equals: 'read' },
+              },
             },
           ],
         },
-*/
-/*
+
         {
           label: 'אחזקות',
           admin: {
@@ -310,7 +325,20 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
-*/
+        {
+          label: 'פגישות',
+          admin: {
+            condition: (data) => data?.type == 'regular',
+          },
+          fields: [
+            {
+              type: 'join',
+              collection: 'meetings',
+              on: 'companies',
+              name: 'meetings',
+            },
+          ],
+        },
         {
           label: 'ניירות ערך מושתקים',
           admin: {

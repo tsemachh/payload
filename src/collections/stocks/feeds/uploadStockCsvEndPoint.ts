@@ -80,7 +80,7 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
           errors,
         },
         duration: `${durationSeconds}s`,
-        summary: `Stocks processed successfully: ${processedRows} / ${fileLength} `,
+        summary: `Stocks processed successfully: ${processedRows} / ${fileLength - 1} `,
       },
       req,
     })
