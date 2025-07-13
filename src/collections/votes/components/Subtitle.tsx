@@ -1,49 +1,38 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { TextFieldClientProps } from 'payload'
-import { useField } from '@payloadcms/ui'
+import React from 'react'
+import type { BeforeDocumentControlsClientProps } from 'payload'
+import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
+import { useFormFields } from '@payloadcms/ui'
 
-const Subtitle: React.FC<TextFieldClientProps> = (props) => {
-  const { path } = props
-  const { value } = useField<string>({ path })
+export default function SubTitle({}: BeforeDocumentControlsClientProps) {
+  const fields = useFormFields(([f]) => f)
 
-  useEffect(() => {
-    const drawerHeader = document.querySelector<HTMLElement>('.doc-drawer__header')
-    const isVoteDrawer = Boolean(
-      drawerHeader?.querySelector<HTMLAnchorElement>('.id-label a[href*="/collections/votes/"]'),
-    )
-    if (!isVoteDrawer || !drawerHeader) return
+  const reported = fields.reported?.value
+  const reportedBy = fields.reportedBy?.value
+  const reportedTime = fields.reportedTime?.value
 
-    const container = drawerHeader.querySelector<HTMLElement>('.doc-drawer__header-content')
-    const titleEl = container?.querySelector<HTMLElement>('h2.doc-drawer__header-text')
-    if (!container || !titleEl) return
+  const isValidTime =
+    typeof reportedTime === 'string' ||
+    typeof reportedTime === 'number' ||
+    reportedTime instanceof Date
 
-    container.style.display = 'flex'
-    container.style.flexDirection = 'row'
-    container.style.flexWrap = 'wrap'
+  const subTitle =
+    reported && reportedBy && isValidTime
+      ? `${reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(reportedTime!), { locale: he })}`
+      : 'לא דווח'
 
-    const tag = 'h3'
-    const subtitleClass = 'doc-drawer__subtitle'
-    let subtitleEl = container.querySelector<HTMLElement>(`${tag}.${subtitleClass}`)
-    if (!subtitleEl) {
-      subtitleEl = document.createElement(tag)
-      subtitleEl.className = subtitleClass
-      titleEl.insertAdjacentElement('afterend', subtitleEl)
-    }
-
-    subtitleEl.textContent = value || ''
-
-    Object.assign(subtitleEl.style, {
-      flexBasis: '100%',
-      order: '1',
-      marginTop: '0.25rem',
-      fontSize: '1.2rem',
-      opacity: '0.75',
-    })
-  }, [value])
-
-  return null
+  return (
+    <div
+      style={{
+        fontSize: '1.2rem',
+        opacity: 0.95,
+        marginBottom: '0.5rem',
+        padding: '0.5rem 0',
+      }}
+    >
+      {subTitle}
+    </div>
+  )
 }
-
-export default Subtitle
