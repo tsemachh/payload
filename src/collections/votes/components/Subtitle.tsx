@@ -32,7 +32,7 @@ const Subtitle: React.FC<TextFieldClientProps> = (props) => {
       titleEl.insertAdjacentElement('afterend', subtitleEl)
     }
 
-    subtitleEl.textContent = value || 'No subtitle provided'
+    subtitleEl.textContent = value || ''
 
     Object.assign(subtitleEl.style, {
       flexBasis: '100%',
