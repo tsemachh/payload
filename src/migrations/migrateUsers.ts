@@ -3,7 +3,7 @@ import sql from 'mssql'
 import { Company, User } from '@/payload-types'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap } from '@/utils/utils'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
 
 
 // Migration script for users from SQL Server to Payload CMS
@@ -109,9 +109,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     // Connect to SQL Server
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     // Fetch all data
     const usersToFirms = await getUsersToFirms(pool)
