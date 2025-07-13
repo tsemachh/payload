@@ -633,6 +633,9 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   reported?: boolean | null;
+  reportedBy?: string | null;
+  reportedTime?: string | null;
+  subTitle?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1322,6 +1325,9 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   reported?: T;
+  reportedBy?: T;
+  reportedTime?: T;
+  subTitle?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
