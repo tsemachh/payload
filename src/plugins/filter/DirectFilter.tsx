@@ -105,7 +105,7 @@ const DirectFilter = ({
   filterList,
 }: {
   slug: string
-  filterList: (string | { name: string })[][]
+  filterList: (string | { name: string; width: string })[][]
 }) => {
   const [fields, setFields] = useState<FilterDetaild[]>([])
   const [filterRows, setFilterRows] = useState<FilterRow[]>([])
@@ -156,6 +156,10 @@ const DirectFilter = ({
         type: field.type,
         options: (field as SelectField).options as OptionObject[],
         row: fieldConfig ? fieldConfig.rowIndex : 0,
+        width:
+          typeof fieldConfig?.field === 'object' && 'width' in fieldConfig.field
+            ? fieldConfig.field.width
+            : undefined,
       }
     })
     // Sort fields by their original order in the filterList
