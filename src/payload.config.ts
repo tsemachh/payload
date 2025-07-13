@@ -12,6 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
+import { CollectionDirectFilterPlugin } from './plugins/filter/CollectionDirectFilterPlugin'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -265,6 +266,7 @@ export default buildConfig({
       excludedGlobals: [],
       usernameField: 'name',
     }),
+    CollectionDirectFilterPlugin({}),
     gcsStorage({
       collections: {
         documents: true,

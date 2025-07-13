@@ -103,9 +103,25 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
 
       // If no holdings feed found, create a notification
       if (holdingsFeeds.length === 0) {
+        const message = `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
+
+        // Delete any existing notifications for this company with the same message
+
+        try {
+          await req.payload.delete({
+            collection: 'admin-notifications',
+            where: {
+              relatedCompany: { equals: company.id },
+              message: { equals: message },
+            },
+          })
+        } catch (error) {
+          req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
+        }
+
         await createAdminNotification(
           req.payload,
-          `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`,
+          message,
           `/admin/collections/companies/${company.id}`,
           company.id,
         )

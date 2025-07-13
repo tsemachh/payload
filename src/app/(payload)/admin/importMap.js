@@ -4,16 +4,17 @@ import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../ad
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { default as default_a3ddc2a168e3e4ede8394e56d9b31c2c } from '../../../plugins/filter/DirectFilter'
 import { default as default_e1e91278a16f25538739696dc1dee72a } from '../../../collections/meetings/components/RecommendationReasonSelect'
 import { default as default_01b6ede7689a44abe9ffe43b59ce999f } from '../../../collections/meetings/components/ConditionalReasonText'
 import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
+import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e } from '../../../admincomponents/icon/VotingCountsStatusCell'
 import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../admincomponents/icon/VotingCountsStatusTextField'
 import { default as default_a24640827b8631aabe9555dec2cee5cd } from '../../../collections/meetings/components/CompaniesRelationshipField'
 import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
 import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../admincomponents/icon/ReportedVotesStatusCell'
-import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
@@ -41,16 +42,17 @@ export const importMap = {
   "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
+  "/plugins/filter/DirectFilter#default": default_a3ddc2a168e3e4ede8394e56d9b31c2c,
   "/collections/meetings/components/RecommendationReasonSelect#default": default_e1e91278a16f25538739696dc1dee72a,
   "/collections/meetings/components/ConditionalReasonText#default": default_01b6ede7689a44abe9ffe43b59ce999f,
   "/collections/meetings/components/RowLabel#ArrayLabel": ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
+  "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/admincomponents/icon/VotingCountsStatusCell#default": default_7ebf2c1a91d3d4fc0ef2fc6e7f5b449e,
   "/admincomponents/icon/VotingCountsStatusTextField#default": default_adb006445235b2e9a92908681b338c68,
   "/collections/meetings/components/CompaniesRelationshipField#default": default_a24640827b8631aabe9555dec2cee5cd,
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
-  "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,

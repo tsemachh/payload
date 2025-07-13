@@ -73,11 +73,6 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VoteDecision".
- */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון' | 'לא משתתף') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
  */
 export type HoldingsPerDay = {
@@ -86,6 +81,11 @@ export type HoldingsPerDay = {
   quantity: number;
   id?: string | null;
 }[];
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
@@ -252,6 +252,7 @@ export interface Config {
     companies: {
       parentCompany: 'companies';
       'researchDocuments.researchDocuments': 'research-documents';
+      holdings: 'holdings';
     };
   };
   collectionsSelect: {
@@ -403,6 +404,10 @@ export interface Meeting {
   electronicVotingEnabled?: boolean | null;
   committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
+  /**
+   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
+   */
+  researchDocuments?: (string | ResearchDocument)[] | null;
   votesCount?: string | null;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
@@ -424,10 +429,6 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
-  /**
-   * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
-   */
-  researchDocuments?: (string | ResearchDocument)[] | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -500,6 +501,11 @@ export interface Company {
         id?: string | null;
       }[]
     | null;
+  holdings?: {
+    docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   silencedStocks?: string[] | null;
   creator?: string | null;
   updator?: string | null;
@@ -530,6 +536,20 @@ export interface ResearchDocument {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  fund: string | Company;
+  valueDate: string;
+  holdings: HoldingsPerDay;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "votes".
  */
 export interface Vote {
@@ -547,13 +567,12 @@ export interface Vote {
     | {
         topicIndex: number;
         voteDecision?: VoteDecision;
-        noParticipantDuty?: boolean | null;
         hasConflictOfInterest?: boolean | null;
-        conflictOfInterestExplanation?: string | null;
         isRelatedParty?: boolean | null;
-        relatedPartyExplanation?: string | null;
         isInvestmentCommittee?: boolean | null;
         hasPersonalInterest?: boolean | null;
+        relatedPartyExplanation?: string | null;
+        conflictOfInterestExplanation?: string | null;
         personalInterestExplanation?: string | null;
         id?: string | null;
       }[]
@@ -567,20 +586,6 @@ export interface Vote {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  fund: string | Company;
-  valueDate: string;
-  holdings: HoldingsPerDay;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1235,6 +1240,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
+  researchDocuments?: T;
   votesCount?: T;
   companies?: T;
   companiesNotYetVoted?: T;
@@ -1252,7 +1258,6 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
-  researchDocuments?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1309,13 +1314,12 @@ export interface VotesSelect<T extends boolean = true> {
     | {
         topicIndex?: T;
         voteDecision?: T;
-        noParticipantDuty?: T;
         hasConflictOfInterest?: T;
-        conflictOfInterestExplanation?: T;
         isRelatedParty?: T;
-        relatedPartyExplanation?: T;
         isInvestmentCommittee?: T;
         hasPersonalInterest?: T;
+        relatedPartyExplanation?: T;
+        conflictOfInterestExplanation?: T;
         personalInterestExplanation?: T;
         id?: T;
       };
@@ -1510,6 +1514,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         subAccounts?: T;
         id?: T;
       };
+  holdings?: T;
   silencedStocks?: T;
   creator?: T;
   updator?: T;

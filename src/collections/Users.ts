@@ -38,9 +38,9 @@ async function computeCompanyTreeAndLeafs(
           },
         },
         {
-          active: {
-            equals: true,
-          },
+          // active: {
+          //   equals: true,
+          // },
         },
       ],
     },
@@ -100,6 +100,12 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
     group: 'ניהול',
+  },
+  custom: {
+    filterList: [
+      ['active', 'isAdmin', 'createdAt'],
+      ['enableAPIKey', 'receiveMailNotification']
+    ],
   },
   auth: {
     useSessions: false,
