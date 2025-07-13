@@ -128,16 +128,16 @@ const DirectFilter = ({
     const collection = getEntityConfig({ collectionSlug: slug })
 
     // Flatten the array of arrays and extract field names
-    const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) => 
+    const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
       row.map((field, fieldIndex) => ({
         field,
         rowIndex,
-        fieldIndex
-      }))
+        fieldIndex,
+      })),
     )
 
-    const fieldNames = flattenedFieldConfigs.map(({ field }) => 
-      typeof field === 'string' ? field : field.name
+    const fieldNames = flattenedFieldConfigs.map(({ field }) =>
+      typeof field === 'string' ? field : field.name,
     )
 
     const matchedFields = findFieldsByName(collection?.fields || [], fieldNames)
@@ -148,10 +148,8 @@ const DirectFilter = ({
       const fieldName = (field as FieldAffectingData).name as string
 
       // Find the corresponding field config with row and order information
-      const fieldConfig = flattenedFieldConfigs.find(({ field: f }) => 
-        typeof f === 'string' 
-          ? f === fieldName
-          : f.name === fieldName
+      const fieldConfig = flattenedFieldConfigs.find(({ field: f }) =>
+        typeof f === 'string' ? f === fieldName : f.name === fieldName,
       )
 
       return {
@@ -167,7 +165,7 @@ const DirectFilter = ({
     const sortedFields = flattenedFieldConfigs
       .map(({ field, rowIndex, fieldIndex }) => {
         const fieldName = typeof field === 'string' ? field : field.name
-        const matchedField = simplifiedFields.find(f => f.name === fieldName)
+        const matchedField = simplifiedFields.find((f) => f.name === fieldName)
 
         // If we found a matching field, return it
         if (matchedField) {
@@ -246,7 +244,7 @@ const DirectFilter = ({
           className="flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50"
         >
           <Filter className="h-4 w-4" />
-          <span>{i18n.language === 'he' ? 'סינון ישיר' : 'Direct Filters'}</span>
+          <span>{i18n.language === 'he' ? 'סינון מהיר' : 'Quick Filters'}</span>
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
