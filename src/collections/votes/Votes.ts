@@ -21,8 +21,8 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name:'meeting'}, { name:'company'}, { name:'reported'}],
-      [{ name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}]
+      [{ name: 'meeting' }, { name: 'company' }, { name: 'reported' }],
+      [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
   },
   versions: {
@@ -348,16 +348,9 @@ export const Votes: CollectionConfig = {
     ],
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-        // בדוק אם reported הופך ל-true
-        console.log('--- req.user - ta', req.user)
-        console.log('--- data._status', data._status)
-        console.log('--- data.reported', data.reported)
-        console.log('--- !originalDoc?.reported ', !originalDoc?.reported)
-
         if (data._status === 'published' && data.reported && !originalDoc?.reported) {
           data.reportedBy = data.updator || req.user?.name
           data.reportedTime = new Date().toISOString()
-          console.log('2 --- da - ta', data)
         }
         return data
       },
