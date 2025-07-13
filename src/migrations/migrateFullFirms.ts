@@ -191,14 +191,11 @@ async function migrateAccounts({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('\n=== Starting Accounts Migration ===')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     // Get accounts data from SQL Server
     const resultAccounts = await getAccounts(pool)
+
     console.log(`Retrieved ${resultAccounts.recordset.length} accounts from SQL Server`)
 
     let successCount = 0
@@ -336,14 +333,11 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
 
   try {
     console.log('\n=== Starting Sub Accounts Migration ===')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     // Get all Holdings tables
     const holdingsTables = await getHoldingsTables(pool)
+
     console.log(`Found ${holdingsTables.length} Holdings tables`)
 
     let successCount = 0

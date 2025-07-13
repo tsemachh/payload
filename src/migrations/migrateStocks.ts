@@ -26,7 +26,7 @@ import {
 import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 import { PayloadRequest } from 'payload'
 import { PromisePool } from '@/utils/promisePool'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
   try {
@@ -60,11 +60,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting migration process...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
     await seedStockMigrationMapping()
     const resultStocks = await getStocks(pool) //AllStocks
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks

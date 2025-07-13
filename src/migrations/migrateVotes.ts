@@ -4,7 +4,7 @@ import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
@@ -27,11 +27,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting votes migration process...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     if (pool === null) {
       console.error('Error no pool, Executing SQL query for votes.')
