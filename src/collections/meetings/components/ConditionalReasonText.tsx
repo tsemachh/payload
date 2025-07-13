@@ -4,7 +4,6 @@ import { TextField, useField } from '@payloadcms/ui'
 import { TextFieldClientProps } from 'payload'
 
 const ConditionalReasonText: React.FC<TextFieldClientProps> = (props) => {
-  console.log('props', props)
   const { path } = props
 
   const reasonRefPath = path.replace(/reasonText$/, 'reasonRef')

@@ -9,6 +9,8 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
+import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -19,8 +21,8 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name:'meeting'}, { name:'company'}, { name:'reported'}],
-      [{ name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}]
+      [{ name: 'meeting' }, { name: 'company' }, { name: 'reported' }],
+      [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
   },
   versions: {
@@ -97,6 +99,43 @@ export const Votes: CollectionConfig = {
           label: 'דווח',
           type: 'checkbox',
           defaultValue: false,
+        },
+        {
+          name: 'reportedBy',
+          label: 'דווח על ידי',
+          type: 'text',
+          admin: {
+            hidden: true,
+          },
+        },
+        {
+          name: 'reportedTime',
+          label: 'תאריך דיווח',
+          type: 'date',
+          admin: {
+            hidden: true,
+          },
+        },
+        {
+          name: 'subTitle',
+          label: 'כותרת משנה',
+          type: 'text',
+          virtual: true,
+          hooks: {
+            afterRead: [
+              ({ data }) => {
+                if (data?.reported && data.reportedBy && data.reportedTime) {
+                  return `${data.reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(data.reportedTime), { locale: he })}`
+                }
+                return 'לא דווח'
+              },
+            ],
+          },
+          admin: {
+            components: {
+              Field: '/collections/votes/components/Subtitle',
+            },
+          },
         },
       ],
     },
@@ -305,6 +344,15 @@ export const Votes: CollectionConfig = {
             console.error('Error creating notification for published vote:', error)
           }
         }
+      },
+    ],
+    beforeChange: [
+      async ({ data, req, originalDoc }) => {
+        if (data._status === 'published' && data.reported && !originalDoc?.reported) {
+          data.reportedBy = data.updator || req.user?.name
+          data.reportedTime = new Date().toISOString()
+        }
+        return data
       },
     ],
   },
