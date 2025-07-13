@@ -105,7 +105,7 @@ export const Votes: CollectionConfig = {
           label: 'דווח על ידי',
           type: 'text',
           admin: {
-            readOnly: true,
+            hidden: true,
           },
         },
         {
@@ -113,7 +113,7 @@ export const Votes: CollectionConfig = {
           label: 'תאריך דיווח',
           type: 'date',
           admin: {
-            readOnly: true,
+            hidden: true,
           },
         },
         {
