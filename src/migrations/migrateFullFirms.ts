@@ -1,12 +1,11 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import sql, { ConnectionPool } from 'mssql'
+import sql from 'mssql'
 import path from 'path'
 import fs from 'fs'
 import { Company } from '@/payload-types'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
 import { getCompanyIdToChildCompanies, getCompanyIdToSequenceMap } from '@/utils/utils'
 import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
-
 
 /**
  * Migrates firms and related data in the following order:
@@ -15,7 +14,7 @@ import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFau
  * 3. migrateSubAccounts - Migrates sub-account data
  * 4. migrateParentCompanies - Migrates parent company relationships
  * 5. migrateAccountCompaniesToCompanies - Converts accounts to companies
- * 
+ *
  * This combined migration ensures that companies are not created if they already exist
  * by including checks in each step of the migration process.
  */
@@ -23,17 +22,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting migrateFullFirms process...')
 
   try {
-    let pool: sql.ConnectionPool | null = null
-
-    console.log('\n=== Starting Firms Migration ===')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
-
     // 1. Migrate Firms
-    await migrateFirms({ payload, req}, pool)
+    await migrateFirms({ payload, req })
 
     // 2. Migrate Accounts
     await migrateAccounts({ payload, req })
@@ -49,7 +39,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Now run the silenced stocks companies migration
     console.log('\n=== Starting Silenced Stocks Companies Migration ===')
-    await migrateSilencedStocksCompanies(payload, req, pool)
+    await migrateSilencedStocksCompanies(payload, req)
     console.log('=== Silenced Stocks Companies Migration Completed ===\n')
     console.log('migrateFullFirms process completed successfully!')
   } catch (error) {
@@ -97,8 +87,10 @@ async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>>
   return result
 }
 
-async function migrateFirms({ payload, req }: MigrateUpArgs, pool: ConnectionPool): Promise<void> {
+async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
+    const pool = await createMSSqlPool()
+
     // Get firms data from SQL Server
     const resultFirms = await getFirms(pool)
     console.log(`Retrieved ${resultFirms.recordset.length} firms from SQL Server`)
@@ -172,11 +164,6 @@ async function migrateFirms({ payload, req }: MigrateUpArgs, pool: ConnectionPoo
     console.error('Critical error during firms migration:', error)
     throw error // Re-throw to ensure migration is marked as failed
   } finally {
-    console.log('Closing SQL Server connection...')
-    if (pool) {
-      await pool.close() // Close the connection pool
-    }
-    console.log('SQL Server connection closed')
   }
 }
 
@@ -1101,8 +1088,10 @@ async function getDistinctStockFirms(pool: sql.ConnectionPool): Promise<sql.IRes
 }
 
 // Function to migrate silenced stocks companies
-export async function migrateSilencedStocksCompanies(payload: any, req: any, pool: sql.ConnectionPool): Promise<void> {
+export async function migrateSilencedStocksCompanies(payload: any, req: any): Promise<void> {
   try {
+    const pool = await createMSSqlPool()
+
     console.log('Starting silenced stocks companies migration process...')
 
     // Initialize counters

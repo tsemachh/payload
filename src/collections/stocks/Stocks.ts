@@ -66,7 +66,7 @@ export const Stocks: CollectionConfig = {
   custom: {
     filterList: [
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
-      [{ name: 'fromMagna' }, { name: 'isFinancial' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'isDual' }],
     ],
   },
   enableQueryPresets: true,
@@ -181,13 +181,13 @@ export const Stocks: CollectionConfig = {
                   defaultValue: 'TASE',
                   admin: {
                     width: '150px',
-                  }
+                  },
                 },
                 {
                   name: 'tradable',
                   label: 'האם נסחר',
                   type: 'checkbox',
-                  admin:{
+                  admin: {
                     width: '150px',
                   },
                   validate: validateTradableRelations,
@@ -202,7 +202,7 @@ export const Stocks: CollectionConfig = {
                   relationTo: 'stocks',
                   index: true,
                   admin: {
-                    width: '400px',
+                    width: '450px',
                     condition: (siblingData) => !siblingData.tradable,
                   },
                   filterOptions: ({ req }: any) => {
@@ -224,7 +224,7 @@ export const Stocks: CollectionConfig = {
                   access: {
                     update: ({ doc }) => !doc?.relatedStock,
                   },
-                  admin:{
+                  admin: {
                     width: '150px',
                   },
                   hooks: {
@@ -263,6 +263,7 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.type == 'מניות',
                   },
                 },
+
                 {
                   name: 'isDual',
                   label: 'דואלית',

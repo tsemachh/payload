@@ -100,7 +100,10 @@ export default buildConfig({
         defaultJobsCollection.admin = {}
       }
       defaultJobsCollection.admin.hidden = false
-      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'queue', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.custom = {
+        filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
+      }
       defaultJobsCollection.admin.group = 'ניהול'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
@@ -189,7 +192,7 @@ export default buildConfig({
     timezones: {
       supportedTimezones: ({ defaultTimezones }) => [
         ...defaultTimezones,
-        { label: '(GMT+3) Israel Standard Time', value: 'Asia/Jerusalem' },
+        { label: 'Israel Standard Time', value: 'Asia/Jerusalem' },
       ],
       defaultTimezone: 'Asia/Jerusalem',
     },
@@ -230,7 +233,7 @@ export default buildConfig({
     importExportPlugin({
       collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
-        collection.admin.group = false //'ניהול'
+        collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
