@@ -54,7 +54,7 @@ export const importMap = {
   "/collections/meetings/components/CompaniesRelationshipField#default": default_a24640827b8631aabe9555dec2cee5cd,
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
-  "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
+  "/collections/votes/components/Subtitle#default": default_891bb5f2eb323ca40a37eb5e72827193,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,
