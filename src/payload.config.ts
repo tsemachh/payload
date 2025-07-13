@@ -28,7 +28,7 @@ import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
-
+import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
@@ -238,6 +238,22 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
+    DynamicFieldOverrides({
+      overrides: [
+        {
+          fieldTypes: ['checkbox'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/YesNoCell',
+              },
+            },
+          },
+        },
+      ],
+      excludedCollections: [],
+    }),
+
     openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
     swaggerUI({}),
     addAccess({

@@ -1,5 +1,6 @@
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { default as default_4b828ebf050d5322d4780521d858b578 } from '../../../admincomponents/link/IconLinkTextField'
+import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -14,7 +15,6 @@ import { default as default_adb006445235b2e9a92908681b338c68 } from '../../../ad
 import { default as default_a24640827b8631aabe9555dec2cee5cd } from '../../../collections/meetings/components/CompaniesRelationshipField'
 import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
 import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../admincomponents/icon/ReportedVotesStatusCell'
-import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
@@ -38,6 +38,7 @@ import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b6
 export const importMap = {
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "/admincomponents/link/IconLinkTextField#default": default_4b828ebf050d5322d4780521d858b578,
+  "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
@@ -52,7 +53,6 @@ export const importMap = {
   "/collections/meetings/components/CompaniesRelationshipField#default": default_a24640827b8631aabe9555dec2cee5cd,
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/icon/ReportedVotesStatusCell#default": default_bb1cca88281f472f26c1e5ecde3b5f45,
-  "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,

@@ -97,11 +97,6 @@ export const Votes: CollectionConfig = {
           label: 'דווח',
           type: 'checkbox',
           defaultValue: false,
-          admin: {
-            components: {
-              Cell: '/admincomponents/cell/YesNoCell',
-            },
-          },
         },
       ],
     },
