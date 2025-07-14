@@ -115,14 +115,6 @@ export function SelectFilter({
       return placeholder || (isHebrew ? 'בחר אפשרויות' : 'Select options')
     } else if (selectedValues.length === options.length) {
       return labels.selectAll
-    } else if (selectedValues.length <= 3) {
-      // Show individual options if 3 or fewer are selected
-      return selectedValues
-        .map((value) => {
-          const option = options.find((opt) => opt.value === value)
-          return option?.label || value
-        })
-        .join(', ')
     } else {
       return `${selectedValues.length} ${labels.selected}`
     }
