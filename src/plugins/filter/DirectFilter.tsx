@@ -96,7 +96,7 @@ const buildWhereClause = (
         } else if (checkboxState === 'unchecked') {
           where[fieldName] = { equals: false }
         }
-        // 'indeterminate' לא יבצע סינון
+        // 'indeterminate' will not filter
         break
       }
     }
@@ -111,30 +111,78 @@ const DirectFilter = ({
   slug: string
   filterList: (string | { name: string; width: string })[][]
 }) => {
+  const localStorageKey = useMemo(() => `direct-filter-${slug}`, [slug])
+
   const [fields, setFields] = useState<FilterDetaild[]>([])
   const [filterRows, setFilterRows] = useState<FilterRow[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const { refineListData, query } = useListQuery()
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({})
-  const isInitialMount = useRef(true)
 
-  useEffect(() => {
-    if (!query?.where || (filterValues && Object.keys(filterValues).length > 0) || !fields.length) {
-      return
+  const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
+    try {
+      const item = window.localStorage.getItem(localStorageKey)
+      return item ? JSON.parse(item) : {}
+    } catch (error) {
+      console.error('Error reading filters from localStorage.', error)
+      return {}
     }
-    const restoredFilters = parseWhereToFilterValues(query?.where || {}, fields)
-    if (!(restoredFilters && Object.keys(restoredFilters).length > 0)) {
-      return
-    }
-    setFilterValues(restoredFilters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, fields])
+  })
+
+  const isInitialLoad = useRef(true)
+
+  const parseWhereToFilterValues = useCallback(
+    (where: Record<string, any>, fieldDefs: FilterDetaild[]): Record<string, any> => {
+      const values: Record<string, any> = {}
+      Object.entries(where).forEach(([fieldName, condition]) => {
+        const fieldDef = fieldDefs.find((f) => f.name === fieldName)
+        if (!fieldDef) return
+        switch (fieldDef.type) {
+          case 'select': {
+            if ('equals' in condition) {
+              values[fieldName] = {
+                selectedValues: [condition.equals],
+              }
+            } else if ('in' in condition) {
+              values[fieldName] = {
+                selectedValues: condition.in,
+              }
+            }
+            break
+          }
+          case 'checkbox': {
+            if ('equals' in condition) {
+              values[fieldName] = condition.equals == true ? 'checked' : 'unchecked'
+            }
+            break
+          }
+          case 'date': {
+            const from = condition.greater_than_equal
+            const to = condition.less_than_equal
+            if (from || to) {
+              values[fieldName] = {
+                type: 'custom', // Setting a default type
+                predefinedValue: null,
+                customRange: {
+                  from: from || null,
+                  to: to || null,
+                },
+              }
+            }
+            break
+          }
+          default:
+            break
+        }
+      })
+      return values
+    },
+    [],
+  )
 
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
-    // Flatten the array of arrays and extract field names
     const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
       row.map((field, fieldIndex) => ({
         field,
@@ -150,7 +198,6 @@ const DirectFilter = ({
       const label = (field as FieldAffectingData).label
       const translatedLabel = getTranslation(label as string, i18n)
       const fieldName = (field as FieldAffectingData).name as string
-      // Find the corresponding field config with row and order information
       const fieldConfig = flattenedFieldConfigs.find(({ field: f }) =>
         typeof f === 'string' ? f === fieldName : f.name === fieldName,
       )
@@ -166,16 +213,10 @@ const DirectFilter = ({
             : undefined,
       }
     })
-    // Sort fields by their original order in the filterList
     const sortedFields = flattenedFieldConfigs
-      .map(({ field, rowIndex, fieldIndex }) => {
+      .map(({ field }) => {
         const fieldName = typeof field === 'string' ? field : field.name
-        const matchedField = simplifiedFields.find((f) => f.name === fieldName)
-        // If we found a matching field, return it
-        if (matchedField) {
-          return matchedField
-        }
-        return null
+        return simplifiedFields.find((f) => f.name === fieldName)
       })
       .filter((f): f is FilterDetaild => !!f)
     setFields(sortedFields)
@@ -183,68 +224,44 @@ const DirectFilter = ({
   }, [slug, filterList, getEntityConfig, i18n])
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
+    // Wait until field metadata has been loaded.
+    if (fields.length === 0) {
       return
     }
-    const columns = parseColumns(query.columns)
-    const where = buildWhereClause(filterValues, fields)
-    refineListData({
-      columns,
-      where,
-      page: '1',
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues])
 
-  const parseWhereToFilterValues = (
-    where: Record<string, any>,
-    fieldDefs: FilterDetaild[],
-  ): Record<string, any> => {
-    const values: Record<string, any> = {}
-    Object.entries(where).forEach(([fieldName, condition]) => {
-      const fieldDef = fieldDefs.find((f) => f.name === fieldName)
-      if (!fieldDef) return
-      switch (fieldDef.type) {
-        case 'select': {
-          if ('equals' in condition) {
-            values[fieldName] = {
-              selectedValues: [condition.equals],
-            }
-          } else if ('in' in condition) {
-            values[fieldName] = {
-              selectedValues: condition.in,
-            }
-          }
-          break
+    const hasQueryWhere = query?.where && Object.keys(query.where).length > 0
+
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false
+      if (hasQueryWhere) {
+        const valuesFromQuery = parseWhereToFilterValues(query.where!, fields)
+        if (JSON.stringify(valuesFromQuery) !== JSON.stringify(filterValues)) {
+          setFilterValues(valuesFromQuery)
+          return
         }
-        case 'checkbox': {
-          if ('equals' in condition) {
-            values[fieldName] = condition.equals == 'true' ? 'checked' : 'unchecked'
-          }
-          break
-        }
-        case 'date': {
-          const from = condition.greater_than_equal
-          const to = condition.less_than_equal
-          if (from || to) {
-            values[fieldName] = {
-              type: 'predefined',
-              predefinedValue: 'today',
-              customRange: {
-                from: from || null,
-                to: to || null,
-              },
-            }
-          }
-          break
-        }
-        default:
-          break
       }
-    })
-    return values
-  }
+    }
+
+    const where = buildWhereClause(filterValues, fields)
+
+    try {
+      if (Object.keys(filterValues).length > 0) {
+        localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
+      } else {
+        localStorage.removeItem(localStorageKey)
+      }
+    } catch (error) {
+      console.error('Failed to save filters to localStorage', error)
+    }
+
+    if (JSON.stringify(where) !== JSON.stringify(query.where)) {
+      refineListData({
+        columns: parseColumns(query.columns),
+        where,
+        page: '1',
+      })
+    }
+  }, [filterValues, fields, query, refineListData, localStorageKey, parseWhereToFilterValues])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
@@ -263,7 +280,7 @@ const DirectFilter = ({
     })
   }, [])
 
-  // Get active filters with details
+  // This function remains largely the same.
   const getActiveFiltersDetails = () => {
     const activeFilters: string[] = []
     const isHebrew = i18n.language === 'he'
@@ -282,11 +299,13 @@ const DirectFilter = ({
               const allOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
               const option = allOptions.find((opt) => opt.value === dateValue.predefinedValue)
               dateDescription = option ? option.label : isHebrew ? 'מותאם אישית' : 'Custom'
-            } else if (dateValue.type === 'custom') {
+            } else if (dateValue.type === 'custom' || dateValue.customRange) {
               dateDescription = isHebrew ? 'מותאם אישית' : 'Custom'
             }
 
-            activeFilters.push(`${field.label} (${dateDescription})`)
+            if (dateDescription) {
+              activeFilters.push(`${field.label} (${dateDescription})`)
+            }
           }
           break
         case 'select': {
@@ -361,7 +380,6 @@ const DirectFilter = ({
 
           {hasActiveFilters ? (
             <>
-              {/* Active filters content */}
               <span className="text-sm truncate">
                 <strong>
                   {isHebrew
@@ -371,7 +389,6 @@ const DirectFilter = ({
                 {activeFiltersDetails.join(' • ')}
               </span>
 
-              {/* Clear button */}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
