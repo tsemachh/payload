@@ -67,7 +67,7 @@ const buildWhereClause = (
           const { from, to } = dateValue.customRange
           const dateQuery: any = {}
           if (from) dateQuery.greater_than_equal = from
-          if (to) dateQuery.less_than_equal = to // כולל את יום הסיום
+          if (to) dateQuery.less_than_equal = to
           if (Object.keys(dateQuery).length > 0) {
             where[fieldName] = dateQuery
           }
