@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { useFormFields } from '@payloadcms/ui'
 
-export default function SubTitle({}: BeforeDocumentControlsClientProps) {
+const SubTitle: BeforeDocumentControlsClientProps = () => {
   const fields = useFormFields(([f]) => f)
 
   const reported = fields.reported?.value
@@ -36,3 +36,4 @@ export default function SubTitle({}: BeforeDocumentControlsClientProps) {
     </div>
   )
 }
+export default SubTitle
