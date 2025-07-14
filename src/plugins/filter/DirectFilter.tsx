@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
@@ -130,57 +130,6 @@ const DirectFilter = ({
     }
   })
 
-  const isInitialLoad = useRef(true)
-
-  const parseWhereToFilterValues = useCallback(
-    (where: Record<string, any>, fieldDefs: FilterDetaild[]): Record<string, any> => {
-      const values: Record<string, any> = {}
-      Object.entries(where).forEach(([fieldName, condition]) => {
-        const fieldDef = fieldDefs.find((f) => f.name === fieldName)
-        if (!fieldDef) return
-        switch (fieldDef.type) {
-          case 'select': {
-            if ('equals' in condition) {
-              values[fieldName] = {
-                selectedValues: [condition.equals],
-              }
-            } else if ('in' in condition) {
-              values[fieldName] = {
-                selectedValues: condition.in,
-              }
-            }
-            break
-          }
-          case 'checkbox': {
-            if ('equals' in condition) {
-              values[fieldName] = condition.equals == true ? 'checked' : 'unchecked'
-            }
-            break
-          }
-          case 'date': {
-            const from = condition.greater_than_equal
-            const to = condition.less_than_equal
-            if (from || to) {
-              values[fieldName] = {
-                type: 'custom', // Setting a default type
-                predefinedValue: null,
-                customRange: {
-                  from: from || null,
-                  to: to || null,
-                },
-              }
-            }
-            break
-          }
-          default:
-            break
-        }
-      })
-      return values
-    },
-    [],
-  )
-
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
     const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
@@ -229,19 +178,6 @@ const DirectFilter = ({
       return
     }
 
-    const hasQueryWhere = query?.where && Object.keys(query.where).length > 0
-
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false
-      if (hasQueryWhere) {
-        const valuesFromQuery = parseWhereToFilterValues(query.where!, fields)
-        if (JSON.stringify(valuesFromQuery) !== JSON.stringify(filterValues)) {
-          setFilterValues(valuesFromQuery)
-          return
-        }
-      }
-    }
-
     const where = buildWhereClause(filterValues, fields)
 
     try {
@@ -261,7 +197,7 @@ const DirectFilter = ({
         page: '1',
       })
     }
-  }, [filterValues, fields, query, refineListData, localStorageKey, parseWhereToFilterValues])
+  }, [filterValues, fields, query, refineListData, localStorageKey])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
