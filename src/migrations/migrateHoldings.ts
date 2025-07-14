@@ -1,9 +1,8 @@
-import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import sql, { IResult } from 'mssql'
-import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
-import { sqlConfig } from '@/migrations/utils/utils'
-
+import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import sql, { IResult } from 'mssql'
+import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 
 interface HoldingRow {
   stockNum: string
@@ -18,18 +17,18 @@ interface HoldingRow {
 function formatDateForSQL(dateStr: string): string {
   // If the date is already in MM-DD-YYYY format, return it
   if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    return dateStr;
+    return dateStr
   }
 
   // Parse the date string
-  const date = new Date(dateStr);
+  const date = new Date(dateStr)
 
   // Format to MM-DD-YYYY
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getFullYear()
 
-  return `${month}-${day}-${year}`;
+  return `${month}-${day}-${year}`
 }
 
 async function getHoldingsPage(
@@ -38,7 +37,7 @@ async function getHoldingsPage(
   latestDate: string,
 ): Promise<sql.IResult<HoldingRow>> {
   // Format the date for SQL query
-  const formattedDate = formatDateForSQL(latestDate);
+  const formattedDate = formatDateForSQL(latestDate)
 
   const result = await pool.request().query(`
       SELECT [stockNum]
@@ -54,7 +53,9 @@ async function getHoldingsPage(
   return result
 }
 
-async function getActiveCompaniesWithLatestDate(pool: sql.ConnectionPool): Promise<{firm: string, latest_date1: string, name: string}[]> {
+async function getActiveCompaniesWithLatestDate(
+  pool: sql.ConnectionPool,
+): Promise<{ firm: string; latest_date1: string; name: string }[]> {
   const result = await pool.request().query(`
       SELECT h.firm, MAX(h.date1) AS latest_date1, f.name
       FROM [${sqlConfig.database}].[dbo].[holdings] h
@@ -71,8 +72,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting holding days migration process...')
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
     console.log('Importing latest holdings for all active companies')
 
     // Initialize on-demand caches
@@ -259,7 +259,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       // Create a batch of promises up to MAX_CONCURRENT_PROCESSES
       for (let j = 0; j < MAX_CONCURRENT_PROCESSES && i + j < activeCompanies.length; j++) {
         const company = activeCompanies[i + j]
-        console.log(`Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`)
+        console.log(
+          `Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`,
+        )
 
         // Process all holdings for this company on its latest date
         const holdings = await getHoldingsPage(pool, company.firm, company.latest_date1)

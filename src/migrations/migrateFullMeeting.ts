@@ -5,7 +5,7 @@ import { getSequenceMeetingId } from '@/utils/utils'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 // Define the mapping for TypeId to newType and newState
 const typeMappings = new Map<number, { newType: string | null; newState: string | null }>([
@@ -62,11 +62,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting full meeting migration process (meetings with agenda)...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     if (pool === null) {
       console.error('Error no pool, Executing SQL query for meetings.')
@@ -305,8 +301,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Failed insertions/updates: ${errorCount}`)
     console.log(`Skipped meetings: ${skippedCount}`)
     console.log('Meetings migration completed successfully.')
-
-
   } catch (error) {
     console.error('Critical error during migration:', error)
     throw error // Re-throw to ensure migration is marked as failed
