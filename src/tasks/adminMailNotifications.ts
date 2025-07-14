@@ -2,6 +2,7 @@ import type { TaskHandler } from 'payload'
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
+import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
 
 /**
  * Core function to send admin mail notifications
@@ -18,6 +19,13 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 
     const emailsSent = {
       count: 0,
+    }
+
+    if (isHolidayOrShabbat(new Date())) {
+      return {
+        success: true,
+        message: 'non working day',
+      }
     }
 
     // Calculate date 24 hours ago
