@@ -99,11 +99,14 @@ export const Holdings: CollectionConfig = {
             },
             {
               name: 'originalForeignData',
-              label: 'אחזקה מניית חול',
+              label: 'אחזקה מקורית מניית חול',
               type: 'array',
               admin: {
                 initCollapsed: true,
                 width: '50%',
+                components: {
+                  Field: '/admincomponents/fields/arrayTable',
+                },
                 condition: (data, siblingData) => {
                   return (
                     Array.isArray(siblingData.originalForeignData) &&
