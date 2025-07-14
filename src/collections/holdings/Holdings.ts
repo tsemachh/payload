@@ -76,6 +76,9 @@ export const Holdings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'stocks',
               required: true,
+              admin: {
+                width: '30%',
+              },
               filterOptions: ({ req }) => {
                 if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 return {
@@ -87,14 +90,53 @@ export const Holdings: CollectionConfig = {
             },
             {
               name: 'feedStockNum',
-              label: 'מספר נייר ערך באחזקה',
+              label: 'מספר נייר ערך',
               type: 'text',
+              admin: {
+                width: '30%',
+              },
             },
             {
               name: 'quantity',
               label: 'כמות',
               type: 'number',
               required: true,
+              admin: {
+                width: '40%',
+              },
+            },
+            {
+              name: 'originalForeignData',
+              label: 'אחזקה מניית חול',
+              type: 'array',
+              admin: {
+                initCollapsed: true,
+                condition: (data, siblingData) => {
+                  return (
+                    Array.isArray(siblingData.originalForeignData) &&
+                    siblingData.originalForeignData.length > 0
+                  )
+                },
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'stockId',
+                      type: 'text',
+                    },
+                    {
+                      name: 'accountNum',
+                      type: 'number',
+                    },
+                    {
+                      name: 'quantity',
+                      type: 'number',
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },

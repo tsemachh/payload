@@ -79,6 +79,14 @@ export type HoldingsPerDay = {
   stock: string | Stock;
   feedStockNum?: string | null;
   quantity: number;
+  originalForeignData?:
+    | {
+        stockId?: string | null;
+        accountNum?: number | null;
+        quantity?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   id?: string | null;
 }[];
 /**
@@ -1375,6 +1383,14 @@ export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
   feedStockNum?: T;
   quantity?: T;
+  originalForeignData?:
+    | T
+    | {
+        stockId?: T;
+        accountNum?: T;
+        quantity?: T;
+        id?: T;
+      };
   id?: T;
 }
 /**

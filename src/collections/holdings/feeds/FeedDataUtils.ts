@@ -1,6 +1,19 @@
 import { PayloadRequest } from 'payload'
 import { Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
+import { getStockByStockId } from '@/utils/utils'
+
+type AggregatedRecord = {
+  company: string
+  stock: string
+  quantity: number
+  feedStockNum?: string
+  originalForeignData?: {
+    stockId: string
+    accountNum?: number | null
+    quantity: number
+  }[]
+}
 
 export async function getPreviousFeed(
   req: PayloadRequest,
@@ -19,11 +32,8 @@ export async function getPreviousFeed(
     depth: 0,
     limit: 1,
   })
-  if (holdings.docs.length > 0) {
-    return holdings.docs[0]
-  }
 
-  return null
+  return holdings.docs.length > 0 ? holdings.docs[0] : null
 }
 
 // Helper function to delete existing holdings for a date
@@ -119,17 +129,16 @@ export const preloadAccountsToCompanyMap = async (
 
   companies.docs.forEach((company: Company) => {
     const accounts = company?.mainAccount
-
     accounts?.forEach((account) => {
       accountToCompanyMapI.set(parseInt(account?.accountNumber), company?.id)
       accountNameMap.set(parseInt(account?.accountNumber), company?.name)
-
       account?.subAccounts?.forEach((subAccount) => {
         accountToCompanyMapI.set(parseInt(subAccount), company?.id)
         accountNameMap.set(parseInt(account?.accountNumber), company?.name)
       })
     })
   })
+
   return { accountToCompanyMapI, accountNameMap }
 }
 /**
@@ -201,57 +210,79 @@ export const createHoldings = async (
   stockMap: Map<string, string>,
   valueDate: string,
 ): Promise<void> => {
-  // Aggregate records with the same accountId and stockId
-  const aggregatedRecords = new Map<
-    string,
-    { company: string; stock: string; quantity: number; feedStockNum: string }
-  >()
+  const aggregatedRecords = new Map<string, AggregatedRecord>()
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
       const accountId = parseInt(record.accountId as string)
       const company = accountToCompanyMap.get(accountId) as string
       const stock = stockMap.get(record.stockId as string) as string
-
-      // Create a unique key for each account-stock combination
       const key = `${company}-${stock}-${record.stockId}`
 
-      if (aggregatedRecords.has(key)) {
-        // If this combination already exists, add to the quantity
-        const existingRecord = aggregatedRecords.get(key)!
-        existingRecord.quantity += record.quantity as number
+      const existingRecord = aggregatedRecords.get(key)
+      const stockData = await getStockByStockId(req.payload, record.stockId)
+      if (existingRecord) {
+        if (stockData?.origin === 'Foreign') {
+          existingRecord.originalForeignData = existingRecord.originalForeignData || []
+          existingRecord.originalForeignData.push({
+            stockId: record.stockId as string,
+            accountNum: parseInt(record.accountId as string),
+            quantity: record.quantity ?? 0,
+          })
+        }
+        existingRecord.quantity += record.quantity ?? 0
       } else {
-        // Otherwise, create a new entry
-        aggregatedRecords.set(key, {
-          company,
-          stock,
-          feedStockNum: record.stockId as string,
-          quantity: record.quantity as number,
-        })
+        if (stockData?.origin === 'Foreign') {
+          aggregatedRecords.set(key, {
+            company,
+            stock,
+            quantity: record.quantity ?? 0,
+            feedStockNum: record.stockId as string,
+            originalForeignData: [
+              {
+                stockId: record.stockId as string,
+                accountNum: parseInt(record.accountId as string),
+                quantity: record.quantity ?? 0,
+              },
+            ],
+          })
+        } else {
+          aggregatedRecords.set(key, {
+            company,
+            stock,
+            feedStockNum: record.stockId as string,
+            quantity: record.quantity ?? 0,
+          })
+        }
       }
     }
   }
 
-  // Create a map of company -> records holdings
-  const companyRecordsMap = new Map<
-    string,
-    Array<{ stock: string; quantity: number; feedStockNum: string }>
-  >()
+  const companyRecordsMap = new Map<string, Array<any>>()
 
-  // Group records by company
   for (const record of aggregatedRecords.values()) {
     if (!companyRecordsMap.has(record.company)) {
       companyRecordsMap.set(record.company, [])
     }
 
-    companyRecordsMap.get(record.company)?.push({
-      stock: record.stock,
-      quantity: record.quantity,
-      feedStockNum: record.feedStockNum,
-    })
+    const holdingsArray = companyRecordsMap.get(record.company)!
+
+    if (record.originalForeignData) {
+      holdingsArray.push({
+        stock: record.stock,
+        quantity: record.quantity,
+        feedStockNum: record.feedStockNum ?? '',
+        originalForeignData: record.originalForeignData,
+      })
+    } else {
+      holdingsArray.push({
+        stock: record.stock,
+        quantity: record.quantity,
+        feedStockNum: record.feedStockNum ?? '',
+      })
+    }
   }
 
-  // Create holdings for each company
   for (const [company, holdings] of companyRecordsMap.entries()) {
     await req.payload
       .create({
