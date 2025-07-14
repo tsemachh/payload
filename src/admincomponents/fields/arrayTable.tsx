@@ -36,7 +36,7 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
             '-apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         }}
       >
-        מניה מקורית חול
+        נייר ערך מקורית חו״ל
       </h3>
 
       <div className="overflow-x-auto">
@@ -50,7 +50,7 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
                 מספר חשבון
               </th>
               <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                מניה
+                נייר ערך
               </th>
             </tr>
           </thead>
