@@ -1,18 +1,13 @@
 import { PayloadRequest } from 'payload'
-import { Company, HoldingFeedLine, HoldingsFeed, Stock } from '@/payload-types'
+import { Company, HoldingFeedLine, HoldingsFeed, HoldingsPerDay, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import { getStockByStockId } from '@/utils/utils'
 
-type AggregatedRecord = {
+export type AggregatedRecord = {
   company: string
   stock: string
   quantity: number
-  feedStockNum?: string
-  originalForeignData?: {
-    stockId: string
-    accountNum?: number | null
-    quantity: number
-  }[]
+  originalForeignData?: NonNullable<HoldingsPerDay[number]['originalForeignData']>
 }
 
 export async function getPreviousFeed(
@@ -237,7 +232,6 @@ export const createHoldings = async (
             company,
             stock,
             quantity: record.quantity ?? 0,
-            feedStockNum: record.stockId as string,
             originalForeignData: [
               {
                 stockId: record.stockId as string,
@@ -250,7 +244,6 @@ export const createHoldings = async (
           aggregatedRecords.set(key, {
             company,
             stock,
-            feedStockNum: record.stockId as string,
             quantity: record.quantity ?? 0,
           })
         }
@@ -271,14 +264,12 @@ export const createHoldings = async (
       holdingsArray.push({
         stock: record.stock,
         quantity: record.quantity,
-        feedStockNum: record.feedStockNum ?? '',
         originalForeignData: record.originalForeignData,
       })
     } else {
       holdingsArray.push({
         stock: record.stock,
         quantity: record.quantity,
-        feedStockNum: record.feedStockNum ?? '',
       })
     }
   }

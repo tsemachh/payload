@@ -120,7 +120,6 @@ export type RolePermissions =
  */
 export type HoldingsPerDay = {
   stock: string | Stock;
-  feedStockNum?: string | null;
   quantity: number;
   originalForeignData?:
     | {
@@ -1409,7 +1408,6 @@ export interface HoldingsSelect<T extends boolean = true> {
  */
 export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
-  feedStockNum?: T;
   quantity?: T;
   originalForeignData?:
     | T

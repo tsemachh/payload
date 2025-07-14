@@ -89,20 +89,12 @@ export const Holdings: CollectionConfig = {
               },
             },
             {
-              name: 'feedStockNum',
-              label: 'מספר נייר ערך',
-              type: 'text',
-              admin: {
-                width: '30%',
-              },
-            },
-            {
               name: 'quantity',
               label: 'כמות',
               type: 'number',
               required: true,
               admin: {
-                width: '40%',
+                width: '20%',
               },
             },
             {
@@ -111,6 +103,7 @@ export const Holdings: CollectionConfig = {
               type: 'array',
               admin: {
                 initCollapsed: true,
+                width: '50%',
                 condition: (data, siblingData) => {
                   return (
                     Array.isArray(siblingData.originalForeignData) &&
