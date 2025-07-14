@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
-import { ClientField, FieldAffectingData, type OptionObject, type SelectField } from 'payload'
+import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
-import {
+import type {
   CheckboxFilterState,
   DateFilterValue,
   FilterDetaild,
@@ -15,6 +15,7 @@ import {
 import { groupFiltersByRow } from './filters/utils/layout-helpers'
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { futureDateFilterOptions, pastDateFilterOptions } from './filters/constants/date-filter-options'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -183,7 +184,6 @@ const DirectFilter = ({
       isInitialMount.current = false
       return
     }
-
     const where = buildWhereClause(filterValues, fields)
     refineListData({
       where,
@@ -197,11 +197,9 @@ const DirectFilter = ({
     fieldDefs: FilterDetaild[],
   ): Record<string, any> => {
     const values: Record<string, any> = {}
-
     Object.entries(where).forEach(([fieldName, condition]) => {
       const fieldDef = fieldDefs.find((f) => f.name === fieldName)
       if (!fieldDef) return
-
       switch (fieldDef.type) {
         case 'select': {
           if ('equals' in condition) {
@@ -215,18 +213,15 @@ const DirectFilter = ({
           }
           break
         }
-
         case 'checkbox': {
           if ('equals' in condition) {
             values[fieldName] = condition.equals == 'true' ? 'checked' : 'unchecked'
           }
           break
         }
-
         case 'date': {
           const from = condition.greater_than_equal
           const to = condition.less_than_equal
-
           if (from || to) {
             values[fieldName] = {
               type: 'predefined',
@@ -239,12 +234,10 @@ const DirectFilter = ({
           }
           break
         }
-
         default:
           break
       }
     })
-
     return values
   }
 
@@ -268,6 +261,7 @@ const DirectFilter = ({
   // Get active filters with details
   const getActiveFiltersDetails = () => {
     const activeFilters: string[] = []
+    const isHebrew = i18n.language === 'he'
 
     Object.entries(filterValues).forEach(([fieldName, value]) => {
       const field = fields.find((f) => f.name === fieldName)
@@ -276,7 +270,18 @@ const DirectFilter = ({
       switch (field.type) {
         case 'date':
           if (value !== undefined) {
-            activeFilters.push(field.label)
+            const dateValue = value as DateFilterValue
+            let dateDescription = ''
+
+            if (dateValue.type === 'predefined' && dateValue.predefinedValue) {
+              const allOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              const option = allOptions.find((opt) => opt.value === dateValue.predefinedValue)
+              dateDescription = option ? option.label : isHebrew ? 'מותאם אישית' : 'Custom'
+            } else if (dateValue.type === 'custom') {
+              dateDescription = isHebrew ? 'מותאם אישית' : 'Custom'
+            }
+
+            activeFilters.push(`${field.label} (${dateDescription})`)
           }
           break
         case 'select': {
@@ -285,7 +290,7 @@ const DirectFilter = ({
             const count = selectValue.selectedValues.length
             const totalOptions = field.options?.length || 0
             if (selectValue.selectedValues.length === totalOptions) {
-              activeFilters.push(field.label)
+              activeFilters.push(`${field.label} (${isHebrew ? 'הכל' : 'All'})`)
             } else {
               activeFilters.push(`${field.label} (${count})`)
             }
@@ -294,7 +299,9 @@ const DirectFilter = ({
         }
         case 'checkbox':
           if (value !== 'indeterminate') {
-            activeFilters.push(field.label)
+            const checkboxValue =
+              value === 'checked' ? (isHebrew ? 'כן' : 'Yes') : isHebrew ? 'לא' : 'No'
+            activeFilters.push(`${field.label} (${checkboxValue})`)
           }
           break
       }
@@ -346,12 +353,20 @@ const DirectFilter = ({
           }`}
         >
           <Filter className={`h-4 w-4 ${hasActiveFilters ? 'fill-current' : ''}`} />
+
           {hasActiveFilters ? (
             <>
               {/* Active filters content */}
-              <span className="text-sm truncate">{activeFiltersDetails.join(' • ')}</span>
+              <span className="text-sm truncate">
+                <strong>
+                  {isHebrew
+                    ? `${activeFiltersDetails.length === 1 ? 'סינון פעיל בעמודה' : 'סינון פעיל בעמודות'}: `
+                    : `${activeFiltersDetails.length === 1 ? 'Active filter on column' : 'Active filters on columns'}: `}
+                </strong>{' '}
+                {activeFiltersDetails.join(' • ')}
+              </span>
 
-              {/* Clear button TO DO return this when needed */}
+              {/* Clear button */}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
