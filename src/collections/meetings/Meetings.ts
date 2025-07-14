@@ -856,6 +856,11 @@ export const Meetings: CollectionConfig = {
                         components: {
                           Field: '/admincomponents/fields/arrayTable',
                         },
+                        condition: (data, siblingData) => {
+                          return (
+                            Array.isArray(siblingData.original) && siblingData.original.length > 0
+                          )
+                        },
                       },
                       fields: [
                         { name: 'stockId', label: 'מניה', type: 'text' },
