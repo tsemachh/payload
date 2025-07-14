@@ -12,10 +12,13 @@ import type {
   FilterRow,
   SelectFilterValue,
 } from './filters/types/filters-type'
-import { groupFiltersByRow } from './filters/utils/layout-helpers'
+import { groupFiltersByRow, parseColumns } from './filters/utils/layout-helpers'
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { futureDateFilterOptions, pastDateFilterOptions } from './filters/constants/date-filter-options'
+import {
+  futureDateFilterOptions,
+  pastDateFilterOptions,
+} from './filters/constants/date-filter-options'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -184,8 +187,10 @@ const DirectFilter = ({
       isInitialMount.current = false
       return
     }
+    const columns = parseColumns(query.columns)
     const where = buildWhereClause(filterValues, fields)
     refineListData({
+      columns,
       where,
       page: '1',
     })
