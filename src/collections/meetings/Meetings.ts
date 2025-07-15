@@ -637,8 +637,9 @@ export const Meetings: CollectionConfig = {
                   ],
                   admin: {
                     disableListFilter: true,
-                    hidden: true,
-                    condition: (_, siblingData) => siblingData.topicType === 'decision',
+                    condition: (value, siblingData) => {
+                      return siblingData.topicType === 'decision' && value?.state === 'completed'
+                    },
                   },
                 },
               ],
