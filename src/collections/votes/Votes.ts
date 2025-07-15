@@ -1,6 +1,6 @@
 import { type CollectionConfig } from 'payload'
-import { createAdminNotification } from '@/utils/utils'
-import { addDays, isSameDay } from '@/utils/dateUtils'
+import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
+import { addDays } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
 import {
   getVoteByMeetingAndCompanies,
@@ -9,6 +9,8 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
+import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -19,8 +21,8 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name:'meeting'}, { name:'company'}, { name:'reported'}],
-      [{ name:'isInterested'}, { name:'isSeniorOfficial'}, { name:'isInstitutionalInvestor'}]
+      [{ name: 'meeting' }, { name: 'company' }, { name: 'reported' }],
+      [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
   },
   versions: {
@@ -97,9 +99,41 @@ export const Votes: CollectionConfig = {
           label: 'דווח',
           type: 'checkbox',
           defaultValue: false,
+        },
+        {
+          name: 'reportedBy',
+          label: 'דווח על ידי',
+          type: 'text',
+          admin: {
+            hidden: true,
+          },
+        },
+        {
+          name: 'reportedTime',
+          label: 'תאריך דיווח',
+          type: 'date',
+          admin: {
+            hidden: true,
+          },
+        },
+        {
+          name: 'subTitle',
+          label: 'כותרת משנה',
+          type: 'text',
+          virtual: true,
+          hooks: {
+            afterRead: [
+              ({ data }) => {
+                if (data?.reported && data.reportedBy && data.reportedTime) {
+                  return `${data.reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(data.reportedTime), { locale: he })}`
+                }
+                return 'לא דווח'
+              },
+            ],
+          },
           admin: {
             components: {
-              Cell: '/admincomponents/cell/YesNoCell',
+              Field: '/collections/votes/components/Subtitle',
             },
           },
         },
@@ -272,36 +306,48 @@ export const Votes: CollectionConfig = {
   ],
   hooks: {
     afterChange: [
-      async ({ doc, req }) => {
-        if (doc._status === 'published') {
+      async ({ doc, req, previousDoc }) => {
+        if (doc._status === 'published' && doc._status !== previousDoc?._status) {
           try {
             let meeting: Meeting | string = doc.meeting
-            if (typeof meeting === 'string')
+            if (typeof meeting === 'string') {
               meeting = await req.payload.findByID({
                 collection: 'meetings',
                 id: meeting,
               })
+            }
 
             if (meeting?.holdingsLimit) {
               const holdingsLimit = new Date(meeting.holdingsLimit)
               const dayAfterHoldings = addDays(holdingsLimit, 1)
 
-              if (isSameDay(new Date(), dayAfterHoldings)) {
+              if (new Date() > dayAfterHoldings) {
                 const meetingName = meeting?.fullName
-                const message = `הצבעה חדשה פורסמה עבור ${meetingName}`
+                const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
                 const url = `/admin/collections/votes/${doc.id}`
-                //TODO ask @philc if we need to put hte first company in the notification
-                const relatedCompany = doc.companies?.[0]
-                  ? typeof doc.companies[0] === 'string'
-                    ? doc.companies[0]
-                    : doc.companies[0].id
-                  : undefined
+                const relatedCompany = getIdOfRelationField(doc.company)
+
+                try {
+                  await req.payload.delete({
+                    collection: 'admin-notifications',
+                    where: {
+                      relatedCompany: { equals: relatedCompany },
+                      message: { equals: message },
+                      url: { equals: url },
+                      user: { equals: req?.user?.id },
+                    },
+                  })
+                } catch (error) {
+                  req.payload.logger.error(
+                    `Error deleting admin notification: ${JSON.stringify(error)}`,
+                  )
+                }
 
                 await createAdminNotification(
                   req.payload,
                   message,
                   url,
-                  relatedCompany,
+                  relatedCompany as string,
                   req?.user?.id,
                 )
               }
@@ -310,6 +356,15 @@ export const Votes: CollectionConfig = {
             console.error('Error creating notification for published vote:', error)
           }
         }
+      },
+    ],
+    beforeChange: [
+      async ({ data, req, originalDoc }) => {
+        if (data._status === 'published' && data.reported && !originalDoc?.reported) {
+          data.reportedBy = data.updator || req.user?.name
+          data.reportedTime = new Date().toISOString()
+        }
+        return data
       },
     ],
   },

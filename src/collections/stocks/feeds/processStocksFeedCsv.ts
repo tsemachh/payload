@@ -88,7 +88,7 @@ export const processStocksFeedCsv = async (
       },
     })
 
-    for (let i = 0; i < rows.length; i++) {
+    for (let i = 0; i < rows.length - 1; i++) {
       try {
         const row = rows[i]
 

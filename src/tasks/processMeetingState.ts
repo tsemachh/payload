@@ -2,7 +2,7 @@ import type { TaskHandler } from 'payload'
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleProcessMeetingStateTask } from '@/tasks/scheduleDailyTasks'
-
+import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
 /**
  * Core function to process meeting state
  * This function contains the core logic for processing meeting state
@@ -18,6 +18,12 @@ export const processMeetingState = async (req: PayloadRequest) => {
       return { error: 'forbidden user', status: 403 }
     }
 
+    if (isHolidayOrShabbat(new Date())) {
+      return {
+        success: true,
+        message: 'non working day',
+      }
+    }
     // Get current date in ISO format
     const now = new Date().toISOString()
 

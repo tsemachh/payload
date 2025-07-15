@@ -4,6 +4,7 @@ import { createAdminNotification } from '@/utils/utils'
 import {
   getWorkingDateAfter,
   getWorkingDateBefore,
+  isHolidayOrShabbat,
 } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { Vote } from '@/payload-types'
 import { sanitizeRequest } from './utils'
@@ -28,6 +29,12 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
       noFeedFromPredictae: false,
     }
 
+    if (isHolidayOrShabbat(new Date())) {
+      return {
+        success: true,
+        message: 'non working day',
+      }
+    }
     // 1. Check companies not feeding holdings for more than 5 days
     await checkHoldingsFeeds(req, notifications)
 

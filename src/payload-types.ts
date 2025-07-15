@@ -73,21 +73,6 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HoldingsPerDay".
- */
-export type HoldingsPerDay = {
-  stock: string | Stock;
-  feedStockNum?: string | null;
-  quantity: number;
-  id?: string | null;
-}[];
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VoteDecision".
- */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserCompany".
  */
 export type UserCompany =
@@ -129,6 +114,28 @@ export type RolePermissions =
       id?: string | null;
     }[]
   | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HoldingsPerDay".
+ */
+export type HoldingsPerDay = {
+  stock: string | Stock;
+  quantity: number;
+  originalForeignData?:
+    | {
+        stockId?: string | null;
+        accountNum?: number | null;
+        quantity?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+}[];
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
@@ -252,7 +259,10 @@ export interface Config {
     companies: {
       parentCompany: 'companies';
       'researchDocuments.researchDocuments': 'research-documents';
+      usersWrite: 'users';
+      usersRead: 'users';
       holdings: 'holdings';
+      meetings: 'meetings';
     };
   };
   collectionsSelect: {
@@ -341,6 +351,8 @@ export interface Stock {
   relatedStock?: (string | null) | Stock;
   active?: boolean | null;
   isFinancial?: boolean | null;
+  isDual?: boolean | null;
+  dualStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
   longName?: string | null;
@@ -424,7 +436,14 @@ export interface Meeting {
         fund?: string | null;
         quantity?: number | null;
         ownedQuantity?: number | null;
-        feedStockNum?: string | null;
+        original?:
+          | {
+              stockId?: string | null;
+              accountNum?: number | null;
+              quantity?: number | null;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -501,8 +520,23 @@ export interface Company {
         id?: string | null;
       }[]
     | null;
+  usersWrite?: {
+    docs?: (string | User)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  usersRead?: {
+    docs?: (string | User)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   holdings?: {
     docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  meetings?: {
+    docs?: (string | Meeting)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -536,6 +570,63 @@ export interface ResearchDocument {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  legacyId?: number | null;
+  active?: boolean | null;
+  companies?: UserCompany;
+  funds?: (string | Company)[] | null;
+  lastLogin?: string | null;
+  changePassword?: boolean | null;
+  receiveMailNotification?: boolean | null;
+  /**
+   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   */
+  userIp?: string | null;
+  isAdmin?: boolean | null;
+  isGeneratorUser?: boolean | null;
+  userRoles?: (string | Role)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  treeCompanies?: string | null;
+  qrCodeData?: {
+    showQr?: boolean | null;
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "holdings".
  */
 export interface Holding {
@@ -558,6 +649,9 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   reported?: boolean | null;
+  reportedBy?: string | null;
+  reportedTime?: string | null;
+  subTitle?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -654,63 +748,6 @@ export interface AdminNotification {
   readStatus?: boolean | null;
   relatedCompany?: (string | null) | Company;
   relatedUser?: (string | null) | User;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  name?: string | null;
-  legacyId?: number | null;
-  active?: boolean | null;
-  companies?: UserCompany;
-  funds?: (string | Company)[] | null;
-  lastLogin?: string | null;
-  changePassword?: boolean | null;
-  receiveMailNotification?: boolean | null;
-  /**
-   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
-   */
-  userIp?: string | null;
-  isAdmin?: boolean | null;
-  isGeneratorUser?: boolean | null;
-  userRoles?: (string | Role)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  treeCompanies?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
-  createdAt: string;
-  updatedAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  password?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
- */
-export interface Role {
-  id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1191,6 +1228,8 @@ export interface StocksSelect<T extends boolean = true> {
   relatedStock?: T;
   active?: T;
   isFinancial?: T;
+  isDual?: T;
+  dualStock?: T;
   symbol?: T;
   name?: T;
   longName?: T;
@@ -1254,7 +1293,14 @@ export interface MeetingsSelect<T extends boolean = true> {
         fund?: T;
         quantity?: T;
         ownedQuantity?: T;
-        feedStockNum?: T;
+        original?:
+          | T
+          | {
+              stockId?: T;
+              accountNum?: T;
+              quantity?: T;
+              id?: T;
+            };
         id?: T;
       };
   stockValue?: T;
@@ -1304,6 +1350,9 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   reported?: T;
+  reportedBy?: T;
+  reportedTime?: T;
+  subTitle?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1373,8 +1422,15 @@ export interface HoldingsSelect<T extends boolean = true> {
  */
 export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
-  feedStockNum?: T;
   quantity?: T;
+  originalForeignData?:
+    | T
+    | {
+        stockId?: T;
+        accountNum?: T;
+        quantity?: T;
+        id?: T;
+      };
   id?: T;
 }
 /**
@@ -1514,7 +1570,10 @@ export interface CompaniesSelect<T extends boolean = true> {
         subAccounts?: T;
         id?: T;
       };
+  usersWrite?: T;
+  usersRead?: T;
   holdings?: T;
+  meetings?: T;
   silencedStocks?: T;
   creator?: T;
   updator?: T;

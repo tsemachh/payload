@@ -1,6 +1,7 @@
 import { type TaskHandler } from 'payload'
 import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
+import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -36,7 +37,12 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     },
     companyDetails: [] as CompanyDetail[],
   }
-
+  if (isHolidayOrShabbat(new Date())) {
+    return {
+      success: true,
+      message: 'non working day',
+    }
+  }
   // Calculate date 24 hours ago
   const twentyFourHoursAgo = new Date()
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
@@ -83,7 +89,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     limit: 0,
   })
   const usersPerCompany = new Map<string, string[]>()
-  users.forEach((user:User) => {
+  users.forEach((user: User) => {
     user?.companies?.forEach((company) => {
       let users = usersPerCompany.get(company?.companyId as string)
       if (!users) {
@@ -96,9 +102,11 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
 
   // Send emails to each user
   for (const [companyId, usersMails] of usersPerCompany.entries()) {
-    const companyNotifications = notifications.docs.filter((notification:CompanyMeetingNotification) => {
-      return (notification?.company as Company)?.id === companyId
-    })
+    const companyNotifications = notifications.docs.filter(
+      (notification: CompanyMeetingNotification) => {
+        return (notification?.company as Company)?.id === companyId
+      },
+    )
     // Skip if no notifications for this user
     if (companyNotifications.length === 0) {
       continue
@@ -120,10 +128,10 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
 
     // Group notifications by type
     const afterHoldingLimit = companyNotifications.filter(
-      (n:CompanyMeetingNotification) => n.notificationType === 'after-holding-limit',
+      (n: CompanyMeetingNotification) => n.notificationType === 'after-holding-limit',
     )
     const beforeVotingEnd = companyNotifications.filter(
-      (n:CompanyMeetingNotification) => n.notificationType === 'before-voting-end',
+      (n: CompanyMeetingNotification) => n.notificationType === 'before-voting-end',
     )
 
     // Count notifications by type

@@ -26,8 +26,15 @@ export function parseDateString(dateStr: string): Date {
   }
 
   try {
-    // Use date-fns to parse the date string
-    // Format: dd/MM/yyyy HH:mm:ss
+    // First try to parse as a standard JavaScript Date
+    const jsDate = new Date(dateStr)
+
+    // Check if the date is valid
+    if (!isNaN(jsDate.getTime())) {
+      return jsDate
+    }
+
+    // If that fails, use date-fns to parse the string in dd/MM/yyyy HH:mm:ss format
     return parse(dateStr, 'dd/MM/yyyy HH:mm:ss', new Date())
   } catch (error) {
     throw new Error(`Failed to parse date string: ${dateStr}`)

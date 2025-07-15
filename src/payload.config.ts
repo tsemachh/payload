@@ -12,7 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionDirectFilterPlugin } from './plugins/filter/CollectionDirectFilterPlugin'
+import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter/CollectionQuickFilterPlugin'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -28,7 +28,7 @@ import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
-
+import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
@@ -100,7 +100,10 @@ export default buildConfig({
         defaultJobsCollection.admin = {}
       }
       defaultJobsCollection.admin.hidden = false
-      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'queue', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.custom = {
+        filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
+      }
       defaultJobsCollection.admin.group = 'ניהול'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
@@ -189,7 +192,7 @@ export default buildConfig({
     timezones: {
       supportedTimezones: ({ defaultTimezones }) => [
         ...defaultTimezones,
-        { label: '(GMT+3) Israel Standard Time', value: 'Asia/Jerusalem' },
+        { label: 'Israel Standard Time', value: 'Asia/Jerusalem' },
       ],
       defaultTimezone: 'Asia/Jerusalem',
     },
@@ -230,7 +233,7 @@ export default buildConfig({
     importExportPlugin({
       collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
-        collection.admin.group = false //'ניהול'
+        collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
@@ -238,6 +241,22 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
+    DynamicFieldOverrides({
+      overrides: [
+        {
+          fieldTypes: ['checkbox'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/YesNoCell',
+              },
+            },
+          },
+        },
+      ],
+      excludedCollections: [],
+    }),
+
     openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
     swaggerUI({}),
     addAccess({
@@ -250,7 +269,7 @@ export default buildConfig({
       excludedGlobals: [],
       usernameField: 'name',
     }),
-    CollectionDirectFilterPlugin({}),
+    CollectionQuickFilterPlugin({}),
     gcsStorage({
       collections: {
         documents: true,

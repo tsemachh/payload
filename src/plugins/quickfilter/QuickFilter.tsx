@@ -104,7 +104,7 @@ const buildWhereClause = (
   return where
 }
 
-const DirectFilter = ({
+const QuickFilter = ({
   slug,
   filterList,
 }: {
@@ -350,4 +350,4 @@ const DirectFilter = ({
   )
 }
 
-export default DirectFilter
+export default QuickFilter
