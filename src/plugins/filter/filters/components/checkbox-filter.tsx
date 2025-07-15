@@ -66,7 +66,7 @@ export function CheckboxFilter({
       >
         <div className={cn('flex items-center', locale.direction === 'rtl' && 'order-first')}>
           {/* Two Button Toggle */}
-          <div className="flex rounded-md border border-gray-200 overflow-hidden">
+          <div className="flex rounded-md border overflow-hidden">
             {/* In RTL, YES comes first, in LTR, NO comes first */}
             {locale.direction === 'rtl' ? (
               <>
@@ -77,7 +77,7 @@ export function CheckboxFilter({
                     'px-3 py-1 text-xs rounded-none border-0',
                     internalState === 'checked'
                       ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
+                      : 'bg-background text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => handleToggle('checked')}
                 >
@@ -87,10 +87,10 @@ export function CheckboxFilter({
                   variant={internalState === 'unchecked' ? 'default' : 'ghost'}
                   size="sm"
                   className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0 border-l border-gray-200',
+                    'px-3 py-1 text-xs rounded-none border-0 border-l',
                     internalState === 'unchecked'
                       ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
+                      : 'bg-background text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => handleToggle('unchecked')}
                 >
@@ -106,7 +106,7 @@ export function CheckboxFilter({
                     'px-3 py-1 text-xs rounded-none border-0',
                     internalState === 'unchecked'
                       ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
+                      : 'bg-background text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => handleToggle('unchecked')}
                 >
@@ -116,10 +116,10 @@ export function CheckboxFilter({
                   variant={internalState === 'checked' ? 'default' : 'ghost'}
                   size="sm"
                   className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0 border-l border-gray-200',
+                    'px-3 py-1 text-xs rounded-none border-0 border-l',
                     internalState === 'checked'
                       ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
+                      : 'bg-background text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => handleToggle('checked')}
                 >
@@ -147,7 +147,7 @@ export function CheckboxFilter({
             variant="ghost"
             size="sm"
             className={cn(
-              'h-5 w-5 p-0 hover:bg-muted-foreground/20 rounded-full -mt-1',
+              'h-5 w-5 p-0 hover:bg-muted rounded-full -mt-1',
               checkboxLabel
                 ? locale.direction === 'rtl'
                   ? 'order-last -ml-1'
