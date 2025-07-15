@@ -2,6 +2,7 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { up as migrateStocks } from './migrateStocks'
 import { migrateDual, up as migrateForeign } from './migrateForeign'
 import { up as migrateFullMeetings } from './migrateFullMeeting'
+import { up as migrateMagnaMeetings } from './migrateMagnaMeetings'
 import { up as migrateUsers } from './migrateUsers'
 import { up as migrateHoldings } from './migrateHoldings'
 import { up as migrateFullFirms } from './migrateFullFirms'
@@ -44,7 +45,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateFullMeetings({ payload, req })
     console.log('=== Meetings Migration Completed ===\n')
 
-    // 2. Migrate Firsm
+    // 2.1 Migrate Magna Meetings
+    console.log('\n=== Starting Magna Meetings Migration ===')
+    await migrateMagnaMeetings({ payload, req })
+    console.log('=== Magna Meetings Migration Completed ===\n')
+
+    // 3. Migrate Firms
     console.log('\n=== Starting Firms Migration ===')
     await migrateFullFirms({ payload, req })
     console.log('=== Meetings Firms Completed ===\n')
