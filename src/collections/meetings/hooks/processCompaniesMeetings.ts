@@ -79,11 +79,21 @@ async function processMeeting(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
 
-    const fundsWithHolding = flattenedHoldings.map((h) => ({
-      fund: String(getIdOfRelationField(h.fund)),
-      quantity: h.holdings[0].quantity,
-      feedStockNum: h.holdings[0].feedStockNum,
-    }))
+    const fundsWithHolding = flattenedHoldings.map((h) => {
+      const originalForeignDataArray = Array.isArray(h.holdings[0].originalForeignData)
+        ? h.holdings[0].originalForeignData
+        : [h.holdings[0].originalForeignData]
+
+      return {
+        fund: String(getIdOfRelationField(h.fund)),
+        quantity: h.holdings[0].quantity,
+        original: originalForeignDataArray.map((item: any) => ({
+          stockId: item.stockId,
+          accountNum: item.accountNum,
+          quantity: item.quantity,
+        })),
+      }
+    })
     let stockValue = meeting.stockValue
     if (!stockValue) {
       const { docs: stockValueDocs } = await req.payload.find({

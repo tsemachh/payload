@@ -120,8 +120,15 @@ export type RolePermissions =
  */
 export type HoldingsPerDay = {
   stock: string | Stock;
-  feedStockNum?: string | null;
   quantity: number;
+  originalForeignData?:
+    | {
+        stockId?: string | null;
+        accountNum?: number | null;
+        quantity?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   id?: string | null;
 }[];
 /**
@@ -429,7 +436,14 @@ export interface Meeting {
         fund?: string | null;
         quantity?: number | null;
         ownedQuantity?: number | null;
-        feedStockNum?: string | null;
+        original?:
+          | {
+              stockId?: string | null;
+              accountNum?: number | null;
+              quantity?: number | null;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -1279,7 +1293,14 @@ export interface MeetingsSelect<T extends boolean = true> {
         fund?: T;
         quantity?: T;
         ownedQuantity?: T;
-        feedStockNum?: T;
+        original?:
+          | T
+          | {
+              stockId?: T;
+              accountNum?: T;
+              quantity?: T;
+              id?: T;
+            };
         id?: T;
       };
   stockValue?: T;
@@ -1401,8 +1422,15 @@ export interface HoldingsSelect<T extends boolean = true> {
  */
 export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
-  feedStockNum?: T;
   quantity?: T;
+  originalForeignData?:
+    | T
+    | {
+        stockId?: T;
+        accountNum?: T;
+        quantity?: T;
+        id?: T;
+      };
   id?: T;
 }
 /**

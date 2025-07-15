@@ -856,9 +856,25 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                     },
                     {
-                      name: 'feedStockNum',
-                      label: 'מספר נייר ערך',
-                      type: 'text',
+                      name: 'original',
+                      label: 'מניה מקורית חול',
+                      type: 'array',
+                      admin: {
+                        initCollapsed: true,
+                        components: {
+                          Field: '/admincomponents/fields/arrayTable',
+                        },
+                        condition: (data, siblingData) => {
+                          return (
+                            Array.isArray(siblingData.original) && siblingData.original.length > 0
+                          )
+                        },
+                      },
+                      fields: [
+                        { name: 'stockId', label: 'מניה', type: 'text' },
+                        { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
+                        { name: 'quantity', label: 'כמות', type: 'number' },
+                      ],
                     },
                   ],
                 },
