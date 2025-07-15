@@ -10,24 +10,19 @@ interface CheckboxFilterProps {
 
 export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFilterProps) {
   const [internalState, setInternalState] = useState<CheckboxFilterState>(value)
-  const [tempState, setTempState] = useState<CheckboxFilterState>(value)
 
   useEffect(() => {
     setInternalState(value)
-    setTempState(value)
   }, [value])
 
   const handleToggle = (newState: 'checked' | 'unchecked') => {
-    setTempState(newState) // שמירת השינוי במצב זמני
+    setInternalState(newState)
+    onChange(newState)
   }
 
   const handleClear = () => {
-    setTempState('indeterminate') // שמירת השינוי במצב זמני
-  }
-
-  const handleConfirm = () => {
-    setInternalState(tempState) // עדכון המצב הפנימי
-    onChange(tempState) // שליחת השינוי ל-Payload
+    setInternalState('indeterminate')
+    onChange('indeterminate')
   }
 
   return (
@@ -45,19 +40,19 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
             padding: '4px 12px',
             fontSize: '12px',
             border: 'none',
-            backgroundColor: tempState === 'checked' ? '#16a34a' : 'white',
-            color: tempState === 'checked' ? 'white' : '#6b7280',
+            backgroundColor: internalState === 'checked' ? '#16a34a' : 'white',
+            color: internalState === 'checked' ? 'white' : '#6b7280',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
           onClick={() => handleToggle('checked')}
           onMouseEnter={(e) => {
-            if (tempState !== 'checked') {
+            if (internalState !== 'checked') {
               e.currentTarget.style.backgroundColor = '#f9fafb'
             }
           }}
           onMouseLeave={(e) => {
-            if (tempState !== 'checked') {
+            if (internalState !== 'checked') {
               e.currentTarget.style.backgroundColor = 'white'
             }
           }}
@@ -70,19 +65,19 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
             fontSize: '12px',
             border: 'none',
             borderLeft: '1px solid #d1d5db',
-            backgroundColor: tempState === 'unchecked' ? '#dc2626' : 'white',
-            color: tempState === 'unchecked' ? 'white' : '#6b7280',
+            backgroundColor: internalState === 'unchecked' ? '#dc2626' : 'white',
+            color: internalState === 'unchecked' ? 'white' : '#6b7280',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
           onClick={() => handleToggle('unchecked')}
           onMouseEnter={(e) => {
-            if (tempState !== 'unchecked') {
+            if (internalState !== 'unchecked') {
               e.currentTarget.style.backgroundColor = '#f9fafb'
             }
           }}
           onMouseLeave={(e) => {
-            if (tempState !== 'unchecked') {
+            if (internalState !== 'unchecked') {
               e.currentTarget.style.backgroundColor = 'white'
             }
           }}
@@ -91,7 +86,7 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
         </button>
       </div>
 
-      {(tempState === 'checked' || tempState === 'unchecked') && (
+      {(internalState === 'checked' || internalState === 'unchecked') && (
         <button
           style={{
             width: '20px',
@@ -118,21 +113,6 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
           ✕
         </button>
       )}
-
-      <button
-        style={{
-          padding: '4px 12px',
-          fontSize: '12px',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          backgroundColor: '#16a34a',
-          color: 'white',
-          cursor: 'pointer',
-        }}
-        onClick={handleConfirm}
-      >
-        אישור
-      </button>
     </div>
   )
 }
