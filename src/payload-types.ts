@@ -656,6 +656,15 @@ export interface Vote {
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
+  fundsWithHoldingsUpdates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1347,6 +1356,7 @@ export interface VotesSelect<T extends boolean = true> {
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;
+  fundsWithHoldingsUpdates?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
