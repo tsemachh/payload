@@ -15,9 +15,7 @@ interface StockItem {
 const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
   const { initialData } = useDocumentInfo()
   const isMeeting = Boolean(initialData?.invitationLink)
-  console.log('value', initialData)
   const data = Array.isArray(get(initialData, path)) ? get(initialData, path) : []
-  console.log('data', data)
   if (data.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
