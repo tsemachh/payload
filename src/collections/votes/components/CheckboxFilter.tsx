@@ -35,7 +35,7 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
           overflow: 'hidden',
         }}
       >
-        <button
+        <span
           style={{
             padding: '4px 12px',
             fontSize: '12px',
@@ -58,8 +58,8 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
           }}
         >
           כן
-        </button>
-        <button
+        </span>
+        <span
           style={{
             padding: '4px 12px',
             fontSize: '12px',
@@ -83,11 +83,11 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
           }}
         >
           לא
-        </button>
+        </span>
       </div>
 
       {(internalState === 'checked' || internalState === 'unchecked') && (
-        <button
+        <span
           style={{
             width: '20px',
             height: '20px',
@@ -111,7 +111,7 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
           }}
         >
           ✕
-        </button>
+        </span>
       )}
     </div>
   )
