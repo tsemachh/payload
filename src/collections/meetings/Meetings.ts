@@ -1,4 +1,4 @@
-import type { Field, TextFieldSingleValidation } from 'payload'
+import type { CollectionBeforeChangeHook, Field, TextFieldSingleValidation } from 'payload'
 import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -19,6 +19,7 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { v1 as uuid1 } from 'uuid'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -26,7 +27,14 @@ const PropsManualLink: IconLinkProps = {
   iconAltText: 'קישור ידני',
   iconOnly: true,
 }
-
+const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
+  if (operation == 'create') {
+    if (!data.meetingId) {
+      data.meetingId = uuid1()
+    }
+  }
+  return data
+}
 const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
@@ -152,14 +160,14 @@ export const Meetings: CollectionConfig = {
         { name: 'meetingDate' },
         { name: 'proxyVotingDate' },
         { name: 'state' },
-        { name: 'type' }
+        { name: 'type' },
       ],
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
         { name: 'committeeInitiated' },
-        { name: '_status' }
-      ]
+        { name: '_status' },
+      ],
     ],
   },
   enableQueryPresets: true,
@@ -929,7 +937,11 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [
+      handleRecommendationReason,
+      clearCompaniesInSingleBondResearchDoc,
+      beforeChangeMeetingId,
+    ],
   },
   endpoints: [
     {
