@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
@@ -19,6 +19,7 @@ import {
   futureDateFilterOptions,
   pastDateFilterOptions,
 } from './filters/constants/date-filter-options'
+import { getDateRangeForOption } from './filters/utils/date-helpers'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -54,7 +55,6 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
   return results
 }
 
-// Helper function to convert UI state to a where query
 const buildWhereClause = (
   values: Record<string, any>,
   fieldDefs: FilterDetaild[],
@@ -123,9 +123,19 @@ const QuickFilter = ({
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
     try {
       const item = window.localStorage.getItem(localStorageKey)
-      return item ? JSON.parse(item) : {}
+      if (!item) {
+        return {}
+      }
+      const dateTimeReviver = (key: string, value: any) => {
+        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
+        if (typeof value === 'string' && isoDateRegex.test(value)) {
+          return new Date(value)
+        }
+        return value
+      }
+      return JSON.parse(item, dateTimeReviver)
     } catch (error) {
-      console.error('Error reading filters from localStorage.', error)
+      console.error('Error reading and parsing filters from localStorage.', error)
       return {}
     }
   })
@@ -195,6 +205,7 @@ const QuickFilter = ({
         page: '1',
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterValues, fields, query, refineListData, localStorageKey])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
