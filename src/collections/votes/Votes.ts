@@ -1,4 +1,4 @@
-import { type CollectionConfig } from 'payload'
+import { ValidationError, type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import { addDays, isSameDay } from '@/utils/dateUtils'
 import { Meeting } from '@/payload-types'
@@ -361,6 +361,91 @@ export const Votes: CollectionConfig = {
           data.reportedBy = data.updator || req.user?.name
           data.reportedTime = new Date().toISOString()
         }
+
+        if (
+          data._status === 'published' &&
+          data.meeting &&
+          data.fundsWithHoldingsUpdates &&
+          JSON.stringify(originalDoc?.fundsWithHoldingsUpdates) !==
+            JSON.stringify(data.fundsWithHoldingsUpdates)
+        ) {
+          console.log('------data._status', data._status)
+          console.log('-----data.fundsWithHoldingsUpdates-', data.fundsWithHoldingsUpdates)
+          console.log(
+            '------originalDoc?.fundsWithHoldingsUpdates',
+            originalDoc?.fundsWithHoldingsUpdates,
+          )
+          const meetingId = data.meeting
+          const updates = data.fundsWithHoldingsUpdates
+
+          if (meetingId && typeof updates === 'object') {
+            const meeting = await req.payload.findByID({
+              collection: 'meetings',
+              id: meetingId,
+            })
+
+            if (!meeting) {
+              throw new Error('לא נמצאה אסיפה מתאימה')
+            }
+
+            const updatedFundsWithHolding = (meeting.fundsWithHolding || []).map((fund: any) => {
+              const update = updates[fund.fund]
+              console.log('------update', update)
+              console.log('------fund', fund)
+              console.log('------update?.ownedQuantity', update?.ownedQuantity)
+
+              if (update) {
+                return {
+                  ...fund,
+                  ownedQuantity: update?.ownedQuantity ?? null,
+                }
+              }
+              return fund
+            })
+            console.log('------updatedFundsWithHolding', updatedFundsWithHolding)
+
+            await req.payload.update({
+              collection: 'meetings',
+              id: meetingId,
+              data: {
+                fundsWithHolding: updatedFundsWithHolding,
+              },
+            })
+
+            console.log('🎯 fundsWithHolding in meeting updated')
+          }
+          //פה צריך לעדכן את אסיפה לפי id לכל מי שיש לו unchecked למלא שם את התוכן
+        }
+        return data
+      },
+    ],
+    beforeValidate: [
+      async ({ data }) => {
+        const updates = data?.fundsWithHoldingsUpdates
+
+        const validationErrors: { message: string; path: string }[] = []
+
+        if (updates && typeof updates === 'object') {
+          type FundUpdate = { isAuthorized?: string; ownedQuantity?: number | null }
+          Object.entries(updates).forEach(([fundId, updateRaw]) => {
+            const update = updateRaw as FundUpdate
+            if (
+              update &&
+              update.isAuthorized === 'unchecked' &&
+              (update.ownedQuantity === null || update.ownedQuantity === undefined)
+            ) {
+              validationErrors.push({
+                message: 'חובה להזין ערך נקוב ברשות כאשר אין תאום בערכים',
+                path: `reported`,
+              })
+            }
+          })
+        }
+
+        if (validationErrors.length > 0) {
+          throw new ValidationError({ errors: validationErrors })
+        }
+
         return data
       },
     ],
