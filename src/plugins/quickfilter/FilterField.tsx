@@ -3,7 +3,7 @@
 'use client'
 import React, { useCallback } from 'react'
 import { useTranslation } from '@payloadcms/ui'
-import { rtlLanguages } from '@payloadcms/translations'
+import { getTranslation, rtlLanguages } from '@payloadcms/translations'
 import { DateFilter } from '@/plugins/quickfilter/filters/components/date-filter'
 import { SelectFilter } from '@/plugins/quickfilter/filters/components/select-filter'
 import { CheckboxFilter } from '@/plugins/quickfilter/filters/components/checkbox-filter'
@@ -65,7 +65,7 @@ const FilterField = ({
             label={field.label}
             key={field.name}
             options={(field.options || []).map((option: any) => ({
-              label: option.label,
+              label: getTranslation(option.label, i18n),
               value: option.value,
             }))}
             onChange={handleSelectFilterChange}
@@ -80,7 +80,7 @@ const FilterField = ({
           label={field.label}
           key={field.name}
           options={(field.options || []).map((option: any) => ({
-            label: option.label,
+            label: getTranslation(option.label, i18n),
             value: option.value,
           }))}
           onChange={handleSelectFilterChange}

@@ -55,9 +55,11 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
   return results
 }
 
+// Helper function to convert UI state to a where query
 const buildWhereClause = (
   values: Record<string, any>,
   fieldDefs: FilterDetaild[],
+  isHebrew: boolean,
 ): Record<string, any> => {
   const where: Record<string, any> = {}
   Object.entries(values).forEach(([fieldName, value]) => {
@@ -67,8 +69,28 @@ const buildWhereClause = (
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
-        if (dateValue.customRange) {
-          const { from, to } = dateValue.customRange
+        let from: Date | null = null
+        let to: Date | null = null
+
+        if (dateValue.predefinedValue) {
+          const locale = isHebrew ? 'he' : 'en'
+          const range = getDateRangeForOption(dateValue.predefinedValue, locale)
+
+          from = range.from
+          to = range.to
+        }
+        // Fallback for custom date ranges
+        else if (dateValue.customRange) {
+          if (dateValue.customRange.from) {
+            from = new Date(dateValue.customRange.from)
+          }
+          if (dateValue.customRange.to) {
+            to = new Date(dateValue.customRange.to)
+          }
+        }
+
+        // Construct the query
+        if (from || to) {
           const dateQuery: any = {}
           if (from) dateQuery.greater_than_equal = from
           if (to) dateQuery.less_than_equal = to
@@ -186,7 +208,7 @@ const QuickFilter = ({
     if (fields.length === 0) {
       return
     }
-    const where = buildWhereClause(filterValues, fields)
+    const where = buildWhereClause(filterValues, fields, isHebrew)
     try {
       if (Object.keys(filterValues).length > 0) {
         localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
@@ -206,7 +228,7 @@ const QuickFilter = ({
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues, fields, query, refineListData, localStorageKey])
+  }, [filterValues, fields, localStorageKey])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
