@@ -303,12 +303,12 @@ const DirectFilter = ({
 
   return (
     <div className="filter-container useTw">
-      <div style={{ position: 'relative', top: '-22px', height: '0px' }}>
+      <div style={{ position: 'relative', top: '-24px', height: '0px' }}>
         <Button
           variant="outline"
           size="sm"
           onClick={toggleFilters}
-          className={`flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50 ${
+          className={`flex items-center gap-2 bg-background border-muted-muted hover:bg-muted ${
             hasActiveFilters ? 'w-auto min-w-fit' : ''
           }`}
         >
@@ -330,7 +330,7 @@ const DirectFilter = ({
                   e.stopPropagation()
                   clearAllFilters()
                 }}
-                className="ml-1 p-0.5 hover:bg-gray-200 rounded-sm transition-colors flex-shrink-0"
+                className="ml-1 p-0.5 hover:bg-muted rounded-sm transition-colors flex-shrink-0"
               >
                 <X className="h-3 w-3 text-gray-500" />
               </span>
@@ -344,8 +344,7 @@ const DirectFilter = ({
       </div>
       {showFilters && (
         <div
-          className={'p-4 pb-2'}
-          style={{ border: '5px solid', borderColor: 'rgb(245, 245, 245)' }}
+          className={'p-4 pb-2 bg-muted/70'}
         >
           {memoizedFilterRows}
         </div>
