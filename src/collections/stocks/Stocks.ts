@@ -60,14 +60,8 @@ const validateNoFutureMeetings = async (
 export const Stocks: CollectionConfig = {
   slug: 'stocks',
   labels: {
-    singular: {
-      en: 'Stock',
-      he: 'נייר ערך',
-    },
-    plural: {
-      en: 'Stocks',
-      he: 'ניירות ערך',
-    },
+    plural: 'ניירות ערך',
+    singular: 'נייר ערך',
   },
   custom: {
     filterList: [
@@ -94,10 +88,7 @@ export const Stocks: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: {
-            en: 'General',
-            he: 'כללי',
-          },
+          label: 'כללי',
           fields: [
             {
               type: 'row',
@@ -105,10 +96,7 @@ export const Stocks: CollectionConfig = {
                 {
                   name: 'stockId',
                   type: 'text',
-                  label: {
-                    en: 'Stock ID',
-                    he: 'מספר נייר',
-                  },
+                  label: 'מספר נייר',
                   unique: true,
                   required: true,
                   index: true,
@@ -129,10 +117,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fullName',
-                  label: {
-                    en: 'Full Name',
-                    he: 'שם מלא',
-                  },
+                  label: 'שם מלא',
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
@@ -148,130 +133,23 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'type',
-                  label: {
-                    en: 'Type',
-                    he: 'סוג',
-                  },
+                  label: 'סוג',
                   type: 'select',
                   interfaceName: 'StockType',
                   options: [
-                    {
-                      label: {
-                        en: 'Stocks',
-                        he: 'מניות',
-                        ar: 'أسهم',
-                        es: 'Acciones',
-                      },
-                      value: 'מניות',
-                    },
-                    {
-                      label: {
-                        en: 'Options',
-                        he: 'אופציות',
-                        ar: 'خيارات',
-                        es: 'Opciones',
-                      },
-                      value: 'אופציות',
-                    },
-                    {
-                      label: {
-                        en: 'Bonds',
-                        he: 'איגרות חוב',
-                        ar: 'سندات',
-                        es: 'Bonos',
-                      },
-                      value: 'איגרות חוב',
-                    },
-                    {
-                      label: {
-                        en: 'Convertible Bonds',
-                        he: 'איגרות חוב להמרה',
-                        ar: 'سندات قابلة للتحويل',
-                        es: 'Bonos Convertibles',
-                      },
-                      value: 'איגרות חוב להמרה',
-                    },
-                    {
-                      label: {
-                        en: 'Participation Unit',
-                        he: 'יחידת השתתפות',
-                        ar: 'وحدة مشاركة',
-                        es: 'Unidad de Participación',
-                      },
-                      value: 'יחידת השתתפות',
-                    },
-                    {
-                      label: {
-                        en: 'Index Certificates',
-                        he: 'תעודות מדד',
-                        ar: 'شهادات المؤشر',
-                        es: 'Certificados de Índice',
-                      },
-                      value: 'תעודות מדד',
-                    },
-                    {
-                      label: {
-                        en: 'ETFs',
-                        he: 'תעודות סל',
-                        ar: 'صناديق المؤشرات المتداولة',
-                        es: 'ETFs',
-                      },
-                      value: 'תעודות סל',
-                    },
-                    {
-                      label: {
-                        en: 'Mutual Funds',
-                        he: 'קרנות נאמנות',
-                        ar: 'صناديق الاستثمار المشتركة',
-                        es: 'Fondos Mutuos',
-                      },
-                      value: 'קרנות נאמנות',
-                    },
-                    {
-                      label: {
-                        en: 'Commercial Paper',
-                        he: 'נייר ערך מסחרי',
-                        ar: 'ورقة تجارية',
-                        es: 'Papel Comercial',
-                      },
-                      value: 'נייר ערך מסחרי',
-                    },
-                    {
-                      label: {
-                        en: 'Other',
-                        he: 'אחר',
-                        ar: 'آخر',
-                        es: 'Otro',
-                      },
-                      value: 'אחר',
-                    },
-                    {
-                      label: {
-                        en: 'Rights',
-                        he: 'זכויות',
-                        ar: 'حقوق',
-                        es: 'Derechos',
-                      },
-                      value: 'זכויות',
-                    },
-                    {
-                      label: {
-                        en: 'Treasury Bills',
-                        he: 'מק"מ',
-                        ar: 'أذون الخزانة',
-                        es: 'Letras del Tesoro',
-                      },
-                      value: 'מק"מ',
-                    },
-                    {
-                      label: {
-                        en: 'Capital Notes',
-                        he: 'שטרי הון',
-                        ar: 'سندات رأس المال',
-                        es: 'Notas de Capital',
-                      },
-                      value: 'שטרי הון',
-                    },
+                    { label: 'מניות', value: 'מניות' },
+                    { label: 'אופציות', value: 'אופציות' },
+                    { label: 'איגרות חוב', value: 'איגרות חוב' },
+                    { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
+                    { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
+                    { label: 'תעודות מדד', value: 'תעודות מדד' },
+                    { label: 'תעודות סל', value: 'תעודות סל' },
+                    { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
+                    { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
+                    { label: 'אחר', value: 'אחר' },
+                    { label: 'זכויות', value: 'זכויות' },
+                    { label: 'מק"מ', value: 'מק"מ' },
+                    { label: 'שטרי הון', value: 'שטרי הון' },
                   ],
                   index: true,
                   admin: {
@@ -281,10 +159,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'fromMagna',
-                  label: {
-                    en: 'From Magna',
-                    he: 'ממגנא',
-                  },
+                  label: 'ממגנא',
                   type: 'checkbox',
                   admin: {
                     hidden: true,
@@ -293,40 +168,13 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'origin',
-                  label: {
-                    en: 'Origin',
-                    he: 'מקור',
-                  },
+                  label: 'מקור',
                   type: 'select',
                   interfaceName: 'StockOrigin',
                   options: [
-                    {
-                      label: {
-                        en: 'Stock Exchange',
-                        he: 'בורסה',
-                        ar: 'بورصة',
-                        es: 'Bolsa de Valores',
-                      },
-                      value: 'TASE',
-                    },
-                    {
-                      label: {
-                        en: 'Foreign',
-                        he: 'חו״ל',
-                        ar: 'أجنبي',
-                        es: 'Extranjero',
-                      },
-                      value: 'Foreign',
-                    },
-                    {
-                      label: {
-                        en: 'Private',
-                        he: 'פרטי',
-                        ar: 'خاص',
-                        es: 'Privado',
-                      },
-                      value: 'Private',
-                    },
+                    { label: 'בורסה', value: 'TASE' },
+                    { label: 'חו״ל', value: 'Foreign' },
+                    { label: 'פרטי', value: 'Private' },
                   ],
                   index: true,
                   required: true,
@@ -337,10 +185,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'tradable',
-                  label: {
-                    en: 'Tradable',
-                    he: 'האם נסחר',
-                  },
+                  label: 'האם נסחר',
                   type: 'checkbox',
                   admin: {
                     width: '150px',
@@ -352,10 +197,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'relatedStock',
-                  label: {
-                    en: 'Main Stock',
-                    he: 'נייר ערך ראשי',
-                  },
+                  label: 'נייר ערך ראשי',
                   type: 'relationship',
                   relationTo: 'stocks',
                   index: true,
@@ -374,10 +216,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'active',
-                  label: {
-                    en: 'Active Stock',
-                    he: 'נייר ערך פעיל',
-                  },
+                  label: 'נייר ערך פעיל',
                   type: 'checkbox',
                   index: true,
                   defaultValue: true,
@@ -416,10 +255,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'isFinancial',
-                  label: {
-                    en: 'Financial',
-                    he: 'פיננסי',
-                  },
+                  label: 'פיננסי',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
@@ -430,10 +266,7 @@ export const Stocks: CollectionConfig = {
 
                 {
                   name: 'isDual',
-                  label: {
-                    en: 'Dual',
-                    he: 'דואלית',
-                  },
+                  label: 'דואלית',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
@@ -443,10 +276,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'dualStock',
-                  label: {
-                    en: 'Dual Stock',
-                    he: 'נייר ערך דואלי',
-                  },
+                  label: 'נייר ערך דואלי',
                   type: 'relationship',
                   relationTo: 'stocks',
                   admin: {
@@ -469,30 +299,21 @@ export const Stocks: CollectionConfig = {
               fields: [
                 {
                   name: 'symbol',
-                  label: {
-                    en: 'Symbol',
-                    he: 'סימול',
-                  },
+                  label: 'סימול',
                   type: 'text',
                   index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
                   name: 'name',
-                  label: {
-                    en: 'Stock Name',
-                    he: 'שם נייר ערך',
-                  },
+                  label: 'שם נייר ערך',
                   type: 'text',
                   index: true,
                   admin: { condition: (siblingData) => siblingData.tradable },
                 },
                 {
                   name: 'longName',
-                  label: {
-                    en: 'Company Name',
-                    he: 'שם חברה',
-                  },
+                  label: 'שם חברה',
                   type: 'text',
                   admin: {
                     condition: (siblingData) =>
@@ -506,10 +327,7 @@ export const Stocks: CollectionConfig = {
               fields: [
                 {
                   name: 'values',
-                  label: {
-                    en: 'Value',
-                    he: 'שווי',
-                  },
+                  label: 'שווי',
                   type: 'join',
                   collection: 'stock-values',
                   on: 'stockId',
@@ -523,28 +341,19 @@ export const Stocks: CollectionConfig = {
             },
             {
               name: 'comments',
-              label: {
-                en: 'Comments',
-                he: 'הערות',
-              },
+              label: 'הערות',
               index: true,
               type: 'textarea',
             },
           ],
         },
         {
-          label: {
-            en: 'Following Stocks',
-            he: 'ניירות ערך עוקבים',
-          },
+          label: 'ניירות ערך עוקבים',
           admin: { condition: (siblingData) => siblingData.tradable },
           fields: [
             {
               name: 'relations',
-              label: {
-                en: 'Following Stocks',
-                he: 'ניירות ערך עוקבים',
-              },
+              label: 'ניירות ערך עוקבים',
               type: 'join',
               collection: 'stocks',
               on: 'relatedStock',
@@ -556,20 +365,14 @@ export const Stocks: CollectionConfig = {
           ],
         },
         {
-          label: {
-            en: 'Meetings',
-            he: 'אסיפות',
-          },
+          label: 'אסיפות',
           admin: {
             condition: (siblingData) => siblingData.tradable || siblingData.origin == 'Private',
           },
           fields: [
             {
               name: 'meetings',
-              label: {
-                en: 'Meetings',
-                he: 'אסיפות',
-              },
+              label: 'אסיפות',
               type: 'join',
               collection: 'meetings',
               on: 'stock',

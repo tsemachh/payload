@@ -46,8 +46,8 @@ export function CheckboxFilter({
   const isActive = internalState === 'checked' || internalState === 'unchecked'
 
   const labels_toggle = {
-    yes: isHebrew ? 'כן' : 'YES',
-    no: isHebrew ? 'לא' : 'NO',
+    yes: isHebrew ? 'כן' : 'Yes',
+    no: isHebrew ? 'לא' : 'No',
   }
 
   return (
