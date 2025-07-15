@@ -156,8 +156,8 @@ export const Meetings: CollectionConfig = {
   custom: {
     filterList: [
       [
-        { name: 'holdingsLimit' },
         { name: 'meetingDate' },
+        { name: 'holdingsLimit' },
         { name: 'proxyVotingDate' },
         { name: 'state' },
         { name: 'type' },

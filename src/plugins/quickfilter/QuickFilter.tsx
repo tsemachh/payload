@@ -19,6 +19,7 @@ import {
   futureDateFilterOptions,
   pastDateFilterOptions,
 } from './filters/constants/date-filter-options'
+import { getDateRangeForOption } from './filters/utils/date-helpers'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -58,6 +59,7 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
 const buildWhereClause = (
   values: Record<string, any>,
   fieldDefs: FilterDetaild[],
+  isHebrew: boolean,
 ): Record<string, any> => {
   const where: Record<string, any> = {}
   Object.entries(values).forEach(([fieldName, value]) => {
@@ -67,8 +69,28 @@ const buildWhereClause = (
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
-        if (dateValue.customRange) {
-          const { from, to } = dateValue.customRange
+        let from: Date | null = null
+        let to: Date | null = null
+
+        if (dateValue.predefinedValue) {
+          const locale = isHebrew ? 'he' : 'en'
+          const range = getDateRangeForOption(dateValue.predefinedValue, locale)
+
+          from = range.from
+          to = range.to
+        }
+        // Fallback for custom date ranges
+        else if (dateValue.customRange) {
+          if (dateValue.customRange.from) {
+            from = new Date(dateValue.customRange.from)
+          }
+          if (dateValue.customRange.to) {
+            to = new Date(dateValue.customRange.to)
+          }
+        }
+
+        // Construct the query
+        if (from || to) {
           const dateQuery: any = {}
           if (from) dateQuery.greater_than_equal = from
           if (to) dateQuery.less_than_equal = to
@@ -123,9 +145,19 @@ const QuickFilter = ({
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
     try {
       const item = window.localStorage.getItem(localStorageKey)
-      return item ? JSON.parse(item) : {}
+      if (!item) {
+        return {}
+      }
+      const dateTimeReviver = (key: string, value: any) => {
+        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
+        if (typeof value === 'string' && isoDateRegex.test(value)) {
+          return new Date(value)
+        }
+        return value
+      }
+      return JSON.parse(item, dateTimeReviver)
     } catch (error) {
-      console.error('Error reading filters from localStorage.', error)
+      console.error('Error reading and parsing filters from localStorage.', error)
       return {}
     }
   })
@@ -173,18 +205,16 @@ const QuickFilter = ({
   }, [slug, filterList, getEntityConfig, i18n])
 
   useEffect(() => {
-    // Wait until field metadata has been loaded.
     if (fields.length === 0) {
       return
     }
-
-    const where = buildWhereClause(filterValues, fields)
-
+    const where = buildWhereClause(filterValues, fields, isHebrew)
     try {
       if (Object.keys(filterValues).length > 0) {
         localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
       } else {
         localStorage.removeItem(localStorageKey)
+        return
       }
     } catch (error) {
       console.error('Failed to save filters to localStorage', error)
@@ -197,7 +227,8 @@ const QuickFilter = ({
         page: '1',
       })
     }
-  }, [filterValues, fields, query, refineListData, localStorageKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterValues, fields, localStorageKey])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
@@ -271,6 +302,11 @@ const QuickFilter = ({
   }
 
   const clearAllFilters = () => {
+    refineListData({
+      columns: parseColumns(query.columns),
+      where: {},
+      page: '1',
+    })
     setFilterValues({})
   }
 
@@ -342,13 +378,7 @@ const QuickFilter = ({
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
-      {showFilters && (
-        <div
-          className={'p-4 pb-2 bg-muted/70'}
-        >
-          {memoizedFilterRows}
-        </div>
-      )}
+      {showFilters && <div className={'p-4 pb-2 bg-muted'}>{memoizedFilterRows}</div>}
     </div>
   )
 }
