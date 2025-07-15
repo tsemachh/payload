@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
@@ -173,18 +173,16 @@ const DirectFilter = ({
   }, [slug, filterList, getEntityConfig, i18n])
 
   useEffect(() => {
-    // Wait until field metadata has been loaded.
     if (fields.length === 0) {
       return
     }
-
     const where = buildWhereClause(filterValues, fields)
-
     try {
       if (Object.keys(filterValues).length > 0) {
         localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
       } else {
         localStorage.removeItem(localStorageKey)
+        return
       }
     } catch (error) {
       console.error('Failed to save filters to localStorage', error)
@@ -271,6 +269,11 @@ const DirectFilter = ({
   }
 
   const clearAllFilters = () => {
+    refineListData({
+      columns: parseColumns(query.columns),
+      where: {},
+      page: '1',
+    })
     setFilterValues({})
   }
 
@@ -342,13 +345,7 @@ const DirectFilter = ({
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
-      {showFilters && (
-        <div
-          className={'p-4 pb-2 bg-muted/70'}
-        >
-          {memoizedFilterRows}
-        </div>
-      )}
+      {showFilters && <div className={'p-4 pb-2 bg-muted'}>{memoizedFilterRows}</div>}
     </div>
   )
 }
