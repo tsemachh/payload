@@ -299,25 +299,14 @@ export const Votes: CollectionConfig = {
             {
               name: 'fundsWithHoldingsUpdates',
               label: 'עדכוני אחזקות תיקים',
-              defaultValue: [],
               type: 'json',
+              //hidden: true,
+              defaultValue: {},
               admin: {
                 components: {
                   Field: '/collections/votes/components/HoldingsInFunds',
                 },
               },
-              // fields: [
-              //   {
-              //     name: 'fundId',
-              //     label: 'מזהה תיק',
-              //     type: 'text',
-              //   },
-              //   {
-              //     name: 'ownedQuantity',
-              //     label: 'ערך נקוב ברשות',
-              //     type: 'number',
-              //   },
-              // ],
             },
           ],
         },

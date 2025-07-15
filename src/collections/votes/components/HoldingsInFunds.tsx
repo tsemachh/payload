@@ -1,9 +1,10 @@
 'use client'
 
-import { useFormFields } from '@payloadcms/ui'
+import { useField, useFormFields } from '@payloadcms/ui'
 import { useState, useEffect } from 'react'
 import { stringify } from 'qs-esm'
 import { CheckboxFilter } from './CheckboxFilter'
+import { JSONFieldClientProps } from 'payload'
 
 export type CheckboxFilterState = 'indeterminate' | 'checked' | 'unchecked'
 
@@ -16,15 +17,19 @@ type Fund = {
   feedStockNum?: string
 }
 
-export default function FundsWithHoldings() {
+const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
   const [funds, setFunds] = useState<Fund[]>([])
-  const [updatedHoldings, setUpdatedHoldings] = useState<Record<string, string | number>>({})
+  const [updatedHoldings, setUpdatedHoldings] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fields = useFormFields(([f]) => f)
   const meeting = fields.meeting?.value
   const company = fields.company?.value
+  const { value, setValue } = useField<
+    Record<string, { isAuthorized: CheckboxFilterState; ownedQuantity: number | null }>
+  >({ path })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,7 +42,6 @@ export default function FundsWithHoldings() {
       setError(null)
 
       try {
-        // פתיחת החברה לקבלת subCompanies
         const companyQuery = {
           where: { id: { equals: company } },
           depth: 1,
@@ -53,7 +57,6 @@ export default function FundsWithHoldings() {
         const companyData = await companyResponse.json()
         const subCompanies = companyData.docs[0]?.subCompanies || []
 
-        // פתיחת האסיפה לקבלת fundsWithHolding
         const meetingQuery = {
           where: { id: { equals: meeting } },
           depth: 0,
@@ -68,56 +71,115 @@ export default function FundsWithHoldings() {
 
         const meetingData = await meetingResponse.json()
         const fundsWithHolding = meetingData.docs[0]?.fundsWithHolding || []
+        console.log('Fetched fundsWithHolding:', fundsWithHolding)
 
-        // מיפוי התיקים עם האחזקות - מסנן רשומות עם quantity = 0
         const fundsWithHoldings = subCompanies
           .map((subCo: { id: any; name: any }) => {
             const holding = fundsWithHolding.find((h: { fund: any }) => h.fund === subCo.id) || {}
+            const existingData = value?.[subCo.id] || {}
             return {
               id: subCo.id,
               name: subCo.name,
               quantity: holding.quantity || 0,
-              isAuthorized: 'indeterminate' as CheckboxFilterState,
+              isAuthorized: existingData.isAuthorized || 'indeterminate',
               actualHolding: holding.ownedQuantity || 0,
               feedStockNum: holding.feedStockNum || '',
             }
           })
-          .filter((fund: Fund) => fund.quantity > 0) // מסנן רשומות עם ערך נקוב = 0
+          .filter((fund: Fund) => fund.quantity > 0)
 
+        console.log('Mapped funds with holdings:', fundsWithHoldings)
         setFunds(fundsWithHoldings)
+
+        const initialUpdatedHoldings: Record<string, string> = {}
+        const initialErrors: Record<string, string | null> = {}
+        fundsWithHoldings.forEach((fund: Fund) => {
+          if (
+            value?.[fund.id]?.ownedQuantity !== undefined &&
+            value?.[fund.id]?.isAuthorized === 'unchecked'
+          ) {
+            initialUpdatedHoldings[fund.id] =
+              value[fund.id] && value[fund.id].ownedQuantity != null
+                ? String(value[fund.id].ownedQuantity)
+                : ''
+            initialErrors[fund.id] = value[fund.id].ownedQuantity ? null : 'חובה להזין ערך'
+          } else {
+            initialErrors[fund.id] = null
+          }
+        })
+        console.log('Initial updatedHoldings:', initialUpdatedHoldings)
+        console.log('Initial errors:', initialErrors)
+        setUpdatedHoldings(initialUpdatedHoldings)
+        setErrors(initialErrors)
       } catch (err) {
         console.error('Error fetching data:', err)
         setError('שגיאה בטעינת נתונים')
       } finally {
         setLoading(false)
+        console.log('Loading finished, loading:', false)
       }
     }
 
     fetchData()
   }, [meeting, company])
 
+  useEffect(() => {
+    const newValue: Record<
+      string,
+      { isAuthorized: CheckboxFilterState; ownedQuantity: number | null }
+    > = {}
+    funds.forEach((fund) => {
+      newValue[fund.id] = {
+        isAuthorized: fund.isAuthorized,
+        ownedQuantity:
+          fund.isAuthorized === 'unchecked' ? Number(updatedHoldings[fund.id]) || null : null,
+      }
+    })
+    console.log('Updating JSON field with newValue:', newValue)
+    setValue(newValue)
+  }, [funds, updatedHoldings])
+
   const handleCheckboxChange = (fundId: string, state: CheckboxFilterState) => {
+    console.log('Checkbox changed for fund:', fundId, 'to state:', state)
     setFunds((prev) =>
       prev.map((fund) => (fund.id === fundId ? { ...fund, isAuthorized: state } : fund)),
     )
 
-    // אם עוברים ממצב "unchecked" למצב אחר, מנקים את השדה
     if (state !== 'unchecked') {
       setUpdatedHoldings((prev) => {
         const newHoldings = { ...prev }
         delete newHoldings[fundId]
+        console.log('Removed holding for fund:', fundId, 'newHoldings:', newHoldings)
         return newHoldings
+      })
+      setErrors((prev) => {
+        const newErrors = { ...prev, [fundId]: null }
+        console.log('Cleared error for fund:', fundId, 'newErrors:', newErrors)
+        return newErrors
+      })
+    } else {
+      setErrors((prev) => {
+        const newErrors = { ...prev, [fundId]: updatedHoldings[fundId] ? null : 'חובה להזין ערך' }
+        console.log('Set error for fund:', fundId, 'newErrors:', newErrors)
+        return newErrors
       })
     }
   }
 
-  const handleInputChange = (fundId: string, value: string) => {
-    // אפשר הקלדה של נקודה ומספרים
-    if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
+  const handleInputChange = (fundId: string, inputValue: string) => {
+    console.log('Input changed for fund:', fundId, 'value:', inputValue)
+    if (inputValue === '' || /^-?\d*\.?\d*$/.test(inputValue)) {
       setUpdatedHoldings((prev) => ({
         ...prev,
-        [fundId]: value,
+        [fundId]: inputValue,
       }))
+      setErrors((prev) => ({
+        ...prev,
+        [fundId]: inputValue ? null : 'חובה להזין ערך',
+      }))
+      console.log('Updated holdings for fund:', fundId, 'new value:', inputValue)
+    } else {
+      console.log('Invalid input for fund:', fundId, 'value:', inputValue)
     }
   }
 
@@ -222,21 +284,28 @@ export default function FundsWithHoldings() {
                 </td>
                 <td style={{ padding: '16px 24px' }}>
                   {fund.isAuthorized === 'unchecked' && (
-                    <input
-                      type="text"
-                      value={updatedHoldings[fund.id] ?? fund.actualHolding}
-                      onChange={(e) => handleInputChange(fund.id, e.target.value)}
-                      style={{
-                        width: '120px',
-                        padding: '8px 12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        textAlign: 'right',
-                        direction: 'rtl',
-                      }}
-                      placeholder="הכנס ערך"
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        value={updatedHoldings[fund.id] ?? ''}
+                        onChange={(e) => handleInputChange(fund.id, e.target.value)}
+                        style={{
+                          width: '120px',
+                          padding: '8px 12px',
+                          border: `1px solid ${errors[fund.id] ? '#d32f2f' : '#d1d5db'}`,
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          textAlign: 'right',
+                          direction: 'rtl',
+                        }}
+                        placeholder="הכנס ערך"
+                      />
+                      {errors[fund.id] && (
+                        <p style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px' }}>
+                          {errors[fund.id]}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </td>
               </tr>
@@ -247,3 +316,5 @@ export default function FundsWithHoldings() {
     </div>
   )
 }
+
+export default FundsWithHoldings
