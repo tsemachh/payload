@@ -7,14 +7,14 @@ export type CollectionFilterPluginConfig = {
   disabled?: boolean
 }
 
-export const CollectionDirectFilterPlugin =
+export const CollectionQuickFilterPlugin =
   (pluginOptions: CollectionFilterPluginConfig = {}) =>
   (config: Config): Config => {
     if (!config.collections) {
       config.collections = []
     }
 
-    // Process each collection to add the DirectFilter component
+    // Process each collection to add the QuickFilter component
     config.collections = config.collections.map((collection) => {
       // Check if the collection has a filterList configuration
       // or if it's specified in the plugin options
@@ -40,9 +40,9 @@ export const CollectionDirectFilterPlugin =
           ]
         }
 
-        // Add the DirectFilter component
+        // Add the QuickFilter component
         newCollection.admin.components.beforeListTable.push({
-          path: '/plugins/filter/DirectFilter',
+          path: '/plugins/quickfilter/QuickFilter',
           clientProps: {
             filterList: collection.custom.filterList,
             slug: collection.slug,
@@ -66,4 +66,4 @@ export const CollectionDirectFilterPlugin =
     return config
   }
 
-export default CollectionDirectFilterPlugin
+export default CollectionQuickFilterPlugin

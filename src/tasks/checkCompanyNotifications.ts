@@ -3,7 +3,10 @@ import { addDays, setToMidnight } from '@/utils/dateUtils'
 import { UserNotificationType } from '@/payload-types'
 import { scheduleCheckCompanyNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { format } from 'date-fns'
-import { getWorkingDateBefore } from '@/collections/meetings/hooks/calculateHoldingDate'
+import {
+  getWorkingDateBefore,
+  isHolidayOrShabbat,
+} from '@/collections/meetings/hooks/calculateHoldingDate'
 
 // Define interface for meeting detail
 interface MeetingDetail {
@@ -43,6 +46,13 @@ export const checkCompanyNotifications = async (req: any) => {
       holdingsNotFed: 0,
     },
     meetingDetails: [] as MeetingDetail[],
+  }
+
+  if (isHolidayOrShabbat(today)) {
+    return {
+      success: true,
+      message: 'non working day',
+    }
   }
 
   // Set up midnight timestamps for date ranges

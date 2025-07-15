@@ -188,7 +188,7 @@ export function DateFilter({
               variant="outline"
               role="combobox"
               aria-expanded={isOpen}
-              className="useTw w-full justify-between bg-transparent relative min-w-70"
+              className="useTw w-full justify-between bg-background relative min-w-70"
             >
               <span className={`useTw truncate ${isHebrew && 'text-right'}`}>
                 {getDisplayValue()}
@@ -269,7 +269,7 @@ export function DateFilter({
                             <Button
                               variant="outline"
                               className={cn(
-                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8',
+                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8 bg-background',
                                 !customRange.from && 'text-muted-foreground',
                               )}
                             >
@@ -310,7 +310,7 @@ export function DateFilter({
                             <Button
                               variant="outline"
                               className={cn(
-                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8',
+                                'useTw w-[60%] justify-start text-left font-normal text-xs h-8 bg-background',
                                 !customRange.to && 'text-muted-foreground',
                               )}
                             >
@@ -349,7 +349,7 @@ export function DateFilter({
                       <Button
                         onClick={handleCancelCustomRange}
                         variant="outline"
-                        className="useTw flex-1 bg-transparent text-xs h-8"
+                        className="useTw flex-1 text-xs h-8 bg-transparent"
                       >
                         {labels.cancel}
                       </Button>
@@ -362,7 +362,7 @@ export function DateFilter({
         </Popover>
         {hasValue() && (
           <button
-            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `}
+            className="useTw absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted rounded-sm flex items-center justify-center z-10"
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()

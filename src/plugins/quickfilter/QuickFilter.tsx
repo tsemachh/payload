@@ -1,31 +1,33 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
-import { ClientField, FieldAffectingData, type OptionObject, type SelectField } from 'payload'
+import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
 import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
-import {
+import type {
   CheckboxFilterState,
   DateFilterValue,
   FilterDetaild,
   FilterRow,
   SelectFilterValue,
 } from './filters/types/filters-type'
-import { groupFiltersByRow } from './filters/utils/layout-helpers'
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react'
+import { groupFiltersByRow, parseColumns } from './filters/utils/layout-helpers'
+import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  futureDateFilterOptions,
+  pastDateFilterOptions,
+} from './filters/constants/date-filter-options'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
   const results: ClientField[] = []
-
   function recursiveSearch(currentFields: ClientField[]) {
     const filteredFields = currentFields.filter(
       (field) => 'name' in field && fieldNames.includes(field.name as string),
     )
     results.push(...filteredFields)
-
     currentFields.forEach((item) => {
       if (
         (item.type === 'array' || item.type === 'row' || item.type === 'collapsible') &&
@@ -48,7 +50,6 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
       }
     })
   }
-
   recursiveSearch(fields)
   return results
 }
@@ -59,13 +60,10 @@ const buildWhereClause = (
   fieldDefs: FilterDetaild[],
 ): Record<string, any> => {
   const where: Record<string, any> = {}
-
   Object.entries(values).forEach(([fieldName, value]) => {
     if (!value) return
-
     const fieldDef = fieldDefs.find((f) => f.name === fieldName)
     if (!fieldDef) return
-
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
@@ -73,7 +71,7 @@ const buildWhereClause = (
           const { from, to } = dateValue.customRange
           const dateQuery: any = {}
           if (from) dateQuery.greater_than_equal = from
-          if (to) dateQuery.less_than_equal = to // כולל את יום הסיום
+          if (to) dateQuery.less_than_equal = to
           if (Object.keys(dateQuery).length > 0) {
             where[fieldName] = dateQuery
           }
@@ -98,7 +96,7 @@ const buildWhereClause = (
         } else if (checkboxState === 'unchecked') {
           where[fieldName] = { equals: false }
         }
-        // 'indeterminate' לא יבצע סינון
+        // 'indeterminate' will not filter
         break
       }
     }
@@ -106,95 +104,100 @@ const buildWhereClause = (
   return where
 }
 
-const DirectFilter = ({
+const QuickFilter = ({
   slug,
   filterList,
 }: {
   slug: string
-  filterList: (string | { name: string })[][]
+  filterList: (string | { name: string; width: string })[][]
 }) => {
+  const localStorageKey = useMemo(() => `direct-filter-${slug}`, [slug])
+
   const [fields, setFields] = useState<FilterDetaild[]>([])
   const [filterRows, setFilterRows] = useState<FilterRow[]>([])
   const [showFilters, setShowFilters] = useState(false)
-
-  const { refineListData } = useListQuery()
+  const { refineListData, query } = useListQuery()
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
 
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({})
-  const isInitialMount = useRef(true)
+  const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
+    try {
+      const item = window.localStorage.getItem(localStorageKey)
+      return item ? JSON.parse(item) : {}
+    } catch (error) {
+      console.error('Error reading filters from localStorage.', error)
+      return {}
+    }
+  })
 
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
-
-    // Flatten the array of arrays and extract field names
-    const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) => 
+    const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
       row.map((field, fieldIndex) => ({
         field,
         rowIndex,
-        fieldIndex
-      }))
+        fieldIndex,
+      })),
     )
-
-    const fieldNames = flattenedFieldConfigs.map(({ field }) => 
-      typeof field === 'string' ? field : field.name
+    const fieldNames = flattenedFieldConfigs.map(({ field }) =>
+      typeof field === 'string' ? field : field.name,
     )
-
     const matchedFields = findFieldsByName(collection?.fields || [], fieldNames)
-
     const simplifiedFields: FilterDetaild[] = matchedFields.map((field) => {
       const label = (field as FieldAffectingData).label
       const translatedLabel = getTranslation(label as string, i18n)
       const fieldName = (field as FieldAffectingData).name as string
-
-      // Find the corresponding field config with row and order information
-      const fieldConfig = flattenedFieldConfigs.find(({ field: f }) => 
-        typeof f === 'string' 
-          ? f === fieldName
-          : f.name === fieldName
+      const fieldConfig = flattenedFieldConfigs.find(({ field: f }) =>
+        typeof f === 'string' ? f === fieldName : f.name === fieldName,
       )
-
       return {
         name: fieldName,
         label: translatedLabel as string,
         type: field.type,
         options: (field as SelectField).options as OptionObject[],
         row: fieldConfig ? fieldConfig.rowIndex : 0,
+        width:
+          typeof fieldConfig?.field === 'object' && 'width' in fieldConfig.field
+            ? fieldConfig.field.width
+            : undefined,
       }
     })
-
-    // Sort fields by their original order in the filterList
     const sortedFields = flattenedFieldConfigs
-      .map(({ field, rowIndex, fieldIndex }) => {
+      .map(({ field }) => {
         const fieldName = typeof field === 'string' ? field : field.name
-        const matchedField = simplifiedFields.find(f => f.name === fieldName)
-
-        // If we found a matching field, return it
-        if (matchedField) {
-          return matchedField
-        }
-        return null
+        return simplifiedFields.find((f) => f.name === fieldName)
       })
       .filter((f): f is FilterDetaild => !!f)
-
     setFields(sortedFields)
     setFilterRows(groupFiltersByRow(sortedFields))
   }, [slug, filterList, getEntityConfig, i18n])
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
+    // Wait until field metadata has been loaded.
+    if (fields.length === 0) {
       return
     }
 
     const where = buildWhereClause(filterValues, fields)
 
-    refineListData({
-      where,
-      page: '1',
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues])
+    try {
+      if (Object.keys(filterValues).length > 0) {
+        localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
+      } else {
+        localStorage.removeItem(localStorageKey)
+      }
+    } catch (error) {
+      console.error('Failed to save filters to localStorage', error)
+    }
+
+    if (JSON.stringify(where) !== JSON.stringify(query.where)) {
+      refineListData({
+        columns: parseColumns(query.columns),
+        where,
+        page: '1',
+      })
+    }
+  }, [filterValues, fields, query, refineListData, localStorageKey])
 
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
@@ -212,6 +215,64 @@ const DirectFilter = ({
       return newValues
     })
   }, [])
+
+  // This function remains largely the same.
+  const getActiveFiltersDetails = () => {
+    const activeFilters: string[] = []
+    const isHebrew = i18n.language === 'he'
+
+    Object.entries(filterValues).forEach(([fieldName, value]) => {
+      const field = fields.find((f) => f.name === fieldName)
+      if (!field) return
+
+      switch (field.type) {
+        case 'date':
+          if (value !== undefined) {
+            const dateValue = value as DateFilterValue
+            let dateDescription = ''
+
+            if (dateValue.type === 'predefined' && dateValue.predefinedValue) {
+              const allOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              const option = allOptions.find((opt) => opt.value === dateValue.predefinedValue)
+              dateDescription = option ? option.label : isHebrew ? 'מותאם אישית' : 'Custom'
+            } else if (dateValue.type === 'custom' || dateValue.customRange) {
+              dateDescription = isHebrew ? 'מותאם אישית' : 'Custom'
+            }
+
+            if (dateDescription) {
+              activeFilters.push(`${field.label} (${dateDescription})`)
+            }
+          }
+          break
+        case 'select': {
+          const selectValue = value as SelectFilterValue
+          if (selectValue && selectValue.selectedValues && selectValue.selectedValues.length > 0) {
+            const count = selectValue.selectedValues.length
+            const totalOptions = field.options?.length || 0
+            if (selectValue.selectedValues.length === totalOptions) {
+              activeFilters.push(`${field.label} (${isHebrew ? 'הכל' : 'All'})`)
+            } else {
+              activeFilters.push(`${field.label} (${count})`)
+            }
+          }
+          break
+        }
+        case 'checkbox':
+          if (value !== 'indeterminate') {
+            const checkboxValue =
+              value === 'checked' ? (isHebrew ? 'כן' : 'Yes') : isHebrew ? 'לא' : 'No'
+            activeFilters.push(`${field.label} (${checkboxValue})`)
+          }
+          break
+      }
+    })
+
+    return activeFilters
+  }
+
+  const clearAllFilters = () => {
+    setFilterValues({})
+  }
 
   const memoizedFilterRows = useMemo(() => {
     return filterRows.map((row) => (
@@ -234,26 +295,56 @@ const DirectFilter = ({
     setShowFilters((prev) => !prev)
   }
 
+  const activeFiltersDetails = getActiveFiltersDetails()
+  const hasActiveFilters = activeFiltersDetails.length > 0
+  const isHebrew = i18n.language === 'he'
+
   if (!fields.length) return null
 
   return (
     <div className="filter-container useTw">
-      <div style={{ position: 'relative', top: '-22px', height: '0px' }}>
+      <div style={{ position: 'relative', top: '-24px', height: '0px' }}>
         <Button
           variant="outline"
           size="sm"
           onClick={toggleFilters}
-          className="flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50"
+          className={`flex items-center gap-2 bg-background border-muted-muted hover:bg-muted ${
+            hasActiveFilters ? 'w-auto min-w-fit' : ''
+          }`}
         >
-          <Filter className="h-4 w-4" />
-          <span>{i18n.language === 'he' ? 'סינון ישיר' : 'Direct Filters'}</span>
+          <Filter className={`h-4 w-4 ${hasActiveFilters ? 'fill-current' : ''}`} />
+
+          {hasActiveFilters ? (
+            <>
+              <span className="text-sm truncate">
+                <strong>
+                  {isHebrew
+                    ? `${activeFiltersDetails.length === 1 ? 'סינון פעיל בעמודה' : 'סינון פעיל בעמודות'}: `
+                    : `${activeFiltersDetails.length === 1 ? 'Active filter on column' : 'Active filters on columns'}: `}
+                </strong>{' '}
+                {activeFiltersDetails.join(' • ')}
+              </span>
+
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearAllFilters()
+                }}
+                className="ml-1 p-0.5 hover:bg-muted rounded-sm transition-colors flex-shrink-0"
+              >
+                <X className="h-3 w-3 text-gray-500" />
+              </span>
+            </>
+          ) : (
+            <span className="text-sm truncate">{isHebrew ? 'סינון מהיר' : 'Quick Filters'}</span>
+          )}
+
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
       {showFilters && (
         <div
-          className={'p-4 pb-2'}
-          style={{ border: '5px solid', borderColor: 'rgb(245, 245, 245)' }}
+          className={'p-4 pb-2 bg-muted/70'}
         >
           {memoizedFilterRows}
         </div>
@@ -262,4 +353,4 @@ const DirectFilter = ({
   )
 }
 
-export default DirectFilter
+export default QuickFilter

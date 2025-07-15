@@ -19,6 +19,15 @@ export function getMajorityType(label: string): 'regular' | 'privileged' {
   return (label || '').trim() !== 'רוב רגיל' ? 'privileged' : 'regular'
 }
 
+export function convertMagnaAgendaToPayload(rowObj: Record<string, any>) {
+  const row = {
+    text: rowObj.topic || '',
+    topicType: getAgendaType(rowObj.topicType || '') as TopicType,
+    majorityType: getMajorityType(rowObj.MajorityRequired) || '',
+  }
+  return row
+}
+
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
@@ -48,12 +57,7 @@ export const processMeetingsAgendaFeedCsv = async (
         },
         {} as Record<string, any>,
       )
-
-      const row = {
-        text: rowObj.topic || '',
-        topicType: getAgendaType(rowObj.topicType || '') as TopicType,
-        majorityType: getMajorityType(rowObj.MajorityRequired) || '',
-      }
+      const row = convertMagnaAgendaToPayload(rowObj)
       const magnaId = rowObj.ProofId || ''
       if (!rowsByMagnaId.has(magnaId)) {
         rowsByMagnaId.set(magnaId, [])

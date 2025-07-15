@@ -1,7 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { up as migrateStocks } from './migrateStocks'
-import { up as migrateForeign } from './migrateForeign'
+import { migrateDual, up as migrateForeign } from './migrateForeign'
 import { up as migrateFullMeetings } from './migrateFullMeeting'
+import { up as migrateMagnaMeetings } from './migrateMagnaMeetings'
 import { up as migrateUsers } from './migrateUsers'
 import { up as migrateHoldings } from './migrateHoldings'
 import { up as migrateFullFirms } from './migrateFullFirms'
@@ -18,7 +19,7 @@ import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCo
  * 3. Meetings (includes Silenced Stocks Companies migration)
  * 4. Firms
  * 5. Users
-  * 8. Holdings
+ * 8. Holdings
  * 12. Votes
  * 13. Recommendation Reasons
  * 14. Unify Meetings (removes duplicate meetings and merges their data)
@@ -34,7 +35,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting migrateAll process...')
 
   try {
-
     // 1. Migrate Stocks
     console.log('\n=== Starting Stocks Migration ===')
     await migrateStocks({ payload, req })
@@ -45,7 +45,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateFullMeetings({ payload, req })
     console.log('=== Meetings Migration Completed ===\n')
 
-// 2. Migrate Firsm
+    // 2.1 Migrate Magna Meetings
+    console.log('\n=== Starting Magna Meetings Migration ===')
+    await migrateMagnaMeetings({ payload, req })
+    console.log('=== Magna Meetings Migration Completed ===\n')
+
+    // 3. Migrate Firms
     console.log('\n=== Starting Firms Migration ===')
     await migrateFullFirms({ payload, req })
     console.log('=== Meetings Firms Completed ===\n')
@@ -54,6 +59,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Foreign Stocks Migration ===')
     await migrateForeign({ payload, req })
     console.log('=== Foreign Stocks Migration Completed ===\n')
+
+    // 4. Migrate Dual-Listed Stocks
+    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
+    await migrateDual({ payload, req })
+    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
 
     // 5. Migrate Users
     console.log('\n=== Starting Users Migration ===')
@@ -80,7 +90,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateRecommendationReasons({ payload, req })
     console.log('=== Recommendation Reasons Migration Completed ===\n')
 
-    // 16. Unify Meetings
+    //16. Unify Meetings
     //    console.log('\n=== Starting Unify Meetings Migration ===')
     //    await unifyMeetings({ payload, req })
     //    console.log('=== Unify Meetings Migration Completed ===\n')

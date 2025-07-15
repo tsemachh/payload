@@ -115,14 +115,6 @@ export function SelectFilter({
       return placeholder || (isHebrew ? 'בחר אפשרויות' : 'Select options')
     } else if (selectedValues.length === options.length) {
       return labels.selectAll
-    } else if (selectedValues.length <= 3) {
-      // Show individual options if 3 or fewer are selected
-      return selectedValues
-        .map((value) => {
-          const option = options.find((opt) => opt.value === value)
-          return option?.label || value
-        })
-        .join(', ')
     } else {
       return `${selectedValues.length} ${labels.selected}`
     }
@@ -143,7 +135,7 @@ export function SelectFilter({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-full justify-between bg-transparent relative"
+              className="w-full justify-between bg-background relative"
             >
               <span className="truncate">{getDisplayText()}</span>
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -209,7 +201,7 @@ export function SelectFilter({
         </Popover>
         {selectedValues.length > 0 && (
           <button
-            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-sm flex items-center justify-center z-10 `}
+            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted rounded-sm flex items-center justify-center z-10 `}
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()
@@ -225,7 +217,7 @@ export function SelectFilter({
           {selectedValues.map((value) => {
             const option = options.find((opt) => opt.value === value)
             return (
-              <Badge key={value} variant="secondary" className="text-xs">
+              <Badge key={value} variant="secondary" className="text-xs bg-background border">
                 {option?.label || value}
                 <button
                   className="ml-1 hover:bg-muted rounded-full"

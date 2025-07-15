@@ -1,4 +1,4 @@
-import type { Field, TextFieldSingleValidation } from 'payload'
+import type { CollectionBeforeChangeHook, Field, TextFieldSingleValidation } from 'payload'
 import { type CollectionConfig, SelectFieldSingleValidation } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -19,6 +19,7 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { v1 as uuid1 } from 'uuid'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -26,7 +27,14 @@ const PropsManualLink: IconLinkProps = {
   iconAltText: 'קישור ידני',
   iconOnly: true,
 }
-
+const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
+  if (operation == 'create') {
+    if (!data.meetingId) {
+      data.meetingId = uuid1()
+    }
+  }
+  return data
+}
 const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
@@ -152,14 +160,14 @@ export const Meetings: CollectionConfig = {
         { name: 'meetingDate' },
         { name: 'proxyVotingDate' },
         { name: 'state' },
-        { name: 'type' }
+        { name: 'type' },
       ],
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
         { name: 'committeeInitiated' },
-        { name: '_status' }
-      ]
+        { name: '_status' },
+      ],
     ],
   },
   enableQueryPresets: true,
@@ -848,9 +856,25 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                     },
                     {
-                      name: 'feedStockNum',
-                      label: 'מספר נייר ערך',
-                      type: 'text',
+                      name: 'original',
+                      label: 'מניה מקורית חול',
+                      type: 'array',
+                      admin: {
+                        initCollapsed: true,
+                        components: {
+                          Field: '/admincomponents/fields/arrayTable',
+                        },
+                        condition: (data, siblingData) => {
+                          return (
+                            Array.isArray(siblingData.original) && siblingData.original.length > 0
+                          )
+                        },
+                      },
+                      fields: [
+                        { name: 'stockId', label: 'מניה', type: 'text' },
+                        { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
+                        { name: 'quantity', label: 'כמות', type: 'number' },
+                      ],
                     },
                   ],
                 },
@@ -929,7 +953,11 @@ export const Meetings: CollectionConfig = {
     ],
 
     beforeValidate: [validateResearchDocsInMeetings],
-    beforeChange: [handleRecommendationReason, clearCompaniesInSingleBondResearchDoc],
+    beforeChange: [
+      handleRecommendationReason,
+      clearCompaniesInSingleBondResearchDoc,
+      beforeChangeMeetingId,
+    ],
   },
   endpoints: [
     {
