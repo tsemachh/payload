@@ -936,14 +936,43 @@ export const Meetings: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ req, doc, previousDoc }) => {
+      async ({ req, doc, previousDoc, operation }) => {
+        // Handle dual stock creation
+        if (operation === 'create' && req.context?.from !== 'process') {
+          const stock = await req.payload.findByID({
+            collection: 'stocks',
+            id: doc.stock,
+          })
+
+          if (stock?.isDual && stock?.dualStock) {
+            // Create dual meeting by cloning the current meeting
+            const dualMeeting = JSON.parse(JSON.stringify(doc))
+            // Remove fields that should be unique/regenerated
+            delete dualMeeting.id
+            delete dualMeeting.meetingId
+            // Set the dual stock
+            dualMeeting.stock = stock.dualStock
+
+            try {
+              await req.payload.create({
+                collection: 'meetings',
+                data: dualMeeting,
+                context: { from: 'process' },
+              })
+            } catch (error) {
+              console.error('Error creating dual meeting:', error)
+            }
+          }
+        }
+
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
         const stockChanged = previousDoc?.stock !== doc?.stock
         const firstPublish =
-          previousDoc._status == 'draft' &&
+          previousDoc?._status == 'draft' &&
           doc._status == 'published' &&
           (!doc.meetings || doc.meetings.length == 0)
+
         if (holdingsLimitChanged || stockChanged || firstPublish) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)

@@ -271,7 +271,8 @@ export const Stocks: CollectionConfig = {
                   defaultValue: false,
                   admin: {
                     width: '100px',
-                    condition: (siblingData) => siblingData.fromMagna,
+                    condition: (siblingData) =>
+                      siblingData.tradable && siblingData.origin == 'TASE',
                   },
                 },
                 {
