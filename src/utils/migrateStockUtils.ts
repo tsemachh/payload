@@ -135,7 +135,7 @@ export async function getStockIdToSequenceMap(req: PayloadRequest) {
   console.log('Prefetching common stocks...')
   const stockIdToSequenceMap = await req.payload.find({
     collection: 'stocks',
-    limit: 20000,
+    limit: 0,
     select: {
       stockId: true,
       id: true,

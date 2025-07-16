@@ -1,11 +1,8 @@
-import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import sql, { IResult } from 'mssql'
-import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
 import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
-import { sqlConfig } from '@/migrations/utils/utils'
-
-
-const START_DATE_TO_IMPORT: string = '01-05-2025'
+import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import sql, { IResult } from 'mssql'
+import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 
 interface HoldingRow {
   stockNum: string
@@ -16,50 +13,32 @@ interface HoldingRow {
   date_update: Date
 }
 
-async function getHoldingsCount(pool: sql.ConnectionPool, holdingDate: string): Promise<number> {
-  const result = await pool.request().query(`
-      SELECT COUNT(*) as count
-      FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] = '${holdingDate}'
-  `)
-  return result.recordset[0].count
-}
-
-// Generate array of dates from START_DATE_TO_IMPORT to today
-const generateDateArray = (startDateStr: string): string[] => {
-  const dates: string[] = []
-  // Parse date in MM-DD-YYYY format
-  const [month, day, year] = startDateStr.split('-').map(Number)
-  const startDate = new Date(year, month - 1, day)
-  const today = new Date()
-
-  // If start date is in the future, return empty array
-  if (startDate > today) {
-    return dates
+// Format date to MM-DD-YYYY format
+function formatDateForSQL(dateStr: string): string {
+  // If the date is already in MM-DD-YYYY format, return it
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    return dateStr
   }
 
-  // Clone the start date to avoid modifying it
-  const currentDate = new Date(startDate)
+  // Parse the date string
+  const date = new Date(dateStr)
 
-  // Loop through each day from start date to today
-  while (currentDate <= today) {
-    // Format date as mm-dd-yyyy
-    const year = currentDate.getFullYear()
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0')
-    const day = String(currentDate.getDate()).padStart(2, '0')
-    dates.push(`${month}-${day}-${year}`)
+  // Format to MM-DD-YYYY
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getFullYear()
 
-    // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1)
-  }
-
-  return dates
+  return `${month}-${day}-${year}`
 }
 
 async function getHoldingsPage(
   pool: sql.ConnectionPool,
-  holdingDate: string,
+  firm: string,
+  latestDate: string,
 ): Promise<sql.IResult<HoldingRow>> {
+  // Format the date for SQL query
+  const formattedDate = formatDateForSQL(latestDate)
+
   const result = await pool.request().query(`
       SELECT [stockNum]
            , [firm]
@@ -68,10 +47,24 @@ async function getHoldingsPage(
            , [date1]
            , [date_update]
       FROM [${sqlConfig.database}].[dbo].[holdings]
-      WHERE [date1] = '${holdingDate}'
-      ORDER BY [firm], [subAccountNum], [stockNum]
+      WHERE [firm] = '${firm}' AND [date1] = '${formattedDate}'
+      ORDER BY [subAccountNum], [stockNum]
   `)
   return result
+}
+
+async function getActiveCompaniesWithLatestDate(
+  pool: sql.ConnectionPool,
+): Promise<{ firm: string; latest_date1: string; name: string }[]> {
+  const result = await pool.request().query(`
+      SELECT h.firm, MAX(h.date1) AS latest_date1, f.name
+      FROM [${sqlConfig.database}].[dbo].[holdings] h
+      INNER JOIN [${sqlConfig.database}].[dbo].[firms] f ON h.firm = f.id
+      WHERE h.qty IS NOT NULL AND h.qty <> 0 AND f.firm_active = 1
+      GROUP BY h.firm, f.name
+      ORDER BY h.firm
+  `)
+  return result.recordset
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
@@ -79,9 +72,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting holding days migration process...')
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
-    console.log(`Importing holding days from ${START_DATE_TO_IMPORT} date`)
+    pool = await createMSSqlPool()
+    console.log('Importing latest holdings for all active companies')
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
@@ -115,7 +107,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         // Find Company id
         const companyId = accountCache.get(accountKey)
         if (!companyId) {
-          console.warn(`Company ID not found for account key: ${accountKey}`)
+          //console.warn(`Company ID not found for account key: ${accountKey}`)
           await logMigrationFault({
             payload,
             type: 'holding',
@@ -252,34 +244,39 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
     console.log(`Prefetched ${accountCache.size} accounts`)
 
-    const holdingDates: string[] = generateDateArray(START_DATE_TO_IMPORT)
-    console.log(`Generated ${holdingDates.length} dates to process`)
+    // Get active companies with their latest holdings date
+    console.log('Fetching active companies with their latest holdings date...')
+    const activeCompanies = await getActiveCompaniesWithLatestDate(pool)
+    console.log(`Found ${activeCompanies.length} active companies to process`)
 
     // Control batch size and parallel processing
-    const MAX_CONCURRENT_PROCESSES = 10
+    const MAX_CONCURRENT_PROCESSES = 5
 
-    // Process holdings in batches with controlled concurrency
-    for (let i = 0; i < holdingDates.length; i += MAX_CONCURRENT_PROCESSES) {
+    // Process companies in batches with controlled concurrency
+    for (let i = 0; i < activeCompanies.length; i += MAX_CONCURRENT_PROCESSES) {
       const batch = []
 
       // Create a batch of promises up to MAX_CONCURRENT_PROCESSES
-      for (let j = 0; j < MAX_CONCURRENT_PROCESSES && i + j < holdingDates.length; j++) {
-        const holdingDate = holdingDates[i + j]
-        // Get total count
-        const totalCount = await getHoldingsCount(pool, holdingDate)
-        console.log(`Total holdings to process for ${holdingDate}: ${totalCount}`)
+      for (let j = 0; j < MAX_CONCURRENT_PROCESSES && i + j < activeCompanies.length; j++) {
+        const company = activeCompanies[i + j]
+        console.log(
+          `Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`,
+        )
 
-        // Process all pages
-        const holdings = await getHoldingsPage(pool, holdingDate)
+        // Process all holdings for this company on its latest date
+        const holdings = await getHoldingsPage(pool, company.firm, company.latest_date1)
+
+        // Format the date for the holding day
+        const formattedDate = formatDateForSQL(company.latest_date1)
 
         // Add to batch
-        batch.push(processHoldingsChunk(holdings, holdingDate))
+        batch.push(processHoldingsChunk(holdings, formattedDate))
       }
 
       // Wait for all promises in the current batch to complete
       await Promise.all(batch)
       console.log(
-        `Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(holdingDates.length / MAX_CONCURRENT_PROCESSES)}`,
+        `Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(activeCompanies.length / MAX_CONCURRENT_PROCESSES)}`,
       )
     }
     console.log(`Migration completed. Success: ${successCount}, Errors: ${errorCount}`)

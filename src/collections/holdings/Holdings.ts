@@ -16,6 +16,11 @@ export const Holdings: CollectionConfig = {
     defaultColumns: ['fund', 'valueDate'],
     group: 'פעילות',
   },
+  custom: {
+    filterList: [
+      [{ name:'valueDate'}]
+    ],
+  },
   disableBulkEdit: true,
   hooks: {
     afterChange: [
@@ -71,6 +76,9 @@ export const Holdings: CollectionConfig = {
               type: 'relationship',
               relationTo: 'stocks',
               required: true,
+              admin: {
+                width: '30%',
+              },
               filterOptions: ({ req }) => {
                 if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 return {
@@ -81,15 +89,50 @@ export const Holdings: CollectionConfig = {
               },
             },
             {
-              name: 'feedStockNum',
-              label: 'מספר נייר ערך באחזקה',
-              type: 'text',
-            },
-            {
               name: 'quantity',
               label: 'כמות',
               type: 'number',
               required: true,
+              admin: {
+                width: '20%',
+              },
+            },
+            {
+              name: 'originalForeignData',
+              label: 'אחזקה מקורית מניית חול',
+              type: 'array',
+              admin: {
+                initCollapsed: true,
+                width: '50%',
+                components: {
+                  Field: '/admincomponents/fields/arrayTable',
+                },
+                condition: (data, siblingData) => {
+                  return (
+                    Array.isArray(siblingData.originalForeignData) &&
+                    siblingData.originalForeignData.length > 0
+                  )
+                },
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'stockId',
+                      type: 'text',
+                    },
+                    {
+                      name: 'accountNum',
+                      type: 'number',
+                    },
+                    {
+                      name: 'quantity',
+                      type: 'number',
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },

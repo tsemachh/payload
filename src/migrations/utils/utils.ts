@@ -13,3 +13,15 @@ export const sqlConfig: sql.config = {
   },
   requestTimeout: 120000, // Increase timeout globally to 120 seconds
 }
+
+export async function createMSSqlPool() {
+  let pool: sql.ConnectionPool | null = null
+
+  console.log('\n=== Starting Firms Migration ===')
+  console.log('Attempting to connect to SQL Server:', sqlConfig.server)
+
+  // Connect to SQL Server
+  pool = await sql.connect(sqlConfig)
+  console.log('Successfully connected to SQL Server')
+  return pool
+}

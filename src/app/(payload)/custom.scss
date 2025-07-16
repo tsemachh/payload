@@ -3,7 +3,6 @@
 .field-type.checkbox .checkbox-input {
   padding-top: 34px;
 }
-
 .link-from-relation {
   padding-top: 0;
   display: inline-flex;
@@ -13,18 +12,15 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
-
   &:hover {
     opacity: 0.8;
   }
-
   img {
     width: 32px;
     height: 32px;
     vertical-align: middle;
   }
 }
-
 .icon-link {
   padding-top: 0;
   display: inline-flex;
@@ -33,36 +29,29 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
-
   &:hover {
     opacity: 0.8;
   }
-
   span {
     vertical-align: middle;
   }
-
   img {
     width: 24px;
     height: 24px;
     vertical-align: middle;
   }
 }
-
 .field-type.relationship .relationship--multi-value-label__content {
   max-width:300px;
 }
-
 .field-type.upload.invitationDocument {
   max-width:300px;
 }
-
 @layer payload-default{
   .collection-list{
     overflow: auto;
   }
 }
-
 form[action*="/api/research-documents"] .file-field__remove,
 form[action*="/api/research-documents"] .file-details__remove,
 .id-label,
@@ -70,25 +59,18 @@ form[action*="/api/research-documents"] .file-details__remove,
 .doc-controls__dots {
   display: none !important;
 }
-
 .bulk-upload--actions-bar__navigation {
   visibility: hidden;
 }
-
 form[action*="/api/research-documents"] .file-field__filename {
   pointer-events: none;
   background: var(--theme-elevation-100);
   color: var(--theme-elevation-400);
 }
-
-
-
 #field-agenda .group-field__header .field-label[for*="recommendation"],
 #field-agenda .group-field__header .field-label[for*="exceptionalRecommendation"] {
   display: none;
 }
-
-
 .field-type.upload.invitationDocument .upload__dropzoneAndUpload {
   .btn.upload__listToggler.btn--icon-style-without-border.btn--size-small.btn--withoutPopup.btn--style-pill.btn--withoutPopup {
     display: none;
@@ -104,7 +86,91 @@ form[action*="/api/research-documents"] .file-field__filename {
     padding: 7px;
   }
 }
-
 :root{
   --nav-width: 180px;
+}
+
+//votes in meeting   
+.field-type.join .table.table--appearance-condensed th:nth-child(1),
+.field-type.join .table.table--appearance-condensed td:nth-child(1) {
+  display: none;
+}
+.field-type.join .field-label[for="field-votes"] {
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.agenda-style-wrapper {  
+
+  .field-type.group-field[id*="__recommendation"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__wrap {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .field-type.group-field[id*="__recommendation"] .group-field__header {
+    display: none !important;
+  }
+  .field-label {
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+}
+[id^="field-agenda__"][id*="__result"] > label {
+  font-weight: bold !important;
+  margin-top: -6px !important;
+  font-size: large;
+}
+  .render-fields,
+  .group-field__wrap,
+  .field-type__wrap,
+  .row__fields {
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+  }
+
+  .render-fields--margins-small,
+  .render-fields--margins-none {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .collapsible__content {
+    padding-top: 4px !important;
+    padding-bottom: 0 !important;
+  }
+
+  .checkbox-input,
+  .checkbox-input * {
+    padding: 0 !important;
+    line-height: 1 !important;
+  }
+
+  .group-field--within-collapsible.group-field--within-tab {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .group-field__header {
+    display: none !important;
+  }
+}
+
+.field-type.textarea textarea {
+  min-height: 42px;
+  padding: 0;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.array-field .voteDecision.field-type.select {
+  margin-left: 50px;
 }

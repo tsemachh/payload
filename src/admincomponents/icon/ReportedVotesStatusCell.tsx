@@ -16,9 +16,6 @@ export type ReportedVotesStatusCellProps = DefaultCellComponentProps
  * @returns React component
  */
 const ReportedVotesStatusCell: React.FC<ReportedVotesStatusCellProps> = ({ cellData }) => {
-  // Log cellData for debugging
-
-  // Initialize variables
   let reportedVotes = 0
   let totalVotes = 0
   let isValid = false

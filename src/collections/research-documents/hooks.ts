@@ -5,7 +5,6 @@ import {
   ValidationError,
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
-import { ResearchDocument } from '@/payload-types'
 
 const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
   const result = await req.payload.find({
@@ -40,7 +39,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   // הבאת מסמכי המחקר הרלוונטיים
   const { docs: researchDocs } = await req.payload.find({
     collection: 'research-documents',
-    select: { id: true, companies: true, filename: true },
+    select: { companies: true, filename: true },
     depth: 0,
     limit: 0,
     where: { id: { in: docIDs } },
@@ -113,6 +112,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
       collection: 'companies',
       select: { id: true, name: true },
       depth: 0,
+      limit: 0,
       where: { id: { in: dupIds } },
     })
     const idToName = Object.fromEntries(
@@ -194,6 +194,7 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
           type: { equals: 'regular' },
           'researchDocuments.showResearchPrivate': { equals: true },
         },
+        limit: 0,
       })
       if (companies) {
         const foundCompanies = companies.docs

@@ -1,7 +1,4 @@
 import { PayloadRequest } from 'payload'
-import csvToJson from 'convert-csv-to-json'
-import iconv from 'iconv-lite'
-import { PromisePool } from '@/utils/promisePool'
 
 export type TopicType = 'reporting' | 'decision'
 
@@ -22,6 +19,15 @@ export function getMajorityType(label: string): 'regular' | 'privileged' {
   return (label || '').trim() !== 'רוב רגיל' ? 'privileged' : 'regular'
 }
 
+export function convertMagnaAgendaToPayload(rowObj: Record<string, any>) {
+  const row = {
+    text: rowObj.topic || '',
+    topicType: getAgendaType(rowObj.topicType || '') as TopicType,
+    majorityType: getMajorityType(rowObj.MajorityRequired) || '',
+  }
+  return row
+}
+
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
@@ -40,6 +46,7 @@ export const processMeetingsAgendaFeedCsv = async (
     const schema = Object.keys(jsonData.schema)
     const dataRows = jsonData.data
 
+    let processedRows = 0
     const rowsByMagnaId = new Map<string, any[]>()
 
     dataRows.forEach((rowArray: any[]) => {
@@ -50,15 +57,8 @@ export const processMeetingsAgendaFeedCsv = async (
         },
         {} as Record<string, any>,
       )
-
-      const row = {
-        text: rowObj.topic || '',
-        topicType: getAgendaType(rowObj.topicType || '') as TopicType,
-        magnaId: rowObj.ProofId || '',
-        majorityType: getMajorityType(rowObj.MajorityRequired) || '',
-      }
-      console.log('row', row)
-      const magnaId = row.magnaId
+      const row = convertMagnaAgendaToPayload(rowObj)
+      const magnaId = rowObj.ProofId || ''
       if (!rowsByMagnaId.has(magnaId)) {
         rowsByMagnaId.set(magnaId, [])
       }
@@ -72,51 +72,77 @@ export const processMeetingsAgendaFeedCsv = async (
     const magnaIds = Array.from(rowsByMagnaId.keys())
     const existingMeetings = await req.payload.find({
       collection: 'meetings',
+      select: {
+        magnaId: true,
+      },
       where: {
         magnaId: {
           in: magnaIds,
         },
       },
       limit: 0,
+      depth: 0,
     })
+    req.payload.logger.info({ existingMeetings }, 'Getting meetings from CSV file')
     const meetingsMap = new Map<string, any>(
       existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
     )
-    const promisePool = new PromisePool(20)
-    const promises: Promise<void>[] = []
+
+    // Calculate all magnaIds that don't exist in the database
+    const nonExistingMagnaIds = Array.from(rowsByMagnaId.keys()).filter(
+      (magnaId) => !meetingsMap.has(magnaId),
+    )
+
+    // Add a single error for all non-existing magnaIds
+    if (nonExistingMagnaIds.length > 0) {
+      req.payload.logger.error({ nonExistingMagnaIds }, `לא נמצאו אסיפות עם מספרי האסמכתא הבאים:`)
+      errors.push(`לא נמצאו אסיפות עם מספרי האסמכתא הבאים: ${nonExistingMagnaIds.join(', ')}`)
+    }
 
     for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
       const meeting = meetingsMap.get(magnaId)
+      processedRows++
+
       if (!meeting) {
-        errors.push(`  לא נמצאה אסיפה עם מספר האסמכתא ${magnaId} `)
+        // Skip non-existing meetings as we've already added an error for them
         continue
       }
 
-      promisePool.add(async () => {
-        try {
-          await req.payload.update({
+      try {
+        await req.payload
+          .update({
             collection: 'meetings',
             id: meeting.id,
             data: { agenda: agendaRows },
             context: { ...req.context, from: 'migration' },
             req,
-          }).catch((e) => {
-            req.payload.logger.info({agendaRows},`   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
           })
-          successCount++
-        } catch (e: any) {
-          req.payload.logger.error({agendaRows},`Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
-          errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+          .catch((e) => {
+            req.payload.logger.info(
+              { agendaRows, meeting },
+              `   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`,
+            )
+          })
+        successCount++
+        // Notify progress every 10 meetings
+        if (processedRows % 10 === 0) {
+          const progressMsg = `Progress: ${processedRows}/${rowsByMagnaId.size} meetings processed (${Math.round((processedRows / rowsByMagnaId.size) * 100)}%)`
+          console.log(progressMsg)
+          req.payload.logger.info(progressMsg)
         }
-      })
+      } catch (e: any) {
+        req.payload.logger.error(
+          { agendaRows, meeting },
+          `Finished processing file:   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`,
+        )
+        errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
+      }
     }
-
-    await promisePool.waitForAll()
     req.payload.logger.info(`Finished processing file: ${file.name}`)
     if (errors.length > 0) {
-      console.error(`\nFinished with ${errors.length} errors:`)
+      req.payload.logger.error(`\nFinished with ${errors.length} errors:`)
       errors.forEach((err, idx) => {
-        console.error(`${idx + 1}. ${err}`)
+        req.payload.logger.error(`${idx + 1}. ${err}`)
       })
     }
 

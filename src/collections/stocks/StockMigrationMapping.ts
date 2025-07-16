@@ -6,9 +6,14 @@ const StockMigrationMapping: CollectionConfig = {
     useAsTitle: 'stockId',
     group: 'מיגרציה',
   },
+  custom: {
+    filterList: [
+      [{ name:'type'}]
+    ],
+  },
   labels: {
-    plural: 'מיפויי מניות',
-    singular: 'מיפוי מניות',
+    plural: 'מיפויי ניירות ערך',
+    singular: 'מיפוי ניירות ערך',
   },
   fields: [
     {

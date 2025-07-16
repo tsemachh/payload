@@ -37,13 +37,19 @@ const VotingCountsStatus: React.FC<VotingCountsStatusProps> = ({ path }) => {
   }
 
   return (
-    <div className="inline-flex items-center gap-2 text-xl">
-      <span>{value || 'אין נתונים'}</span>
-      {value && (
-        <span className="font-semibold flex items-center gap-1">
-          הצביעו <span className="text-2xl mr-2"> {statusIcon}</span>
+    <div className="p-2 mb-2">
+      <div className="inline-flex items-center gap-4 p-4 rounded-xl bg-gray-100/60 text-gray-800 shadow-sm">
+        <span className="flex items-center gap-2 text-3xl font-semibold text-gray-800">
+          {value || 'אין נתונים'}
         </span>
-      )}
+
+        {value && (
+          <span className="flex items-center gap-2 text-3xl font-semibold text-gray-800">
+            הצביעו
+            <span className="text-4xl leading-none font-semibold text-gray-800">{statusIcon}</span>
+          </span>
+        )}
+      </div>
     </div>
   )
 }

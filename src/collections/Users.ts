@@ -38,9 +38,9 @@ async function computeCompanyTreeAndLeafs(
           },
         },
         {
-          active: {
-            equals: true,
-          },
+          // active: {
+          //   equals: true,
+          // },
         },
       ],
     },
@@ -100,6 +100,12 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
     group: 'ניהול',
+  },
+  custom: {
+    filterList: [
+      ['active', 'isAdmin', 'createdAt'],
+      ['enableAPIKey', 'receiveMailNotification']
+    ],
   },
   auth: {
     useSessions: false,
@@ -302,13 +308,16 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
+        if (req.context.from == 'migration' || req.context.from == 'process') {
+          return data
+        }
         if (data?.companies) {
           const companiesChanged =
             originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
             const companyIds = data?.companies.map((company: any) =>
-              getIdOfRelationField(company.companyId),
+              company.companyId,
             )
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
@@ -335,9 +344,10 @@ export const Users: CollectionConfig = {
             await createAdminNotification(
               req.payload,
               `משתמש חדש נוצר: ${doc.email}`,
+              'userCreated',
               `/admin/collections/users/${doc.id}`,
               undefined,
-              doc.id,
+              doc.id
             )
             return
           }
@@ -370,9 +380,10 @@ export const Users: CollectionConfig = {
               await createAdminNotification(
                 req.payload,
                 `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
+                'userPermissionsChanged',
                 `/admin/collections/users/${doc.id}`,
                 undefined,
-                doc.id,
+                doc.id
               )
             }
           }
