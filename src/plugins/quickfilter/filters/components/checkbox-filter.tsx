@@ -46,8 +46,8 @@ export function CheckboxFilter({
   const isActive = internalState === 'checked' || internalState === 'unchecked'
 
   const labels_toggle = {
-    yes: isHebrew ? 'כן' : 'YES',
-    no: isHebrew ? 'לא' : 'NO',
+    yes: isHebrew ? 'כן' : 'Yes',
+    no: isHebrew ? 'לא' : 'No',
   }
 
   return (
@@ -66,67 +66,34 @@ export function CheckboxFilter({
       >
         <div className={cn('flex items-center', locale.direction === 'rtl' && 'order-first')}>
           {/* Two Button Toggle */}
-          <div className="flex rounded-md border border-gray-200 overflow-hidden">
+          <div className="flex rounded-md border overflow-hidden">
             {/* In RTL, YES comes first, in LTR, NO comes first */}
-            {locale.direction === 'rtl' ? (
-              <>
-                <Button
-                  variant={internalState === 'checked' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0',
-                    internalState === 'checked'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
-                  )}
-                  onClick={() => handleToggle('checked')}
-                >
-                  {labels_toggle.yes}
-                </Button>
-                <Button
-                  variant={internalState === 'unchecked' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0 border-l border-gray-200',
-                    internalState === 'unchecked'
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
-                  )}
-                  onClick={() => handleToggle('unchecked')}
-                >
-                  {labels_toggle.no}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant={internalState === 'unchecked' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0',
-                    internalState === 'unchecked'
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
-                  )}
-                  onClick={() => handleToggle('unchecked')}
-                >
-                  {labels_toggle.no}
-                </Button>
-                <Button
-                  variant={internalState === 'checked' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    'px-3 py-1 text-xs rounded-none border-0 border-l border-gray-200',
-                    internalState === 'checked'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-white text-gray-600 hover:bg-gray-50',
-                  )}
-                  onClick={() => handleToggle('checked')}
-                >
-                  {labels_toggle.yes}
-                </Button>
-              </>
-            )}
+            <Button
+              variant={internalState === 'checked' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                'px-3 py-1 text-xs rounded-none border-0',
+                internalState === 'checked'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-background text-muted-foreground hover:bg-muted',
+              )}
+              onClick={() => handleToggle('checked')}
+            >
+              {labels_toggle.yes}
+            </Button>
+            <Button
+              variant={internalState === 'unchecked' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                'px-3 py-1 text-xs rounded-none border-0 border-l',
+                internalState === 'unchecked'
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-background text-muted-foreground hover:bg-muted',
+              )}
+              onClick={() => handleToggle('unchecked')}
+            >
+              {labels_toggle.no}
+            </Button>
           </div>
         </div>
 
@@ -147,7 +114,7 @@ export function CheckboxFilter({
             variant="ghost"
             size="sm"
             className={cn(
-              'h-5 w-5 p-0 hover:bg-muted-foreground/20 rounded-full -mt-1',
+              'h-5 w-5 p-0 hover:bg-muted rounded-full -mt-1',
               checkboxLabel
                 ? locale.direction === 'rtl'
                   ? 'order-last -ml-1'

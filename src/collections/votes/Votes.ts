@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { ValidationError, type CollectionConfig } from 'payload'
 import { createAdminNotification } from '@/utils/utils'
 import { addDays, isSameDay } from '@/utils/dateUtils'
+=======
+import { type CollectionConfig } from 'payload'
+import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
+import { addDays } from '@/utils/dateUtils'
+>>>>>>> origin
 import { Meeting } from '@/payload-types'
 import {
   getVoteByMeetingAndCompanies,
@@ -315,36 +321,48 @@ export const Votes: CollectionConfig = {
   ],
   hooks: {
     afterChange: [
-      async ({ doc, req }) => {
-        if (doc._status === 'published') {
+      async ({ doc, req, previousDoc }) => {
+        if (doc._status === 'published' && doc._status !== previousDoc?._status) {
           try {
             let meeting: Meeting | string = doc.meeting
-            if (typeof meeting === 'string')
+            if (typeof meeting === 'string') {
               meeting = await req.payload.findByID({
                 collection: 'meetings',
                 id: meeting,
               })
+            }
 
             if (meeting?.holdingsLimit) {
               const holdingsLimit = new Date(meeting.holdingsLimit)
               const dayAfterHoldings = addDays(holdingsLimit, 1)
 
-              if (isSameDay(new Date(), dayAfterHoldings)) {
+              if (new Date() > dayAfterHoldings) {
                 const meetingName = meeting?.fullName
-                const message = `הצבעה חדשה פורסמה עבור ${meetingName}`
+                const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
                 const url = `/admin/collections/votes/${doc.id}`
-                //TODO ask @philc if we need to put hte first company in the notification
-                const relatedCompany = doc.companies?.[0]
-                  ? typeof doc.companies[0] === 'string'
-                    ? doc.companies[0]
-                    : doc.companies[0].id
-                  : undefined
+                const relatedCompany = getIdOfRelationField(doc.company)
+
+                try {
+                  await req.payload.delete({
+                    collection: 'admin-notifications',
+                    where: {
+                      relatedCompany: { equals: relatedCompany },
+                      message: { equals: message },
+                      url: { equals: url },
+                      user: { equals: req?.user?.id },
+                    },
+                  })
+                } catch (error) {
+                  req.payload.logger.error(
+                    `Error deleting admin notification: ${JSON.stringify(error)}`,
+                  )
+                }
 
                 await createAdminNotification(
                   req.payload,
                   message,
                   url,
-                  relatedCompany,
+                  relatedCompany as string,
                   req?.user?.id,
                 )
               }

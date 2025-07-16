@@ -3,12 +3,12 @@
 'use client'
 import React, { useCallback } from 'react'
 import { useTranslation } from '@payloadcms/ui'
-import { rtlLanguages } from '@payloadcms/translations'
-import { DateFilter } from '@/plugins/filter/filters/components/date-filter'
-import { SelectFilter } from '@/plugins/filter/filters/components/select-filter'
-import { CheckboxFilter } from '@/plugins/filter/filters/components/checkbox-filter'
+import { getTranslation, rtlLanguages } from '@payloadcms/translations'
+import { DateFilter } from '@/plugins/quickfilter/filters/components/date-filter'
+import { SelectFilter } from '@/plugins/quickfilter/filters/components/select-filter'
+import { CheckboxFilter } from '@/plugins/quickfilter/filters/components/checkbox-filter'
 import type { Locale } from '@/types/filter-types'
-import { SmallSelectFilter } from '@/plugins/filter/filters/components/small-select-filter'
+import { SmallSelectFilter } from '@/plugins/quickfilter/filters/components/small-select-filter'
 
 const FilterField = ({
   field,
@@ -51,7 +51,7 @@ const FilterField = ({
       return (
         <DateFilter
           label={field.label}
-          value={controlledValue} 
+          value={controlledValue}
           key={field.name}
           onChange={handleDateFilterChange}
           locale={userLocale as Locale}
@@ -65,7 +65,7 @@ const FilterField = ({
             label={field.label}
             key={field.name}
             options={(field.options || []).map((option: any) => ({
-              label: option.label,
+              label: getTranslation(option.label, i18n),
               value: option.value,
             }))}
             onChange={handleSelectFilterChange}
@@ -80,10 +80,10 @@ const FilterField = ({
           label={field.label}
           key={field.name}
           options={(field.options || []).map((option: any) => ({
-            label: option.label,
+            label: getTranslation(option.label, i18n),
             value: option.value,
           }))}
-          onChange={handleSelectFilterChange} 
+          onChange={handleSelectFilterChange}
           value={controlledValue}
           locale={userLocale as Locale}
           className={` w-[${field.width || '250px'}]`}

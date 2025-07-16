@@ -61,3 +61,33 @@ export function getGridColumnsClass(filtersCount: number): string {
       return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
   }
 }
+
+export const parseColumns = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw
+  }
+
+  if (typeof raw === 'string') {
+    try {
+      const cleaned = raw
+        .trim()
+        .replace(/^"+/, '')
+        .replace(/"+$/, '')
+        .replace(/\\"/g, '"')
+        .replace(/\\+"/g, '"')
+        .replace(/\\\\/g, '\\')
+
+      const parsed = JSON.parse(cleaned)
+
+      if (Array.isArray(parsed)) {
+        console.log('Parsed columns:', parsed)
+        console.log('row:', raw)
+        return parsed
+      }
+    } catch (err) {
+      console.warn('Failed to parse columns string:', raw, err)
+    }
+  }
+
+  return []
+}

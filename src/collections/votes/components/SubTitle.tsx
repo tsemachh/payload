@@ -12,7 +12,6 @@ const SubTitle: BeforeDocumentControlsClientProps = () => {
   const reported = fields.reported?.value
   const reportedBy = fields.reportedBy?.value
   const reportedTime = fields.reportedTime?.value
-
   const isValidTime =
     typeof reportedTime === 'string' ||
     typeof reportedTime === 'number' ||
@@ -22,7 +21,6 @@ const SubTitle: BeforeDocumentControlsClientProps = () => {
     reported && reportedBy && isValidTime
       ? `${reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(reportedTime!), { locale: he })}`
       : 'לא דווח'
-
   return (
     <div
       style={{
