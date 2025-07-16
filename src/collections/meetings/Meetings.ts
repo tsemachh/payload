@@ -613,34 +613,40 @@ export const Meetings: CollectionConfig = {
                   ],
                 },
                 {
-                  name: 'vPercentSpecial',
-                  label: 'אחוז הצבעה מיוחד',
-                  type: 'number',
-                  admin: {
-                    disableListFilter: true,
-                    hidden: true,
-                    step: 0.01,
-                    condition: (_, siblingData) =>
-                      siblingData.topicType === 'decision' &&
-                      siblingData.majorityType === 'privileged',
-                  },
-                },
-                {
-                  name: 'result',
-                  label: 'תוצאה',
-                  type: 'select',
-                  options: [
-                    { label: '---', value: '0' },
-                    { label: 'בעד', value: '1' },
-                    { label: 'נגד', value: '2' },
-                    { label: 'דיון', value: '3' },
-                  ],
-                  admin: {
-                    disableListFilter: true,
-                    condition: (value, siblingData) => {
-                      return siblingData.topicType === 'decision' && value?.state === 'completed'
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'result',
+                      label: 'תוצאה',
+                      type: 'select',
+                      admin: {
+                        width: '30%',
+                        disableListFilter: true,
+                        condition: (value, siblingData) =>
+                          siblingData.topicType === 'decision' && value?.state === 'completed',
+                      },
+                      options: [
+                        { label: '---', value: '0' },
+                        { label: 'בעד', value: '1' },
+                        { label: 'נגד', value: '2' },
+                        { label: 'דיון', value: '3' },
+                      ],
                     },
-                  },
+                    {
+                      name: 'vPercentSpecial',
+                      label: 'אחוז הצבעה מיוחד',
+                      type: 'number',
+                      admin: {
+                        width: '15%',
+                        disableListFilter: true,
+                        step: 0.01,
+                        condition: (_, siblingData) =>
+                          siblingData.topicType === 'decision' &&
+                          siblingData.majorityType === 'privileged' &&
+                          siblingData.result,
+                      },
+                    },
+                  ],
                 },
               ],
             },
