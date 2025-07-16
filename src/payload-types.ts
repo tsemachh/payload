@@ -138,6 +138,21 @@ export type HoldingsPerDay = {
 export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AdminNotificationType".
+ */
+export type AdminNotificationType =
+  | (
+      | 'general'
+      | 'predictaFeed'
+      | 'userCreated'
+      | 'userPermissionsChanged'
+      | 'companyNotReportedHoldings'
+      | 'companyNotVotedMeetingNextDay'
+      | 'newVoteAfterHoldingLimit'
+    )
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
 export type UserNotificationType = 'after-holding-limit' | 'before-voting-end' | 'holdings-not-fed';
@@ -752,6 +767,7 @@ export interface SilencedStock {
 export interface AdminNotification {
   id: string;
   message: string;
+  type?: AdminNotificationType;
   url?: string | null;
   readStatus?: boolean | null;
   relatedCompany?: (string | null) | Company;
@@ -1521,6 +1537,7 @@ export interface DocumentsSelect<T extends boolean = true> {
  */
 export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
+  type?: T;
   url?: T;
   readStatus?: T;
   relatedCompany?: T;
