@@ -66,8 +66,8 @@ export type MeetingAgenda =
         showExceptional?: boolean | null;
         companies?: (string | Company)[] | null;
       };
-      vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
+      vPercentSpecial?: number | null;
       id?: string | null;
     }[]
   | null;
@@ -1345,8 +1345,8 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
         showExceptional?: T;
         companies?: T;
       };
-  vPercentSpecial?: T;
   result?: T;
+  vPercentSpecial?: T;
   id?: T;
 }
 /**
