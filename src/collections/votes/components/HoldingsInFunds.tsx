@@ -132,7 +132,9 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       newValue[fund.id] = {
         isAuthorized: fund.isAuthorized,
         ownedQuantity:
-          fund.isAuthorized === 'unchecked' ? Number(updatedHoldings[fund.id]) || null : null,
+          fund.isAuthorized === 'unchecked'
+            ? Number(updatedHoldings[fund.id]) || null
+            : fund.quantity,
       }
     })
     console.log('Updating JSON field with newValue:', newValue)
