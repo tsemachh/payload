@@ -53,15 +53,15 @@ const MEETING_SELECT_FIELDS: SelectType = {
 function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
   return userFunds
     ? {
-        funds: {
-          in: userFunds,
-        },
-      }
+      funds: {
+        in: userFunds,
+      },
+    }
     : {
-        funds: {
-          in: [], // no matches if user.funds is missing or empty
-        },
-      }
+      funds: {
+        in: [], // no matches if user.funds is missing or empty
+      },
+    }
 }
 
 /**
@@ -145,18 +145,18 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
           createPublishedStatusFilter(),
           searchTerm
             ? {
-                or: [
-                  { meetingId: { contains: searchTerm } },
-                  { 'stock.stockId': { contains: searchTerm } },
-                  { 'stock.name': { contains: searchTerm } },
-                  { 'stock.symbol': { contains: searchTerm } },
-                  { 'stock.type': { contains: searchTerm } },
-                  { magnaId: { contains: searchTerm } },
-                  { type: { contains: searchTerm } },
-                  { location: { contains: searchTerm } },
-                  { comments: { contains: searchTerm } },
-                ],
-              }
+              or: [
+                { meetingId: { contains: searchTerm } },
+                { 'stock.stockId': { contains: searchTerm } },
+                { 'stock.name': { contains: searchTerm } },
+                { 'stock.symbol': { contains: searchTerm } },
+                { 'stock.type': { contains: searchTerm } },
+                { magnaId: { contains: searchTerm } },
+                { type: { contains: searchTerm } },
+                { location: { contains: searchTerm } },
+                { comments: { contains: searchTerm } },
+              ],
+            }
             : {},
         ],
       },
@@ -192,13 +192,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       limit: 0, // Get all meetings
       where: {
         and: [
-          {
-            or: [
-              {
-                state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] },
-              },
-            ],
-          },
+          { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
           createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
