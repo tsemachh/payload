@@ -36,7 +36,7 @@ export const Votes: CollectionConfig = {
     },
     components: {
       edit: {
-        beforeDocumentControls: ['/collections/votes/components/SubTitle'],
+        beforeDocumentControls: ['/collections/votes/components/VoteSubTitle'],
       },
     },
     group: 'פעילות',
