@@ -274,11 +274,11 @@ export const Votes: CollectionConfig = {
           ],
         },
         {
-          label: 'דווח',
+          label: 'הצבעה בפועל',
           fields: [
             {
               name: 'reported',
-              label: 'דווח',
+              label: 'הצבעה בפועל',
               type: 'checkbox',
               defaultValue: false,
             },
