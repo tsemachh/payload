@@ -375,46 +375,52 @@ export const Votes: CollectionConfig = {
             '------originalDoc?.fundsWithHoldingsUpdates',
             originalDoc?.fundsWithHoldingsUpdates,
           )
-          const meetingId = data.meeting
-          const updates = data.fundsWithHoldingsUpdates
+          try {
+            const meetingId = data.meeting
+            const updates = data.fundsWithHoldingsUpdates
 
-          if (meetingId && typeof updates === 'object') {
-            const meeting = await req.payload.findByID({
-              collection: 'meetings',
-              id: meetingId,
-            })
+            if (meetingId && typeof updates === 'object') {
+              const meeting = await req.payload.findByID({
+                collection: 'meetings',
+                id: meetingId,
+              })
 
-            if (!meeting) {
-              throw new Error('לא נמצאה אסיפה מתאימה')
-            }
-
-            const updatedFundsWithHolding = (meeting.fundsWithHolding || []).map((fund: any) => {
-              const update = updates[fund.fund]
-              console.log('------update', update)
-              console.log('------fund', fund)
-              console.log('------update?.ownedQuantity', update?.ownedQuantity)
-
-              if (update) {
-                return {
-                  ...fund,
-                  ownedQuantity: update?.ownedQuantity ?? null,
-                }
+              if (!meeting) {
+                throw new Error('לא נמצאה אסיפה מתאימה')
               }
-              return fund
-            })
-            console.log('------updatedFundsWithHolding', updatedFundsWithHolding)
 
-            await req.payload.update({
-              collection: 'meetings',
-              id: meetingId,
-              data: {
-                fundsWithHolding: updatedFundsWithHolding,
-              },
-            })
+              const updatedFundsWithHolding = (meeting.fundsWithHolding || []).map((fund: any) => {
+                const update = updates[fund.fund]
+                console.log('------update', update)
+                console.log('------fund', fund)
+                console.log('------update?.ownedQuantity', update?.ownedQuantity)
 
-            console.log('🎯 fundsWithHolding in meeting updated')
+                if (update) {
+                  return {
+                    ...fund,
+                    ownedQuantity: update?.ownedQuantity ?? null,
+                  }
+                }
+                return fund
+              })
+              console.log('------updatedFundsWithHolding', updatedFundsWithHolding)
+
+              await req.payload.update({
+                collection: 'meetings',
+                id: meetingId,
+                data: {
+                  fundsWithHolding: updatedFundsWithHolding,
+                },
+                req,
+              })
+
+              console.log('🎯 fundsWithHolding in meeting updated')
+            }
+            //פה צריך לעדכן את אסיפה לפי id לכל מי שיש לו unchecked למלא שם את התוכן
+          } catch (error) {
+            console.error('Error updating meeting:', error)
+            throw new Error('Failed to update meeting fundsWithHolding')
           }
-          //פה צריך לעדכן את אסיפה לפי id לכל מי שיש לו unchecked למלא שם את התוכן
         }
         return data
       },
