@@ -12,7 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter/CollectionQuickFilterPlugin'
+import { CollectionQuickFilterPlugin } from '@shefing/quickfilter'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
