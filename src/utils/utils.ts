@@ -200,7 +200,7 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 }
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
-  return typeof item == 'string' ? item : item.id
+  return typeof item == 'string' ?  item :(typeof item == 'object' ? item?.id : null)
 }
 
 export function findSubCompanyNameById(
