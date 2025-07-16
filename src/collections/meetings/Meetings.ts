@@ -634,7 +634,7 @@ export const Meetings: CollectionConfig = {
                     },
                     {
                       name: 'vPercentSpecial',
-                      label: 'אחוז הצבעה מיוחד',
+                      label: 'תוצאה באחוזים',
                       type: 'number',
                       admin: {
                         width: '15%',
