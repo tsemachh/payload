@@ -285,7 +285,7 @@ export default function HoldingsFeedView() {
     <div className="space-y-6">
       {editForm ? (
         <>
-          <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-center md:gap-6 md:px-10">
+          <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-right md:gap-6 md:px-10">
             <div>
               <label className="text-base font-semibold mb-2 block">חברות</label>
               <CompanyTreeSelector
