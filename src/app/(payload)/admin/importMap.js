@@ -18,7 +18,7 @@ import { default as default_bb1cca88281f472f26c1e5ecde3b5f45 } from '../../../ad
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_569907a85db59f6d8c1deaba81af6db9 } from '../../../collections/votes/components/HoldingsInFunds'
-import { default as default_90c0b3d967217a8ea68cdf85f162b5f5 } from '../../../collections/votes/components/SubTitle'
+import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
 import { default as default_fdd78b27d59dd9f7771977d77e0bda85 } from '../../../admincomponents/fields/ReadStatusField'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
@@ -59,7 +59,7 @@ export const importMap = {
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/HoldingsInFunds#default": default_569907a85db59f6d8c1deaba81af6db9,
-  "/collections/votes/components/SubTitle#default": default_90c0b3d967217a8ea68cdf85f162b5f5,
+  "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
   "/admincomponents/fields/ReadStatusField#default": default_fdd78b27d59dd9f7771977d77e0bda85,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
