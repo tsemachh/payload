@@ -60,11 +60,11 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
-        showExceptional?: boolean | null;
-        companies?: (string | Company)[] | null;
       };
       result?: ('0' | '1' | '2' | '3') | null;
       vPercentSpecial?: number | null;
@@ -1339,11 +1339,11 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
+        showExceptional?: T;
+        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
-        showExceptional?: T;
-        companies?: T;
       };
   result?: T;
   vPercentSpecial?: T;
