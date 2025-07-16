@@ -967,7 +967,8 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const stockChanged = previousDoc?.stock !== doc?.stock
+        const stockChanged =
+          getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
           previousDoc?._status == 'draft' &&
           doc._status == 'published' &&

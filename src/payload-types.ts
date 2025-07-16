@@ -648,9 +648,6 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   title?: string | null;
-  reported?: boolean | null;
-  reportedBy?: string | null;
-  reportedTime?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -672,6 +669,18 @@ export interface Vote {
     | null;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
+  reported?: boolean | null;
+  reportedBy?: string | null;
+  reportedTime?: string | null;
+  fundsWithHoldingsUpdates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1348,9 +1357,6 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   title?: T;
-  reported?: T;
-  reportedBy?: T;
-  reportedTime?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1372,6 +1378,10 @@ export interface VotesSelect<T extends boolean = true> {
       };
   voteDocuments?: T;
   clientComment?: T;
+  reported?: T;
+  reportedBy?: T;
+  reportedTime?: T;
+  fundsWithHoldingsUpdates?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;

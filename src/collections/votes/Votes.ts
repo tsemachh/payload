@@ -1,7 +1,9 @@
-import { type CollectionConfig } from 'payload'
+import { ValidationError, type CollectionConfig } from 'payload'
+import { addDays, isSameDay } from '@/utils/dateUtils'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
-import { addDays } from '@/utils/dateUtils'
+
 import { Meeting } from '@/payload-types'
+
 import {
   getVoteByMeetingAndCompanies,
   getVotedCompanies,
@@ -44,244 +46,271 @@ export const Votes: CollectionConfig = {
   disableBulkEdit: true,
   fields: [
     {
-      type: 'row',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'meeting',
-          label: 'אסיפה',
-          type: 'relationship',
-          relationTo: 'meetings',
-          maxDepth: 0,
-          required: true,
-          index: true,
-        },
-        {
-          name: 'company',
-          label: 'חברה',
-          type: 'relationship',
-          relationTo: 'companies',
-          maxDepth: 0,
-          required: true,
-          index: true,
-          filterOptions: ({ req }: any) => {
-            if (req.context?.from == 'migration' || req.context?.from == 'process') {
-              return true
-            }
-            return {
-              type: { equals: 'regular' },
-            }
-          },
-        },
-        {
-          name: 'title',
-          label: 'כותרת',
-          type: 'text', // Stored in the database
-          admin: {
-            hidden: true, // Hide in admin UI to prevent manual edits
-          },
-          hooks: {
-            afterRead: [
-              async ({ data, req }) => {
-                if (data?.company && typeof data.company === 'string') {
-                  const company = await req.payload.findByID({
-                    collection: 'companies',
-                    select: {
-                      name: true,
-                    },
-                    id: data.company,
-                    depth: 0,
-                  })
-                  return `הצבעה ${company?.name || 'ללא שם חברה'}`
-                }
-              },
-            ],
-          },
-        },
-        {
-          name: 'reported',
-          label: 'דווח',
-          type: 'checkbox',
-          defaultValue: false,
-        },
-        {
-          name: 'reportedBy',
-          label: 'דווח על ידי',
-          type: 'text',
-          admin: {
-            hidden: true,
-          },
-        },
-        {
-          name: 'reportedTime',
-          label: 'תאריך דיווח',
-          type: 'date',
-          admin: {
-            hidden: true,
-          },
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'isInterested',
-          label: 'בעל עניין',
-          type: 'checkbox',
-          defaultValue: false,
-        },
-        {
-          name: 'interestedExplanation',
-          label: 'הסבר בעל עניין',
-          type: 'textarea',
-          admin: {
-            condition: (_, siblingData) => siblingData.isInterested === true,
-          },
-        },
-        {
-          name: 'isSeniorOfficial',
-          label: 'נושא משרה בכירה',
-          type: 'checkbox',
-          defaultValue: false,
-        },
-        {
-          name: 'seniorOfficialExplanation',
-          label: 'הסבר נושא משרה בכירה',
-          type: 'textarea',
-          admin: {
-            condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
-          },
-        },
-        {
-          name: 'isInstitutionalInvestor',
-          label: 'משקיע מוסדי',
-          type: 'checkbox',
-          defaultValue: true,
-        },
-      ],
-    },
-    {
-      name: 'votes',
-      label: 'סעיפי הצבעה',
-      type: 'array',
-      labels: {
-        singular: 'נושא',
-        plural: 'נושאים',
-      },
-      admin: {
-        components: {
-          RowLabel: {
-            path: '/collections/votes/components/RowLabel',
-          },
-        },
-      },
-      fields: [
-        {
-          type: 'row',
+          label: 'תוכן',
           fields: [
             {
-              name: 'topicIndex',
-              label: 'מספר נושא',
-              type: 'number',
-              required: true,
-              admin: { width: '100px', hidden: true },
-            },
-            {
-              name: 'voteDecision',
-              interfaceName: 'VoteDecision',
-              label: 'הצבעה',
-              type: 'select',
-              options: [
-                { label: '----', value: '----' },
-                { label: 'בעד', value: 'בעד' },
-                { label: 'נגד', value: 'נגד' },
-                { label: 'נמנע', value: 'נמנע' },
-                { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
-                { label: 'דיון', value: 'דיון' },
-                { label: 'לא משתתף', value: 'לא משתתף' },
+              type: 'row',
+              fields: [
+                {
+                  name: 'meeting',
+                  label: 'אסיפה',
+                  type: 'relationship',
+                  relationTo: 'meetings',
+                  maxDepth: 0,
+                  required: true,
+                  index: true,
+                },
+                {
+                  name: 'company',
+                  label: 'חברה',
+                  type: 'relationship',
+                  relationTo: 'companies',
+                  maxDepth: 0,
+                  required: true,
+                  index: true,
+                  filterOptions: ({ req }: any) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      type: { equals: 'regular' },
+                    }
+                  },
+                },
+                {
+                  name: 'title',
+                  label: 'כותרת',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                  hooks: {
+                    afterRead: [
+                      async ({ data, req }) => {
+                        if (data?.company && typeof data.company === 'string') {
+                          const company = await req.payload.findByID({
+                            collection: 'companies',
+                            select: {
+                              name: true,
+                            },
+                            id: data.company,
+                            depth: 0,
+                          })
+                          return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                        }
+                      },
+                    ],
+                  },
+                },
               ],
-              defaultValue: '----',
-              admin: { width: '15%', className: 'voteDecision' },
             },
             {
-              name: 'hasConflictOfInterest',
-              label: 'ניגוד עניינים',
-              type: 'checkbox',
-              defaultValue: false,
-              admin: { width: '120px' },
+              type: 'row',
+              fields: [
+                {
+                  name: 'isInterested',
+                  label: 'בעל עניין',
+                  type: 'checkbox',
+                  defaultValue: false,
+                },
+                {
+                  name: 'interestedExplanation',
+                  label: 'הסבר בעל עניין',
+                  type: 'textarea',
+                  admin: {
+                    condition: (_, siblingData) => siblingData.isInterested === true,
+                  },
+                },
+                {
+                  name: 'isSeniorOfficial',
+                  label: 'נושא משרה בכירה',
+                  type: 'checkbox',
+                  defaultValue: false,
+                },
+                {
+                  name: 'seniorOfficialExplanation',
+                  label: 'הסבר נושא משרה בכירה',
+                  type: 'textarea',
+                  admin: {
+                    condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
+                  },
+                },
+                {
+                  name: 'isInstitutionalInvestor',
+                  label: 'משקיע מוסדי',
+                  type: 'checkbox',
+                  defaultValue: true,
+                },
+              ],
             },
             {
-              name: 'isRelatedParty',
-              label: 'צד קשור',
-              type: 'checkbox',
-              defaultValue: false,
-              admin: { width: '120px' },
-            },
+              name: 'votes',
+              label: 'סעיפי הצבעה',
+              type: 'array',
+              labels: {
+                singular: 'נושא',
+                plural: 'נושאים',
+              },
+              admin: {
+                components: {
+                  RowLabel: {
+                    path: '/collections/votes/components/RowLabel',
+                  },
+                },
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'topicIndex',
+                      label: 'מספר נושא',
+                      type: 'number',
+                      required: true,
+                      admin: { width: '100px', hidden: true },
+                    },
+                    {
+                      name: 'voteDecision',
+                      interfaceName: 'VoteDecision',
+                      label: 'הצבעה',
+                      type: 'select',
+                      options: [
+                        { label: '----', value: '----' },
+                        { label: 'בעד', value: 'בעד' },
+                        { label: 'נגד', value: 'נגד' },
+                        { label: 'נמנע', value: 'נמנע' },
+                        { label: 'אין חובת השתתפות', value: 'אין חובת השתתפות' },
+                        { label: 'דיון', value: 'דיון' },
+                        { label: 'לא משתתף', value: 'לא משתתף' },
+                      ],
+                      defaultValue: '----',
+                      admin: { width: '15%', className: 'voteDecision' },
+                    },
+                    {
+                      name: 'hasConflictOfInterest',
+                      label: 'ניגוד עניינים',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: { width: '120px' },
+                    },
+                    {
+                      name: 'isRelatedParty',
+                      label: 'צד קשור',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: { width: '120px' },
+                    },
 
-            {
-              name: 'isInvestmentCommittee',
-              label: 'ועדה',
-              type: 'checkbox',
-              defaultValue: true,
-              admin: { width: '120px' },
+                    {
+                      name: 'isInvestmentCommittee',
+                      label: 'ועדה',
+                      type: 'checkbox',
+                      defaultValue: true,
+                      admin: { width: '120px' },
+                    },
+                    {
+                      name: 'hasPersonalInterest',
+                      label: 'עניין אישי',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: { width: '120px' },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'relatedPartyExplanation',
+                      label: 'הסבר ניגוד עניינים',
+                      type: 'textarea',
+                      admin: {
+                        condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
+                        width: '33%',
+                      },
+                    },
+                    {
+                      name: 'conflictOfInterestExplanation',
+                      label: 'הסבר צד קשור',
+                      type: 'textarea',
+                      admin: {
+                        condition: (_, siblingData) => siblingData.isRelatedParty === true,
+                        width: '33%',
+                      },
+                    },
+                    {
+                      name: 'personalInterestExplanation',
+                      label: 'הסבר עניין אישי',
+                      type: 'textarea',
+                      admin: {
+                        condition: (_, siblingData) => siblingData.hasPersonalInterest === true,
+                        width: '33%',
+                      },
+                    },
+                  ],
+                },
+              ],
             },
             {
-              name: 'hasPersonalInterest',
-              label: 'עניין אישי',
-              type: 'checkbox',
-              defaultValue: false,
-              admin: { width: '120px' },
+              type: 'row',
+              fields: [
+                {
+                  name: 'voteDocuments',
+                  label: 'מסמכים מצורפים',
+                  type: 'relationship',
+                  relationTo: 'documents',
+                  hasMany: true,
+                },
+                {
+                  name: 'clientComment',
+                  label: 'הערת לקוח',
+                  type: 'textarea',
+                },
+              ],
             },
           ],
         },
         {
-          type: 'row',
+          label: 'דווח',
           fields: [
             {
-              name: 'relatedPartyExplanation',
-              label: 'הסבר ניגוד עניינים',
-              type: 'textarea',
+              name: 'reported',
+              label: 'דווח',
+              type: 'checkbox',
+              defaultValue: false,
+            },
+            {
+              name: 'reportedBy',
+              label: 'דווח על ידי',
+              type: 'text',
               admin: {
-                condition: (_, siblingData) => siblingData.hasConflictOfInterest === true,
-                width: '33%',
+                hidden: true,
               },
             },
             {
-              name: 'conflictOfInterestExplanation',
-              label: 'הסבר צד קשור',
-              type: 'textarea',
+              name: 'reportedTime',
+              label: 'תאריך דיווח',
+              type: 'date',
               admin: {
-                condition: (_, siblingData) => siblingData.isRelatedParty === true,
-                width: '33%',
+                hidden: true,
               },
             },
             {
-              name: 'personalInterestExplanation',
-              label: 'הסבר עניין אישי',
-              type: 'textarea',
+              name: 'fundsWithHoldingsUpdates',
+              label: 'עדכוני אחזקות תיקים',
+              type: 'json',
+              //hidden: true,
+              defaultValue: {},
               admin: {
-                condition: (_, siblingData) => siblingData.hasPersonalInterest === true,
-                width: '33%',
+                components: {
+                  Field: '/collections/votes/components/HoldingsInFunds',
+                },
               },
             },
           ],
-        },
-      ],
-    },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'voteDocuments',
-          label: 'מסמכים מצורפים',
-          type: 'relationship',
-          relationTo: 'documents',
-          hasMany: true,
-        },
-        {
-          name: 'clientComment',
-          label: 'הערת לקוח',
-          type: 'textarea',
         },
       ],
     },
@@ -346,6 +375,88 @@ export const Votes: CollectionConfig = {
           data.reportedBy = data.updator || req.user?.name
           data.reportedTime = new Date().toISOString()
         }
+
+        if (
+          data._status === 'published' &&
+          data.meeting &&
+          data.fundsWithHoldingsUpdates &&
+          JSON.stringify(originalDoc?.fundsWithHoldingsUpdates) !==
+            JSON.stringify(data.fundsWithHoldingsUpdates)
+        ) {
+          try {
+            const meetingId = data.meeting
+            const updates = data.fundsWithHoldingsUpdates
+
+            if (meetingId && typeof updates === 'object') {
+              const meeting = await req.payload.findByID({
+                collection: 'meetings',
+                id: meetingId,
+                depth: 0,
+              })
+
+              if (!meeting) {
+                throw new Error('לא נמצאה אסיפה מתאימה')
+              }
+
+              const updatedFundsWithHolding = (meeting.fundsWithHolding || []).map((fund: any) => {
+                const update = updates[fund.fund]
+
+                if (update) {
+                  return {
+                    ...fund,
+                    ownedQuantity:
+                      update.ownedQuantity !== undefined && update.ownedQuantity !== null
+                        ? update.ownedQuantity
+                        : 0,
+                  }
+                }
+                return fund
+              })
+
+              await req.payload.update({
+                collection: 'meetings',
+                id: meetingId,
+                data: {
+                  fundsWithHolding: updatedFundsWithHolding,
+                },
+                req,
+              })
+            }
+          } catch (error) {
+            console.error('Error updating meeting:', error)
+            throw new Error('Failed to update meeting fundsWithHolding')
+          }
+        }
+        return data
+      },
+    ],
+    beforeValidate: [
+      async ({ data }) => {
+        const updates = data?.fundsWithHoldingsUpdates
+
+        const validationErrors: { message: string; path: string }[] = []
+
+        if (updates && typeof updates === 'object') {
+          type FundUpdate = { isAuthorized?: string; ownedQuantity?: number | null }
+          Object.entries(updates).forEach(([fundId, updateRaw]) => {
+            const update = updateRaw as FundUpdate
+            if (
+              update &&
+              update.isAuthorized === 'unchecked' &&
+              (update.ownedQuantity === null || update.ownedQuantity === undefined)
+            ) {
+              validationErrors.push({
+                message: 'חובה להזין ערך נקוב ברשות כאשר אין תאום בערכים',
+                path: `reported`,
+              })
+            }
+          })
+        }
+
+        if (validationErrors.length > 0) {
+          throw new ValidationError({ errors: validationErrors })
+        }
+
         return data
       },
     ],
