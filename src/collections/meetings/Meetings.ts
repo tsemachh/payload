@@ -617,7 +617,7 @@ export const Meetings: CollectionConfig = {
                   fields: [
                     {
                       name: 'result',
-                      label: 'תוצאה',
+                      label: 'החלטה',
                       type: 'select',
                       admin: {
                         width: '30%',
