@@ -407,7 +407,7 @@ export const Votes: CollectionConfig = {
                     ownedQuantity:
                       update.ownedQuantity !== undefined && update.ownedQuantity !== null
                         ? update.ownedQuantity
-                        : 0, // שינוי: במקום null, נגדיר 0 כדי לוודא שהשדה נשמר
+                        : 0,
                   }
                 }
                 return fund
@@ -421,10 +421,7 @@ export const Votes: CollectionConfig = {
                 },
                 req,
               })
-
-              console.log('🎯 fundsWithHolding in meeting updated for ID:', meetingId)
             }
-            //פה צריך לעדכן את אסיפה לפי id לכל מי שיש לו unchecked למלא שם את התוכן
           } catch (error) {
             console.error('Error updating meeting:', error)
             throw new Error('Failed to update meeting fundsWithHolding')
