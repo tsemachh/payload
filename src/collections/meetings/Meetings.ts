@@ -569,7 +569,6 @@ export const Meetings: CollectionConfig = {
                   type: 'group',
                   name: 'exceptionalRecommendation',
                   fields: [
-                    ...(votingRecommendationExceptional as Field[]),
                     {
                       type: 'row',
                       fields: [
@@ -578,7 +577,7 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצה חריגה',
                           type: 'checkbox',
                           admin: {
-                            width: '20%',
+                            width: '155px',
                             disableListFilter: true,
                           },
                         },
@@ -604,12 +603,13 @@ export const Meetings: CollectionConfig = {
                           },
                           admin: {
                             disableListFilter: true,
-                            width: '80%',
+                            width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                         },
                       ],
                     },
+                    ...(votingRecommendationExceptional as Field[]),
                   ],
                 },
                 {
