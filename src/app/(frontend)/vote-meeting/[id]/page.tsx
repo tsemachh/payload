@@ -51,10 +51,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../components/ui/tooltip'
-import VoteStatus from '../components/Status'
 import { useParams } from 'next/navigation'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 import { Document } from '@/payload-types'
+import VoteHeader from '../components/Header'
 
 export default function VotingForm() {
   const params = useParams()
@@ -63,6 +63,7 @@ export default function VotingForm() {
 
   const meetingIdFromUrl = params?.id || '-'
 
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [uploadedDocs, setUploadedDocs] = useState<Document[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
@@ -96,6 +97,16 @@ export default function VotingForm() {
       revalidateOnFocus: false,
     },
   )
+
+  useEffect(() => {
+    if (meetingData?.proxyVotingDate) {
+      const proxyVotingDate = new Date(meetingData.proxyVotingDate)
+      const now = new Date()
+      if (proxyVotingDate < now) {
+        setIsReadOnly(true)
+      }
+    }
+  }, [meetingData])
 
   useEffect(() => {
     if (meetingDataError) {
@@ -207,8 +218,6 @@ export default function VotingForm() {
 
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
-      console.log('-----fetchedVotes', fetchedVotes)
-
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
         setIsGeneralVoteOption(false)
@@ -243,7 +252,6 @@ export default function VotingForm() {
     let publishedData: VoteDataType | null = null
 
     if (!fetchedVotes || fetchedVotes.length === 0) {
-      // Default case if no fetched votes or error
       initialData = {
         generalVotingData: {
           isInterested: false,
@@ -479,7 +487,6 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
-        console.log('-----currentVotingData', currentVotingData)
         const response = await fetch('/api/votes/publish-votes', {
           method: 'POST',
           headers: {
@@ -489,10 +496,6 @@ export default function VotingForm() {
             meetingId: meetingIdPayload,
             companiesIds: companiesIDs,
             votingData: currentVotingData,
-            // {
-            //   ...currentVotingData,
-            //   voteDocuments: uploadedDocs.map((doc) => doc.id),
-            // },
           }),
         })
 
@@ -536,8 +539,6 @@ export default function VotingForm() {
         return
       }
       try {
-        console.log('----- currentVotingData', currentVotingData)
-
         const requestBody = {
           meetingId: meetingIdPayload,
           companiesIds: companiesIDs,
@@ -720,8 +721,6 @@ export default function VotingForm() {
         const uploadPromises = filesArray.map((file) => {
           const formData = new FormData()
           formData.append('file', file)
-          // You can add other fields to the 'documents' collection here if needed
-          // formData.append('alt', 'A description for the file');
           return fetch('/api/documents', {
             method: 'POST',
             body: formData,
@@ -756,7 +755,6 @@ export default function VotingForm() {
         })
       } finally {
         setIsUploading(false)
-        // Reset file input
         e.target.value = ''
       }
     }
@@ -773,53 +771,29 @@ export default function VotingForm() {
         saveDraftData('עדכון קבצים', updatedVotingData)
         return updatedVotingData
       })
-      // Optionally, you could add a call here to DELETE the document from the server
-      // fetch(`/api/documents/${docIdToRemove}`, { method: 'DELETE' });
       return newDocs
     })
   }
-  // END: New file upload and removal handlers
 
   return (
     <>
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
-          {/* ... (header section is unchanged) ... */}
-          <div className="mb-3 mt-[-20px]">
-            <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
-              {/* main title - centered */}
-              <div className="w-full md:w-auto">
-                {meetingData.meetingInviteUrl ? (
-                  <a
-                    href={meetingData.meetingInviteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center text-2xl font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors"
-                  >
-                    אסיפה {meetingData.meetingType} - {meetingData.stockName}
-                  </a>
-                ) : (
-                  <div className="text-2xl font-bold">
-                    אסיפה {meetingData.meetingType} - {meetingData.stockName}
-                  </div>
-                )}
-              </div>
-              <VoteStatus
-                isPublished={!isDirty}
-                publishedInfo={lastPublishedVoteInfo}
-                isFirstDraft={!!lastPublishedVoteInfo}
-                isDraft={fetchedVotes?.length && isDirty}
-                draftInfo={
-                  fetchedVotes?.length &&
-                  fetchedVotes[0].updatedAt && { user: 'לא ידוע', date: fetchedVotes[0].updatedAt }
-                }
-              />
-            </div>
-          </div>
+          <VoteHeader
+            meetingData={{
+              meetingInviteUrl: meetingData.meetingInviteUrl,
+              meetingType: meetingData.meetingType,
+              stockName: meetingData.meetingType,
+            }}
+            isReadOnly={isReadOnly}
+            isDirty={isDirty}
+            lastPublishedVoteInfo={lastPublishedVoteInfo}
+            fetchedVotes={fetchedVotes}
+          />
 
           {/* Main content */}
           <div className="space-y-6">
-            <VoteDetails meetingData={meetingData} />
+            <VoteDetails meetingData={meetingData} isReadOnly={isReadOnly} />
             <Card>
               <CardHeader className="bg-primary/10 py-1.5 px-3">
                 <h2 className="text-sm font-medium text-primary">בחירת חברה</h2>
@@ -844,6 +818,7 @@ export default function VotingForm() {
                   generalVotingData={votingData.generalVotingData}
                   onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
                   getFieldErrorAction={getFieldError}
+                  isReadOnly={isReadOnly}
                 />
               </CardContent>
             </Card>
@@ -853,7 +828,6 @@ export default function VotingForm() {
               <CardHeader className="bg-primary/10 py-1.5 px-3">
                 <h2 className="text-sm font-medium text-primary">סדר יום</h2>
               </CardHeader>
-
               <CardContent className="p-4">
                 <div className="space-y-6">
                   {meetingData.agendas.map((item, index) => {
@@ -872,7 +846,9 @@ export default function VotingForm() {
                         <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,auto] gap-4 pl-3 pr-3">
                           <div>
                             <div className="flex items-start">
-                              <span className="text-primary font-bold ml-2 mt-0.5 min-w-[24px]">
+                              <span
+                                className={`text-primary font-bold ml-2 mt-0.5 min-w-[24px] ${isReadOnly && 'text-primary/70'}  `}
+                              >
                                 {itemNumber}.
                               </span>
                               <div className={`flex-1 ${isHebrew ? 'text-right' : 'text-left'}`}>
@@ -881,14 +857,13 @@ export default function VotingForm() {
                                     item.isRemovedFromAgenda
                                       ? 'line-through text-muted-foreground'
                                       : ''
-                                  }`}
+                                  } ${isReadOnly && 'text-primary/70'}`}
                                   dir={isHebrew ? 'rtl' : 'ltr'}
                                 >
                                   {item.text}
                                 </p>
                               </div>
                             </div>
-
                             <div
                               className="flex flex-wrap gap-2 mt-2 mr-7"
                               style={{
@@ -929,6 +904,7 @@ export default function VotingForm() {
                                 onValueChange={(value) =>
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
+                                disabled={isReadOnly}
                               >
                                 <SelectTrigger
                                   className={`w-full ${
@@ -990,6 +966,7 @@ export default function VotingForm() {
                                 }
                                 getFieldErrorAction={getFieldError}
                                 topicIndex={item.topicIndex}
+                                isReadOnly={isReadOnly}
                               />
                             </div>
                           )}
@@ -1012,7 +989,6 @@ export default function VotingForm() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-[3fr,1fr] gap-6">
-                  {/* הערות המצביע - חלק גדול */}
                   <div>
                     <div className="flex items-center mb-2">
                       <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
@@ -1024,6 +1000,7 @@ export default function VotingForm() {
                       value={localVoterNotes}
                       onChange={(e) => setLocalVoterNotes(e.target.value)}
                       onBlur={handleNotesChange}
+                      readOnly={isReadOnly}
                     />
                   </div>
                   <div>
@@ -1038,11 +1015,11 @@ export default function VotingForm() {
                           multiple
                           onChange={handleFileChange}
                           className="sr-only"
-                          disabled={isUploading}
+                          disabled={isUploading || isReadOnly}
                         />
                         <label
                           htmlFor="file-upload"
-                          className={`flex items-center gap-2 bg-background border border-input rounded-md p-2 transition-colors ${isUploading ? 'cursor-not-allowed bg-muted/50' : 'cursor-pointer hover:bg-muted/50'}`}
+                          className={`flex items-center gap-2 bg-background border border-input rounded-md p-2 transition-colors ${isUploading || isReadOnly ? 'cursor-default bg-muted/50' : 'cursor-pointer hover:bg-muted/50'}`}
                         >
                           <Upload className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
@@ -1096,20 +1073,22 @@ export default function VotingForm() {
                             return currentVotingData
                           })
                         }
-                        disabled={!isDirty || isSubmitting || isUploading}
+                        disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
                         className="px-8"
                       >
                         {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  {(!isDirty || isSubmitting || isUploading) && (
+                  {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
                     <TooltipContent className="m-1 mx-3">
                       {!isDirty
                         ? 'אין שינוי מההצבעה שנשלחה לעמדה'
                         : isUploading
                           ? 'אנא המתן לסיום העלאת הקבצים'
-                          : 'הצבעה נשלחת, אנא המתן'}
+                          : isReadOnly
+                            ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
+                            : 'הצבעה נשלחת, אנא המתן'}
                     </TooltipContent>
                   )}
                 </Tooltip>
