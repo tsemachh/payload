@@ -138,9 +138,9 @@ export default function VotingForm() {
     revalidateOnFocus: false,
   })
 
-  const swrKeyDraft =
+  const swrKey =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=draft`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=${isReadOnly ? 'published' : 'draft'}`
       : null
 
   const {
@@ -148,16 +148,16 @@ export default function VotingForm() {
     error: votesError,
     isLoading: isSWRLoading,
     mutate: mutateDraft,
-  } = useSWR(swrKeyDraft, fetcherVote, {
+  } = useSWR(swrKey, fetcherVote, {
     revalidateOnFocus: false,
   })
 
-  const swrKeyDraftAll =
+  const swrKeyAll =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=draft`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'draft'}`
       : null
 
-  const { data: fetchedVotesAll } = useSWR(swrKeyDraftAll, fetcherVote, {
+  const { data: fetchedVotesAll } = useSWR(swrKeyAll, fetcherVote, {
     revalidateOnFocus: false,
   })
 

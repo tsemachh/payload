@@ -189,7 +189,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       collection: 'meetings',
       select: MEETING_SELECT_FIELDS,
       depth: 1,
-      limit: 0, // Get all meetings
+      limit: 0,
       where: {
         and: [
           { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
