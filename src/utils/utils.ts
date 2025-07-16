@@ -1,5 +1,5 @@
 import { BasePayload, TypeWithID } from 'payload'
-import type { Stock } from '@/payload-types'
+import type { AdminNotificationType, Stock } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
 export async function getStockIds(stock: Stock) {
@@ -200,7 +200,7 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 }
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
-  return typeof item == 'string' ?  item :(typeof item == 'object' ? item?.id : null)
+  return typeof item == 'string' ? item : typeof item == 'object' ? item?.id : null
 }
 
 export function findSubCompanyNameById(
@@ -217,6 +217,7 @@ export function findSubCompanyNameById(
  * Creates a new admin notification in the admin-notifications collection
  * @param payload - The Payload CMS instance
  * @param message - The notification message
+ * @param type - Type of notification (general, system, user, company, etc.)
  * @param url - Optional URL related to the notification
  * @param relatedCompany - Optional ID of the related company
  * @param relatedUser - Optional ID of the related user
@@ -225,23 +226,23 @@ export function findSubCompanyNameById(
 export async function createAdminNotification(
   payload: BasePayload,
   message: string,
+  type: AdminNotificationType,
   url?: string,
   relatedCompany?: string,
   relatedUser?: string,
 ) {
   try {
-    const notification = await payload.create({
+    return await payload.create({
       collection: 'admin-notifications',
       data: {
         message,
+        type,
         url,
         readStatus: false,
         relatedCompany,
         relatedUser,
       },
     })
-
-    return notification
   } catch (error) {
     console.error('Error creating admin notification:', error)
     return null

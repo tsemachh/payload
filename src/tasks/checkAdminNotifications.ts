@@ -129,6 +129,7 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
         await createAdminNotification(
           req.payload,
           message,
+          'companyNotReportedHoldings',
           `/admin/collections/companies/${company.id}`,
           company.id,
         )
@@ -231,6 +232,7 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         await createAdminNotification(
           req.payload,
           `חברה ${company.name || companyId} לא הצביעה באסיפה שתתקיים ביום העבודה הבא: ${meeting.fullName}`,
+          'companyNotVotedMeetingNextDay',
           `/admin/collections/meetings/${meeting.id}`,
           companyId,
         )
@@ -297,7 +299,7 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         message += `אסיפות`
       }
 
-      await createAdminNotification(req.payload, message, `/admin`)
+      await createAdminNotification(req.payload, message, 'predictaFeed', `/admin`)
       notifications.noFeedFromPredictae = true
     }
   } catch (error) {

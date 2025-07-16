@@ -357,9 +357,10 @@ export const Votes: CollectionConfig = {
                 await createAdminNotification(
                   req.payload,
                   message,
+                  'newVoteAfterHoldingLimit',
                   url,
                   relatedCompany as string,
-                  req?.user?.id,
+                  req?.user?.id
                 )
               }
             }
