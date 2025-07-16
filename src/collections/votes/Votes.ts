@@ -9,8 +9,6 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
-import { formatDistanceToNow } from 'date-fns'
-import { he } from 'date-fns/locale'
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -35,6 +33,11 @@ export const Votes: CollectionConfig = {
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200],
+    },
+    components: {
+      edit: {
+        beforeDocumentControls: ['/collections/votes/components/SubTitle'],
+      },
     },
     group: 'פעילות',
   },
@@ -114,27 +117,6 @@ export const Votes: CollectionConfig = {
           type: 'date',
           admin: {
             hidden: true,
-          },
-        },
-        {
-          name: 'subTitle',
-          label: 'כותרת משנה',
-          type: 'text',
-          virtual: true,
-          hooks: {
-            afterRead: [
-              ({ data }) => {
-                if (data?.reported && data.reportedBy && data.reportedTime) {
-                  return `${data.reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(data.reportedTime), { locale: he })}`
-                }
-                return 'לא דווח'
-              },
-            ],
-          },
-          admin: {
-            components: {
-              Field: '/collections/votes/components/Subtitle',
-            },
           },
         },
       ],
