@@ -152,14 +152,14 @@ export const Meetings: CollectionConfig = {
         { name: 'meetingDate' },
         { name: 'proxyVotingDate' },
         { name: 'state' },
-        { name: 'type' }
+        { name: 'type' },
       ],
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
         { name: 'committeeInitiated' },
-        { name: '_status' }
-      ]
+        { name: '_status' },
+      ],
     ],
   },
   enableQueryPresets: true,
@@ -914,7 +914,8 @@ export const Meetings: CollectionConfig = {
       async ({ req, doc, previousDoc }) => {
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const stockChanged = previousDoc?.stock !== doc?.stock
+        const stockChanged =
+          getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
           previousDoc._status == 'draft' &&
           doc._status == 'published' &&

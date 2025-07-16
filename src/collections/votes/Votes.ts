@@ -369,12 +369,6 @@ export const Votes: CollectionConfig = {
           JSON.stringify(originalDoc?.fundsWithHoldingsUpdates) !==
             JSON.stringify(data.fundsWithHoldingsUpdates)
         ) {
-          console.log('------data._status', data._status)
-          console.log('-----data.fundsWithHoldingsUpdates-', data.fundsWithHoldingsUpdates)
-          console.log(
-            '------originalDoc?.fundsWithHoldingsUpdates',
-            originalDoc?.fundsWithHoldingsUpdates,
-          )
           try {
             const meetingId = data.meeting
             const updates = data.fundsWithHoldingsUpdates
@@ -383,6 +377,7 @@ export const Votes: CollectionConfig = {
               const meeting = await req.payload.findByID({
                 collection: 'meetings',
                 id: meetingId,
+                depth: 0,
               })
 
               if (!meeting) {
@@ -391,19 +386,18 @@ export const Votes: CollectionConfig = {
 
               const updatedFundsWithHolding = (meeting.fundsWithHolding || []).map((fund: any) => {
                 const update = updates[fund.fund]
-                console.log('------update', update)
-                console.log('------fund', fund)
-                console.log('------update?.ownedQuantity', update?.ownedQuantity)
 
                 if (update) {
                   return {
                     ...fund,
-                    ownedQuantity: update?.ownedQuantity ?? null,
+                    ownedQuantity:
+                      update.ownedQuantity !== undefined && update.ownedQuantity !== null
+                        ? update.ownedQuantity
+                        : 0, // שינוי: במקום null, נגדיר 0 כדי לוודא שהשדה נשמר
                   }
                 }
                 return fund
               })
-              console.log('------updatedFundsWithHolding', updatedFundsWithHolding)
 
               await req.payload.update({
                 collection: 'meetings',
@@ -414,7 +408,7 @@ export const Votes: CollectionConfig = {
                 req,
               })
 
-              console.log('🎯 fundsWithHolding in meeting updated')
+              console.log('🎯 fundsWithHolding in meeting updated for ID:', meetingId)
             }
             //פה צריך לעדכן את אסיפה לפי id לכל מי שיש לו unchecked למלא שם את התוכן
           } catch (error) {
