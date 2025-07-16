@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 import { ValidationError, type CollectionConfig } from 'payload'
-import { createAdminNotification } from '@/utils/utils'
 import { addDays, isSameDay } from '@/utils/dateUtils'
-=======
-import { type CollectionConfig } from 'payload'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
-import { addDays } from '@/utils/dateUtils'
->>>>>>> origin
+
 import { Meeting } from '@/payload-types'
+
 import {
   getVoteByMeetingAndCompanies,
   getVotedCompanies,
