@@ -544,18 +544,20 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             // This is a simple check - if the name matches the pattern of English characters
             const stockName = (relatedStock as Stock).name as string
             if (stockName && /^[A-Za-z0-9\s\-]+$/.test(stockName)) {
+              const relatedStockId = getIdOfRelationField(relatedStock)
               // Update the related stock to point to the Foreign Stock
-              await payload.update({
-                collection: 'stocks',
-                id: getIdOfRelationField(relatedStock),
-                data: {
-                  relatedStock: foreignStock.id,
-                },
-                req: {
-                  ...req,
-                  context: { ...req.context, from: 'migration' },
-                },
-              })
+              if (relatedStockId)
+                await payload.update({
+                  collection: 'stocks',
+                  id: relatedStockId,
+                  data: {
+                    relatedStock: foreignStock.id,
+                  },
+                  req: {
+                    ...req,
+                    context: { ...req.context, from: 'migration' },
+                  },
+                })
             }
           }
         }
