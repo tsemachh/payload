@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { useFormFields } from '@payloadcms/ui'
 
-export default function SubTitle({}: BeforeDocumentControlsClientProps) {
+export default function VoteSubTitle({}: BeforeDocumentControlsClientProps) {
   const fields = useFormFields(([f]) => f)
 
   const reported = fields.reported?.value
