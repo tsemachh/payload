@@ -105,7 +105,7 @@ export default function VotingForm() {
       if (proxyVotingDate < now) {
         setIsReadOnly(true)
       }
-    } //מה לעשות כשאין תאריל מסירה?
+    }
   }, [meetingData])
 
   useEffect(() => {
