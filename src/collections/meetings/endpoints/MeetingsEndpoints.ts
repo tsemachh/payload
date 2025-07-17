@@ -1,4 +1,4 @@
-import { PayloadRequest, User, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'payload'
 import {
   Company,
   Meeting,
@@ -15,10 +15,8 @@ import {
   MeetingTableDataType,
   UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
-import { SelectType } from 'payload'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById } from '@/utils/utils'
-import { id } from 'date-fns/locale'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -126,7 +124,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Get query parameters
     const page = parseInt((req.query.page as string) || '1')
-    const pageSize = parseInt((req.query.pageSize as string) || '25')
+    const pageSize = parseInt((req.query.pageSize as string) || '50')
     const sortField = (req.query.sortField as string) || 'meetingDate'
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
@@ -169,7 +167,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -199,9 +197,6 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
               {
                 meetingDate: { greater_than_equal: new Date() },
               },
-              {
-                meetingDate: { exists: false },
-              },
             ],
           },
           createCompaniesFilter(user?.funds),
@@ -212,8 +207,8 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
     const safeFunds = getSafeFunds(user?.funds)
 
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
-    const pageSize = parseInt((req.query.pageSize as string) || '25')
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
+    const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)
@@ -244,11 +239,16 @@ function createMeetingDataObject(
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
   researchDocuments: UrlFilenameMap[],
+  displayVotingRecommendation: boolean,
+  defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
   return {
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
+    votingPercentage: null, // mean have no data yet.
+    displayVotingRecommendation,
+    defaultVotingRecommendation,
     companies: companiesArray,
     stockNumber: stockPresent?.stockId?.toString() || '-',
     stockType: stockPresent?.type || '-',
@@ -290,7 +290,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
       isRemovedFromAgenda: item.isRemovedFromAgenda || false,
       privilegedMajority: item?.majorityType == 'privileged' || false,
       recommendation: {
-        votingRecommendation: item.recommendation?.votingRecommendation || 'בעד', //TODO: Return an empty string as the default value.
+        votingRecommendation: item.recommendation?.votingRecommendation || '',
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
     }
@@ -458,6 +458,28 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           .map((c: { companyId: string }) => c.companyId)
           .filter((id: string): id is string => !!id) || []
 
+      const commonCompanies = (meeting.companies ?? []).filter(
+        (company): company is Company =>
+          company != null &&
+          typeof company === 'object' &&
+          'id' in company &&
+          usersCompanyIds.includes(String((company as Company).id)),
+      )
+      type PermissionKey =
+        | 'showResearch'
+        | 'showResearchBond'
+        | 'showResearchTrusteeship'
+        | 'showResearchPrivate'
+      const keys: PermissionKey[] = [
+        'showResearch',
+        'showResearchBond',
+        'showResearchTrusteeship',
+        'showResearchPrivate',
+      ]
+      const researchPermissions = Object.fromEntries(
+        keys.map((key) => [key, commonCompanies.some((c) => c.researchDocuments?.[key])]),
+      ) as Record<PermissionKey, boolean>
+
       const researchDocuments: UrlFilenameMap[] = (meeting.researchDocuments ?? [])
         .filter(
           (doc): doc is ResearchDocument =>
@@ -472,13 +494,39 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         )
         .filter((doc) => {
           const docCompanyIds = doc.companies ?? []
-          if (docCompanyIds.length === 0) return true
-          return docCompanyIds.some((id) => usersCompanyIds.includes(id))
+          const hasCompanies = docCompanyIds.length > 0
+          const userHasAccessToDocCompanies = hasCompanies
+            ? docCompanyIds.some((id) => usersCompanyIds.includes(id))
+            : true
+          switch (meeting.type) {
+            case 'אג"ח':
+              return researchPermissions.showResearchBond
+            case 'אג"ח כהונת נאמן':
+              return researchPermissions.showResearchTrusteeship
+            default:
+              return hasCompanies ? userHasAccessToDocCompanies : researchPermissions.showResearch
+          }
         })
         .map((doc) => ({
           url: doc.url as string,
           filename: doc.filename as string,
         }))
+
+      const displayVotingRecommendation = user?.companies.some(
+        (userCompany: { companyId: string }) => {
+          const companies = meeting?.companies?.filter((c): c is Company => typeof c !== 'string')
+          const fullCompany = companies?.find((c) => c.id === userCompany?.companyId)
+          return fullCompany?.researchDocuments?.displayVotingRecommendation === true
+        },
+      )
+      const defaultVotingRecommendation = user?.companies.some(
+        (userCompany: { companyId: string }) => {
+          const companies = meeting?.companies?.filter((c): c is Company => typeof c !== 'string')
+          const fullCompany = companies?.find((c) => c.id === userCompany?.companyId)
+          return fullCompany?.researchDocuments?.defaultVotingRecommendation === true
+        },
+      )
+
       return createMeetingDataObject(
         meeting,
         stockPresent,
@@ -486,6 +534,8 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
         agendas,
         companiesArray,
         researchDocuments,
+        displayVotingRecommendation,
+        defaultVotingRecommendation,
       )
     }),
   )
@@ -509,7 +559,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
       where: {
         and: [
           {
-            meetingId: { equals: meetingId },
+            id: { equals: meetingId },
           },
           createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
@@ -522,7 +572,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {

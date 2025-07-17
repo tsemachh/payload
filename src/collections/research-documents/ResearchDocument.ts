@@ -14,6 +14,11 @@ export const ResearchDocument: CollectionConfig = {
     listSearchableFields: ['filename', 'company'],
     group: 'פעילות',
   },
+  custom: {
+    filterList: [
+      [{ name:'uploadedAt'}]
+    ],
+  },
   access: {
     admin: ({ req: { user } }) => {
       return Boolean(user)
@@ -24,6 +29,7 @@ export const ResearchDocument: CollectionConfig = {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/pdf',
     ],
+    skipSafeFetch: true,
   },
   fields: [
     {
@@ -36,13 +42,19 @@ export const ResearchDocument: CollectionConfig = {
       admin: {
         allowCreate: false,
       },
-      filterOptions: {
-        type: {
-          equals: 'regular',
-        },
-        active: {
-          equals: true,
-        },
+      filterOptions: ({ req }: any) => {
+        if (req.context?.from == 'migration' || req.context?.from == 'process') {
+          return true
+        }
+        return {
+          type: {
+            equals: 'regular',
+          },
+          active: {
+            equals: true,
+          },
+          'researchDocuments.showResearchPrivate': { equals: true }, //
+        }
       },
     },
     {

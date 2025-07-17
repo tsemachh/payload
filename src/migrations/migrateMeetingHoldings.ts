@@ -3,18 +3,14 @@ import sql from 'mssql'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { Stock } from '@/payload-types'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
     console.log('Starting meeting holdings migration process...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     if (pool === null) {
       console.error('Error no pool, Executing SQL query for meeting holdings.')
@@ -199,12 +195,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
 
       // Import the endpoint handler
-      const { meetingsVotesReportEndpoint } = await import(
+      const { MeetingsVotesReportEndpoint } = await import(
         '@/collections/meetings/endpoints/MeetingsVotesReport'
       )
 
       // Call the endpoint
-      const response = await meetingsVotesReportEndpoint(mockReq as any)
+      const response = await MeetingsVotesReportEndpoint(mockReq as any)
       const responseData = await response.json()
 
       if (responseData.success) {

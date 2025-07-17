@@ -12,6 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
+import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter/CollectionQuickFilterPlugin'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -27,17 +28,17 @@ import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
-
+import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
 import { logger } from './lib/logger'
 import { MeetingsFeed } from '@/collections/meetings/feeds/MeetingsFeed'
 import { scheduleDailyTasks } from './tasks/scheduleDailyTasks'
-import { checkNotificationsHandler } from '@/tasks/checkNotifications'
+import { checkAdminNotificationsHandler } from '@/tasks/checkAdminNotifications'
 import { processMeetingStateHandler } from '@/tasks/processMeetingState'
 import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
 import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
-import { checkCompanyMeetingNotificationsHandler } from '@/tasks/checkCompanyMeetingNotifications'
+import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
 // import mongoose from 'mongoose';
@@ -82,7 +83,10 @@ if (process.env.MONGO_USE_TX !== 'true') {
 }
 
 export default buildConfig({
-  serverURL: process.env.PUBLIC_SERVER_URL || '',
+  debug: process.env.NODE_ENV === 'development',
+  serverURL:
+    process.env.PUBLIC_SERVER_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
   i18n: {
     supportedLanguages: { he, en },
   },
@@ -96,7 +100,10 @@ export default buildConfig({
         defaultJobsCollection.admin = {}
       }
       defaultJobsCollection.admin.hidden = false
-      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'queue', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.custom = {
+        filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
+      }
       defaultJobsCollection.admin.group = 'ניהול'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
@@ -107,8 +114,8 @@ export default buildConfig({
     deleteJobOnComplete: false,
     tasks: [
       {
-        slug: 'checkNotifications',
-        handler: checkNotificationsHandler,
+        slug: 'checkAdminNotifications',
+        handler: checkAdminNotificationsHandler,
       },
       {
         slug: 'processMeetingState',
@@ -124,8 +131,8 @@ export default buildConfig({
         inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
       },
       {
-        slug: 'checkCompanyMeetingNotifications',
-        handler: checkCompanyMeetingNotificationsHandler,
+        slug: 'checkCompanyNotifications',
+        handler: checkCompanyNotificationsHandler,
       },
       {
         slug: 'sendCompanyMeetingNotifications',
@@ -133,29 +140,31 @@ export default buildConfig({
       },
     ],
     // autoRun can optionally be a function that receives payload as an argument
-    autoRun: [
-      {
-        cron: '00 19 * * *', // every day at 19:00
-        limit: 10, // limit jobs to process each run
-        queue: 'daily', // name of the queue
-      },
-      {
-        cron: '00 22 * * *', // every day at 22:00
-        limit: 10, // limit jobs to process each run
-        queue: 'daily10pm', // name of the queue
-      },
-      {
-        cron: '*/30 * * * *', // every 30 minutes
-        limit: 100, // limit jobs to process each run
-        queue: 'holdings', // name of the queue
-      },
-      {
-        cron: '*/02 * * * *', // every 2 minutes
-        limit: 100, // limit jobs to process each run
-        queue: 'immediate', // name of the queue
-      },
-      // add as many cron jobs as you want
-    ],
+    autoRun: process.env.NOJOBS
+      ? []
+      : [
+          {
+            cron: '00 19 * * *', // every day at 19:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily', // name of the queue
+          },
+          {
+            cron: '00 22 * * *', // every day at 22:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily10pm', // name of the queue
+          },
+          {
+            cron: '*/30 * * * *', // every 30 minutes
+            limit: 100, // limit jobs to process each run
+            queue: 'holdings', // name of the queue
+          },
+          {
+            cron: '*/02 * * * *', // every 1 minutes
+            limit: 100, // limit jobs to process each run
+            queue: 'now', // name of the queue
+          },
+          // add as many cron jobs as you want
+        ],
   },
   admin: {
     dateFormat: 'HH:mm dd/MM/yyyy',
@@ -183,7 +192,7 @@ export default buildConfig({
     timezones: {
       supportedTimezones: ({ defaultTimezones }) => [
         ...defaultTimezones,
-        { label: '(GMT+3) Israel Standard Time', value: 'Asia/Jerusalem' },
+        { label: 'Israel Standard Time', value: 'Asia/Jerusalem' },
       ],
       defaultTimezone: 'Asia/Jerusalem',
     },
@@ -224,7 +233,7 @@ export default buildConfig({
     importExportPlugin({
       collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
-        collection.admin.group = false //'ניהול'
+        collection.admin.group = 'ניהול'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
@@ -232,6 +241,22 @@ export default buildConfig({
       disableJobsQueue: true,
     }),
     payloadCloudPlugin(),
+    DynamicFieldOverrides({
+      overrides: [
+        {
+          fieldTypes: ['checkbox'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/YesNoCell',
+              },
+            },
+          },
+        },
+      ],
+      excludedCollections: [],
+    }),
+
     openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
     swaggerUI({}),
     addAccess({
@@ -244,6 +269,7 @@ export default buildConfig({
       excludedGlobals: [],
       usernameField: 'name',
     }),
+    CollectionQuickFilterPlugin({}),
     gcsStorage({
       collections: {
         documents: true,

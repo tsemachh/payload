@@ -1,4 +1,4 @@
-import { UserVote } from '@/app/(frontend)/types/vote'
+import { UserVote, VoteDataType } from '@/app/(frontend)/types/vote'
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
@@ -20,10 +20,14 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
     const existingVotes = await req.payload.find({
       collection: 'votes',
       where: {
-        and: [{ meeting: { equals: meetingIdString } }, { company: { in: companiesIdsArray } }],
+        and: [
+          { meeting: { equals: meetingIdString } },
+          { company: { in: companiesIdsArray } },
+          statusString === 'draft' ? {} : { _status: { equals: statusString } },
+        ],
       },
-      draft: statusString == 'draft',
-      depth: 0,
+      draft: statusString === 'draft' ? true : false,
+      depth: 1,
       limit: companiesIdsArray.length,
     })
 
@@ -130,7 +134,6 @@ export const publishVotes = async (req: PayloadRequest) => {
           id: vote.id,
           data: {
             _status: 'published',
-            publishedBy: req.user?.email,
           },
           draft: false,
           overrideAccess: true,
@@ -162,7 +165,7 @@ const upsertVotesInternal = async ({
   req: PayloadRequest
   meetingId: string
   companiesIds: string[]
-  votingData: any
+  votingData: VoteDataType
 }) => {
   const generalFields = {
     isInterested: votingData.generalVotingData.isInterested,
@@ -171,6 +174,7 @@ const upsertVotesInternal = async ({
     seniorOfficialExplanation: votingData.generalVotingData.seniorOfficialExplanation,
     isInstitutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
     clientComment: votingData.voterNotes,
+    voteDocuments: votingData.voteDocuments || [],
   }
 
   const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({

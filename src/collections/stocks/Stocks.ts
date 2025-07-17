@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
+import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 
 const stockLinkProps: IconLinkProps = {
@@ -9,7 +10,22 @@ const stockLinkProps: IconLinkProps = {
   iconAltText: 'קישור לבורסה',
   visibilityConditions: { origin: 'TASE', tradable: true, fromMagna: true },
 }
+const validateTradableRelations = async (
+  value: boolean | null | undefined,
+  { req, data, id }: any,
+): Promise<true | string> => {
+  if (req.context?.from === 'migration') {
+    return true
+  }
 
+  if (value === true && data?.relatedStock)
+    return 'אין אפשרות להפוך לסחיר נייר שיש לו נייר ערך ראשי'
+  if (value === false && data?.relations?.docs.length > 0) {
+    return 'אין אפשרות להפוך ללא סחיר נייר שיש לו נירות עוקבים'
+  }
+
+  return true
+}
 const validateNoFutureMeetings = async (
   value: boolean | null | undefined,
   { req, data, id }: any,
@@ -47,6 +63,12 @@ export const Stocks: CollectionConfig = {
     plural: 'ניירות ערך',
     singular: 'נייר ערך',
   },
+  custom: {
+    filterList: [
+      [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'isDual' }],
+    ],
+  },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
@@ -66,7 +88,7 @@ export const Stocks: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',
@@ -80,6 +102,7 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   access: { update: () => false },
                   admin: {
+                    width: '200px',
                     components: {
                       Cell: {
                         path: '/admincomponents/link/IconLinkCell',
@@ -129,10 +152,14 @@ export const Stocks: CollectionConfig = {
                     { label: 'שטרי הון', value: 'שטרי הון' },
                   ],
                   index: true,
-                  admin: { condition: (siblingData) => siblingData.tradable },
+                  admin: {
+                    condition: (siblingData) => siblingData.tradable,
+                    width: '200px',
+                  },
                 },
                 {
                   name: 'fromMagna',
+                  label: 'ממגנא',
                   type: 'checkbox',
                   admin: {
                     hidden: true,
@@ -152,11 +179,21 @@ export const Stocks: CollectionConfig = {
                   index: true,
                   required: true,
                   defaultValue: 'TASE',
+                  admin: {
+                    width: '150px',
+                  },
                 },
                 {
                   name: 'tradable',
                   label: 'האם נסחר',
                   type: 'checkbox',
+                  admin: {
+                    width: '150px',
+                  },
+                  validate: validateTradableRelations,
+                  access: {
+                    update: ({ doc }) => !doc?.fromMagna,
+                  },
                 },
                 {
                   name: 'relatedStock',
@@ -165,11 +202,17 @@ export const Stocks: CollectionConfig = {
                   relationTo: 'stocks',
                   index: true,
                   admin: {
+                    width: '450px',
                     condition: (siblingData) => !siblingData.tradable,
                   },
-                  filterOptions: () => ({
-                    tradable: { equals: true },
-                  }),
+                  filterOptions: ({ req }: any) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      tradable: { equals: true },
+                    }
+                  },
                 },
                 {
                   name: 'active',
@@ -181,11 +224,14 @@ export const Stocks: CollectionConfig = {
                   access: {
                     update: ({ doc }) => !doc?.relatedStock,
                   },
+                  admin: {
+                    width: '150px',
+                  },
                   hooks: {
                     beforeChange: [
                       async ({ value, originalDoc, req, operation }) => {
                         // Skip processing during migrations
-                        if (req.context?.from === 'migration') {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process') {
                           return value
                         }
 
@@ -213,7 +259,38 @@ export const Stocks: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
+                    width: '100px',
                     condition: (siblingData) => siblingData.type == 'מניות',
+                  },
+                },
+
+                {
+                  name: 'isDual',
+                  label: 'דואלית',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '100px',
+                    condition: (siblingData) =>
+                      siblingData.tradable && siblingData.origin == 'TASE',
+                  },
+                },
+                {
+                  name: 'dualStock',
+                  label: 'נייר ערך דואלי',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  admin: {
+                    condition: (siblingData) => siblingData.isDual,
+                    width: '400px',
+                  },
+                  filterOptions: ({ req }: any) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      origin: { equals: 'Foreign' },
+                    }
                   },
                 },
               ],
@@ -320,6 +397,11 @@ export const Stocks: CollectionConfig = {
       path: '/upload-stock-csv',
       method: 'post',
       handler: uploadStockCsvEndPoint,
+    },
+    {
+      path: '/fix-stock-relations',
+      method: 'post',
+      handler: fixStockRelationsEndPoint,
     },
   ],
 }

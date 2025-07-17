@@ -4,7 +4,7 @@ import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
@@ -13,7 +13,7 @@ const votingResultMap: Record<string, string | null> = {
   '0': '----',
   '1': 'בעד',
   '2': 'נגד',
-  '3': null, //3	דיון
+  '3': 'דיון', //3	דיון
   '4': null, //הוסר מסדר היום
   '10': null, // אין חובת השתתפות
   '14': 'נמנע',
@@ -22,17 +22,12 @@ const votingResultMap: Record<string, string | null> = {
   '17': null, //נמכרה אחזקה
 }
 
-
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
     console.log('Starting votes migration process...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     if (pool === null) {
       console.error('Error no pool, Executing SQL query for votes.')
@@ -154,10 +149,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 agendaItems?.forEach((item, index) => {
                   agendaItemPositions.set(item.id, index + 1)
                 })
-                let noParticipantDuty = false
                 // Create votes array, preserving the order of agenda topics
                 const votes = votingData?.map((vote) => {
                   const voteDecision = votingResultMap[vote.cdecision.toString()] || null
+                  let noParticipantDuty = false
                   if (vote.voteDecision == 10 || vote.voteDecision == 14) {
                     noParticipantDuty = true
                   }
@@ -168,6 +163,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   return {
                     topicIndex,
                     voteDecision,
+                    noParticipantDuty,
                     comment: vote.comment || '',
                     clientComment: vote.ccomment || '',
                     committee: vote.committee === 1,
@@ -182,7 +178,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 const voteData = {
                   meeting: mongoMeetingId,
                   company: mongoCompanyId,
-                  noParticipantDuty,
                   reported: !!votingOrdersMemo, // Add the votingOrdersMemo field
                   votes,
                   _status: 'published',
@@ -225,7 +220,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     context: { ...req.context, from: 'migration' },
                   },
                 })
-                console.log(`✓ Updated meeting ${meeting.id} with ${meetingCompanyIds.length} companies`)
+                console.log(
+                  `✓ Updated meeting ${meeting.id} with ${meetingCompanyIds.length} companies`,
+                )
               }
             } catch (updateError: any) {
               console.error(`✗ Failed to update meeting ${meeting.id} with companies:`, updateError)

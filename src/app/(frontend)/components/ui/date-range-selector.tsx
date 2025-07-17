@@ -5,25 +5,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { CalendarRange, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DateSelector } from '../../holdings/components/DateSelector'
-import { startOfDay, endOfDay, addDays } from 'date-fns'
+import { startOfDay, endOfDay, addDays, subDays, subMonths } from 'date-fns'
 
 export const getCustomDateRange = (
   option: 'week' | 'month' | 'custom',
   customStartDate?: Date,
   customEndDate?: Date,
 ): { start: Date; end: Date } => {
-  const today = startOfDay(new Date())
+  const today = endOfDay(new Date())
 
   switch (option) {
     case 'week':
       return {
-        start: today,
-        end: endOfDay(addDays(today, 7)),
+        start: startOfDay(subDays(today, 6)),
+        end: today,
       }
     case 'month':
       return {
-        start: today,
-        end: endOfDay(addDays(today, 30)),
+        start: startOfDay(subMonths(today, 1)),
+        end: today,
       }
     case 'custom':
       return {
@@ -116,7 +116,7 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
               <div className="text-right">
                 {rangeType
                   ? `${getLabelForRangeType(rangeType)} ${
-                      rangeType !== 'custom' ? formatRangeDates(startDate, endDate) : ''
+                      rangeType !== 'custom' ? formatRangeDates(endDate, startDate) : ''
                     }`
                   : 'בחר טווח'}
               </div>

@@ -3,7 +3,7 @@ import sql from 'mssql'
 import { Company, User } from '@/payload-types'
 import { logMigrationFault } from '@/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap } from '@/utils/utils'
-import { sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
 
 
 // Migration script for users from SQL Server to Payload CMS
@@ -109,9 +109,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     // Connect to SQL Server
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
 
     // Fetch all data
     const usersToFirms = await getUsersToFirms(pool)
@@ -334,8 +332,14 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     // Read the test.users.json file
     const testUsers: Partial<User>[] = [
       {
+        name: 'system@shefing.com',
+        isAdmin: true,
+        email: 'system@shefing.com',
+        password: 'system@shefing.com',
+      },
+      {
         name: 'amosp@praedicta.com',
-        isAdmin: false,
+        isAdmin: true, //TODO Change to userRoles
         userRoles: [],
         enableAPIKey: true,
         apiKey: '3dbb49cb-ce8f-4032-a3df-4ed088d4234c',
@@ -379,12 +383,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         isAdmin: true,
         email: 'philc@shefing.com',
       },
-      {
-        name: 'system@shefing.com',
-        isAdmin: true,
-        email: 'system@shefing.com',
-        password: 'system@shefing.com',
-      },
+
     ]
     const seqMap = await getCompanyIdToSequenceMap(req.payload)
 
@@ -423,6 +422,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             }
           })
         }
+
         if (existingUser.docs.length > 0) {
           // Update existing user
           await payload.update({

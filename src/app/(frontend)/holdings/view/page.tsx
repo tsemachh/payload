@@ -22,7 +22,7 @@ export default function HoldingsView() {
   const [error, setError] = useState('')
 
   const searchParams = useSearchParams()
-  const encoded = searchParams.get('data')
+  const dateFormUrl = searchParams.get('date')
 
   const { data: recentData } = useSWR('/api/holdings/dates?month=true', fetcher, {
     revalidateOnFocus: false,
@@ -42,10 +42,10 @@ export default function HoldingsView() {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    if (encoded) {
+    if (dateFormUrl) {
       try {
-        const decoded = JSON.parse(atob(encoded))
-        setDate(new Date(decoded.date))
+        const dateTmp = new Date(`${dateFormUrl}T00:00:00`)
+        setDate(dateTmp)
         setError('')
       } catch (e) {
         setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
@@ -54,16 +54,13 @@ export default function HoldingsView() {
     } else {
       setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
     }
-  }, [encoded])
+  }, [dateFormUrl])
 
   useEffect(() => {
-    if (date) {
+    if (date && user?.funds && user.funds.length > 0) {
       fetchHoldings()
     }
-    if (!date) {
-      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
-    }
-  }, [date])
+  }, [date, user])
 
   const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
     const query: Where = {
@@ -167,8 +164,8 @@ export default function HoldingsView() {
   }
 
   return (
-    <div className="flex md:flex-row gap-6 px-4 pt-1">
-      <div className="h-[400px] mt-3 ">
+    <div className="flex flex-col md:flex-row gap-6 px-4 pt-1">
+      <div className="h-[400px] mt-3 mb-6 md:mb-0">
         <div>
           <label className="text-base font-semibold mb-2 block h-100 text-center">תאריך ערך</label>
           <DateSelector
@@ -185,7 +182,9 @@ export default function HoldingsView() {
           />
         </div>
       </div>
+
       <div className="hidden md:block w-[2px] bg-muted self-stretch mx-2" />
+
       <div className="w-full flex justify-center mt-3">
         {isLoading ? (
           <div className="flex flex-col h-[500px] items-center pt-[100px] ">
@@ -203,7 +202,7 @@ export default function HoldingsView() {
                 data={processedHoldings}
                 idField="id"
                 defaultSortField="lastUpdated"
-                defaultSortDirection="desc"
+                defaultSortDirection="asc"
                 tableId="holdings-view-table"
                 columnsOption={false}
                 tableHeightOffset={280}
@@ -219,7 +218,7 @@ export default function HoldingsView() {
             </div>
           )
         )}
-        {error != '' && <h4 className="text-xl text-center pt-20">{error}</h4>}
+        {error !== '' && <h4 className="text-xl text-center pt-20">{error}</h4>}
       </div>
     </div>
   )

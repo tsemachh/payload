@@ -4,7 +4,10 @@ import { TreeCompanyType } from '@/types/companies'
 export type MeetingTableDataType = {
   meetingIdPayload: string // Payload ID of the meeting
   meetingId: string
-  agendas: AgendasType[]
+  agendas: AgendasType[] // סדר היום של האסיפה
+  votingPercentage: number | null // אחוז ההצבעה של המשתש מתוך חברות המשתמש
+  displayVotingRecommendation: boolean
+  defaultVotingRecommendation: boolean
   companies: CompanyTableDate[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
@@ -44,6 +47,7 @@ export type CompanyTableDate = {
   nominalValue: number
   funds: FundType[]
 }
+
 export type FundType = {
   id: string
   holdingsCompanyName: string
@@ -133,4 +137,9 @@ export interface DataTableProps<T extends Record<string, any>> {
 export interface UrlFilenameMap {
   url: string
   filename: string
+}
+
+export type MeetingWithCompanies = {
+  meetingId: string
+  companyIds: string[]
 }

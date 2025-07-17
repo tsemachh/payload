@@ -1,9 +1,9 @@
 import { isWithinInterval } from 'date-fns'
 import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
-import { Company, StockValue } from '@/payload-types'
+import { StockValue } from '@/payload-types'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
-  if (!originDate) return '-'
+  if (!originDate) return ' '
   const date = new Date(originDate)
   if (isNaN(date.getTime())) return '-'
   const newDate = new Intl.DateTimeFormat('he-IL', {
@@ -127,4 +127,31 @@ export const fetcher = async (url: string) => {
     throw new Error(`API error: ${res.status} - ${errText}`)
   }
   return res.json()
+}
+
+export const postFetcher = async ([url, bodyData]: [string, object]) => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bodyData),
+  })
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while posting the data.')
+    ;(error as any).info = await response.json()
+    ;(error as any).status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
+export const getVotingRecommendationColor = (recommendation: string) => {
+  if (recommendation === 'בעד') {
+    return 'text-green-600'
+  } else if (recommendation === 'נגד') {
+    return 'text-red-600'
+  } else {
+    return 'text-gray-900'
+  }
 }

@@ -1,4 +1,4 @@
-import { Vote } from '@/payload-types'
+import { Vote, VoteDecision } from '@/payload-types'
 import { MeetingTableDataType } from '../types/meetings'
 import { UserVote } from '../types/vote'
 
@@ -34,18 +34,21 @@ export const fetchVotedCompanies = async (url: string) => {
 
 export const createDefaultAgendaQuestions = (
   agendas: MeetingTableDataType['agendas'],
+  showDefaultRecommendations: boolean,
 ): UserVote[] => {
   return agendas.map((agenda) => ({
     topicIndex: agenda.topicIndex,
-    choice: '----',
+    choice: (agenda.recommendation.votingRecommendation && showDefaultRecommendations
+      ? agenda.recommendation.votingRecommendation
+      : '----') as VoteDecision,
     questions: {
       hasConflictOfInterest: false,
       isRelatedParty: false,
       isInvestmentCommittee: true,
       hasPersonalInterest: false,
-      conflictOfInterestExplanation: undefined,
-      relatedPartyExplanation: undefined,
-      personalInterestExplanation: undefined,
+      conflictOfInterestExplanation: '',
+      relatedPartyExplanation: '',
+      personalInterestExplanation: '',
     },
     privilegedMajority: agenda.privilegedMajority,
     isRemovedFromAgenda: agenda.isRemovedFromAgenda,
@@ -63,7 +66,6 @@ export function isGeneralVote(votes: Vote[]): boolean {
     const currentVotes = current.votes ?? []
 
     const generalFieldsToCompare: (keyof typeof ref)[] = [
-      'noParticipantDuty',
       'isInterested',
       'interestedExplanation',
       'isSeniorOfficial',

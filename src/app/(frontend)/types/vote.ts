@@ -2,8 +2,9 @@ import { VoteDecision } from '../../../payload-types'
 
 export type VoteDataType = {
   generalVotingData: GeneralVotingData
-  voterNotes: string
   userVotes: UserVote[]
+  voterNotes: string
+  voteDocuments: string[]
 }
 
 export type GeneralVotingData = {

@@ -10,6 +10,11 @@ export const StocksFeed: CollectionConfig = {
     useAsTitle: 'filename',
     group: 'ניהול',
   },
+  custom: {
+    filterList: [
+      [{ name:'createdAt'}]
+    ],
+  },
   access: {
     read: () => true,
   },
@@ -20,6 +25,11 @@ export const StocksFeed: CollectionConfig = {
       label: 'הערות',
       admin: {
         readOnly: true,
+        components: {
+          Cell: {
+            path: '/admincomponents/cell/FormattedErrorsCell',
+          },
+        },
       },
     },
     {
@@ -57,5 +67,5 @@ export const StocksFeed: CollectionConfig = {
     },
   ],
 
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

@@ -14,6 +14,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
 import { ThemeChooser } from '@/components/theme-chooser'
+import { UserNotificationComponent } from './user-notification'
 
 export function UserNav() {
   const { user } = useAuth()
@@ -33,6 +34,7 @@ export function UserNav() {
 
   return (
     <>
+      <UserNotificationComponent />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">

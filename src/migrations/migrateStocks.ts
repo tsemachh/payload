@@ -26,8 +26,7 @@ import {
 import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 import { PayloadRequest } from 'payload'
 import { PromisePool } from '@/utils/promisePool'
-import { sqlConfig } from '@/migrations/utils/utils'
-
+import { createMSSqlPool } from '@/migrations/utils/utils'
 
 async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
   try {
@@ -45,7 +44,10 @@ async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
       await req.payload.create({
         collection: 'silenced-stocks',
         data: { stockId },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, from: 'migration' },
+        },
       })
     }
   } catch (e) {
@@ -58,11 +60,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
   try {
     console.log('Starting migration process...')
-    console.log('Attempting to connect to SQL Server:', sqlConfig.server)
-
-    // Connect to SQL Server
-    pool = await sql.connect(sqlConfig)
-    console.log('Successfully connected to SQL Server')
+    pool = await createMSSqlPool()
     await seedStockMigrationMapping()
     const resultStocks = await getStocks(pool) //AllStocks
     const predictaStocks: Set<string> = await getPredictaStockIds(pool) //Bursa stocks
@@ -303,7 +301,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const relatedStock = stockIdTOSequence.get(id2)
           const theStockToUpdate = stockIdTOSequence.get(id1)
 
-          if (theStockToUpdate && relatedStock) {
+          if (theStockToUpdate && relatedStock && !predictaStocks.has(id1)) {
             try {
               await payload.update({
                 collection: 'stocks',
@@ -311,7 +309,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 data: {
                   relatedStock: relatedStock as Stock['id'],
                 },
-                req,
+                req: {
+                  ...req,
+                  context: { ...req.context, from: 'migration' },
+                },
               })
               successCount++
               //console.log(`✓ Inserted stock relation: ${id1} (${successCount}/${relationStocksLength})`)

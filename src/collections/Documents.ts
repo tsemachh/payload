@@ -13,6 +13,11 @@ export const Documents: CollectionConfig = {
   admin: {
     group: 'פעילות',
   },
+  custom: {
+    filterList: [
+      ['createdAt']
+    ],
+  },
   fields: [
     {
       name: 'alt',
@@ -20,5 +25,5 @@ export const Documents: CollectionConfig = {
       type: 'text',
     },
   ],
-  upload: true,
+  upload: { skipSafeFetch: true },
 }

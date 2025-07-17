@@ -1,8 +1,8 @@
 import { Payload } from 'payload'
 
-export const scheduleCheckNotificationsTask = async (payload: Payload): Promise<void> => {
+export const scheduleCheckAdminNotificationsTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
-    task: 'checkNotifications',
+    task: 'checkAdminNotifications',
     queue: 'daily',
     input: {},
   })
@@ -24,11 +24,11 @@ export const scheduleAdminMailNotificationsTask = async (payload: Payload): Prom
   })
 }
 
-export const scheduleCheckCompanyMeetingNotificationsTask = async (
+export const scheduleCheckCompanyNotificationsTask = async (
   payload: Payload,
 ): Promise<void> => {
   await payload.jobs.queue({
-    task: 'checkCompanyMeetingNotifications',
+    task: 'checkCompanyNotifications',
     queue: 'daily',
     input: {},
   })
@@ -51,10 +51,10 @@ export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
       where: {
         taskSlug: {
           in: [
-            'checkNotifications',
+            'checkAdminNotifications',
             'processMeetingState',
             'adminMailNotifications',
-            'checkCompanyMeetingNotifications',
+            'checkCompanyNotifications',
             'sendCompanyMeetingNotifications',
           ],
         },
@@ -63,14 +63,14 @@ export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
         },
       },
     })
-    // Schedule the checkNotifications task
-    await scheduleCheckNotificationsTask(payload)
+    // Schedule the checkAdminNotifications task
+    await scheduleCheckAdminNotificationsTask(payload)
     // Schedule the processMeetingState task
     await scheduleProcessMeetingStateTask(payload)
     // Schedule the adminMailNotifications task
     await scheduleAdminMailNotificationsTask(payload)
-    // Schedule the checkCompanyMeetingNotifications task
-    await scheduleCheckCompanyMeetingNotificationsTask(payload)
+    // Schedule the checkCompanyNotifications task
+    await scheduleCheckCompanyNotificationsTask(payload)
     // Schedule the sendCompanyMeetingNotifications task
     await scheduleSendCompanyMeetingNotificationsTask(payload)
 

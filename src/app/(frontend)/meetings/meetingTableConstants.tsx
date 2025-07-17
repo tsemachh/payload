@@ -1,7 +1,12 @@
 'use client'
 
 import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
-import { formatDateTime, isRTL, parseNumber } from '../helpers/utils-data-table'
+import {
+  formatDateTime,
+  getVotingRecommendationColor,
+  isRTL,
+  parseNumber,
+} from '../helpers/utils-data-table'
 import { AgendasType, Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
@@ -9,12 +14,13 @@ import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus'
 
 function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
   const router = useRouter()
 
-  const handleIconClick = (e: any) => {
-    router.push(`/vote?meetingId=${row.meetingId}`)
+  const handleIconClick = () => {
+    router.push(`/vote-meeting/${row.meetingIdPayload}`)
   }
   if (row.companies.length === 0) return null
   return (
@@ -45,16 +51,10 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
             className="flex flex-col gap-2"
           >
             {/* Vote Status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${Number.parseInt(row.meetingId) % 2 === 0 ? 'bg-green-500' : 'bg-red-500'}`}
-              ></div>
-              <span className="font-medium text-sm px-2">
-                {Number.parseInt(row.meetingId) % 2 === 0
-                  ? 'ההצבעות התקבלו בעמדה'
-                  : 'ההצבעות טרם התקבלו בעמדה'}
-              </span>
-            </div>
+            <VotedCountStatus
+              votingPercentage={row.votingPercentage}
+              companiesNum={row.companies.length}
+            />
 
             {/* Comments Section */}
             {row.comments && row.comments != '-' && (
@@ -69,12 +69,31 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
               <h4 className="font-bold text-base mb-1 text-right">נושאים לסדר היום</h4>
               <div className="border rounded-md overflow-hidden">
                 <table className="w-full border-collapse table-fixed">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th
+                        className="py-2 px-2 border-b text-right font-medium text-gray-700"
+                        style={{ width: '30px', minWidth: '30px' }}
+                      ></th>
+                      <th className="py-2 px-2 border-b text-center font-medium text-gray-700 text-[0.8rem]">
+                        נושא ההצבעה
+                      </th>
+                      {row.displayVotingRecommendation && (
+                        <th
+                          className="py-2 px-2 border-b text-center font-medium text-gray-700 text-[0.8rem]"
+                          style={{ width: '100px', minWidth: '100px' }}
+                        >
+                          המלצת הצבעה
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
                   <tbody>
                     {row.agendas.length ? (
                       row.agendas.map((item: AgendasType, index: number) => (
                         <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td
-                            className="py-1 px-2 border-t text-right "
+                            className="py-1 px-2 border-t text-right"
                             style={{ width: '30px', minWidth: '30px' }}
                           >
                             {item.topicIndex}.
@@ -83,7 +102,7 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
                             className={`py-1 px-2 border-t ${isRTL(item.text) ? 'text-right' : 'text-left'}`}
                           >
                             <div
-                              dir={isRTL(item.text) ? 'ltr' : 'ltr'}
+                              dir={isRTL(item.text) ? 'rtl' : 'ltr'}
                               style={{
                                 wordBreak: 'break-word',
                                 whiteSpace: 'pre-wrap',
@@ -94,12 +113,14 @@ function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
                               {item.text}
                             </div>
                           </td>
-                          <td
-                            className="py-1 px-2 border-t text-right text-green-600 font-medium"
-                            style={{ width: '80px', minWidth: '80px' }}
-                          >
-                            בעד
-                          </td>
+                          {row.displayVotingRecommendation && (
+                            <td
+                              className={`py-1 px-2 border-t text-right font-medium ${getVotingRecommendationColor(item.recommendation.votingRecommendation)}`}
+                              style={{ width: '100px', minWidth: '100px' }}
+                            >
+                              {item.recommendation.votingRecommendation}
+                            </td>
+                          )}
                         </tr>
                       ))
                     ) : (
@@ -126,7 +147,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'סדר היום',
     noHeader: true,
     type: 'other',
-    filterable: true,
     isAlwaysVisible: true,
     positionCenter: true,
     render: (row) => {
@@ -190,7 +210,6 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
-
       return new Intl.NumberFormat('he-IL', {
         maximumFractionDigits: 0,
       }).format(marketValue / 1_000_000)

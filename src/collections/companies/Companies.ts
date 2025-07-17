@@ -1,6 +1,6 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
-import detailsEndpoint from './detailsEndpoint'
+import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -36,13 +36,16 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  custom: {
+    filterList: [['type', 'active', 'passiveFund']],
+  },
   versions: {},
   fields: [
     {
       type: 'tabs',
       tabs: [
         {
-          label: 'תוכן',
+          label: 'כללי',
           fields: [
             {
               type: 'row',
@@ -208,6 +211,14 @@ export const Companies: CollectionConfig = {
                       },
                     },
                     {
+                      name: 'displayVotingRecommendation',
+                      label: 'הצגת המלצת הצבעה',
+                      type: 'checkbox',
+                      admin: {
+                        width: '200px',
+                      },
+                    },
+                    {
                       name: 'defaultVotingRecommendation',
                       label: 'המלצת הצבעה כברירת מחדל',
                       type: 'checkbox',
@@ -272,19 +283,34 @@ export const Companies: CollectionConfig = {
           ],
         },
         {
-          label: 'פגישות',
+          label: 'משתמשים',
           admin: {
             condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
+              label: 'משתמשים בהרשאת כתיבה',
               type: 'join',
-              collection: 'meetings',
-              on: 'companies',
-              name: 'meetings',
+              collection: 'users',
+              on: 'companies.companyId',
+              name: 'usersWrite',
+              where: {
+                'companies.permission': { equals: 'write' },
+              },
+            },
+            {
+              label: 'משתמשים בהרשאת קריאה',
+              type: 'join',
+              collection: 'users',
+              on: 'companies.companyId',
+              name: 'usersRead',
+              where: {
+                'companies.permission': { equals: 'read' },
+              },
             },
           ],
         },
+
         {
           label: 'אחזקות',
           admin: {
@@ -296,6 +322,20 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'fund',
               name: 'holdings',
+            },
+          ],
+        },
+        {
+          label: 'פגישות',
+          admin: {
+            condition: (data) => data?.type == 'regular',
+          },
+          fields: [
+            {
+              type: 'join',
+              collection: 'meetings',
+              on: 'companies',
+              name: 'meetings',
             },
           ],
         },
@@ -362,6 +402,11 @@ export const Companies: CollectionConfig = {
       path: '/details',
       method: 'get',
       handler: detailsEndpoint,
+    },
+    {
+      path: '/voting-recommendations',
+      method: 'get',
+      handler: getVotingRecommendation,
     },
   ],
 }

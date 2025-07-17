@@ -18,7 +18,11 @@ export async function getSequenceStockId(payload: BasePayload, stockID: string |
   return stock ? stock.id : null
 }
 
-export async function getStockByStockId(payload: BasePayload, stockID: string | null | undefined) {
+export async function getStockByStockId(
+  payload: BasePayload,
+  stockID: string | null | undefined,
+  depth: number = 0,
+) {
   if (stockID === null) return null
 
   let id = null
@@ -27,7 +31,7 @@ export async function getStockByStockId(payload: BasePayload, stockID: string | 
     const stock = await payload.find({
       collection: 'stocks',
       limit: 1,
-      depth: 0,
+      depth: depth,
       where: {
         stockId: { equals: stockID },
       },
