@@ -143,6 +143,7 @@ const QuickFilter = ({
   const { i18n } = useTranslation()
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
+    if (typeof window == 'undefined') return {}
     try {
       const item = window.localStorage.getItem(localStorageKey)
       if (!item) {
