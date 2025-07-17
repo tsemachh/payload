@@ -58,6 +58,7 @@ import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
+import CustomRadio from './custom-radio'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -855,10 +856,8 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 className="flex items-center justify-between py-2 remove-checked"
                                                 onSelect={(e) => e.preventDefault()}
                                               >
-                                                <Checkbox
-                                                  checked={isChecked}
-                                                  className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                                />
+                                                <CustomRadio checked={isChecked} size="md" />
+
                                                 <div
                                                   className="flex justify-between gap-2"
                                                   dir="rtl"
@@ -895,10 +894,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                             className="flex items-center justify-between py-2 remove-checked"
                                             onSelect={(e) => e.preventDefault()}
                                           >
-                                            <Checkbox
-                                              checked={isChecked}
-                                              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                            />
+                                            <CustomRadio checked={isChecked} size="md" />
                                             <div className="flex justify-between gap-2" dir="rtl">
                                               <span className="text-right">{option.label}</span>
                                               <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
@@ -910,7 +906,6 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       })}
                                     </div>
                                   </div>
-
                                   {/* Empty date option */}
                                   <div className="p-2 border-t border-gray-200 mt-2">
                                     <DropdownMenuCheckboxItem
@@ -921,9 +916,9 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       }}
                                       className="flex items-center justify-between py-2 remove-checked"
                                     >
-                                      <Checkbox
+                                      <CustomRadio
                                         checked={dateFilters[String(column.key)]?.empty}
-                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                        size="md"
                                       />
                                       <div className="flex justify-between gap-2" dir="rtl">
                                         <span className="text-right">{emptyDateOption.label}</span>

@@ -60,14 +60,14 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
-        showExceptional?: boolean | null;
-        companies?: (string | Company)[] | null;
       };
-      vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
+      vPercentSpecial?: number | null;
       id?: string | null;
     }[]
   | null;
@@ -136,6 +136,21 @@ export type HoldingsPerDay = {
  * via the `definition` "VoteDecision".
  */
 export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AdminNotificationType".
+ */
+export type AdminNotificationType =
+  | (
+      | 'general'
+      | 'predictaFeed'
+      | 'userCreated'
+      | 'userPermissionsChanged'
+      | 'companyNotReportedHoldings'
+      | 'companyNotVotedMeetingNextDay'
+      | 'newVoteAfterHoldingLimit'
+    )
+  | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
@@ -648,9 +663,6 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   title?: string | null;
-  reported?: boolean | null;
-  reportedBy?: string | null;
-  reportedTime?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -672,6 +684,18 @@ export interface Vote {
     | null;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
+  reported?: boolean | null;
+  reportedBy?: string | null;
+  reportedTime?: string | null;
+  fundsWithHoldingsUpdates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -743,6 +767,7 @@ export interface SilencedStock {
 export interface AdminNotification {
   id: string;
   message: string;
+  type?: AdminNotificationType;
   url?: string | null;
   readStatus?: boolean | null;
   relatedCompany?: (string | null) | Company;
@@ -1330,14 +1355,14 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
+        showExceptional?: T;
+        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
-        showExceptional?: T;
-        companies?: T;
       };
-  vPercentSpecial?: T;
   result?: T;
+  vPercentSpecial?: T;
   id?: T;
 }
 /**
@@ -1348,9 +1373,6 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   title?: T;
-  reported?: T;
-  reportedBy?: T;
-  reportedTime?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1372,6 +1394,10 @@ export interface VotesSelect<T extends boolean = true> {
       };
   voteDocuments?: T;
   clientComment?: T;
+  reported?: T;
+  reportedBy?: T;
+  reportedTime?: T;
+  fundsWithHoldingsUpdates?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1511,6 +1537,7 @@ export interface DocumentsSelect<T extends boolean = true> {
  */
 export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
+  type?: T;
   url?: T;
   readStatus?: T;
   relatedCompany?: T;

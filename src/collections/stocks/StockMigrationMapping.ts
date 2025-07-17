@@ -12,8 +12,8 @@ const StockMigrationMapping: CollectionConfig = {
     ],
   },
   labels: {
-    plural: 'מיפויי מניות',
-    singular: 'מיפוי מניות',
+    plural: 'מיפויי ניירות ערך',
+    singular: 'מיפוי ניירות ערך',
   },
   fields: [
     {

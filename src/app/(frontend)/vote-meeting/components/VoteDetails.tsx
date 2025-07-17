@@ -5,9 +5,10 @@ import { SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons
 
 interface VoteDetailsProps {
   meetingData: MeetingTableDataType
+  isReadOnly?: boolean
 }
 
-export default function VoteDetails({ meetingData }: VoteDetailsProps) {
+export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
   const hasResearchDocuments = meetingData.researchDocuments
 
@@ -46,7 +47,7 @@ export default function VoteDetails({ meetingData }: VoteDetailsProps) {
             <span className="text-muted-foreground font-medium">מועד מסירת ההצבעות</span>
             <TruncatedText
               text={formatDateTime(meetingData.proxyVotingDate)}
-              className="text-foreground max-w-[250px]"
+              className={`text-foreground max-w-[250px] ${isReadOnly && 'text-red-500'}`}
             />
           </div>
         </div>

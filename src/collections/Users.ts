@@ -344,9 +344,10 @@ export const Users: CollectionConfig = {
             await createAdminNotification(
               req.payload,
               `משתמש חדש נוצר: ${doc.email}`,
+              'userCreated',
               `/admin/collections/users/${doc.id}`,
               undefined,
-              doc.id,
+              doc.id
             )
             return
           }
@@ -379,9 +380,10 @@ export const Users: CollectionConfig = {
               await createAdminNotification(
                 req.payload,
                 `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
+                'userPermissionsChanged',
                 `/admin/collections/users/${doc.id}`,
                 undefined,
-                doc.id,
+                doc.id
               )
             }
           }
