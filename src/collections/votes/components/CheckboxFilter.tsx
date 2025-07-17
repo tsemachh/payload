@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { CheckboxFilterState } from '@/types/filter-types'
+
+export type CheckboxFilterState = 'checked' | 'unchecked' | 'indeterminate'
 
 interface CheckboxFilterProps {
   value?: CheckboxFilterState
