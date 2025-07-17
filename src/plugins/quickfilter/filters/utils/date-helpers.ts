@@ -93,7 +93,7 @@ export function formatDate(date: Date, formatStr: string): string {
 export function getDateRangeForOption(
   option: string,
   locale: 'he' | 'en' = 'he',
-): { from: Date; to: Date; description: string } {
+): { from: Date | undefined; to: Date | undefined; description: string } {
   const now = new Date()
   const isHebrew = locale === 'he'
 
@@ -126,7 +126,7 @@ export function getDateRangeForOption(
 
     case 'allPast':
       return {
-        from: new Date(1900, 0, 1),
+        from: undefined,
         to: subDays(now, 1),
         description: isHebrew ? '(עד אתמול)' : '(until yesterday)',
       }
@@ -159,7 +159,7 @@ export function getDateRangeForOption(
     case 'allFuture':
       return {
         from: now,
-        to: new Date(2100, 11, 31),
+        to: undefined,
         description: isHebrew ? '(מהיום ואילך)' : '(from today onwards)',
       }
 
