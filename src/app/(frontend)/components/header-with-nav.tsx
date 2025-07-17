@@ -2,11 +2,11 @@
 
 import { useAuth } from '@/providers/auth-provider'
 import { MainNav } from './main-nav'
-import { ThemeChooser } from '@/components/theme-chooser'
 import { UserNav } from './user-nav'
 import { usePathname } from 'next/navigation'
 import { HoldingsNav } from '../holdings/sub-nav-holdings'
 import { MeetingsNav } from '../meetings/sub-nav-meetings'
+import { ImpersonationBanner } from '@/plugins/impersonate/components'
 
 export function HeaderWithNav() {
   const auth = useAuth()
@@ -53,6 +53,7 @@ export function HeaderWithNav() {
           </div>
         )
       )}
+     <ImpersonationBanner position="top" locale="he" />
     </header>
   )
 }

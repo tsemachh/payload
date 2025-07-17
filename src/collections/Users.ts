@@ -1,7 +1,7 @@
 import type { CollectionConfig, PayloadRequest, Where } from 'payload'
 import { APIError } from 'payload'
-import { userFields } from '@shefing/authorization'
-import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
+import { isAdmin, isAdminOrSelf, userFields } from '@shefing/authorization'
+import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
@@ -104,8 +104,18 @@ export const Users: CollectionConfig = {
   custom: {
     filterList: [
       ['active', 'isAdmin', 'createdAt'],
-      ['enableAPIKey', 'receiveMailNotification']
+      ['enableAPIKey', 'receiveMailNotification'],
     ],
+  },
+  access: {
+    // Only admins can create users
+    create: isAdmin,
+    // Admins can read all, but any other logged in user can only read themselves
+    read: isAdminOrSelf,
+    // Admins can update all, but any other logged in user can only update themselves
+    update: isAdminOrSelf,
+    // Only admins can delete
+    delete: isAdmin,
   },
   auth: {
     useSessions: false,
@@ -316,9 +326,7 @@ export const Users: CollectionConfig = {
             originalDoc && JSON.stringify(originalDoc.companies) !== JSON.stringify(data?.companies)
 
           if (companiesChanged || !data?.funds || data?.funds.length === 0) {
-            const companyIds = data?.companies.map((company: any) =>
-              company.companyId,
-            )
+            const companyIds = data?.companies.map((company: any) => company.companyId)
             const { funds, treeCompanies } = await computeCompanyTreeAndLeafs(companyIds, req)
             data.funds = funds
             data.treeCompanies = treeCompanies
@@ -347,7 +355,7 @@ export const Users: CollectionConfig = {
               'userCreated',
               `/admin/collections/users/${doc.id}`,
               undefined,
-              doc.id
+              doc.id,
             )
             return
           }
@@ -383,7 +391,7 @@ export const Users: CollectionConfig = {
                 'userPermissionsChanged',
                 `/admin/collections/users/${doc.id}`,
                 undefined,
-                doc.id
+                doc.id,
               )
             }
           }

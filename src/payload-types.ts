@@ -101,7 +101,6 @@ export type RolePermissions =
         | 'admin-notifications'
         | 'company-meeting-notifications'
         | 'companies'
-        | 'users'
         | 'roles'
         | 'stocks-feed'
         | 'meetings-feed'
