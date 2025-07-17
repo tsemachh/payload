@@ -124,12 +124,14 @@ export function getDateRangeForOption(
         description: `(${formatDate(lastMonthStart, 'MM/yyyy')})`,
       }
 
-    case 'allPast':
+    case 'allPast': {
+      const yesterday = subDays(now, 1)
       return {
         from: undefined,
-        to: subDays(now, 1),
+        to: endOfDay(yesterday),
         description: isHebrew ? '(עד אתמול)' : '(until yesterday)',
       }
+    }
 
     case 'today':
       return {
@@ -158,15 +160,15 @@ export function getDateRangeForOption(
 
     case 'allFuture':
       return {
-        from: now,
+        from: startOfDay(now),
         to: undefined,
         description: isHebrew ? '(מהיום ואילך)' : '(from today onwards)',
       }
 
     default:
       return {
-        from: now,
-        to: now,
+        from: startOfDay(now),
+        to: endOfDay(now),
         description: '',
       }
   }
