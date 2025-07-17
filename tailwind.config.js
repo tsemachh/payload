@@ -12,6 +12,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app//*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    './node_modules/@shefing/quickfilter/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     container: {

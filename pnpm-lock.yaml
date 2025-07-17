@@ -138,8 +138,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@shefing/quickfilter':
-        specifier: ^1.0.9
-        version: 1.0.9(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
+        specifier: ^1.0.11
+        version: 1.0.11(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
       '@tanstack/react-table':
         specifier: ^8.21.2
         version: 8.21.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -2203,8 +2203,8 @@ packages:
   '@shefing/field-type-component-override@1.0.5':
     resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
 
-  '@shefing/quickfilter@1.0.9':
-    resolution: {integrity: sha512-Kmqe6zQ4EWWr56lCj8gsuKqmJBsDkQ1AXyf7b04fAC9t/ZlEZo5GqAcSocCJuFJ4bDxfgbxT594gOFmDOwjfJA==}
+  '@shefing/quickfilter@1.0.11':
+    resolution: {integrity: sha512-6AX4v8hNblYFJjkVgx1RTJuLIGJTWorxWm//UwbB5mNiQYFJftiYzGAKM4aCANMBSiu+0+wp4aPPuYUh+hNiNA==}
 
   '@smithy/abort-controller@4.0.4':
     resolution: {integrity: sha512-gJnEjZMvigPDQWHrW3oPrFhQtkrgqBkyjj3pCIdF3A5M6vsZODG93KNlfJprv6bp4245bdT32fsHK4kkH3KYDA==}
@@ -8646,7 +8646,7 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.5': {}
 
-  '@shefing/quickfilter@1.0.9(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
+  '@shefing/quickfilter@1.0.11(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
     dependencies:
       '@payloadcms/translations': 3.47.0
       '@payloadcms/ui': 3.47.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.47.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
