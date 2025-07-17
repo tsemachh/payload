@@ -159,8 +159,8 @@ export const Meetings: CollectionConfig = {
         { name: 'meetingDate' },
         { name: 'holdingsLimit' },
         { name: 'proxyVotingDate' },
-        { name: 'state' },
-        { name: 'type' },
+        { name: 'state' , width:"200px" },
+        { name: 'type',  width:"200px" },
       ],
       [
         { name: 'resultsConfirmationStatus' },

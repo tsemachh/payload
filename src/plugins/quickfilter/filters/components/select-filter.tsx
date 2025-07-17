@@ -27,6 +27,7 @@ interface SelectFilterProps {
   locale?: Locale
   className?: string
   multiSelect?: boolean
+  style?: React.CSSProperties
 }
 
 export function SelectFilter({
@@ -38,6 +39,7 @@ export function SelectFilter({
   locale = { code: 'he', direction: 'rtl' },
   className,
   multiSelect = true,
+  style
 }: SelectFilterProps) {
   const [open, setOpen] = useState(false)
   const [internalValue, setInternalValue] = useState<SelectFilterValue | undefined>(value)
@@ -122,7 +124,7 @@ export function SelectFilter({
   }
 
   return (
-    <div className={cn('space-y-1', className)} dir={locale.direction}>
+    <div className={cn('space-y-1', className)} dir={locale.direction} style={style}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}
