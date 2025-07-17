@@ -520,7 +520,7 @@ export default function VotingForm() {
         setIsSubmitting(false)
       }
     },
-    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish, uploadedDocs],
+    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish]
   )
 
   const saveDraftData = useCallback(
@@ -549,7 +549,6 @@ export default function VotingForm() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         })
-
         if (response.ok) {
           toast({
             title: '✅ נתונים נשמרו',
@@ -577,7 +576,7 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, uploadedDocs],
+    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
   )
 
   const handleQuestionChange = useCallback(
@@ -612,22 +611,18 @@ export default function VotingForm() {
             ? config.toastNoteExplanation || config.toastNote
             : config.toastNote
 
-        setVotingData((prev) => {
-          const newGeneralData: GeneralVotingData = {
-            ...prev.generalVotingData,
-            [questionId]: value,
-          }
-          const generalExplanationFieldName = getExplanationFieldName(
-            questionId as GeneralQuestionId,
-          )
-          if (generalExplanationFieldName) {
-            newGeneralData[generalExplanationFieldName] = value === true ? explanation || '' : ''
-          }
+        const newGeneralData: GeneralVotingData = {
+          ...votingData.generalVotingData,
+          [questionId]: value,
+        }
+        const generalExplanationFieldName = getExplanationFieldName(questionId as GeneralQuestionId)
+        if (generalExplanationFieldName) {
+          newGeneralData[generalExplanationFieldName] = value ? explanation || '' : ''
+        }
+        const updatedVotingData = { ...votingData, generalVotingData: newGeneralData }
 
-          const updatedVotingData = { ...prev, generalVotingData: newGeneralData }
-          saveDraftData(dataType, updatedVotingData)
-          return updatedVotingData
-        })
+        setVotingData(updatedVotingData)
+        saveDraftData(dataType, updatedVotingData)
       } else if (type === 'agenda' && topicIndex !== undefined) {
         const config = AGENDA_QUESTIONS_CONFIG[questionId as AgendaQuestionId]
         const dataType =
@@ -635,31 +630,29 @@ export default function VotingForm() {
             ? config.toastNoteExplanation || config.toastNote
             : config.toastNote
 
-        setVotingData((prev) => {
-          const newUserVotes = prev.userVotes.map((vote) => {
-            if (vote.topicIndex == topicIndex) {
-              const newQuestions: AgendaQuestionsType = {
-                ...vote.questions,
-                [questionId]: value,
-              }
-              const agendaExplanationFieldName = getExplanationFieldName(
-                questionId as AgendaQuestionId,
-              )
-              if (agendaExplanationFieldName) {
-                newQuestions[agendaExplanationFieldName] = value === true ? explanation || '' : ''
-              }
-              return { ...vote, questions: newQuestions }
+        const newUserVotes = votingData.userVotes.map((vote) => {
+          if (vote.topicIndex == topicIndex) {
+            const newQuestions: AgendaQuestionsType = {
+              ...vote.questions,
+              [questionId]: value,
             }
-            return vote
-          })
-
-          const updatedVotingData = { ...prev, userVotes: newUserVotes }
-          saveDraftData(dataType, updatedVotingData)
-          return updatedVotingData
+            const agendaExplanationFieldName = getExplanationFieldName(
+              questionId as AgendaQuestionId,
+            )
+            if (agendaExplanationFieldName) {
+              newQuestions[agendaExplanationFieldName] = value ? explanation || '' : ''
+            }
+            return { ...vote, questions: newQuestions }
+          }
+          return vote
         })
+        const updatedVotingData = { ...votingData, userVotes: newUserVotes }
+
+        setVotingData(updatedVotingData)
+        saveDraftData(dataType, updatedVotingData)
       }
     },
-    [saveDraftData],
+    [votingData, saveDraftData],
   )
 
   const handleGeneralQuestionChangeWrapper = useCallback(
@@ -682,32 +675,23 @@ export default function VotingForm() {
       prev.filter((error) => !(error.topicIndex === topicIndex && error.field === 'choice')),
     )
 
-    setVotingData((prev) => {
-      const existingVoteIndex = prev.userVotes.findIndex((vote) => vote.topicIndex == topicIndex)
-      let newUserVotes: UserVote[]
+    const newUserVotes = votingData.userVotes.map((vote) =>
+      vote.topicIndex === topicIndex ? { ...vote, choice } : vote,
+    )
+    const updatedVotingData = {
+      ...votingData,
+      userVotes: newUserVotes,
+    }
 
-      if (existingVoteIndex !== -1) {
-        newUserVotes = prev.userVotes.map((vote, index) =>
-          index === existingVoteIndex ? { ...vote, choice } : vote,
-        )
-        const updatedVotingData = {
-          ...prev,
-          userVotes: newUserVotes,
-        }
-        saveDraftData('הצבעה', updatedVotingData)
-
-        return updatedVotingData
-      }
-      return prev
-    })
+    setVotingData(updatedVotingData)
+    saveDraftData('הצבעה', updatedVotingData)
   }
+
   const handleNotesChange = () => {
     if (votingData.voterNotes !== localVoterNotes) {
-      setVotingData((prev) => {
-        const updatedVotingData = { ...prev, voterNotes: localVoterNotes }
-        saveDraftData('הערות המצביע', updatedVotingData)
-        return updatedVotingData
-      })
+      const updatedVotingData = { ...votingData, voterNotes: localVoterNotes }
+      setVotingData(updatedVotingData)
+      saveDraftData('הערות המצביע', updatedVotingData)
     }
   }
 
@@ -733,18 +717,15 @@ export default function VotingForm() {
         const results = await Promise.all(uploadPromises)
         const newDocs = results.map((result) => result.doc)
 
-        setUploadedDocs((prev) => {
-          const updatedDocs = [...prev, ...newDocs]
-          setVotingData((currentVotingData) => {
-            const updatedVotingData = {
-              ...currentVotingData,
-              voteDocuments: updatedDocs.map((d) => d.id),
-            }
-            saveDraftData('קובץ', updatedVotingData)
-            return updatedVotingData
-          })
-          return updatedDocs
-        })
+        const updatedDocs = [...uploadedDocs, ...newDocs]
+        setUploadedDocs(updatedDocs)
+
+        const updatedVotingData = {
+          ...votingData,
+          voteDocuments: updatedDocs.map((d) => d.id),
+        }
+        setVotingData(updatedVotingData)
+        saveDraftData('קובץ', updatedVotingData)
       } catch (error) {
         console.error('Upload error:', error)
         toast({
@@ -761,18 +742,15 @@ export default function VotingForm() {
   }
 
   const removeFile = (docIdToRemove: string) => {
-    setUploadedDocs((prev) => {
-      const newDocs = prev.filter((doc) => doc.id !== docIdToRemove)
-      setVotingData((currentVotingData) => {
-        const updatedVotingData = {
-          ...currentVotingData,
-          voteDocuments: newDocs.map((d) => d.id),
-        }
-        saveDraftData('עדכון קבצים', updatedVotingData)
-        return updatedVotingData
-      })
-      return newDocs
-    })
+    const newDocs = uploadedDocs.filter((doc) => doc.id !== docIdToRemove)
+    setUploadedDocs(newDocs)
+
+    const updatedVotingData = {
+      ...votingData,
+      voteDocuments: newDocs.map((d) => d.id),
+    }
+    setVotingData(updatedVotingData)
+    saveDraftData('עדכון קבצים', updatedVotingData)
   }
 
   return (
@@ -1067,12 +1045,7 @@ export default function VotingForm() {
                   <TooltipTrigger asChild>
                     <div>
                       <Button
-                        onClick={() =>
-                          setVotingData((currentVotingData) => {
-                            savePublish(currentVotingData)
-                            return currentVotingData
-                          })
-                        }
+                        onClick={() => savePublish(votingData)}
                         disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
                         className="px-8"
                       >
