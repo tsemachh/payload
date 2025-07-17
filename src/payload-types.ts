@@ -429,7 +429,6 @@ export interface Meeting {
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
-  committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -1301,7 +1300,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
-  committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   votesCount?: T;

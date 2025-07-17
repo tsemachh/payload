@@ -229,7 +229,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: row.comments,
               resultsConfirmationStatus: !!row.ResultConfirm,
               electronicVotingEnabled: !!row.ElectronicVoting,
-              committeeInitiated: !!row.CommiteeRequest,
               _status: 'published' as const,
               agenda: agendaItems.map((item) => ({
                 text: item.text,

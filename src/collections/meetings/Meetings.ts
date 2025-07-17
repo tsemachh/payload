@@ -163,7 +163,6 @@ export const Meetings: CollectionConfig = {
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
-        { name: 'committeeInitiated' },
         { name: '_status' },
       ],
     ],
@@ -464,12 +463,6 @@ export const Meetings: CollectionConfig = {
                 {
                   name: 'electronicVotingEnabled',
                   label: 'האם מופיעה במערכת האלק׳?',
-                  type: 'checkbox',
-                  admin: { width: 'auto', disableListFilter: true },
-                },
-                {
-                  name: 'committeeInitiated',
-                  label: 'האם פיננסי דורש ועדה?',
                   type: 'checkbox',
                   admin: { width: 'auto', disableListFilter: true },
                 },
