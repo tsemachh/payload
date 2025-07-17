@@ -268,7 +268,7 @@ function createMeetingDataObject(
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
-    committeeInitiated: !!meeting.committeeInitiated,
+    committeeInitiated: !!stockPresent.isFinancial,
   }
 }
 
