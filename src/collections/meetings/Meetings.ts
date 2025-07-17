@@ -340,7 +340,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${stockName}-${data?.type}`
+                        return `${stockName}-${data?.type?data?.type:'נדחתה/בוטלה'}`
                       },
                     ],
                   },
