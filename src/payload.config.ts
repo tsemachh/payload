@@ -298,7 +298,7 @@ export default buildConfig({
           originalUser: originalUser?.email,
           targetUser: impersonateUserId,
           timestamp: new Date().toISOString(),
-          ip:  req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+          ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
         })
       },
       onUnImpersonate: async ({ req, originalUserId }) => {

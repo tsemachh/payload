@@ -116,7 +116,7 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
               <div className="text-right">
                 {rangeType
                   ? `${getLabelForRangeType(rangeType)} ${
-                      rangeType !== 'custom' ? formatRangeDates(endDate, startDate) : ''
+                      rangeType !== 'custom' ? formatRangeDates(startDate, endDate) : ''
                     }`
                   : 'בחר טווח'}
               </div>

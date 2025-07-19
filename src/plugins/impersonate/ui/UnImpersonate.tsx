@@ -13,7 +13,7 @@ const style: CSSProperties | undefined = {
 
 export const UnImpersonate: PayloadServerReactComponent<
   SanitizedConfig['admin']['components']['header'][0]
-> = async ({ user, payload }) => {
+> = async ({ user, payload, clientProps }) => {
   const { email } = user
   const appCookies = await cookies()
 
@@ -31,13 +31,16 @@ export const UnImpersonate: PayloadServerReactComponent<
   // Get centralized labels
   const currentLabels = getLabels(currentLocale)
 
+  // Get authCollection from clientProps or default to 'users'
+  const authCollectionSlug = clientProps?.authCollection || 'users'
+
   return (
     <div style={{ ...style }}>
       <span>
         {currentLabels.impersonating as string} <strong>{email}</strong>{' '}
         <a
           className="admin-action"
-          href={`/api/users/unImpersonate/${userId?.value}`}
+          href={`/api/${authCollectionSlug}/unImpersonate/${userId?.value}`}
           style={{
             color: 'var(--theme-text)',
             textDecoration: 'underline',

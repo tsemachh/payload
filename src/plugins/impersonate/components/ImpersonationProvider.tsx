@@ -24,11 +24,13 @@ const ImpersonationContext = createContext<ImpersonationContextType | null>(null
 interface ImpersonationProviderProps {
   children: ReactNode
   checkInterval?: number // in milliseconds, default 30000 (30 seconds)
+  authCollection?: string // collection slug for auth, default 'users'
 }
 
 export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   children,
   checkInterval = 30000,
+  authCollection = 'users',
 }) => {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData>({
     isImpersonating: false,
@@ -36,7 +38,7 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
 
   const checkImpersonation = async () => {
     try {
-      const response = await fetch('/api/users/impersonate/status')
+      const response = await fetch(`/api/${authCollection}/impersonate/status`)
       if (response.ok) {
         const data = await response.json()
         setImpersonationData(data)
@@ -48,7 +50,7 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
 
   const exitImpersonation = () => {
     if (impersonationData.originalUser) {
-      window.location.href = `/api/users/unImpersonate/${impersonationData.originalUser.id}`
+      window.location.href = `/api/${authCollection}/unImpersonate/${impersonationData.originalUser.id}`
     }
   }
 

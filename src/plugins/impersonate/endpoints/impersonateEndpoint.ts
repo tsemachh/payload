@@ -21,6 +21,11 @@ export const impersonateEndpoint = (
   handler: async (req) => {
     const { payload, routeParams } = req
 
+    // Check if current user is an admin
+    if (!req?.user?.isAdmin) {
+      return new Response('Unauthorized: Only admins can impersonate users', { status: 403 })
+    }
+
     const authCollection = payload.config.collections?.find(
       (collection) => collection.slug === authCollectionSlug,
     )
@@ -36,6 +41,11 @@ export const impersonateEndpoint = (
       req,
       where: {id:{equals: routeParams.id as string}},
     })
+
+    // Check if target user is an admin
+    if (user?.isAdmin) {
+      return new Response('Cannot impersonate admin users', { status: 403 })
+    }
 
 
     if (!user) {
