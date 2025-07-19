@@ -1,9 +1,15 @@
-import type { CollectionConfig,  Config, PayloadRequest, Plugin } from 'payload'
+import type { CollectionConfig, Config, FieldAccess, PayloadRequest, Plugin, TypedUser } from 'payload'
 import { cookies } from 'next/headers'
 import { impersonateEndpoint } from './endpoints/impersonateEndpoint'
 import { unImpersonateEndpoint } from './endpoints/unImpersonateEndpoint'
 import { statusEndpoint } from './endpoints/statusEndpoint'
 import { PLUGIN_LABELS } from './labels'
+
+export const isAdminFieldLevel: FieldAccess<{ id: string }, TypedUser
+> = ({ req: { user } }) => {
+  // Return true or false based on if the user has an admin role
+  return Boolean(user?.isAdmin);
+};
 
 export interface PluginTypes {
   /**
@@ -54,6 +60,7 @@ export const impersonatePlugin =
     const getCurrentLocaleLabels = (locale: 'en' | 'he' = 'en') => {
       return labels[locale] || labels.en || PLUGIN_LABELS.en
     }
+    const authCollectionSlug = pluginOptions.authCollection || 'users'
 
     config.admin = {
       ...(config.admin || {}),
@@ -61,7 +68,12 @@ export const impersonatePlugin =
         ...(config.admin?.components || {}),
         header: [
           ...(config.admin?.components?.header || []),
-          '@/plugins/impersonate/ui/UnImpersonate#UnImpersonate',
+          {
+            path: '@/plugins/impersonate/ui/UnImpersonate#UnImpersonate',
+            clientProps: {
+              authCollection: authCollectionSlug
+            }
+          },
         ],
         actions: [
           ...(config.admin?.components?.actions || []),
@@ -69,7 +81,6 @@ export const impersonatePlugin =
       },
     }
 
-    const authCollectionSlug = pluginOptions.authCollection || 'users'
     const authCollection = config.collections?.find(
       (collection) => collection.slug === authCollectionSlug,
     )
@@ -90,10 +101,19 @@ export const impersonatePlugin =
         ...(authCollection.fields || []),
         {
           name: 'impersonate',
-          type: 'ui',
+          type: 'text',
+          virtual: true,
+          access:{
+            read: isAdminFieldLevel
+          },
           admin: {
             components: {
-              Cell: '@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell',
+              Cell: {
+                path: '@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell',
+                clientProps: {
+                  authCollection: authCollectionSlug
+                }
+              },
               Field: '@/plugins/impersonate/ui/NullField#NullField',
             },
           },

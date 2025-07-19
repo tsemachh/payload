@@ -613,6 +613,7 @@ export interface User {
   };
   createdAt: string;
   updatedAt: string;
+  impersonate?: string | null;
   enableAPIKey?: boolean | null;
   apiKey?: string | null;
   apiKeyIndex?: string | null;
@@ -1632,6 +1633,7 @@ export interface UsersSelect<T extends boolean = true> {
       };
   createdAt?: T;
   updatedAt?: T;
+  impersonate?: T;
   enableAPIKey?: T;
   apiKey?: T;
   apiKeyIndex?: T;

@@ -14,7 +14,13 @@ interface ImpersonationData {
   }
 }
 
-export const ClientImpersonationBar: React.FC = () => {
+interface ClientImpersonationBarProps {
+  authCollection?: string // collection slug for auth, default 'users'
+}
+
+export const ClientImpersonationBar: React.FC<ClientImpersonationBarProps> = ({
+  authCollection = 'users',
+}) => {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData>({
     isImpersonating: false,
   })
@@ -23,7 +29,7 @@ export const ClientImpersonationBar: React.FC = () => {
     // Check for impersonation status
     const checkImpersonation = async () => {
       try {
-        const response = await fetch('/api/impersonate/status')
+        const response = await fetch(`/api/${authCollection}/impersonate/status`)
         if (response.ok) {
           const data = await response.json()
           setImpersonationData(data)
@@ -42,7 +48,7 @@ export const ClientImpersonationBar: React.FC = () => {
 
   const handleExitImpersonation = () => {
     if (impersonationData.originalUser) {
-      window.location.href = `/api/users/unImpersonate/${impersonationData.originalUser.id}`
+      window.location.href = `/api/${authCollection}/unImpersonate/${impersonationData.originalUser.id}`
     }
   }
 
