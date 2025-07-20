@@ -130,7 +130,7 @@ importers:
         version: 1.2.7(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@shefing/authorization':
         specifier: ^1.0.9
-        version: 1.0.9
+        version: 1.0.10
       '@shefing/authors-info':
         specifier: ^1.0.10
         version: 1.0.10(@payloadcms/ui@3.47.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.47.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.47.0(graphql@16.11.0)(typescript@5.7.3))
@@ -2187,8 +2187,8 @@ packages:
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
-  '@shefing/authorization@1.0.9':
-    resolution: {integrity: sha512-Up/ypBSrz8Vfw+m62vRuCqvoZnYjin1KdJ6l8vZszFrs5eFTUliLNnc92U8LqiDVvmDxfllebVOTHFxIuguNmA==}
+  '@shefing/authorization@1.0.10':
+    resolution: {integrity: sha512-G3RV15KtU4wLENB/983YhPrKpcnGveppG2Jc89MsBUQ+B0Ax+4y8s6SPvVd5IJW7Rqi+ny+1syM0PEg5QHPccA==}
 
   '@shefing/authors-info@1.0.10':
     resolution: {integrity: sha512-yI7cXYWkyU5xst+llvsOlMMA1ArmuXQc0dB0sO1PHBqkrcUwJUIeJ7KhKNY8CZ6VvlJ5YU/NmehDDNkJckpOEQ==}
@@ -8629,7 +8629,7 @@ snapshots:
 
   '@scarf/scarf@1.4.0': {}
 
-  '@shefing/authorization@1.0.9': {}
+  '@shefing/authorization@1.0.10': {}
 
   '@shefing/authors-info@1.0.10(@payloadcms/ui@3.47.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.47.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.47.0(graphql@16.11.0)(typescript@5.7.3))':
     dependencies:
