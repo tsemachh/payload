@@ -905,7 +905,7 @@ export interface MigrationFault {
 export interface Export {
   id: string;
   name?: string | null;
-  format: 'csv' | 'json';
+  format?: ('csv' | 'json') | null;
   limit?: number | null;
   sort?: string | null;
   drafts?: ('yes' | 'no') | null;
@@ -1945,7 +1945,7 @@ export interface TaskSendCompanyMeetingNotifications {
 export interface TaskCreateCollectionExport {
   input: {
     name?: string | null;
-    format: 'csv' | 'json';
+    format?: ('csv' | 'json') | null;
     limit?: number | null;
     sort?: string | null;
     drafts?: ('yes' | 'no') | null;
