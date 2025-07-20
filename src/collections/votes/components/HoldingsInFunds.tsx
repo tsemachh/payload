@@ -186,134 +186,85 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
   }
 
   return (
-    <div style={{ margin: '20px 0', padding: '10px' }}>
-      {loading && <p style={{ color: '#666' }}>טוען נתונים...</p>}
-      {error && <p style={{ color: '#d32f2f' }}>{error}</p>}
+    <div className="my-5 p-2.5">
+      {loading && <p className="text-gray-600">טוען נתונים...</p>}
+
+      {error && <p className="text-red-600">{error}</p>}
+
       {funds.length === 0 && !loading && !error && (
-        <p style={{ color: '#666' }}>אין תיקים זמינים להצגה</p>
+        <p className="text-gray-600">אין תיקים זמינים להצגה</p>
       )}
 
       {funds.length > 0 && (
-        <table
-          style={{
-            width: '800px',
-            borderCollapse: 'collapse',
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <thead>
-            <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                שם תיק
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                ערך נקוב במערכת
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                אימות אחזקות
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                ערך נקוב ברשות
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {funds.map((fund, index) => (
-              <tr
-                key={fund.id}
-                style={{
-                  borderBottom: '1px solid #f3f4f6',
-                  backgroundColor: index % 2 === 0 ? 'white' : '#fafafa',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : '#fafafa')
-                }
-              >
-                <td
-                  style={{
-                    padding: '16px 24px',
-                    fontSize: '14px',
-                    color: '#111827',
-                    fontWeight: '500',
-                  }}
-                >
-                  {fund.name}
-                </td>
-                <td style={{ padding: '16px 24px', fontSize: '14px', color: '#374151' }}>
-                  {fund.quantity.toLocaleString()}
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <CheckboxFilter
-                    value={fund.isAuthorized}
-                    onChange={(state: any) => handleCheckboxChange(fund.id, state)}
-                  />
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  {fund.isAuthorized === 'unchecked' && (
-                    <div>
-                      <input
-                        type="text"
-                        value={updatedHoldings[fund.id] ?? ''}
-                        onChange={(e) => handleInputChange(fund.id, e.target.value)}
-                        style={{
-                          width: '120px',
-                          padding: '8px 12px',
-                          border: `1px solid ${errors[fund.id] ? '#d32f2f' : '#d1d5db'}`,
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          textAlign: 'right',
-                          direction: 'rtl',
-                        }}
-                        placeholder="הכנס ערך"
-                      />
-                      {errors[fund.id] && (
-                        <p style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px' }}>
-                          {errors[fund.id]}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </td>
+        <div className="w-full max-w-4xl overflow-x-auto">
+          <table className="w-full border-collapse bg-white rounded-lg shadow-sm">
+            <thead>
+              <tr className="bg-gray-200 border-b border-gray-200">
+                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
+                  שם תיק
+                </th>
+                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
+                  ערך נקוב במערכת
+                </th>
+                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
+                  אימות אחזקות
+                </th>
+                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
+                  ערך נקוב ברשות
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {funds.map((fund, index) => (
+                <tr
+                  key={fund.id}
+                  className={`
+  border-b border-gray-100 transition-colors duration-200 h-20
+  ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-200 hover:bg-gray-250'}
+`}
+                >
+                  <td className="px-6 py-6 text-base text-gray-900 font-medium align-top">
+                    {fund.name}
+                  </td>
+                  <td className="px-6 py-6 text-base text-gray-700 align-top">
+                    {fund.quantity.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-6 align-top">
+                    <CheckboxFilter
+                      value={fund.isAuthorized}
+                      onChange={(state) => handleCheckboxChange(fund.id, state)}
+                    />
+                  </td>
+                  <td className="px-6 py-6 align-top w-48">
+                    {fund.isAuthorized === 'unchecked' && (
+                      <div className="space-y-1">
+                        <input
+                          type="text"
+                          value={updatedHoldings[fund.id] ?? ''}
+                          onChange={(e) => handleInputChange(fund.id, e.target.value)}
+                          className={`
+                            w-32 px-3 py-2 text-base text-right border rounded-md
+                            focus:outline-none focus:ring-2 focus:ring-blue-500
+                            ${
+                              errors[fund.id]
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:border-blue-500'
+                            }
+                          `}
+                          placeholder="הכנס ערך"
+                          dir="rtl"
+                        />
+                        {errors[fund.id] && (
+                          <p className="text-red-600 text-sm mt-1">{errors[fund.id]}</p>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
