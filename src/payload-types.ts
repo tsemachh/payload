@@ -424,6 +424,7 @@ export interface Meeting {
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
+  dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
@@ -1296,6 +1297,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
+  dualMeeting?: T;
   location?: T;
   comments?: T;
   resultsConfirmationStatus?: T;

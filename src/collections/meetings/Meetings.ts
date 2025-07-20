@@ -20,6 +20,7 @@ import {
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 import { v1 as uuid1 } from 'uuid'
+import { syncDualMeeting } from './hooks/syncDualMeeting'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -339,7 +340,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${stockName}-${data?.type?data?.type:'נדחתה/בוטלה'}`
+                        return `${stockName}-${data?.type ? data?.type : 'נדחתה/בוטלה'}`
                       },
                     ],
                   },
@@ -418,6 +419,23 @@ export const Meetings: CollectionConfig = {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
                     },
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'dualMeeting',
+                  type: 'relationship',
+                  relationTo: 'meetings',
+                  hasMany: false,
+                  label: 'אסיפה דואלית',
+                  admin: {
+                    readOnly: true,
+                    width: '50%',
+                    condition: (data) => Boolean(data?.dualMeeting),
                   },
                 },
               ],
@@ -929,16 +947,25 @@ export const Meetings: CollectionConfig = {
           if (stock?.isDual && stock?.dualStock) {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
-            // Remove fields that should be unique/regenerated
             delete dualMeeting.id
             delete dualMeeting.meetingId
-            // Set the dual stock
+            delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
 
             try {
-              await req.payload.create({
+              const createdDualMeeting = await req.payload.create({
                 collection: 'meetings',
                 data: dualMeeting,
+                context: { from: 'process' },
+              })
+
+              // Only update the original meeting with the relation
+              await req.payload.update({
+                collection: 'meetings',
+                id: doc.id,
+                data: {
+                  dualMeeting: createdDualMeeting.id,
+                },
                 context: { from: 'process' },
               })
             } catch (error) {
@@ -952,19 +979,27 @@ export const Meetings: CollectionConfig = {
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status == 'draft' &&
-          doc._status == 'published' &&
-          (!doc.meetings || doc.meetings.length == 0)
+          previousDoc?._status === 'draft' &&
+          doc._status === 'published' &&
+          (!doc.meetings || doc.meetings.length === 0)
 
         if (holdingsLimitChanged || stockChanged || firstPublish) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
+
+        // Sync recommendations with dual meeting if needed
+        if (
+          req.context?.from !== 'process' &&
+          req.context?.from !== 'migration' &&
+          operation === 'update'
+        ) {
+          await syncDualMeeting(req.payload, doc, previousDoc)
+        }
       },
       afterChangeDeleteResearchDocs,
     ],
-
     beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [
       handleRecommendationReason,
