@@ -60,14 +60,14 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       exceptionalRecommendation?: {
+        showExceptional?: boolean | null;
+        companies?: (string | Company)[] | null;
         votingRecommendation?: ('----' | 'בעד' | 'נגד' | 'נמנע' | 'דיון') | null;
         reasonRef?: string | null;
         reasonText?: string | null;
-        showExceptional?: boolean | null;
-        companies?: (string | Company)[] | null;
       };
-      vPercentSpecial?: number | null;
       result?: ('0' | '1' | '2' | '3') | null;
+      vPercentSpecial?: number | null;
       id?: string | null;
     }[]
   | null;
@@ -101,7 +101,6 @@ export type RolePermissions =
         | 'admin-notifications'
         | 'company-meeting-notifications'
         | 'companies'
-        | 'users'
         | 'roles'
         | 'stocks-feed'
         | 'meetings-feed'
@@ -136,6 +135,21 @@ export type HoldingsPerDay = {
  * via the `definition` "VoteDecision".
  */
 export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AdminNotificationType".
+ */
+export type AdminNotificationType =
+  | (
+      | 'general'
+      | 'predictaFeed'
+      | 'userCreated'
+      | 'userPermissionsChanged'
+      | 'companyNotReportedHoldings'
+      | 'companyNotVotedMeetingNextDay'
+      | 'newVoteAfterHoldingLimit'
+    )
+  | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
@@ -410,11 +424,11 @@ export interface Meeting {
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
+  dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
-  committeeInitiated?: boolean | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -600,6 +614,7 @@ export interface User {
   };
   createdAt: string;
   updatedAt: string;
+  impersonate?: string | null;
   enableAPIKey?: boolean | null;
   apiKey?: string | null;
   apiKeyIndex?: string | null;
@@ -752,6 +767,7 @@ export interface SilencedStock {
 export interface AdminNotification {
   id: string;
   message: string;
+  type?: AdminNotificationType;
   url?: string | null;
   readStatus?: boolean | null;
   relatedCompany?: (string | null) | Company;
@@ -889,7 +905,7 @@ export interface MigrationFault {
 export interface Export {
   id: string;
   name?: string | null;
-  format: 'csv' | 'json';
+  format?: ('csv' | 'json') | null;
   limit?: number | null;
   sort?: string | null;
   drafts?: ('yes' | 'no') | null;
@@ -1281,11 +1297,11 @@ export interface MeetingsSelect<T extends boolean = true> {
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
+  dualMeeting?: T;
   location?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
-  committeeInitiated?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   votesCount?: T;
@@ -1339,14 +1355,14 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
   exceptionalRecommendation?:
     | T
     | {
+        showExceptional?: T;
+        companies?: T;
         votingRecommendation?: T;
         reasonRef?: T;
         reasonText?: T;
-        showExceptional?: T;
-        companies?: T;
       };
-  vPercentSpecial?: T;
   result?: T;
+  vPercentSpecial?: T;
   id?: T;
 }
 /**
@@ -1521,6 +1537,7 @@ export interface DocumentsSelect<T extends boolean = true> {
  */
 export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
+  type?: T;
   url?: T;
   readStatus?: T;
   relatedCompany?: T;
@@ -1618,6 +1635,7 @@ export interface UsersSelect<T extends boolean = true> {
       };
   createdAt?: T;
   updatedAt?: T;
+  impersonate?: T;
   enableAPIKey?: T;
   apiKey?: T;
   apiKeyIndex?: T;
@@ -1927,7 +1945,7 @@ export interface TaskSendCompanyMeetingNotifications {
 export interface TaskCreateCollectionExport {
   input: {
     name?: string | null;
-    format: 'csv' | 'json';
+    format?: ('csv' | 'json') | null;
     limit?: number | null;
     sort?: string | null;
     drafts?: ('yes' | 'no') | null;

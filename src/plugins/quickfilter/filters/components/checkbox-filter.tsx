@@ -72,7 +72,7 @@ export function CheckboxFilter({
               variant={internalState === 'checked' ? 'default' : 'ghost'}
               size="sm"
               className={cn(
-                'px-3 py-1 text-xs rounded-none border-0',
+                'useTW px-3 py-1 text-xs rounded-none border-0',
                 internalState === 'checked'
                   ? 'bg-green-600 text-white hover:bg-green-700'
                   : 'bg-background text-muted-foreground hover:bg-muted',
@@ -85,7 +85,7 @@ export function CheckboxFilter({
               variant={internalState === 'unchecked' ? 'default' : 'ghost'}
               size="sm"
               className={cn(
-                'px-3 py-1 text-xs rounded-none border-0 border-l',
+                'useTw px-3 py-1 text-xs rounded-none border-0 border-l',
                 internalState === 'unchecked'
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-background text-muted-foreground hover:bg-muted',

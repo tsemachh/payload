@@ -20,6 +20,7 @@ import {
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 import { v1 as uuid1 } from 'uuid'
+import { syncDualMeeting } from './hooks/syncDualMeeting'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -104,7 +105,6 @@ const votingRecommendation = [
         type: 'select',
         admin: {
           width: '10%',
-          disableListFilter: true,
         },
         options: [
           { label: '----', value: '----' },
@@ -132,7 +132,6 @@ const votingRecommendation = [
         label: 'נימוק חופשי',
         type: 'text',
         admin: {
-          disableListFilter: true,
           width: '100%',
           components: {
             Field: '/collections/meetings/components/ConditionalReasonText',
@@ -165,12 +164,12 @@ export const Meetings: CollectionConfig = {
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
-        { name: 'committeeInitiated' },
         { name: '_status' },
       ],
     ],
   },
   enableQueryPresets: true,
+  defaultSort: 'meetingDate',
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
@@ -236,7 +235,6 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '330px',
-                    disableListFilter: true,
                   },
                 },
                 {
@@ -273,7 +271,6 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '150px',
-                    disableListFilter: true,
                   },
                 },
                 {
@@ -283,7 +280,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '200px',
-                    disableListFilter: true,
+
                     components: {
                       Cell: {
                         path: '/admincomponents/link/IconLinkCell',
@@ -325,7 +322,6 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     className: 'invitationDocument',
                     width: '220px',
-                    disableListFilter: true,
                   },
                 },
                 {
@@ -334,7 +330,6 @@ export const Meetings: CollectionConfig = {
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
-                    disableListFilter: true,
                   },
                   index: true,
                   hooks: {
@@ -345,7 +340,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${stockName}-${data?.type}`
+                        return `${stockName}-${data?.type ? data?.type : 'נדחתה/בוטלה'}`
                       },
                     ],
                   },
@@ -403,7 +398,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   admin: {
                     width: '220px',
-                    disableListFilter: true,
+
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
@@ -432,12 +427,28 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'dualMeeting',
+                  type: 'relationship',
+                  relationTo: 'meetings',
+                  hasMany: false,
+                  label: 'אסיפה דואלית',
+                  admin: {
+                    readOnly: true,
+                    width: '50%',
+                    condition: (data) => Boolean(data?.dualMeeting),
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
                   name: 'location',
                   label: 'כתובת',
                   type: 'text',
                   admin: {
                     width: '50%',
-                    disableListFilter: true,
                   },
                 },
               ],
@@ -451,7 +462,6 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   admin: {
                     width: '50%',
-                    disableListFilter: true,
                   },
                 },
               ],
@@ -466,18 +476,11 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: 'auto',
                     condition: (siblingData) => siblingData.state === 'completed',
-                    disableListFilter: true,
                   },
                 },
                 {
                   name: 'electronicVotingEnabled',
                   label: 'האם מופיעה במערכת האלק׳?',
-                  type: 'checkbox',
-                  admin: { width: 'auto', disableListFilter: true },
-                },
-                {
-                  name: 'committeeInitiated',
-                  label: 'האם פיננסי דורש ועדה?',
                   type: 'checkbox',
                   admin: { width: 'auto', disableListFilter: true },
                 },
@@ -498,7 +501,6 @@ export const Meetings: CollectionConfig = {
                 plural: 'נושאים',
               },
               admin: {
-                disableListFilter: true,
                 initCollapsed: true,
                 components: {
                   RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
@@ -513,7 +515,6 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   required: true,
                   admin: {
-                    disableListFilter: true,
                     className: 'agendaText',
                     style: { minHeight: '37px' },
                   },
@@ -538,7 +539,6 @@ export const Meetings: CollectionConfig = {
                       ],
                       admin: {
                         width: '200px',
-                        disableListFilter: true,
                       },
                     },
                     {
@@ -551,7 +551,7 @@ export const Meetings: CollectionConfig = {
                       ],
                       admin: {
                         width: '200px',
-                        disableListFilter: true,
+
                         condition: (_, siblingData) => {
                           return siblingData.topicType === 'decision'
                         },
@@ -569,7 +569,6 @@ export const Meetings: CollectionConfig = {
                   type: 'group',
                   name: 'exceptionalRecommendation',
                   fields: [
-                    ...(votingRecommendationExceptional as Field[]),
                     {
                       type: 'row',
                       fields: [
@@ -578,8 +577,7 @@ export const Meetings: CollectionConfig = {
                           label: 'המלצה חריגה',
                           type: 'checkbox',
                           admin: {
-                            width: '20%',
-                            disableListFilter: true,
+                            width: '155px',
                           },
                         },
                         {
@@ -603,44 +601,50 @@ export const Meetings: CollectionConfig = {
                             }
                           },
                           admin: {
-                            disableListFilter: true,
-                            width: '80%',
+                            width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
                         },
                       ],
                     },
+                    ...(votingRecommendationExceptional as Field[]),
                   ],
                 },
                 {
-                  name: 'vPercentSpecial',
-                  label: 'אחוז הצבעה מיוחד',
-                  type: 'number',
-                  admin: {
-                    disableListFilter: true,
-                    hidden: true,
-                    step: 0.01,
-                    condition: (_, siblingData) =>
-                      siblingData.topicType === 'decision' &&
-                      siblingData.majorityType === 'privileged',
-                  },
-                },
-                {
-                  name: 'result',
-                  label: 'תוצאה',
-                  type: 'select',
-                  options: [
-                    { label: '---', value: '0' },
-                    { label: 'בעד', value: '1' },
-                    { label: 'נגד', value: '2' },
-                    { label: 'דיון', value: '3' },
-                  ],
-                  admin: {
-                    disableListFilter: true,
-                    condition: (value, siblingData) => {
-                      return siblingData.topicType === 'decision' && value?.state === 'completed'
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'result',
+                      label: 'החלטה',
+                      type: 'select',
+                      admin: {
+                        width: '30%',
+
+                        condition: (value, siblingData) =>
+                          siblingData.topicType === 'decision' && value?.state === 'completed',
+                      },
+                      options: [
+                        { label: '---', value: '0' },
+                        { label: 'בעד', value: '1' },
+                        { label: 'נגד', value: '2' },
+                        { label: 'דיון', value: '3' },
+                      ],
                     },
-                  },
+                    {
+                      name: 'vPercentSpecial',
+                      label: 'תוצאה באחוזים',
+                      type: 'number',
+                      admin: {
+                        width: '15%',
+
+                        step: 0.01,
+                        condition: (_, siblingData) =>
+                          siblingData.topicType === 'decision' &&
+                          siblingData.majorityType === 'privileged' &&
+                          siblingData.result,
+                      },
+                    },
+                  ],
                 },
               ],
             },
@@ -659,7 +663,6 @@ export const Meetings: CollectionConfig = {
               relationTo: 'research-documents',
               hasMany: true,
               admin: {
-                disableListFilter: true,
                 description:
                   'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
                 components: {
@@ -677,7 +680,6 @@ export const Meetings: CollectionConfig = {
               label: 'הצבעות',
               type: 'text',
               admin: {
-                disableListFilter: true,
                 readOnly: true,
                 width: '600px',
                 components: {
@@ -795,7 +797,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 allowCreate: false,
-                disableListFilter: true,
+
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported'],
               },
               where: {
@@ -825,7 +827,6 @@ export const Meetings: CollectionConfig = {
                 }
               },
               admin: {
-                disableListFilter: true,
                 readOnly: true,
               },
             },
@@ -888,7 +889,6 @@ export const Meetings: CollectionConfig = {
               hasMany: false,
               admin: {
                 hidden: true,
-                disableListFilter: true,
               },
               maxDepth: 1,
             },
@@ -947,16 +947,25 @@ export const Meetings: CollectionConfig = {
           if (stock?.isDual && stock?.dualStock) {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
-            // Remove fields that should be unique/regenerated
             delete dualMeeting.id
             delete dualMeeting.meetingId
-            // Set the dual stock
+            delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
 
             try {
-              await req.payload.create({
+              const createdDualMeeting = await req.payload.create({
                 collection: 'meetings',
                 data: dualMeeting,
+                context: { from: 'process' },
+              })
+
+              // Only update the original meeting with the relation
+              await req.payload.update({
+                collection: 'meetings',
+                id: doc.id,
+                data: {
+                  dualMeeting: createdDualMeeting.id,
+                },
                 context: { from: 'process' },
               })
             } catch (error) {
@@ -970,19 +979,27 @@ export const Meetings: CollectionConfig = {
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status == 'draft' &&
-          doc._status == 'published' &&
-          (!doc.meetings || doc.meetings.length == 0)
+          previousDoc?._status === 'draft' &&
+          doc._status === 'published' &&
+          (!doc.meetings || doc.meetings.length === 0)
 
         if (holdingsLimitChanged || stockChanged || firstPublish) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
+
+        // Sync recommendations with dual meeting if needed
+        if (
+          req.context?.from !== 'process' &&
+          req.context?.from !== 'migration' &&
+          operation === 'update'
+        ) {
+          await syncDualMeeting(req.payload, doc, previousDoc)
+        }
       },
       afterChangeDeleteResearchDocs,
     ],
-
     beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [
       handleRecommendationReason,

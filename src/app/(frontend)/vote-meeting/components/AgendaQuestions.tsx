@@ -23,6 +23,7 @@ interface AgendaQuestionsProps {
     topicIndex: number,
   ) => ValidationError | undefined
   topicIndex: number
+  isReadOnly?: boolean
 }
 
 export default function AgendaQuestions({
@@ -30,6 +31,7 @@ export default function AgendaQuestions({
   handleAgendaQuestionsChangeAction,
   getFieldErrorAction,
   topicIndex,
+  isReadOnly = false,
 }: AgendaQuestionsProps) {
   return (
     <div className="space-y-3 min-w-[300px]">
@@ -57,6 +59,7 @@ export default function AgendaQuestions({
             }
             isAgendaQuestion={true}
             hasExplanationError={hasExplanationError}
+            isReadOnly={isReadOnly}
           />
         )
       })}

@@ -24,6 +24,7 @@ import { Holdings } from '@/collections/holdings/Holdings'
 import { HoldingsFeed } from '@/collections/holdings/feeds/HoldingsFeed'
 import { StocksFeed } from './collections/stocks/feeds/StocksFeed'
 import { SilencedStocks } from '@/collections/silenced-stocks/SilencedStocks'
+import { impersonatePlugin } from './plugins/impersonate'
 import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
@@ -262,7 +263,7 @@ export default buildConfig({
     addAccess({
       rolesCollection: 'roles',
       permissionsField: 'permissions',
-      excludedCollections: [],
+      excludedCollections: ['users'],
     }),
     addAuthorsFields({
       excludedCollections: [],
@@ -283,6 +284,28 @@ export default buildConfig({
       options: {
         apiEndpoint: process.env.GCS_ENDPOINT,
         projectId: process.env.GCS_PROJECT_ID,
+      },
+    }),
+    impersonatePlugin({
+      enabled: true,
+      authCollection: 'users',
+      // Labels are now centralized in the plugin itself
+      onImpersonate: async ({ req, impersonateUserId }) => {
+        const { user: originalUser } = req
+
+        // Log impersonation action
+        console.log(`🎭 Impersonation started:`, {
+          originalUser: originalUser?.email,
+          targetUser: impersonateUserId,
+          timestamp: new Date().toISOString(),
+          ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        })
+      },
+      onUnImpersonate: async ({ req, originalUserId }) => {
+        console.log(`✅ Impersonation ended:`, {
+          returnedToUser: originalUserId,
+          timestamp: new Date().toISOString(),
+        })
       },
     }),
   ],

@@ -23,7 +23,7 @@ export const AdminNotifications: CollectionConfig = {
   },
   custom: {
     filterList: [
-      ['createdAt', 'readStatus']
+      ['type','createdAt', 'readStatus']
     ],
   },
   fields: [
@@ -32,6 +32,43 @@ export const AdminNotifications: CollectionConfig = {
       label: 'הודעה',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'type',
+      label: 'סוג התראה',
+      type: 'select',
+      interfaceName:'AdminNotificationType',
+      options: [
+        {
+          label: 'כללי',
+          value: 'general',
+        },
+        {
+          label: 'פיד מערכת',
+          value: 'predictaFeed',
+        },
+        {
+          label: 'משתמש חדש',
+          value: 'userCreated',
+        },
+        {
+          label: 'שינוי הרשאות משתמש',
+          value: 'userPermissionsChanged',
+        },
+        {
+          label: 'חברה לא דיווחה אחזקות',
+          value: 'companyNotReportedHoldings',
+        },
+        {
+          label: 'חברה לא הצביעה באסיפה',
+          value: 'companyNotVotedMeetingNextDay',
+        },
+        {
+          label: 'הצבעה חדשה לאחר מועד קובע',
+          value: 'newVoteAfterHoldingLimit',
+        }
+      ],
+      defaultValue: 'general',
     },
     {
       name: 'url',

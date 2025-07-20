@@ -69,8 +69,8 @@ const buildWhereClause = (
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
-        let from: Date | null = null
-        let to: Date | null = null
+        let from: Date | undefined;
+        let to: Date | undefined;
 
         if (dateValue.predefinedValue) {
           const locale = isHebrew ? 'he' : 'en'
@@ -143,6 +143,7 @@ const QuickFilter = ({
   const { i18n } = useTranslation()
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
+    if (typeof window == 'undefined') return {}
     try {
       const item = window.localStorage.getItem(localStorageKey)
       if (!item) {

@@ -274,11 +274,11 @@ export const Votes: CollectionConfig = {
           ],
         },
         {
-          label: 'דווח',
+          label: 'הצבעה בפועל',
           fields: [
             {
               name: 'reported',
-              label: 'דווח',
+              label: 'הצבעה בפועל',
               type: 'checkbox',
               defaultValue: false,
             },
@@ -357,9 +357,10 @@ export const Votes: CollectionConfig = {
                 await createAdminNotification(
                   req.payload,
                   message,
+                  'newVoteAfterHoldingLimit',
                   url,
                   relatedCompany as string,
-                  req?.user?.id,
+                  req?.user?.id
                 )
               }
             }

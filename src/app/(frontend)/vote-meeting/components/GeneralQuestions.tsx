@@ -17,12 +17,14 @@ interface GeneralQuestionsProps {
     type: 'general',
     topicIndex?: number,
   ) => ValidationError | undefined
+  isReadOnly?: boolean
 }
 
 export default function GeneralQuestions({
   generalVotingData,
   onQuestionChangeAction,
   getFieldErrorAction,
+  isReadOnly = false,
 }: GeneralQuestionsProps) {
   return (
     <div className="space-y-4">
@@ -49,8 +51,9 @@ export default function GeneralQuestions({
               onValueChangeAction={(value, explanation) =>
                 onQuestionChangeAction(questionId, value, explanation)
               }
-              isAgendaQuestion={false} // זהות לשאלות כלליות
+              isAgendaQuestion={false}
               hasExplanationError={hasExplanationError}
+              isReadOnly={isReadOnly}
             />
           )
         })}

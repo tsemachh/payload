@@ -6,6 +6,7 @@ import { Notifications } from '@/components/notifications'
 import { AuthProvider } from '@/providers/auth-provider'
 import { HeaderWithNav } from './components/header-with-nav'
 import { CompaniesProvider } from './context/companiesContext'
+import { ImpersonationProvider } from '@/plugins/impersonate/components'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body className={`useTw ${inter.className}`} suppressHydrationWarning>
         <AuthProvider>
+          <ImpersonationProvider checkInterval={600000}>
           <CompaniesProvider>
             <ThemeProvider
               attribute="class"
@@ -39,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Notifications />
             </ThemeProvider>
           </CompaniesProvider>
+          </ImpersonationProvider>
         </AuthProvider>
       </body>
     </html>
