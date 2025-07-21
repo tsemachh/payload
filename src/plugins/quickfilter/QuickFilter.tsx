@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
-import { getTranslation } from '@payloadcms/translations'
+import { getTranslation, rtlLanguages } from '@payloadcms/translations'
 import FilterField from './FilterField'
+import { getLabel, SupportedLocale } from './labels'
 import type {
   CheckboxFilterState,
   DateFilterValue,
@@ -15,10 +16,7 @@ import type {
 import { groupFiltersByRow, parseColumns } from './filters/utils/layout-helpers'
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  futureDateFilterOptions,
-  pastDateFilterOptions,
-} from './filters/constants/date-filter-options'
+import { getDateFilterOptions } from './filters/constants/date-filter-options'
 import { getDateRangeForOption } from './filters/utils/date-helpers'
 import { isEqual } from 'lodash'
 
@@ -60,7 +58,7 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
 const buildQuickFilterConditions = (
   values: Record<string, any>,
   fieldDefs: FilterDetaild[],
-  isHebrew: boolean,
+  locale: SupportedLocale,
 ): Record<string, any>[] => {
   const conditions: Record<string, any>[] = []
 
@@ -78,7 +76,6 @@ const buildQuickFilterConditions = (
         let to: Date | undefined
 
         if (dateValue.predefinedValue) {
-          const locale = isHebrew ? 'he' : 'en'
           const range = getDateRangeForOption(dateValue.predefinedValue, locale)
           from = range.from
           to = range.to
@@ -236,6 +233,8 @@ const QuickFilter = ({
   const { refineListData, query } = useListQuery()
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
+  const locale = i18n.language as SupportedLocale
+  const isRTL = (rtlLanguages as readonly string[]).includes(i18n.language)
 
   const isSyncingFromQuery = useRef(false)
 
@@ -324,8 +323,7 @@ const QuickFilter = ({
 
     if (fields.length === 0) return
 
-    const isHebrew = i18n.language === 'he'
-    const quickFilterConditions = buildQuickFilterConditions(filterValues, fields, isHebrew)
+    const quickFilterConditions = buildQuickFilterConditions(filterValues, fields, locale)
     const quickFilterFieldNames = new Set(fields.map((f) => f.name))
     const otherFilters = cleanWhereClause(query.where, quickFilterFieldNames)
 
@@ -389,8 +387,7 @@ const QuickFilter = ({
   // This function remains largely the same.
   const getActiveFiltersDetails = () => {
     const activeFilters: string[] = []
-    const isHebrew = i18n.language === 'he'
-
+    const locale=i18n.language as SupportedLocale
     Object.entries(filterValues).forEach(([fieldName, value]) => {
       const field = fields.find((f) => f.name === fieldName)
       if (!field) return
@@ -402,11 +399,12 @@ const QuickFilter = ({
             let dateDescription = ''
 
             if (dateValue.type === 'predefined' && dateValue.predefinedValue) {
-              const allOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              const { pastOptions, futureOptions } = getDateFilterOptions(locale)
+              const allOptions = [...pastOptions, ...futureOptions]
               const option = allOptions.find((opt) => opt.value === dateValue.predefinedValue)
-              dateDescription = option ? option.label : isHebrew ? 'מותאם אישית' : 'Custom'
+              dateDescription = option ? option.label : getLabel('custom', locale)
             } else if (dateValue.type === 'custom' || dateValue.customRange) {
-              dateDescription = isHebrew ? 'מותאם אישית' : 'Custom'
+              dateDescription = getLabel('custom', locale)
             }
 
             if (dateDescription) {
@@ -420,7 +418,7 @@ const QuickFilter = ({
             const count = selectValue.selectedValues.length
             const totalOptions = field.options?.length || 0
             if (selectValue.selectedValues.length === totalOptions) {
-              activeFilters.push(`${field.label} (${isHebrew ? 'הכל' : 'All'})`)
+              activeFilters.push(`${field.label} (${getLabel('all', locale)})`)
             } else {
               activeFilters.push(`${field.label} (${count})`)
             }
@@ -430,7 +428,7 @@ const QuickFilter = ({
         case 'checkbox':
           if (value !== 'indeterminate') {
             const checkboxValue =
-              value === 'checked' ? (isHebrew ? 'כן' : 'Yes') : isHebrew ? 'לא' : 'No'
+              value === 'checked' ? getLabel('yes', locale) : getLabel('no', locale)
             activeFilters.push(`${field.label} (${checkboxValue})`)
           }
           break
@@ -467,7 +465,6 @@ const QuickFilter = ({
 
   const activeFiltersDetails = getActiveFiltersDetails()
   const hasActiveFilters = activeFiltersDetails.length > 0
-  const isHebrew = i18n.language === 'he'
 
   if (!fields.length) return null
 
@@ -488,9 +485,7 @@ const QuickFilter = ({
             <>
               <span className="text-sm truncate">
                 <strong>
-                  {isHebrew
-                    ? `${activeFiltersDetails.length === 1 ? 'סינון פעיל בעמודה' : 'סינון פעיל בעמודות'}: `
-                    : `${activeFiltersDetails.length === 1 ? 'Active filter on column' : 'Active filters on columns'}: `}
+                  {`${activeFiltersDetails.length === 1 ? getLabel('activeFilterSingular', locale) : getLabel('activeFilterPlural', locale)}: `}
                 </strong>{' '}
                 {activeFiltersDetails.join(' • ')}
               </span>
@@ -506,7 +501,7 @@ const QuickFilter = ({
               </span>
             </>
           ) : (
-            <span className="text-sm truncate">{isHebrew ? 'סינון מהיר' : 'Quick Filters'}</span>
+            <span className="text-sm truncate">{getLabel('quickFilters', locale)}</span>
           )}
 
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import type { CheckboxFilterState, Locale } from '@/types/filter-types'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { getLabel } from '../../labels'
 
 interface CheckboxFilterProps {
   label?: string
@@ -28,7 +29,7 @@ export function CheckboxFilter({
 }: CheckboxFilterProps) {
   const [internalState, setInternalState] = useState<CheckboxFilterState>(value)
 
-  const isHebrew = locale.code === 'he'
+  const isRTL = locale.direction === 'rtl'
 
   // Sync internal state with external value prop
   useEffect(() => {
@@ -48,14 +49,14 @@ export function CheckboxFilter({
   const isActive = internalState === 'checked' || internalState === 'unchecked'
 
   const labels_toggle = {
-    yes: isHebrew ? 'כן' : 'Yes',
-    no: isHebrew ? 'לא' : 'No',
+    yes: getLabel('yes', locale.code),
+    no: getLabel('no', locale.code),
   }
 
   return (
     <div className={cn('space-y-1', className)} dir={locale.direction} style={style}>
       {label && (
-        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+        <Label className={cn('useTw text-sm font-medium', isRTL && 'text-right block')}>
           {label}
         </Label>
       )}
@@ -103,7 +104,7 @@ export function CheckboxFilter({
           <Label
             className={cn(
               'useTw cursor-pointer select-none text-sm',
-              isHebrew && 'text-right',
+              isRTL && 'text-right',
               locale.direction === 'rtl' && 'order-2',
             )}
           >
