@@ -183,21 +183,13 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
 
       {funds.length > 0 && (
         <div className="w-full max-w-4xl overflow-x-auto">
-          <table className="w-full border-collapse bg-white rounded-lg shadow-sm">
+          <table className="w-full border-collapse bg-white rounded-lg shadow-sm text-sm">
             <thead>
-              <tr className="bg-gray-200 border-b border-gray-200">
-                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
-                  שם תיק
-                </th>
-                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
-                  ערך נקוב במערכת
-                </th>
-                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
-                  אימות אחזקות
-                </th>
-                <th className="px-6 py-6 text-right text-base font-semibold text-gray-500">
-                  ערך נקוב ברשות
-                </th>
+              <tr className="bg-[#f5f5f5] text-[#a0a0a0] font-normal">
+                <th className="px-6 py-3 text-right font-semibold">שם תיק</th>
+                <th className="px-6 py-3 text-right font-semibold">ערך נקוב במערכת</th>
+                <th className="px-6 py-3 text-right font-semibold">אימות אחזקות</th>
+                <th className="px-6 py-3 text-right font-semibold">ערך נקוב ברשות</th>
               </tr>
             </thead>
             <tbody>
@@ -205,23 +197,21 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
                 <tr
                   key={fund.id}
                   className={`
-  border-b border-gray-100 transition-colors duration-200 h-20
-  ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-200 hover:bg-gray-250'}
-`}
+                border-b border-gray-100 transition-colors duration-200 h-12
+                ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-[#f5f5f5] hover:bg-gray-200'}
+              `}
                 >
-                  <td className="px-6 py-6 text-base text-gray-900 font-medium align-top">
-                    {fund.name}
-                  </td>
-                  <td className="px-6 py-6 text-base text-gray-700 align-top">
+                  <td className="px-6 py-2 text-gray-900 font-medium align-middle">{fund.name}</td>
+                  <td className="px-6 py-2 text-gray-700 align-middle">
                     {fund.quantity.toLocaleString()}
                   </td>
-                  <td className="px-6 py-6 align-top min-w-[150px]">
+                  <td className="px-6 py-2 align-middle min-w-[140px]">
                     <CheckboxFilter
                       value={fund.isAuthorized}
                       onChange={(state) => handleCheckboxChange(fund.id, state)}
                     />
                   </td>
-                  <td className="w-48 p-0 text-center align-middle">
+                  <td className="w-48 pl-2 text-center align-middle">
                     {fund.isAuthorized === 'unchecked' && (
                       <div>
                         <input
@@ -229,10 +219,10 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
                           value={updatedHoldings[fund.id] ?? ''}
                           onChange={(e) => handleInputChange(fund.id, e.target.value)}
                           className={`
-    mx-auto w-32 px-2 py-1 text-base text-right border rounded-md
-    focus:outline-none focus:ring-2
-    ${!updatedHoldings[fund.id] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-  `}
+                        mx-auto w-32 px-2 py-1 text-right text-base border rounded-md
+                        focus:outline-none focus:ring-2
+                        ${!updatedHoldings[fund.id] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                      `}
                           placeholder="הכנס ערך"
                           dir="rtl"
                         />
