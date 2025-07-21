@@ -44,6 +44,9 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       try {
         const companyQuery = {
           where: { id: { equals: company } },
+          select: {
+            subCompanies: true,
+          },
           depth: 1,
           limit: 1,
         }
@@ -55,10 +58,15 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         }
 
         const companyData = await companyResponse.json()
+        console.log('---companyData', companyData)
+
         const subCompanies = companyData.docs[0]?.subCompanies || []
 
         const meetingQuery = {
           where: { id: { equals: meeting } },
+          select: {
+            fundsWithHolding: true,
+          },
           depth: 0,
           limit: 1,
         }
@@ -70,6 +78,7 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         }
 
         const meetingData = await meetingResponse.json()
+        console.log('---meetingData', meetingData)
         const fundsWithHolding = meetingData.docs[0]?.fundsWithHolding || []
 
         const fundsWithHoldings = subCompanies
