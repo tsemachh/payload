@@ -69,8 +69,8 @@ const buildWhereClause = (
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
-        let from: Date | undefined;
-        let to: Date | undefined;
+        let from: Date | undefined
+        let to: Date | undefined
 
         if (dateValue.predefinedValue) {
           const locale = isHebrew ? 'he' : 'en'
@@ -279,12 +279,22 @@ const QuickFilter = ({
         case 'select': {
           const selectValue = value as SelectFilterValue
           if (selectValue && selectValue.selectedValues && selectValue.selectedValues.length > 0) {
-            const count = selectValue.selectedValues.length
             const totalOptions = field.options?.length || 0
+
             if (selectValue.selectedValues.length === totalOptions) {
               activeFilters.push(`${field.label} (${isHebrew ? 'הכל' : 'All'})`)
+            } else if (selectValue.selectedValues.length === 1) {
+              // Show the actual option name when only one is selected
+              const selectedOption = field.options?.find(
+                (opt: any) => opt.value === selectValue.selectedValues[0],
+              )
+              const optionLabel = selectedOption
+                ? selectedOption.label
+                : selectValue.selectedValues[0]
+              activeFilters.push(`${field.label} (${optionLabel})`)
             } else {
-              activeFilters.push(`${field.label} (${count})`)
+              // Show count for multiple selections
+              activeFilters.push(`${field.label} (${selectValue.selectedValues.length})`)
             }
           }
           break
