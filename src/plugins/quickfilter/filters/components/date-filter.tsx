@@ -10,12 +10,10 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import type { DateFilterValue, DateRange, Locale } from '@/types/filter-types'
 import {
-  futureDateFilterOptions,
-  futureDateFilterOptionsEn,
-  pastDateFilterOptions,
-  pastDateFilterOptionsEn,
+  getDateFilterOptions
 } from '../constants/date-filter-options'
 import { formatDate, getDateRangeForOption } from '../utils/date-helpers'
+import { getLabel, SupportedLocale } from '../../labels'
 
 interface DateFilterProps {
   label?: string
@@ -41,9 +39,9 @@ export function DateFilter({
   const [openFromCalendar, setOpenFromCalendar] = useState(false)
   const [openToCalendar, setOpenToCalendar] = useState(false)
 
-  const isHebrew = locale.code === 'he'
-  const pastOptions = isHebrew ? pastDateFilterOptions : pastDateFilterOptionsEn
-  const futureOptions = isHebrew ? futureDateFilterOptions : futureDateFilterOptionsEn
+  const isRTL = locale.direction === 'rtl'
+  const localeCode = locale.code as SupportedLocale
+  const { pastOptions, futureOptions } = getDateFilterOptions(localeCode)
 
   // Sync internal state with external value prop
   useEffect(() => {
@@ -54,15 +52,15 @@ export function DateFilter({
   }, [value])
 
   const labels = {
-    selectOption: isHebrew ? 'בחר אפשרות' : 'Select Option',
-    from: isHebrew ? 'מתאריך' : 'From',
-    to: isHebrew ? 'עד תאריך' : 'To',
-    selectDate: isHebrew ? 'בחר תאריך' : 'Select Date',
-    past: isHebrew ? 'עבר' : 'Past',
-    future: isHebrew ? 'עתיד' : 'Future',
-    custom: isHebrew ? 'טווח מותאם אישית' : 'Custom Range',
-    apply: isHebrew ? 'החל' : 'Apply',
-    cancel: isHebrew ? 'ביטול' : 'Cancel',
+    selectOption: getLabel('selectOption', localeCode),
+    from: getLabel('from', localeCode),
+    to: getLabel('to', localeCode),
+    selectDate: getLabel('selectDate', localeCode),
+    past: getLabel('past', localeCode),
+    future: getLabel('future', localeCode),
+    custom: getLabel('customRange', localeCode),
+    apply: getLabel('apply', localeCode),
+    cancel: getLabel('cancel', localeCode),
   }
 
   const handlePredefinedSelect = (optionValue: string) => {
@@ -142,7 +140,7 @@ export function DateFilter({
 
   const formatDateRange = (description: string) => {
     // Check if description contains a date range (has " - " in it)
-    if (description.includes(' - ') && isHebrew) {
+    if (description.includes(' - ') && isRTL) {
       // Split by " - " and reverse the order for RTL
       const parts = description.replace(/[()]/g, '').split(' - ')
       if (parts.length === 2) {
@@ -162,7 +160,7 @@ export function DateFilter({
         variant="ghost"
         className={cn(
           ' w-full h-auto py-1 px-2 text-xs leading-tight justify-start',
-          isHebrew ? ' text-right' : ' text-left',
+          isRTL ? ' text-right' : ' text-left',
           internalValue?.predefinedValue === option.value && 'bg-accent',
         )}
         onClick={() => handlePredefinedSelect(option.value)}
@@ -180,7 +178,7 @@ export function DateFilter({
   return (
     <div className={cn('useTw space-y-1', className)} dir={locale.direction} style={style}>
       {label && (
-        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+        <Label className={cn('useTw text-sm font-medium', isRTL && 'text-right block')}>
           {label}
         </Label>
       )}
@@ -194,7 +192,7 @@ export function DateFilter({
               aria-expanded={isOpen}
               className="useTw w-full justify-between bg-background relative min-w-70"
             >
-              <span className={`useTw truncate ${isHebrew && 'text-right'}`}>
+              <span className={`useTw truncate ${isRTL && 'text-right'}`}>
                 {getDisplayValue()}
               </span>
               <ChevronDown className="useTw h-4 w-4 shrink-0 opacity-50" />
@@ -208,7 +206,7 @@ export function DateFilter({
                   <div
                     className={cn(
                       'text-sm font-semibold text-muted-foreground mb-2',
-                      isHebrew && 'text-right',
+                      isRTL && 'text-right',
                     )}
                   >
                     {labels.future}
@@ -225,7 +223,7 @@ export function DateFilter({
                   <div
                     className={cn(
                       'text-sm font-semibold text-muted-foreground mb-2',
-                      isHebrew && 'text-right',
+                      isRTL && 'text-right',
                     )}
                   >
                     {labels.past}
@@ -247,7 +245,7 @@ export function DateFilter({
                   className={cn(
                     'useTw w-full justify-start h-auto py-2 px-2',
                     (showCustom || internalValue?.type === 'custom') && 'bg-accent',
-                    isHebrew && 'justify-start text-right',
+                    isRTL && 'justify-start text-right',
                   )}
                   onClick={handleCustomSelect}
                 >
@@ -263,7 +261,7 @@ export function DateFilter({
                         <Label
                           className={cn(
                             'useTw text-xs w-[20%]',
-                            isHebrew && 'text-right text-start',
+                            isRTL && 'text-right',
                           )}
                         >
                           {labels.from}
@@ -304,8 +302,8 @@ export function DateFilter({
                       <div className={cn('flex items-center gap-2')}>
                         <Label
                           className={cn(
-                            'useTw useTw text-xs w-[20%]',
-                            isHebrew && 'text-right text-strat',
+                            'useTw text-xs w-[20%]',
+                            isRTL && 'text-right',
                           )}
                         >
                           {labels.to}
@@ -368,7 +366,7 @@ export function DateFilter({
         </Popover>
         {hasValue() && (
           <button
-            className={`useTw absolute ${isHebrew ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted rounded-sm flex items-center justify-center z-10 `}
+            className={`useTw absolute ${isRTL ? 'left-8' : 'right-8'} top-1/2 -translate-y-1/2 h-4 w-4 p-0 hover:bg-muted rounded-sm flex items-center justify-center z-10 `}
             onClick={(e) => {
               e.stopPropagation()
               handleClearAll()
