@@ -1,8 +1,8 @@
 import { ValidationError, type CollectionConfig } from 'payload'
-import { addDays, isSameDay } from '@/utils/dateUtils'
+import { addDays } from '@/utils/dateUtils'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 
-import { Meeting } from '@/payload-types'
+import { Meeting, TopicVote} from '@/payload-types'
 
 import {
   getVoteByMeetingAndCompanies,
@@ -91,15 +91,20 @@ export const Votes: CollectionConfig = {
                     afterRead: [
                       async ({ data, req }) => {
                         if (data?.company && typeof data.company === 'string') {
-                          const company = await req.payload.findByID({
-                            collection: 'companies',
-                            select: {
-                              name: true,
-                            },
-                            id: data.company,
-                            depth: 0,
-                          })
-                          return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                          try {
+                            const company = await req.payload.findByID({
+                              collection: 'companies',
+                              select: {
+                                name: true,
+                              },
+                              id: data.company,
+                              depth: 0,
+                            })
+                            return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                          } catch (error) {
+                            // Handle case when company is not found
+                            return `הצבעה ללא שם חברה`
+                          }
                         }
                       },
                     ],
@@ -110,6 +115,48 @@ export const Votes: CollectionConfig = {
             {
               type: 'row',
               fields: [
+                {
+                  name: 'checksum',
+                  type: 'text',
+                  hooks: {
+                    afterRead: [
+                      async ({ data }) => {
+                        if (!data) return null;
+
+                        // Create a string representation of the fields to compute checksum
+                        const checksumData = {
+                          // Basic fields
+                          isInterested: data.isInterested || false,
+                          isSeniorOfficial: data.isSeniorOfficial || false,
+                          isInstitutionalInvestor: data.isInstitutionalInvestor || false,
+
+                          // Votes array fields
+                          votes: (data.votes || []).map((vote: NonNullable<TopicVote>[number]) => ({
+                            topicIndex: vote.topicIndex,
+                            voteDecision: vote.voteDecision,
+                            hasConflictOfInterest: vote.hasConflictOfInterest || false,
+                            isRelatedParty: vote.isRelatedParty || false,
+                            isInvestmentCommittee: vote.isInvestmentCommittee || false,
+                            hasPersonalInterest: vote.hasPersonalInterest || false
+                          }))
+                        };
+
+                        // Convert to string and create a simple hash
+                        const checksumString = JSON.stringify(checksumData);
+
+                        // Create a simple hash from the string
+                        let hash = 0;
+                        for (let i = 0; i < checksumString.length; i++) {
+                          const char = checksumString.charCodeAt(i);
+                          hash = ((hash << 5) - hash) + char;
+                          hash = hash & hash; // Convert to 32bit integer
+                        }
+
+                        return hash.toString(16); // Return as hex string
+                      },
+                    ],
+                  },
+                },
                 {
                   name: 'isInterested',
                   label: 'בעל עניין',
@@ -154,6 +201,7 @@ export const Votes: CollectionConfig = {
                 singular: 'נושא',
                 plural: 'נושאים',
               },
+              interfaceName: 'TopicVote',
               admin: {
                 components: {
                   RowLabel: {
