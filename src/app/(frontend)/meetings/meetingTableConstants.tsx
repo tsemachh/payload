@@ -307,14 +307,14 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     ],
     render: (row) =>
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
-    minWidth: 50,
+    minWidth: 100,
   },
   {
     key: 'researchDocuments',
     header: 'מחקר',
     type: 'other',
     filterable: false,
-    minWidth: 50,
+    minWidth: 60,
     render: (row) => (
       <div className="flex gap-2">
         {row.researchDocuments.length > 0 && (
@@ -354,7 +354,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
-    minWidth: 50,
+    minWidth: 70,
   },
   {
     key: 'electronicVotingEnabled',
@@ -363,7 +363,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
-    minWidth: 50,
+    minWidth: 70,
   },
   {
     key: 'committeeInitiated',
@@ -372,7 +372,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
-    minWidth: 50,
+    minWidth: 70,
   },
 ]
 export const defaultVisibleColumns = [
