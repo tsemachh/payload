@@ -2,7 +2,7 @@ import { ValidationError, type CollectionConfig } from 'payload'
 import { addDays } from '@/utils/dateUtils'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 
-import { Meeting, TopicVote} from '@/payload-types'
+import { Meeting, TopicVote, Vote } from '@/payload-types'
 
 import {
   getVoteByMeetingAndCompanies,
@@ -11,6 +11,44 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
+
+function calculateCheckSum(data: Vote) {
+  // Create a string representation of the fields to compute checksum
+  const checksumData = {
+    // Basic fields
+    isInterested: data.isInterested || false,
+    isSeniorOfficial: data.isSeniorOfficial || false,
+    isInstitutionalInvestor: data.isInstitutionalInvestor || false,
+    interestedExplanation: data.interestedExplanation || null,
+    seniorOfficialExplanation: data.seniorOfficialExplanation || null,
+
+    // Votes array fields
+    votes: (data.votes || []).map((vote: NonNullable<TopicVote>[number]) => ({
+      topicIndex: vote.topicIndex,
+      voteDecision: vote.voteDecision,
+      hasConflictOfInterest: vote.hasConflictOfInterest || false,
+      isRelatedParty: vote.isRelatedParty || false,
+      isInvestmentCommittee: vote.isInvestmentCommittee || false,
+      hasPersonalInterest: vote.hasPersonalInterest || false,
+      relatedPartyExplanation: vote.relatedPartyExplanation || null,
+      conflictOfInterestExplanation: vote.conflictOfInterestExplanation || null,
+      personalInterestExplanation: vote.personalInterestExplanation || null,
+    })),
+  }
+
+  // Convert to string and create a simple hash
+  const checksumString = JSON.stringify(checksumData)
+
+  // Create a simple hash from the string
+  let hash = 0
+  for (let i = 0; i < checksumString.length; i++) {
+    const char = checksumString.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+
+  return hash.toString(16) // Return as hex string
+}
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -121,38 +159,8 @@ export const Votes: CollectionConfig = {
                   hooks: {
                     afterRead: [
                       async ({ data }) => {
-                        if (!data) return null;
-
-                        // Create a string representation of the fields to compute checksum
-                        const checksumData = {
-                          // Basic fields
-                          isInterested: data.isInterested || false,
-                          isSeniorOfficial: data.isSeniorOfficial || false,
-                          isInstitutionalInvestor: data.isInstitutionalInvestor || false,
-
-                          // Votes array fields
-                          votes: (data.votes || []).map((vote: NonNullable<TopicVote>[number]) => ({
-                            topicIndex: vote.topicIndex,
-                            voteDecision: vote.voteDecision,
-                            hasConflictOfInterest: vote.hasConflictOfInterest || false,
-                            isRelatedParty: vote.isRelatedParty || false,
-                            isInvestmentCommittee: vote.isInvestmentCommittee || false,
-                            hasPersonalInterest: vote.hasPersonalInterest || false
-                          }))
-                        };
-
-                        // Convert to string and create a simple hash
-                        const checksumString = JSON.stringify(checksumData);
-
-                        // Create a simple hash from the string
-                        let hash = 0;
-                        for (let i = 0; i < checksumString.length; i++) {
-                          const char = checksumString.charCodeAt(i);
-                          hash = ((hash << 5) - hash) + char;
-                          hash = hash & hash; // Convert to 32bit integer
-                        }
-
-                        return hash.toString(16); // Return as hex string
+                        if (!data) return null
+                        return calculateCheckSum(data as Vote)
                       },
                     ],
                   },
