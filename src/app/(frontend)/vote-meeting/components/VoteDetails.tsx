@@ -8,7 +8,7 @@ interface VoteDetailsProps {
   isReadOnly?: boolean
 }
 
-export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetailsProps) {
+export default function VoteDetails({ meetingData, isReadOnly = false }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
   const hasResearchDocuments = meetingData.researchDocuments
 
@@ -59,7 +59,7 @@ export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetai
           <div className="flex justify-between">
             <span className="text-muted-foreground font-medium  w-[100px]">חברה</span>
             <TruncatedText
-              text={`${meetingData.companyName} ${meetingData.committeeInitiated&&', נדרשת ועדה'}`}
+              text={`${meetingData.companyName}${meetingData.committeeInitiated ? ', פינ׳ נדרשת ועדה' : ""}`}
               className="text-foreground w-full"
             />
           </div>
