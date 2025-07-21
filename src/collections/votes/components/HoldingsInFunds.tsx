@@ -71,7 +71,6 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
 
         const meetingData = await meetingResponse.json()
         const fundsWithHolding = meetingData.docs[0]?.fundsWithHolding || []
-        console.log('Fetched fundsWithHolding:', fundsWithHolding)
 
         const fundsWithHoldings = subCompanies
           .map((subCo: { id: any; name: any }) => {
@@ -88,7 +87,6 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
           })
           .filter((fund: Fund) => fund.quantity > 0)
 
-        console.log('Mapped funds with holdings:', fundsWithHoldings)
         setFunds(fundsWithHoldings)
 
         const initialUpdatedHoldings: Record<string, string> = {}
@@ -102,13 +100,11 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
               value[fund.id] && value[fund.id].ownedQuantity != null
                 ? String(value[fund.id].ownedQuantity)
                 : ''
-            initialErrors[fund.id] = value[fund.id].ownedQuantity ? null : 'חובה להזין ערך'
+            initialErrors[fund.id] = null
           } else {
             initialErrors[fund.id] = null
           }
         })
-        console.log('Initial updatedHoldings:', initialUpdatedHoldings)
-        console.log('Initial errors:', initialErrors)
         setUpdatedHoldings(initialUpdatedHoldings)
         setErrors(initialErrors)
       } catch (err) {
@@ -116,7 +112,6 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         setError('שגיאה בטעינת נתונים')
       } finally {
         setLoading(false)
-        console.log('Loading finished, loading:', false)
       }
     }
 
@@ -137,12 +132,10 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
             : fund.quantity,
       }
     })
-    console.log('Updating JSON field with newValue:', newValue)
     setValue(newValue)
   }, [funds, updatedHoldings])
 
   const handleCheckboxChange = (fundId: string, state: CheckboxFilterState) => {
-    console.log('Checkbox changed for fund:', fundId, 'to state:', state)
     setFunds((prev) =>
       prev.map((fund) => (fund.id === fundId ? { ...fund, isAuthorized: state } : fund)),
     )
@@ -151,25 +144,21 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       setUpdatedHoldings((prev) => {
         const newHoldings = { ...prev }
         delete newHoldings[fundId]
-        console.log('Removed holding for fund:', fundId, 'newHoldings:', newHoldings)
         return newHoldings
       })
       setErrors((prev) => {
         const newErrors = { ...prev, [fundId]: null }
-        console.log('Cleared error for fund:', fundId, 'newErrors:', newErrors)
         return newErrors
       })
     } else {
       setErrors((prev) => {
-        const newErrors = { ...prev, [fundId]: updatedHoldings[fundId] ? null : 'חובה להזין ערך' }
-        console.log('Set error for fund:', fundId, 'newErrors:', newErrors)
+        const newErrors = { ...prev, [fundId]: null }
         return newErrors
       })
     }
   }
 
   const handleInputChange = (fundId: string, inputValue: string) => {
-    console.log('Input changed for fund:', fundId, 'value:', inputValue)
     if (inputValue === '' || /^-?\d*\.?\d*$/.test(inputValue)) {
       setUpdatedHoldings((prev) => ({
         ...prev,
@@ -177,11 +166,8 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       }))
       setErrors((prev) => ({
         ...prev,
-        [fundId]: inputValue ? null : 'חובה להזין ערך',
+        [fundId]: null,
       }))
-      console.log('Updated holdings for fund:', fundId, 'new value:', inputValue)
-    } else {
-      console.log('Invalid input for fund:', fundId, 'value:', inputValue)
     }
   }
 
@@ -229,34 +215,27 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
                   <td className="px-6 py-6 text-base text-gray-700 align-top">
                     {fund.quantity.toLocaleString()}
                   </td>
-                  <td className="px-6 py-6 align-top">
+                  <td className="px-6 py-6 align-top min-w-[150px]">
                     <CheckboxFilter
                       value={fund.isAuthorized}
                       onChange={(state) => handleCheckboxChange(fund.id, state)}
                     />
                   </td>
-                  <td className="px-6 py-6 align-top w-48">
+                  <td className="w-48 p-0 text-center align-middle">
                     {fund.isAuthorized === 'unchecked' && (
-                      <div className="space-y-1">
+                      <div>
                         <input
                           type="text"
                           value={updatedHoldings[fund.id] ?? ''}
                           onChange={(e) => handleInputChange(fund.id, e.target.value)}
                           className={`
-                            w-32 px-3 py-2 text-base text-right border rounded-md
-                            focus:outline-none focus:ring-2 focus:ring-blue-500
-                            ${
-                              errors[fund.id]
-                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:border-blue-500'
-                            }
-                          `}
+    mx-auto w-32 px-2 py-1 text-base text-right border rounded-md
+    focus:outline-none focus:ring-2
+    ${!updatedHoldings[fund.id] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+  `}
                           placeholder="הכנס ערך"
                           dir="rtl"
                         />
-                        {errors[fund.id] && (
-                          <p className="text-red-600 text-sm mt-1">{errors[fund.id]}</p>
-                        )}
                       </div>
                     )}
                   </td>
