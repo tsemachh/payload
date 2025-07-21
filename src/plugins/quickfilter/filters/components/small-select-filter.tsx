@@ -21,6 +21,7 @@ interface SmallSelectFilterProps {
   className?: string
   multiSelect?: boolean
   maxOptions?: number
+  style?: React.CSSProperties
 }
 
 export function SmallSelectFilter({
@@ -32,6 +33,7 @@ export function SmallSelectFilter({
   className,
   multiSelect = true,
   maxOptions = 3,
+  style
 }: SmallSelectFilterProps) {
   const [internalValue, setInternalValue] = useState<SelectFilterValue>(
     value || { type: 'none', selectedValues: [] },
@@ -106,7 +108,7 @@ export function SmallSelectFilter({
   }
 
   return (
-    <div className={cn('space-y-2', className)} dir={locale.direction}>
+    <div className={cn('space-y-2', className)} dir={locale.direction} style={style}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}

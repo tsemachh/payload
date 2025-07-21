@@ -23,6 +23,7 @@ interface DateFilterProps {
   onChange: (value: DateFilterValue) => void
   locale?: Locale
   className?: string
+  style?: React.CSSProperties
 }
 
 export function DateFilter({
@@ -31,6 +32,7 @@ export function DateFilter({
   onChange,
   locale = { code: 'he', direction: 'rtl' },
   className,
+  style
 }: DateFilterProps) {
   const [internalValue, setInternalValue] = useState<DateFilterValue | undefined>(value)
   const [customRange, setCustomRange] = useState<DateRange>({ from: undefined, to: undefined })
@@ -176,7 +178,7 @@ export function DateFilter({
   }
 
   return (
-    <div className={cn('useTw space-y-1', className)} dir={locale.direction}>
+    <div className={cn('useTw space-y-1', className)} dir={locale.direction} style={style}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}

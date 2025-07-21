@@ -14,6 +14,7 @@ interface CheckboxFilterProps {
   onChange: (state: CheckboxFilterState) => void
   locale?: Locale
   className?: string
+  style?: React.CSSProperties
 }
 
 export function CheckboxFilter({
@@ -23,6 +24,7 @@ export function CheckboxFilter({
   onChange,
   locale = { code: 'he', direction: 'rtl' },
   className,
+  style
 }: CheckboxFilterProps) {
   const [internalState, setInternalState] = useState<CheckboxFilterState>(value)
 
@@ -51,7 +53,7 @@ export function CheckboxFilter({
   }
 
   return (
-    <div className={cn('space-y-1', className)} dir={locale.direction}>
+    <div className={cn('space-y-1', className)} dir={locale.direction} style={style}>
       {label && (
         <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
           {label}
