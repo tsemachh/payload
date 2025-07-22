@@ -1,5 +1,6 @@
 import { Vote } from '@/payload-types'
 import VoteStatus from './Status'
+import { Lock } from "lucide-react"
 
 interface MeetingHeaderProps {
   meetingData: {
@@ -24,9 +25,12 @@ const VoteHeader = ({
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
       <div className="mb-3 mt-[-30px]">
         {isReadOnly && (
-          <div className="text-center mb-2 mt-[-50px]">
-            <div className="text-xl font-bold font-semibold text-gray-900">האסיפה נעולה להצבעה</div>
-          </div>
+         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg px-4 py-3">
+         <div className="flex flex-col items-center justify-center space-y-2">
+           <Lock className="w-6 h-6 text-gray-600" />
+              <div className="text-sm font-medium text-gray-800 text-center whitespace-nowrap">האסיפה נעולה להצבעה</div>
+         </div>
+       </div>
         )}
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
           <div className="w-full md:w-auto">

@@ -124,11 +124,11 @@ const ResearchRelationshipValidationFilename: React.FC = () => {
           setCompaniesValue(Array.from(companyIds))
         } else if (stockNameFromMatch) {
           setSpanMessage(
-            `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}" לא משתתפת באסיפה זו`,
+            `נייר הערך "${result.stockName}" נמצא, אך החברה "${result.companyName}"לא משתתפת באסיפה זו או שאין לה הרשאה לקבל מסמכי מחקר פרטניים`,
           )
         } else {
           setSpanMessage(
-            `החברה "${result.companyName}" לא משתתפת באסיפה זו וגם נייר הערך "${result.stockName}" לא באסיפה`,
+            `החברה "${result.companyName}" לא משתתפת באסיפה זו או שאין לה הרשאה לקבל מסמכי מחקר פרטניים וגם נייר הערך "${result.stockName}" לא באסיפה`,
           )
         }
       } catch (err) {

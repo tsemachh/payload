@@ -8,7 +8,7 @@ interface VoteDetailsProps {
   isReadOnly?: boolean
 }
 
-export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetailsProps) {
+export default function VoteDetails({ meetingData, isReadOnly = false }: VoteDetailsProps) {
   const hasComments = meetingData.comments && meetingData.comments !== '-'
   const hasResearchDocuments = meetingData.researchDocuments
 
@@ -26,28 +26,28 @@ export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetai
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">תאריך האסיפה</span>
+            <span className="text-muted-foreground font-medium w-[120px]">תאריך האסיפה</span>
             <TruncatedText
               text={formatDateTime(meetingData.meetingDate)}
-              className="text-foreground max-w-[250px]"
+              className="text-foreground w-full"
             />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">מיקום האסיפה</span>
-            <TruncatedText text={meetingData.location} className="text-foreground max-w-[250px]" />
+            <span className="text-muted-foreground font-medium w-[120px]">מיקום האסיפה</span>
+            <TruncatedText text={meetingData.location} className="text-foreground w-full" />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">מועד קובע</span>
+            <span className="text-muted-foreground font-medium w-[120px]">מועד קובע</span>
             <TruncatedText
               text={formatDateTime(meetingData.holdingsLimit)}
-              className="text-foreground max-w-[250px]"
+              className="text-foreground w-full"
             />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">מועד מסירת ההצבעות</span>
+            <span className="text-muted-foreground font-medium w-[200px]">מועד מסירת ההצבעות</span>
             <TruncatedText
               text={formatDateTime(meetingData.proxyVotingDate)}
-              className={`text-foreground max-w-[250px] ${isReadOnly && 'text-red-500'}`}
+              className={`text-foreground w-full ${isReadOnly && 'text-red-500'}`}
             />
           </div>
         </div>
@@ -57,24 +57,24 @@ export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetai
       <div className="rounded-lg border border-border">
         <div className="space-y-2 text-sm p-3">
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">שם חברה</span>
+            <span className="text-muted-foreground font-medium  w-[100px]">חברה</span>
             <TruncatedText
-              text={meetingData.companyName}
-              className="text-foreground max-w-[250px]"
+              text={`${meetingData.companyName}${meetingData.committeeInitiated ? ', פינ׳ נדרשת ועדה' : ""}`}
+              className="text-foreground w-full"
             />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">שווי שוק</span>
+            <span className="text-muted-foreground font-medium  w-[120px]">שווי שוק</span>
             <TruncatedText
               text={meetingData.marketValue.toLocaleString() + ' ₪'}
-              className="text-foreground max-w-[250px]"
+              className="text-foreground w-full"
             />
           </div>
           {meetingData.stockOrigin === 'TASE' &&
             meetingData.stockTradable === true &&
             meetingData.stockNumber && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground font-medium">סוג נייר</span>
+                <span className="text-muted-foreground font-medium  w-[120px]">סוג נייר</span>
                 <a
                   href={
                     'https://www.tase.co.il/he/market_data/security/' +
@@ -91,7 +91,7 @@ export default function VoteDetails({ meetingData, isReadOnly=false }: VoteDetai
             )}
           {hasResearchDocuments && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground font-medium">מחקר</span>
+              <span className="text-muted-foreground font-medium  w-[100px]">מחקר</span>
               <div className="flex gap-2">
                 {meetingData.researchDocuments.length > 0 && (
                   <button

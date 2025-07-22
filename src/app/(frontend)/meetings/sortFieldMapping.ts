@@ -18,7 +18,7 @@ export const sortFieldMapping: Record<string, string> = {
   comments: 'comments',
   electronicVotingEnabled: 'electronicVotingEnabled',
   resultsConfirmationStatus: 'resultsConfirmationStatus',
-  committeeInitiated: 'committeeInitiated',
+  committeeInitiated: 'stock.isFinancial',
 }
 
 // Get the database field name for a frontend field
