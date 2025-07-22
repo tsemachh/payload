@@ -16,13 +16,13 @@ import type {
 import { groupFiltersByRow, parseColumns } from './filters/utils/layout-helpers'
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getDateFilterOptions } from './filters/constants/date-filter-options'
+import {
+  futureOptionKeys,
+  getDateFilterOptions,
+  pastOptionKeys,
+} from './filters/constants/date-filter-options'
 import { getDateRangeForOption } from './filters/utils/date-helpers'
 import { isEqual } from 'lodash'
-import {
-  futureDateFilterOptions,
-  pastDateFilterOptions,
-} from '@/app/(frontend)/meetings/meetingTableConstants'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -205,11 +205,11 @@ const parseWhereClauseToFilterValues = (
                 ? new Date(condition.greater_than_equal)
                 : null
               const toDate = condition.less_than_equal ? new Date(condition.less_than_equal) : null
-              const allDateOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              const allDateOptions = [...pastOptionKeys, ...futureOptionKeys]
               let matchedOption = null
 
               for (const option of allDateOptions) {
-                const range = getDateRangeForOption(option.value, locale)
+                const range = getDateRangeForOption(option, locale)
                 let isFromMatch
                 if (fromDate) {
                   isFromMatch = range.from?.toDateString() === fromDate.toDateString()
@@ -234,7 +234,7 @@ const parseWhereClauseToFilterValues = (
               if (matchedOption) {
                 values[fieldName] = {
                   type: 'predefined',
-                  predefinedValue: matchedOption.value,
+                  predefinedValue: matchedOption,
                 }
               } else {
                 values[fieldName] = {
