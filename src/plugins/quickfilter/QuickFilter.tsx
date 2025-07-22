@@ -112,9 +112,9 @@ const buildQuickFilterConditions = (
       case 'checkbox': {
         const checkboxState = value as CheckboxFilterState
         if (checkboxState === 'checked') {
-          condition = { [fieldName]: { equals: true } }
+          condition = { [fieldName]: { equals: 'true' } }
         } else if (checkboxState === 'unchecked') {
-          condition = { [fieldName]: { equals: false } }
+          condition = { [fieldName]: { equals: 'false' } }
         }
         break
       }
@@ -331,7 +331,11 @@ const QuickFilter = ({
   useEffect(() => {
     if (fields.length === 0) return
 
-    const valuesFromQuery: Record<string, any> = parseWhereClauseToFilterValues(query.where, fields, locale)
+    const valuesFromQuery: Record<string, any> = parseWhereClauseToFilterValues(
+      query.where,
+      fields,
+      locale,
+    )
 
     if (!isEqual(valuesFromQuery, filterValues)) {
       // Lock to prevent feedback loop when internal state changes
