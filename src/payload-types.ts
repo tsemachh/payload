@@ -775,7 +775,7 @@ export interface AdminNotification {
   message: string;
   type?: AdminNotificationType;
   url?: string | null;
-  readStatus?: boolean | null;
+  handled?: boolean | null;
   relatedCompany?: (string | null) | Company;
   relatedUser?: (string | null) | User;
   creator?: string | null;
@@ -1549,7 +1549,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
   type?: T;
   url?: T;
-  readStatus?: T;
+  handled?: T;
   relatedCompany?: T;
   relatedUser?: T;
   creator?: T;

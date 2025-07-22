@@ -238,7 +238,7 @@ export async function createAdminNotification(
         message,
         type,
         url,
-        readStatus: false,
+        handled: false,
         relatedCompany,
         relatedUser,
       },
