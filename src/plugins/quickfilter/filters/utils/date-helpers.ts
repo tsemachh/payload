@@ -1,4 +1,6 @@
 // Custom date utilities to replace date-fns
+import { SupportedLocale, getLabel } from '@/plugins/quickfilter/labels'
+
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date)
   result.setDate(result.getDate() + days)
@@ -92,10 +94,9 @@ export function formatDate(date: Date, formatStr: string): string {
 
 export function getDateRangeForOption(
   option: string,
-  locale: 'he' | 'en' = 'he',
+  locale: SupportedLocale = 'he',
 ): { from: Date | undefined; to: Date | undefined; description: string } {
   const now = new Date()
-  const isHebrew = locale === 'he'
 
   switch (option) {
     case 'yesterday':
@@ -129,7 +130,7 @@ export function getDateRangeForOption(
       return {
         from: undefined,
         to: endOfDay(yesterday),
-        description: isHebrew ? '(עד אתמול)' : '(until yesterday)',
+        description: `(${getLabel('allPast', locale)})`,
       }
     }
 
@@ -162,7 +163,7 @@ export function getDateRangeForOption(
       return {
         from: startOfDay(now),
         to: undefined,
-        description: isHebrew ? '(מהיום ואילך)' : '(from today onwards)',
+        description: `(${getLabel('allFuture', locale)})`,
       }
 
     default:

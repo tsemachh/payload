@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import type { Locale, SelectFilterValue } from '@/types/filter-types'
+import { SupportedLocale, getLabel } from '@/plugins/quickfilter/labels'
 
 interface SmallSelectOption {
   value: string
@@ -29,7 +30,7 @@ export function SmallSelectFilter({
   options,
   value,
   onChange,
-  locale = { code: 'he', direction: 'rtl' },
+  locale = { code: 'he' as SupportedLocale, direction: 'rtl' },
   className,
   multiSelect = true,
   maxOptions = 3,
@@ -39,7 +40,7 @@ export function SmallSelectFilter({
     value || { type: 'none', selectedValues: [] },
   )
 
-  const isHebrew = locale.code === 'he'
+  const isRtl = locale?.direction === 'rtl'
 
   // Limit options to maxOptions
   const limitedOptions = options.slice(0, maxOptions)
@@ -110,7 +111,7 @@ export function SmallSelectFilter({
   return (
     <div className={cn('space-y-2', className)} dir={locale.direction} style={style}>
       {label && (
-        <Label className={cn('useTw text-sm font-medium', isHebrew && 'text-right block')}>
+        <Label className={cn('useTw text-sm font-medium', isRtl && 'text-right block')}>
           {label}
         </Label>
       )}
