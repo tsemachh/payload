@@ -3,8 +3,8 @@ import { getLabel } from "../../labels"
 import type { SupportedLocale } from "../../labels"
 
 // Define the option keys for past and future date filters
-const pastOptionKeys = ["yesterday", "lastWeek", "lastMonth", "allPast"] as const
-const futureOptionKeys = ["today", "nextWeek", "nextMonth", "allFuture"] as const
+export const pastOptionKeys = ["yesterday", "lastWeek", "lastMonth", "allPast"] as const
+export const futureOptionKeys = ["today", "nextWeek", "nextMonth", "allFuture"] as const
 
 // Create date filter options dynamically based on locale
 const createDateFilterOptions = (keys: readonly string[], locale: SupportedLocale | string): DateFilterOption[] => {
