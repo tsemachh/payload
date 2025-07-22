@@ -191,7 +191,7 @@ const parseWhereClauseToFilterValues = (
         if (fieldDef && condition && typeof condition === 'object') {
           if ('equals' in condition) {
             if (fieldDef.type === 'checkbox') {
-              values[fieldName] = condition.equals ? 'checked' : 'unchecked'
+              values[fieldName] = condition.equals == 'true' ? 'checked' : 'unchecked'
             } else if (fieldDef.type === 'select') {
               values[fieldName] = { selectedValues: [condition.equals] }
             }
@@ -210,12 +210,20 @@ const parseWhereClauseToFilterValues = (
 
               for (const option of allDateOptions) {
                 const range = getDateRangeForOption(option.value, locale)
-                const isFromMatch = fromDate
-                  ? range.from?.toDateString() === fromDate.toDateString()
-                  : false
-                const isToMatch = toDate
-                  ? range.to?.toDateString() === toDate.toDateString()
-                  : false
+                let isFromMatch
+                if (fromDate) {
+                  isFromMatch = range.from?.toDateString() === fromDate.toDateString()
+                } else if (fromDate == null && range.to == undefined) {
+                  // all future: fromDate == null & range.to == undefined
+                  isFromMatch = true
+                }
+                let isToMatch
+                if (toDate) {
+                  isToMatch = range.from?.toDateString() === toDate.toDateString()
+                } else if (toDate == null && range.to == undefined) {
+                  // all future: fromDate == null & range.to == undefined
+                  isToMatch = true
+                }
 
                 if (isFromMatch && isToMatch) {
                   matchedOption = option
