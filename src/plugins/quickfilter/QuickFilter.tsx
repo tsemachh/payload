@@ -219,7 +219,7 @@ const parseWhereClauseToFilterValues = (
                 }
                 let isToMatch
                 if (toDate) {
-                  isToMatch = range.from?.toDateString() === toDate.toDateString()
+                  isToMatch = range.to?.toDateString() === toDate.toDateString()
                 } else if (toDate == null && range.to == undefined) {
                   // all future: fromDate == null & range.to == undefined
                   isToMatch = true
