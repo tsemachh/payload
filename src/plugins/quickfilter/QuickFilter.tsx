@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
-import { getTranslation, rtlLanguages } from '@payloadcms/translations'
+import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
 import { getLabel, SupportedLocale } from './labels'
 import type {
@@ -19,6 +19,10 @@ import { Button } from '@/components/ui/button'
 import { getDateFilterOptions } from './filters/constants/date-filter-options'
 import { getDateRangeForOption } from './filters/utils/date-helpers'
 import { isEqual } from 'lodash'
+import {
+  futureDateFilterOptions,
+  pastDateFilterOptions,
+} from '@/app/(frontend)/meetings/meetingTableConstants'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -162,6 +166,7 @@ const cleanWhereClause = (clause: any, fieldsToClean: Set<string>): any => {
 const parseWhereClauseToFilterValues = (
   where: any,
   fields: FilterDetaild[],
+  locale: SupportedLocale,
 ): Record<string, any> => {
   const values: Record<string, any> = {}
   const fieldNames = new Set(fields.map((f) => f.name))
@@ -196,16 +201,41 @@ const parseWhereClauseToFilterValues = (
             }
           } else if ('greater_than_equal' in condition || 'less_than_equal' in condition) {
             if (fieldDef.type === 'date') {
-              const customRange: { from?: Date; to?: Date } = {}
-              if (condition.greater_than_equal) {
-                customRange.from = new Date(condition.greater_than_equal)
+              const fromDate = condition.greater_than_equal
+                ? new Date(condition.greater_than_equal)
+                : null
+              const toDate = condition.less_than_equal ? new Date(condition.less_than_equal) : null
+              const allDateOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              let matchedOption = null
+
+              for (const option of allDateOptions) {
+                const range = getDateRangeForOption(option.value, locale)
+                const isFromMatch = fromDate
+                  ? range.from?.toDateString() === fromDate.toDateString()
+                  : false
+                const isToMatch = toDate
+                  ? range.to?.toDateString() === toDate.toDateString()
+                  : false
+
+                if (isFromMatch && isToMatch) {
+                  matchedOption = option
+                  break
+                }
               }
-              if (condition.less_than_equal) {
-                customRange.to = new Date(condition.less_than_equal)
-              }
-              values[fieldName] = {
-                type: 'custom',
-                customRange,
+
+              if (matchedOption) {
+                values[fieldName] = {
+                  type: 'predefined',
+                  predefinedValue: matchedOption.value,
+                }
+              } else {
+                values[fieldName] = {
+                  type: 'custom',
+                  customRange: {
+                    from: fromDate,
+                    to: toDate,
+                  },
+                }
               }
             }
           }
@@ -234,8 +264,6 @@ const QuickFilter = ({
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
   const locale = i18n.language as SupportedLocale
-  const isRTL = (rtlLanguages as readonly string[]).includes(i18n.language)
-
   const isSyncingFromQuery = useRef(false)
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
@@ -303,7 +331,7 @@ const QuickFilter = ({
   useEffect(() => {
     if (fields.length === 0) return
 
-    const valuesFromQuery = parseWhereClauseToFilterValues(query.where, fields)
+    const valuesFromQuery: Record<string, any> = parseWhereClauseToFilterValues(query.where, fields, locale)
 
     if (!isEqual(valuesFromQuery, filterValues)) {
       // Lock to prevent feedback loop when internal state changes
