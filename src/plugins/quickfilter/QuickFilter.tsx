@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
-import { getTranslation, rtlLanguages } from '@payloadcms/translations'
+import { getTranslation } from '@payloadcms/translations'
 import FilterField from './FilterField'
 import { getLabel, SupportedLocale } from './labels'
 import type {
@@ -19,6 +19,10 @@ import { Button } from '@/components/ui/button'
 import { getDateFilterOptions } from './filters/constants/date-filter-options'
 import { getDateRangeForOption } from './filters/utils/date-helpers'
 import { isEqual } from 'lodash'
+import {
+  futureDateFilterOptions,
+  pastDateFilterOptions,
+} from '@/app/(frontend)/meetings/meetingTableConstants'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -108,9 +112,9 @@ const buildQuickFilterConditions = (
       case 'checkbox': {
         const checkboxState = value as CheckboxFilterState
         if (checkboxState === 'checked') {
-          condition = { [fieldName]: { equals: true } }
+          condition = { [fieldName]: { equals: 'true' } }
         } else if (checkboxState === 'unchecked') {
-          condition = { [fieldName]: { equals: false } }
+          condition = { [fieldName]: { equals: 'false' } }
         }
         break
       }
@@ -162,6 +166,7 @@ const cleanWhereClause = (clause: any, fieldsToClean: Set<string>): any => {
 const parseWhereClauseToFilterValues = (
   where: any,
   fields: FilterDetaild[],
+  locale: SupportedLocale,
 ): Record<string, any> => {
   const values: Record<string, any> = {}
   const fieldNames = new Set(fields.map((f) => f.name))
@@ -186,7 +191,7 @@ const parseWhereClauseToFilterValues = (
         if (fieldDef && condition && typeof condition === 'object') {
           if ('equals' in condition) {
             if (fieldDef.type === 'checkbox') {
-              values[fieldName] = condition.equals ? 'checked' : 'unchecked'
+              values[fieldName] = condition.equals == 'true' ? 'checked' : 'unchecked'
             } else if (fieldDef.type === 'select') {
               values[fieldName] = { selectedValues: [condition.equals] }
             }
@@ -196,16 +201,49 @@ const parseWhereClauseToFilterValues = (
             }
           } else if ('greater_than_equal' in condition || 'less_than_equal' in condition) {
             if (fieldDef.type === 'date') {
-              const customRange: { from?: Date; to?: Date } = {}
-              if (condition.greater_than_equal) {
-                customRange.from = new Date(condition.greater_than_equal)
+              const fromDate = condition.greater_than_equal
+                ? new Date(condition.greater_than_equal)
+                : null
+              const toDate = condition.less_than_equal ? new Date(condition.less_than_equal) : null
+              const allDateOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              let matchedOption = null
+
+              for (const option of allDateOptions) {
+                const range = getDateRangeForOption(option.value, locale)
+                let isFromMatch
+                if (fromDate) {
+                  isFromMatch = range.from?.toDateString() === fromDate.toDateString()
+                } else if (fromDate == null && range.to == undefined) {
+                  // all future: fromDate == null & range.to == undefined
+                  isFromMatch = true
+                }
+                let isToMatch
+                if (toDate) {
+                  isToMatch = range.from?.toDateString() === toDate.toDateString()
+                } else if (toDate == null && range.to == undefined) {
+                  // all future: fromDate == null & range.to == undefined
+                  isToMatch = true
+                }
+
+                if (isFromMatch && isToMatch) {
+                  matchedOption = option
+                  break
+                }
               }
-              if (condition.less_than_equal) {
-                customRange.to = new Date(condition.less_than_equal)
-              }
-              values[fieldName] = {
-                type: 'custom',
-                customRange,
+
+              if (matchedOption) {
+                values[fieldName] = {
+                  type: 'predefined',
+                  predefinedValue: matchedOption.value,
+                }
+              } else {
+                values[fieldName] = {
+                  type: 'custom',
+                  customRange: {
+                    from: fromDate,
+                    to: toDate,
+                  },
+                }
               }
             }
           }
@@ -234,8 +272,6 @@ const QuickFilter = ({
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
   const locale = i18n.language as SupportedLocale
-  const isRTL = (rtlLanguages as readonly string[]).includes(i18n.language)
-
   const isSyncingFromQuery = useRef(false)
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
@@ -257,7 +293,7 @@ const QuickFilter = ({
     }
   })
 
-  // Build the list of filter fields from config 
+  // Build the list of filter fields from config
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
     const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
@@ -303,7 +339,11 @@ const QuickFilter = ({
   useEffect(() => {
     if (fields.length === 0) return
 
-    const valuesFromQuery = parseWhereClauseToFilterValues(query.where, fields)
+    const valuesFromQuery: Record<string, any> = parseWhereClauseToFilterValues(
+      query.where,
+      fields,
+      locale,
+    )
 
     if (!isEqual(valuesFromQuery, filterValues)) {
       // Lock to prevent feedback loop when internal state changes
@@ -353,7 +393,7 @@ const QuickFilter = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterValues, fields, i18n.language, refineListData])
-  // Effect for persisting to localStorage 
+  // Effect for persisting to localStorage
   useEffect(() => {
     try {
       if (Object.keys(filterValues).length > 0) {
@@ -387,7 +427,7 @@ const QuickFilter = ({
   // This function remains largely the same.
   const getActiveFiltersDetails = () => {
     const activeFilters: string[] = []
-    const locale=i18n.language as SupportedLocale
+    const locale = i18n.language as SupportedLocale
     Object.entries(filterValues).forEach(([fieldName, value]) => {
       const field = fields.find((f) => f.name === fieldName)
       if (!field) return
@@ -415,12 +455,22 @@ const QuickFilter = ({
         case 'select': {
           const selectValue = value as SelectFilterValue
           if (selectValue && selectValue.selectedValues && selectValue.selectedValues.length > 0) {
-            const count = selectValue.selectedValues.length
             const totalOptions = field.options?.length || 0
+
             if (selectValue.selectedValues.length === totalOptions) {
               activeFilters.push(`${field.label} (${getLabel('all', locale)})`)
+            } else if (selectValue.selectedValues.length === 1) {
+              // Show the actual option name when only one is selected
+              const selectedOption = field.options?.find(
+                (opt: any) => opt.value === selectValue.selectedValues[0],
+              )
+              const optionLabel = selectedOption
+                ? selectedOption.label
+                : selectValue.selectedValues[0]
+              activeFilters.push(`${field.label} (${optionLabel})`)
             } else {
-              activeFilters.push(`${field.label} (${count})`)
+              // Show count for multiple selections
+              activeFilters.push(`${field.label} (${selectValue.selectedValues.length})`)
             }
           }
           break
