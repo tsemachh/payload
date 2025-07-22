@@ -1,3 +1,5 @@
+import { SupportedLocale } from '@/plugins/quickfilter/labels'
+
 export interface DateFilterOption {
   value: string
   label: string
@@ -27,6 +29,6 @@ export interface SelectFilterValue {
 export type CheckboxFilterState = "checked" | "unchecked" | "indeterminate"
 
 export interface Locale {
-  code: "he" | "en"
+  code: SupportedLocale
   direction: "rtl" | "ltr"
 }
