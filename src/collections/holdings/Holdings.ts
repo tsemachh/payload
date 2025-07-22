@@ -17,9 +17,7 @@ export const Holdings: CollectionConfig = {
     group: 'פעילות',
   },
   custom: {
-    filterList: [
-      [{ name:'valueDate'}]
-    ],
+    filterList: [[{ name: 'valueDate' }]],
   },
   disableBulkEdit: true,
   hooks: {
@@ -44,6 +42,11 @@ export const Holdings: CollectionConfig = {
           relationTo: 'companies',
           required: true,
           index: true,
+          filterOptions: () => ({
+            type: {
+              equals: 'fund',
+            },
+          }),
         },
         {
           name: 'valueDate',

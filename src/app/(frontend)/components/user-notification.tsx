@@ -1,17 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Bell, CheckCheck, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
-
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
+import { Bell, X, CheckCheck } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { NotificationAlert } from "@/components/notification-alert"
 import moment from 'moment'
-import 'moment/locale/he'
+import { ScrollArea } from "@radix-ui/react-scroll-area"
 
 interface Notification {
   id: string
@@ -22,7 +21,7 @@ interface Notification {
   route?: string
 }
 
-export function UserNotificationComponent() {
+export const UserNotificationComponent = forwardRef<{ openNotifications: () => void }>((props, ref) => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -32,9 +31,13 @@ export function UserNotificationComponent() {
   const router = useRouter()
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
-  const filteredNotifications = showUnreadOnly
-    ? notifications.filter((n) => !n.isRead)
-    : notifications
+  const filteredNotifications = showUnreadOnly ? notifications.filter((n) => !n.isRead) : notifications
+
+  useImperativeHandle(ref, () => ({
+    openNotifications: () => {
+      setIsOpen(true)
+    },
+  }))
 
   // Fetch notifications on component mount
   useEffect(() => {
@@ -128,8 +131,13 @@ export function UserNotificationComponent() {
     return moment(dateString).fromNow()
   }
 
+  const handleOpenNotifications = () => {
+    setIsOpen(true)
+  }
   return (
-    <TooltipProvider>
+    <>
+    <NotificationAlert onOpenNotifications={handleOpenNotifications} notifications={notifications} />
+  <TooltipProvider>
       <div className="relative" ref={dropdownRef}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -245,5 +253,6 @@ export function UserNotificationComponent() {
         )}
       </div>
     </TooltipProvider>
+    </>
   )
-}
+})

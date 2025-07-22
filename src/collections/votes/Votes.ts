@@ -1,8 +1,8 @@
 import { ValidationError, type CollectionConfig } from 'payload'
-import { addDays, isSameDay } from '@/utils/dateUtils'
+import { addDays } from '@/utils/dateUtils'
 import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 
-import { Meeting } from '@/payload-types'
+import { Meeting, TopicVote, Vote } from '@/payload-types'
 
 import {
   getVoteByMeetingAndCompanies,
@@ -11,6 +11,44 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
+
+function calculateCheckSum(data: Vote) {
+  // Create a string representation of the fields to compute checksum
+  const checksumData = {
+    // Basic fields
+    isInterested: data.isInterested || false,
+    isSeniorOfficial: data.isSeniorOfficial || false,
+    isInstitutionalInvestor: data.isInstitutionalInvestor || false,
+    interestedExplanation: data.interestedExplanation || null,
+    seniorOfficialExplanation: data.seniorOfficialExplanation || null,
+
+    // Votes array fields
+    votes: (data.votes || []).map((vote: NonNullable<TopicVote>[number]) => ({
+      topicIndex: vote.topicIndex,
+      voteDecision: vote.voteDecision,
+      hasConflictOfInterest: vote.hasConflictOfInterest || false,
+      isRelatedParty: vote.isRelatedParty || false,
+      isInvestmentCommittee: vote.isInvestmentCommittee || false,
+      hasPersonalInterest: vote.hasPersonalInterest || false,
+      relatedPartyExplanation: vote.relatedPartyExplanation || null,
+      conflictOfInterestExplanation: vote.conflictOfInterestExplanation || null,
+      personalInterestExplanation: vote.personalInterestExplanation || null,
+    })),
+  }
+
+  // Convert to string and create a simple hash
+  const checksumString = JSON.stringify(checksumData)
+
+  // Create a simple hash from the string
+  let hash = 0
+  for (let i = 0; i < checksumString.length; i++) {
+    const char = checksumString.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+
+  return hash.toString(16) // Return as hex string
+}
 
 export const Votes: CollectionConfig = {
   slug: 'votes',
@@ -91,15 +129,20 @@ export const Votes: CollectionConfig = {
                     afterRead: [
                       async ({ data, req }) => {
                         if (data?.company && typeof data.company === 'string') {
-                          const company = await req.payload.findByID({
-                            collection: 'companies',
-                            select: {
-                              name: true,
-                            },
-                            id: data.company,
-                            depth: 0,
-                          })
-                          return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                          try {
+                            const company = await req.payload.findByID({
+                              collection: 'companies',
+                              select: {
+                                name: true,
+                              },
+                              id: data.company,
+                              depth: 0,
+                            })
+                            return `הצבעה ${company?.name || 'ללא שם חברה'}`
+                          } catch (error) {
+                            // Handle case when company is not found
+                            return `הצבעה ללא שם חברה`
+                          }
                         }
                       },
                     ],
@@ -110,6 +153,21 @@ export const Votes: CollectionConfig = {
             {
               type: 'row',
               fields: [
+                {
+                  name: 'checksum',
+                  type: 'text',
+                  admin: {
+                    hidden: true
+                  },
+                  hooks: {
+                    afterRead: [
+                      async ({ data }) => {
+                        if (!data) return null
+                        return calculateCheckSum(data as Vote)
+                      },
+                    ],
+                  },
+                },
                 {
                   name: 'isInterested',
                   label: 'בעל עניין',
@@ -147,6 +205,49 @@ export const Votes: CollectionConfig = {
               ],
             },
             {
+              type:'row',
+              fields: [
+                {
+                  name: 'reported',
+                  label: 'הצבעה בפועל',
+                  type: 'checkbox',
+                  defaultValue: false,
+                },
+                {
+                  name: 'reportedBy',
+                  label: 'דווח על ידי',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'reportedTime',
+                  label: 'תאריך דיווח',
+                  type: 'date',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+              ]},{
+              type:'row',
+              fields :[
+                {
+                  name: 'fundsWithHoldingsUpdates',
+                  label: 'עדכוני אחזקות תיקים',
+                  type: 'json',
+                  //hidden: true,
+                  defaultValue: {},
+                  admin: {
+                    components: {
+                      Field: '/collections/votes/components/HoldingsInFunds',
+                    },
+                  },
+                },
+              ],
+            },
+
+            {
               name: 'votes',
               label: 'סעיפי הצבעה',
               type: 'array',
@@ -154,6 +255,7 @@ export const Votes: CollectionConfig = {
                 singular: 'נושא',
                 plural: 'נושאים',
               },
+              interfaceName: 'TopicVote',
               admin: {
                 components: {
                   RowLabel: {
@@ -270,45 +372,6 @@ export const Votes: CollectionConfig = {
                   type: 'textarea',
                 },
               ],
-            },
-          ],
-        },
-        {
-          label: 'הצבעה בפועל',
-          fields: [
-            {
-              name: 'reported',
-              label: 'הצבעה בפועל',
-              type: 'checkbox',
-              defaultValue: false,
-            },
-            {
-              name: 'reportedBy',
-              label: 'דווח על ידי',
-              type: 'text',
-              admin: {
-                hidden: true,
-              },
-            },
-            {
-              name: 'reportedTime',
-              label: 'תאריך דיווח',
-              type: 'date',
-              admin: {
-                hidden: true,
-              },
-            },
-            {
-              name: 'fundsWithHoldingsUpdates',
-              label: 'עדכוני אחזקות תיקים',
-              type: 'json',
-              //hidden: true,
-              defaultValue: {},
-              admin: {
-                components: {
-                  Field: '/collections/votes/components/HoldingsInFunds',
-                },
-              },
             },
           ],
         },

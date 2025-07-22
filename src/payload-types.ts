@@ -132,6 +132,24 @@ export type HoldingsPerDay = {
 }[];
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicVote".
+ */
+export type TopicVote =
+  | {
+      topicIndex: number;
+      voteDecision?: VoteDecision;
+      hasConflictOfInterest?: boolean | null;
+      isRelatedParty?: boolean | null;
+      isInvestmentCommittee?: boolean | null;
+      hasPersonalInterest?: boolean | null;
+      relatedPartyExplanation?: string | null;
+      conflictOfInterestExplanation?: string | null;
+      personalInterestExplanation?: string | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VoteDecision".
  */
 export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
@@ -424,6 +442,7 @@ export interface Meeting {
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
+  dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
   resultsConfirmationStatus?: boolean | null;
@@ -662,27 +681,12 @@ export interface Vote {
   meeting: string | Meeting;
   company: string | Company;
   title?: string | null;
+  checksum?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  votes?:
-    | {
-        topicIndex: number;
-        voteDecision?: VoteDecision;
-        hasConflictOfInterest?: boolean | null;
-        isRelatedParty?: boolean | null;
-        isInvestmentCommittee?: boolean | null;
-        hasPersonalInterest?: boolean | null;
-        relatedPartyExplanation?: string | null;
-        conflictOfInterestExplanation?: string | null;
-        personalInterestExplanation?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  voteDocuments?: (string | Document)[] | null;
-  clientComment?: string | null;
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
@@ -695,6 +699,9 @@ export interface Vote {
     | number
     | boolean
     | null;
+  votes?: TopicVote;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -768,7 +775,7 @@ export interface AdminNotification {
   message: string;
   type?: AdminNotificationType;
   url?: string | null;
-  readStatus?: boolean | null;
+  handled?: boolean | null;
   relatedCompany?: (string | null) | Company;
   relatedUser?: (string | null) | User;
   creator?: string | null;
@@ -1296,6 +1303,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
+  dualMeeting?: T;
   location?: T;
   comments?: T;
   resultsConfirmationStatus?: T;
@@ -1371,31 +1379,19 @@ export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
   title?: T;
+  checksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  votes?:
-    | T
-    | {
-        topicIndex?: T;
-        voteDecision?: T;
-        hasConflictOfInterest?: T;
-        isRelatedParty?: T;
-        isInvestmentCommittee?: T;
-        hasPersonalInterest?: T;
-        relatedPartyExplanation?: T;
-        conflictOfInterestExplanation?: T;
-        personalInterestExplanation?: T;
-        id?: T;
-      };
-  voteDocuments?: T;
-  clientComment?: T;
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;
   fundsWithHoldingsUpdates?: T;
+  votes?: T | TopicVoteSelect<T>;
+  voteDocuments?: T;
+  clientComment?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1403,6 +1399,22 @@ export interface VotesSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicVote_select".
+ */
+export interface TopicVoteSelect<T extends boolean = true> {
+  topicIndex?: T;
+  voteDecision?: T;
+  hasConflictOfInterest?: T;
+  isRelatedParty?: T;
+  isInvestmentCommittee?: T;
+  hasPersonalInterest?: T;
+  relatedPartyExplanation?: T;
+  conflictOfInterestExplanation?: T;
+  personalInterestExplanation?: T;
+  id?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1537,7 +1549,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
   type?: T;
   url?: T;
-  readStatus?: T;
+  handled?: T;
   relatedCompany?: T;
   relatedUser?: T;
   creator?: T;

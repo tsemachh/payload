@@ -904,7 +904,7 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
             const newCompanyData: Partial<Company> = {
               legacyCompanyId: company.companyId,
               name: companyName,
-              active: true,
+              active: company.active,
               type: 'fund',
               // Set the account number in the appropriate field using the new structure
               mainAccount: [

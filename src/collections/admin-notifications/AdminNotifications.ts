@@ -22,9 +22,7 @@ export const AdminNotifications: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: [
-      ['type','createdAt', 'readStatus']
-    ],
+    filterList: [['type', 'createdAt', 'handled']],
   },
   fields: [
     {
@@ -37,7 +35,7 @@ export const AdminNotifications: CollectionConfig = {
       name: 'type',
       label: 'סוג התראה',
       type: 'select',
-      interfaceName:'AdminNotificationType',
+      interfaceName: 'AdminNotificationType',
       options: [
         {
           label: 'כללי',
@@ -66,7 +64,7 @@ export const AdminNotifications: CollectionConfig = {
         {
           label: 'הצבעה חדשה לאחר מועד קובע',
           value: 'newVoteAfterHoldingLimit',
-        }
+        },
       ],
       defaultValue: 'general',
     },
@@ -88,15 +86,10 @@ export const AdminNotifications: CollectionConfig = {
       },
     },
     {
-      name: 'readStatus',
-      label: 'סטטוס קריאה',
+      name: 'handled',
+      label: 'טופל',
       type: 'checkbox',
       defaultValue: false,
-      admin: {
-        components: {
-          Cell: '/admincomponents/fields/ReadStatusField',
-        },
-      },
     },
     {
       name: 'relatedCompany',

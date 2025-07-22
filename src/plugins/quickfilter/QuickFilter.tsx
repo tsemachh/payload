@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useConfig, useListQuery, useTranslation } from '@payloadcms/ui'
 import type { ClientField, FieldAffectingData, OptionObject, SelectField } from 'payload'
-import { getTranslation } from '@payloadcms/translations'
+import { getTranslation, rtlLanguages } from '@payloadcms/translations'
 import FilterField from './FilterField'
+import { getLabel, SupportedLocale } from './labels'
 import type {
   CheckboxFilterState,
   DateFilterValue,
@@ -15,11 +16,9 @@ import type {
 import { groupFiltersByRow, parseColumns } from './filters/utils/layout-helpers'
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  futureDateFilterOptions,
-  pastDateFilterOptions,
-} from './filters/constants/date-filter-options'
+import { getDateFilterOptions } from './filters/constants/date-filter-options'
 import { getDateRangeForOption } from './filters/utils/date-helpers'
+import { isEqual } from 'lodash'
 
 // Recursive function to find fields by name
 function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientField[] {
@@ -55,17 +54,21 @@ function findFieldsByName(fields: ClientField[], fieldNames: string[]): ClientFi
   return results
 }
 
-// Helper function to convert UI state to a where query
-const buildWhereClause = (
+// Builds an array of condition objects from the quick filter values
+const buildQuickFilterConditions = (
   values: Record<string, any>,
   fieldDefs: FilterDetaild[],
-  isHebrew: boolean,
-): Record<string, any> => {
-  const where: Record<string, any> = {}
+  locale: SupportedLocale,
+): Record<string, any>[] => {
+  const conditions: Record<string, any>[] = []
+
   Object.entries(values).forEach(([fieldName, value]) => {
     if (!value) return
     const fieldDef = fieldDefs.find((f) => f.name === fieldName)
     if (!fieldDef) return
+
+    let condition: Record<string, any> | null = null
+
     switch (fieldDef.type) {
       case 'date': {
         const dateValue = value as DateFilterValue
@@ -73,29 +76,20 @@ const buildWhereClause = (
         let to: Date | undefined
 
         if (dateValue.predefinedValue) {
-          const locale = isHebrew ? 'he' : 'en'
           const range = getDateRangeForOption(dateValue.predefinedValue, locale)
-
           from = range.from
           to = range.to
-        }
-        // Fallback for custom date ranges
-        else if (dateValue.customRange) {
-          if (dateValue.customRange.from) {
-            from = new Date(dateValue.customRange.from)
-          }
-          if (dateValue.customRange.to) {
-            to = new Date(dateValue.customRange.to)
-          }
+        } else if (dateValue.customRange) {
+          if (dateValue.customRange.from) from = new Date(dateValue.customRange.from)
+          if (dateValue.customRange.to) to = new Date(dateValue.customRange.to)
         }
 
-        // Construct the query
         if (from || to) {
           const dateQuery: any = {}
           if (from) dateQuery.greater_than_equal = from
           if (to) dateQuery.less_than_equal = to
           if (Object.keys(dateQuery).length > 0) {
-            where[fieldName] = dateQuery
+            condition = { [fieldName]: dateQuery }
           }
         }
         break
@@ -104,9 +98,9 @@ const buildWhereClause = (
         const selectValue = value as SelectFilterValue
         if (selectValue.selectedValues && selectValue.selectedValues.length > 0) {
           if (selectValue.selectedValues.length === 1) {
-            where[fieldName] = { equals: selectValue.selectedValues[0] }
+            condition = { [fieldName]: { equals: selectValue.selectedValues[0] } }
           } else {
-            where[fieldName] = { in: selectValue.selectedValues }
+            condition = { [fieldName]: { in: selectValue.selectedValues } }
           }
         }
         break
@@ -114,16 +108,114 @@ const buildWhereClause = (
       case 'checkbox': {
         const checkboxState = value as CheckboxFilterState
         if (checkboxState === 'checked') {
-          where[fieldName] = { equals: true }
+          condition = { [fieldName]: { equals: true } }
         } else if (checkboxState === 'unchecked') {
-          where[fieldName] = { equals: false }
+          condition = { [fieldName]: { equals: false } }
         }
-        // 'indeterminate' will not filter
         break
       }
     }
+    if (condition) {
+      conditions.push(condition)
+    }
   })
-  return where
+  return conditions
+}
+
+// Helper function to remove quick filter conditions from a 'where' clause
+const cleanWhereClause = (clause: any, fieldsToClean: Set<string>): any => {
+  if (!clause || typeof clause !== 'object' || Array.isArray(clause)) {
+    return clause
+  }
+
+  const newClause: Record<string, any> = {}
+
+  for (const key in clause) {
+    if (key === 'and' || key === 'or') {
+      const cleanedSubClauses = clause[key]
+        .map((subClause: any) => cleanWhereClause(subClause, fieldsToClean))
+        .filter(Boolean)
+
+      if (cleanedSubClauses.length > 0) {
+        newClause[key] = cleanedSubClauses
+      }
+    } else if (!fieldsToClean.has(key)) {
+      newClause[key] = clause[key]
+    }
+  }
+
+  if (Object.keys(newClause).length === 0) {
+    return null
+  }
+
+  if (newClause.and?.length === 1 && Object.keys(newClause).length === 1) {
+    return newClause.and[0]
+  }
+  if (newClause.or?.length === 1 && Object.keys(newClause).length === 1) {
+    return newClause.or[0]
+  }
+
+  return newClause
+}
+
+// Translates URL query conditions to the quick filter's internal state
+const parseWhereClauseToFilterValues = (
+  where: any,
+  fields: FilterDetaild[],
+): Record<string, any> => {
+  const values: Record<string, any> = {}
+  const fieldNames = new Set(fields.map((f) => f.name))
+
+  const recursiveParse = (clause: any) => {
+    if (!clause || typeof clause !== 'object') return
+
+    if (clause.and) {
+      clause.and.forEach(recursiveParse)
+      return
+    }
+    if (clause.or) {
+      clause.or.forEach(recursiveParse)
+      return
+    }
+
+    for (const fieldName in clause) {
+      if (fieldNames.has(fieldName)) {
+        const fieldDef = fields.find((f) => f.name === fieldName)
+        const condition = clause[fieldName]
+
+        if (fieldDef && condition && typeof condition === 'object') {
+          if ('equals' in condition) {
+            if (fieldDef.type === 'checkbox') {
+              values[fieldName] = condition.equals ? 'checked' : 'unchecked'
+            } else if (fieldDef.type === 'select') {
+              values[fieldName] = { selectedValues: [condition.equals] }
+            }
+          } else if ('in' in condition && Array.isArray(condition.in)) {
+            if (fieldDef.type === 'select') {
+              values[fieldName] = { selectedValues: condition.in }
+            }
+          } else if ('greater_than_equal' in condition || 'less_than_equal' in condition) {
+            if (fieldDef.type === 'date') {
+              const customRange: { from?: Date; to?: Date } = {}
+              if (condition.greater_than_equal) {
+                customRange.from = new Date(condition.greater_than_equal)
+              }
+              if (condition.less_than_equal) {
+                customRange.to = new Date(condition.less_than_equal)
+              }
+              values[fieldName] = {
+                type: 'custom',
+                customRange,
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  recursiveParse(where)
+  return values
 }
 
 const QuickFilter = ({
@@ -141,14 +233,16 @@ const QuickFilter = ({
   const { refineListData, query } = useListQuery()
   const { getEntityConfig } = useConfig()
   const { i18n } = useTranslation()
+  const locale = i18n.language as SupportedLocale
+  const isRTL = (rtlLanguages as readonly string[]).includes(i18n.language)
+
+  const isSyncingFromQuery = useRef(false)
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>(() => {
     if (typeof window == 'undefined') return {}
     try {
       const item = window.localStorage.getItem(localStorageKey)
-      if (!item) {
-        return {}
-      }
+      if (!item) return {}
       const dateTimeReviver = (key: string, value: any) => {
         const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
         if (typeof value === 'string' && isoDateRegex.test(value)) {
@@ -163,6 +257,7 @@ const QuickFilter = ({
     }
   })
 
+  // Build the list of filter fields from config
   useEffect(() => {
     const collection = getEntityConfig({ collectionSlug: slug })
     const flattenedFieldConfigs = filterList.flatMap((row, rowIndex) =>
@@ -204,33 +299,74 @@ const QuickFilter = ({
     setFields(sortedFields)
     setFilterRows(groupFiltersByRow(sortedFields))
   }, [slug, filterList, getEntityConfig, i18n])
-
+  // Sync from URL (query.where) into internal state
   useEffect(() => {
-    if (fields.length === 0) {
+    if (fields.length === 0) return
+
+    const valuesFromQuery = parseWhereClauseToFilterValues(query.where, fields)
+
+    if (!isEqual(valuesFromQuery, filterValues)) {
+      // Lock to prevent feedback loop when internal state changes
+      isSyncingFromQuery.current = true
+      setFilterValues(valuesFromQuery)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.where, fields])
+
+  // Sync internal state (filterValues) back into the URL
+  useEffect(() => {
+    // If the change originated from the first effect, skip to avoid infinite loop
+    if (isSyncingFromQuery.current) {
+      isSyncingFromQuery.current = false
       return
     }
-    const where = buildWhereClause(filterValues, fields, isHebrew)
+
+    if (fields.length === 0) return
+
+    const quickFilterConditions = buildQuickFilterConditions(filterValues, fields, locale)
+    const quickFilterFieldNames = new Set(fields.map((f) => f.name))
+    const otherFilters = cleanWhereClause(query.where, quickFilterFieldNames)
+
+    const allConditions = [...quickFilterConditions]
+    if (otherFilters) {
+      if (otherFilters.and && Array.isArray(otherFilters.and)) {
+        allConditions.push(...otherFilters.and)
+      } else if (Object.keys(otherFilters).length > 0) {
+        allConditions.push(otherFilters)
+      }
+    }
+
+    let newWhere: Record<string, any> = {}
+    if (allConditions.length > 1) {
+      newWhere = { and: allConditions }
+    } else if (allConditions.length === 1) {
+      newWhere = allConditions[0]
+    }
+
+    // Only update if the query has actually changed to avoid unnecessary updates
+    if (!isEqual(newWhere, query.where)) {
+      refineListData({
+        columns: parseColumns(query.columns),
+        where: newWhere,
+        page: '1',
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterValues, fields, i18n.language, refineListData])
+  // Effect for persisting to localStorage
+  useEffect(() => {
     try {
       if (Object.keys(filterValues).length > 0) {
         localStorage.setItem(localStorageKey, JSON.stringify(filterValues))
       } else {
         localStorage.removeItem(localStorageKey)
-        return
       }
     } catch (error) {
       console.error('Failed to save filters to localStorage', error)
     }
+  }, [filterValues, localStorageKey])
 
-    if (JSON.stringify(where) !== JSON.stringify(query.where)) {
-      refineListData({
-        columns: parseColumns(query.columns),
-        where,
-        page: '1',
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues, fields, localStorageKey])
-
+  // Updates only the internal state
   const handleFilterChange = useCallback((fieldName: string, value: any) => {
     setFilterValues((prev) => {
       const newValues = { ...prev }
@@ -251,8 +387,7 @@ const QuickFilter = ({
   // This function remains largely the same.
   const getActiveFiltersDetails = () => {
     const activeFilters: string[] = []
-    const isHebrew = i18n.language === 'he'
-
+    const locale = i18n.language as SupportedLocale
     Object.entries(filterValues).forEach(([fieldName, value]) => {
       const field = fields.find((f) => f.name === fieldName)
       if (!field) return
@@ -264,11 +399,12 @@ const QuickFilter = ({
             let dateDescription = ''
 
             if (dateValue.type === 'predefined' && dateValue.predefinedValue) {
-              const allOptions = [...pastDateFilterOptions, ...futureDateFilterOptions]
+              const { pastOptions, futureOptions } = getDateFilterOptions(locale)
+              const allOptions = [...pastOptions, ...futureOptions]
               const option = allOptions.find((opt) => opt.value === dateValue.predefinedValue)
-              dateDescription = option ? option.label : isHebrew ? 'מותאם אישית' : 'Custom'
+              dateDescription = option ? option.label : getLabel('custom', locale)
             } else if (dateValue.type === 'custom' || dateValue.customRange) {
-              dateDescription = isHebrew ? 'מותאם אישית' : 'Custom'
+              dateDescription = getLabel('custom', locale)
             }
 
             if (dateDescription) {
@@ -282,7 +418,7 @@ const QuickFilter = ({
             const totalOptions = field.options?.length || 0
 
             if (selectValue.selectedValues.length === totalOptions) {
-              activeFilters.push(`${field.label} (${isHebrew ? 'הכל' : 'All'})`)
+              activeFilters.push(`${field.label} (${getLabel('all', locale)})`)
             } else if (selectValue.selectedValues.length === 1) {
               // Show the actual option name when only one is selected
               const selectedOption = field.options?.find(
@@ -302,7 +438,7 @@ const QuickFilter = ({
         case 'checkbox':
           if (value !== 'indeterminate') {
             const checkboxValue =
-              value === 'checked' ? (isHebrew ? 'כן' : 'Yes') : isHebrew ? 'לא' : 'No'
+              value === 'checked' ? getLabel('yes', locale) : getLabel('no', locale)
             activeFilters.push(`${field.label} (${checkboxValue})`)
           }
           break
@@ -313,11 +449,6 @@ const QuickFilter = ({
   }
 
   const clearAllFilters = () => {
-    refineListData({
-      columns: parseColumns(query.columns),
-      where: {},
-      page: '1',
-    })
     setFilterValues({})
   }
 
@@ -344,7 +475,6 @@ const QuickFilter = ({
 
   const activeFiltersDetails = getActiveFiltersDetails()
   const hasActiveFilters = activeFiltersDetails.length > 0
-  const isHebrew = i18n.language === 'he'
 
   if (!fields.length) return null
 
@@ -365,9 +495,7 @@ const QuickFilter = ({
             <>
               <span className="text-sm truncate">
                 <strong>
-                  {isHebrew
-                    ? `${activeFiltersDetails.length === 1 ? 'סינון פעיל בעמודה' : 'סינון פעיל בעמודות'}: `
-                    : `${activeFiltersDetails.length === 1 ? 'Active filter on column' : 'Active filters on columns'}: `}
+                  {`${activeFiltersDetails.length === 1 ? getLabel('activeFilterSingular', locale) : getLabel('activeFilterPlural', locale)}: `}
                 </strong>{' '}
                 {activeFiltersDetails.join(' • ')}
               </span>
@@ -383,7 +511,7 @@ const QuickFilter = ({
               </span>
             </>
           ) : (
-            <span className="text-sm truncate">{isHebrew ? 'סינון מהיר' : 'Quick Filters'}</span>
+            <span className="text-sm truncate">{getLabel('quickFilters', locale)}</span>
           )}
 
           {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

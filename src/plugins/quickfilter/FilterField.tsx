@@ -7,8 +7,8 @@ import { getTranslation, rtlLanguages } from '@payloadcms/translations'
 import { DateFilter } from '@/plugins/quickfilter/filters/components/date-filter'
 import { SelectFilter } from '@/plugins/quickfilter/filters/components/select-filter'
 import { CheckboxFilter } from '@/plugins/quickfilter/filters/components/checkbox-filter'
-import type { Locale } from '@/types/filter-types'
 import { SmallSelectFilter } from '@/plugins/quickfilter/filters/components/small-select-filter'
+import { Locale } from '@/plugins/quickfilter/filters/types/filters-type'
 
 const FilterField = ({
   field,
@@ -23,7 +23,7 @@ const FilterField = ({
   const localeLang = i18n.language
   const isRTL = (rtlLanguages as readonly string[]).includes(localeLang)
   const direction = isRTL ? 'rtl' : 'ltr'
-  const userLocale = { code: localeLang, direction }
+  const locale = { code: localeLang, direction } as Locale
 
   const handleDateFilterChange = useCallback(
     (value: any) => {
@@ -54,8 +54,8 @@ const FilterField = ({
           value={controlledValue}
           key={field.name}
           onChange={handleDateFilterChange}
-          locale={userLocale as Locale}
-          className={` w-[${field.width || '250px'}]`}
+          locale={locale}
+          style={{ width: field.width || '230px' }}
         />
       )
     case 'select':
@@ -70,8 +70,8 @@ const FilterField = ({
             }))}
             onChange={handleSelectFilterChange}
             value={controlledValue}
-            locale={userLocale as Locale}
-            className={` w-[${field.width || '250px'}]`}
+            locale={locale}
+            style={{ width: field.width || '230px' }}
           />
         )
       }
@@ -85,8 +85,8 @@ const FilterField = ({
           }))}
           onChange={handleSelectFilterChange}
           value={controlledValue}
-          locale={userLocale as Locale}
-          className={` w-[${field.width || '250px'}]`}
+          locale={locale}
+          style={{ width: field.width || '230px' }}
         />
       )
     case 'checkbox':
@@ -97,8 +97,8 @@ const FilterField = ({
           onChange={handleCheckboxFilterChange}
           value={controlledValue}
           checkboxLabel={''}
-          locale={userLocale as Locale}
-          className={` w-[${field.width || '250px'}]`}
+          locale={locale}
+          style={{ width: field.width || '230px' }}
         />
       )
     default:

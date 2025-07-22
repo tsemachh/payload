@@ -14,6 +14,7 @@ interface CompanyTreeSelectorProps {
   onSelectionChangeAction: (selected: string[]) => Promise<void> | void
   className?: string
   isLoading?: boolean
+  showSearch?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -21,6 +22,7 @@ export function CompanyTreeSelector({
   onSelectionChangeAction,
   className,
   isLoading = false,
+  showSearch = true,
 }: CompanyTreeSelectorProps) {
   const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
@@ -385,16 +387,18 @@ export function CompanyTreeSelector({
   return (
     <div className={className} dir="rtl">
       <div className="relative border rounded-md p-2">
-        <div className="mb-2">
-          <input
-            type="text"
-            placeholder="חפש חברה..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
-            disabled={isLoading}
-          />
-        </div>
+        {showSearch && (
+          <div className="mb-2">
+            <input
+              type="text"
+              placeholder="חפש חברה..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-7 px-2 text-sm bg-transparent border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+              disabled={isLoading}
+            />
+          </div>
+        )}
         <div
           ref={treeContainerRef}
           className={cn('w-full', shouldScroll ? 'max-h-[calc(100vh-350px)] overflow-auto' : '')}
