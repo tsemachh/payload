@@ -24,6 +24,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ChevronLeft,
   Filter,
   FilterX,
   Search,
@@ -43,9 +44,9 @@ import {
   isValidDate,
 } from '../helpers/utils-data-table'
 import { Checkbox } from './ui/checkbox'
-import { MeetingState } from '@/payload-types'
+import type { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
-import {
+import type {
   Column,
   DataTableProps,
   FacetedFilterItem,
@@ -70,6 +71,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   defaultSortDirection = 'asc',
   tableId = 'default-table',
   renderRowActions,
+  searchOption = true,
   searchPlaceholder = 'חיפוש כללי...',
   filterOption = true,
   filterLabel = 'סינון',
@@ -79,6 +81,8 @@ export function DataTableStatic<T extends Record<string, any>>({
   onlyFuture = false,
   tableHeightOffset = 200,
   isLoading = false,
+  renderExpandedRowContent,
+  expanderColumnKey,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -87,10 +91,15 @@ export function DataTableStatic<T extends Record<string, any>>({
     key: (defaultSortField || columns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
+
   const { companies } = useCompaniesContext()
   const [columnVisibility, setColumnVisibility] = useState<{
     [key: string]: boolean
   }>({})
+
+  // State for generic row expansion (used for agendas) - only if renderExpandedRowContent is provided
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
+
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
@@ -183,7 +192,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       }
     })
     setDateFilters(initialDateFilters)
-  }, [columns, data, tableId])
+  }, [columns, data, tableId, columnsOption])
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
@@ -680,12 +689,13 @@ export function DataTableStatic<T extends Record<string, any>>({
         } else if (column.key === 'meetingState') {
           const meetingStateCounts = filteredData.reduce(
             (acc, { meetingState }) => {
-              if (!meetingState) return acc // Skip null values
-              acc[meetingState as keyof typeof acc] =
-                (acc[meetingState as keyof typeof acc] || 0) + 1
+              if (!meetingState) return acc // Skip null/undefined values
+
+              const key = meetingState.toString() // 🔧 הקסטה ל־string
+              acc[key] = (acc[key] || 0) + 1
               return acc
             },
-            {} as Record<Exclude<MeetingState, null>, number>,
+            {} as Record<string, number>,
           )
 
           facets[column.key as string] = Object.entries(meetingStateCounts).map(
@@ -707,26 +717,47 @@ export function DataTableStatic<T extends Record<string, any>>({
     return facets
   }, [columns, getFilteredDataExcludingColumn])
 
+  // Toggle generic row expansion (used for agendas) - only if renderExpandedRowContent is provided
+  const toggleRowExpand = useCallback(
+    (rowId: string) => {
+      if (!renderExpandedRowContent) return
+
+      setExpandedRowIds((prev) => {
+        const newSet = new Set(prev)
+        if (newSet.has(rowId)) {
+          newSet.delete(rowId)
+        } else {
+          newSet.add(rowId)
+        }
+        return newSet
+      })
+    },
+    [renderExpandedRowContent],
+  )
+
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <div className="relative w-1/3">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          {searchTerm && (
-            <X
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ז-10"
-              onClick={() => setSearchTerm('')}
+        {searchOption && (
+          <div className="relative w-1/3">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            {searchTerm && (
+              <X
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10 cursor-pointer"
+                onClick={() => setSearchTerm('')}
+              />
+            )}
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 text-right"
+              disabled={isLoading}
             />
-          )}
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10 text-right"
-            disabled={isLoading}
-          />
-        </div>
+          </div>
+        )}
+
         <div className="flex space-x-2 space-x-reverse">
           {filterOption && (
             <Button
@@ -750,7 +781,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex justify-between items-center w-40"
+                  className="flex justify-between items-center w-40 bg-transparent"
                   disabled={isLoading}
                 >
                   <span>{columnsLabel}</span>
@@ -1018,6 +1049,23 @@ export function DataTableStatic<T extends Record<string, any>>({
                             )
                           }}
                         >
+                          {/* Add expander icon for generic expansion (agendas) - only if both props are provided */}
+                          {expanderColumnKey === column.key && renderExpandedRowContent && (
+                            <span
+                              className="inline-flex items-center justify-center ml-2 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleRowExpand(row[idField] as string)
+                              }}
+                            >
+                              {expandedRowIds.has(row[idField] as string) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronLeft className="h-4 w-4" />
+                              )}
+                            </span>
+                          )}
+
                           {column.key === 'companies'
                             ? renderCompaniesCell(
                                 row,
@@ -1035,6 +1083,19 @@ export function DataTableStatic<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
+
+                    {/* Render expanded content row (for agendas) - only if renderExpandedRowContent is provided */}
+                    {renderExpandedRowContent && expandedRowIds.has(row[idField] as string) && (
+                      <TableRow className="">
+                        <TableCell
+                          colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
+                          className="p-0"
+                        >
+                          {renderExpandedRowContent(row)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (
@@ -1063,6 +1124,13 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           if (typeof value === 'number') {
                                             return new Intl.NumberFormat('he-IL').format(value)
                                           }
+                                          if (Array.isArray(value)) {
+                                            return `${value.length} פריטים`
+                                          }
+                                          if (typeof value === 'object' && value !== null) {
+                                            return JSON.stringify(value)
+                                          }
+                                          return String(value || '')
                                         })()}
                                       </TableCell>
                                     )
@@ -1125,6 +1193,13 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                       value,
                                                     )
                                                   }
+                                                  if (Array.isArray(value)) {
+                                                    return `${value.length} פריטים`
+                                                  }
+                                                  if (typeof value === 'object' && value !== null) {
+                                                    return JSON.stringify(value)
+                                                  }
+                                                  return String(value || '')
                                                 })()}
                                               </TableCell>
                                             )
