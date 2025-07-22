@@ -35,6 +35,15 @@ export const PLUGIN_LABELS = {
 
     // Loading states
     loading: 'Loading...',
+
+    // Confirmation dialog
+    confirmationTitle: 'Impersonate User',
+    confirmationDescription:
+      'Impersonating this user will be logged in the security log and an alert will be sent to their company.',
+    confirmationDescriptionWithUser:
+      'Impersonating {userName} will be logged in the security log and an alert will be sent to their company.',
+    confirmButton: 'Impersonate',
+    cancelButton: 'Cancel',
   },
   he: {
     // Main actions
@@ -59,7 +68,7 @@ export const PLUGIN_LABELS = {
     impersonationStart: 'התחלת התחזות',
     impersonationEnd: 'סיום התחזות',
 
-       // Field labels
+    // Field labels
     action: 'פעולה',
     originalUser: 'משתמש מקורי',
     targetUser: 'משתמש יעד',
@@ -71,6 +80,14 @@ export const PLUGIN_LABELS = {
 
     // Loading states
     loading: 'טוען...',
+
+    // Confirmation dialog
+    confirmationTitle: 'התחזות למשתמש',
+    confirmationDescription: 'התחזות למשתמש זה תירשם ביומן אבטחה ותשלח התרעה להחברות שלו',
+    confirmationDescriptionWithUser:
+      'התחזות למשתמש {userName} תירשם ביומן אבטחה ותשלח התרעה להחברות שלו',
+    confirmButton: 'התחזה',
+    cancelButton: 'ביטול',
   },
 } as const
 
