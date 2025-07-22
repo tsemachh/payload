@@ -83,9 +83,9 @@ export const PLUGIN_LABELS = {
 
     // Confirmation dialog
     confirmationTitle: 'התחזות למשתמש',
-    confirmationDescription: 'התחזות למשתמש זה תירשם ביומן אבטחה ותשלח התרעה להחברות שלו',
+    confirmationDescription: 'התחזות למשתמש זה תירשם ביומן אבטחה ותשלח התרעה לחברות שלו',
     confirmationDescriptionWithUser:
-      'התחזות למשתמש {userName} תירשם ביומן אבטחה ותשלח התרעה להחברות שלו',
+      'התחזות למשתמש {userName} תירשם ביומן אבטחה ותשלח התרעה לחברות שלו',
     confirmButton: 'התחזה',
     cancelButton: 'ביטול',
   },
