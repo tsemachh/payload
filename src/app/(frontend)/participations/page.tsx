@@ -14,11 +14,10 @@ import { fetcher } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { BooleanIcon } from '@/components/ui/icons'
-import type { ParticipationTableDataType } from './components/participation-table'
 import { DataTableStatic } from '../components/data-table-client'
 import { Checkbox } from '@/components/ui/checkbox'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-
+import { ParticipationTableDataType } from './types'
 export interface Company {
   id: string
   name: string
