@@ -156,6 +156,9 @@ export const Votes: CollectionConfig = {
                 {
                   name: 'checksum',
                   type: 'text',
+                  admin: {
+                    hidden: true
+                  },
                   hooks: {
                     afterRead: [
                       async ({ data }) => {
@@ -201,6 +204,49 @@ export const Votes: CollectionConfig = {
                 },
               ],
             },
+            {
+              type:'row',
+              fields: [
+                {
+                  name: 'reported',
+                  label: 'הצבעה בפועל',
+                  type: 'checkbox',
+                  defaultValue: false,
+                },
+                {
+                  name: 'reportedBy',
+                  label: 'דווח על ידי',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'reportedTime',
+                  label: 'תאריך דיווח',
+                  type: 'date',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+              ]},{
+              type:'row',
+              fields :[
+                {
+                  name: 'fundsWithHoldingsUpdates',
+                  label: 'עדכוני אחזקות תיקים',
+                  type: 'json',
+                  //hidden: true,
+                  defaultValue: {},
+                  admin: {
+                    components: {
+                      Field: '/collections/votes/components/HoldingsInFunds',
+                    },
+                  },
+                },
+              ],
+            },
+
             {
               name: 'votes',
               label: 'סעיפי הצבעה',
@@ -326,45 +372,6 @@ export const Votes: CollectionConfig = {
                   type: 'textarea',
                 },
               ],
-            },
-          ],
-        },
-        {
-          label: 'הצבעה בפועל',
-          fields: [
-            {
-              name: 'reported',
-              label: 'הצבעה בפועל',
-              type: 'checkbox',
-              defaultValue: false,
-            },
-            {
-              name: 'reportedBy',
-              label: 'דווח על ידי',
-              type: 'text',
-              admin: {
-                hidden: true,
-              },
-            },
-            {
-              name: 'reportedTime',
-              label: 'תאריך דיווח',
-              type: 'date',
-              admin: {
-                hidden: true,
-              },
-            },
-            {
-              name: 'fundsWithHoldingsUpdates',
-              label: 'עדכוני אחזקות תיקים',
-              type: 'json',
-              //hidden: true,
-              defaultValue: {},
-              admin: {
-                components: {
-                  Field: '/collections/votes/components/HoldingsInFunds',
-                },
-              },
             },
           ],
         },

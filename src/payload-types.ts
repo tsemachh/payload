@@ -687,9 +687,6 @@ export interface Vote {
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  votes?: TopicVote;
-  voteDocuments?: (string | Document)[] | null;
-  clientComment?: string | null;
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
@@ -702,6 +699,9 @@ export interface Vote {
     | number
     | boolean
     | null;
+  votes?: TopicVote;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -1385,13 +1385,13 @@ export interface VotesSelect<T extends boolean = true> {
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  votes?: T | TopicVoteSelect<T>;
-  voteDocuments?: T;
-  clientComment?: T;
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;
   fundsWithHoldingsUpdates?: T;
+  votes?: T | TopicVoteSelect<T>;
+  voteDocuments?: T;
+  clientComment?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
