@@ -29,7 +29,7 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
   const defaultStyle: React.CSSProperties = {
     position: 'fixed',
     [position]: 0,
-    left: '30%',
+    left: '20%',
     backgroundColor: '#ff6b35',
     color: 'white',
     padding: '12px 16px',
@@ -43,7 +43,7 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
     justifyContent: 'center',
     gap: '12px',
     direction: locale === 'he' ? 'rtl' : 'ltr',
-    width: '800px',
+    width: '550px',
     ...style,
   }
 

@@ -65,6 +65,10 @@ export const AdminNotifications: CollectionConfig = {
           label: 'הצבעה חדשה לאחר מועד קובע',
           value: 'newVoteAfterHoldingLimit',
         },
+        {
+          label: 'התחזות למשתמש',
+          value: 'userImpersonation',
+        },
       ],
       defaultValue: 'general',
     },

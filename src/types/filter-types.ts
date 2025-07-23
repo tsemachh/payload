@@ -1,4 +1,4 @@
-import { SupportedLocale } from '@/plugins/quickfilter/labels'
+import { SupportedLocale } from '@/plugins/impersonate/labels'
 
 export interface DateFilterOption {
   value: string
@@ -11,7 +11,7 @@ export interface DateRange {
 }
 
 export interface DateFilterValue {
-  type: "predefined" | "custom"
+  type: 'predefined' | 'custom'
   predefinedValue?: string
   customRange?: DateRange
 }
@@ -22,13 +22,13 @@ export interface SelectFilterOption {
 }
 
 export interface SelectFilterValue {
-  type: "all" | "some" | "none"
+  type: 'all' | 'some' | 'none'
   selectedValues: string[]
 }
 
-export type CheckboxFilterState = "checked" | "unchecked" | "indeterminate"
+export type CheckboxFilterState = 'checked' | 'unchecked' | 'indeterminate'
 
 export interface Locale {
   code: SupportedLocale
-  direction: "rtl" | "ltr"
+  direction: 'rtl' | 'ltr'
 }
