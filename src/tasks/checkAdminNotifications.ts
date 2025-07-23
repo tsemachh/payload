@@ -1,6 +1,6 @@
 import type { TaskHandler } from 'payload'
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
-import { createAdminNotification } from '@/utils/utils'
+import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import {
   getWorkingDateAfter,
   getWorkingDateBefore,
@@ -27,6 +27,7 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
       holdingsNotFed: 0,
       meetingsNotVoted: 0,
       noFeedFromPredictae: false,
+      votesAfterHoldingDate: 0,
     }
 
     if (isHolidayOrShabbat(new Date())) {
@@ -43,6 +44,9 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
 
     // 3. Check if there was no feed from Predictae in the past day
     await checkPredictaeFeeds(req, notifications)
+
+    // 4. Check for votes that were done before the holding date
+    await checkVotesAfterHoldingDate(req, notifications)
 
     return {
       success: true,
@@ -306,6 +310,122 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
     req.payload.logger.error(`Error checking Predictae feeds: ${JSON.stringify(error)}`)
   }
 }
+/**
+ * Check for votes that were done before the holding date and create admin notifications
+ * one day after the holding date occurred
+ */
+async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: any) {
+  try {
+    // Get current date
+    const now = new Date()
+
+    // Find meetings where the holding limit date was yesterday
+    // We want to find meetings where the day after the holding limit is today
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStart = new Date(yesterday)
+    yesterdayStart.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+
+    // Find meetings where the holding limit date was yesterday
+    const { docs: meetings } = await req.payload.find({
+      collection: 'meetings',
+      select: {
+        id: true,
+        holdingsLimit: true,
+        fullName: true,
+      },
+      where: {
+        holdingsLimit: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
+        },
+      },
+      limit: 0,
+      depth: 0,
+    })
+
+    // For each meeting, check if there are any published votes
+    for (const meeting of meetings) {
+      // Find all published votes for this meeting
+      const { docs: votes } = await req.payload.find({
+        collection: 'votes',
+        select: {
+          company: true,
+          creator: true,
+        },
+        where: {
+          meeting: {
+            equals: meeting.id,
+          },
+          _status: {
+            equals: 'published',
+          },
+        },
+        limit: 0,
+        depth: 0,
+      })
+
+      if (votes.length > 0) {
+        // Group votes by user
+        const votesByUser = new Map<string, { voteIds: string[]; companies: Set<string> }>()
+
+        votes.forEach((vote: any) => {
+          const userId = vote.creator
+          const companyId = getIdOfRelationField(vote.company) as string
+
+          if (userId && companyId) {
+            if (!votesByUser.has(userId)) {
+              votesByUser.set(userId, { voteIds: [], companies: new Set() })
+            }
+            votesByUser.get(userId)?.voteIds.push(vote.id)
+            votesByUser.get(userId)?.companies.add(companyId)
+          }
+        })
+
+        // Create notification for each user
+        for (const [userId, { voteIds, companies }] of votesByUser.entries()) {
+          const meetingName = meeting?.fullName
+          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
+          const url = `/admin/collections/meetings/${meeting.id}`
+          const companiesArray = Array.from(companies)
+
+          // Delete any existing notifications with the same message for this user
+          try {
+            await req.payload.delete({
+              collection: 'admin-notifications',
+              where: {
+                relatedUser: { equals: userId },
+                message: { equals: message },
+                meeting: { equals: meeting.id },
+                url: { equals: url },
+              },
+            })
+          } catch (error) {
+            req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
+          }
+
+          // Create notification
+          await createAdminNotification(
+            req.payload,
+            message,
+            'newVoteAfterHoldingLimit',
+            url,
+            companiesArray,
+            userId,
+            meeting.id,
+          )
+
+          notifications.votesAfterHoldingDate++
+        }
+      }
+    }
+  } catch (error) {
+    req.payload.logger.error(`Error checking votes after holding date: ${JSON.stringify(error)}`)
+  }
+}
+
 export const checkAdminNotificationsHandler: TaskHandler<'checkAdminNotifications'> = async ({
   job,
   req,
