@@ -94,6 +94,12 @@ export interface FacetedFilterItem {
   icon?: React.ReactNode
   translate?: string
 }
+// Structure for faceted filters
+export interface FacetedFilterItemServer {
+  value: string
+  icon?: React.ReactNode
+  translate?: string
+}
 // Pagination props
 export interface PaginationProps {
   pageSize: number
