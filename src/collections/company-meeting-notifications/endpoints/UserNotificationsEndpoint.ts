@@ -44,6 +44,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       'after-holding-limit': 'מועד קובע',
       'before-voting-end': 'סגירת הצבעה',
       'holdings-not-fed': 'דיווח אחזקה',
+      'user-impersonation': 'התחזות למשתמש',
     }
 
     // Transform notifications to the required format
@@ -59,6 +60,9 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
           break
         case 'holdings-not-fed':
           route = '/holdings'
+          break
+        case 'user-impersonation':
+          route = '/admin/collections/users'
           break
       }
       return {

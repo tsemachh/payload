@@ -173,7 +173,11 @@ export type AdminNotificationType =
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
-export type UserNotificationType = 'after-holding-limit' | 'before-voting-end' | 'holdings-not-fed';
+export type UserNotificationType =
+  | 'after-holding-limit'
+  | 'before-voting-end'
+  | 'holdings-not-fed'
+  | 'user-impersonation';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".

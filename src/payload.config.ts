@@ -42,7 +42,7 @@ import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
-import { createAdminNotification } from '@/utils/utils'
+import { handleImpersonationStart, handleImpersonationEnd } from './plugins/impersonate/hooks'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -290,43 +290,11 @@ export default buildConfig({
     impersonatePlugin({
       enabled: true,
       authCollection: 'users',
-      // Labels are now centralized in the plugin itself
       onImpersonate: async ({ req, impersonateUserId }) => {
-        const { user: originalUser } = req
-
-        // Log impersonation action
-        console.log(`🎭 Impersonation started:`, {
-          originalUser: originalUser?.email,
-          targetUser: impersonateUserId,
-          timestamp: new Date().toISOString(),
-          ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
-        })
-
-        // Get the target user details for the notification
-        try {
-          const targetUser = await req.payload.findByID({
-            collection: 'users',
-            id: impersonateUserId,
-          })
-
-          // Create admin notification
-          await createAdminNotification(
-            req.payload,
-            `מנהל ${originalUser?.email || originalUser?.name || 'לא ידוע'} התחזה למשתמש ${targetUser?.email || targetUser?.name || 'לא ידוע'}`,
-            'userImpersonation',
-            `/admin/collections/users/${impersonateUserId}`,
-            undefined,
-            impersonateUserId as string,
-          )
-        } catch (error) {
-          console.error('Error creating impersonation notification:', error)
-        }
+        await handleImpersonationStart({ req, impersonateUserId: impersonateUserId as string })
       },
       onUnImpersonate: async ({ req, originalUserId }) => {
-        console.log(`✅ Impersonation ended:`, {
-          returnedToUser: originalUserId,
-          timestamp: new Date().toISOString(),
-        })
+        await handleImpersonationEnd({ req, originalUserId: originalUserId as string })
       },
     }),
   ],
