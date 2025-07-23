@@ -168,10 +168,11 @@ export const publishVotes = async (req: PayloadRequest) => {
             await req.payload.delete({
               collection: 'admin-notifications',
               where: {
-                companies: { contains: companiesIds[0] },
+                companies: { contains: companiesIds },
                 message: { equals: message },
+                meeting: { equals: meetingId },
                 url: { equals: url },
-                user: { equals: req?.user?.id },
+                relatedUser: { equals: req?.user?.id },
               },
             })
           } catch (error) {
