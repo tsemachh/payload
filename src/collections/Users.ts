@@ -100,14 +100,7 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
     group: 'ניהול',
-    defaultColumns: [
-      'email',
-      'name',
-      'active',
-      'companies',
-      'isAdmin',
-      'impersonate',
-    ],
+    defaultColumns: ['email', 'name', 'active', 'companies', 'isAdmin', 'impersonate'],
   },
   custom: {
     filterList: [

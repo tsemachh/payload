@@ -166,6 +166,7 @@ export type AdminNotificationType =
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
       | 'newVoteAfterHoldingLimit'
+      | 'userImpersonation'
     )
   | null;
 /**
