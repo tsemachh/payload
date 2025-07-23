@@ -242,6 +242,7 @@ export default function VotingForm() {
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
 
   useEffect(() => {
@@ -520,7 +521,8 @@ export default function VotingForm() {
         setIsSubmitting(false)
       }
     },
-    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
   )
 
   const saveDraftData = useCallback(
@@ -761,7 +763,10 @@ export default function VotingForm() {
             meetingData={{
               meetingInviteUrl: meetingData.meetingInviteUrl,
               meetingType: meetingData.meetingType,
-              stockName: meetingData.meetingType,
+              stockName:
+                meetingData.stockName && meetingData.stockNumber
+                  ? `${meetingData.stockName} (${meetingData.stockNumber})`
+                  : meetingData.stockName || meetingData.stockNumber || '',
             }}
             isReadOnly={isReadOnly}
             isDirty={isDirty}
