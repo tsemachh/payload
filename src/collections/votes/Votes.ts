@@ -1,8 +1,6 @@
-import { ValidationError, type CollectionConfig } from 'payload'
-import { addDays } from '@/utils/dateUtils'
-import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
+import { type CollectionConfig } from 'payload'
 
-import { Meeting, TopicVote, Vote } from '@/payload-types'
+import { TopicVote, Vote } from '@/payload-types'
 
 import {
   getVoteByMeetingAndCompanies,
@@ -11,11 +9,7 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
-import {
-  notifyVoteAfterHoldingLimit,
-  updateReportedAndMeetingHoldings,
-  validateOwnedQuantityWhenUnauthorized,
-} from './hooks'
+import { updateReportedAndMeetingHoldings, validateOwnedQuantityWhenUnauthorized } from './hooks'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
@@ -386,7 +380,6 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    afterChange: [notifyVoteAfterHoldingLimit],
     beforeChange: [updateReportedAndMeetingHoldings],
     beforeValidate: [validateOwnedQuantityWhenUnauthorized],
   },

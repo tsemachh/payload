@@ -20,9 +20,21 @@ export const AdminNotifications: CollectionConfig = {
   admin: {
     useAsTitle: 'message',
     group: 'ניהול',
+    defaultColumns: [
+      'message',
+      'url',
+      'handled',
+      'type',
+      'createdAt',
+      'meeting',
+      'stock',
+      'meetingDate',
+      'holdingsLimit',
+    ],
   },
+  defaultSort: 'createdAt',
   custom: {
-    filterList: [['type', 'createdAt', 'handled']],
+    filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled']],
   },
   fields: [
     {
@@ -96,18 +108,49 @@ export const AdminNotifications: CollectionConfig = {
       defaultValue: false,
     },
     {
-      name: 'relatedCompany',
-      label: 'חברה קשורה',
-      type: 'relationship',
-      relationTo: 'companies',
-      hasMany: false,
-    },
-    {
-      name: 'relatedUser',
-      label: 'משתמש קשור',
-      type: 'relationship',
-      relationTo: 'users',
-      hasMany: false,
+      type: 'row',
+      fields: [
+        {
+          name: 'companies',
+          label: 'חברות קשורות',
+          type: 'relationship',
+          relationTo: 'companies',
+          hasMany: true,
+        },
+        {
+          name: 'meeting',
+          label: 'אסיפה קשורה',
+          type: 'relationship',
+          relationTo: 'meetings',
+          hasMany: false,
+        },
+        {
+          name: 'meetingDate',
+          label: 'מועד האסיפה',
+          type: 'date',
+          virtual: 'meeting.meetingDate',
+        },
+        {
+          name: 'holdingsLimit',
+          label: 'מועד קובע',
+          type: 'date',
+          virtual: 'meeting.holdingsLimit',
+        },
+        {
+          name: 'stock',
+          label: 'מניה',
+          type: 'relationship',
+          relationTo: 'stocks',
+          virtual: 'meeting.stock',
+        },
+        {
+          name: 'relatedUser',
+          label: 'משתמש קשור',
+          type: 'relationship',
+          relationTo: 'users',
+          hasMany: false,
+        },
+      ],
     },
   ],
   endpoints: [

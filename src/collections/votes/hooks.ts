@@ -1,67 +1,8 @@
-import { addDays } from '@/utils/dateUtils'
-import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import {
-  type CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   type CollectionBeforeValidateHook,
   ValidationError,
 } from 'payload'
-import { Meeting } from '@/payload-types'
-
-export const notifyVoteAfterHoldingLimit: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-  previousDoc,
-}) => {
-  if (doc._status === 'published' && doc._status !== previousDoc?._status) {
-    try {
-      let meeting: Meeting | string = doc.meeting
-      if (typeof meeting === 'string') {
-        meeting = await req.payload.findByID({
-          collection: 'meetings',
-          id: meeting,
-        })
-      }
-
-      if (meeting?.holdingsLimit) {
-        const holdingsLimit = new Date(meeting.holdingsLimit)
-        const dayAfterHoldings = addDays(holdingsLimit, 1)
-
-        if (new Date() > dayAfterHoldings) {
-          const meetingName = meeting?.fullName
-          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
-          const url = `/admin/collections/votes/${doc.id}`
-          const relatedCompany = getIdOfRelationField(doc.company)
-
-          try {
-            await req.payload.delete({
-              collection: 'admin-notifications',
-              where: {
-                relatedCompany: { equals: relatedCompany },
-                message: { equals: message },
-                url: { equals: url },
-                user: { equals: req?.user?.id },
-              },
-            })
-          } catch (error) {
-            req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
-          }
-
-          await createAdminNotification(
-            req.payload,
-            message,
-            'newVoteAfterHoldingLimit',
-            url,
-            relatedCompany as string,
-            req?.user?.id,
-          )
-        }
-      }
-    } catch (error) {
-      console.error('Error creating notification for published vote:', error)
-    }
-  }
-}
 
 export const updateReportedAndMeetingHoldings: CollectionBeforeChangeHook = async ({
   data,
