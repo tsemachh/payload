@@ -118,7 +118,7 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
           await req.payload.delete({
             collection: 'admin-notifications',
             where: {
-              relatedCompany: { equals: company.id },
+              companies: { contains: [company.id] },
               message: { equals: message },
             },
           })

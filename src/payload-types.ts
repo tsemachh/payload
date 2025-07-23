@@ -781,7 +781,11 @@ export interface AdminNotification {
   type?: AdminNotificationType;
   url?: string | null;
   handled?: boolean | null;
-  relatedCompany?: (string | null) | Company;
+  companies?: (string | Company)[] | null;
+  meeting?: (string | null) | Meeting;
+  meetingDate?: string | null;
+  holdingsLimit?: string | null;
+  stock?: (string | null) | Stock;
   relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
@@ -1555,7 +1559,11 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   type?: T;
   url?: T;
   handled?: T;
-  relatedCompany?: T;
+  companies?: T;
+  meeting?: T;
+  meetingDate?: T;
+  holdingsLimit?: T;
+  stock?: T;
   relatedUser?: T;
   creator?: T;
   updator?: T;

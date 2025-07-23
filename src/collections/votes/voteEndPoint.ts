@@ -1,5 +1,8 @@
 import { UserVote, VoteDataType } from '@/app/(frontend)/types/vote'
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { addDays } from '@/utils/dateUtils'
+import { createAdminNotification } from '@/utils/utils'
+import { Meeting } from '@/payload-types'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
@@ -141,6 +144,56 @@ export const publishVotes = async (req: PayloadRequest) => {
         }),
       ),
     )
+
+    // Check if votes were published after holding limit and create admin notification
+    try {
+      // Get meeting details
+      const meeting = (await req.payload.findByID({
+        collection: 'meetings',
+        select: { holdingsLimit: true, fullName: true },
+        id: meetingId,
+      })) as Meeting
+
+      if (meeting?.holdingsLimit) {
+        const holdingsLimit = new Date(meeting.holdingsLimit)
+        const dayAfterHoldings = addDays(holdingsLimit, 1)
+
+        if (new Date() > dayAfterHoldings) {
+          const meetingName = meeting?.fullName
+          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
+          const url = `/admin/collections/meetings/${meetingId}`
+
+          // Delete any existing notifications with the same message
+          try {
+            await req.payload.delete({
+              collection: 'admin-notifications',
+              where: {
+                companies: { contains: companiesIds },
+                message: { equals: message },
+                meeting: { equals: meetingId },
+                url: { equals: url },
+                relatedUser: { equals: req?.user?.id },
+              },
+            })
+          } catch (error) {
+            req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
+          }
+
+          // Create one notification with all companies and meeting ID
+          await createAdminNotification(
+            req.payload,
+            message,
+            'newVoteAfterHoldingLimit',
+            url,
+            companiesIds,
+            req?.user?.id,
+            meetingId,
+          )
+        }
+      }
+    } catch (error) {
+      console.error('Error creating notification for published votes:', error)
+    }
 
     return Response.json(
       votesToPublish.docs.length === 1

@@ -219,8 +219,9 @@ export function findSubCompanyNameById(
  * @param message - The notification message
  * @param type - Type of notification (general, system, user, company, etc.)
  * @param url - Optional URL related to the notification
- * @param relatedCompany - Optional ID of the related company
+ * @param companies - Optional ID or IDs of related companies
  * @param relatedUser - Optional ID of the related user
+ * @param meeting - Optional ID of the related meeting
  * @returns The created notification or null if there was an error
  */
 export async function createAdminNotification(
@@ -228,8 +229,9 @@ export async function createAdminNotification(
   message: string,
   type: AdminNotificationType,
   url?: string,
-  relatedCompany?: string,
+  companies?: string | string[],
   relatedUser?: string,
+  meeting?: string,
 ) {
   try {
     return await payload.create({
@@ -239,8 +241,9 @@ export async function createAdminNotification(
         type,
         url,
         handled: false,
-        relatedCompany,
+        companies: companies ? (Array.isArray(companies) ? companies : [companies]) : undefined,
         relatedUser,
+        meeting,
       },
     })
   } catch (error) {
