@@ -94,11 +94,11 @@ function createRegularFilters(filters: Record<string, string[]>) {
         conditions.push({
           'stock.type': { in: values },
         })
-      }  else if (field === 'meetingType') {
+      } else if (field === 'meetingType') {
         conditions.push({
           type: { in: values.length ? values : [null] },
         })
-      }  else if (field === 'electronicVotingEnabled') {
+      } else if (field === 'electronicVotingEnabled') {
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           electronicVotingEnabled: { in: booleanValues },
@@ -141,6 +141,7 @@ function createDateFilters(
 
   Object.entries(dateFilters).forEach(([field, filter]) => {
     const { past, future, empty } = filter
+    console.log('--------------field', field, '\n-----------filter', filter)
 
     // Skip if all options are selected (no actual filtering)
     if (past === 'allPast' && future === 'allFuture' && empty) {
@@ -151,7 +152,7 @@ function createDateFilters(
     const dateConditions: any[] = []
 
     // Handle past dates
-    if (past && past !== 'allPast') {
+    if (past) {
       const dateRange = getDateRangeForFilter(past)
       if (dateRange) {
         dateConditions.push({
@@ -164,7 +165,7 @@ function createDateFilters(
     }
 
     // Handle future dates
-    if (future && future !== 'allFuture') {
+    if (future) {
       const dateRange = getDateRangeForFilter(future)
       if (dateRange) {
         dateConditions.push({
@@ -210,6 +211,7 @@ function createDateFilters(
       }
     }
   })
+  console.log('----------conditions date', conditions)
 
   return conditions
 }
