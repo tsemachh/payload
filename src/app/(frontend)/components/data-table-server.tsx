@@ -51,9 +51,7 @@ import {
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import {
-  futureDateFilterOptions,
   getDateRange,
-  pastDateFilterOptions,
   unSortAbleColumnsOnServer,
 } from '../meetings/meetingTableConstants'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
@@ -68,6 +66,8 @@ import { Checkbox } from './ui/checkbox'
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
   columns,
+  pastDateFilterOptions = [],
+  futureDateFilterOptions = [],
   idField,
   defaultSortField,
   defaultSortDirection = 'desc',
@@ -81,6 +81,9 @@ export function DataTableServer<T extends Record<string, any>>({
   isLoading = false,
   onServerSort,
   onServerSearch,
+  onServerFilter,
+  onServerDateFilter,
+  serverSideProcessing = false,
   initialSearchTerm = '',
   tableHeightOffset = 250,
 }: DataTableProps<T>) {
@@ -356,18 +359,28 @@ export function DataTableServer<T extends Record<string, any>>({
   // Handle filter
   const handleFilter = useCallback(
     (key: string, value: any) => {
-      setFilters((prev) => {
-        const newFilters = { ...prev }
+      if (serverSideProcessing && onServerFilter) {
+        // Use server-side filtering
         if (value === 'all') {
-          // Initialize all options as checked when resetting the filter
-          newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
+          onServerFilter(key, [])
         } else if (Array.isArray(value)) {
-          newFilters[key] = value
+          onServerFilter(key, value)
         }
-        return newFilters
-      })
+      } else {
+        // Use client-side filtering (fallback)
+        setFilters((prev) => {
+          const newFilters = { ...prev }
+          if (value === 'all') {
+            // Initialize all options as checked when resetting the filter
+            newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
+          } else if (Array.isArray(value)) {
+            newFilters[key] = value
+          }
+          return newFilters
+        })
+      }
     },
-    [data],
+    [data, serverSideProcessing, onServerFilter],
   )
 
   // Handle date filter
@@ -375,24 +388,24 @@ export function DataTableServer<T extends Record<string, any>>({
     (columnKey: string, option: string, checked: boolean) => {
       if (option === '') {
         // Clear all filters for this column
-        setDateFilters((prev) => {
-          const newFilters = { ...prev }
-          newFilters[columnKey] = {
-            past: 'allPast',
-            future: 'allFuture',
-            empty: true,
-          }
-          return newFilters
-        })
+        const clearedFilter = {
+          past: 'allPast',
+          future: 'allFuture',
+          empty: true,
+        }
+        
+        if (serverSideProcessing && onServerDateFilter) {
+          onServerDateFilter(columnKey, clearedFilter)
+        } else {
+          setDateFilters((prev) => ({
+            ...prev,
+            [columnKey]: clearedFilter
+          }))
+        }
         return
       }
 
-      setDateFilters((prev) => {
-        const currentFilter = prev[columnKey] || {
-          past: '',
-          future: '',
-          empty: false,
-        }
+      const updateFilter = (currentFilter: any) => {
         const newFilter = { ...currentFilter }
 
         if (option === 'empty') {
@@ -416,55 +429,105 @@ export function DataTableServer<T extends Record<string, any>>({
           }
         }
 
-        return { ...prev, [columnKey]: newFilter }
-      })
+        return newFilter
+      }
+
+      if (serverSideProcessing && onServerDateFilter) {
+        // Use server-side filtering
+        const currentFilter = dateFilters[columnKey] || {
+          past: '',
+          future: '',
+          empty: false,
+        }
+        const newFilter = updateFilter(currentFilter)
+        onServerDateFilter(columnKey, newFilter)
+      } else {
+        // Use client-side filtering (fallback)
+        setDateFilters((prev) => {
+          const currentFilter = prev[columnKey] || {
+            past: '',
+            future: '',
+            empty: false,
+          }
+          const newFilter = updateFilter(currentFilter)
+          return { ...prev, [columnKey]: newFilter }
+        })
+      }
     },
-    [pastDateFilterOptions, futureDateFilterOptions],
+    [pastDateFilterOptions, futureDateFilterOptions, serverSideProcessing, onServerDateFilter, dateFilters],
   )
   // Reset filters
   const resetFilters = useCallback(() => {
-    if (isFilterActive) {
-      setFilters({})
-      setIsFilterActive(false)
-      const initialDateFilters: {
-        [key: string]: { past: string; future: string; empty: boolean }
-      } = {}
-      columns.forEach((column) => {
-        if (column.type === 'datetime' && column.filterable) {
-          initialDateFilters[column.key as string] = {
-            past: 'allPast',
-            future: 'allFuture',
-            empty: true,
+    if (serverSideProcessing) {
+      // For server-side processing, clear all filters
+      if (isFilterActive) {
+        // Clear all filters
+        columns.forEach((column) => {
+          if (column.filterable) {
+            if (column.type === 'datetime') {
+              if (onServerDateFilter) {
+                onServerDateFilter(column.key as string, {
+                  past: 'allPast',
+                  future: 'allFuture',
+                  empty: true,
+                })
+              }
+            } else {
+              if (onServerFilter) {
+                onServerFilter(column.key as string, [])
+              }
+            }
           }
-        }
-      })
-      setDateFilters(initialDateFilters)
+        })
+        setIsFilterActive(false)
+      } else {
+        setIsFilterActive(true)
+      }
     } else {
-      const initialFilters: { [key: string]: any } = {}
-      columns.forEach((column) => {
-        if (column.filterable) {
-          initialFilters[String(column.key)] = Array.from(
-            new Set(data.map((item) => String(item[column.key as keyof T]))),
-          )
-        }
-      })
-      setFilters(initialFilters)
-      setIsFilterActive(true)
-      const initialDateFilters: {
-        [key: string]: { past: string; future: string; empty: boolean }
-      } = {}
-      columns.forEach((column) => {
-        if (column.type === 'datetime' && column.filterable) {
-          initialDateFilters[column.key as string] = {
-            past: 'allPast',
-            future: 'allFuture',
-            empty: true,
+      // Client-side processing (fallback)
+      if (isFilterActive) {
+        setFilters({})
+        setIsFilterActive(false)
+        const initialDateFilters: {
+          [key: string]: { past: string; future: string; empty: boolean }
+        } = {}
+        columns.forEach((column) => {
+          if (column.type === 'datetime' && column.filterable) {
+            initialDateFilters[column.key as string] = {
+              past: 'allPast',
+              future: 'allFuture',
+              empty: true,
+            }
           }
-        }
-      })
-      setDateFilters(initialDateFilters)
+        })
+        setDateFilters(initialDateFilters)
+      } else {
+        const initialFilters: { [key: string]: any } = {}
+        columns.forEach((column) => {
+          if (column.filterable) {
+            initialFilters[String(column.key)] = Array.from(
+              new Set(data.map((item) => String(item[column.key as keyof T]))),
+            )
+          }
+        })
+        setFilters(initialFilters)
+        setIsFilterActive(true)
+        const initialDateFilters: {
+          [key: string]: { past: string; future: string; empty: boolean }
+        } = {}
+        columns.forEach((column) => {
+          if (column.type === 'datetime' && column.filterable) {
+            initialDateFilters[column.key as string] = {
+              past: 'allPast',
+              future: 'allFuture',
+              empty: true,
+            }
+          }
+        })
+        setDateFilters(initialDateFilters)
+      }
     }
-  }, [data, columns, isFilterActive])
+  }, [data, columns, isFilterActive, serverSideProcessing, onServerFilter, onServerDateFilter])
 
   // Highlight search term in text
   const highlightText = useCallback((text: string, highlight: string) => {
@@ -499,12 +562,7 @@ export function DataTableServer<T extends Record<string, any>>({
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
-    if (column?.key == 'meetingDate') {
-      const dateFilter = dateFilters[columnKey]
-      if (dateFilter?.future === 'allFuture' && !dateFilter?.empty) {
-        return <ChevronDown />
-      }
-    }
+    
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (
@@ -517,6 +575,12 @@ export function DataTableServer<T extends Record<string, any>>({
         return <Filter />
       }
     }
+    
+    if (serverSideProcessing) {
+      // For server-side processing, we don't have complete filter state
+      return <ChevronDown className="h-4 w-4" />
+    }
+    
     if (!filters[columnKey]) {
       return <ChevronDown className="h-4 w-4 " />
     }
@@ -526,40 +590,67 @@ export function DataTableServer<T extends Record<string, any>>({
     const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
     return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
   }
-  // Generate faceted filters רחלי םרוש זה אמור להשתנות רק פעם אחת לא בכול שינוי של הפילטר
-  //בעצם כן אמור להשתנות בכול סינון כי אולי לא יכלול כבר חלק מהעמודות
+  // Generate faceted filters
   const facetedFilters = useMemo(() => {
     const facets: {
       [key: string]: FacetedFilterItemServer[]
     } = {}
     columns.forEach((column) => {
       if (column.filterable) {
-        const filteredData = getFilteredDataExcludingColumn(column.key as string)
-        if (column.type === 'boolean') {
-          facets[column.key as string] = []
-          facets[column.key as string].push({
-            value: 'true',
-            icon: <BooleanIcon iconType={true} />,
-          })
-          facets[column.key as string].push({
-            value: 'false',
-            icon: <BooleanIcon iconType={false} />,
-          })
-        } else if (column.key === 'meetingState') {
-          facets[column.key as string] = Object.entries(filteredData).map(([state]) => ({
-            value: state,
-            translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
-          }))
+        if (serverSideProcessing) {
+          // For server-side processing, generate filters from current data
+          if (column.type === 'boolean') {
+            facets[column.key as string] = [
+              {
+                value: 'true',
+                icon: <BooleanIcon iconType={true} />,
+              },
+              {
+                value: 'false',
+                icon: <BooleanIcon iconType={false} />,
+              }
+            ]
+          } else if (column.key === 'meetingState') {
+            const values = new Set(data.map((item) => String(item[column.key])).filter(v => v && v !== '-'))
+            facets[column.key as string] = Array.from(values).map((state) => ({
+              value: state,
+              translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+            }))
+          } else {
+            const values = new Set(data.map((item) => String(item[column.key])).filter(v => v && v !== '-'))
+            facets[column.key as string] = Array.from(values).map((value) => ({
+              value,
+            }))
+          }
         } else {
-          const values = new Set(filteredData.map((item) => String(item[column.key])))
-          facets[column.key as string] = Array.from(values).map((value) => ({
-            value,
-          }))
+          // Client-side processing (fallback)
+          const filteredData = getFilteredDataExcludingColumn(column.key as string)
+          if (column.type === 'boolean') {
+            facets[column.key as string] = []
+            facets[column.key as string].push({
+              value: 'true',
+              icon: <BooleanIcon iconType={true} />,
+            })
+            facets[column.key as string].push({
+              value: 'false',
+              icon: <BooleanIcon iconType={false} />,
+            })
+          } else if (column.key === 'meetingState') {
+            facets[column.key as string] = Object.entries(filteredData).map(([state]) => ({
+              value: state,
+              translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+            }))
+          } else {
+            const values = new Set(filteredData.map((item) => String(item[column.key])))
+            facets[column.key as string] = Array.from(values).map((value) => ({
+              value,
+            }))
+          }
         }
       }
     })
     return facets
-  }, [columns, getFilteredDataExcludingColumn])
+  }, [columns, data, serverSideProcessing, getFilteredDataExcludingColumn])
 
   // Render the data table
   return (
@@ -698,8 +789,6 @@ export function DataTableServer<T extends Record<string, any>>({
                               {column.type === 'datetime' ? (
                                 <div className="flex flex-col">
                                   <div className="flex">
-                                    {!(column.key == 'meetingDate') && (
-                                      <>
                                         {/* Past dates column */}
                                         <div className="p-2">
                                           {pastDateFilterOptions.map((option) => {
@@ -732,8 +821,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                           })}
                                         </div>
                                         <div className="border-r border-gray-200 mx-2"></div>
-                                      </>
-                                    )}
+
                                     {/* Future dates column */}
                                     <div className="p-2">
                                       {futureDateFilterOptions.map((option) => {
@@ -820,11 +908,13 @@ export function DataTableServer<T extends Record<string, any>>({
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="justify-center text-center"
-                                onClick={() =>
-                                  column.type === 'datetime'
-                                    ? handleDateFilter(String(column.key), '', false)
-                                    : handleFilter(String(column.key), 'all')
-                                }
+                                onClick={() => {
+                                  if (column.type === 'datetime') {
+                                    handleDateFilter(String(column.key), '', false)
+                                  } else {
+                                    handleFilter(String(column.key), 'all')
+                                  }
+                                }}
                               >
                                 הסר סינון
                               </DropdownMenuItem>

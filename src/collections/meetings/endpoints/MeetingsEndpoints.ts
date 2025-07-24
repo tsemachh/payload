@@ -7,6 +7,7 @@ import {
   Stock,
   StockValue,
 } from '@/payload-types'
+import { endOfDay } from 'date-fns'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
@@ -76,6 +77,197 @@ function createPublishedStatusFilter() {
 }
 
 /**
+ * Creates filter conditions from regular filters
+ */
+function createRegularFilters(filters: Record<string, string[]>) {
+  const conditions: any[] = []
+  
+  Object.entries(filters).forEach(([field, values]) => {
+    if (values && values.length > 0) {
+      // Map frontend field names to database field names
+      const dbField = getDbFieldName(field)
+      
+      if (field === 'meetingState') {
+        conditions.push({
+          state: { in: values }
+        })
+      } else if (field === 'stockNumber') {
+        conditions.push({
+          'stock.stockId': { in: values }
+        })
+      } else if (field === 'stockSymbol') {
+        conditions.push({
+          'stock.symbol': { in: values }
+        })
+      } else if (field === 'stockName') {
+        conditions.push({
+          'stock.name': { in: values }
+        })
+      } else if (field === 'companyName') {
+        conditions.push({
+          'stock.longName': { in: values }
+        })
+      } else if (field === 'meetingType') {
+        conditions.push({
+          type: { in: values }
+        })
+      } else if (field === 'reference') {
+        conditions.push({
+          magnaId: { in: values }
+        })
+      } else if (field === 'location') {
+        conditions.push({
+          location: { in: values }
+        })
+      } else if (field === 'electronicVotingEnabled') {
+        const booleanValues = values.map(v => v === 'true')
+        conditions.push({
+          electronicVotingEnabled: { in: booleanValues }
+        })
+      } else if (field === 'resultsConfirmationStatus') {
+        const booleanValues = values.map(v => v === 'true')
+        conditions.push({
+          resultsConfirmationStatus: { in: booleanValues }
+        })
+      } else {
+        // Generic field filter
+        conditions.push({
+          [dbField]: { in: values }
+        })
+      }
+    }
+  })
+  
+  return conditions
+}
+
+/**
+ * Creates date filter conditions
+ */
+function createDateFilters(dateFilters: Record<string, { past: string; future: string; empty: boolean }>) {
+  const conditions: any[] = []
+  
+  Object.entries(dateFilters).forEach(([field, filter]) => {
+    const { past, future, empty } = filter
+    
+    // Skip if all options are selected (no actual filtering)
+    if (past === 'allPast' && future === 'allFuture' && empty) {
+      return
+    }
+    
+    const dbField = getDbFieldName(field)
+    const dateConditions: any[] = []
+    
+    // Handle past dates
+    if (past && past !== 'allPast') {
+      const dateRange = getDateRangeForFilter(past)
+      if (dateRange) {
+        dateConditions.push({
+          [dbField]: {
+            greater_than_equal: dateRange.start.toISOString(),
+            less_than_equal: dateRange.end.toISOString()
+          }
+        })
+      }
+    }
+    
+    // Handle future dates
+    if (future && future !== 'allFuture') {
+      const dateRange = getDateRangeForFilter(future)
+      if (dateRange) {
+        dateConditions.push({
+          [dbField]: {
+            greater_than_equal: dateRange.start.toISOString(),
+            less_than_equal: dateRange.end.toISOString()
+          }
+        })
+      }
+    }
+    
+    // Handle empty dates
+    if (!empty && dateConditions.length > 0) {
+      // If empty is false and we have other date conditions, exclude null/empty dates
+      dateConditions.forEach(condition => {
+        // Add not null condition to existing date conditions
+        if (condition[dbField]) {
+          condition[dbField] = {
+            ...condition[dbField],
+            not_equals: null
+          }
+        }
+      })
+    } else if (empty && dateConditions.length === 0) {
+      // If only empty is selected and no other date conditions
+      dateConditions.push({
+        or: [
+          { [dbField]: { equals: null } },
+          { [dbField]: { equals: '' } }
+        ]
+      })
+    } else if (empty && dateConditions.length > 0) {
+      // If empty is selected along with other date conditions, include empty dates in OR
+      dateConditions.push({
+        or: [
+          { [dbField]: { equals: null } },
+          { [dbField]: { equals: '' } }
+        ]
+      })
+    }
+    
+    if (dateConditions.length > 0) {
+      if (dateConditions.length === 1) {
+        conditions.push(dateConditions[0])
+      } else {
+        conditions.push({
+          or: dateConditions
+        })
+      }
+    }
+  })
+  
+  return conditions
+}
+
+/**
+ * Helper function to get date range for filter options
+ */
+function getDateRangeForFilter(option: string) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  
+  switch (option) {
+    case 'yesterday':
+      return { start: yesterday, end: yesterday }
+    case 'lastWeek':
+      const lastWeekStart = new Date(today)
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+      return { start: lastWeekStart, end: yesterday }
+    case 'lastMonth':
+      const lastMonthStart = new Date(today)
+      lastMonthStart.setMonth(lastMonthStart.getMonth() - 1)
+      return { start: lastMonthStart, end: yesterday }
+    case 'today':
+      return { start: today, end: today }
+    case 'nextWeek':
+      const nextWeekEnd = new Date(today)
+      nextWeekEnd.setDate(nextWeekEnd.getDate() + 7)
+      return { start: today, end: nextWeekEnd }
+    case 'nextMonth':
+      const nextMonthEnd = new Date(today)
+      nextMonthEnd.setMonth(nextMonthEnd.getMonth() + 1)
+      return { start: today, end: nextMonthEnd }
+    case 'allPast':
+      return { start: new Date(-8640000000000000), end: yesterday }
+    case 'allFuture':
+      return { start: today, end: new Date(8640000000000000) }
+    default:
+      return null
+  }
+}
+
+/**
  * Converts user's leaf companies to a safe format
  */
 function getSafeFunds(userFunds: (string | Company)[] | undefined | null) {
@@ -128,10 +320,63 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sortField = (req.query.sortField as string) || 'meetingDate'
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
+    
+    // Parse filters from query parameters
+    const filters: Record<string, string[]> = {}
+    const dateFilters: Record<string, { past: string; future: string; empty: boolean }> = {}
+    
+    Object.keys(req.query).forEach(key => {
+      if (key.startsWith('filter_')) {
+        const fieldName = key.replace('filter_', '')
+        try {
+          filters[fieldName] = JSON.parse(req.query[key] as string)
+        } catch (e) {
+          console.warn(`Failed to parse filter for ${fieldName}:`, e)
+        }
+      } else if (key.startsWith('dateFilter_')) {
+        const fieldName = key.replace('dateFilter_', '')
+        try {
+          dateFilters[fieldName] = JSON.parse(req.query[key] as string)
+        } catch (e) {
+          console.warn(`Failed to parse date filter for ${fieldName}:`, e)
+        }
+      }
+    })
 
     // Determine sort field
     const dbSortField = getDbFieldName(sortField)
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
+
+    // Build filter conditions
+    const whereConditions: any[] = [
+      createCompaniesFilter(user?.funds),
+      createPublishedStatusFilter(),
+    ]
+    
+    // Add search condition
+    if (searchTerm) {
+      whereConditions.push({
+        or: [
+          { meetingId: { contains: searchTerm } },
+          { 'stock.stockId': { contains: searchTerm } },
+          { 'stock.name': { contains: searchTerm } },
+          { 'stock.symbol': { contains: searchTerm } },
+          { 'stock.type': { contains: searchTerm } },
+          { magnaId: { contains: searchTerm } },
+          { type: { contains: searchTerm } },
+          { location: { contains: searchTerm } },
+          { comments: { contains: searchTerm } },
+        ],
+      })
+    }
+    
+    // Add regular filters
+    const regularFilterConditions = createRegularFilters(filters)
+    whereConditions.push(...regularFilterConditions)
+    
+    // Add date filters
+    const dateFilterConditions = createDateFilters(dateFilters)
+    whereConditions.push(...dateFilterConditions)
 
     const query: any = {
       collection: 'meetings',
@@ -140,25 +385,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       page: page,
       sort: sort,
       where: {
-        and: [
-          createCompaniesFilter(user?.funds),
-          createPublishedStatusFilter(),
-          searchTerm
-            ? {
-                or: [
-                  { meetingId: { contains: searchTerm } },
-                  { 'stock.stockId': { contains: searchTerm } },
-                  { 'stock.name': { contains: searchTerm } },
-                  { 'stock.symbol': { contains: searchTerm } },
-                  { 'stock.type': { contains: searchTerm } },
-                  { magnaId: { contains: searchTerm } },
-                  { type: { contains: searchTerm } },
-                  { location: { contains: searchTerm } },
-                  { comments: { contains: searchTerm } },
-                ],
-              }
-            : {},
-        ],
+        and: whereConditions.filter(condition => Object.keys(condition).length > 0),
       },
     }
 

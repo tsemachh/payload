@@ -133,6 +133,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   onServerSort?: (field: string) => void
   onServerSearch?: (term: string) => void
   onServerFilter?: (field: string, values: string[]) => void
+  onServerDateFilter?: (field: string, filter: { past: string; future: string; empty: boolean }) => void
   serverSideProcessing?: boolean
   initialSearchTerm?: string
   activeFilters?: Record<string, string[]>
