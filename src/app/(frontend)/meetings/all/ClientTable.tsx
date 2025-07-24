@@ -3,9 +3,10 @@
 import { useState, useMemo } from 'react'
 import useSWR from 'swr'
 import { DataTableServer } from '@/components/data-table-server'
-import { meetingColumns, renderMeetingActions, pastDateFilterOptions, futureDateFilterOptions } from '../meetingTableConstants'
+import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
+import { futureDateFilterOptions, pastDateFilterOptions } from '../filterConst'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)
@@ -14,7 +15,9 @@ export function MeetingsTableServer() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [filters, setFilters] = useState<Record<string, string[]>>({})
-  const [dateFilters, setDateFilters] = useState<Record<string, { past: string; future: string; empty: boolean }>>({})
+  const [dateFilters, setDateFilters] = useState<
+    Record<string, { past: string; future: string; empty: boolean }>
+  >({})
 
   const query = useMemo(() => {
     const params = new URLSearchParams({
@@ -24,21 +27,21 @@ export function MeetingsTableServer() {
       sortDirection,
       search: searchTerm,
     })
-    
+
     // Add regular filters
     Object.entries(filters).forEach(([key, values]) => {
       if (values && values.length > 0) {
         params.append(`filter_${key}`, JSON.stringify(values))
       }
     })
-    
+
     // Add date filters
     Object.entries(dateFilters).forEach(([key, filter]) => {
       if (filter.past || filter.future || !filter.empty) {
         params.append(`dateFilter_${key}`, JSON.stringify(filter))
       }
     })
-    
+
     return `/api/meetings/all-meetings?${params.toString()}`
   }, [currentPage, pageSize, sortField, sortDirection, searchTerm, filters, dateFilters])
 
@@ -106,17 +109,21 @@ export function MeetingsTableServer() {
   }
 
   const handleFilter = (field: string, values: string[]) => {
-    setFilters(prev => ({
+    console.log('field', field, 'values', values)
+    setFilters((prev) => ({
       ...prev,
-      [field]: values
+      [field]: values,
     }))
     setCurrentPage(1) // reset to first page
   }
 
-  const handleDateFilter = (field: string, filter: { past: string; future: string; empty: boolean }) => {
-    setDateFilters(prev => ({
+  const handleDateFilter = (
+    field: string,
+    filter: { past: string; future: string; empty: boolean },
+  ) => {
+    setDateFilters((prev) => ({
       ...prev,
-      [field]: filter
+      [field]: filter,
     }))
     setCurrentPage(1) // reset to first page
   }

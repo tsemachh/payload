@@ -7,7 +7,6 @@ import {
   Stock,
   StockValue,
 } from '@/payload-types'
-import { endOfDay } from 'date-fns'
 import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
@@ -81,83 +80,76 @@ function createPublishedStatusFilter() {
  */
 function createRegularFilters(filters: Record<string, string[]>) {
   const conditions: any[] = []
-  
+
   Object.entries(filters).forEach(([field, values]) => {
     if (values && values.length > 0) {
       // Map frontend field names to database field names
       const dbField = getDbFieldName(field)
-      
+
       if (field === 'meetingState') {
         conditions.push({
-          state: { in: values }
+          state: { in: values },
         })
-      } else if (field === 'stockNumber') {
+      } else if (field === 'stockType') {
         conditions.push({
-          'stock.stockId': { in: values }
+          'stock.type': { in: values },
         })
-      } else if (field === 'stockSymbol') {
+      }  else if (field === 'meetingType') {
         conditions.push({
-          'stock.symbol': { in: values }
+          type: { in: values.length ? values : [null] },
         })
-      } else if (field === 'stockName') {
+      }  else if (field === 'electronicVotingEnabled') {
+        const booleanValues = values.map((v) => v === 'true')
         conditions.push({
-          'stock.name': { in: values }
-        })
-      } else if (field === 'companyName') {
-        conditions.push({
-          'stock.longName': { in: values }
-        })
-      } else if (field === 'meetingType') {
-        conditions.push({
-          type: { in: values }
-        })
-      } else if (field === 'reference') {
-        conditions.push({
-          magnaId: { in: values }
-        })
-      } else if (field === 'location') {
-        conditions.push({
-          location: { in: values }
-        })
-      } else if (field === 'electronicVotingEnabled') {
-        const booleanValues = values.map(v => v === 'true')
-        conditions.push({
-          electronicVotingEnabled: { in: booleanValues }
+          electronicVotingEnabled: { in: booleanValues },
         })
       } else if (field === 'resultsConfirmationStatus') {
-        const booleanValues = values.map(v => v === 'true')
+        const booleanValues = values.map((v) => v === 'true')
         conditions.push({
-          resultsConfirmationStatus: { in: booleanValues }
+          resultsConfirmationStatus: { in: booleanValues },
+        })
+      } else if (field === 'stockTradable') {
+        const booleanValues = values.map((v) => v === 'true')
+        conditions.push({
+          'stock.tradable': { in: booleanValues },
+        })
+      } else if (field === 'committeeInitiated') {
+        const booleanValues = values.map((v) => v === 'true')
+        conditions.push({
+          'stock.isFinancial': { in: booleanValues },
         })
       } else {
         // Generic field filter
         conditions.push({
-          [dbField]: { in: values }
+          [dbField]: { in: values },
         })
       }
     }
   })
-  
+  console.log('--------------conditions', conditions, '\n--------------filters', filters)
+
   return conditions
 }
 
 /**
  * Creates date filter conditions
  */
-function createDateFilters(dateFilters: Record<string, { past: string; future: string; empty: boolean }>) {
+function createDateFilters(
+  dateFilters: Record<string, { past: string; future: string; empty: boolean }>,
+) {
   const conditions: any[] = []
-  
+
   Object.entries(dateFilters).forEach(([field, filter]) => {
     const { past, future, empty } = filter
-    
+
     // Skip if all options are selected (no actual filtering)
     if (past === 'allPast' && future === 'allFuture' && empty) {
       return
     }
-    
+
     const dbField = getDbFieldName(field)
     const dateConditions: any[] = []
-    
+
     // Handle past dates
     if (past && past !== 'allPast') {
       const dateRange = getDateRangeForFilter(past)
@@ -165,12 +157,12 @@ function createDateFilters(dateFilters: Record<string, { past: string; future: s
         dateConditions.push({
           [dbField]: {
             greater_than_equal: dateRange.start.toISOString(),
-            less_than_equal: dateRange.end.toISOString()
-          }
+            less_than_equal: dateRange.end.toISOString(),
+          },
         })
       }
     }
-    
+
     // Handle future dates
     if (future && future !== 'allFuture') {
       const dateRange = getDateRangeForFilter(future)
@@ -178,53 +170,47 @@ function createDateFilters(dateFilters: Record<string, { past: string; future: s
         dateConditions.push({
           [dbField]: {
             greater_than_equal: dateRange.start.toISOString(),
-            less_than_equal: dateRange.end.toISOString()
-          }
+            less_than_equal: dateRange.end.toISOString(),
+          },
         })
       }
     }
-    
+
     // Handle empty dates
     if (!empty && dateConditions.length > 0) {
       // If empty is false and we have other date conditions, exclude null/empty dates
-      dateConditions.forEach(condition => {
+      dateConditions.forEach((condition) => {
         // Add not null condition to existing date conditions
         if (condition[dbField]) {
           condition[dbField] = {
             ...condition[dbField],
-            not_equals: null
+            not_equals: null,
           }
         }
       })
     } else if (empty && dateConditions.length === 0) {
       // If only empty is selected and no other date conditions
       dateConditions.push({
-        or: [
-          { [dbField]: { equals: null } },
-          { [dbField]: { equals: '' } }
-        ]
+        or: [{ [dbField]: { equals: null } }, { [dbField]: { equals: '' } }],
       })
     } else if (empty && dateConditions.length > 0) {
       // If empty is selected along with other date conditions, include empty dates in OR
       dateConditions.push({
-        or: [
-          { [dbField]: { equals: null } },
-          { [dbField]: { equals: '' } }
-        ]
+        or: [{ [dbField]: { equals: null } }, { [dbField]: { equals: '' } }],
       })
     }
-    
+
     if (dateConditions.length > 0) {
       if (dateConditions.length === 1) {
         conditions.push(dateConditions[0])
       } else {
         conditions.push({
-          or: dateConditions
+          or: dateConditions,
         })
       }
     }
   })
-  
+
   return conditions
 }
 
@@ -236,7 +222,7 @@ function getDateRangeForFilter(option: string) {
   today.setHours(0, 0, 0, 0)
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   switch (option) {
     case 'yesterday':
       return { start: yesterday, end: yesterday }
@@ -320,12 +306,12 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sortField = (req.query.sortField as string) || 'meetingDate'
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
-    
+
     // Parse filters from query parameters
     const filters: Record<string, string[]> = {}
     const dateFilters: Record<string, { past: string; future: string; empty: boolean }> = {}
-    
-    Object.keys(req.query).forEach(key => {
+
+    Object.keys(req.query).forEach((key) => {
       if (key.startsWith('filter_')) {
         const fieldName = key.replace('filter_', '')
         try {
@@ -352,7 +338,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       createCompaniesFilter(user?.funds),
       createPublishedStatusFilter(),
     ]
-    
+
     // Add search condition
     if (searchTerm) {
       whereConditions.push({
@@ -369,11 +355,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
         ],
       })
     }
-    
+
     // Add regular filters
     const regularFilterConditions = createRegularFilters(filters)
     whereConditions.push(...regularFilterConditions)
-    
+
     // Add date filters
     const dateFilterConditions = createDateFilters(dateFilters)
     whereConditions.push(...dateFilterConditions)
@@ -385,7 +371,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       page: page,
       sort: sort,
       where: {
-        and: whereConditions.filter(condition => Object.keys(condition).length > 0),
+        and: whereConditions.filter((condition) => Object.keys(condition).length > 0),
       },
     }
 

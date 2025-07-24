@@ -53,7 +53,7 @@ import {
   FundType,
   MeetingTableDataType,
 } from '../types/meetings'
-import { getDateRange } from '../meetings/meetingTableConstants'
+import { getDateRange } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'

@@ -36,6 +36,8 @@ import {
   calculatePrecedingColumnsWidth,
   escapeRegExp,
   formatDateTime,
+  getDateRange,
+  getStaticFilterOptions,
   isDateInRange,
   isDateOption,
   isValidDate,
@@ -50,13 +52,9 @@ import {
   FacetedFilterItemServer,
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
-import {
-  getDateRange,
-  unSortAbleColumnsOnServer,
-} from '../meetings/meetingTableConstants'
+import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
-import { BooleanIcon } from './ui/icons'
 import { MeetingState } from '@/payload-types'
 import { meetingStateMap } from '../helpers/maps'
 import CustomRadio from './custom-radio'
@@ -97,7 +95,17 @@ export function DataTableServer<T extends Record<string, any>>({
     [key: string]: boolean
   }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
-  const [filters, setFilters] = useState<{ [key: string]: any }>({})
+  const [filters, setFilters] = useState<{ [key: string]: any }>(() => {
+    const initialFilters: { [key: string]: any } = {}
+    columns.forEach((column) => {
+      if (column.filterable) {
+        initialFilters[String(column.key)] = getStaticFilterOptions(column.key, column.type).map(
+          (e) => e.value,
+        )
+      }
+    })
+    return initialFilters
+  })
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
@@ -145,11 +153,15 @@ export function DataTableServer<T extends Record<string, any>>({
       const initialFilters: { [key: string]: any } = {}
       columns.forEach((column) => {
         if (column.filterable) {
-          initialFilters[String(column.key)] = Array.from(
-            new Set(data.map((item) => String(item[column.key as keyof T]))),
-          )
+          // initialFilters[String(column.key)] = Array.from(
+          //   new Set(data.map((item) => String(item[column.key as keyof T]))),
+          // )
+          initialFilters[String(column.key)] = getStaticFilterOptions(column.key, column.type)
+            .filter((e) => filters[String(column.key)]?.includes(e.value))
+            .map((e) => e.value)
         }
       })
+      console.log('initialFilters', initialFilters)
       setFilters(initialFilters)
       const initialDateFilters: {
         [key: string]: { past: string; future: string; empty: boolean }
@@ -358,21 +370,27 @@ export function DataTableServer<T extends Record<string, any>>({
 
   // Handle filter
   const handleFilter = useCallback(
-    (key: string, value: any) => {
+    (key: string, value: any, type?: string) => {
       if (serverSideProcessing && onServerFilter) {
         // Use server-side filtering
         if (value === 'all') {
           onServerFilter(key, [])
         } else if (Array.isArray(value)) {
-          onServerFilter(key, value)
+          if (value.length === facetedFiltersStatic[key].length) {
+            onServerFilter(key, [])
+          } else {
+            if (value.length == 0) {
+              onServerFilter(key, ['noOptionSelect'])
+            } else {
+              onServerFilter(key, value)
+            }
+          }
         }
-      } else {
-        // Use client-side filtering (fallback)
         setFilters((prev) => {
           const newFilters = { ...prev }
           if (value === 'all') {
             // Initialize all options as checked when resetting the filter
-            newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
+            newFilters[key] = getStaticFilterOptions(key, type).map((e) => e.value)
           } else if (Array.isArray(value)) {
             newFilters[key] = value
           }
@@ -393,13 +411,13 @@ export function DataTableServer<T extends Record<string, any>>({
           future: 'allFuture',
           empty: true,
         }
-        
+
         if (serverSideProcessing && onServerDateFilter) {
           onServerDateFilter(columnKey, clearedFilter)
         } else {
           setDateFilters((prev) => ({
             ...prev,
-            [columnKey]: clearedFilter
+            [columnKey]: clearedFilter,
           }))
         }
         return
@@ -454,12 +472,17 @@ export function DataTableServer<T extends Record<string, any>>({
         })
       }
     },
-    [pastDateFilterOptions, futureDateFilterOptions, serverSideProcessing, onServerDateFilter, dateFilters],
+    [
+      pastDateFilterOptions,
+      futureDateFilterOptions,
+      serverSideProcessing,
+      onServerDateFilter,
+      dateFilters,
+    ],
   )
   // Reset filters
   const resetFilters = useCallback(() => {
     if (serverSideProcessing) {
-      // For server-side processing, clear all filters
       if (isFilterActive) {
         // Clear all filters
         columns.forEach((column) => {
@@ -484,48 +507,47 @@ export function DataTableServer<T extends Record<string, any>>({
         setIsFilterActive(true)
       }
     } else {
-      // Client-side processing (fallback)
-      if (isFilterActive) {
-        setFilters({})
-        setIsFilterActive(false)
-        const initialDateFilters: {
-          [key: string]: { past: string; future: string; empty: boolean }
-        } = {}
-        columns.forEach((column) => {
-          if (column.type === 'datetime' && column.filterable) {
-            initialDateFilters[column.key as string] = {
-              past: 'allPast',
-              future: 'allFuture',
-              empty: true,
-            }
-          }
-        })
-        setDateFilters(initialDateFilters)
-      } else {
-        const initialFilters: { [key: string]: any } = {}
-        columns.forEach((column) => {
-          if (column.filterable) {
-            initialFilters[String(column.key)] = Array.from(
-              new Set(data.map((item) => String(item[column.key as keyof T]))),
-            )
-          }
-        })
-        setFilters(initialFilters)
-        setIsFilterActive(true)
-        const initialDateFilters: {
-          [key: string]: { past: string; future: string; empty: boolean }
-        } = {}
-        columns.forEach((column) => {
-          if (column.type === 'datetime' && column.filterable) {
-            initialDateFilters[column.key as string] = {
-              past: 'allPast',
-              future: 'allFuture',
-              empty: true,
-            }
-          }
-        })
-        setDateFilters(initialDateFilters)
-      }
+      // if (isFilterActive) {
+      //   setFilters({})
+      //   setIsFilterActive(false)
+      //   const initialDateFilters: {
+      //     [key: string]: { past: string; future: string; empty: boolean }
+      //   } = {}
+      //   columns.forEach((column) => {
+      //     if (column.type === 'datetime' && column.filterable) {
+      //       initialDateFilters[column.key as string] = {
+      //         past: 'allPast',
+      //         future: 'allFuture',
+      //         empty: true,
+      //       }
+      //     }
+      //   })
+      //   setDateFilters(initialDateFilters)
+      // } else {
+      //   const initialFilters: { [key: string]: any } = {}
+      //   columns.forEach((column) => {
+      //     if (column.filterable) {
+      //       initialFilters[String(column.key)] = Array.from(
+      //         new Set(data.map((item) => String(item[column.key as keyof T]))),
+      //       )
+      //     }
+      //   })
+      //   setFilters(initialFilters)
+      //   setIsFilterActive(true)
+      //   const initialDateFilters: {
+      //     [key: string]: { past: string; future: string; empty: boolean }
+      //   } = {}
+      //   columns.forEach((column) => {
+      //     if (column.type === 'datetime' && column.filterable) {
+      //       initialDateFilters[column.key as string] = {
+      //         past: 'allPast',
+      //         future: 'allFuture',
+      //         empty: true,
+      //       }
+      //     }
+      //   })
+      //   setDateFilters(initialDateFilters)
+      // }
     }
   }, [data, columns, isFilterActive, serverSideProcessing, onServerFilter, onServerDateFilter])
 
@@ -562,7 +584,7 @@ export function DataTableServer<T extends Record<string, any>>({
   const getFilterIcon = (columnKey: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
-    
+
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (
@@ -575,12 +597,12 @@ export function DataTableServer<T extends Record<string, any>>({
         return <Filter />
       }
     }
-    
+
     if (serverSideProcessing) {
       // For server-side processing, we don't have complete filter state
       return <ChevronDown className="h-4 w-4" />
     }
-    
+
     if (!filters[columnKey]) {
       return <ChevronDown className="h-4 w-4 " />
     }
@@ -591,67 +613,85 @@ export function DataTableServer<T extends Record<string, any>>({
     return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
   }
   // Generate faceted filters
-  const facetedFilters = useMemo(() => {
+  // const facetedFilters = useMemo(() => {
+  //   const facets: {
+  //     [key: string]: FacetedFilterItemServer[]
+  //   } = {}
+  //   columns.forEach((column) => {
+  //     if (column.filterable) {
+  //       if (serverSideProcessing) {
+  //         // For server-side processing, generate filters from current data
+  //         if (column.type === 'boolean') {
+  //           facets[column.key as string] = [
+  //             {
+  //               value: 'true',
+  //               icon: <BooleanIcon iconType={true} />,
+  //             },
+  //             {
+  //               value: 'false',
+  //               icon: <BooleanIcon iconType={false} />,
+  //             },
+  //           ]
+  //         } else if (column.key === 'meetingState') {
+  //           const values = new Set(
+  //             data.map((item) => String(item[column.key])).filter((v) => v && v !== '-'),
+  //           )
+  //           facets[column.key as string] = Array.from(values).map((state) => ({
+  //             value: state,
+  //             translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+  //           }))
+  //         } else {
+  //           const values = new Set(
+  //             data.map((item) => String(item[column.key])).filter((v) => v && v !== '-'),
+  //           )
+  //           facets[column.key as string] = Array.from(values).map((value) => ({
+  //             value,
+  //           }))
+  //         }
+  //       } else {
+  //         // Client-side processing (fallback)
+  //         const filteredData = getFilteredDataExcludingColumn(column.key as string)
+  //         if (column.type === 'boolean') {
+  //           facets[column.key as string] = []
+  //           facets[column.key as string].push({
+  //             value: 'true',
+  //             icon: <BooleanIcon iconType={true} />,
+  //           })
+  //           facets[column.key as string].push({
+  //             value: 'false',
+  //             icon: <BooleanIcon iconType={false} />,
+  //           })
+  //         } else if (column.key === 'meetingState') {
+  //           facets[column.key as string] = Object.entries(filteredData).map(([state]) => ({
+  //             value: state,
+  //             translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+  //           }))
+  //         } else {
+  //           const values = new Set(filteredData.map((item) => String(item[column.key])))
+  //           facets[column.key as string] = Array.from(values).map((value) => ({
+  //             value,
+  //           }))
+  //         }
+  //       }
+  //     }
+  //   })
+
+  //   console.log('-----facets', facets)
+  //   return facets
+  // }, [columns, data, serverSideProcessing, getFilteredDataExcludingColumn])
+  const facetedFiltersStatic = useMemo(() => {
     const facets: {
       [key: string]: FacetedFilterItemServer[]
     } = {}
     columns.forEach((column) => {
       if (column.filterable) {
-        if (serverSideProcessing) {
-          // For server-side processing, generate filters from current data
-          if (column.type === 'boolean') {
-            facets[column.key as string] = [
-              {
-                value: 'true',
-                icon: <BooleanIcon iconType={true} />,
-              },
-              {
-                value: 'false',
-                icon: <BooleanIcon iconType={false} />,
-              }
-            ]
-          } else if (column.key === 'meetingState') {
-            const values = new Set(data.map((item) => String(item[column.key])).filter(v => v && v !== '-'))
-            facets[column.key as string] = Array.from(values).map((state) => ({
-              value: state,
-              translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
-            }))
-          } else {
-            const values = new Set(data.map((item) => String(item[column.key])).filter(v => v && v !== '-'))
-            facets[column.key as string] = Array.from(values).map((value) => ({
-              value,
-            }))
-          }
-        } else {
-          // Client-side processing (fallback)
-          const filteredData = getFilteredDataExcludingColumn(column.key as string)
-          if (column.type === 'boolean') {
-            facets[column.key as string] = []
-            facets[column.key as string].push({
-              value: 'true',
-              icon: <BooleanIcon iconType={true} />,
-            })
-            facets[column.key as string].push({
-              value: 'false',
-              icon: <BooleanIcon iconType={false} />,
-            })
-          } else if (column.key === 'meetingState') {
-            facets[column.key as string] = Object.entries(filteredData).map(([state]) => ({
-              value: state,
-              translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
-            }))
-          } else {
-            const values = new Set(filteredData.map((item) => String(item[column.key])))
-            facets[column.key as string] = Array.from(values).map((value) => ({
-              value,
-            }))
-          }
-        }
+        const staticOptions = getStaticFilterOptions(column.key as string, column.type)
+        facets[column.key as string] = staticOptions
       }
     })
-    return facets
-  }, [columns, data, serverSideProcessing, getFilteredDataExcludingColumn])
 
+    return facets
+  }, [columns])
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
@@ -785,42 +825,44 @@ export function DataTableServer<T extends Record<string, any>>({
                                 {getFilterIcon(String(column.key))}
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent
+                              style={{
+                                overflowY: 'auto',
+                                maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+                              }}
+                            >
                               {column.type === 'datetime' ? (
                                 <div className="flex flex-col">
                                   <div className="flex">
-                                        {/* Past dates column */}
-                                        <div className="p-2">
-                                          {pastDateFilterOptions.map((option) => {
-                                            const isChecked =
-                                              dateFilters[String(column.key)]?.past === option.value
-                                            return (
-                                              <DropdownMenuCheckboxItem
-                                                key={option.value}
-                                                checked={isChecked}
-                                                onCheckedChange={(checked) => {
-                                                  handleDateFilter(
-                                                    String(column.key),
-                                                    option.value,
-                                                    checked,
-                                                  )
-                                                }}
-                                                className="flex items-center justify-between py-2 remove-checked"
-                                                onSelect={(e) => e.preventDefault()}
-                                              >
-                                                <CustomRadio checked={isChecked} size="md" />
+                                    {/* Past dates column */}
+                                    <div className="p-2">
+                                      {pastDateFilterOptions.map((option) => {
+                                        const isChecked =
+                                          dateFilters[String(column.key)]?.past === option.value
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
+                                            checked={isChecked}
+                                            onCheckedChange={(checked) => {
+                                              handleDateFilter(
+                                                String(column.key),
+                                                option.value,
+                                                checked,
+                                              )
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <CustomRadio checked={isChecked} size="md" />
 
-                                                <div
-                                                  className="flex justify-between gap-2"
-                                                  dir="rtl"
-                                                >
-                                                  <span className="text-right">{option.label}</span>
-                                                </div>
-                                              </DropdownMenuCheckboxItem>
-                                            )
-                                          })}
-                                        </div>
-                                        <div className="border-r border-gray-200 mx-2"></div>
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        )
+                                      })}
+                                    </div>
+                                    <div className="border-r border-gray-200 mx-2"></div>
 
                                     {/* Future dates column */}
                                     <div className="p-2">
@@ -871,7 +913,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                   </div>
                                 </div>
                               ) : (
-                                facetedFilters[column.key as string]?.map(
+                                facetedFiltersStatic[column.key as string]?.map(
                                   ({ value, icon, translate }: FacetedFilterItemServer) => (
                                     <DropdownMenuCheckboxItem
                                       key={value}
@@ -912,7 +954,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                   if (column.type === 'datetime') {
                                     handleDateFilter(String(column.key), '', false)
                                   } else {
-                                    handleFilter(String(column.key), 'all')
+                                    handleFilter(String(column.key), 'all', column.type)
                                   }
                                 }}
                               >
