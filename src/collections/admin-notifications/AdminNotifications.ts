@@ -98,6 +98,13 @@ export const AdminNotifications: CollectionConfig = {
       label: 'טופל',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        components: {
+          Cell: {
+            path: '/admincomponents/cell/EditableCheckboxCell',
+          },
+        },
+      },
     },
     {
       type: 'row',
