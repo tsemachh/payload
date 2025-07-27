@@ -7,6 +7,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { DateRangeSelector } from '../components/ui/date-range-selector'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { useAuth } from '@payloadcms/ui'
@@ -45,6 +47,8 @@ export default function Participations() {
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
   const [showParticipationTable, setShowParticipationTable] = useState(false)
+  const [reportName, setReportName] = useState<string>('') // New state for report name
+
   // This state will now track IDs of rows that have been *deselected* from the "all selected" state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
 
@@ -95,18 +99,22 @@ export default function Participations() {
     }
   }, [companiesWithFunds])
 
-  // Construct the query URL based on pagination and sort states
+  // Construct the query URL based on pagination, sort, date range, and selected funds states
   const query = useMemo(() => {
     const params = new URLSearchParams({
       page: currentPage.toString(),
       pageSize: pageSize.toString(),
       sortField,
       sortDirection,
-      // You might also want to add startDate, endDate, selectedFundIds here if your API supports filtering by them
-      // For example: startDate: startDate?.toISOString() || '', endDate: endDate?.toISOString() || '', funds: selectedFundIds.join(',')
     })
+
+    // Add selectedFundIds to query parameters if they exist
+    if (selectedFundIds.length > 0) {
+      params.append('funds', selectedFundIds.join(','))
+    }
+
     return `/api/meetings/all-meetings?${params.toString()}`
-  }, [currentPage, pageSize, sortField, sortDirection]) // currentPage, pageSize, sortField, and sortDirection are dependencies
+  }, [currentPage, pageSize, sortField, sortDirection, startDate, endDate, selectedFundIds]) // Add selectedFundIds to dependencies
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
@@ -164,7 +172,7 @@ export default function Participations() {
       ),
     },
     { key: 'stockNumber', header: 'מספר נייר', type: 'string', minWidth: 120 },
-    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
+    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 200 },
     {
       key: 'marketValue',
       header: 'שווי שוק',
@@ -271,6 +279,7 @@ export default function Participations() {
 
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
+    setCurrentPage(1) // Reset to first page when funds selection changes
   }
 
   const handleRangeChange = (
@@ -281,6 +290,7 @@ export default function Participations() {
     setStartDate(newStartDate)
     setEndDate(newEndDate)
     setRangeType(type)
+    setCurrentPage(1) // Reset to first page when date range changes
   }
 
   const handleExport = () => {
@@ -289,6 +299,7 @@ export default function Participations() {
       endDate,
       rangeType,
       selectedFunds: selectedFundIds,
+      reportName, // Include report name in export
     })
     setShowParticipationTable(true)
   }
@@ -319,6 +330,7 @@ export default function Participations() {
     if (width) {
       return width
     }
+
     // Distribute available width evenly
     return minWidth
   }
@@ -362,8 +374,8 @@ export default function Participations() {
                         break
                       case 'stockNumber':
                         content = (
-                          <div className="flex items-center justify-end gap-2 pr-8 pl-4">
-                            <span>{agenda.topicIndex}.</span>
+                          <div className="flex items-center justify-end gap-2 pr-16 pl-4">
+                            <span style={{ marginLeft: 'auto' }}>{agenda.topicIndex}.</span>
                           </div>
                         )
                         break
@@ -377,7 +389,10 @@ export default function Participations() {
                             )}
                             dir={isEnglish ? 'ltr' : 'rtl'}
                           >
-                            <div className="truncate cursor-pointer hover:text-blue-600">
+                            <div
+                              className="truncate cursor-pointer hover:text-blue-600"
+                              style={{ transform: 'translateX(50px)' }}
+                            >
                               {agenda.text}
                             </div>
                             {/* Tooltip on hover */}
@@ -503,14 +518,14 @@ export default function Participations() {
 
   return (
     <div className="p-4 space-y-3" dir="rtl">
-      <div className="flex flex-col md:flex-row justify-center gap-4 mx-auto">
+      <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
         {/* Date Range Selector */}
-        <div className="w-full md:w-[280px] min-h-[200px]">
+        <div className="w-full lg:w-[280px] min-h-[200px]">
           <DateRangeSelector onRangeChange={handleRangeChange} />
         </div>
 
         {/* Company/Fund Selector */}
-        <div className="w-full md:w-[280px]">
+        <div className="w-full lg:w-[280px]">
           <label className="text-base font-semibold mb-2 block text-right">חברות</label>
           <Select>
             <SelectTrigger className="w-[280px] flex-row-reverse justify-between text-right">
@@ -526,6 +541,22 @@ export default function Participations() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Report Name Input */}
+        <div className="w-full lg:w-[280px]">
+          <Label htmlFor="report-name" className="text-base font-semibold mb-2 block text-right">
+            שם הדו״ח
+          </Label>
+          <Input
+            id="report-name"
+            type="text"
+            value={reportName}
+            onChange={(e) => setReportName(e.target.value)}
+            placeholder="הכנס שם לדו״ח"
+            className="w-[280px] text-right"
+            dir="rtl"
+          />
+        </div>
       </div>
 
       {/* Export Button */}
@@ -534,7 +565,7 @@ export default function Participations() {
           <Button
             onClick={handleExport}
             variant="default"
-            disabled={!rangeType || selectedFundIds.length === 0}
+            disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
           >
             ייצוא
           </Button>
