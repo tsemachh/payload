@@ -1,4 +1,5 @@
 'use client'
+
 import type React from 'react'
 import { cn } from '@/lib/utils'
 import { useCallback } from 'react'
@@ -14,10 +15,11 @@ import { fetcher } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { BooleanIcon } from '@/components/ui/icons'
-import { DataTableStatic } from '../components/data-table-client'
 import { Checkbox } from '@/components/ui/checkbox'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
-import { ParticipationTableDataType } from './types'
+import type { ParticipationTableDataType } from './types'
+import { DataTableServer } from '../components/data-table-server'
+
 export interface Company {
   id: string
   name: string
@@ -43,7 +45,30 @@ export default function Participations() {
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
   const [showParticipationTable, setShowParticipationTable] = useState(false)
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  // This state will now track IDs of rows that have been *deselected* from the "all selected" state
+  const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
+
+  // States for server-side pagination and sorting
+  const [pageSize, setPageSize] = useState(50)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('meetingDate') // Default sort field
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc') // Default sort direction
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setCurrentPage(1) // reset to first page when page size changes
+  }
+
+  const handleSort = (field: string) => {
+    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
+    setSortField(field)
+    setSortDirection(newDirection)
+    setCurrentPage(1) // Reset to first page on sort change
+  }
 
   const companiesWithFunds: CompanyWithFunds[] = useMemo(() => {
     const companyMap = new Map<string, CompanyWithFunds>(
@@ -70,7 +95,23 @@ export default function Participations() {
     }
   }, [companiesWithFunds])
 
-  const { data: meetingsResponse, isLoading } = useSWR('/api/meetings/all-meetings', fetcher)
+  // Construct the query URL based on pagination and sort states
+  const query = useMemo(() => {
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      pageSize: pageSize.toString(),
+      sortField,
+      sortDirection,
+      // You might also want to add startDate, endDate, selectedFundIds here if your API supports filtering by them
+      // For example: startDate: startDate?.toISOString() || '', endDate: endDate?.toISOString() || '', funds: selectedFundIds.join(',')
+    })
+    return `/api/meetings/all-meetings?${params.toString()}`
+  }, [currentPage, pageSize, sortField, sortDirection]) // currentPage, pageSize, sortField, and sortDirection are dependencies
+
+  const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
 
   const participationData: ParticipationTableDataType[] = useMemo(() => {
     return (
@@ -85,13 +126,12 @@ export default function Participations() {
     )
   }, [meetingsResponse?.data])
 
-  // Select all rows when data is loaded
+  // Reset deselectedIds when the total number of items changes (e.g., initial load or filter change)
   useEffect(() => {
-    if (participationData.length > 0 && selectedRows.size === 0) {
-      const allRowIds = new Set(participationData.map((row) => row.id))
-      setSelectedRows(allRowIds)
+    if (meetingsResponse?.totalItems !== undefined) {
+      setDeselectedIds(new Set()) // Assume all are selected initially
     }
-  }, [participationData, selectedRows.size])
+  }, [meetingsResponse?.totalItems])
 
   // Define columns for DataTableStatic
   const participationColumns: Column<ParticipationTableDataType>[] = [
@@ -104,13 +144,16 @@ export default function Participations() {
       isAlwaysVisible: true,
       render: (row) => (
         <Checkbox
-          checked={selectedRows.has(row.id)}
+          // An item is checked if its ID is NOT in the deselectedIds set
+          checked={!deselectedIds.has(row.id)}
           onCheckedChange={(checked) => {
-            setSelectedRows((prev) => {
+            setDeselectedIds((prev) => {
               const newSet = new Set(prev)
-              if (checked) {
+              if (!checked) {
+                // User unchecked this row, add its ID to deselectedIds
                 newSet.add(row.id)
               } else {
+                // User checked this row (it was previously deselected), remove its ID from deselectedIds
                 newSet.delete(row.id)
               }
               return newSet
@@ -277,7 +320,6 @@ export default function Participations() {
     if (width) {
       return width
     }
-
     // Distribute available width evenly
     return minWidth
   }
@@ -319,7 +361,6 @@ export default function Participations() {
                         // Empty cell for agenda rows
                         content = null
                         break
-
                       case 'stockNumber':
                         content = (
                           <div className="flex items-center justify-end gap-2 pr-8 pl-4">
@@ -327,10 +368,8 @@ export default function Participations() {
                           </div>
                         )
                         break
-
                       case 'stockName':
                         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
-
                         content = (
                           <div
                             className={cn(
@@ -342,7 +381,6 @@ export default function Participations() {
                             <div className="truncate cursor-pointer hover:text-blue-600">
                               {agenda.text}
                             </div>
-
                             {/* Tooltip on hover */}
                             <div
                               className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -363,7 +401,6 @@ export default function Participations() {
                           </div>
                         )
                         break
-
                       case 'marketValue':
                       case 'percentageHolding':
                       case 'holdingValueInMillions':
@@ -372,7 +409,6 @@ export default function Participations() {
                         // These columns remain empty for agenda rows
                         content = null
                         break
-
                       case 'advisoryRecommendation':
                         // Get recommendation from the nested object
                         content =
@@ -380,18 +416,15 @@ export default function Participations() {
                           agenda.recommendation?.recommendationExplanation ||
                           null
                         break
-
                       case 'vote':
                         content = agenda.vote || agenda.votingResult || null
                         break
-
                       case 'meetingResults':
                         // Use the result field with mapping
                         content = agenda.result
                           ? resultMapping[agenda.result] || agenda.result
                           : agenda.meetingResults || null
                         break
-
                       case 'simpleMajority':
                         // Show icon under "רוב רגיל" if privilegedMajority is false or undefined
                         content =
@@ -399,7 +432,6 @@ export default function Participations() {
                             <BooleanIcon iconType={true} />
                           ) : null
                         break
-
                       case 'specialMajority':
                         // Show only percentage under "רוב מיוחד" if privilegedMajority is true
                         content =
@@ -407,7 +439,6 @@ export default function Participations() {
                             ? `${agenda.vPercentSpecial}%`
                             : null
                         break
-
                       case 'policyCompliance':
                         content =
                           agenda.policyCompliance !== undefined &&
@@ -415,7 +446,6 @@ export default function Participations() {
                             <BooleanIcon iconType={agenda.policyCompliance} />
                           ) : null
                         break
-
                       case 'conflictOfInterest':
                         content =
                           agenda.conflictOfInterest !== undefined &&
@@ -423,14 +453,12 @@ export default function Participations() {
                             <BooleanIcon iconType={agenda.conflictOfInterest} />
                           ) : null
                         break
-
                       case 'relatedParty':
                         content =
                           agenda.relatedParty !== undefined && agenda.relatedParty !== null ? (
                             <BooleanIcon iconType={agenda.relatedParty} />
                           ) : null
                         break
-
                       case 'personalInterest':
                         content =
                           agenda.personalInterest !== undefined &&
@@ -438,7 +466,6 @@ export default function Participations() {
                             <BooleanIcon iconType={agenda.personalInterest} />
                           ) : null
                         break
-
                       default:
                         content = null
                         break
@@ -471,6 +498,9 @@ export default function Participations() {
       </div>
     )
   }, [])
+
+  // Calculate the number of currently selected items
+  const currentSelectedCount = (meetingsResponse?.totalItems || 0) - deselectedIds.size
 
   return (
     <div className="p-4 space-y-3" dir="rtl">
@@ -512,14 +542,16 @@ export default function Participations() {
         </div>
       )}
 
-      {/* Selected rows info - Only show when there are selected rows */}
+      {/* Selected rows info - Now reflects total selected based on deselectedIds */}
       {showParticipationTable &&
         !isLoading &&
         !meetingsResponse?.error &&
-        selectedRows.size > 0 && (
+        currentSelectedCount > 0 && (
           <div className="flex justify-center mb-4">
             <div className="border border-teal-500 rounded-lg px-4 py-1 bg-white">
-              <span className="text-teal-600 font-medium">נבחרו {selectedRows.size} אסיפות</span>
+              <span className="text-teal-600 font-medium">
+                נבחרו {currentSelectedCount} אסיפויות
+              </span>
             </div>
           </div>
         )}
@@ -537,23 +569,32 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {meetingsResponse.error.message}
           </div>
         ) : (
-          <DataTableStatic
+          <DataTableServer
             data={participationData}
             columns={participationColumns}
             idField="id"
-            defaultSortField="meetingDate"
-            defaultSortDirection="desc"
+            defaultSortField={sortField as keyof ParticipationTableDataType} // Pass sortField
+            defaultSortDirection={sortDirection} // Pass sortDirection
             tableId="participations-table"
-            searchOption={false}
-            filterOption={false}
-            columnsOption={false}
+            searchOption={false} // As per your request
+            filterOption={false} // As per your request
+            columnsOption={false} // As per your request
             tableHeightOffset={280}
             isLoading={isLoading}
             renderExpandedRowContent={renderAgendaRows}
             expanderColumnKey="stockNumber"
+            pagination={{
+              pageSize,
+              totalItems: meetingsResponse?.totalItems || 0,
+              totalPages: meetingsResponse?.totalPages || 0,
+              currentPage,
+              onPageChange: handlePageChange,
+              onPageSizeChange: handlePageSizeChange,
+              pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+            }}
+            onServerSort={handleSort} // Pass handleSort
           />
         ))}
     </div>
   )
 }
-

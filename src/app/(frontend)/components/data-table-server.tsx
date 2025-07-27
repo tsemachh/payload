@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Table,
@@ -17,7 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Settings2, ArrowUp, ArrowDown, X } from 'lucide-react'
+import { Search, Settings2, ArrowUp, ArrowDown, X, ChevronDown, ChevronLeft } from 'lucide-react' // Added ChevronDown, ChevronLeft
 import React from 'react'
 import { cn } from '@/lib/utils'
 import {
@@ -26,7 +25,7 @@ import {
   escapeRegExp,
 } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
-import {
+import type {
   Column,
   CompanyTableDate,
   DataTableProps,
@@ -55,9 +54,12 @@ export function DataTableServer<T extends Record<string, any>>({
   onServerSearch,
   initialSearchTerm = '',
   tableHeightOffset = 250,
+  renderExpandedRowContent, // Added prop
+  expanderColumnKey, // Added prop
+  columnsOption = false,
+  searchOption = false,
 }: DataTableProps<T>) {
   const { companies } = useCompaniesContext()
-
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 50)
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
@@ -66,6 +68,8 @@ export function DataTableServer<T extends Record<string, any>>({
     [key: string]: boolean
   }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
+  // State for generic row expansion (used for agendas)
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set()) // Added state
 
   // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
@@ -80,19 +84,17 @@ export function DataTableServer<T extends Record<string, any>>({
       const alwaysVisible = columns
         .filter((col) => col.isAlwaysVisible)
         .map((col) => String(col.key))
+
       if (storedColumns) {
         try {
           const parsedColumns = JSON.parse(storedColumns)
           const validColumns = columns.map((col) => String(col.key))
           const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
-
           // Add alwaysVisible columns if they're not already in localStorage
           const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
-
           if (mergedColumns.length !== parsedColumns.length) {
             localStorage.setItem(storageKey, JSON.stringify(mergedColumns))
           }
-
           const newVisibility = Object.fromEntries(
             columns.map((col) => [String(col.key), mergedColumns.includes(String(col.key))]),
           )
@@ -122,7 +124,7 @@ export function DataTableServer<T extends Record<string, any>>({
       )
 
       setColumnVisibility(newVisibility)
-      localStorage.setItem(`columnVisibility-${tableId}`, JSON.stringify(mergedVisible))
+      localStorage.setItem(storageKey, JSON.stringify(mergedVisible))
     }
 
     loadColumnVisibility()
@@ -221,77 +223,97 @@ export function DataTableServer<T extends Record<string, any>>({
     return null
   }
 
+  // Toggle generic row expansion (used for agendas)
+  const toggleRowExpand = useCallback(
+    (rowId: string) => {
+      if (!renderExpandedRowContent) return
+      setExpandedRowIds((prev) => {
+        const newSet = new Set(prev)
+        if (newSet.has(rowId)) {
+          newSet.delete(rowId)
+        } else {
+          newSet.add(rowId)
+        }
+        return newSet
+      })
+    },
+    [renderExpandedRowContent],
+  )
+
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
-        <div className="relative w-1/3">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          {searchTerm && (
-            <X
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground cursor-pointer z-10"
-              onClick={() => {
-                setSearchTerm('')
+        {searchOption && (
+          <div className="relative w-1/3">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            {searchTerm && (
+              <X
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground cursor-pointer z-10"
+                onClick={() => {
+                  setSearchTerm('')
+                  if (onServerSearch) {
+                    onServerSearch('')
+                  }
+                }}
+              />
+            )}
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => {
+                const newValue = e.target.value
+                setSearchTerm(newValue)
                 if (onServerSearch) {
-                  onServerSearch('')
+                  // Use debounce for server-side search
+                  const delayDebounceFn = setTimeout(() => {
+                    onServerSearch(newValue.trim())
+                  }, 500)
+                  return () => clearTimeout(delayDebounceFn)
                 }
               }}
+              className="pr-10 text-right"
+              disabled={isLoading}
             />
-          )}
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={(e) => {
-              const newValue = e.target.value
-              setSearchTerm(newValue)
-              if (onServerSearch) {
-                // Use debounce for server-side search
-                const delayDebounceFn = setTimeout(() => {
-                  onServerSearch(newValue.trim())
-                }, 500)
-                return () => clearTimeout(delayDebounceFn)
-              }
-            }}
-            className="pr-10 text-right"
-            disabled={isLoading}
-          />
-        </div>
-        <div className="flex space-x-2 space-x-reverse">
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex justify-between items-center w-40"
-                disabled={isLoading}
-              >
-                <span>{columnsLabel}</span>
-                <Settings2 className="h-4 w-4 mr-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              style={{
-                overflowY: 'auto',
-                maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
-              }}
-            >
-              {columns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={String(column.key)}
-                  disabled={column.isAlwaysVisible}
-                  checked={columnVisibility[String(column.key)]}
-                  onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                  onSelect={(event) => event.preventDefault()}
-                  dir="rtl"
+          </div>
+        )}
+        {columnsOption && (
+          <div className="flex space-x-2 space-x-reverse">
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex justify-between items-center w-40 bg-transparent"
+                  disabled={isLoading}
                 >
-                  {column.header ? column.header : 'עמודה'}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                  <span>{columnsLabel}</span>
+                  <Settings2 className="h-4 w-4 mr-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                style={{
+                  overflowY: 'auto',
+                  maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+                }}
+              >
+                {columns.map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={String(column.key)}
+                    disabled={column.isAlwaysVisible}
+                    checked={columnVisibility[String(column.key)]}
+                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                    onSelect={(event) => event.preventDefault()}
+                    dir="rtl"
+                  >
+                    {column.header ? column.header : 'עמודה'}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
-
       <div className="bg-background relative">
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
@@ -365,6 +387,22 @@ export function DataTableServer<T extends Record<string, any>>({
                             )
                           }}
                         >
+                          {/* Add expander icon for generic expansion (agendas) - only if both props are provided */}
+                          {expanderColumnKey === column.key && renderExpandedRowContent && (
+                            <span
+                              className="inline-flex items-center justify-center ml-2 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleRowExpand(row[idField] as string)
+                              }}
+                            >
+                              {expandedRowIds.has(row[idField] as string) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronLeft className="h-4 w-4" />
+                              )}
+                            </span>
+                          )}
                           {column.key === 'companies'
                             ? renderCompaniesCell(
                                 row,
@@ -385,6 +423,17 @@ export function DataTableServer<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
+                    {/* Render expanded content row (for agendas) - only if renderExpandedRowContent is provided */}
+                    {renderExpandedRowContent && expandedRowIds.has(row[idField] as string) && (
+                      <TableRow className="">
+                        <TableCell
+                          colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
+                          className="p-0"
+                        >
+                          {renderExpandedRowContent(row)}
+                        </TableCell>
+                      </TableRow>
+                    )}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (
@@ -559,9 +608,7 @@ export function DataTableServer<T extends Record<string, any>>({
             >
               {'הקודם'}
             </Button>
-            <div className="text-sm font-medium min-w-[120px] text-center">
-              {`עמוד ${currentPage} מתוך ${pagination.totalPages}`}
-            </div>
+            <div className="text-sm font-medium min-w-[120px] text-center">{`עמוד ${currentPage} מתוך ${pagination.totalPages}`}</div>
             <Button
               variant="outline"
               size="sm"
