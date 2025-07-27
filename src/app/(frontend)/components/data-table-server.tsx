@@ -36,11 +36,8 @@ import {
   calculatePrecedingColumnsWidth,
   escapeRegExp,
   formatDateTime,
-  getDateRange,
   getStaticFilterOptions,
-  isDateInRange,
   isDateOption,
-  isValidDate,
 } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import type {
@@ -454,7 +451,7 @@ export function DataTableServer<T extends Record<string, any>>({
   )
 
   // Get filter icon for column header
-  const getFilterIcon = (columnKey: string) => {
+  const getFilterIcon = (columnKey: string, columnType: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
 
@@ -466,24 +463,15 @@ export function DataTableServer<T extends Record<string, any>>({
         dateFilter?.empty
       ) {
         return <ChevronDown />
-      } else {
-        return <Filter />
       }
+      return <Filter />
     }
 
-    if (serverSideProcessing) {
-      // For server-side processing, we don't have complete filter state
-      return <ChevronDown className="h-4 w-4" />
+    const allOptions = getStaticFilterOptions(columnKey, columnType).map((e) => e.value)
+    if (filters[columnKey].length < allOptions.length) {
+      return <Filter className="h-4 w-4 " />
     }
-
-    if (!filters[columnKey]) {
-      return <ChevronDown className="h-4 w-4 " />
-    }
-    const allPossibleValues = Array.from(
-      new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
-    )
-    const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
-    return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
+    return <ChevronDown className="h-4 w-4 " />
   }
 
   const facetedFiltersStatic = useMemo(() => {
@@ -634,7 +622,7 @@ export function DataTableServer<T extends Record<string, any>>({
                           <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                {getFilterIcon(String(column.key))}
+                                {getFilterIcon(String(column.key), column.type)}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
