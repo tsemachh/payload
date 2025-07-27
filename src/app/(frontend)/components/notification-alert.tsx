@@ -27,9 +27,11 @@ export function NotificationAlert({ onOpenNotifications, notifications }: Notifi
   const [hasShownAlert, setHasShownAlert] = useState(false)
 
   useEffect(() => {
-    // Check if we've already shown the alert in this session
-    const alertShown = sessionStorage.getItem("notification-alert-shown")
-    if (alertShown) {
+    // Check if we've already shown the alert today
+    const alertShownDate = sessionStorage.getItem("notification-alert-shown")
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+
+    if (alertShownDate === today) {
       setHasShownAlert(true)
       return
     }
@@ -40,8 +42,8 @@ export function NotificationAlert({ onOpenNotifications, notifications }: Notifi
     if (unreadNotifications.length > 0 && !hasShownAlert) {
       setUnreadCount(unreadNotifications.length)
       setShowAlert(true)
-      // Mark that we've shown the alert for this session
-      sessionStorage.setItem("notification-alert-shown", "true")
+      // Mark that we've shown the alert for today
+      sessionStorage.setItem("notification-alert-shown", today)
       setHasShownAlert(true)
     }
   }, [notifications, hasShownAlert])

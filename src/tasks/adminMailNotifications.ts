@@ -37,7 +37,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
     const { docs: unreadNotifications } = await req.payload.find({
       collection: 'admin-notifications',
       where: {
-        readStatus: {
+        handled: {
           equals: false,
         },
         createdAt: {
@@ -172,7 +172,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
       const { docs } = await req.payload.delete({
         collection: 'admin-notifications',
         where: {
-          readStatus: {
+          handled: {
             equals: true,
           },
           createdAt: {

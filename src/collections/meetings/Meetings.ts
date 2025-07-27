@@ -158,8 +158,8 @@ export const Meetings: CollectionConfig = {
         { name: 'meetingDate' },
         { name: 'holdingsLimit' },
         { name: 'proxyVotingDate' },
-        { name: 'state' },
-        { name: 'type' },
+        { name: 'state', width: '200px' },
+        { name: 'type', width: '200px' },
       ],
       [
         { name: 'resultsConfirmationStatus' },
@@ -797,7 +797,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 0,
               admin: {
                 allowCreate: false,
-                defaultColumns: ['title', 'creator', 'updatedAt', 'reported','checksum'],
+                defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
               },
               where: {
                 _status: { equals: 'published' },
@@ -958,6 +958,8 @@ export const Meetings: CollectionConfig = {
                 context: { from: 'process' },
               })
 
+              await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
+
               // Only update the original meeting with the relation
               await req.payload.update({
                 collection: 'meetings',
@@ -987,8 +989,6 @@ export const Meetings: CollectionConfig = {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
-
-        // Sync recommendations with dual meeting if needed
         if (
           req.context?.from !== 'process' &&
           req.context?.from !== 'migration' &&

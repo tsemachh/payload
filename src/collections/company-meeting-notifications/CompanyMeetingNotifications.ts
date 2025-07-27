@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'payload'
 import MarkReadEndpoint from './endpoints/MarkReadEndpoint'
 import MarkAllReadEndpoint from './endpoints/MarkAllReadEndpoint'
 import UserNotificationsEndpoint from './endpoints/UserNotificationsEndpoint'
-import  SendCompanyMeetingNotificationsEndpoint  from './endpoints/SendCompanyMeetingNotificationsEndpoint'
+import SendCompanyMeetingNotificationsEndpoint from './endpoints/SendCompanyMeetingNotificationsEndpoint'
 import { CheckCompanyNotificationsEndpoint } from './endpoints/CheckCompanyNotificationsEndpoint'
 
 export const CompanyMeetingNotifications: CollectionConfig = {
@@ -17,9 +17,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
     group: 'ניהול',
   },
   custom: {
-    filterList: [
-      [{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]
-    ],
+    filterList: [[{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]],
   },
   fields: [
     {
@@ -37,6 +35,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
         { label: 'יום אחרי מועד קובע', value: 'after-holding-limit' },
         { label: 'יום לפני סיום הצבעה', value: 'before-voting-end' },
         { label: 'אחזקות לא דווחו', value: 'holdings-not-fed' },
+        { label: 'התחזות למשתמש', value: 'user-impersonation' },
       ],
       required: true,
     },

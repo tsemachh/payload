@@ -20,11 +20,21 @@ export const AdminNotifications: CollectionConfig = {
   admin: {
     useAsTitle: 'message',
     group: 'ניהול',
-  },
-  custom: {
-    filterList: [
-      ['type','createdAt', 'readStatus']
+    defaultColumns: [
+      'message',
+      'url',
+      'handled',
+      'type',
+      'createdAt',
+      'meeting',
+      'stock',
+      'meetingDate',
+      'holdingsLimit',
     ],
+  },
+  defaultSort: 'createdAt',
+  custom: {
+    filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled']],
   },
   fields: [
     {
@@ -37,7 +47,7 @@ export const AdminNotifications: CollectionConfig = {
       name: 'type',
       label: 'סוג התראה',
       type: 'select',
-      interfaceName:'AdminNotificationType',
+      interfaceName: 'AdminNotificationType',
       options: [
         {
           label: 'כללי',
@@ -66,7 +76,11 @@ export const AdminNotifications: CollectionConfig = {
         {
           label: 'הצבעה חדשה לאחר מועד קובע',
           value: 'newVoteAfterHoldingLimit',
-        }
+        },
+        {
+          label: 'התחזות למשתמש',
+          value: 'userImpersonation',
+        },
       ],
       defaultValue: 'general',
     },
@@ -88,29 +102,55 @@ export const AdminNotifications: CollectionConfig = {
       },
     },
     {
-      name: 'readStatus',
-      label: 'סטטוס קריאה',
+      name: 'handled',
+      label: 'טופל',
       type: 'checkbox',
       defaultValue: false,
-      admin: {
-        components: {
-          Cell: '/admincomponents/fields/ReadStatusField',
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'companies',
+          label: 'חברות קשורות',
+          type: 'relationship',
+          relationTo: 'companies',
+          hasMany: true,
         },
-      },
-    },
-    {
-      name: 'relatedCompany',
-      label: 'חברה קשורה',
-      type: 'relationship',
-      relationTo: 'companies',
-      hasMany: false,
-    },
-    {
-      name: 'relatedUser',
-      label: 'משתמש קשור',
-      type: 'relationship',
-      relationTo: 'users',
-      hasMany: false,
+        {
+          name: 'meeting',
+          label: 'אסיפה קשורה',
+          type: 'relationship',
+          relationTo: 'meetings',
+          hasMany: false,
+        },
+        {
+          name: 'meetingDate',
+          label: 'מועד האסיפה',
+          type: 'date',
+          virtual: 'meeting.meetingDate',
+        },
+        {
+          name: 'holdingsLimit',
+          label: 'מועד קובע',
+          type: 'date',
+          virtual: 'meeting.holdingsLimit',
+        },
+        {
+          name: 'stock',
+          label: 'מניה',
+          type: 'relationship',
+          relationTo: 'stocks',
+          virtual: 'meeting.stock',
+        },
+        {
+          name: 'relatedUser',
+          label: 'משתמש קשור',
+          type: 'relationship',
+          relationTo: 'users',
+          hasMany: false,
+        },
+      ],
     },
   ],
   endpoints: [

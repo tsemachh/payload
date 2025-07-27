@@ -166,13 +166,18 @@ export type AdminNotificationType =
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
       | 'newVoteAfterHoldingLimit'
+      | 'userImpersonation'
     )
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
-export type UserNotificationType = 'after-holding-limit' | 'before-voting-end' | 'holdings-not-fed';
+export type UserNotificationType =
+  | 'after-holding-limit'
+  | 'before-voting-end'
+  | 'holdings-not-fed'
+  | 'user-impersonation';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -687,9 +692,6 @@ export interface Vote {
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  votes?: TopicVote;
-  voteDocuments?: (string | Document)[] | null;
-  clientComment?: string | null;
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
@@ -702,6 +704,9 @@ export interface Vote {
     | number
     | boolean
     | null;
+  votes?: TopicVote;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -775,8 +780,12 @@ export interface AdminNotification {
   message: string;
   type?: AdminNotificationType;
   url?: string | null;
-  readStatus?: boolean | null;
-  relatedCompany?: (string | null) | Company;
+  handled?: boolean | null;
+  companies?: (string | Company)[] | null;
+  meeting?: (string | null) | Meeting;
+  meetingDate?: string | null;
+  holdingsLimit?: string | null;
+  stock?: (string | null) | Stock;
   relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
@@ -1385,13 +1394,13 @@ export interface VotesSelect<T extends boolean = true> {
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  votes?: T | TopicVoteSelect<T>;
-  voteDocuments?: T;
-  clientComment?: T;
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;
   fundsWithHoldingsUpdates?: T;
+  votes?: T | TopicVoteSelect<T>;
+  voteDocuments?: T;
+  clientComment?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1549,8 +1558,12 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
   type?: T;
   url?: T;
-  readStatus?: T;
-  relatedCompany?: T;
+  handled?: T;
+  companies?: T;
+  meeting?: T;
+  meetingDate?: T;
+  holdingsLimit?: T;
+  stock?: T;
   relatedUser?: T;
   creator?: T;
   updator?: T;

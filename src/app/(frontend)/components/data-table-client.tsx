@@ -1019,7 +1019,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       </div>
                     </TableHead>
                   ))}
-                  {renderRowActions && <TableHead className="sticky left-0 z-10 w-0"></TableHead>}
+                  {renderRowActions && <TableHead className="sticky left-0 z-[-1] w-0"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -12,7 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter/CollectionQuickFilterPlugin'
+import { CollectionQuickFilterPlugin } from '@shefing/quickfilter'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -42,6 +42,7 @@ import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
+import { handleImpersonationStart, handleImpersonationEnd } from './plugins/impersonate/hooks'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -289,23 +290,11 @@ export default buildConfig({
     impersonatePlugin({
       enabled: true,
       authCollection: 'users',
-      // Labels are now centralized in the plugin itself
       onImpersonate: async ({ req, impersonateUserId }) => {
-        const { user: originalUser } = req
-
-        // Log impersonation action
-        console.log(`🎭 Impersonation started:`, {
-          originalUser: originalUser?.email,
-          targetUser: impersonateUserId,
-          timestamp: new Date().toISOString(),
-          ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
-        })
+        await handleImpersonationStart({ req, impersonateUserId: impersonateUserId as string })
       },
       onUnImpersonate: async ({ req, originalUserId }) => {
-        console.log(`✅ Impersonation ended:`, {
-          returnedToUser: originalUserId,
-          timestamp: new Date().toISOString(),
-        })
+        await handleImpersonationEnd({ req, originalUserId: originalUserId as string })
       },
     }),
   ],

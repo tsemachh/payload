@@ -44,6 +44,9 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       try {
         const companyQuery = {
           where: { id: { equals: company } },
+          select: {
+            subCompanies: true,
+          },
           depth: 1,
           limit: 1,
         }
@@ -55,10 +58,15 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         }
 
         const companyData = await companyResponse.json()
+        console.log('---companyData', companyData)
+
         const subCompanies = companyData.docs[0]?.subCompanies || []
 
         const meetingQuery = {
           where: { id: { equals: meeting } },
+          select: {
+            fundsWithHolding: true,
+          },
           depth: 0,
           limit: 1,
         }
@@ -70,8 +78,8 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         }
 
         const meetingData = await meetingResponse.json()
+        console.log('---meetingData', meetingData)
         const fundsWithHolding = meetingData.docs[0]?.fundsWithHolding || []
-        console.log('Fetched fundsWithHolding:', fundsWithHolding)
 
         const fundsWithHoldings = subCompanies
           .map((subCo: { id: any; name: any }) => {
@@ -88,7 +96,6 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
           })
           .filter((fund: Fund) => fund.quantity > 0)
 
-        console.log('Mapped funds with holdings:', fundsWithHoldings)
         setFunds(fundsWithHoldings)
 
         const initialUpdatedHoldings: Record<string, string> = {}
@@ -102,13 +109,11 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
               value[fund.id] && value[fund.id].ownedQuantity != null
                 ? String(value[fund.id].ownedQuantity)
                 : ''
-            initialErrors[fund.id] = value[fund.id].ownedQuantity ? null : 'חובה להזין ערך'
+            initialErrors[fund.id] = null
           } else {
             initialErrors[fund.id] = null
           }
         })
-        console.log('Initial updatedHoldings:', initialUpdatedHoldings)
-        console.log('Initial errors:', initialErrors)
         setUpdatedHoldings(initialUpdatedHoldings)
         setErrors(initialErrors)
       } catch (err) {
@@ -116,7 +121,6 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
         setError('שגיאה בטעינת נתונים')
       } finally {
         setLoading(false)
-        console.log('Loading finished, loading:', false)
       }
     }
 
@@ -137,12 +141,10 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
             : fund.quantity,
       }
     })
-    console.log('Updating JSON field with newValue:', newValue)
     setValue(newValue)
   }, [funds, updatedHoldings])
 
   const handleCheckboxChange = (fundId: string, state: CheckboxFilterState) => {
-    console.log('Checkbox changed for fund:', fundId, 'to state:', state)
     setFunds((prev) =>
       prev.map((fund) => (fund.id === fundId ? { ...fund, isAuthorized: state } : fund)),
     )
@@ -151,25 +153,21 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       setUpdatedHoldings((prev) => {
         const newHoldings = { ...prev }
         delete newHoldings[fundId]
-        console.log('Removed holding for fund:', fundId, 'newHoldings:', newHoldings)
         return newHoldings
       })
       setErrors((prev) => {
         const newErrors = { ...prev, [fundId]: null }
-        console.log('Cleared error for fund:', fundId, 'newErrors:', newErrors)
         return newErrors
       })
     } else {
       setErrors((prev) => {
-        const newErrors = { ...prev, [fundId]: updatedHoldings[fundId] ? null : 'חובה להזין ערך' }
-        console.log('Set error for fund:', fundId, 'newErrors:', newErrors)
+        const newErrors = { ...prev, [fundId]: null }
         return newErrors
       })
     }
   }
 
   const handleInputChange = (fundId: string, inputValue: string) => {
-    console.log('Input changed for fund:', fundId, 'value:', inputValue)
     if (inputValue === '' || /^-?\d*\.?\d*$/.test(inputValue)) {
       setUpdatedHoldings((prev) => ({
         ...prev,
@@ -177,143 +175,74 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
       }))
       setErrors((prev) => ({
         ...prev,
-        [fundId]: inputValue ? null : 'חובה להזין ערך',
+        [fundId]: null,
       }))
-      console.log('Updated holdings for fund:', fundId, 'new value:', inputValue)
-    } else {
-      console.log('Invalid input for fund:', fundId, 'value:', inputValue)
     }
   }
 
   return (
-    <div style={{ margin: '20px 0', padding: '10px' }}>
-      {loading && <p style={{ color: '#666' }}>טוען נתונים...</p>}
-      {error && <p style={{ color: '#d32f2f' }}>{error}</p>}
+    <div className="my-5 p-2.5">
+      {loading && <p className="text-gray-600">טוען נתונים...</p>}
+
+      {error && <p className="text-red-600">{error}</p>}
+
       {funds.length === 0 && !loading && !error && (
-        <p style={{ color: '#666' }}>אין תיקים זמינים להצגה</p>
+        <p className="text-gray-600">אין תיקים זמינים להצגה</p>
       )}
 
       {funds.length > 0 && (
-        <table
-          style={{
-            width: '800px',
-            borderCollapse: 'collapse',
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <thead>
-            <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                שם תיק
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                ערך נקוב במערכת
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                אימות אחזקות
-              </th>
-              <th
-                style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
-                ערך נקוב ברשות
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {funds.map((fund, index) => (
-              <tr
-                key={fund.id}
-                style={{
-                  borderBottom: '1px solid #f3f4f6',
-                  backgroundColor: index % 2 === 0 ? 'white' : '#fafafa',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : '#fafafa')
-                }
-              >
-                <td
-                  style={{
-                    padding: '16px 24px',
-                    fontSize: '14px',
-                    color: '#111827',
-                    fontWeight: '500',
-                  }}
-                >
-                  {fund.name}
-                </td>
-                <td style={{ padding: '16px 24px', fontSize: '14px', color: '#374151' }}>
-                  {fund.quantity.toLocaleString()}
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <CheckboxFilter
-                    value={fund.isAuthorized}
-                    onChange={(state: any) => handleCheckboxChange(fund.id, state)}
-                  />
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  {fund.isAuthorized === 'unchecked' && (
-                    <div>
-                      <input
-                        type="text"
-                        value={updatedHoldings[fund.id] ?? ''}
-                        onChange={(e) => handleInputChange(fund.id, e.target.value)}
-                        style={{
-                          width: '120px',
-                          padding: '8px 12px',
-                          border: `1px solid ${errors[fund.id] ? '#d32f2f' : '#d1d5db'}`,
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          textAlign: 'right',
-                          direction: 'rtl',
-                        }}
-                        placeholder="הכנס ערך"
-                      />
-                      {errors[fund.id] && (
-                        <p style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px' }}>
-                          {errors[fund.id]}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </td>
+        <div className="w-full max-w-4xl overflow-x-auto">
+          <table className="w-full border-collapse bg-white rounded-lg shadow-sm text-sm">
+            <thead>
+              <tr className="bg-[#f5f5f5] text-[#a0a0a0] font-normal">
+                <th className="px-6 py-3 text-right font-semibold">שם תיק</th>
+                <th className="px-6 py-3 text-right font-semibold">ערך נקוב במערכת</th>
+                <th className="px-6 py-3 text-right font-semibold">אימות אחזקות</th>
+                <th className="px-6 py-3 text-right font-semibold">ערך נקוב ברשות</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {funds.map((fund, index) => (
+                <tr
+                  key={fund.id}
+                  className={`
+                border-b border-gray-100 transition-colors duration-200 h-12
+                ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-[#f5f5f5] hover:bg-gray-200'}
+              `}
+                >
+                  <td className="px-6 py-2 text-gray-900 font-medium align-middle">{fund.name}</td>
+                  <td className="px-6 py-2 text-gray-700 align-middle">
+                    {fund.quantity.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-2 align-middle min-w-[140px]">
+                    <CheckboxFilter
+                      value={fund.isAuthorized}
+                      onChange={(state) => handleCheckboxChange(fund.id, state)}
+                    />
+                  </td>
+                  <td className="w-48 pl-2 text-center align-middle">
+                    {fund.isAuthorized === 'unchecked' && (
+                      <div>
+                        <input
+                          type="text"
+                          value={updatedHoldings[fund.id] ?? ''}
+                          onChange={(e) => handleInputChange(fund.id, e.target.value)}
+                          className={`
+                        mx-auto w-32 px-2 py-1 text-right text-base border rounded-md
+                        focus:outline-none focus:ring-2
+                        ${!updatedHoldings[fund.id] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                      `}
+                          placeholder="הכנס ערך"
+                          dir="rtl"
+                        />
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
