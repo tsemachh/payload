@@ -14,15 +14,33 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Settings2, ArrowUp, ArrowDown, X, ChevronDown, ChevronLeft } from 'lucide-react' // Added ChevronDown, ChevronLeft
+import {
+  Search,
+  Settings2,
+  ArrowUp,
+  ArrowDown,
+  X,
+  ChevronDown,
+  ChevronLeft,
+  Filter,
+  FilterX,
+} from 'lucide-react' // Added ChevronDown, ChevronLeft
 import React from 'react'
 import { cn } from '@/lib/utils'
 import {
   calculateColumnWidths,
   calculatePrecedingColumnsWidth,
   escapeRegExp,
+  formatDateTime,
+  getDateRange,
+  getStaticFilterOptions,
+  isDateInRange,
+  isDateOption,
+  isValidDate,
 } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import type {
@@ -31,33 +49,46 @@ import type {
   DataTableProps,
   MeetingTableDataType,
   FundType,
+  FacetedFilterItemServer,
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
+import { MeetingState } from '@/payload-types'
+import { meetingStateMap } from '../helpers/maps'
+import CustomRadio from './custom-radio'
+import { isWithinInterval } from 'date-fns'
+import { Checkbox } from './ui/checkbox'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
   columns,
+  pastDateFilterOptions = [],
+  futureDateFilterOptions = [],
   idField,
   defaultSortField,
   defaultSortDirection = 'desc',
   tableId = 'default-table',
   renderRowActions,
   searchPlaceholder = 'חיפוש כללי...',
+  filterLabel = 'סינון',
   columnsLabel = 'עמודות',
   defaultVisibleColumns = columns.map((column) => column.key),
   pagination,
   isLoading = false,
   onServerSort,
   onServerSearch,
+  onServerFilter,
+  onServerDateFilter,
+  serverSideProcessing = false,
   initialSearchTerm = '',
   tableHeightOffset = 250,
   renderExpandedRowContent, // Added prop
   expanderColumnKey, // Added prop
-  columnsOption = false,
-  searchOption = false,
+  columnsOption = true,
+  searchOption = true,
+  filterOption = true,
 }: DataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
@@ -70,6 +101,34 @@ export function DataTableServer<T extends Record<string, any>>({
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   // State for generic row expansion (used for agendas)
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set()) // Added state
+  const [filters, setFilters] = useState<{ [key: string]: any }>(() => {
+    const initialFilters: { [key: string]: any } = {}
+    columns.forEach((column) => {
+      if (column.filterable && column.type != 'datetime') {
+        initialFilters[String(column.key)] = getStaticFilterOptions(column.key, column.type).map(
+          (e) => e.value,
+        )
+      }
+    })
+    return initialFilters
+  })
+  const [isFilterActive, setIsFilterActive] = useState(false)
+  const [dateFilters, setDateFilters] = useState<{
+    [key: string]: { past: string; future: string; empty: boolean }
+  }>(() => {
+    const initialFilters: { [key: string]: any } = {}
+    columns.forEach((column) => {
+      if (column.filterable && column.type == 'datetime') {
+        initialFilters[String(column.key)] = {
+          past: 'allPast',
+          future: 'allFuture',
+          empty: true,
+        }
+      }
+    })
+    return initialFilters
+  })
+  const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
   // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
@@ -128,7 +187,8 @@ export function DataTableServer<T extends Record<string, any>>({
     }
 
     loadColumnVisibility()
-  }, [columns, tableId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, data, tableId])
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -169,11 +229,38 @@ export function DataTableServer<T extends Record<string, any>>({
     [tableId],
   )
 
-  // Filter and sort data
+  // Filter and sort data  הלוגיקה בקליינט רחלי פרוש בבדיקה אפ לעשות משהו כתוב אפ האמפטי שווה true
   const filteredAndSortedData = useMemo(() => {
     // If server-side processing is enabled, skip client-side filtering and sorting
     return [...data]
   }, [data])
+
+  // Function that extracts the displayed value of a field
+  const getDisplayValue = useCallback(
+    (item: T, columnKey: keyof T): string => {
+      const column = columns.find((col) => col.key === columnKey)
+      if (!column) return String(item[columnKey] || '')
+
+      // Handling date fields
+      if (column.type === 'datetime') {
+        return formatDateTime(item[columnKey] as string, columnKey === 'holdingsLimit')
+      }
+
+      // Handling the meeting state field
+      if (columnKey === 'meetingState' && item.meetingState) {
+        return (
+          meetingStateMap[item.meetingState as Exclude<MeetingState, null>] ||
+          String(item.meetingState)
+        )
+      }
+
+      if (item[columnKey] == '-') {
+        return '' //empty value
+      }
+      return String(item[columnKey] || '')
+    },
+    [columns],
+  )
 
   // Handle sort
   const handleSort = useCallback(
@@ -193,6 +280,133 @@ export function DataTableServer<T extends Record<string, any>>({
     },
     [onServerSort],
   )
+
+  // Handle filter
+  const handleFilter = useCallback(
+    (key: string, value: any, type?: string) => {
+      if (serverSideProcessing && onServerFilter) {
+        // Use server-side filtering
+        if (value === 'all') {
+          onServerFilter(key, [])
+        } else if (Array.isArray(value)) {
+          if (value.length === facetedFiltersStatic[key].length) {
+            onServerFilter(key, [])
+          } else {
+            if (value.length == 0) {
+              onServerFilter(key, ['noOptionSelect'])
+            } else {
+              onServerFilter(key, value)
+            }
+          }
+        }
+        setFilters((prev) => {
+          const newFilters = { ...prev }
+          if (value === 'all') {
+            // Initialize all options as checked when resetting the filter
+            newFilters[key] = getStaticFilterOptions(key, type).map((e) => e.value)
+          } else if (Array.isArray(value)) {
+            newFilters[key] = value
+          }
+          return newFilters
+        })
+      }
+    },
+    [data, serverSideProcessing, onServerFilter],
+  )
+
+  // Handle date filter
+  const handleDateFilter = useCallback(
+    (columnKey: string, option: string, checked: boolean) => {
+      if (option === '') {
+        // Clear all filters for this column
+        const clearedFilter = {
+          past: 'allPast',
+          future: 'allFuture',
+          empty: true,
+        }
+
+        if (onServerDateFilter) {
+          onServerDateFilter(columnKey, clearedFilter)
+          setDateFilters((prev) => ({
+            ...prev,
+            [columnKey]: clearedFilter,
+          }))
+        }
+        return
+      }
+
+      const updateFilter = (currentFilter: any) => {
+        const newFilter = { ...currentFilter }
+
+        if (option === 'empty') {
+          // Toggle the empty filter
+          newFilter.empty = checked
+        } else if (isDateOption(option, pastDateFilterOptions)) {
+          // If unchecking, clear the past filter
+          if (!checked) {
+            newFilter.past = ''
+          } else {
+            // Replace the past filter with the new option
+            newFilter.past = option
+          }
+        } else if (isDateOption(option, futureDateFilterOptions)) {
+          // If unchecking, clear the future filter
+          if (!checked) {
+            newFilter.future = ''
+          } else {
+            // Replace the future filter with the new option
+            newFilter.future = option
+          }
+        }
+
+        return newFilter
+      }
+
+      if (onServerDateFilter) {
+        // Use server-side filtering
+        const currentFilter = dateFilters[columnKey] || {
+          past: '',
+          future: '',
+          empty: false,
+        }
+        const newFilter = updateFilter(currentFilter)
+        onServerDateFilter(columnKey, newFilter)
+        setDateFilters((prev) => ({
+          ...prev,
+          [columnKey]: newFilter,
+        }))
+      }
+    },
+    [pastDateFilterOptions, futureDateFilterOptions, onServerDateFilter, dateFilters],
+  )
+  // Reset filters
+  const resetFilters = useCallback(() => {
+    if (serverSideProcessing) {
+      if (isFilterActive) {
+        // Clear all filters
+        columns.forEach((column) => {
+          if (column.filterable) {
+            if (column.type === 'datetime') {
+              if (onServerDateFilter) {
+                onServerDateFilter(column.key as string, {
+                  past: 'allPast',
+                  future: 'allFuture',
+                  empty: true,
+                })
+              }
+            } else {
+              if (onServerFilter) {
+                onServerFilter(column.key as string, [])
+              }
+            }
+          }
+        })
+        setIsFilterActive(false)
+      } else {
+        setIsFilterActive(true)
+      }
+    }
+  }, [data, columns, isFilterActive, serverSideProcessing, onServerFilter, onServerDateFilter])
 
   // Highlight search term in text
   const highlightText = useCallback((text: string, highlight: string) => {
@@ -222,7 +436,6 @@ export function DataTableServer<T extends Record<string, any>>({
     }
     return null
   }
-
   // Toggle generic row expansion (used for agendas)
   const toggleRowExpand = useCallback(
     (rowId: string) => {
@@ -240,6 +453,52 @@ export function DataTableServer<T extends Record<string, any>>({
     [renderExpandedRowContent],
   )
 
+  // Get filter icon for column header
+  const getFilterIcon = (columnKey: string) => {
+    if (!isFilterActive) return null
+    const column = columns.find((col) => col.key === columnKey)
+
+    if (column?.type === 'datetime') {
+      const dateFilter = dateFilters[columnKey]
+      if (
+        dateFilter?.past === 'allPast' &&
+        dateFilter?.future === 'allFuture' &&
+        dateFilter?.empty
+      ) {
+        return <ChevronDown />
+      } else {
+        return <Filter />
+      }
+    }
+
+    if (serverSideProcessing) {
+      // For server-side processing, we don't have complete filter state
+      return <ChevronDown className="h-4 w-4" />
+    }
+
+    if (!filters[columnKey]) {
+      return <ChevronDown className="h-4 w-4 " />
+    }
+    const allPossibleValues = Array.from(
+      new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
+    )
+    const allSelected = allPossibleValues.every((value) => filters[columnKey].includes(value))
+    return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
+  }
+
+  const facetedFiltersStatic = useMemo(() => {
+    const facets: {
+      [key: string]: FacetedFilterItemServer[]
+    } = {}
+    columns.forEach((column) => {
+      if (column.filterable) {
+        const staticOptions = getStaticFilterOptions(column.key as string, column.type)
+        facets[column.key as string] = staticOptions
+      }
+    })
+
+    return facets
+  }, [columns])
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
@@ -268,7 +527,7 @@ export function DataTableServer<T extends Record<string, any>>({
                   // Use debounce for server-side search
                   const delayDebounceFn = setTimeout(() => {
                     onServerSearch(newValue.trim())
-                  }, 500)
+                  }, 1000)
                   return () => clearTimeout(delayDebounceFn)
                 }
               }}
@@ -277,14 +536,30 @@ export function DataTableServer<T extends Record<string, any>>({
             />
           </div>
         )}
-        {columnsOption && (
-          <div className="flex space-x-2 space-x-reverse">
+        <div className="flex space-x-2 space-x-reverse">
+          {filterOption && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => resetFilters()}
+              className={cn('flex justify-between items-center w-40', isFilterActive && 'bg-muted')}
+              disabled={isLoading}
+            >
+              {isFilterActive ? `הסר ${filterLabel}` : filterLabel}
+              {isFilterActive ? (
+                <FilterX className="h-4 w-4 mr-2" />
+              ) : (
+                <Filter className="h-4 w-4 mr-2" />
+              )}
+            </Button>
+          )}
+          {columnsOption && (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex justify-between items-center w-40 bg-transparent"
+                  className="flex justify-between items-center w-40"
                   disabled={isLoading}
                 >
                   <span>{columnsLabel}</span>
@@ -311,8 +586,8 @@ export function DataTableServer<T extends Record<string, any>>({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="bg-background relative">
         {isLoading && (
@@ -355,6 +630,151 @@ export function DataTableServer<T extends Record<string, any>>({
                         >
                           {getSortIcon(column.key)}
                         </span>
+                        {isFilterActive && column.filterable && (
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                {getFilterIcon(String(column.key))}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              style={{
+                                overflowY: 'auto',
+                                maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
+                              }}
+                            >
+                              {column.type === 'datetime' ? (
+                                <div className="flex flex-col">
+                                  <div className="flex">
+                                    {/* Past dates column */}
+                                    <div className="p-2">
+                                      {pastDateFilterOptions.map((option) => {
+                                        const isChecked =
+                                          dateFilters[String(column.key)]?.past === option.value
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
+                                            checked={isChecked}
+                                            onCheckedChange={(checked) => {
+                                              handleDateFilter(
+                                                String(column.key),
+                                                option.value,
+                                                checked,
+                                              )
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <CustomRadio checked={isChecked} size="md" />
+
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        )
+                                      })}
+                                    </div>
+                                    <div className="border-r border-gray-200 mx-2"></div>
+
+                                    {/* Future dates column */}
+                                    <div className="p-2">
+                                      {futureDateFilterOptions.map((option) => {
+                                        const isChecked =
+                                          dateFilters[String(column.key)]?.future === option.value
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={option.value}
+                                            checked={isChecked}
+                                            onCheckedChange={(checked) => {
+                                              handleDateFilter(
+                                                String(column.key),
+                                                option.value,
+                                                checked,
+                                              )
+                                            }}
+                                            className="flex items-center justify-between py-2 remove-checked"
+                                            onSelect={(e) => e.preventDefault()}
+                                          >
+                                            <CustomRadio checked={isChecked} size="md" />
+                                            <div className="flex justify-between gap-2" dir="rtl">
+                                              <span className="text-right">{option.label}</span>
+                                            </div>
+                                          </DropdownMenuCheckboxItem>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                  {/* Empty date option */}
+                                  <div className="p-2 border-t border-gray-200 mt-2">
+                                    <DropdownMenuCheckboxItem
+                                      checked={dateFilters[String(column.key)]?.empty}
+                                      onSelect={(e) => e.preventDefault()}
+                                      onCheckedChange={(checked) => {
+                                        handleDateFilter(String(column.key), 'empty', checked)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                    >
+                                      <CustomRadio
+                                        checked={dateFilters[String(column.key)]?.empty}
+                                        size="md"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">{emptyDateOption.label}</span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  </div>
+                                </div>
+                              ) : (
+                                facetedFiltersStatic[column.key as string]?.map(
+                                  ({ value, icon, translate }: FacetedFilterItemServer) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={value}
+                                      checked={
+                                        !filters[column.key as string] ||
+                                        filters[column.key as string].includes(value)
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        const currentFilters = filters[column.key as string] || []
+                                        const newFilters = checked
+                                          ? [...currentFilters, value]
+                                          : currentFilters.filter((v: any) => v !== value)
+                                        handleFilter(String(column.key), newFilters)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Checkbox
+                                        checked={
+                                          !filters[column.key as string] ||
+                                          filters[column.key as string].includes(value)
+                                        }
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">
+                                          {icon ? icon : translate ? translate : value}
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+                                  ),
+                                )
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="justify-center text-center"
+                                onClick={() => {
+                                  if (column.type === 'datetime') {
+                                    handleDateFilter(String(column.key), '', false)
+                                  } else {
+                                    handleFilter(String(column.key), 'all', column.type)
+                                  }
+                                }}
+                              >
+                                הסר סינון
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </TableHead>
                   ))}
@@ -574,29 +994,31 @@ export function DataTableServer<T extends Record<string, any>>({
         </div>
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && (
         <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
               סה&quot;כ {pagination.totalItems?.toLocaleString()} פריטים.
             </div>
-            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
-                <select
-                  className="h-8 w-[80px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={pageSize}
-                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                  disabled={isLoading}
-                >
-                  {pagination.pageSizeOptions.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {pagination.pageSizeOptions &&
+              pagination.onPageSizeChange &&
+              pagination.totalPages > 1 && (
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
+                  <select
+                    className="h-8 w-[80px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={pageSize}
+                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    disabled={isLoading}
+                  >
+                    {pagination.pageSizeOptions.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Button

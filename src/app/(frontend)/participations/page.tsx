@@ -271,7 +271,6 @@ export default function Participations() {
 
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
-    console.log('Selected Funds:', selected)
   }
 
   const handleRangeChange = (

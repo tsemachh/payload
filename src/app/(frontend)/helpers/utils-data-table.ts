@@ -1,6 +1,20 @@
 import { isWithinInterval } from 'date-fns'
-import { Column, DateFilterOption, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import {
+  Column,
+  DateFilterOption,
+  CompanyTableDate,
+  MeetingTableDataType,
+  FacetedFilterItemServer,
+} from '../types/meetings'
 import { StockValue } from '@/payload-types'
+import {
+  booleanOptions,
+  meetingStateOptions,
+  meetingTypeOptions,
+  stockTypeOptions,
+} from '../meetings/filterConst'
+import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
+
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return ' '
@@ -153,5 +167,67 @@ export const getVotingRecommendationColor = (recommendation: string) => {
     return 'text-red-600'
   } else {
     return 'text-gray-900'
+  }
+}
+
+export const getStaticFilterOptions = (
+  columnKey: string,
+  columnType?: string,
+): FacetedFilterItemServer[] => {
+  switch (columnKey) {
+    case 'stockType':
+      return stockTypeOptions.map((option) => ({
+        value: option.value,
+        translate: option.label,
+      }))
+
+    case 'meetingType':
+      return meetingTypeOptions.map((option) => ({
+        value: option.value,
+        translate: option.label,
+      }))
+
+    case 'meetingState':
+      return meetingStateOptions.map((option) => ({
+        value: option.value,
+        translate: option.label,
+      }))
+    default:
+      if (columnType === 'boolean') {
+        return booleanOptions
+      }
+      return []
+  }
+}
+
+export const getDateRange = (option: string): { start: Date; end: Date } => {
+  const today = startOfDay(new Date())
+  const yesterday = subDays(today, 1)
+
+  switch (option) {
+    case 'today':
+      return { start: today, end: endOfDay(today) }
+    case 'nextWeek':
+      return { start: today, end: endOfDay(addDays(today, 7)) }
+    case 'nextMonth':
+      return { start: today, end: endOfDay(addDays(today, 30)) }
+    case 'allFuture':
+      return { start: today, end: new Date(8640000000000000) } // Max date
+    case 'yesterday':
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
+    case 'lastWeek':
+      return {
+        start: startOfDay(subDays(yesterday, 6)),
+        end: endOfDay(yesterday),
+      }
+    case 'lastMonth':
+      return {
+        start: startOfDay(subDays(yesterday, 29)),
+        end: endOfDay(yesterday),
+      }
+    case 'allPast':
+      return { start: new Date(-8640000000000000), end: endOfDay(yesterday) } // Min date
+    default:
+      return { start: today, end: today }
   }
 }
