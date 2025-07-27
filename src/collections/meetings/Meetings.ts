@@ -625,8 +625,8 @@ export const Meetings: CollectionConfig = {
                       },
                       options: [
                         { label: '---', value: '0' },
-                        { label: 'בעד', value: '1' },
-                        { label: 'נגד', value: '2' },
+                        { label: 'אושר', value: '1' },
+                        { label: 'לא אושר', value: '2' },
                         { label: 'דיון', value: '3' },
                       ],
                     },

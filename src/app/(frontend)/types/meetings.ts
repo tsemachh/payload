@@ -139,6 +139,9 @@ export interface DataTableProps<T extends Record<string, any>> {
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
+  renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
+  expanderColumnKey?: keyof T
+  searchOption?: boolean
 }
 
 export interface UrlFilenameMap {
