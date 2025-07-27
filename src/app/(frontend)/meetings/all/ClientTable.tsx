@@ -109,7 +109,6 @@ export function MeetingsTableServer() {
   }
 
   const handleFilter = (field: string, values: string[]) => {
-    console.log('field', field, 'values', values)
     setFilters((prev) => ({
       ...prev,
       [field]: values,

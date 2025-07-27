@@ -126,7 +126,6 @@ function createRegularFilters(filters: Record<string, string[]>) {
       }
     }
   })
-  console.log('--------------conditions', conditions, '\n--------------filters', filters)
 
   return conditions
 }
@@ -141,7 +140,6 @@ function createDateFilters(
 
   Object.entries(dateFilters).forEach(([field, filter]) => {
     const { past, future, empty } = filter
-    console.log('--------------field', field, '\n-----------filter', filter)
 
     // Skip if all options are selected (no actual filtering)
     if (past === 'allPast' && future === 'allFuture' && empty) {
@@ -211,8 +209,6 @@ function createDateFilters(
       }
     }
   })
-  console.log('----------conditions date', conditions)
-
   return conditions
 }
 

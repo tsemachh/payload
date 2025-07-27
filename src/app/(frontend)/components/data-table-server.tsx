@@ -161,33 +161,6 @@ export function DataTableServer<T extends Record<string, any>>({
       } else {
         setDefaultVisibility()
       }
-      // // Filters:
-      // const initialFilters: { [key: string]: any } = {}
-      // columns.forEach((column) => {
-      //   if (column.filterable) {
-      //     // initialFilters[String(column.key)] = Array.from(
-      //     //   new Set(data.map((item) => String(item[column.key as keyof T]))),
-      //     // )
-      //     initialFilters[String(column.key)] = getStaticFilterOptions(column.key, column.type)
-      //       .filter((e) => filters[String(column.key)]?.includes(e.value))
-      //       .map((e) => e.value)
-      //   }
-      // })
-      // console.log('initialFilters', initialFilters)
-      // setFilters(initialFilters)
-      // const initialDateFilters: {
-      //   [key: string]: { past: string; future: string; empty: boolean }
-      // } = {}
-      // columns.forEach((column) => {
-      //   if (column.type === 'datetime' && column.filterable) {
-      //     initialDateFilters[column.key as string] = {
-      //       past: 'allPast',
-      //       future: 'allFuture',
-      //       empty: true,
-      //     }
-      //   }
-      // })
-      // setDateFilters(initialDateFilters)
     }
 
     const setDefaultVisibility = () => {
@@ -285,82 +258,6 @@ export function DataTableServer<T extends Record<string, any>>({
     [columns],
   )
 
-  const getFilteredDataExcludingColumn = useCallback(
-    (columnKey: string) => {
-      let filteredItems = [...data]
-      // Apply date filters except for the current column
-      Object.entries(dateFilters).forEach(([key, { past, future, empty }]) => {
-        if (key === columnKey) return // Skip current column
-        // If both past and future are set to 'all', treat it as no filter
-        if (past === 'allPast' && future === 'allFuture' && empty) return
-        filteredItems = filteredItems.filter((item) => {
-          const dateValue = item[key as keyof MeetingTableDataType] as string
-
-          // Check if the date is empty/invalid and if we should include it
-          if (!isValidDate(dateValue)) {
-            return empty
-          }
-
-          const itemDate = new Date(dateValue) // Check if the item matches the past filter
-          const matchesPast = past ? isDateInRange(itemDate, getDateRange(past)) : false
-          // Check if the item matches the future filter
-          const matchesFuture = future ? isDateInRange(itemDate, getDateRange(future)) : false
-          // Item passes if it matches either the past or future filter
-          return matchesPast || matchesFuture
-        })
-      })
-
-      // Apply search filter
-      if (searchTerm) {
-        const trimmedSearchTerm = searchTerm.trim()
-        const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
-        filteredItems = filteredItems.filter((item) =>
-          visibleColumns.some((column) => {
-            const displayValue = getDisplayValue(item, column.key)
-            return displayValue && searchRegex.test(displayValue)
-          }),
-        )
-      }
-
-      // Apply other filters except for the current column
-      Object.entries(filters).forEach(([key, value]) => {
-        if (key === columnKey) return // Skip current column
-        // If the filter is an empty array, no items should pass
-        if (Array.isArray(value) && value.length === 0) {
-          filteredItems = []
-          return
-        }
-        // Handle date filters
-        if (columns.find((col) => col.key === key)?.type === 'datetime') {
-          // Skip if either date is missing
-          if (!value.from || !value.to) {
-            return
-          }
-          filteredItems = filteredItems.filter((item) => {
-            const itemDate = new Date(item[key as keyof MeetingTableDataType] as string)
-            return isWithinInterval(itemDate, {
-              start: value.from,
-              end: value.to,
-            })
-          })
-        }
-        // Handle array filters (faceted)
-        else if (Array.isArray(value)) {
-          filteredItems = filteredItems.filter((item) =>
-            value.includes(String(item[key as keyof MeetingTableDataType])),
-          )
-        }
-        // Handle other filter types
-        else {
-          filteredItems = filteredItems.filter(
-            (item) => item[key as keyof MeetingTableDataType] === value,
-          )
-        }
-      })
-      return filteredItems
-    },
-    [columns, data, dateFilters, filters, searchTerm, visibleColumns, getDisplayValue],
-  )
   // Handle sort
   const handleSort = useCallback(
     (key: keyof T) => {
@@ -1045,13 +942,13 @@ export function DataTableServer<T extends Record<string, any>>({
         </div>
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && (
         <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
               סה&quot;כ {pagination.totalItems?.toLocaleString()} פריטים.
             </div>
-            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
+            {pagination.pageSizeOptions && pagination.onPageSizeChange && pagination.totalPages > 1 && (
               <div className="flex items-center space-x-2 space-x-reverse">
                 <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
                 <select
