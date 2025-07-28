@@ -588,30 +588,27 @@ export default function Participations() {
           <Label htmlFor="report-name" className="text-base font-semibold mb-2 block text-right">
             שם הדו״ח
           </Label>
-          <Input
-            id="report-name"
-            type="text"
-            value={reportName}
-            onChange={(e) => setReportName(e.target.value)}
-            placeholder="הכנס שם לדו״ח"
-            className="w-[280px] text-right"
-            dir="rtl"
-          />
+          <div className="flex gap-2 items-end">
+            <Input
+              id="report-name"
+              type="text"
+              value={reportName}
+              onChange={(e) => setReportName(e.target.value)}
+              placeholder="הכנס שם לדו״ח"
+              className="w-[280px] text-right"
+              dir="rtl"
+            />
+            <Button
+              onClick={handleExport}
+              variant="default"
+              disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
+              className="whitespace-nowrap"
+            >
+              הצג
+            </Button>
+          </div>
         </div>
       </div>
-
-      {/* Export Button */}
-      {!showParticipationTable && (
-        <div className="flex justify-center mt-4">
-          <Button
-            onClick={handleExport}
-            variant="default"
-            disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
-          >
-            ייצוא
-          </Button>
-        </div>
-      )}
 
       {/* Selected rows info - Now reflects total selected based on deselectedIds */}
       {showParticipationTable && !isLoading && !meetingsResponse?.error && (
