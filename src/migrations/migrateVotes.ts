@@ -5,6 +5,10 @@ import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/ut
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
 import { createMSSqlPool } from '@/migrations/utils/utils'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 // Mapping from MSSQL voting codes to MongoDB voting values
 const votingResultMap: Record<string, string | null> = {
@@ -36,9 +40,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Get all meetings from MSSQL
     console.log('Executing SQL query for meetings.')
+    const dateCutoff = process.env.MIGRATION_VOTES_DATE_CUTOFF || '2018-01-01'
+    console.log(`Using date cutoff: ${dateCutoff}`)
     const meetingsResult = await pool.request().query(`
         SELECT id
-        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '2018-01-01';
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '${dateCutoff}';
     `)
 
     const meetings = meetingsResult.recordset
