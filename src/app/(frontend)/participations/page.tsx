@@ -618,7 +618,7 @@ export default function Participations() {
         <div className="flex justify-center ">
           <div className="flex justify-start mb-2 w-full pr-11 mt-6">
             <span className="text-[rgb(71,122,133)] text-sm -mb-[15px]">
-              נבחרו {currentSelectedCount} אסיפויות
+              נבחרו {currentSelectedCount} אסיפות
             </span>
           </div>
         </div>
