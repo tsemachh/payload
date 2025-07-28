@@ -659,6 +659,23 @@ export default function Participations() {
             >
               הצג
             </Button>
+            {showParticipationTable && (
+              <Button
+                onClick={() => {
+                  console.log('Exporting file with data:', {
+                    reportName,
+                    selectedCount: currentSelectedCount,
+                    totalItems: meetingsResponse?.totalItems,
+                    appliedFilters,
+                    participationData: participationData.length,
+                  })
+                }}
+                variant="default"
+                className="whitespace-nowrap"
+              >
+                ייצוא הקובץ
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -687,7 +704,7 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {meetingsResponse.error.message}
           </div>
         ) : (
-          <div className="-mt-10">
+          <div className="-mt-4">
             <DataTableServer
               data={participationData}
               columns={participationColumns}
