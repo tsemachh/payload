@@ -199,9 +199,9 @@ export const Users: CollectionConfig = {
                   type: {
                     equals: 'regular',
                   },
-                  active: {
+                  /*                  active: {
                     equals: true,
-                  },
+                  },*/
                 }
                 if (selectedIds.length === 0) {
                   return query
@@ -319,7 +319,10 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, originalDoc }) => {
-        if (req.context.from == 'migration' || req.context.from == 'process') {
+        if (
+          (req.context.from == 'migration' || req.context.from == 'process') &&
+          data.funds?.length > 0
+        ) {
           return data
         }
         if (data?.companies) {

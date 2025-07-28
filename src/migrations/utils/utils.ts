@@ -1,9 +1,13 @@
 import sql from 'mssql'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 // SQL Server configuration
 export const sqlConfig: sql.config = {
   user: 'sa',
-  password: 'dockerStrongPwd123',
+  password: process.env.MSSQL_PASSWORD || 'dockerStrongPwd123', // Use environment variable with fallback
   database: 'dbEmda', // Use the actual database name
   server: 'localhost',
   port: 1433,
@@ -20,8 +24,20 @@ export async function createMSSqlPool() {
   console.log('\n=== Starting Firms Migration ===')
   console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
+  // Log whether we're using the environment variable for the password
+  if (process.env.MSSQL_PASSWORD) {
+    console.log('Using password from environment variable')
+  } else {
+    console.log('Using default password (environment variable not set)')
+  }
+
   // Connect to SQL Server
-  pool = await sql.connect(sqlConfig)
-  console.log('Successfully connected to SQL Server')
-  return pool
+  try {
+    pool = await sql.connect(sqlConfig)
+    console.log('Successfully connected to SQL Server')
+    return pool
+  } catch (error) {
+    console.error('Failed to connect to SQL Server:', error)
+    throw error
+  }
 }
