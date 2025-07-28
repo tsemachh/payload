@@ -312,7 +312,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sortField = (req.query.sortField as string) || 'meetingDate'
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
-
+    const selectedFundsParam = req.query.funds as string
+    let frontendSelectedFundIds: string[] | undefined
+    if (selectedFundsParam) {
+      frontendSelectedFundIds = selectedFundsParam.split(',')
+    }
     // Parse filters from query parameters
     const filters: Record<string, string[]> = {}
     const dateFilters: Record<string, DateFilterType> = {}
@@ -344,7 +348,18 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
       createCompaniesFilter(user?.funds),
       createPublishedStatusFilter(),
     ]
+    const userFunds = getSafeFunds(user?.funds)
+    if (userFunds && userFunds.length > 0) {
+      whereConditions.push(createCompaniesFilter(userFunds))
+    } else {
+      // If user has no funds, they shouldn't see any meetings
+      whereConditions.push({ funds: { in: [] } })
+    }
 
+    // Apply frontend selected funds filter (further restriction)
+    if (frontendSelectedFundIds && frontendSelectedFundIds.length > 0) {
+      whereConditions.push(createCompaniesFilter(frontendSelectedFundIds))
+    }
     // Add search condition
     if (searchTerm) {
       whereConditions.push({

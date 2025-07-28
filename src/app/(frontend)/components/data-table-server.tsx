@@ -584,7 +584,11 @@ export function DataTableServer<T extends Record<string, any>>({
                           className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
-                          {column.noHeader ? '' : column.header}
+                          {column.renderHeader
+                            ? column.renderHeader()
+                            : column.noHeader
+                              ? ''
+                              : column.header}
                         </span>
                         <span
                           className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}

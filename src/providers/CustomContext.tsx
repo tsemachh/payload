@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, PropsWithChildren, useState } from 'react'
+import { Toaster as SonnerToaster } from 'sonner'
 
 /* eslint-disable */
 interface ICustomContext {
@@ -28,6 +29,7 @@ export const CustomContextProvider = ({ children }: PropsWithChildren<{}>) => {
       }}
     >
       {children}
+      <SonnerToaster />
     </CustomContext.Provider>
   )
 }

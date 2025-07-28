@@ -266,6 +266,7 @@ export const unSortAbleColumnsOnServer = [
   'nominalValue',
   'percentageHolding',
   'holdingValueInMillions',
+  'select',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

@@ -79,6 +79,7 @@ export interface Column<T> {
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
+  renderHeader?: () => React.ReactNode
   defaultVisible?: boolean
   minWidth: number
   width?: number
