@@ -141,38 +141,74 @@ export default function Participations() {
     }
   }, [meetingsResponse?.totalItems])
 
+  // Check if all items are selected - move this calculation closer to where it's used
+  const allSelected = deselectedIds.size === 0 && (meetingsResponse?.totalItems || 0) > 0
+
   // Define columns for DataTableStatic
   const participationColumns: Column<ParticipationTableDataType>[] = [
     {
       key: 'select',
-      header: '',
+      header: 'בחר הכל',
       type: 'boolean',
-      minWidth: 50,
+      minWidth: 80,
       positionCenter: true,
       isAlwaysVisible: true,
-      render: (row) => (
-        <Checkbox
-          // An item is checked if its ID is NOT in the deselectedIds set
-          checked={!deselectedIds.has(row.id)}
-          onCheckedChange={(checked) => {
-            setDeselectedIds((prev) => {
-              const newSet = new Set(prev)
-              if (!checked) {
-                // User unchecked this row, add its ID to deselectedIds
-                newSet.add(row.id)
-              } else {
-                // User checked this row (it was previously deselected), remove its ID from deselectedIds
-                newSet.delete(row.id)
-              }
-              return newSet
+      filterable: false, // הוסף את זה
+      renderHeader: () => (
+        <div
+          className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
+          onClick={() => {
+            console.log('Header clicked!', {
+              allSelected,
+              deselectedIds: deselectedIds.size,
+              totalItems: meetingsResponse?.totalItems,
             })
+
+            if (allSelected) {
+              // Deselect all - create a set with ALL possible IDs (simulate all items being deselected)
+              // Since we can't get all IDs from all pages, we'll use a large number to represent "all deselected"
+              const totalItems = meetingsResponse?.totalItems || 0
+              // Create a set that represents all items being deselected
+              setDeselectedIds(
+                new Set(Array.from({ length: totalItems }, (_, i) => `deselected_${i}`)),
+              )
+              // Also add current page IDs to be sure
+              const currentPageIds = participationData.map((row) => row.id)
+              setDeselectedIds((prev) => new Set([...prev, ...currentPageIds]))
+            } else {
+              // Select all - clear deselectedIds completely
+              setDeselectedIds(new Set())
+            }
           }}
-          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-        />
+        >
+          {allSelected ? 'בטל הכל' : 'בחר הכל'}
+        </div>
+      ),
+      render: (row) => (
+        <div className="flex justify-center">
+          <Checkbox
+            // An item is checked if its ID is NOT in the deselectedIds set
+            checked={!deselectedIds.has(row.id)}
+            onCheckedChange={(checked) => {
+              setDeselectedIds((prev) => {
+                const newSet = new Set(prev)
+                if (!checked) {
+                  // User unchecked this row, add its ID to deselectedIds
+                  newSet.add(row.id)
+                } else {
+                  // User checked this row (it was previously deselected), remove its ID from deselectedIds
+                  newSet.delete(row.id)
+                }
+                return newSet
+              })
+            }}
+            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          />
+        </div>
       ),
     },
-    { key: 'stockNumber', header: 'מספר נייר', type: 'string', minWidth: 120 },
-    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 200 },
+    { key: 'stockNumber', header: 'מספר נייר / נושאי האסיפה', type: 'string', minWidth: 120 },
+    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 }, // Back to original width
     {
       key: 'marketValue',
       header: 'שווי שוק',
@@ -192,7 +228,7 @@ export default function Participations() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(row.percentageHolding),
-      minWidth: 80,
+      minWidth: 100,
     },
     {
       key: 'holdingValueInMillions',
@@ -217,7 +253,7 @@ export default function Participations() {
       header: 'המלצת גורם מייעץ',
       type: 'string',
       render: (row) => null,
-      minWidth: 100,
+      minWidth: 120,
     },
     { key: 'vote', header: 'הצבעה', type: 'string', render: (row) => null, minWidth: 80 },
     {
@@ -233,7 +269,7 @@ export default function Participations() {
       type: 'boolean',
       render: (row) => null,
       positionCenter: true,
-      minWidth: 60,
+      minWidth: 90,
     },
     {
       key: 'specialMajority',
@@ -375,7 +411,9 @@ export default function Participations() {
                       case 'stockNumber':
                         content = (
                           <div className="flex items-center justify-end gap-2 pr-16 pl-4">
-                            <span style={{ marginLeft: 'auto' }}>{agenda.topicIndex}.</span>
+                            <span style={{ marginLeft: 'auto', transform: 'translateX(20px)' }}>
+                              {agenda.topicIndex}.
+                            </span>
                           </div>
                         )
                         break
@@ -383,10 +421,7 @@ export default function Participations() {
                         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
                         content = (
                           <div
-                            className={cn(
-                              'max-w-[400px] relative group',
-                              isEnglish ? 'text-left' : 'text-right',
-                            )}
+                            className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
                             dir={isEnglish ? 'ltr' : 'rtl'}
                           >
                             <div
@@ -414,14 +449,6 @@ export default function Participations() {
                             </div>
                           </div>
                         )
-                        break
-                      case 'marketValue':
-                      case 'percentageHolding':
-                      case 'holdingValueInMillions':
-                      case 'meetingDate':
-                      case 'meetingType':
-                        // These columns remain empty for agenda rows
-                        content = null
                         break
                       case 'advisoryRecommendation':
                         // Get recommendation from the nested object
@@ -485,6 +512,17 @@ export default function Participations() {
                         break
                     }
 
+                    // Skip columns that are covered by stockName colspan
+                    if (
+                      column.key === 'marketValue' ||
+                      column.key === 'percentageHolding' ||
+                      column.key === 'holdingValueInMillions' ||
+                      column.key === 'meetingDate' ||
+                      column.key === 'meetingType'
+                    ) {
+                      return null
+                    }
+
                     return (
                       <td
                         key={`${agenda.id}-${column.key}`}
@@ -493,12 +531,13 @@ export default function Participations() {
                           column.positionCenter ? 'text-center' : 'text-right',
                         )}
                         style={{
-                          width: `${column.minWidth}px`,
-                          minWidth: `${column.minWidth}px`,
-                          maxWidth: `${column.minWidth}px`,
+                          width: column.key === 'stockName' ? '650px' : `${column.minWidth}px`,
+                          minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
+                          maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
                           textAlign: column.positionCenter ? 'center' : 'right',
                           verticalAlign: 'middle',
                         }}
+                        colSpan={column.key === 'stockName' ? 5 : 1} // Span across 5 columns: stockName, marketValue, percentageHolding, holdingValueInMillions, meetingDate, meetingType
                       >
                         {content}
                       </td>
@@ -514,7 +553,9 @@ export default function Participations() {
   }, [])
 
   // Calculate the number of currently selected items
-  const currentSelectedCount = (meetingsResponse?.totalItems || 0) - deselectedIds.size
+  const currentSelectedCount = allSelected
+    ? meetingsResponse?.totalItems || 0
+    : Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
 
   return (
     <div className="p-4 space-y-3" dir="rtl">
@@ -547,44 +588,38 @@ export default function Participations() {
           <Label htmlFor="report-name" className="text-base font-semibold mb-2 block text-right">
             שם הדו״ח
           </Label>
-          <Input
-            id="report-name"
-            type="text"
-            value={reportName}
-            onChange={(e) => setReportName(e.target.value)}
-            placeholder="הכנס שם לדו״ח"
-            className="w-[280px] text-right"
-            dir="rtl"
-          />
+          <div className="flex gap-2 items-end">
+            <Input
+              id="report-name"
+              type="text"
+              value={reportName}
+              onChange={(e) => setReportName(e.target.value)}
+              placeholder="הכנס שם לדו״ח"
+              className="w-[280px] text-right"
+              dir="rtl"
+            />
+            <Button
+              onClick={handleExport}
+              variant="default"
+              disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
+              className="whitespace-nowrap"
+            >
+              הצג
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Export Button */}
-      {!showParticipationTable && (
-        <div className="flex justify-center mt-4">
-          <Button
-            onClick={handleExport}
-            variant="default"
-            disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
-          >
-            ייצוא
-          </Button>
+      {/* Selected rows info - Now reflects total selected based on deselectedIds */}
+      {showParticipationTable && !isLoading && !meetingsResponse?.error && (
+        <div className="flex justify-center ">
+          <div className="flex justify-start mb-2 w-full pr-11 mt-6">
+            <span className="text-[rgb(71,122,133)] text-sm -mb-[15px]">
+              נבחרו {currentSelectedCount} אסיפות
+            </span>
+          </div>
         </div>
       )}
-
-      {/* Selected rows info - Now reflects total selected based on deselectedIds */}
-      {showParticipationTable &&
-        !isLoading &&
-        !meetingsResponse?.error &&
-        currentSelectedCount > 0 && (
-          <div className="flex justify-center mb-4">
-            <div className="border border-teal-500 rounded-lg px-4 py-1 bg-white">
-              <span className="text-teal-600 font-medium">
-                נבחרו {currentSelectedCount} אסיפויות
-              </span>
-            </div>
-          </div>
-        )}
 
       {/* Participation Table */}
       {showParticipationTable &&
@@ -603,8 +638,8 @@ export default function Participations() {
             data={participationData}
             columns={participationColumns}
             idField="id"
-            defaultSortField={sortField as keyof ParticipationTableDataType} // Pass sortField
-            defaultSortDirection={sortDirection} // Pass sortDirection
+            defaultSortField={'meetingDate'} // Pass sortField
+            defaultSortDirection={'desc'} // Pass sortDirection
             tableId="participations-table"
             searchOption={false} // As per your request
             filterOption={false} // As per your request
