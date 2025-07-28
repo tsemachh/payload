@@ -172,7 +172,7 @@ export default function Participations() {
       ),
     },
     { key: 'stockNumber', header: 'מספר נייר', type: 'string', minWidth: 120 },
-    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 200 },
+    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 }, // Back to original width
     {
       key: 'marketValue',
       header: 'שווי שוק',
@@ -192,7 +192,7 @@ export default function Participations() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(row.percentageHolding),
-      minWidth: 80,
+      minWidth: 100,
     },
     {
       key: 'holdingValueInMillions',
@@ -217,7 +217,7 @@ export default function Participations() {
       header: 'המלצת גורם מייעץ',
       type: 'string',
       render: (row) => null,
-      minWidth: 100,
+      minWidth: 120,
     },
     { key: 'vote', header: 'הצבעה', type: 'string', render: (row) => null, minWidth: 80 },
     {
@@ -233,7 +233,7 @@ export default function Participations() {
       type: 'boolean',
       render: (row) => null,
       positionCenter: true,
-      minWidth: 60,
+      minWidth: 90,
     },
     {
       key: 'specialMajority',
@@ -375,7 +375,9 @@ export default function Participations() {
                       case 'stockNumber':
                         content = (
                           <div className="flex items-center justify-end gap-2 pr-16 pl-4">
-                            <span style={{ marginLeft: 'auto' }}>{agenda.topicIndex}.</span>
+                            <span style={{ marginLeft: 'auto', transform: 'translateX(20px)' }}>
+                              {agenda.topicIndex}.
+                            </span>
                           </div>
                         )
                         break
@@ -383,10 +385,7 @@ export default function Participations() {
                         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
                         content = (
                           <div
-                            className={cn(
-                              'max-w-[400px] relative group',
-                              isEnglish ? 'text-left' : 'text-right',
-                            )}
+                            className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
                             dir={isEnglish ? 'ltr' : 'rtl'}
                           >
                             <div
@@ -414,14 +413,6 @@ export default function Participations() {
                             </div>
                           </div>
                         )
-                        break
-                      case 'marketValue':
-                      case 'percentageHolding':
-                      case 'holdingValueInMillions':
-                      case 'meetingDate':
-                      case 'meetingType':
-                        // These columns remain empty for agenda rows
-                        content = null
                         break
                       case 'advisoryRecommendation':
                         // Get recommendation from the nested object
@@ -485,6 +476,17 @@ export default function Participations() {
                         break
                     }
 
+                    // Skip columns that are covered by stockName colspan
+                    if (
+                      column.key === 'marketValue' ||
+                      column.key === 'percentageHolding' ||
+                      column.key === 'holdingValueInMillions' ||
+                      column.key === 'meetingDate' ||
+                      column.key === 'meetingType'
+                    ) {
+                      return null
+                    }
+
                     return (
                       <td
                         key={`${agenda.id}-${column.key}`}
@@ -493,12 +495,13 @@ export default function Participations() {
                           column.positionCenter ? 'text-center' : 'text-right',
                         )}
                         style={{
-                          width: `${column.minWidth}px`,
-                          minWidth: `${column.minWidth}px`,
-                          maxWidth: `${column.minWidth}px`,
+                          width: column.key === 'stockName' ? '650px' : `${column.minWidth}px`,
+                          minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
+                          maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
                           textAlign: column.positionCenter ? 'center' : 'right',
                           verticalAlign: 'middle',
                         }}
+                        colSpan={column.key === 'stockName' ? 5 : 1} // Span across 5 columns: stockName, marketValue, percentageHolding, holdingValueInMillions, meetingDate, meetingType
                       >
                         {content}
                       </td>
