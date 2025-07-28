@@ -21,6 +21,7 @@ import {
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 import { v1 as uuid1 } from 'uuid'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
+import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -243,15 +244,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   type: 'select',
                   interfaceName: 'MeetingType',
-                  options: [
-                    { label: 'שנתית', value: 'שנתית' },
-                    { label: 'מיוחדת', value: 'מיוחדת' },
-                    { label: 'אג"ח', value: 'אג"ח' },
-                    { label: 'אופציה', value: 'אופציה' },
-                    { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-                    { label: 'תעודת סל', value: 'תעודת סל' },
-                    { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
-                  ],
+                  options: meetingTypeOptions,
                   admin: {
                     width: '150px',
                   },
@@ -366,14 +359,7 @@ export const Meetings: CollectionConfig = {
                   },
                   interfaceName: 'MeetingState',
                   validate: validateMeetingState,
-                  options: [
-                    { label: 'מתוכננת', value: 'scheduled' },
-                    { label: 'התקיימה', value: 'completed' },
-                    { label: 'נדחית', value: 'postponed' },
-                    { label: 'נדחית ללא מועד', value: 'on-hold' },
-                    { label: 'נמשכת', value: 'ongoing' },
-                    { label: 'בוטלה', value: 'cancelled' },
-                  ],
+                  options: meetingStateOptions,
                   admin: {
                     width: '150px',
                   },

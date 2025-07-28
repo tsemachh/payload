@@ -3,6 +3,7 @@ import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPo
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
 import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
+import { stockTypeOptions } from '@/consts/otipns-const'
 
 const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
@@ -136,21 +137,7 @@ export const Stocks: CollectionConfig = {
                   label: 'סוג',
                   type: 'select',
                   interfaceName: 'StockType',
-                  options: [
-                    { label: 'מניות', value: 'מניות' },
-                    { label: 'אופציות', value: 'אופציות' },
-                    { label: 'איגרות חוב', value: 'איגרות חוב' },
-                    { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
-                    { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-                    { label: 'תעודות מדד', value: 'תעודות מדד' },
-                    { label: 'תעודות סל', value: 'תעודות סל' },
-                    { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
-                    { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
-                    { label: 'אחר', value: 'אחר' },
-                    { label: 'זכויות', value: 'זכויות' },
-                    { label: 'מק"מ', value: 'מק"מ' },
-                    { label: 'שטרי הון', value: 'שטרי הון' },
-                  ],
+                  options:stockTypeOptions,
                   index: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
