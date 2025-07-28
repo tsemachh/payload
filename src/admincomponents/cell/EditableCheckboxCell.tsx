@@ -1,7 +1,7 @@
 'use client'
 import React, { useCallback, useState } from 'react'
 import type { CheckboxFieldClient, DefaultCellComponentProps } from 'payload'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from '@payloadcms/ui'
 import { useLocale } from '@/plugins/impersonate/hooks/useLocale'
 
 const EditableCheckboxCell: React.FC<DefaultCellComponentProps<CheckboxFieldClient>> = (props) => {
@@ -9,7 +9,6 @@ const EditableCheckboxCell: React.FC<DefaultCellComponentProps<CheckboxFieldClie
   const { id } = rowData
 
   const [isChecked, setIsChecked] = useState<boolean>(cellData)
-  const { toast } = useToast()
   const locale = useLocale()
 
   // Toast messages for both languages
@@ -44,25 +43,24 @@ const EditableCheckboxCell: React.FC<DefaultCellComponentProps<CheckboxFieldClie
 
       setIsChecked(!isChecked)
 
-      // Show success toast with unique key
-      toast({
-        title: messages.success[locale as keyof typeof messages.success] || messages.success.en,
-        description: rowData.message || `ID: ${id}`,
-        variant: 'default',
-        key: `success-${id}-${timestamp}`,
-      })
+      // Show success toast using Payload's sonner toast
+      toast.success(
+        messages.success[locale as keyof typeof messages.success] || messages.success.en,
+        {
+          description: rowData.message || `ID: ${id}`,
+          id: `success-${id}-${timestamp}`,
+        },
+      )
     } catch (error) {
       console.error('Error updating notification:', error)
 
-      // Show error toast with unique key
-      toast({
-        title: messages.error[locale as keyof typeof messages.error] || messages.error.en,
+      // Show error toast using Payload's sonner toast
+      toast.error(messages.error[locale as keyof typeof messages.error] || messages.error.en, {
         description: rowData.message || `ID: ${id}`,
-        variant: 'destructive',
-        key: `error-${id}-${timestamp}`,
+        id: `error-${id}-${timestamp}`,
       })
     }
-  }, [id, isChecked, toast, locale, messages])
+  }, [id, isChecked, locale, messages])
 
   return (
     <div>
