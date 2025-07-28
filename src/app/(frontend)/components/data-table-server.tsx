@@ -98,8 +98,9 @@ export function DataTableServer<T extends Record<string, any>>({
     [key: string]: boolean
   }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
+  const [inputSearchTerm, setInputSearchTerm] = useState(initialSearchTerm)
   // State for generic row expansion (used for agendas)
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set()) // Added state
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<{ [key: string]: any }>(() => {
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
@@ -123,7 +124,7 @@ export function DataTableServer<T extends Record<string, any>>({
           future: 'allFuture',
           empty: true,
           custom: false,
-          customDate: {}
+          customDate: {},
         }
       }
     })
@@ -134,7 +135,15 @@ export function DataTableServer<T extends Record<string, any>>({
   // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
     setSearchTerm(initialSearchTerm)
+    setInputSearchTerm(initialSearchTerm) // Synchronize inputSearchTerm as well
   }, [initialSearchTerm])
+
+  // Effect to synchronize inputSearchTerm with searchTerm when searchTerm changes (e.g., clear button)
+  useEffect(() => {
+    if (searchTerm === '') {
+      setInputSearchTerm('')
+    }
+  }, [searchTerm])
 
   useEffect(() => {
     // Load column visibility from localStorage
@@ -236,7 +245,6 @@ export function DataTableServer<T extends Record<string, any>>({
     return [...data]
   }, [data])
 
-
   // Handle sort
   const handleSort = useCallback(
     (key: keyof T) => {
@@ -298,7 +306,7 @@ export function DataTableServer<T extends Record<string, any>>({
           future: 'allFuture',
           empty: true,
           custom: false,
-          customDate: {}
+          customDate: {},
         }
 
         if (onServerDateFilter) {
@@ -311,16 +319,15 @@ export function DataTableServer<T extends Record<string, any>>({
         return
       }
 
-
       if (onServerDateFilter) {
         const currentFilter = dateFilters[columnKey] || {
           past: '',
           future: '',
           empty: false,
           custom: false,
-          customDate: {}
+          customDate: {},
         }
-        const newFilter = updateFilter(option, checked, currentFilter, customDate,)
+        const newFilter = updateFilter(option, checked, currentFilter, customDate)
         onServerDateFilter(columnKey, newFilter)
         setDateFilters((prev) => ({
           ...prev,
@@ -338,7 +345,7 @@ export function DataTableServer<T extends Record<string, any>>({
         future: '',
         empty: false,
         custom: false,
-        customDate: {}
+        customDate: {},
       }
       const newFilter = { ...currentFilter }
       newFilter.customDate = customDate
@@ -362,7 +369,7 @@ export function DataTableServer<T extends Record<string, any>>({
                   future: 'allFuture',
                   empty: true,
                   custom: false,
-                  customDate: {}
+                  customDate: {},
                 })
               }
             } else {
@@ -468,11 +475,12 @@ export function DataTableServer<T extends Record<string, any>>({
         {searchOption && (
           <div className="relative w-1/3">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            {searchTerm && (
+            {inputSearchTerm && (
               <X
                 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground cursor-pointer z-10"
                 onClick={() => {
                   setSearchTerm('')
+                  setInputSearchTerm('')
                   if (onServerSearch) {
                     onServerSearch('')
                   }
@@ -481,16 +489,22 @@ export function DataTableServer<T extends Record<string, any>>({
             )}
             <Input
               placeholder={searchPlaceholder}
-              value={searchTerm}
+              value={inputSearchTerm}
               onChange={(e) => {
-                const newValue = e.target.value
-                setSearchTerm(newValue)
+                setInputSearchTerm(e.target.value)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchTerm(inputSearchTerm)
+                  if (onServerSearch) {
+                    onServerSearch(inputSearchTerm.trim())
+                  }
+                }
+              }}
+              onBlur={() => {
+                setSearchTerm(inputSearchTerm)
                 if (onServerSearch) {
-                  // Use debounce for server-side search
-                  const delayDebounceFn = setTimeout(() => {
-                    onServerSearch(newValue.trim())
-                  }, 1000)
-                  return () => clearTimeout(delayDebounceFn)
+                  onServerSearch(inputSearchTerm.trim())
                 }
               }}
               className="pr-10 text-right"
@@ -697,11 +711,23 @@ export function DataTableServer<T extends Record<string, any>>({
                                       checked={dateFilters[String(column.key)]?.custom || false}
                                       onSelect={(e) => e.preventDefault()}
                                       onCheckedChange={(checked) => {
-                                        handleDateFilter(String(column.key), 'custom', checked, dateFilters[String(column.key)]?.customDate)
+                                        handleDateFilter(
+                                          String(column.key),
+                                          'custom',
+                                          checked,
+                                          dateFilters[String(column.key)]?.customDate,
+                                        )
                                       }}
                                       className="flex items-center justify-between py-2 remove-checked"
                                     >
-                                      <CustomRadio checked={dateFilters[String(column.key)]?.custom || false} size="md" disabled={!dateFilters[String(column.key)]?.customDate.startDate || !dateFilters[String(column.key)]?.customDate.endDate} />
+                                      <CustomRadio
+                                        checked={dateFilters[String(column.key)]?.custom || false}
+                                        size="md"
+                                        disabled={
+                                          !dateFilters[String(column.key)]?.customDate.startDate ||
+                                          !dateFilters[String(column.key)]?.customDate.endDate
+                                        }
+                                      />
                                       <div className="flex justify-between gap-2" dir="rtl">
                                         <span className="text-right">תאריך מותאם אישית </span>
                                       </div>
@@ -721,12 +747,18 @@ export function DataTableServer<T extends Record<string, any>>({
                                                 variant="outline"
                                                 className={cn(
                                                   'w-full justify-start text-right font-normal text-sm',
-                                                  !dateFilters[String(column.key)]?.customDate.endDate && 'text-muted-foreground',
+                                                  !dateFilters[String(column.key)]?.customDate
+                                                    .endDate && 'text-muted-foreground',
                                                 )}
                                               >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {dateFilters[String(column.key)]?.customDate.endDate ? (
-                                                  format(dateFilters[String(column.key)].customDate.endDate!, 'dd/MM/yy')
+                                                {dateFilters[String(column.key)]?.customDate
+                                                  .endDate ? (
+                                                  format(
+                                                    dateFilters[String(column.key)].customDate
+                                                      .endDate!,
+                                                    'dd/MM/yy',
+                                                  )
                                                 ) : (
                                                   <span>בחר</span>
                                                 )}
@@ -735,9 +767,14 @@ export function DataTableServer<T extends Record<string, any>>({
                                             <PopoverContent className="w-auto p-0" align="start">
                                               <Calendar
                                                 mode="single"
-                                                selected={dateFilters[String(column.key)]?.customDate.endDate}
+                                                selected={
+                                                  dateFilters[String(column.key)]?.customDate
+                                                    .endDate
+                                                }
                                                 onSelect={(date) => {
-                                                  const currentStartDate = dateFilters[String(column.key)]?.customDate.startDate
+                                                  const currentStartDate =
+                                                    dateFilters[String(column.key)]?.customDate
+                                                      .startDate
                                                   if (currentStartDate || date) {
                                                     updateCustomDate(String(column.key), {
                                                       startDate: currentStartDate,
@@ -746,7 +783,12 @@ export function DataTableServer<T extends Record<string, any>>({
                                                   }
                                                 }}
                                                 disabled={(date) =>
-                                                  dateFilters[String(column.key)]?.customDate.startDate ? date < dateFilters[String(column.key)].customDate.startDate! : false
+                                                  dateFilters[String(column.key)]?.customDate
+                                                    .startDate
+                                                    ? date <
+                                                      dateFilters[String(column.key)].customDate
+                                                        .startDate!
+                                                    : false
                                                 }
                                               />
                                             </PopoverContent>
@@ -763,12 +805,18 @@ export function DataTableServer<T extends Record<string, any>>({
                                                 variant="outline"
                                                 className={cn(
                                                   'w-full justify-start text-right font-normal text-sm',
-                                                  !dateFilters[String(column.key)]?.customDate.startDate && 'text-muted-foreground',
+                                                  !dateFilters[String(column.key)]?.customDate
+                                                    .startDate && 'text-muted-foreground',
                                                 )}
                                               >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {dateFilters[String(column.key)]?.customDate.startDate ? (
-                                                  format(dateFilters[String(column.key)].customDate.startDate!, 'dd/MM/yy')
+                                                {dateFilters[String(column.key)]?.customDate
+                                                  .startDate ? (
+                                                  format(
+                                                    dateFilters[String(column.key)].customDate
+                                                      .startDate!,
+                                                    'dd/MM/yy',
+                                                  )
                                                 ) : (
                                                   <span>בחר</span>
                                                 )}
@@ -777,9 +825,14 @@ export function DataTableServer<T extends Record<string, any>>({
                                             <PopoverContent className="w-auto p-0" align="start">
                                               <Calendar
                                                 mode="single"
-                                                selected={dateFilters[String(column.key)]?.customDate.startDate}
+                                                selected={
+                                                  dateFilters[String(column.key)]?.customDate
+                                                    .startDate
+                                                }
                                                 onSelect={(date) => {
-                                                  const currentEndDate = dateFilters[String(column.key)]?.customDate.endDate
+                                                  const currentEndDate =
+                                                    dateFilters[String(column.key)]?.customDate
+                                                      .endDate
                                                   if (date || currentEndDate) {
                                                     updateCustomDate(String(column.key), {
                                                       startDate: date || undefined,
@@ -896,16 +949,16 @@ export function DataTableServer<T extends Record<string, any>>({
                           )}
                           {column.key === 'companies'
                             ? renderCompaniesCell(
-                              row,
-                              companiesExpandedRows,
-                              setCompaniesExpandedRows,
-                            )
+                                row,
+                                companiesExpandedRows,
+                                setCompaniesExpandedRows,
+                              )
                             : column.render
                               ? column.render(row)
                               : highlightText(
-                                String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
-                                searchTerm,
-                              )}
+                                  String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
+                                  searchTerm,
+                                )}
                         </TableCell>
                       ))}
                       {renderRowActions && (
@@ -968,7 +1021,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                               {renderFundsCell(
                                                 company,
                                                 companies.find((c) => c.id === company.id)?.name ||
-                                                '',
+                                                  '',
                                                 fundsExpandedRows,
                                                 setFundsExpandedRows,
                                                 visibleColumns,
@@ -1065,7 +1118,7 @@ export function DataTableServer<T extends Record<string, any>>({
         </div>
       </div>
 
-      {pagination && (
+      {pagination && !isLoading && (
         <div className="flex items-center justify-between space-x-2 py-3 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
