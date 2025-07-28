@@ -134,7 +134,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   onServerSort?: (field: string) => void
   onServerSearch?: (term: string) => void
   onServerFilter?: (field: string, values: string[]) => void
-  onServerDateFilter?: (field: string, filter: { past: string; future: string; empty: boolean }) => void
+  onServerDateFilter?: (field: string, filter: DateFilterType) => void
   serverSideProcessing?: boolean
   initialSearchTerm?: string
   activeFilters?: Record<string, string[]>
@@ -153,4 +153,17 @@ export interface UrlFilenameMap {
 export type MeetingWithCompanies = {
   meetingId: string
   companyIds: string[]
+}
+
+export type DateFilterType = {
+  past: string
+  future: string
+  empty: boolean
+  custom: boolean
+  customDate: CustomDate
+}
+
+export type CustomDate = {
+  startDate?: Date
+  endDate?: Date
 }
