@@ -201,8 +201,8 @@ function createDateFilters(dateFilters: Record<string, DateFilterType>) {
     if (custom && customDate.startDate && customDate.endDate) {
       dateConditions.push({
         [dbField]: {
-          greater_than_equal: customDate.startDate.toISOString(),
-          less_than_equal: customDate.endDate.toISOString(),
+          greater_than_equal: customDate.startDate,
+          less_than_equal: customDate.endDate,
         },
       })
     }
