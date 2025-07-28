@@ -5,16 +5,18 @@ import {
   CompanyTableDate,
   MeetingTableDataType,
   FacetedFilterItemServer,
+  CustomDate,
 } from '../types/meetings'
 import { StockValue } from '@/payload-types'
 import {
   booleanOptions,
+  futureDateFilterOptions,
   meetingStateOptions,
   meetingTypeOptions,
+  pastDateFilterOptions,
   stockTypeOptions,
 } from '../meetings/filterConst'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
-
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
   if (!originDate) return ' '
@@ -230,4 +232,40 @@ export const getDateRange = (option: string): { start: Date; end: Date } => {
     default:
       return { start: today, end: today }
   }
+}
+
+export const updateFilter = (
+  option: string,
+  checked: boolean,
+  currentFilter: any,
+  customDate?: CustomDate,
+) => {
+  const newFilter = { ...currentFilter }
+
+  if (option === 'empty') {
+    // Toggle the empty filter
+    newFilter.empty = checked
+  } else if (option === 'custom') {
+    // Handle custom date range toggle
+    newFilter.custom = checked
+    newFilter.customDate = customDate
+  } else if (isDateOption(option, pastDateFilterOptions)) {
+    // If unchecking, clear the past filter
+    if (!checked) {
+      newFilter.past = ''
+    } else {
+      // Replace the past filter with the new option
+      newFilter.past = option
+    }
+  } else if (isDateOption(option, futureDateFilterOptions)) {
+    // If unchecking, clear the future filter
+    if (!checked) {
+      newFilter.future = ''
+    } else {
+      // Replace the future filter with the new option
+      newFilter.future = option
+    }
+  }
+
+  return newFilter
 }

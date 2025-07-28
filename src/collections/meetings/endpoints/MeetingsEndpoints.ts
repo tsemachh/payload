@@ -11,6 +11,7 @@ import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-tabl
 import {
   AgendasType,
   CompanyTableDate,
+  DateFilterType,
   FundType,
   MeetingTableDataType,
   UrlFilenameMap,
@@ -133,16 +134,14 @@ function createRegularFilters(filters: Record<string, string[]>) {
 /**
  * Creates date filter conditions
  */
-function createDateFilters(
-  dateFilters: Record<string, { past: string; future: string; empty: boolean }>,
-) {
+function createDateFilters(dateFilters: Record<string, DateFilterType>) {
   const conditions: any[] = []
 
   Object.entries(dateFilters).forEach(([field, filter]) => {
-    const { past, future, empty } = filter
+    const { past, future, empty, custom, customDate } = filter
 
     // Skip if all options are selected (no actual filtering)
-    if (past === 'allPast' && future === 'allFuture' && empty) {
+    if (past === 'allPast' && future === 'allFuture' && empty && !custom) {
       return
     }
 
@@ -196,6 +195,15 @@ function createDateFilters(
       // If empty is selected along with other date conditions, include empty dates in OR
       dateConditions.push({
         or: [{ [dbField]: { equals: null } }, { [dbField]: { equals: '' } }],
+      })
+    }
+
+    if (custom && customDate.startDate && customDate.endDate) {
+      dateConditions.push({
+        [dbField]: {
+          greater_than_equal: customDate.startDate.toISOString(),
+          less_than_equal: customDate.endDate.toISOString(),
+        },
       })
     }
 
@@ -307,7 +315,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Parse filters from query parameters
     const filters: Record<string, string[]> = {}
-    const dateFilters: Record<string, { past: string; future: string; empty: boolean }> = {}
+    const dateFilters: Record<string, DateFilterType> = {}
 
     Object.keys(req.query).forEach((key) => {
       if (key.startsWith('filter_')) {

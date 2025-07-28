@@ -5,9 +5,10 @@ interface CustomRadioProps {
   checked: boolean
   className?: string
   size?: "sm" | "md" | "lg"
+  disabled?: boolean
 }
 
-const CustomRadio: React.FC<CustomRadioProps> = ({ checked, className, size = "md" }) => {
+const CustomRadio: React.FC<CustomRadioProps> = ({ checked, className, size = "md", disabled }) => {
   const sizeClasses = {
     sm: "w-3 h-3",
     md: "w-4 h-4",
@@ -24,11 +25,13 @@ const CustomRadio: React.FC<CustomRadioProps> = ({ checked, className, size = "m
     <div className={cn("relative ml-[-25px] mr-[15px]", className)}>
       <div
         className={cn(
-          "rounded-full border transition-all duration-200 ease-in-out cursor-pointer",
+          "rounded-full border transition-all duration-200 ease-in-out",
           sizeClasses[size],
-          checked
-            ? "border-foreground bg-background"
-            : "border-muted-foreground/40 bg-background hover:border-foreground/60",
+          disabled
+            ? "border-muted bg-muted-foreground/20 cursor-not-allowed"
+            : checked
+              ? "border-foreground bg-background cursor-pointer"
+              : "border-muted-foreground/40 bg-background hover:border-foreground/60 cursor-pointer"
         )}
       >
         {checked && (
@@ -41,6 +44,7 @@ const CustomRadio: React.FC<CustomRadioProps> = ({ checked, className, size = "m
         )}
       </div>
     </div>
+
   )
 }
 

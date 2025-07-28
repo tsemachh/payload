@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import useSWR from 'swr'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
-import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
+import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filterConst'
 
@@ -16,7 +16,7 @@ export function MeetingsTableServer() {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [filters, setFilters] = useState<Record<string, string[]>>({})
   const [dateFilters, setDateFilters] = useState<
-    Record<string, { past: string; future: string; empty: boolean }>
+    Record<string, DateFilterType>
   >({})
 
   const query = useMemo(() => {
@@ -37,7 +37,7 @@ export function MeetingsTableServer() {
 
     // Add date filters
     Object.entries(dateFilters).forEach(([key, filter]) => {
-      if (filter.past || filter.future || !filter.empty) {
+      if (filter.past || filter.future || !filter.empty || filter.custom) {
         params.append(`dateFilter_${key}`, JSON.stringify(filter))
       }
     })
@@ -118,7 +118,7 @@ export function MeetingsTableServer() {
 
   const handleDateFilter = (
     field: string,
-    filter: { past: string; future: string; empty: boolean },
+    filter: DateFilterType,
   ) => {
     setDateFilters((prev) => ({
       ...prev,

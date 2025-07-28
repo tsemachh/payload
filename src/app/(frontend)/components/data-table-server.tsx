@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   Filter,
   FilterX,
+  CalendarIcon,
 } from 'lucide-react' // Added ChevronDown, ChevronLeft
 import React from 'react'
 import { cn } from '@/lib/utils'
@@ -35,9 +36,8 @@ import {
   calculateColumnWidths,
   calculatePrecedingColumnsWidth,
   escapeRegExp,
-  formatDateTime,
   getStaticFilterOptions,
-  isDateOption,
+  updateFilter,
 } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import type {
@@ -47,16 +47,18 @@ import type {
   MeetingTableDataType,
   FundType,
   FacetedFilterItemServer,
+  DateFilterType,
+  CustomDate,
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
-import { MeetingState } from '@/payload-types'
-import { meetingStateMap } from '../helpers/maps'
 import CustomRadio from './custom-radio'
-import { isWithinInterval } from 'date-fns'
+import { format } from 'date-fns'
 import { Checkbox } from './ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Calendar } from './ui/calendar'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -111,15 +113,17 @@ export function DataTableServer<T extends Record<string, any>>({
   })
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
-    [key: string]: { past: string; future: string; empty: boolean }
+    [key: string]: DateFilterType
   }>(() => {
-    const initialFilters: { [key: string]: any } = {}
+    const initialFilters: { [key: string]: DateFilterType } = {}
     columns.forEach((column) => {
       if (column.filterable && column.type == 'datetime') {
         initialFilters[String(column.key)] = {
           past: 'allPast',
           future: 'allFuture',
           empty: true,
+          custom: false,
+          customDate: {}
         }
       }
     })
@@ -232,32 +236,6 @@ export function DataTableServer<T extends Record<string, any>>({
     return [...data]
   }, [data])
 
-  // Function that extracts the displayed value of a field
-  const getDisplayValue = useCallback(
-    (item: T, columnKey: keyof T): string => {
-      const column = columns.find((col) => col.key === columnKey)
-      if (!column) return String(item[columnKey] || '')
-
-      // Handling date fields
-      if (column.type === 'datetime') {
-        return formatDateTime(item[columnKey] as string, columnKey === 'holdingsLimit')
-      }
-
-      // Handling the meeting state field
-      if (columnKey === 'meetingState' && item.meetingState) {
-        return (
-          meetingStateMap[item.meetingState as Exclude<MeetingState, null>] ||
-          String(item.meetingState)
-        )
-      }
-
-      if (item[columnKey] == '-') {
-        return '' //empty value
-      }
-      return String(item[columnKey] || '')
-    },
-    [columns],
-  )
 
   // Handle sort
   const handleSort = useCallback(
@@ -313,13 +291,15 @@ export function DataTableServer<T extends Record<string, any>>({
 
   // Handle date filter
   const handleDateFilter = useCallback(
-    (columnKey: string, option: string, checked: boolean) => {
+    (columnKey: string, option: string, checked: boolean, customDate?: CustomDate) => {
       if (option === '') {
         // Clear all filters for this column
         const clearedFilter = {
           past: 'allPast',
           future: 'allFuture',
           empty: true,
+          custom: false,
+          customDate: {}
         }
 
         if (onServerDateFilter) {
@@ -332,32 +312,6 @@ export function DataTableServer<T extends Record<string, any>>({
         return
       }
 
-      const updateFilter = (currentFilter: any) => {
-        const newFilter = { ...currentFilter }
-
-        if (option === 'empty') {
-          // Toggle the empty filter
-          newFilter.empty = checked
-        } else if (isDateOption(option, pastDateFilterOptions)) {
-          // If unchecking, clear the past filter
-          if (!checked) {
-            newFilter.past = ''
-          } else {
-            // Replace the past filter with the new option
-            newFilter.past = option
-          }
-        } else if (isDateOption(option, futureDateFilterOptions)) {
-          // If unchecking, clear the future filter
-          if (!checked) {
-            newFilter.future = ''
-          } else {
-            // Replace the future filter with the new option
-            newFilter.future = option
-          }
-        }
-
-        return newFilter
-      }
 
       if (onServerDateFilter) {
         // Use server-side filtering
@@ -365,8 +319,10 @@ export function DataTableServer<T extends Record<string, any>>({
           past: '',
           future: '',
           empty: false,
+          custom: false,
+          customDate: {}
         }
-        const newFilter = updateFilter(currentFilter)
+        const newFilter = updateFilter(option, checked, currentFilter, customDate,)
         onServerDateFilter(columnKey, newFilter)
         setDateFilters((prev) => ({
           ...prev,
@@ -376,6 +332,25 @@ export function DataTableServer<T extends Record<string, any>>({
     },
     [pastDateFilterOptions, futureDateFilterOptions, onServerDateFilter, dateFilters],
   )
+
+  const updateCustomDate = (columnKey: string, customDate: CustomDate) => {
+    if (onServerDateFilter) {
+      // Use server-side filtering
+      const currentFilter = dateFilters[columnKey] || {
+        past: '',
+        future: '',
+        empty: false,
+        custom: false,
+        customDate: {}
+      }
+      const newFilter = { ...currentFilter }
+      newFilter.customDate = customDate
+      setDateFilters((prev) => ({
+        ...prev,
+        [columnKey]: newFilter,
+      }))
+    }
+  }
   // Reset filters
   const resetFilters = useCallback(() => {
     if (serverSideProcessing) {
@@ -389,6 +364,8 @@ export function DataTableServer<T extends Record<string, any>>({
                   past: 'allPast',
                   future: 'allFuture',
                   empty: true,
+                  custom: false,
+                  customDate: {}
                 })
               }
             } else {
@@ -654,7 +631,6 @@ export function DataTableServer<T extends Record<string, any>>({
                                             onSelect={(e) => e.preventDefault()}
                                           >
                                             <CustomRadio checked={isChecked} size="md" />
-
                                             <div className="flex justify-between gap-2" dir="rtl">
                                               <span className="text-right">{option.label}</span>
                                             </div>
@@ -662,6 +638,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                         )
                                       })}
                                     </div>
+
                                     <div className="border-r border-gray-200 mx-2"></div>
 
                                     {/* Future dates column */}
@@ -692,6 +669,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                       })}
                                     </div>
                                   </div>
+
                                   {/* Empty date option */}
                                   <div className="p-2 border-t border-gray-200 mt-2">
                                     <DropdownMenuCheckboxItem
@@ -710,6 +688,110 @@ export function DataTableServer<T extends Record<string, any>>({
                                         <span className="text-right">{emptyDateOption.label}</span>
                                       </div>
                                     </DropdownMenuCheckboxItem>
+                                  </div>
+
+                                  {/* Custom date range option */}
+                                  <div className="p-2 border-t border-gray-200">
+                                    <DropdownMenuCheckboxItem
+                                      checked={dateFilters[String(column.key)]?.custom || false}
+                                      onSelect={(e) => e.preventDefault()}
+                                      onCheckedChange={(checked) => {
+                                        handleDateFilter(String(column.key), 'custom', checked, dateFilters[String(column.key)]?.customDate)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                    >
+                                      <CustomRadio checked={dateFilters[String(column.key)]?.custom || false} size="md" disabled={!dateFilters[String(column.key)]?.customDate.startDate || !dateFilters[String(column.key)]?.customDate.endDate} />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right">תאריך מותאם אישית </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
+
+                                    <div className="mt-3">
+                                      {/* Date range pickers in same row */}
+                                      <div className="flex gap-3 ">
+                                        {/* End date picker */}
+                                        <div className="flex-1">
+                                          <label className="text-sm font-medium text-right block mb-1">
+                                            תאריך סיום
+                                          </label>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                variant="outline"
+                                                className={cn(
+                                                  'w-full justify-start text-right font-normal text-sm',
+                                                  !dateFilters[String(column.key)]?.customDate.endDate && 'text-muted-foreground',
+                                                )}
+                                              >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dateFilters[String(column.key)]?.customDate.endDate ? (
+                                                  format(dateFilters[String(column.key)].customDate.endDate!, 'dd/MM/yy')
+                                                ) : (
+                                                  <span>בחר</span>
+                                                )}
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                              <Calendar
+                                                mode="single"
+                                                selected={dateFilters[String(column.key)]?.customDate.endDate}
+                                                onSelect={(date) => {
+                                                  const currentStartDate = dateFilters[String(column.key)]?.customDate.startDate
+                                                  if (currentStartDate || date) {
+                                                    updateCustomDate(String(column.key), {
+                                                      startDate: currentStartDate,
+                                                      endDate: date || undefined,
+                                                    })
+                                                  }
+                                                }}
+                                                disabled={(date) =>
+                                                  dateFilters[String(column.key)]?.customDate.startDate ? date < dateFilters[String(column.key)].customDate.startDate! : false
+                                                }
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
+                                        {/* Start date picker */}
+                                        <div className="flex-1">
+                                          <label className="text-sm font-medium text-right block mb-1">
+                                            תאריך התחלה{' '}
+                                          </label>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                variant="outline"
+                                                className={cn(
+                                                  'w-full justify-start text-right font-normal text-sm',
+                                                  !dateFilters[String(column.key)]?.customDate.startDate && 'text-muted-foreground',
+                                                )}
+                                              >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dateFilters[String(column.key)]?.customDate.startDate ? (
+                                                  format(dateFilters[String(column.key)].customDate.startDate!, 'dd/MM/yy')
+                                                ) : (
+                                                  <span>בחר</span>
+                                                )}
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                              <Calendar
+                                                mode="single"
+                                                selected={dateFilters[String(column.key)]?.customDate.startDate}
+                                                onSelect={(date) => {
+                                                  const currentEndDate = dateFilters[String(column.key)]?.customDate.endDate
+                                                  if (date || currentEndDate) {
+                                                    updateCustomDate(String(column.key), {
+                                                      startDate: date || undefined,
+                                                      endDate: currentEndDate,
+                                                    })
+                                                  }
+                                                }}
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               ) : (
@@ -813,16 +895,16 @@ export function DataTableServer<T extends Record<string, any>>({
                           )}
                           {column.key === 'companies'
                             ? renderCompaniesCell(
-                                row,
-                                companiesExpandedRows,
-                                setCompaniesExpandedRows,
-                              )
+                              row,
+                              companiesExpandedRows,
+                              setCompaniesExpandedRows,
+                            )
                             : column.render
                               ? column.render(row)
                               : highlightText(
-                                  String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
-                                  searchTerm,
-                                )}
+                                String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
+                                searchTerm,
+                              )}
                         </TableCell>
                       ))}
                       {renderRowActions && (
@@ -885,7 +967,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                               {renderFundsCell(
                                                 company,
                                                 companies.find((c) => c.id === company.id)?.name ||
-                                                  '',
+                                                '',
                                                 fundsExpandedRows,
                                                 setFundsExpandedRows,
                                                 visibleColumns,
