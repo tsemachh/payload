@@ -260,7 +260,6 @@ export function DataTableServer<T extends Record<string, any>>({
   const handleFilter = useCallback(
     (key: string, value: any, type?: string) => {
       if (serverSideProcessing && onServerFilter) {
-        // Use server-side filtering
         if (value === 'all') {
           onServerFilter(key, [])
         } else if (Array.isArray(value)) {
@@ -314,7 +313,6 @@ export function DataTableServer<T extends Record<string, any>>({
 
 
       if (onServerDateFilter) {
-        // Use server-side filtering
         const currentFilter = dateFilters[columnKey] || {
           past: '',
           future: '',
@@ -335,7 +333,6 @@ export function DataTableServer<T extends Record<string, any>>({
 
   const updateCustomDate = (columnKey: string, customDate: CustomDate) => {
     if (onServerDateFilter) {
-      // Use server-side filtering
       const currentFilter = dateFilters[columnKey] || {
         past: '',
         future: '',
