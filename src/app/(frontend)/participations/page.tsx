@@ -615,9 +615,11 @@ export default function Participations() {
 
       {/* Selected rows info - Now reflects total selected based on deselectedIds */}
       {showParticipationTable && !isLoading && !meetingsResponse?.error && (
-        <div className="flex justify-center mb-4">
-          <div className="border border-teal-500 rounded-lg px-4 py-1 bg-white">
-            <span className="text-teal-600 font-medium">נבחרו {currentSelectedCount} אסיפויות</span>
+        <div className="flex justify-center ">
+          <div className="flex justify-start mb-2 w-full pr-11 mt-6">
+            <span className="text-[rgb(71,122,133)] text-sm -mb-[15px]">
+              נבחרו {currentSelectedCount} אסיפויות
+            </span>
           </div>
         </div>
       )}
