@@ -94,6 +94,12 @@ export interface FacetedFilterItem {
   icon?: React.ReactNode
   translate?: string
 }
+// Structure for faceted filters
+export interface FacetedFilterItemServer {
+  value: string
+  icon?: React.ReactNode
+  translate?: string
+}
 // Pagination props
 export interface PaginationProps {
   pageSize: number
@@ -127,11 +133,15 @@ export interface DataTableProps<T extends Record<string, any>> {
   onServerSort?: (field: string) => void
   onServerSearch?: (term: string) => void
   onServerFilter?: (field: string, values: string[]) => void
+  onServerDateFilter?: (field: string, filter: { past: string; future: string; empty: boolean }) => void
   serverSideProcessing?: boolean
   initialSearchTerm?: string
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
+  renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
+  expanderColumnKey?: keyof T
+  searchOption?: boolean
 }
 
 export interface UrlFilenameMap {

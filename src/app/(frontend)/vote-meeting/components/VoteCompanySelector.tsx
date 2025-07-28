@@ -110,7 +110,9 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 <div className="text-sm">
                   <p>ע׳ נקוב {meetingData.nominalValue.toLocaleString()}</p>
-                  <p>{meetingData.percentageHolding}%</p>
+                  {meetingData.percentageHolding && (
+                    <p>{Math.round(meetingData.percentageHolding * 100) / 100}%</p>
+                  )}
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -146,7 +148,7 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 <div className="text-sm">
                   <p>ע׳ נקוב {company.nominalValue.toLocaleString()}</p>
-                  <p>{Math.round(company.percentageHolding)}%</p>
+                  <p>{Math.round(company.percentageHolding * 100) / 100}%</p>
                 </div>
               </TooltipContent>
             </Tooltip>

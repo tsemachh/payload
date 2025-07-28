@@ -53,7 +53,7 @@ import {
   FundType,
   MeetingTableDataType,
 } from '../types/meetings'
-import { getDateRange } from '../meetings/meetingTableConstants'
+import { getDateRange } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
@@ -178,11 +178,12 @@ export function DataTableStatic<T extends Record<string, any>>({
         initialDateFilters[column.key as string] = {
           past: 'allPast',
           future: 'allFuture',
-          empty: false,
+          empty: true,
         }
       }
     })
     setDateFilters(initialDateFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columns, data, tableId])
 
   // Filter columns based on visibility
@@ -500,7 +501,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           newFilters[columnKey] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: false,
+            empty: true,
           }
           return newFilters
         })
@@ -554,7 +555,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: false,
+            empty: true,
           }
         }
       })
@@ -578,7 +579,7 @@ export function DataTableStatic<T extends Record<string, any>>({
           initialDateFilters[column.key as string] = {
             past: 'allPast',
             future: 'allFuture',
-            empty: false,
+            empty: true,
           }
         }
       })
@@ -621,7 +622,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     const column = columns.find((col) => col.key === columnKey)
     if (column?.key == 'meetingDate' && onlyFuture) {
       const dateFilter = dateFilters[columnKey]
-      if (dateFilter?.future === 'allFuture' && !dateFilter?.empty) {
+      if (dateFilter?.future === 'allFuture' && dateFilter?.empty) {
         return <ChevronDown />
       }
     }
@@ -630,7 +631,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       if (
         dateFilter?.past === 'allPast' &&
         dateFilter?.future === 'allFuture' &&
-        !dateFilter?.empty
+        dateFilter?.empty
       ) {
         return <ChevronDown />
       } else {
@@ -663,20 +664,16 @@ export function DataTableStatic<T extends Record<string, any>>({
             (item) => item[column.key as keyof typeof item] === false,
           ).length
           facets[column.key as string] = []
-          if (trueCount > 0) {
-            facets[column.key as string].push({
-              value: 'true',
-              count: trueCount,
-              icon: <BooleanIcon iconType={true} />,
-            })
-          }
-          if (falseCount > 0) {
-            facets[column.key as string].push({
-              value: 'false',
-              count: falseCount,
-              icon: <BooleanIcon iconType={false} />,
-            })
-          }
+          facets[column.key as string].push({
+            value: 'true',
+            count: trueCount,
+            icon: <BooleanIcon iconType={true} />,
+          })
+          facets[column.key as string].push({
+            value: 'false',
+            count: falseCount,
+            icon: <BooleanIcon iconType={false} />,
+          })
         } else if (column.key === 'meetingState') {
           const meetingStateCounts = filteredData.reduce(
             (acc, { meetingState }) => {

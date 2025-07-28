@@ -159,10 +159,8 @@ export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין 
  */
 export type AdminNotificationType =
   | (
-      | 'general'
       | 'predictaFeed'
-      | 'userCreated'
-      | 'userPermissionsChanged'
+      | 'usersUpdated'
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
       | 'newVoteAfterHoldingLimit'

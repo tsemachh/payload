@@ -50,31 +50,23 @@ export const AdminNotifications: CollectionConfig = {
       interfaceName: 'AdminNotificationType',
       options: [
         {
-          label: 'כללי',
-          value: 'general',
-        },
-        {
-          label: 'פיד מערכת',
+          label: 'הזנת מערכת נ״ע ואסיפות',
           value: 'predictaFeed',
         },
         {
-          label: 'משתמש חדש',
-          value: 'userCreated',
+          label: 'עדכון משתמשים',
+          value: 'usersUpdated',
         },
         {
-          label: 'שינוי הרשאות משתמש',
-          value: 'userPermissionsChanged',
-        },
-        {
-          label: 'חברה לא דיווחה אחזקות',
+          label: 'העדר דווח אחזקות',
           value: 'companyNotReportedHoldings',
         },
         {
-          label: 'חברה לא הצביעה באסיפה',
+          label: 'העדר הצבעה',
           value: 'companyNotVotedMeetingNextDay',
         },
         {
-          label: 'הצבעה חדשה לאחר מועד קובע',
+          label: 'הצבעה לטיפול',
           value: 'newVoteAfterHoldingLimit',
         },
         {
@@ -106,6 +98,13 @@ export const AdminNotifications: CollectionConfig = {
       label: 'טופל',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        components: {
+          Cell: {
+            path: '/admincomponents/cell/EditableCheckboxCell',
+          },
+        },
+      },
     },
     {
       type: 'row',

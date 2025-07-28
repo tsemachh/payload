@@ -18,31 +18,31 @@ importers:
         specifier: ^0.5.2
         version: 0.5.3
       '@payloadcms/db-mongodb':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@aws-sdk/credential-providers@3.848.0)(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))
       '@payloadcms/email-nodemailer':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))
       '@payloadcms/next':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@types/react@19.0.7)(graphql@16.11.0)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@payloadcms/payload-cloud':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))
       '@payloadcms/plugin-import-export':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@payloadcms/ui@3.49.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@payloadcms/richtext-lexical':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@faceless-ui/modal@3.0.0-beta.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(@faceless-ui/scroll-info@2.0.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(@payloadcms/next@3.49.0(@types/react@19.0.7)(graphql@16.11.0)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(yjs@13.6.27)
       '@payloadcms/storage-gcs':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@payloadcms/translations':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0
       '@payloadcms/ui':
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@radix-ui/react-accordion':
         specifier: ^1.2.3
@@ -138,8 +138,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@shefing/quickfilter':
-        specifier: ^1.0.24
-        version: 1.0.24(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
+        specifier: ^1.0.27
+        version: 1.0.27(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
       '@tanstack/react-table':
         specifier: ^8.21.2
         version: 8.21.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -213,7 +213,7 @@ importers:
         specifier: ^7.0.3
         version: 7.0.5
       payload:
-        specifier: ^3.49.0
+        specifier: ^3.48.0
         version: 3.49.0(graphql@16.11.0)(typescript@5.7.3)
       payload-oapi:
         specifier: 0.2.4-b.0
@@ -2209,8 +2209,8 @@ packages:
   '@shefing/field-type-component-override@1.0.5':
     resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
 
-  '@shefing/quickfilter@1.0.24':
-    resolution: {integrity: sha512-3CFiqmkKo0vclk9+vYe1X4mp+NgQFZRc3JFtg9B66hxH/wiBOYVujN+BZGy+oyx+8PKMyv+DlJa3FMoChPUhng==}
+  '@shefing/quickfilter@1.0.27':
+    resolution: {integrity: sha512-L/6bYY6guaS/d+lZ+6JV4w1hUCnSz0vfrE0U+xL407C7vqxvPRCGcTebwlgdO0IQGV5E7cLtYcM8Zij12OtAZQ==}
 
   '@smithy/abort-controller@4.0.4':
     resolution: {integrity: sha512-gJnEjZMvigPDQWHrW3oPrFhQtkrgqBkyjj3pCIdF3A5M6vsZODG93KNlfJprv6bp4245bdT32fsHK4kkH3KYDA==}
@@ -8656,7 +8656,7 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.5': {}
 
-  '@shefing/quickfilter@1.0.24(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
+  '@shefing/quickfilter@1.0.27(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
     dependencies:
       '@payloadcms/translations': 3.49.0
       '@payloadcms/ui': 3.49.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.49.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)

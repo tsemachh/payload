@@ -6,6 +6,7 @@ import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
+import { futureDateFilterOptions, pastDateFilterOptions } from '../filterConst'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)
@@ -13,6 +14,10 @@ export function MeetingsTableServer() {
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [filters, setFilters] = useState<Record<string, string[]>>({})
+  const [dateFilters, setDateFilters] = useState<
+    Record<string, { past: string; future: string; empty: boolean }>
+  >({})
 
   const query = useMemo(() => {
     const params = new URLSearchParams({
@@ -22,8 +27,23 @@ export function MeetingsTableServer() {
       sortDirection,
       search: searchTerm,
     })
+
+    // Add regular filters
+    Object.entries(filters).forEach(([key, values]) => {
+      if (values && values.length > 0) {
+        params.append(`filter_${key}`, JSON.stringify(values))
+      }
+    })
+
+    // Add date filters
+    Object.entries(dateFilters).forEach(([key, filter]) => {
+      if (filter.past || filter.future || !filter.empty) {
+        params.append(`dateFilter_${key}`, JSON.stringify(filter))
+      }
+    })
+
     return `/api/meetings/all-meetings?${params.toString()}`
-  }, [currentPage, pageSize, sortField, sortDirection, searchTerm])
+  }, [currentPage, pageSize, sortField, sortDirection, searchTerm, filters, dateFilters])
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
@@ -88,6 +108,25 @@ export function MeetingsTableServer() {
     setCurrentPage(1) // reset to first page
   }
 
+  const handleFilter = (field: string, values: string[]) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: values,
+    }))
+    setCurrentPage(1) // reset to first page
+  }
+
+  const handleDateFilter = (
+    field: string,
+    filter: { past: string; future: string; empty: boolean },
+  ) => {
+    setDateFilters((prev) => ({
+      ...prev,
+      [field]: filter,
+    }))
+    setCurrentPage(1) // reset to first page
+  }
+
   return (
     <DataTableServer
       data={dataWithPercentages}
@@ -109,8 +148,13 @@ export function MeetingsTableServer() {
       isLoading={isLoading}
       onServerSort={handleSort}
       onServerSearch={handleSearch}
+      onServerFilter={handleFilter}
+      onServerDateFilter={handleDateFilter}
       initialSearchTerm={searchTerm}
-      searchPlaceholder="חיפוש בכל השדות..."
+      searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
+      serverSideProcessing={true}
+      pastDateFilterOptions={pastDateFilterOptions}
+      futureDateFilterOptions={futureDateFilterOptions}
     />
   )
 }
