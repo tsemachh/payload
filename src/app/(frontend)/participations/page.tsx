@@ -601,7 +601,7 @@ export default function Participations() {
     : Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
 
   return (
-    <div className="p-4 space-y-3" dir="rtl">
+    <div className="p-4 space-y-0" dir="rtl">
       <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
         {/* Date Range Selector */}
         <div className="w-full lg:w-[280px] min-h-[200px]">
@@ -665,9 +665,9 @@ export default function Participations() {
 
       {/* Selected rows info - Now reflects total selected based on deselectedIds */}
       {showParticipationTable && !isLoading && !meetingsResponse?.error && (
-        <div className="flex justify-center ">
-          <div className="flex justify-start mb-2 w-full pr-11 mt-6">
-            <span className="text-[rgb(71,122,133)] text-sm -mb-[15px]">
+        <div className="flex justify-center">
+          <div className="flex justify-start w-full pr-11">
+            <span className="text-[rgb(71,122,133)] text-sm">
               נבחרו {currentSelectedCount} אסיפות
             </span>
           </div>
@@ -687,31 +687,33 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {meetingsResponse.error.message}
           </div>
         ) : (
-          <DataTableServer
-            data={participationData}
-            columns={participationColumns}
-            idField="id"
-            defaultSortField={'meetingDate'} // Pass sortField
-            defaultSortDirection={'desc'} // Pass sortDirection
-            tableId="participations-table"
-            searchOption={false} // As per your request
-            filterOption={false} // As per your request
-            columnsOption={false} // As per your request
-            tableHeightOffset={280}
-            isLoading={isLoading}
-            renderExpandedRowContent={renderAgendaRows}
-            expanderColumnKey="stockNumber"
-            pagination={{
-              pageSize,
-              totalItems: meetingsResponse?.totalItems || 0,
-              totalPages: meetingsResponse?.totalPages || 0,
-              currentPage,
-              onPageChange: handlePageChange,
-              onPageSizeChange: handlePageSizeChange,
-              pageSizeOptions: [10, 25, 50, 100, 500, 1000],
-            }}
-            onServerSort={handleSort} // Pass handleSort
-          />
+          <div className="-mt-10">
+            <DataTableServer
+              data={participationData}
+              columns={participationColumns}
+              idField="id"
+              defaultSortField={'meetingDate'}
+              defaultSortDirection={'desc'}
+              tableId="participations-table"
+              searchOption={false}
+              filterOption={false}
+              columnsOption={false}
+              tableHeightOffset={280}
+              isLoading={isLoading}
+              renderExpandedRowContent={renderAgendaRows}
+              expanderColumnKey="stockNumber"
+              pagination={{
+                pageSize,
+                totalItems: meetingsResponse?.totalItems || 0,
+                totalPages: meetingsResponse?.totalPages || 0,
+                currentPage,
+                onPageChange: handlePageChange,
+                onPageSizeChange: handlePageSizeChange,
+                pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+              }}
+              onServerSort={handleSort}
+            />
+          </div>
         ))}
     </div>
   )
