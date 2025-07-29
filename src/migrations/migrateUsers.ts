@@ -1,10 +1,9 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Company, User } from '@/payload-types'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap } from '@/utils/utils'
 import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
-
 
 // Migration script for users from SQL Server to Payload CMS
 // Handles:
@@ -383,7 +382,6 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         isAdmin: true,
         email: 'philc@shefing.com',
       },
-
     ]
     const seqMap = await getCompanyIdToSequenceMap(req.payload)
 
