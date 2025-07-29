@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { Stock } from '@/payload-types'
 import { createMSSqlPool } from '@/migrations/utils/utils'

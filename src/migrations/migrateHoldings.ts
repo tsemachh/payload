@@ -1,6 +1,6 @@
 import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
-import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
-import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
+import { createErrorFaultComment, logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import sql, { IResult } from 'mssql'
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 
@@ -137,11 +137,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
 
-        const existingHolding = stocksMap.get(holding.stockNum)
+        const existingHolding = stocksMap.get(String(holding.stockNum))
         if (existingHolding) {
           existingHolding.quantity += holding.qty
         } else {
-          stocksMap.set(holding.stockNum, {
+          stocksMap.set(String(holding.stockNum), {
             stockId,
             quantity: holding.qty,
             feedStockNum: holding.stockNum,

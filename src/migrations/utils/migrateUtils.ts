@@ -20,8 +20,9 @@ export async function getStocks(pool: sql.ConnectionPool) {
 }
 
 export async function getStockValues(pool: sql.ConnectionPool) {
-  // Query the last 30 days of data
-  console.log('Executing SQL query for last 30 days of stock data...')
+  // Query the last days of data based on environment variable
+  const days = process.env.MIGRATION_STOCK_VALUES_DAYS || '90';
+  console.log(`Executing SQL query for last ${days} days of stock data...`)
   const resultStockValues = await pool.request().query(`
       SELECT stockID,
              name,
@@ -34,7 +35,7 @@ export async function getStockValues(pool: sql.ConnectionPool) {
              logUpdateID,
              longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -90, GETDATE())
+      WHERE [valueDate] >= DATEADD(DAY, -${days}, GETDATE())
       ORDER BY valueDate ASC;
   `)
   console.log(`Retrieved ${resultStockValues.recordset.length} records from SQL Server`)
@@ -223,9 +224,10 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
+  const historyDate = process.env.MIGRATION_MEETINGS_HISTORY_DATE_CUTOFF || '2018-01-01';
   const res = await pool.request().query(`
       SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[meetings]  WHERE mdate > '2018-01-01' `)
+      FROM [dbEmda].[dbo].[meetings]  WHERE mdate > '${historyDate}' `)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
     stocks.add(`${row.stockID}`)
@@ -234,9 +236,10 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInLatestMeetings(pool: sql.ConnectionPool) {
+  const cutoffDate = process.env.MIGRATION_MEETINGS_DATE_CUTOFF || '2024-01-01';
   const res = await pool.request().query(`
       SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '2024-01-01'  `)
+      FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${cutoffDate}'  `)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
     stocks.add(`${row.stockID}`)
@@ -258,7 +261,7 @@ export async function getStockIdsByMappingType(
         equals: type,
       },
     },
-    limit: 1000,
+    limit: 0,
   })
 
   console.log(

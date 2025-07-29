@@ -3,9 +3,8 @@ import {
   createStocksMap,
   upsertStockFromImport,
   upsertStockValueFromImport,
-} from '@/utils/migrateUtils'
-import { getStockType, parseDate } from '@/utils/migrateStockUtils'
-import iconv from 'iconv-lite'
+} from '@/migrations/utils/migrateUtils'
+import { getStockType, parseDate } from '@/migrations/utils/migrateStockUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { StocksFeed, StockType } from '@/payload-types'
 
