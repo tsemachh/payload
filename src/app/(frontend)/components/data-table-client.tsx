@@ -94,12 +94,17 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
+  const [inputSearchTerm, setInputSearchTerm] = useState('')
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
   }>({})
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
+
+  useEffect(() => {
+    setInputSearchTerm(searchTerm)
+  }, [searchTerm])
 
   useEffect(() => {
     if (columnsOption) {
@@ -710,16 +715,25 @@ export function DataTableStatic<T extends Record<string, any>>({
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
         <div className="relative w-1/3">
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          {searchTerm && (
+          {inputSearchTerm && (
             <X
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ז-10"
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                setSearchTerm('')
+                setInputSearchTerm('')
+              }}
             />
           )}
           <Input
             placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={inputSearchTerm}
+            onChange={(e) => setInputSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchTerm(e.currentTarget.value)
+              }
+            }}
+            onBlur={(e) => setSearchTerm(e.currentTarget.value)}
             className="pr-10 text-right"
             disabled={isLoading}
           />
