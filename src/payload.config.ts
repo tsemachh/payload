@@ -42,7 +42,8 @@ import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
-import { handleImpersonationStart, handleImpersonationEnd } from './plugins/impersonate/hooks'
+import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
+import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -201,25 +202,31 @@ export default buildConfig({
   },
 
   collections: [
-    Stocks,
-    StockValues,
-    Meetings,
-    Votes,
-    ResearchDocument,
-    Holdings,
-    HoldingsFeed,
-    SilencedStocks,
-    Documents,
+    // פעילות
     AdminNotifications,
-    CompanyMeetingNotifications,
+    Meetings,
+    Stocks,
+    Holdings,
+    // ניהול
     Companies,
     Users,
     Roles,
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
+    // תחזוקה
+    CompanyMeetingNotifications,
+    Votes,
+    HoldingsFeed,
+    // מסמכים
+    ResearchDocument,
+    Documents,
+    // פיתוח
+    SilencedStocks,
     StockMigrationMapping,
     MigrationFaults,
+    // Hidden collections
+    StockValues,
   ],
 
   globals: [],
@@ -296,6 +303,9 @@ export default buildConfig({
       onUnImpersonate: async ({ req, originalUserId }) => {
         await handleImpersonationEnd({ req, originalUserId: originalUserId as string })
       },
+    }),
+    CollectionResetPreferencesPlugin({
+      // Plugin options here
     }),
   ],
 })

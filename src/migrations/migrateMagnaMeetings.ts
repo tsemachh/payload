@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { createMSSqlPool } from '@/migrations/utils/utils'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import {
   convertMagnaToPayloadMeeting,
   MeetingFeedContext,

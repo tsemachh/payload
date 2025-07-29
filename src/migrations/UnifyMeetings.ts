@@ -1,5 +1,5 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { Meeting, Vote } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
@@ -36,7 +36,7 @@ async function processMeetingGroup(
   payload: any,
   req: any,
   meetings: Meeting[],
-  groupKey: string
+  groupKey: string,
 ): Promise<boolean> {
   try {
     console.log(`Processing group: ${groupKey} with ${meetings.length} meetings`)
@@ -59,7 +59,7 @@ async function processMeetingGroup(
     const meetingsToRemove = sortedMeetings.slice(1)
 
     console.log(
-      `Keeping meeting ${meetingToKeep.id}, removing ${meetingsToRemove.length} duplicates for key ${groupKey}`
+      `Keeping meeting ${meetingToKeep.id}, removing ${meetingsToRemove.length} duplicates for key ${groupKey}`,
     )
 
     // Collect all votes from meetings to be removed
@@ -83,7 +83,7 @@ async function processMeetingGroup(
 
       if (voteCompanies.length > 0) {
         console.log(
-          `Adding ${voteCompanies.length} companies from votes to meeting ${meetingToKeep.id}`
+          `Adding ${voteCompanies.length} companies from votes to meeting ${meetingToKeep.id}`,
         )
 
         // Use companies directly from meetingToKeep
@@ -144,10 +144,11 @@ async function processMeetingGroup(
               item.exceptionalRecommendation.companies?.length > 0
             ) {
               // Check if the recommendations are different
-              const keptItemRecommendation = keptItem.exceptionalRecommendation?.votingRecommendation || 
-                keptItem.recommendation?.votingRecommendation;
-              const isRecommendationDifferent = 
-                item.exceptionalRecommendation.votingRecommendation !== keptItemRecommendation;
+              const keptItemRecommendation =
+                keptItem.exceptionalRecommendation?.votingRecommendation ||
+                keptItem.recommendation?.votingRecommendation
+              const isRecommendationDifferent =
+                item.exceptionalRecommendation.votingRecommendation !== keptItemRecommendation
 
               // If the recommendations are different, set the exceptionalRecommendation in meetingToKeep
               // as in meetingToRemove and add the companies of meetingToRemove to the companies of the exceptionalRecommendation
@@ -157,8 +158,7 @@ async function processMeetingGroup(
                   keptItem.exceptionalRecommendation = {
                     showExceptional: true,
                     companies: [],
-                    votingRecommendation:
-                      item.exceptionalRecommendation.votingRecommendation,
+                    votingRecommendation: item.exceptionalRecommendation.votingRecommendation,
                     reasonRef: item.exceptionalRecommendation.reasonRef,
                     reasonText: item.exceptionalRecommendation.reasonText,
                   }
@@ -353,7 +353,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 comments: `Failed to unify meetings with key ${groupKey}: ${error.message}`,
               })
             }
-          })
+          }),
         )
       }
 

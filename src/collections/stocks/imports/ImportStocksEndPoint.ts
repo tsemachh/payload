@@ -2,7 +2,7 @@ import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { getStockByStockId } from '@/utils/utils'
 
-import { upsertStockFromImport, upsertStockValueFromImport } from '@/utils/migrateUtils'
+import { upsertStockFromImport, upsertStockValueFromImport } from '@/migrations/utils/migrateUtils'
 
 const ImportStocksEndPoint = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)

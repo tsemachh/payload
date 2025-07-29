@@ -52,6 +52,17 @@ export default function Participations() {
   // This state will now track IDs of rows that have been *deselected* from the "all selected" state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
 
+  // Add these new states after the existing useState declarations
+  const [hasDisplayed, setHasDisplayed] = useState(false) // Track if "הצג" was clicked
+  const [hasChanges, setHasChanges] = useState(false) // Track if any filters changed after display
+  const [appliedFilters, setAppliedFilters] = useState({
+    selectedFundIds: [] as string[],
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
+    rangeType: undefined as DateRangeType | undefined,
+    reportName: '',
+  }) // Store the filters that are actually applied
+
   // States for server-side pagination and sorting
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
@@ -99,7 +110,7 @@ export default function Participations() {
     }
   }, [companiesWithFunds])
 
-  // Construct the query URL based on pagination, sort, date range, and selected funds states
+  // Update the query useMemo to send date filters in the correct format that the server expects
   const query = useMemo(() => {
     const params = new URLSearchParams({
       page: currentPage.toString(),
@@ -108,13 +119,28 @@ export default function Participations() {
       sortDirection,
     })
 
-    // Add selectedFundIds to query parameters if they exist
-    if (selectedFundIds.length > 0) {
-      params.append('funds', selectedFundIds.join(','))
+    // Use appliedFilters instead of current state
+    if (appliedFilters.selectedFundIds.length > 0) {
+      params.append('funds', appliedFilters.selectedFundIds.join(','))
+    }
+
+    // Add date filters in the format the server expects
+    if (appliedFilters.startDate && appliedFilters.endDate) {
+      const dateFilter = {
+        past: null,
+        future: null,
+        empty: false,
+        custom: true,
+        customDate: {
+          startDate: appliedFilters.startDate.toISOString(),
+          endDate: appliedFilters.endDate.toISOString(),
+        },
+      }
+      params.append('dateFilter_meetingDate', JSON.stringify(dateFilter))
     }
 
     return `/api/meetings/all-meetings?${params.toString()}`
-  }, [currentPage, pageSize, sortField, sortDirection, startDate, endDate, selectedFundIds]) // Add selectedFundIds to dependencies
+  }, [currentPage, pageSize, sortField, sortDirection, appliedFilters])
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
@@ -153,7 +179,7 @@ export default function Participations() {
       minWidth: 80,
       positionCenter: true,
       isAlwaysVisible: true,
-      filterable: false, // הוסף את זה
+      filterable: false,
       renderHeader: () => (
         <div
           className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
@@ -163,7 +189,6 @@ export default function Participations() {
               deselectedIds: deselectedIds.size,
               totalItems: meetingsResponse?.totalItems,
             })
-
             if (allSelected) {
               // Deselect all - create a set with ALL possible IDs (simulate all items being deselected)
               // Since we can't get all IDs from all pages, we'll use a large number to represent "all deselected"
@@ -315,7 +340,10 @@ export default function Participations() {
 
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
-    setCurrentPage(1) // Reset to first page when funds selection changes
+    if (hasDisplayed) {
+      setHasChanges(true) // Mark that changes were made after display
+    }
+    // Remove the setCurrentPage(1) from here since we don't want immediate filtering
   }
 
   const handleRangeChange = (
@@ -326,7 +354,10 @@ export default function Participations() {
     setStartDate(newStartDate)
     setEndDate(newEndDate)
     setRangeType(type)
-    setCurrentPage(1) // Reset to first page when date range changes
+    if (hasDisplayed) {
+      setHasChanges(true) // Mark that changes were made after display
+    }
+    // Remove the setCurrentPage(1) from here since we don't want immediate filtering
   }
 
   const handleExport = () => {
@@ -335,9 +366,22 @@ export default function Participations() {
       endDate,
       rangeType,
       selectedFunds: selectedFundIds,
-      reportName, // Include report name in export
+      reportName,
     })
+
+    // Apply the current filters
+    setAppliedFilters({
+      selectedFundIds: [...selectedFundIds],
+      startDate,
+      endDate,
+      rangeType,
+      reportName,
+    })
+
     setShowParticipationTable(true)
+    setHasDisplayed(true) // Mark that display button was clicked
+    setHasChanges(false) // Reset changes flag
+    setCurrentPage(1) // Reset to first page when applying new filters
   }
 
   const getCompanySelectSummary = () => {
@@ -366,7 +410,6 @@ export default function Participations() {
     if (width) {
       return width
     }
-
     // Distribute available width evenly
     return minWidth
   }
@@ -558,7 +601,7 @@ export default function Participations() {
     : Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
 
   return (
-    <div className="p-4 space-y-3" dir="rtl">
+    <div className="p-4 space-y-0" dir="rtl">
       <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
         {/* Date Range Selector */}
         <div className="w-full lg:w-[280px] min-h-[200px]">
@@ -593,7 +636,12 @@ export default function Participations() {
               id="report-name"
               type="text"
               value={reportName}
-              onChange={(e) => setReportName(e.target.value)}
+              onChange={(e) => {
+                setReportName(e.target.value)
+                if (hasDisplayed) {
+                  setHasChanges(true) // Mark that changes were made after display
+                }
+              }}
               placeholder="הכנס שם לדו״ח"
               className="w-[280px] text-right"
               dir="rtl"
@@ -601,20 +649,42 @@ export default function Participations() {
             <Button
               onClick={handleExport}
               variant="default"
-              disabled={!rangeType || selectedFundIds.length === 0 || !reportName}
+              disabled={
+                !rangeType ||
+                selectedFundIds.length === 0 ||
+                !reportName ||
+                (hasDisplayed && !hasChanges) // Disable if already displayed and no changes
+              }
               className="whitespace-nowrap"
             >
               הצג
             </Button>
+            {showParticipationTable && (
+              <Button
+                onClick={() => {
+                  console.log('Exporting file with data:', {
+                    reportName,
+                    selectedCount: currentSelectedCount,
+                    totalItems: meetingsResponse?.totalItems,
+                    appliedFilters,
+                    participationData: participationData.length,
+                  })
+                }}
+                variant="default"
+                className="whitespace-nowrap"
+              >
+                ייצוא הקובץ
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Selected rows info - Now reflects total selected based on deselectedIds */}
       {showParticipationTable && !isLoading && !meetingsResponse?.error && (
-        <div className="flex justify-center ">
-          <div className="flex justify-start mb-2 w-full pr-11 mt-6">
-            <span className="text-[rgb(71,122,133)] text-sm -mb-[15px]">
+        <div className="flex justify-center">
+          <div className="flex justify-start w-full pr-11">
+            <span className="text-[rgb(71,122,133)] text-sm">
               נבחרו {currentSelectedCount} אסיפות
             </span>
           </div>
@@ -634,31 +704,33 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {meetingsResponse.error.message}
           </div>
         ) : (
-          <DataTableServer
-            data={participationData}
-            columns={participationColumns}
-            idField="id"
-            defaultSortField={'meetingDate'} // Pass sortField
-            defaultSortDirection={'desc'} // Pass sortDirection
-            tableId="participations-table"
-            searchOption={false} // As per your request
-            filterOption={false} // As per your request
-            columnsOption={false} // As per your request
-            tableHeightOffset={280}
-            isLoading={isLoading}
-            renderExpandedRowContent={renderAgendaRows}
-            expanderColumnKey="stockNumber"
-            pagination={{
-              pageSize,
-              totalItems: meetingsResponse?.totalItems || 0,
-              totalPages: meetingsResponse?.totalPages || 0,
-              currentPage,
-              onPageChange: handlePageChange,
-              onPageSizeChange: handlePageSizeChange,
-              pageSizeOptions: [10, 25, 50, 100, 500, 1000],
-            }}
-            onServerSort={handleSort} // Pass handleSort
-          />
+          <div className="-mt-4">
+            <DataTableServer
+              data={participationData}
+              columns={participationColumns}
+              idField="id"
+              defaultSortField={'meetingDate'}
+              defaultSortDirection={'desc'}
+              tableId="participations-table"
+              searchOption={false}
+              filterOption={false}
+              columnsOption={false}
+              tableHeightOffset={280}
+              isLoading={isLoading}
+              renderExpandedRowContent={renderAgendaRows}
+              expanderColumnKey="stockNumber"
+              pagination={{
+                pageSize,
+                totalItems: meetingsResponse?.totalItems || 0,
+                totalPages: meetingsResponse?.totalPages || 0,
+                currentPage,
+                onPageChange: handlePageChange,
+                onPageSizeChange: handlePageSizeChange,
+                pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+              }}
+              onServerSort={handleSort}
+            />
+          </div>
         ))}
     </div>
   )
