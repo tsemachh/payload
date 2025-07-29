@@ -116,13 +116,14 @@ export const Meetings: CollectionConfig = {
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
-      'invitationLink',
-      'holdingsLimit',
+      'type',
       'meetingDate',
-      'state',
-      'comments',
+      'holdingsLimit',
+      'proxyVotingDate',
       'votesCount',
       'reportedVotesCount',
+      'electronicVotingEnabled',
+      'invitationLink',
     ],
     pagination: {
       defaultLimit: 100,
