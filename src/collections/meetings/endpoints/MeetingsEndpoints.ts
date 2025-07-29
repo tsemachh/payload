@@ -525,7 +525,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
       result: item.result || '',
-      vPercentSpecial: item.vPercentSpecial || false,
+      vPercentSpecial: typeof item.vPercentSpecial === 'number' ? item.vPercentSpecial : null,
     }
   })
 }
