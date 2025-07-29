@@ -11,7 +11,7 @@ export const Documents: CollectionConfig = {
     read: () => true,
   },
   admin: {
-    group: 'פעילות',
+    group: 'מסמכים',
   },
   custom: {
     filterList: [

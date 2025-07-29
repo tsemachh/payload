@@ -4,7 +4,7 @@ const StockMigrationMapping: CollectionConfig = {
   slug: 'stock-migration-mapping',
   admin: {
     useAsTitle: 'stockId',
-    group: 'מיגרציה',
+    group: 'פיתוח',
   },
   custom: {
     filterList: [

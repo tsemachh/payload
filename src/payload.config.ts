@@ -202,25 +202,31 @@ export default buildConfig({
   },
 
   collections: [
-    Stocks,
-    StockValues,
-    Meetings,
-    Votes,
-    ResearchDocument,
-    Holdings,
-    HoldingsFeed,
-    SilencedStocks,
-    Documents,
+    // פעילות
     AdminNotifications,
-    CompanyMeetingNotifications,
+    Meetings,
+    Stocks,
+    Holdings,
+    // ניהול
     Companies,
     Users,
     Roles,
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
+    // תחזוקה
+    CompanyMeetingNotifications,
+    Votes,
+    HoldingsFeed,
+    // מסמכים
+    ResearchDocument,
+    Documents,
+    // פיתוח
+    SilencedStocks,
     StockMigrationMapping,
     MigrationFaults,
+    // Hidden collections
+    StockValues,
   ],
 
   globals: [],
