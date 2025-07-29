@@ -2,9 +2,9 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
 import { getSequenceMeetingId } from '@/utils/utils'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
-import { getStockIdToSequenceMap } from '@/utils/migrateStockUtils'
+import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import dotenv from 'dotenv'
 
@@ -57,7 +57,12 @@ const recommendationMap = new Map<number, string | null>([
 ])
 
 // Function to get the voting recommendation based on the recommendation code
-function getVotingRecommendation(rec: number): string | null | undefined | number {
+function getVotingRecommendation(
+  rec: number | null | undefined,
+): string | null | undefined | number {
+  if (rec === null || rec === undefined) {
+    return null
+  }
   return recommendationMap.has(rec) ? recommendationMap.get(rec) : rec
 }
 
@@ -163,80 +168,94 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Process each meeting in parallel using the promise pool
     for (const row of meetingsResult.recordset) {
+      // Capture the meetingAgendaMap in closure to avoid race conditions
+      const agendaMap = meetingAgendaMap
+      row.stockID = `${row.stockID}`
+      // Find stockId
+      const stockId = stockMap.get(`${row.stockID}`)
+      if (stockId === undefined) {
+        console.log("Stockid can't be found:", row.stockID)
+        await logMigrationFault({
+          payload,
+          type: 'meeting',
+          typeId: `${row.id}`,
+          comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
+          row,
+        })
+        skippedCount++
+        continue // Use continue instead of return to skip this iteration
+      }
+
+      // Find meetingTypeId
+      const { newType } = getTypeAndState(row.mtype)
+      let { newState } = getTypeAndState(row.mtype)
+
+      // Create Date objects only for comparison purposes
+      const meetingDate = row.mdate ? new Date(row.mdate) : null
+      const now = new Date()
+
+      if (newState == null) {
+        newState = meetingDate && meetingDate > now ? 'scheduled' : 'completed'
+      }
+
+      switch (newState) {
+        case 'postponed':
+        case 'ongoing':
+          if (meetingDate && meetingDate < now) {
+            newState = 'completed'
+          }
+          break
+        case 'on-hold':
+          row.mdate = null
+          break
+      }
+
+      if (row.mdate == null && newState != 'on-hold') {
+        await logMigrationFault({
+          payload,
+          type: 'meeting',
+          typeId: `${row.id}`,
+          comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
+          row,
+        })
+        skippedCount++
+        continue // Use continue instead of return to skip this iteration
+      }
+
+      // Get agenda items for this meeting using the captured map reference
+      const agendaItems = agendaMap.get(Number(row.id)) || []
+
+      // Add defensive logging to debug empty map issues
+      if (agendaMap.size === 0) {
+        console.error(`Warning: agendaMap is empty for meeting ${row.id}`)
+      }
+
+      // Create a copy of the row to avoid reference issues in closures
+      const currentRow = { ...row }
+      const currentStockId = stockId
+      const currentNewType = newType
+      const currentNewState = newState
+      const currentAgendaItems = [...agendaItems]
+
       promises.push(
         promisePool.add(async () => {
           try {
-            row.stockID = `${row.stockID}`
-            // Find stockId
-            const stockId = stockMap.get(`${row.stockID}`)
-            if (stockId === undefined) {
-              console.log("Stockid can't be found:", row.stockID)
-              logMigrationFault({
-                payload,
-                type: 'meeting',
-                typeId: `${row.id}`,
-                comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
-                row,
-              })
-              skippedCount++
-              return
-            }
-
-            // Find meetingTypeId
-            const { newType } = getTypeAndState(row.mtype)
-            let { newState } = getTypeAndState(row.mtype)
-
-            // Create Date objects only for comparison purposes
-            const meetingDate = row.mdate ? new Date(row.mdate) : null
-            const now = new Date()
-
-            if (newState == null) {
-              newState = meetingDate && meetingDate > now ? 'scheduled' : 'completed'
-            }
-
-            switch (newState) {
-              case 'postponed':
-              case 'ongoing':
-                if (meetingDate && meetingDate < now) {
-                  newState = 'completed'
-                }
-                break
-              case 'on-hold':
-                row.mdate = null
-                break
-            }
-
-            if (row.mdate == null && newState != 'on-hold') {
-              await logMigrationFault({
-                payload,
-                type: 'meeting',
-                typeId: `${row.id}`,
-                comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
-                row,
-              })
-              skippedCount++
-              return
-            }
-
-            // Get agenda items for this meeting
-            const agendaItems = meetingAgendaMap.get(row.id) || []
-
-            // Prepare meeting data with agenda
+            // Prepare meeting data with agenda inside the promise to avoid shared reference issues
             const meetingData: Partial<Meeting> = {
-              meetingId: `${row.id}`,
-              stock: stockId as string,
-              magnaId: row.proofId,
-              meetingDate: row.mdate, // Keep as string instead of converting to Date
-              holdingsLimit: row.sdate, // Keep as string instead of converting to Date
-              proxyVotingDate: row.proxyStatementDate,
-              location: row.location,
-              type: newType as MeetingType,
-              state: newState as MeetingState,
-              comments: row.comments,
-              resultsConfirmationStatus: !!row.ResultConfirm,
-              electronicVotingEnabled: !!row.ElectronicVoting,
+              meetingId: `${currentRow.id}`,
+              stock: currentStockId as string,
+              magnaId: currentRow.proofId,
+              meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
+              holdingsLimit: currentRow.sdate, // Keep as string instead of converting to Date
+              proxyVotingDate: currentRow.proxyStatementDate,
+              location: currentRow.location,
+              type: currentNewType as MeetingType,
+              state: currentNewState as MeetingState,
+              comments: currentRow.comments,
+              resultsConfirmationStatus: !!currentRow.ResultConfirm,
+              electronicVotingEnabled: !!currentRow.ElectronicVoting,
               _status: 'published' as const,
-              agenda: agendaItems.map((item) => ({
+              agenda: currentAgendaItems.map((item) => ({
                 text: item.text,
                 topicType: item.topicType,
                 majorityType: item.majorityType,
@@ -249,8 +268,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               })),
             }
 
-            if (!row.proofId && row?.link2?.startsWith('http')) {
-              meetingData.invitationLink = row.link2
+            if (!currentRow.proofId && currentRow?.link2?.startsWith('http')) {
+              meetingData.invitationLink = currentRow.link2
             }
 
             const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
@@ -279,18 +298,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             successCount++
             console.log(
-              `✓ Inserted/Updated Meeting: ${row.id} with ${agendaItems.length} agenda items (${successCount}/${meetingsResult.recordset.length})`,
+              `✓ Inserted/Updated Meeting: ${currentRow.id} with ${meetingData.agenda?.length} agenda items (${successCount}/${meetingsResult.recordset.length})`,
             )
           } catch (insertError) {
-            console.log('Row', JSON.stringify(row, null, 2))
+            console.log('Row', JSON.stringify(currentRow, null, 2))
             errorCount++
-            console.error(`✗ Failed to insert Meeting ${row.id}:`, insertError)
-            logMigrationFault({
+            console.error(`✗ Failed to insert Meeting ${currentRow.id}:`, insertError)
+            await logMigrationFault({
               payload,
               type: 'meeting',
-              typeId: `${row.id}`,
-              comments: `Failed to insert/update Meeting ${row.id}: ${insertError}`,
-              row,
+              typeId: `${currentRow.id}`,
+              comments: `Failed to insert/update Meeting ${currentRow.id}: ${insertError}`,
+              row: currentRow,
             })
           }
         }),

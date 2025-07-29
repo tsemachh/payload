@@ -42,7 +42,8 @@ import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
-import { handleImpersonationStart, handleImpersonationEnd } from './plugins/impersonate/hooks'
+import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
+import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -296,6 +297,9 @@ export default buildConfig({
       onUnImpersonate: async ({ req, originalUserId }) => {
         await handleImpersonationEnd({ req, originalUserId: originalUserId as string })
       },
+    }),
+    CollectionResetPreferencesPlugin({
+      // Plugin options here
     }),
   ],
 })

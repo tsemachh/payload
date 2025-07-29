@@ -1,6 +1,6 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
@@ -164,7 +164,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                   // Use the agenda item's position in the agenda as the topicIndex
                   // This preserves the order of topics as they appear in the agenda
-                  const topicIndex = agendaItemPositions.get(vote.maid) || vote.maid
+                  const topicIndex = agendaItemPositions.get(Number(vote.maid)) || vote.maid
 
                   return {
                     topicIndex,

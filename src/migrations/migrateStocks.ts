@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Stock, StockOrigin } from '@/payload-types'
-import { getStockType } from '@/utils/migrateStockUtils'
+import { getStockType } from '@/migrations/utils/migrateStockUtils'
 import { getCollectionDoc, getStockByStockId, getStockIdToSequenceMap } from '@/utils/utils'
 import {
   getAllStocksInLatestMeetings,
@@ -15,14 +15,14 @@ import {
   getStockValues,
   upsertStockFromImport,
   upsertStockValueFromImport,
-} from '@/utils/migrateUtils'
+} from '@/migrations/utils/migrateUtils'
 import {
   createErrorFaultComment,
   createStockFaultComment,
   createStockRelationFaultComment,
   createStockValueFaultComment,
   logMigrationFault,
-} from '@/utils/migrationFaultUtils'
+} from '@/migrations/utils/migrationFaultUtils'
 import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 import { PayloadRequest } from 'payload'
 import { PromisePool } from '@/utils/promisePool'
@@ -391,9 +391,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           await upsertStockValueFromImport(stockSequence, row, req)
 
           successCount++
-          console.log(
-            `✓ Inserted stock value: ${row.symbol} (${successCount}/${resultStockValues.recordset.length})`,
-          )
+          if (successCount % 1000 === 0 || successCount === resultStockValues.recordset.length) {
+            console.log(
+              `✓ Inserted stock value: (${successCount}/${resultStockValues.recordset.length})`,
+            )
+          }
         } catch (error) {
           errorCount++
           await logMigrationFault({

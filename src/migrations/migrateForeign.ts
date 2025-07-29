@@ -1,8 +1,8 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { Stock, StockType } from '@/payload-types'
-import { upsertStockFromImport } from '@/utils/migrateUtils'
+import { upsertStockFromImport } from '@/migrations/utils/migrateUtils'
 import { getIdOfRelationField, getSequenceStockId, getStockByStockId } from '@/utils/utils'
-import { logMigrationFault } from '@/utils/migrationFaultUtils'
+import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {

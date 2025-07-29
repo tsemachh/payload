@@ -3,9 +3,9 @@ import sql from 'mssql'
 import path from 'path'
 import fs from 'fs'
 import { Company } from '@/payload-types'
-import { createMSSqlPool, sqlConfig } from '@/migrations/utils/utils'
+import { createMSSqlPool } from '@/migrations/utils/utils'
 import { getCompanyIdToChildCompanies, getCompanyIdToSequenceMap } from '@/utils/utils'
-import { createErrorFaultComment, logMigrationFault } from '@/utils/migrationFaultUtils'
+import { createErrorFaultComment, logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 
 /**
  * Migrates firms and related data in the following order:
