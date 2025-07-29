@@ -64,6 +64,10 @@ export type AgendasType = {
   isRemovedFromAgenda: boolean
   privilegedMajority: boolean
   recommendation: recommendationType
+  vote: string
+  result: string
+  simpleMajority: boolean
+  vPercentSpecial: number | null
 }
 export type recommendationType = {
   votingRecommendation: string

@@ -524,6 +524,8 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
         votingRecommendation: item.recommendation?.votingRecommendation || '',
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
+      result: item.result || '',
+      vPercentSpecial: item.vPercentSpecial || false,
     }
   })
 }
