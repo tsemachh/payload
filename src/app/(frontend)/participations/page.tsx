@@ -17,10 +17,12 @@ import { fetcher } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { BooleanIcon } from '@/components/ui/icons'
-import { Checkbox } from '@/components/ui/checkbox'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
+// Add this import at the top with the other imports
+import { fetcherVote } from '../helpers/utils-vote'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export interface Company {
   id: string
@@ -39,6 +41,21 @@ export interface CompanyWithFunds extends Company {
 
 type DateRangeType = 'two-years' | 'one-year' | 'month' | 'week' | 'custom'
 
+type ReportType =
+  | 'different-from-emda'
+  | 'different-from-results'
+  | 'search-agenda'
+  | 'foreign-stocks'
+  | 'dual-stocks'
+
+const reportTypeOptions = [
+  'different-from-emda',
+  'different-from-results',
+  'search-agenda',
+  'foreign-stocks',
+  'dual-stocks',
+]
+
 export default function Participations() {
   const { companies, funds } = useCompaniesContext()
   const { user } = useAuth()
@@ -48,6 +65,7 @@ export default function Participations() {
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
   const [showParticipationTable, setShowParticipationTable] = useState(false)
   const [reportName, setReportName] = useState<string>('') // New state for report name
+  const [selectedReportTypes, setSelectedReportTypes] = useState<ReportType[]>([]) // New state for report types
 
   // This state will now track IDs of rows that have been *deselected* from the "all selected" state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
@@ -147,8 +165,65 @@ export default function Participations() {
     revalidateOnReconnect: false,
   })
 
+  // Map selectedFundIds to their parent company IDs
+  const selectedCompanyIds = useMemo(() => {
+    const companyIds = new Set<string>()
+    appliedFilters.selectedFundIds.forEach((fundId) => {
+      const fund = funds.find((f) => f.id === fundId)
+      if (fund?.parentCompany) {
+        companyIds.add(fund.parentCompany)
+      }
+    })
+    return Array.from(companyIds)
+  }, [appliedFilters.selectedFundIds, funds])
+
+  // Create individual SWR calls for each meeting
+  const [meetingVotesData, setMeetingVotesData] = useState<{ [meetingId: string]: any[] }>({})
+
+  useEffect(() => {
+    if (
+      !meetingsResponse?.data ||
+      meetingsResponse?.data.length === 0 ||
+      selectedCompanyIds.length === 0
+    ) {
+      setMeetingVotesData({})
+      return
+    }
+
+    const fetchVotesData = async () => {
+      const votesMap: { [meetingId: string]: any[] } = {}
+
+      // For each meeting, we'll create a separate API call
+      const meetingIds = meetingsResponse.data.map((meeting: any) => meeting.meetingIdPayload)
+      const votePromises = meetingIds.map((meetingId: string) => {
+        const swrKey =
+          selectedCompanyIds.length > 0
+            ? `/api/votes/by-meeting-and-companies?meetingId=${meetingId}&companiesIds=${selectedCompanyIds.join(',')}&status=published`
+            : null
+
+        return swrKey ? fetcherVote(swrKey) : Promise.resolve([])
+      })
+
+      const voteResults = await Promise.all(votePromises)
+
+      meetingIds.forEach((meetingId: string, index: number) => {
+        votesMap[meetingId] = voteResults[index]
+      })
+
+      setMeetingVotesData(votesMap)
+    }
+
+    fetchVotesData()
+  }, [meetingsResponse?.data, selectedCompanyIds])
+
+  // Combine all votes data
+  const allVotesData = useMemo(() => {
+    return meetingVotesData
+  }, [meetingVotesData])
+
+  // Update the participationData useMemo to include votes data
   const participationData: ParticipationTableDataType[] = useMemo(() => {
-    return (
+    const baseData =
       meetingsResponse?.data?.map((meeting: any) => ({
         ...meeting,
         id: meeting.meetingIdPayload,
@@ -157,8 +232,39 @@ export default function Participations() {
             ? Number.parseFloat(meeting.holdingValueInMillions.replace(/,/g, ''))
             : meeting.holdingValueInMillions,
       })) || []
-    )
-  }, [meetingsResponse?.data])
+
+    // Merge votes data with meetings data
+    return baseData.map((meeting: any) => {
+      const meetingVotes = allVotesData[meeting.meetingIdPayload] || []
+
+      // Update agendas with vote data
+      const updatedAgendas =
+        meeting.agendas?.map((agenda: any) => {
+          // Find vote for this agenda item
+          const voteData = meetingVotes.find((vote: any) => {
+            return vote.votes?.some((v: any) => v.topicIndex === agenda.topicIndex)
+          })
+
+          const agendaVote = voteData?.votes?.find((v: any) => v.topicIndex === agenda.topicIndex)
+
+          return {
+            ...agenda,
+            vote: agendaVote?.voteDecision || null,
+            policyCompliance: agendaVote?.isInvestmentCommittee,
+            conflictOfInterest: agendaVote?.hasConflictOfInterest,
+            relatedParty: agendaVote?.isRelatedParty,
+            personalInterest: agendaVote?.hasPersonalInterest,
+          }
+        }) || []
+
+      return {
+        ...meeting,
+        agendas: updatedAgendas,
+        votes: meetingVotes,
+        hasVotes: meetingVotes.length > 0,
+      }
+    })
+  }, [meetingsResponse?.data, allVotesData])
 
   // Reset deselectedIds when the total number of items changes (e.g., initial load or filter change)
   useEffect(() => {
@@ -277,22 +383,28 @@ export default function Participations() {
       key: 'advisoryRecommendation',
       header: 'המלצת גורם מייעץ',
       type: 'string',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       minWidth: 120,
     },
-    { key: 'vote', header: 'הצבעה', type: 'string', render: (row) => null, minWidth: 80 },
+    {
+      key: 'vote',
+      header: 'הצבעה',
+      type: 'string',
+      render: (row) => null, // רק בשורות המורחבות
+      minWidth: 80,
+    },
     {
       key: 'meetingResults',
       header: 'תוצאות האסיפה',
       type: 'string',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       minWidth: 100,
     },
     {
       key: 'simpleMajority',
       header: 'רוב רגיל',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 90,
     },
@@ -300,7 +412,7 @@ export default function Participations() {
       key: 'specialMajority',
       header: 'רוב מיוחד',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 60,
     },
@@ -308,7 +420,7 @@ export default function Participations() {
       key: 'policyCompliance',
       header: 'בהתאם למדיניות דירקטריון ו/או וועדת השקעות',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 150,
     },
@@ -316,7 +428,7 @@ export default function Participations() {
       key: 'conflictOfInterest',
       header: 'ניגוד עניינים',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 80,
     },
@@ -324,7 +436,7 @@ export default function Participations() {
       key: 'relatedParty',
       header: 'צד קשר',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 60,
     },
@@ -332,7 +444,7 @@ export default function Participations() {
       key: 'personalInterest',
       header: 'עניין אישי',
       type: 'boolean',
-      render: (row) => null,
+      render: (row) => null, // רק בשורות המורחבות
       positionCenter: true,
       minWidth: 60,
     },
@@ -361,14 +473,6 @@ export default function Participations() {
   }
 
   const handleExport = () => {
-    console.log('Exporting data with:', {
-      startDate,
-      endDate,
-      rangeType,
-      selectedFunds: selectedFundIds,
-      reportName,
-    })
-
     // Apply the current filters
     setAppliedFilters({
       selectedFundIds: [...selectedFundIds],
@@ -427,8 +531,8 @@ export default function Participations() {
     // Add result mapping
     const resultMapping: { [key: string]: string } = {
       '0': '---',
-      '1': 'בעד',
-      '2': 'נגד',
+      '1': 'אושר',
+      '2': 'לא אושר',
       '3': 'דיון',
     }
 
@@ -501,7 +605,8 @@ export default function Participations() {
                           null
                         break
                       case 'vote':
-                        content = agenda.vote || agenda.votingResult || null
+                        // Show the actual vote decision
+                        content = agenda.vote || null
                         break
                       case 'meetingResults':
                         // Use the result field with mapping
