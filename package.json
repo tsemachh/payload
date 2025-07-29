@@ -66,7 +66,7 @@
     "@shefing/authors-info": "^1.0.10",
     "@shefing/field-type-component-override": "^1.0.5",
     "@shefing/quickfilter": "^1.0.27",
-    "@shefing/reset-list-view": "^0.2.3",
+    "@shefing/reset-list-view": "^0.2.4",
     "@tanstack/react-table": "^8.21.2",
     "@types/uuid": "^10.0.0",
     "buffer": "^6.0.3",
