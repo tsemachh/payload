@@ -8,7 +8,7 @@ export const HoldingsFeed: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'filename',
-    group: 'פעילות',
+    group: 'תחזוקה',
   },
   custom: {
     filterList: [
