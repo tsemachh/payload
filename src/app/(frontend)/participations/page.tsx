@@ -41,21 +41,6 @@ export interface CompanyWithFunds extends Company {
 
 type DateRangeType = 'two-years' | 'one-year' | 'month' | 'week' | 'custom'
 
-type ReportType =
-  | 'different-from-emda'
-  | 'different-from-results'
-  | 'search-agenda'
-  | 'foreign-stocks'
-  | 'dual-stocks'
-
-const reportTypeOptions = [
-  'different-from-emda',
-  'different-from-results',
-  'search-agenda',
-  'foreign-stocks',
-  'dual-stocks',
-]
-
 export default function Participations() {
   const { companies, funds } = useCompaniesContext()
   const { user } = useAuth()
@@ -65,7 +50,7 @@ export default function Participations() {
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
   const [showParticipationTable, setShowParticipationTable] = useState(false)
   const [reportName, setReportName] = useState<string>('') // New state for report name
-  const [selectedReportTypes, setSelectedReportTypes] = useState<ReportType[]>([]) // New state for report types
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   // This state will now track IDs of rows that have been *deselected* from the "all selected" state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
@@ -78,7 +63,6 @@ export default function Participations() {
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
     rangeType: undefined as DateRangeType | undefined,
-    reportName: '',
   }) // Store the filters that are actually applied
 
   // States for server-side pagination and sorting
@@ -86,7 +70,10 @@ export default function Participations() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string>('meetingDate') // Default sort field
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc') // Default sort direction
-
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setCurrentPage(1)
+  }
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -135,6 +122,7 @@ export default function Participations() {
       pageSize: pageSize.toString(),
       sortField,
       sortDirection,
+      search: searchTerm,
     })
 
     // Use appliedFilters instead of current state
@@ -158,7 +146,7 @@ export default function Participations() {
     }
 
     return `/api/meetings/all-meetings?${params.toString()}`
-  }, [currentPage, pageSize, sortField, sortDirection, appliedFilters])
+  }, [currentPage, pageSize, sortField, sortDirection, appliedFilters, searchTerm])
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
@@ -479,7 +467,6 @@ export default function Participations() {
       startDate,
       endDate,
       rangeType,
-      reportName,
     })
 
     setShowParticipationTable(true)
@@ -817,7 +804,7 @@ export default function Participations() {
               defaultSortField={'meetingDate'}
               defaultSortDirection={'desc'}
               tableId="participations-table"
-              searchOption={false}
+              searchOption={true}
               filterOption={false}
               columnsOption={false}
               tableHeightOffset={280}
@@ -834,6 +821,9 @@ export default function Participations() {
                 pageSizeOptions: [10, 25, 50, 100, 500, 1000],
               }}
               onServerSort={handleSort}
+              onServerSearch={handleSearch}
+              initialSearchTerm={searchTerm}
+              searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
             />
           </div>
         ))}

@@ -373,6 +373,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
           { type: { contains: searchTerm } },
           { location: { contains: searchTerm } },
           { comments: { contains: searchTerm } },
+          { 'agenda.text': { contains: searchTerm } },
         ],
       })
     }
