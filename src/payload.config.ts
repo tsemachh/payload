@@ -92,6 +92,18 @@ export default buildConfig({
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
   i18n: {
     supportedLanguages: { he, en },
+    translations: {
+      he: {
+        // or any other locale you're using
+        authentication: {
+          youAreReceivingResetPassword:
+            ':קיבלת הודעה זו מכיוון שאתה ביקשת לאפס את הסיסמה שלך במערכת. אנא לחץ על הקישור כדי להשלים את התהליך',
+          youDidNotRequestPassword:
+            '<br><br>אם לא ביקשת זאת, פנה למנהל המערכת עמדה מיידית<br><br>מערכת עמדה',
+          resetYourPassword: 'איפוס סיסמה',
+        },
+      },
+    },
   },
   onInit: async (payload) => {
     // Schedule daily tasks when payload initializes
