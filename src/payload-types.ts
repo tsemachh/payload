@@ -129,6 +129,16 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesStatus".
+ */
+export type VotesStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesReportStatus".
+ */
+export type VotesReportStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TopicVote".
  */
 export type TopicVote =
@@ -639,11 +649,13 @@ export interface Meeting {
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
    */
   researchDocuments?: (string | ResearchDocument)[] | null;
-  votesCount?: string | null;
+  votesCount?: number | null;
+  votesStatus?: VotesStatus;
+  reportVotesCount?: number | null;
+  votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   participationReport?: (string | null) | Document;
-  reportedVotesCount?: string | null;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -1295,10 +1307,12 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   votesCount?: T;
+  votesStatus?: T;
+  reportVotesCount?: T;
+  votesReportStatus?: T;
   companies?: T;
   companiesNotYetVoted?: T;
   participationReport?: T;
-  reportedVotesCount?: T;
   votes?: T;
   funds?: T;
   fundsWithHolding?:
