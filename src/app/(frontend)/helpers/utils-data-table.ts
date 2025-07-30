@@ -6,6 +6,7 @@ import {
   MeetingTableDataType,
   FacetedFilterItemServer,
   CustomDate,
+  selectOptionType,
 } from '../types/meetings'
 import { StockValue } from '@/payload-types'
 import {
@@ -14,8 +15,9 @@ import {
   meetingStateOptions,
   meetingTypeOptions,
   pastDateFilterOptions,
+  stockOriginOptions,
   stockTypeOptions,
-} from '../meetings/filterConst'
+} from '../meetings/filtersConst'
 import { addDays, subDays, startOfDay, endOfDay } from 'date-fns'
 
 export const formatDateTime = (originDate: string, withoutTime?: boolean) => {
@@ -178,19 +180,23 @@ export const getStaticFilterOptions = (
 ): FacetedFilterItemServer[] => {
   switch (columnKey) {
     case 'stockType':
-      return stockTypeOptions.map((option) => ({
+      return stockTypeOptions.map((option: selectOptionType) => ({
         value: option.value,
         translate: option.label,
       }))
-
+    case 'stockOrigin':
+      return stockOriginOptions.map((option: selectOptionType) => ({
+        value: option.value,
+        translate: option.label,
+      }))
     case 'meetingType':
-      return meetingTypeOptions.map((option) => ({
+      return meetingTypeOptions.map((option: selectOptionType) => ({
         value: option.value,
         translate: option.label,
       }))
 
     case 'meetingState':
-      return meetingStateOptions.map((option) => ({
+      return meetingStateOptions.map((option: selectOptionType) => ({
         value: option.value,
         translate: option.label,
       }))

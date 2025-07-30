@@ -1,4 +1,4 @@
-import { MeetingState } from '@/payload-types'
+import { MeetingState, StockOrigin } from '@/payload-types'
 
 export const meetingStateMap: Record<Exclude<MeetingState, null>, string> = {
   scheduled: 'מתוכננת',
@@ -7,4 +7,10 @@ export const meetingStateMap: Record<Exclude<MeetingState, null>, string> = {
   'on-hold': 'נדחית ללא מועד',
   ongoing: 'נמשכת',
   cancelled: 'בוטלה',
+}
+
+export const stockOriginMap: Record<Exclude<StockOrigin, null>, string> = {
+  TASE: 'בורסה',
+  Foreign:'חו״ל',
+  Private: 'פרטי',
 }

@@ -92,14 +92,12 @@ export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
  */
-export type MeetingType =
-  | ('שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן')
-  | null;
+export type MeetingType = 'שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingState".
  */
-export type MeetingState = ('scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled') | null;
+export type MeetingState = 'scheduled' | 'completed' | 'postponed' | 'on-hold' | 'ongoing' | 'cancelled';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingAgenda".
@@ -629,13 +627,13 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   stock: string | Stock;
-  type?: MeetingType;
+  type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
   invitationLink?: string | null;
   invitationDocument?: (string | null) | Document;
   fullName?: string | null;
-  state?: MeetingState;
+  state: MeetingState;
   holdingsLimit?: string | null;
   proxyVotingDate?: string | null;
   meetingDate?: string | null;
