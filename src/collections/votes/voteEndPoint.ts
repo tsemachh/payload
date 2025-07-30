@@ -155,7 +155,7 @@ export const publishVotes = async (req: PayloadRequest) => {
         select: { holdingsLimit: true, fullName: true },
         id: meetingId,
       })) as Meeting
-      await recalculateMeetingVoteCounts(req.payload, meetingId)
+      await recalculateMeetingVoteCounts(req, meetingId)
       if (meeting?.holdingsLimit) {
         const holdingsLimit = new Date(meeting.holdingsLimit)
         const dayAfterHoldings = addDays(holdingsLimit, 1)
