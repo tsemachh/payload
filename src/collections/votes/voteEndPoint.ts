@@ -4,6 +4,8 @@ import { addDays } from '@/utils/dateUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Meeting } from '@/payload-types'
 
+import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
+
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
   try {
@@ -153,7 +155,7 @@ export const publishVotes = async (req: PayloadRequest) => {
         select: { holdingsLimit: true, fullName: true },
         id: meetingId,
       })) as Meeting
-
+      await recalculateMeetingVoteCounts(req.payload, meetingId)
       if (meeting?.holdingsLimit) {
         const holdingsLimit = new Date(meeting.holdingsLimit)
         const dayAfterHoldings = addDays(holdingsLimit, 1)

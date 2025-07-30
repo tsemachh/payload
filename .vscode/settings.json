@@ -36,11 +36,5 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
     }
-  },
-  "mdb.presetConnections": [
-    {
-      "name": "Preset Connection",
-      "connectionString": "mongodb://localhost:27017/test"
-    }
-  ]
+  }
 }

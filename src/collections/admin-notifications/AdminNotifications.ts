@@ -20,17 +20,7 @@ export const AdminNotifications: CollectionConfig = {
   admin: {
     useAsTitle: 'message',
     group: 'פעילות',
-    defaultColumns: [
-      'message',
-      'url',
-      'handled',
-      'type',
-      'createdAt',
-      'meeting',
-      'stock',
-      'meetingDate',
-      'holdingsLimit',
-    ],
+    defaultColumns: ['message', 'url', 'handled', 'createdAt', 'companies'],
   },
   defaultSort: 'createdAt',
   custom: {
