@@ -46,6 +46,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   fundsWithHolding: true,
   stockValue: true,
   invitationLink: true,
+  votes: true,
 }
 
 /**
@@ -297,9 +298,76 @@ function createSuccessResponse(
   })
 }
 
-/**
- * Endpoint to fetch all meetings
- */
+/** * Filter meetings based on vote patterns - NEW FUNCTION */
+async function filterMeetingsByVotes(
+  meetings: MeetingTableDataType[],
+  voteAgainstRecommendation: boolean,
+  voteDifferentFromResult: boolean,
+  req: PayloadRequest,
+): Promise<MeetingTableDataType[]> {
+  if (!voteAgainstRecommendation && !voteDifferentFromResult) {
+    return meetings
+  }
+
+  const filteredMeetings: MeetingTableDataType[] = []
+
+  for (const meeting of meetings) {
+    //console.log('Checking meeting:', meeting)
+    const { user } = req
+    const usersCompanyIds = user?.companies || []
+    // Get votes for this meeting
+    const companyIds = usersCompanyIds.map((c) => c.companyId)
+
+    const docs = meeting.votes?.docs || []
+    //console.log('docs', docs)
+    let meetingMatches = false
+    const userCompanyVoteDoc = docs.find((doc) => companyIds.includes(doc.company))
+
+    if (!userCompanyVoteDoc) {
+      continue
+    }
+    // Check each agenda item
+    for (const agenda of meeting.agendas || []) {
+      const vote = userCompanyVoteDoc.votes.find((v) => v.topicIndex === agenda.topicIndex)
+      if (!vote) continue
+      const voteDecision = vote.voteDecision
+      const recommendation = agenda.recommendation?.votingRecommendation
+      const result = agenda.result
+      let agendaMatches = true
+
+      if (voteAgainstRecommendation) {
+        const isAgainstRecommendation =
+          (recommendation === 'בעד' && voteDecision === 'נגד') ||
+          (recommendation === 'נגד' && voteDecision === 'בעד')
+        agendaMatches = agendaMatches && isAgainstRecommendation
+      }
+
+      if (voteDifferentFromResult) {
+        const resultMapping: { [key: string]: string } = {
+          '1': 'בעד',
+          '2': 'נגד',
+          '3': 'דיון',
+        }
+        const resultText = result !== undefined ? resultMapping[result] || result : result
+        const isDifferentFromResult = voteDecision !== resultText
+        agendaMatches = agendaMatches && isDifferentFromResult
+      }
+
+      if (agendaMatches) {
+        meetingMatches = true
+        break
+      }
+    }
+
+    if (meetingMatches) {
+      filteredMeetings.push(meeting)
+    }
+  }
+
+  return filteredMeetings
+}
+
+/** * Endpoint to fetch all meetings */
 export const allMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
@@ -313,6 +381,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
     const selectedFundsParam = req.query.funds as string
+
+    // NEW: Get vote filter parameters
+    const voteAgainstRecommendation = req.query.voteAgainstRecommendation === 'true'
+    const voteDifferentFromResult = req.query.voteDifferentFromResult === 'true'
+
     let frontendSelectedFundIds: string[] | undefined
     if (selectedFundsParam) {
       frontendSelectedFundIds = selectedFundsParam.split(',')
@@ -402,9 +475,27 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
+    let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
-    return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
+    // NEW: Apply vote-based filtering after processing
+    if (voteAgainstRecommendation || voteDifferentFromResult) {
+      meetingData = await filterMeetingsByVotes(
+        meetingData as MeetingTableDataType[],
+        voteAgainstRecommendation,
+        voteDifferentFromResult,
+        req,
+      )
+    }
+
+    // NEW: Recalculate totals after filtering
+    const totalItemsAfterFilter = meetingData.length
+    const totalPagesAfterFilter = Math.ceil(totalItemsAfterFilter / pageSize)
+
+    return createSuccessResponse(
+      meetingData as MeetingTableDataType[],
+      totalItemsAfterFilter,
+      totalPagesAfterFilter,
+    )
   } catch (error) {
     req.payload.logger.error(`Error in allMeetingsEndpoint: ${JSON.stringify(error)}`)
     return createErrorResponse(error, 'Failed to fetch meetings')
@@ -507,6 +598,7 @@ function createMeetingDataObject(
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
+    votes: meeting.votes || [],
   }
 }
 

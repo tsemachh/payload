@@ -33,6 +33,7 @@ export type MeetingTableDataType = {
   electronicVotingEnabled: boolean //האם האסיפה מופיעה במערכת האלקטרונית?
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
+  votes: any
 }
 
 export type DateFilterOption = {

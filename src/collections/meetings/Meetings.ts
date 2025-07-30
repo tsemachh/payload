@@ -718,7 +718,7 @@ export const Meetings: CollectionConfig = {
               collection: 'votes',
               on: 'meeting',
               defaultLimit: 0,
-              maxDepth: 0,
+              maxDepth: 1,
               admin: {
                 allowCreate: false,
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
@@ -828,8 +828,7 @@ export const Meetings: CollectionConfig = {
           return { reportedVotesCount: '0/0' }
         }
         if (doc?.votes?.docs?.length) {
-          const voteIds = doc.votes.docs
-
+          const voteIds = doc.votes.docs.map((vote: any) => vote.id)
           try {
             const votesResponse = await req.payload.find({
               collection: 'votes',

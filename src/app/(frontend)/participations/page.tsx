@@ -63,6 +63,9 @@ export default function Participations() {
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
     rangeType: undefined as DateRangeType | undefined,
+    // Add new filter states here
+    voteAgainstRecommendation: false,
+    voteDifferentFromResult: false,
   }) // Store the filters that are actually applied
 
   // States for server-side pagination and sorting
@@ -70,6 +73,11 @@ export default function Participations() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string>('meetingDate') // Default sort field
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc') // Default sort direction
+
+  // New states for the checkboxes
+  const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
+  const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
+
   const handleSearch = (term: string) => {
     setSearchTerm(term)
     setCurrentPage(1)
@@ -145,14 +153,21 @@ export default function Participations() {
       params.append('dateFilter_meetingDate', JSON.stringify(dateFilter))
     }
 
+    // Add new filter parameters for checkboxes
+    if (appliedFilters.voteAgainstRecommendation) {
+      params.append('voteAgainstRecommendation', 'true')
+    }
+    if (appliedFilters.voteDifferentFromResult) {
+      params.append('voteDifferentFromResult', 'true')
+    }
+
     return `/api/meetings/all-meetings?${params.toString()}`
   }, [currentPage, pageSize, sortField, sortDirection, appliedFilters, searchTerm])
-
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-
+  console.log('meetingsResponse', meetingsResponse)
   // Map selectedFundIds to their parent company IDs
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -457,7 +472,21 @@ export default function Participations() {
     if (hasDisplayed) {
       setHasChanges(true) // Mark that changes were made after display
     }
-    // Remove the setCurrentPage(1) from here since we don't want immediate filtering
+  }
+
+  // Handle checkbox changes
+  const handleVoteAgainstRecommendationChange = (checked: boolean) => {
+    setVoteAgainstRecommendation(checked)
+    if (hasDisplayed) {
+      setHasChanges(true)
+    }
+  }
+
+  const handleVoteDifferentFromResultChange = (checked: boolean) => {
+    setVoteDifferentFromResult(checked)
+    if (hasDisplayed) {
+      setHasChanges(true)
+    }
   }
 
   const handleExport = () => {
@@ -467,6 +496,8 @@ export default function Participations() {
       startDate,
       endDate,
       rangeType,
+      voteAgainstRecommendation, // Apply new filter state
+      voteDifferentFromResult, // Apply new filter state
     })
 
     setShowParticipationTable(true)
@@ -779,6 +810,45 @@ export default function Participations() {
             <span className="text-[rgb(71,122,133)] text-sm">
               נבחרו {currentSelectedCount} אסיפות
             </span>
+          </div>
+        </div>
+      )}
+      {/* New Checkboxes */}
+      {showParticipationTable && !isLoading && !meetingsResponse?.error && (
+        <div className="w-full lg:w-auto flex justify-end pr-50 mt-4">
+          {' '}
+          <div className="flex gap-6 items-center pl-[50px]">
+            {' '}
+            <div className="flex items-center gap-2">
+              {' '}
+              <Checkbox
+                id="vote-against-recommendation"
+                checked={voteAgainstRecommendation}
+                onCheckedChange={handleVoteAgainstRecommendationChange}
+                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              />
+              <Label
+                htmlFor="vote-against-recommendation"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+              >
+                הצבעה בניגוד להמלצה
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              {' '}
+              <Checkbox
+                id="vote-different-from-result"
+                checked={voteDifferentFromResult}
+                onCheckedChange={handleVoteDifferentFromResultChange}
+                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              />
+              <Label
+                htmlFor="vote-different-from-result"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+              >
+                הצבעה שונה מהתוצאה
+              </Label>
+            </div>
           </div>
         </div>
       )}
