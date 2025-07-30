@@ -1,4 +1,4 @@
-import { CollectionBeforeChangeHook, Payload } from 'payload'
+import { CollectionBeforeChangeHook, PayloadRequest } from 'payload'
 import { Meeting, Vote, VotesReportStatus, VotesStatus } from '@/payload-types'
 
 /**
@@ -7,7 +7,7 @@ import { Meeting, Vote, VotesReportStatus, VotesStatus } from '@/payload-types'
  * @returns Object with success status, message, and updated data
  */
 export async function recalculateMeetingVoteCounts(
-  payload: Payload,
+  req: PayloadRequest,
   meetingId: string,
 ): Promise<{
   success: boolean
@@ -21,7 +21,7 @@ export async function recalculateMeetingVoteCounts(
 }> {
   try {
     // Get the meeting
-    const meeting = await payload.findByID({
+    const meeting = await req.payload.findByID({
       collection: 'meetings',
       select: {
         votes: true,
@@ -50,7 +50,7 @@ export async function recalculateMeetingVoteCounts(
     )
 
     // Update the meeting with calculated values
-    await payload.update({
+    await req.payload.update({
       collection: 'meetings',
       id: meetingId,
       data: {
@@ -60,6 +60,10 @@ export async function recalculateMeetingVoteCounts(
         votesReportStatus,
       },
       depth: 0,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'migration' },
+      },
     })
 
     return {
