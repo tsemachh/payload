@@ -183,6 +183,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   type: 'select',
                   interfaceName: 'MeetingType',
+                  required: true,
                   options: meetingTypeOptions,
                   admin: {
                     width: '150px',
@@ -286,6 +287,7 @@ export const Meetings: CollectionConfig = {
                   name: 'state',
                   label: 'מצב',
                   type: 'select',
+                  required: true,
                   hooks: {
                     beforeChange: [
                       ({ siblingData, value }) => {

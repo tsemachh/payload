@@ -1,4 +1,5 @@
-import { BooleanIcon } from "../components/ui/icons";
+import React from 'react'
+import { BooleanIcon } from '@/components/ui/icons'
 
 export const pastDateFilterOptions = [
   { value: 'yesterday', label: 'אתמול' },
@@ -48,6 +49,12 @@ export const meetingStateOptions: { label: string; value: string }[] = [
   { label: 'נדחית ללא מועד', value: 'on-hold' },
   { label: 'נמשכת', value: 'ongoing' },
   { label: 'בוטלה', value: 'cancelled' },
+]
+
+export const stockOriginOptions: { label: string; value: string }[] = [
+  { label: 'בורסה', value: 'TASE' },
+  { label: 'חו״ל', value: 'Foreign' },
+  { label: 'פרטי', value: 'Private' },
 ]
 
 export const booleanOptions = [

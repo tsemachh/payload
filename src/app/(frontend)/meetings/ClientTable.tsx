@@ -10,7 +10,7 @@ import { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useMemo } from 'react'
-import { futureDateFilterOptions, pastDateFilterOptions } from './filterConst'
+import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 
 export function MeetingsTableClient() {
   const { data: meetingsResponse, isLoading: isLoadingMeetings } = useSWR(

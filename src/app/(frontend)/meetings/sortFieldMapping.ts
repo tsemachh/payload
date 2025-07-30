@@ -4,6 +4,7 @@ export const sortFieldMapping: Record<string, string> = {
   meetingId: 'meetingId',
   stockNumber: 'stock.stockId',
   stockType: 'stock.type',
+  stockOrigin: 'stock.origin',
   stockSymbol: 'stock.symbol',
   stockName: 'stock.name',
   companyName: 'stock.longName',

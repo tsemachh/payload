@@ -3,9 +3,15 @@
 import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
-import { MeetingState } from '@/payload-types'
-import { meetingStateMap } from '../helpers/maps'
+import { MeetingState, StockOrigin } from '@/payload-types'
+import { meetingStateMap, stockOriginMap } from '../helpers/maps'
 import { AgendaTooltipWithNavigation } from './AgendaTooltipWithNavigation'
+import {
+  meetingStateOptions,
+  meetingTypeOptions,
+  stockOriginOptions,
+  stockTypeOptions,
+} from './filtersConst'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
@@ -41,21 +47,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'סוג נייר',
     type: 'enum',
     filterable: true,
-    options: [
-      { label: 'מניות', value: 'מניות' },
-      { label: 'אופציות', value: 'אופציות' },
-      { label: 'איגרות חוב', value: 'איגרות חוב' },
-      { label: 'איגרות חוב להמרה', value: 'איגרות חוב להמרה' },
-      { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-      { label: 'תעודות מדד', value: 'תעודות מדד' },
-      { label: 'תעודות סל', value: 'תעודות סל' },
-      { label: 'קרנות נאמנות', value: 'קרנות נאמנות' },
-      { label: 'נייר ערך מסחרי', value: 'נייר ערך מסחרי' },
-      { label: 'אחר', value: 'אחר' },
-      { label: 'זכויות', value: 'זכויות' },
-      { label: 'מק"מ', value: 'מק"מ' },
-      { label: 'שטרי הון', value: 'שטרי הון' },
-    ],
+    options: stockTypeOptions,
     minWidth: 60,
   },
   { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
@@ -71,6 +63,16 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 40,
   },
   {
+    key: 'stockOrigin',
+    header: 'מקור נייר',
+    type: 'enum',
+    filterable: true,
+    options: stockOriginOptions,
+    render: (row) =>
+      stockOriginMap[row.stockOrigin as Exclude<StockOrigin, null>] || row.stockOrigin,
+    minWidth: 80,
+  },
+  {
     key: 'marketValue',
     header: 'שווי שוק (מיליוני ₪)',
     type: 'number',
@@ -80,23 +82,15 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
         maximumFractionDigits: 0,
       }).format(marketValue / 1_000_000)
     },
-    minWidth: 70,
+    minWidth: 80,
   },
   {
     key: 'meetingType',
     header: 'סוג אסיפה',
     type: 'enum',
     filterable: true,
-    options: [
-      { label: 'שנתית', value: 'שנתית' },
-      { label: 'מיוחדת', value: 'מיוחדת' },
-      { label: 'אג"ח', value: 'אג"ח' },
-      { label: 'אופציה', value: 'אופציה' },
-      { label: 'יחידת השתתפות', value: 'יחידת השתתפות' },
-      { label: 'תעודת סל', value: 'תעודת סל' },
-      { label: 'אג"ח כהונת נאמן', value: 'אג"ח כהונת נאמן' },
-    ],
-    minWidth: 60,
+    options: meetingTypeOptions,
+    minWidth: 80,
   },
   {
     key: 'meetingDate',
@@ -163,14 +157,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'מצב',
     type: 'enum',
     filterable: true,
-    options: [
-      { label: 'מתוכננת', value: 'scheduled' },
-      { label: 'התקיימה', value: 'completed' },
-      { label: 'נדחית', value: 'postponed' },
-      { label: 'נדחית ללא מועד', value: 'on-hold' },
-      { label: 'נמשכת', value: 'ongoing' },
-      { label: 'בוטלה', value: 'cancelled' },
-    ],
+    options: meetingStateOptions,
     render: (row) =>
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 100,
