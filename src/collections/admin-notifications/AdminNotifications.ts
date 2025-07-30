@@ -13,24 +13,14 @@ const NotificationLinkProps: IconLinkProps = {
 export const AdminNotifications: CollectionConfig = {
   slug: 'admin-notifications',
   labels: {
-    plural: 'התראות מנהל',
-    singular: 'התראת מנהל',
+    plural: 'התראות',
+    singular: 'התראה',
   },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'message',
-    group: 'ניהול',
-    defaultColumns: [
-      'message',
-      'url',
-      'handled',
-      'type',
-      'createdAt',
-      'meeting',
-      'stock',
-      'meetingDate',
-      'holdingsLimit',
-    ],
+    group: 'פעילות',
+    defaultColumns: ['message', 'url', 'handled', 'createdAt', 'companies'],
   },
   defaultSort: 'createdAt',
   custom: {

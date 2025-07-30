@@ -116,13 +116,14 @@ export const Meetings: CollectionConfig = {
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
-      'invitationLink',
-      'holdingsLimit',
+      'type',
       'meetingDate',
-      'state',
-      'comments',
+      'holdingsLimit',
+      'proxyVotingDate',
       'votesCount',
       'reportedVotesCount',
+      'electronicVotingEnabled',
+      'invitationLink',
     ],
     pagination: {
       defaultLimit: 100,
@@ -724,7 +725,21 @@ export const Meetings: CollectionConfig = {
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
               },
               where: {
-                _status: { equals: 'published' },
+                or: [
+                  {
+                    _status: {
+                      equals: 'published',
+                    },
+                  },
+                  {
+                    _status: {
+                      equals: 'draft',
+                    },
+                    publishDate: {
+                      not_equals: null,
+                    },
+                  },
+                ],
               },
             },
           ],

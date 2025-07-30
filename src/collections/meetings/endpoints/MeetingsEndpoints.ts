@@ -319,16 +319,15 @@ async function filterMeetingsByVotes(
     const companyIds = usersCompanyIds.map((c) => c.companyId)
 
     const docs = meeting.votes?.docs || []
-    //console.log('docs', docs)
     let meetingMatches = false
-    const userCompanyVoteDoc = docs.find((doc) => companyIds.includes(doc.company))
+    const userCompanyVoteDoc = docs.find((doc: any) => companyIds.includes(doc.company))
 
     if (!userCompanyVoteDoc) {
       continue
     }
     // Check each agenda item
     for (const agenda of meeting.agendas || []) {
-      const vote = userCompanyVoteDoc.votes.find((v) => v.topicIndex === agenda.topicIndex)
+      const vote = userCompanyVoteDoc.votes.find((v: any) => v.topicIndex === agenda.topicIndex)
       if (!vote) continue
       const voteDecision = vote.voteDecision
       const recommendation = agenda.recommendation?.votingRecommendation

@@ -14,7 +14,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'message',
-    group: 'ניהול',
+    group: 'תחזוקה',
   },
   custom: {
     filterList: [[{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]],

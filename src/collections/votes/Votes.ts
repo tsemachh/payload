@@ -86,7 +86,7 @@ export const Votes: CollectionConfig = {
         beforeDocumentControls: ['/collections/votes/components/VoteSubTitle'],
       },
     },
-    group: 'פעילות',
+    group: 'תחזוקה',
   },
   disableBulkEdit: true,
   fields: [

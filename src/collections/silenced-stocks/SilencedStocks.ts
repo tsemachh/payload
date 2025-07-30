@@ -11,7 +11,7 @@ export const SilencedStocks: CollectionConfig = {
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'companies'],
     listSearchableFields: ['stockId'],
-    group: 'פעילות',
+    group: 'פיתוח',
     hidden: true,
     pagination: {
       defaultLimit: 500,

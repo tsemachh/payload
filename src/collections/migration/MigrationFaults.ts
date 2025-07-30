@@ -43,7 +43,7 @@ const MigrationFaults: CollectionConfig = {
   ],
   enableQueryPresets: true,
   admin: {
-    group: 'מיגרציה',
+    group: 'פיתוח',
     useAsTitle: 'typeId',
     defaultColumns: ['comments', 'type', 'typeId', 'row'],
     listSearchableFields: ['comments', 'type', 'typeId', 'row'],

@@ -73,7 +73,7 @@ export const Stocks: CollectionConfig = {
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'fullName',
-    defaultColumns: ['stockId', 'symbol', 'type', 'longName', 'origin', 'tradable'],
+    defaultColumns: ['stockId', 'type', 'longName', 'origin', 'tradable', 'active'],
     listSearchableFields: ['symbol', 'stockId', 'name', 'longName', 'comments'],
     pagination: {
       defaultLimit: 500,
