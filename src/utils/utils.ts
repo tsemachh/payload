@@ -1,4 +1,4 @@
-import { BasePayload, TypeWithID } from 'payload'
+import { BasePayload, CollectionSlug, TypeWithID } from 'payload'
 import type { AdminNotificationType, Stock } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
@@ -249,5 +249,58 @@ export async function createAdminNotification(
   } catch (error) {
     console.error('Error creating admin notification:', error)
     return null
+  }
+}
+
+/**
+ * Reverts a draft document to its published version
+ * @param payload - The Payload CMS instance
+ * @param collectionSlug - The collection slug (e.g., 'votes')
+ * @param documentId - The ID of the document to revert
+ * @param locale - Optional locale for the document
+ * @returns An object with information about the operation result
+ */
+export async function revertToPublished(
+  payload: BasePayload,
+  collectionSlug: string,
+  documentId: string,
+) {
+  try {
+    // Step 1: Fetch the published version (without draft=true)
+    const publishedDoc = await payload.findByID({
+      collection: collectionSlug as CollectionSlug,
+      id: documentId,
+      depth: 0,
+      draft: false, // Important: this gets the published version
+    })
+
+    if (publishedDoc) {
+      // Step 2: Update the document with the published data
+      // This creates a new version that matches the published version
+      const result = await payload.update({
+        collection: collectionSlug as CollectionSlug,
+        id: documentId,
+        data: publishedDoc, // Use the published document data
+        draft: true, // Update the draft version
+      })
+
+      return {
+        success: true,
+        publishedDoc,
+        result,
+      }
+    } else {
+      return {
+        success: false,
+        reason: 'no-published-version',
+      }
+    }
+  } catch (error) {
+    console.error(`Error reverting document ${documentId} in collection ${collectionSlug}:`, error)
+    return {
+      success: false,
+      reason: 'error',
+      error,
+    }
   }
 }

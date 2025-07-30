@@ -725,7 +725,21 @@ export const Meetings: CollectionConfig = {
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
               },
               where: {
-                _status: { equals: 'published' },
+                or: [
+                  {
+                    _status: {
+                      equals: 'published',
+                    },
+                  },
+                  {
+                    _status: {
+                      equals: 'draft',
+                    },
+                    publishDate: {
+                      not_equals: null,
+                    },
+                  },
+                ],
               },
             },
           ],
