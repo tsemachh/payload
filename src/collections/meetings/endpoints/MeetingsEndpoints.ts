@@ -335,9 +335,11 @@ async function filterMeetingsByVotes(
       let agendaMatches = true
 
       if (voteAgainstRecommendation) {
-        const isAgainstRecommendation =
-          (recommendation === 'בעד' && voteDecision === 'נגד') ||
-          (recommendation === 'נגד' && voteDecision === 'בעד')
+        const rec = recommendation?.trim()
+        const vote = voteDecision?.trim()
+
+        const isAgainstRecommendation = rec && vote && rec !== vote
+
         agendaMatches = agendaMatches && isAgainstRecommendation
       }
 

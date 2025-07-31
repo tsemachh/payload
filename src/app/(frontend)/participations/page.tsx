@@ -20,8 +20,6 @@ import { BooleanIcon } from '@/components/ui/icons'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
-// Add this import at the top with the other imports
-import { fetcherVote } from '../helpers/utils-vote'
 import { Checkbox } from '@/components/ui/checkbox'
 
 export interface Company {
@@ -167,64 +165,7 @@ export default function Participations() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-  console.log('meetingsResponse', meetingsResponse)
-  // Map selectedFundIds to their parent company IDs
-  const selectedCompanyIds = useMemo(() => {
-    const companyIds = new Set<string>()
-    appliedFilters.selectedFundIds.forEach((fundId) => {
-      const fund = funds.find((f) => f.id === fundId)
-      if (fund?.parentCompany) {
-        companyIds.add(fund.parentCompany)
-      }
-    })
-    return Array.from(companyIds)
-  }, [appliedFilters.selectedFundIds, funds])
 
-  // Create individual SWR calls for each meeting
-  const [meetingVotesData, setMeetingVotesData] = useState<{ [meetingId: string]: any[] }>({})
-
-  useEffect(() => {
-    if (
-      !meetingsResponse?.data ||
-      meetingsResponse?.data.length === 0 ||
-      selectedCompanyIds.length === 0
-    ) {
-      setMeetingVotesData({})
-      return
-    }
-
-    const fetchVotesData = async () => {
-      const votesMap: { [meetingId: string]: any[] } = {}
-
-      // For each meeting, we'll create a separate API call
-      const meetingIds = meetingsResponse.data.map((meeting: any) => meeting.meetingIdPayload)
-      const votePromises = meetingIds.map((meetingId: string) => {
-        const swrKey =
-          selectedCompanyIds.length > 0
-            ? `/api/votes/by-meeting-and-companies?meetingId=${meetingId}&companiesIds=${selectedCompanyIds.join(',')}&status=published`
-            : null
-
-        return swrKey ? fetcherVote(swrKey) : Promise.resolve([])
-      })
-
-      const voteResults = await Promise.all(votePromises)
-
-      meetingIds.forEach((meetingId: string, index: number) => {
-        votesMap[meetingId] = voteResults[index]
-      })
-
-      setMeetingVotesData(votesMap)
-    }
-
-    fetchVotesData()
-  }, [meetingsResponse?.data, selectedCompanyIds])
-
-  // Combine all votes data
-  const allVotesData = useMemo(() => {
-    return meetingVotesData
-  }, [meetingVotesData])
-
-  // Update the participationData useMemo to include votes data
   const participationData: ParticipationTableDataType[] = useMemo(() => {
     const baseData =
       meetingsResponse?.data?.map((meeting: any) => ({
@@ -238,17 +179,21 @@ export default function Participations() {
 
     // Merge votes data with meetings data
     return baseData.map((meeting: any) => {
-      const meetingVotes = allVotesData[meeting.meetingIdPayload] || []
+      const meetingVotes = meeting.votes?.docs || []
+      console.log('Meeting Votes:', meeting)
 
-      // Update agendas with vote data
       const updatedAgendas =
         meeting.agendas?.map((agenda: any) => {
-          // Find vote for this agenda item
-          const voteData = meetingVotes.find((vote: any) => {
-            return vote.votes?.some((v: any) => v.topicIndex === agenda.topicIndex)
-          })
+          let agendaVote = null
 
-          const agendaVote = voteData?.votes?.find((v: any) => v.topicIndex === agenda.topicIndex)
+          for (const vote of meetingVotes) {
+            if (vote.votes && Array.isArray(vote.votes)) {
+              const foundVote = vote.votes.find((v: any) => v.topicIndex === agenda.topicIndex)
+              if (foundVote) {
+                agendaVote = foundVote
+              }
+            }
+          }
 
           return {
             ...agenda,
@@ -267,7 +212,7 @@ export default function Participations() {
         hasVotes: meetingVotes.length > 0,
       }
     })
-  }, [meetingsResponse?.data, allVotesData])
+  }, [meetingsResponse?.data])
 
   // Reset deselectedIds when the total number of items changes (e.g., initial load or filter change)
   useEffect(() => {
@@ -293,11 +238,6 @@ export default function Participations() {
         <div
           className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
           onClick={() => {
-            console.log('Header clicked!', {
-              allSelected,
-              deselectedIds: deselectedIds.size,
-              totalItems: meetingsResponse?.totalItems,
-            })
             if (allSelected) {
               // Deselect all - create a set with ALL possible IDs (simulate all items being deselected)
               // Since we can't get all IDs from all pages, we'll use a large number to represent "all deselected"
@@ -342,7 +282,7 @@ export default function Participations() {
       ),
     },
     { key: 'stockNumber', header: 'מספר נייר / נושאי האסיפה', type: 'string', minWidth: 120 },
-    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 }, // Back to original width
+    { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
     {
       key: 'marketValue',
       header: 'שווי שוק',
@@ -386,28 +326,28 @@ export default function Participations() {
       key: 'advisoryRecommendation',
       header: 'המלצת גורם מייעץ',
       type: 'string',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       minWidth: 120,
     },
     {
       key: 'vote',
       header: 'הצבעה',
       type: 'string',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       minWidth: 80,
     },
     {
       key: 'meetingResults',
       header: 'תוצאות האסיפה',
       type: 'string',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       minWidth: 100,
     },
     {
       key: 'simpleMajority',
       header: 'רוב רגיל',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 90,
     },
@@ -415,7 +355,7 @@ export default function Participations() {
       key: 'specialMajority',
       header: 'רוב מיוחד',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 60,
     },
@@ -423,7 +363,7 @@ export default function Participations() {
       key: 'policyCompliance',
       header: 'בהתאם למדיניות דירקטריון ו/או וועדת השקעות',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 150,
     },
@@ -431,7 +371,7 @@ export default function Participations() {
       key: 'conflictOfInterest',
       header: 'ניגוד עניינים',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 80,
     },
@@ -439,7 +379,7 @@ export default function Participations() {
       key: 'relatedParty',
       header: 'צד קשר',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 60,
     },
@@ -447,7 +387,7 @@ export default function Participations() {
       key: 'personalInterest',
       header: 'עניין אישי',
       type: 'boolean',
-      render: (row) => null, // רק בשורות המורחבות
+      render: (row) => null,
       positionCenter: true,
       minWidth: 60,
     },
@@ -456,9 +396,8 @@ export default function Participations() {
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
     if (hasDisplayed) {
-      setHasChanges(true) // Mark that changes were made after display
+      setHasChanges(true)
     }
-    // Remove the setCurrentPage(1) from here since we don't want immediate filtering
   }
 
   const handleRangeChange = (
@@ -470,13 +409,21 @@ export default function Participations() {
     setEndDate(newEndDate)
     setRangeType(type)
     if (hasDisplayed) {
-      setHasChanges(true) // Mark that changes were made after display
+      setHasChanges(true)
     }
   }
 
-  // Handle checkbox changes
   const handleVoteAgainstRecommendationChange = (checked: boolean) => {
     setVoteAgainstRecommendation(checked)
+
+    if (showParticipationTable) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        voteAgainstRecommendation: checked,
+      }))
+      setCurrentPage(1)
+    }
+
     if (hasDisplayed) {
       setHasChanges(true)
     }
@@ -484,6 +431,15 @@ export default function Participations() {
 
   const handleVoteDifferentFromResultChange = (checked: boolean) => {
     setVoteDifferentFromResult(checked)
+
+    if (showParticipationTable) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        voteDifferentFromResult: checked,
+      }))
+      setCurrentPage(1)
+    }
+
     if (hasDisplayed) {
       setHasChanges(true)
     }
@@ -496,14 +452,13 @@ export default function Participations() {
       startDate,
       endDate,
       rangeType,
-      voteAgainstRecommendation, // Apply new filter state
-      voteDifferentFromResult, // Apply new filter state
+      voteAgainstRecommendation,
+      voteDifferentFromResult,
     })
-
     setShowParticipationTable(true)
-    setHasDisplayed(true) // Mark that display button was clicked
-    setHasChanges(false) // Reset changes flag
-    setCurrentPage(1) // Reset to first page when applying new filters
+    setHasDisplayed(true)
+    setHasChanges(false)
+    setCurrentPage(1)
   }
 
   const getCompanySelectSummary = () => {
@@ -526,17 +481,6 @@ export default function Participations() {
     return `נבחרו ${selectedFundIds.length} חשבונות`
   }
 
-  // Function to calculate column widths
-  const calculateColumnWidths = (minWidth: number, totalColumns: number, width?: number) => {
-    // If a specific width is provided, use it
-    if (width) {
-      return width
-    }
-    // Distribute available width evenly
-    return minWidth
-  }
-
-  // Function to render agenda items for expanded rows
   const renderAgendaRows = useCallback((row: ParticipationTableDataType) => {
     if (!row.agendas || row.agendas.length === 0) {
       return (
@@ -595,7 +539,6 @@ export default function Participations() {
                             >
                               {agenda.text}
                             </div>
-                            {/* Tooltip on hover */}
                             <div
                               className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                               style={{
@@ -703,7 +646,7 @@ export default function Participations() {
                           textAlign: column.positionCenter ? 'center' : 'right',
                           verticalAlign: 'middle',
                         }}
-                        colSpan={column.key === 'stockName' ? 5 : 1} // Span across 5 columns: stockName, marketValue, percentageHolding, holdingValueInMillions, meetingDate, meetingType
+                        colSpan={column.key === 'stockName' ? 5 : 1}
                       >
                         {content}
                       </td>
@@ -718,7 +661,6 @@ export default function Participations() {
     )
   }, [])
 
-  // Calculate the number of currently selected items
   const currentSelectedCount = allSelected
     ? meetingsResponse?.totalItems || 0
     : Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
@@ -815,12 +757,9 @@ export default function Participations() {
       )}
       {/* New Checkboxes */}
       {showParticipationTable && !isLoading && !meetingsResponse?.error && (
-        <div className="w-full lg:w-auto flex justify-end pr-50 mt-4">
-          {' '}
+        <div className="w-full lg:w-auto flex justify-end pr-50 ">
           <div className="flex gap-6 items-center pl-[50px]">
-            {' '}
             <div className="flex items-center gap-2">
-              {' '}
               <Checkbox
                 id="vote-against-recommendation"
                 checked={voteAgainstRecommendation}
@@ -835,7 +774,6 @@ export default function Participations() {
               </Label>
             </div>
             <div className="flex items-center gap-2">
-              {' '}
               <Checkbox
                 id="vote-different-from-result"
                 checked={voteDifferentFromResult}
