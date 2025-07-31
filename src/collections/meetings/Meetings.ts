@@ -123,8 +123,7 @@ export const Meetings: CollectionConfig = {
       'meetingDate',
       'holdingsLimit',
       'proxyVotingDate',
-      'votesCount',
-      'reportVotesCount',
+      'activity',
       'votesStatus',
       'votesReportStatus',
       'electronicVotingEnabled',
@@ -283,7 +282,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${stockName}-${data?.type ? data?.type : 'נדחתה/בוטלה'}`
+                        return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
                       },
                     ],
                   },
@@ -632,7 +631,7 @@ export const Meetings: CollectionConfig = {
                   defaultValue: 'None',
                   interfaceName: 'VotesStatus',
                   options: [
-                    { label: 'ללא', value: 'None' },
+                    { label: 'ריק', value: 'None' },
                     { label: 'חלקי', value: 'Partial' },
                     { label: 'מלא', value: 'All' },
                   ],
@@ -658,7 +657,7 @@ export const Meetings: CollectionConfig = {
                   interfaceName: 'VotesReportStatus',
                   defaultValue: 'None',
                   options: [
-                    { label: 'ללא', value: 'None' },
+                    { label: 'ריק', value: 'None' },
                     { label: 'חלקי', value: 'Partial' },
                     { label: 'מלא', value: 'All' },
                   ],
@@ -730,6 +729,29 @@ export const Meetings: CollectionConfig = {
                       (companyId: string) => !votedCompanyIds.includes(companyId),
                     )
                     return nonVotedCompanies
+                  },
+                ],
+              },
+            },
+            {
+              name: 'activity',
+              label: 'פעילות',
+              type: 'text',
+              virtual: true,
+              admin: {
+                components: {
+                  Cell: { path: '/admincomponents/icon/CompactMeetingBarCell' },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    // Return the data needed for the component as a JSON string
+                    return JSON.stringify({
+                      companies: data?.companies?.length || 0,
+                      votes: data?.votesCount || 0,
+                      reportedVotes: data?.reportVotesCount || 0,
+                    })
                   },
                 ],
               },

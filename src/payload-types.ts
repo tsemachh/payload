@@ -653,6 +653,7 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
+  activity?: string | null;
   participationReport?: (string | null) | Document;
   votes?: {
     docs?: (string | Vote)[];
@@ -1310,6 +1311,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   companiesNotYetVoted?: T;
+  activity?: T;
   participationReport?: T;
   votes?: T;
   funds?: T;
