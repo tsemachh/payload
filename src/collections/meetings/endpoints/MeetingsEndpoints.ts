@@ -482,7 +482,6 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Process results to standardized format
     let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
-    // NEW: Apply vote-based filtering after processing
     if (voteAgainstRecommendation || voteDifferentFromResult) {
       meetingData = await filterMeetingsByVotes(
         meetingData as MeetingTableDataType[],
@@ -490,17 +489,20 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
         voteDifferentFromResult,
         req,
       )
+      const totalItemsAfterFilter = meetingData.length
+      const totalPagesAfterFilter = Math.ceil(totalItemsAfterFilter / pageSize)
+
+      const paginatedMeetingData = meetingData.slice((page - 1) * pageSize, page * pageSize)
+
+      return createSuccessResponse(
+        paginatedMeetingData as MeetingTableDataType[],
+        totalItemsAfterFilter,
+        totalPagesAfterFilter,
+      )
+    } else {
+      console.log('🚫 Skipping filterMeetingsByVotes - no relevant filters active')
     }
-
-    // NEW: Recalculate totals after filtering
-    const totalItemsAfterFilter = meetingData.length
-    const totalPagesAfterFilter = Math.ceil(totalItemsAfterFilter / pageSize)
-
-    return createSuccessResponse(
-      meetingData as MeetingTableDataType[],
-      totalItemsAfterFilter,
-      totalPagesAfterFilter,
-    )
+    return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
     req.payload.logger.error(`Error in allMeetingsEndpoint: ${JSON.stringify(error)}`)
     return createErrorResponse(error, 'Failed to fetch meetings')
