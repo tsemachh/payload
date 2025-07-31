@@ -674,16 +674,20 @@ export function DataTableStatic<T extends Record<string, any>>({
             (item) => item[column.key as keyof typeof item] === false,
           ).length
           facets[column.key as string] = []
-          facets[column.key as string].push({
-            value: 'true',
-            count: trueCount,
-            icon: <BooleanIcon iconType={true} />,
-          })
-          facets[column.key as string].push({
-            value: 'false',
-            count: falseCount,
-            icon: <BooleanIcon iconType={false} />,
-          })
+          if (trueCount) {
+            facets[column.key as string].push({
+              value: 'true',
+              count: trueCount,
+              icon: <BooleanIcon iconType={true} />,
+            })
+          }
+          if (falseCount) {
+            facets[column.key as string].push({
+              value: 'false',
+              count: falseCount,
+              icon: <BooleanIcon iconType={false} />,
+            })
+          }
         } else if (column.key === 'meetingState') {
           const meetingStateCounts = filteredData.reduce(
             (acc, { meetingState }) => {
@@ -899,7 +903,9 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                   className="flex justify-between gap-2"
                                                   dir="rtl"
                                                 >
-                                                  <span className="text-right text-xs">{option.label}</span>
+                                                  <span className="text-right text-xs">
+                                                    {option.label}
+                                                  </span>
                                                   <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                                     {counts[option.value]}
                                                   </span>
@@ -933,7 +939,9 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           >
                                             <CustomRadio checked={isChecked} size="md" />
                                             <div className="flex justify-between gap-2" dir="rtl">
-                                              <span className="text-right text-xs">{option.label}</span>
+                                              <span className="text-right text-xs">
+                                                {option.label}
+                                              </span>
                                               <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                                 {counts[option.value]}
                                               </span>
@@ -991,7 +999,6 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       ? currentSelectedFilters.length ===
                                           allPossibleValues.length && allPossibleValues.length > 0
                                       : currentSelectedFilters.includes(value)
-
                                     const handleToggle = (checked: boolean) => {
                                       if (isSelectAllOption) {
                                         const newFilters = checked ? allPossibleValues : []

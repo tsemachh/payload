@@ -2,17 +2,17 @@ import React from 'react'
 import { BooleanIcon } from '@/components/ui/icons'
 
 export const pastDateFilterOptions = [
-  { value: 'yesterday', label: 'אתמול' },
-  { value: 'lastWeek', label: 'שבוע שעבר' },
-  { value: 'lastMonth', label: 'חודש שעבר' },
   { value: 'allPast', label: 'בעבר' },
+  { value: 'lastMonth', label: 'חודש שעבר' },
+  { value: 'lastWeek', label: 'שבוע שעבר' },
+  { value: 'yesterday', label: 'אתמול' },
 ]
 
 export const futureDateFilterOptions = [
-  { value: 'today', label: 'היום' },
-  { value: 'nextWeek', label: 'השבוע' },
-  { value: 'nextMonth', label: 'החודש' },
   { value: 'allFuture', label: 'בעתיד' },
+  { value: 'nextMonth', label: 'החודש' },
+  { value: 'nextWeek', label: 'השבוע' },
+  { value: 'today', label: 'היום' },
 ]
 
 // Create arrays from the types
