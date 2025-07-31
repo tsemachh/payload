@@ -739,6 +739,7 @@ export const Meetings: CollectionConfig = {
               type: 'text',
               virtual: true,
               admin: {
+                hidden: true,
                 components: {
                   Cell: { path: '/admincomponents/icon/CompactMeetingBarCell' },
                 },
