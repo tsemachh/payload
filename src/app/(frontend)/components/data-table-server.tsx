@@ -463,7 +463,7 @@ export function DataTableServer<T extends Record<string, any>>({
       if (column.filterable) {
         const staticOptions = getStaticFilterOptions(column.key as string, column.type)
         facets[column.key as string] = [
-          ...(staticOptions.length > 1 ? [{ value: selectAll }] : []),
+          ...(staticOptions.length > 1 && column.type != 'boolean' ? [{ value: selectAll }] : []),
           ...staticOptions,
         ]
       }
