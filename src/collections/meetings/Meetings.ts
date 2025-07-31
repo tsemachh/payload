@@ -124,8 +124,6 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'proxyVotingDate',
       'activity',
-      'votesStatus',
-      'votesReportStatus',
       'electronicVotingEnabled',
       'invitationLink',
     ],
