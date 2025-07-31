@@ -14,8 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -88,6 +86,8 @@ export function DataTableServer<T extends Record<string, any>>({
   columnsOption = true,
   searchOption = true,
   filterOption = true,
+  selectAll = 'בחר הכל',
+  removeAll = 'הסר הכל',
 }: DataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
@@ -462,7 +462,10 @@ export function DataTableServer<T extends Record<string, any>>({
     columns.forEach((column) => {
       if (column.filterable) {
         const staticOptions = getStaticFilterOptions(column.key as string, column.type)
-        facets[column.key as string] = staticOptions
+        facets[column.key as string] = [
+          ...(staticOptions.length > 1 ? [{ value: selectAll }] : []),
+          ...staticOptions,
+        ]
       }
     })
 
@@ -624,89 +627,9 @@ export function DataTableServer<T extends Record<string, any>>({
                               }}
                             >
                               {column.type === 'datetime' ? (
-                                <div className="flex flex-col">
-                                  <div className="flex">
-                                    {/* Past dates column */}
-                                    <div className="p-2">
-                                      {pastDateFilterOptions.map((option) => {
-                                        const isChecked =
-                                          dateFilters[String(column.key)]?.past === option.value
-                                        return (
-                                          <DropdownMenuCheckboxItem
-                                            key={option.value}
-                                            checked={isChecked}
-                                            onCheckedChange={(checked) => {
-                                              handleDateFilter(
-                                                String(column.key),
-                                                option.value,
-                                                checked,
-                                              )
-                                            }}
-                                            className="flex items-center justify-between py-2 remove-checked"
-                                            onSelect={(e) => e.preventDefault()}
-                                          >
-                                            <CustomRadio checked={isChecked} size="md" />
-                                            <div className="flex justify-between gap-2" dir="rtl">
-                                              <span className="text-right">{option.label}</span>
-                                            </div>
-                                          </DropdownMenuCheckboxItem>
-                                        )
-                                      })}
-                                    </div>
-
-                                    <div className="border-r border-gray-200 mx-2"></div>
-
-                                    {/* Future dates column */}
-                                    <div className="p-2">
-                                      {futureDateFilterOptions.map((option) => {
-                                        const isChecked =
-                                          dateFilters[String(column.key)]?.future === option.value
-                                        return (
-                                          <DropdownMenuCheckboxItem
-                                            key={option.value}
-                                            checked={isChecked}
-                                            onCheckedChange={(checked) => {
-                                              handleDateFilter(
-                                                String(column.key),
-                                                option.value,
-                                                checked,
-                                              )
-                                            }}
-                                            className="flex items-center justify-between py-2 remove-checked"
-                                            onSelect={(e) => e.preventDefault()}
-                                          >
-                                            <CustomRadio checked={isChecked} size="md" />
-                                            <div className="flex justify-between gap-2" dir="rtl">
-                                              <span className="text-right">{option.label}</span>
-                                            </div>
-                                          </DropdownMenuCheckboxItem>
-                                        )
-                                      })}
-                                    </div>
-                                  </div>
-
-                                  {/* Empty date option */}
-                                  <div className="p-2 border-t border-gray-200 mt-2">
-                                    <DropdownMenuCheckboxItem
-                                      checked={dateFilters[String(column.key)]?.empty}
-                                      onSelect={(e) => e.preventDefault()}
-                                      onCheckedChange={(checked) => {
-                                        handleDateFilter(String(column.key), 'empty', checked)
-                                      }}
-                                      className="flex items-center justify-between py-2 remove-checked"
-                                    >
-                                      <CustomRadio
-                                        checked={dateFilters[String(column.key)]?.empty}
-                                        size="md"
-                                      />
-                                      <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">{emptyDateOption.label}</span>
-                                      </div>
-                                    </DropdownMenuCheckboxItem>
-                                  </div>
-
+                                <div>
                                   {/* Custom date range option */}
-                                  <div className="p-2 border-t border-gray-200">
+                                  <div className="p-2 border-t border-gray-200 w-[180px]">
                                     <DropdownMenuCheckboxItem
                                       checked={dateFilters[String(column.key)]?.custom || false}
                                       onSelect={(e) => e.preventDefault()}
@@ -729,29 +652,78 @@ export function DataTableServer<T extends Record<string, any>>({
                                         }
                                       />
                                       <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">תאריך מותאם אישית </span>
+                                        <span className="text-right text-xs">מותאם אישית </span>
                                       </div>
                                     </DropdownMenuCheckboxItem>
 
                                     <div className="mt-3">
                                       {/* Date range pickers in same row */}
-                                      <div className="flex gap-3 ">
-                                        {/* End date picker */}
-                                        <div className="flex-1">
-                                          <label className="text-sm font-medium text-right block mb-1">
-                                            תאריך סיום
+                                      <div className="flex flex-col space-y-3">
+                                        {/* Start date picker */}
+                                        <div className="flex flex-row-reverse items-center gap-2">
+                                          <label className="text-right text-xs ml-auto">
+                                            החל מ
                                           </label>
                                           <Popover>
                                             <PopoverTrigger asChild>
                                               <Button
                                                 variant="outline"
                                                 className={cn(
-                                                  'w-full justify-start text-right font-normal text-sm',
+                                                  'text-left font-normal text-sm w-auto',
+                                                  !dateFilters[String(column.key)]?.customDate
+                                                    ?.startDate && 'text-muted-foreground',
+                                                )}
+                                              >
+                                                <CalendarIcon className="mr-2 h-2 w-2" />
+                                                {dateFilters[String(column.key)]?.customDate
+                                                  ?.startDate ? (
+                                                  format(
+                                                    dateFilters[String(column.key)].customDate
+                                                      .startDate!,
+                                                    'dd/MM/yy',
+                                                  )
+                                                ) : (
+                                                  <span className="text-xs">בחר</span>
+                                                )}
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                              <Calendar
+                                                mode="single"
+                                                selected={
+                                                  dateFilters[String(column.key)]?.customDate
+                                                    ?.startDate
+                                                }
+                                                onSelect={(date) => {
+                                                  const currentEndDate =
+                                                    dateFilters[String(column.key)]?.customDate
+                                                      ?.endDate
+                                                  if (date || currentEndDate) {
+                                                    updateCustomDate(String(column.key), {
+                                                      startDate: date || undefined,
+                                                      endDate: currentEndDate,
+                                                    })
+                                                  }
+                                                }}
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
+
+                                        {/* End date picker */}
+                                        <div className="flex flex-row-reverse items-center gap-2">
+                                          <label className="text-right text-xs  ml-auto">עד</label>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                variant="outline"
+                                                className={cn(
+                                                  'justify-start text-right font-normal text-sm w-auto',
                                                   !dateFilters[String(column.key)]?.customDate
                                                     .endDate && 'text-muted-foreground',
                                                 )}
                                               >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                <CalendarIcon className="mr-2 h-2 w-2" />
                                                 {dateFilters[String(column.key)]?.customDate
                                                   .endDate ? (
                                                   format(
@@ -760,7 +732,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                                     'dd/MM/yy',
                                                   )
                                                 ) : (
-                                                  <span>בחר</span>
+                                                  <span className="text-xs">בחר</span>
                                                 )}
                                               </Button>
                                             </PopoverTrigger>
@@ -794,108 +766,91 @@ export function DataTableServer<T extends Record<string, any>>({
                                             </PopoverContent>
                                           </Popover>
                                         </div>
-                                        {/* Start date picker */}
-                                        <div className="flex-1">
-                                          <label className="text-sm font-medium text-right block mb-1">
-                                            תאריך התחלה{' '}
-                                          </label>
-                                          <Popover>
-                                            <PopoverTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                className={cn(
-                                                  'w-full justify-start text-right font-normal text-sm',
-                                                  !dateFilters[String(column.key)]?.customDate
-                                                    .startDate && 'text-muted-foreground',
-                                                )}
-                                              >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {dateFilters[String(column.key)]?.customDate
-                                                  .startDate ? (
-                                                  format(
-                                                    dateFilters[String(column.key)].customDate
-                                                      .startDate!,
-                                                    'dd/MM/yy',
-                                                  )
-                                                ) : (
-                                                  <span>בחר</span>
-                                                )}
-                                              </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                              <Calendar
-                                                mode="single"
-                                                selected={
-                                                  dateFilters[String(column.key)]?.customDate
-                                                    .startDate
-                                                }
-                                                onSelect={(date) => {
-                                                  const currentEndDate =
-                                                    dateFilters[String(column.key)]?.customDate
-                                                      .endDate
-                                                  if (date || currentEndDate) {
-                                                    updateCustomDate(String(column.key), {
-                                                      startDate: date || undefined,
-                                                      endDate: currentEndDate,
-                                                    })
-                                                  }
-                                                }}
-                                              />
-                                            </PopoverContent>
-                                          </Popover>
-                                        </div>
                                       </div>
                                     </div>
+                                  </div>
+                                  {/* Empty date option */}
+                                  <div className="p-2 border-t border-gray-200 mt-2">
+                                    <DropdownMenuCheckboxItem
+                                      checked={dateFilters[String(column.key)]?.empty}
+                                      onSelect={(e) => e.preventDefault()}
+                                      onCheckedChange={(checked) => {
+                                        handleDateFilter(String(column.key), 'empty', checked)
+                                      }}
+                                      className="flex items-center justify-between py-2 remove-checked"
+                                    >
+                                      <CustomRadio
+                                        checked={dateFilters[String(column.key)]?.empty}
+                                        size="md"
+                                      />
+                                      <div className="flex justify-between gap-2" dir="rtl">
+                                        <span className="text-right text-xs">
+                                          {emptyDateOption.label}
+                                        </span>
+                                      </div>
+                                    </DropdownMenuCheckboxItem>
                                   </div>
                                 </div>
                               ) : (
                                 facetedFiltersStatic[column.key as string]?.map(
-                                  ({ value, icon, translate }: FacetedFilterItemServer) => (
-                                    <DropdownMenuCheckboxItem
-                                      key={value}
-                                      checked={
-                                        !filters[column.key as string] ||
-                                        filters[column.key as string].includes(value)
-                                      }
-                                      onCheckedChange={(checked) => {
-                                        const currentFilters = filters[column.key as string] || []
-                                        const newFilters = checked
-                                          ? [...currentFilters, value]
-                                          : currentFilters.filter((v: any) => v !== value)
+                                  ({ value, icon, translate }: FacetedFilterItemServer) => {
+                                    const isSelectAllOption = value === selectAll
+                                    const allPossibleValues = facetedFiltersStatic[
+                                      column.key as string
+                                    ]
+                                      .map((item) => item.value)
+                                      .filter((v) => v !== selectAll)
+                                    const currentSelectedFilters =
+                                      filters[column.key as string] || []
+
+                                    const isChecked = isSelectAllOption
+                                      ? currentSelectedFilters.length ===
+                                          allPossibleValues.length && allPossibleValues.length > 0
+                                      : currentSelectedFilters.includes(value)
+                                    const handleToggle = (checked: boolean) => {
+                                      if (isSelectAllOption) {
+                                        const newFilters = checked ? allPossibleValues : []
                                         handleFilter(String(column.key), newFilters)
-                                      }}
-                                      className="flex items-center justify-between py-2 remove-checked"
-                                      onSelect={(e) => e.preventDefault()}
-                                    >
-                                      <Checkbox
-                                        checked={
-                                          !filters[column.key as string] ||
-                                          filters[column.key as string].includes(value)
-                                        }
-                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                      />
-                                      <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">
-                                          {icon ? icon : translate ? translate : value}
-                                        </span>
-                                      </div>
-                                    </DropdownMenuCheckboxItem>
-                                  ),
+                                      } else {
+                                        const newFilters = checked
+                                          ? [...currentSelectedFilters, value]
+                                          : currentSelectedFilters.filter(
+                                              (v: string) => v !== value,
+                                            )
+                                        handleFilter(String(column.key), newFilters)
+                                      }
+                                    }
+                                    return (
+                                      <DropdownMenuCheckboxItem
+                                        key={value}
+                                        checked={isChecked}
+                                        onCheckedChange={handleToggle}
+                                        className="flex items-center justify-between py-2 remove-checked"
+                                        onSelect={(e) => e.preventDefault()}
+                                      >
+                                        <Checkbox
+                                          checked={isChecked}
+                                          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                        />
+                                        <div className="flex justify-between gap-2" dir="rtl">
+                                          <span
+                                            className="text-right text-xs"
+                                            style={isSelectAllOption ? { fontWeight: 'bold' } : {}}
+                                          >
+                                            {icon
+                                              ? icon
+                                              : translate
+                                                ? translate
+                                                : isSelectAllOption && isChecked
+                                                  ? removeAll
+                                                  : value}
+                                          </span>
+                                        </div>
+                                      </DropdownMenuCheckboxItem>
+                                    )
+                                  },
                                 )
                               )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="justify-center text-center"
-                                onClick={() => {
-                                  if (column.type === 'datetime') {
-                                    handleDateFilter(String(column.key), '', false)
-                                  } else {
-                                    handleFilter(String(column.key), 'all', column.type)
-                                  }
-                                }}
-                              >
-                                הסר סינון
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}

@@ -78,6 +78,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   tableHeightOffset = 200,
   isLoading = false,
   selectAll = 'בחר הכל',
+  removeAll = 'הסר הכל',
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -1030,7 +1031,13 @@ export function DataTableStatic<T extends Record<string, any>>({
                                             className="text-right text-xs"
                                             style={isSelectAllOption ? { fontWeight: 'bold' } : {}}
                                           >
-                                            {icon ? icon : translate ? translate : value}
+                                            {icon
+                                              ? icon
+                                              : translate
+                                                ? translate
+                                                : isSelectAllOption && isChecked
+                                                  ? removeAll
+                                                  : value}
                                           </span>
                                           <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                             {count}

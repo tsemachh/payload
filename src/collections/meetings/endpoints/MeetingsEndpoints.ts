@@ -142,41 +142,15 @@ function createDateFilters(dateFilters: Record<string, DateFilterType>) {
   const conditions: any[] = []
 
   Object.entries(dateFilters).forEach(([field, filter]) => {
-    const { past, future, empty, custom, customDate } = filter
+    const { empty, custom, customDate } = filter
 
     // Skip if all options are selected (no actual filtering)
-    if (past === 'allPast' && future === 'allFuture' && empty && !custom) {
+    if (empty && !custom) {
       return
     }
 
     const dbField = getDbFieldName(field)
     const dateConditions: any[] = []
-
-    // Handle past dates
-    if (past) {
-      const dateRange = getDateRangeForFilter(past)
-      if (dateRange) {
-        dateConditions.push({
-          [dbField]: {
-            greater_than_equal: dateRange.start.toISOString(),
-            less_than_equal: dateRange.end.toISOString(),
-          },
-        })
-      }
-    }
-
-    // Handle future dates
-    if (future) {
-      const dateRange = getDateRangeForFilter(future)
-      if (dateRange) {
-        dateConditions.push({
-          [dbField]: {
-            greater_than_equal: dateRange.start.toISOString(),
-            less_than_equal: dateRange.end.toISOString(),
-          },
-        })
-      }
-    }
 
     // Handle empty dates
     if (!empty && dateConditions.length > 0) {
@@ -222,45 +196,6 @@ function createDateFilters(dateFilters: Record<string, DateFilterType>) {
     }
   })
   return conditions
-}
-
-/**
- * Helper function to get date range for filter options
- */
-function getDateRangeForFilter(option: string) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  switch (option) {
-    case 'yesterday':
-      return { start: yesterday, end: yesterday }
-    case 'lastWeek':
-      const lastWeekStart = new Date(today)
-      lastWeekStart.setDate(lastWeekStart.getDate() - 7)
-      return { start: lastWeekStart, end: yesterday }
-    case 'lastMonth':
-      const lastMonthStart = new Date(today)
-      lastMonthStart.setMonth(lastMonthStart.getMonth() - 1)
-      return { start: lastMonthStart, end: yesterday }
-    case 'today':
-      return { start: today, end: today }
-    case 'nextWeek':
-      const nextWeekEnd = new Date(today)
-      nextWeekEnd.setDate(nextWeekEnd.getDate() + 7)
-      return { start: today, end: nextWeekEnd }
-    case 'nextMonth':
-      const nextMonthEnd = new Date(today)
-      nextMonthEnd.setMonth(nextMonthEnd.getMonth() + 1)
-      return { start: today, end: nextMonthEnd }
-    case 'allPast':
-      return { start: new Date(-8640000000000000), end: yesterday }
-    case 'allFuture':
-      return { start: today, end: new Date(8640000000000000) }
-    default:
-      return null
-  }
 }
 
 /**
