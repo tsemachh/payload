@@ -48,5 +48,8 @@ export interface ParticipationTableDataType {
   stockSymbol: string
   stockTradable: boolean
   stockType: string
+  fundName: string | null // Assuming this is a string or null
   votingPercentage: number | null
+  currentCompany: any
+  votes: any
 }

@@ -246,6 +246,7 @@ export const defaultVisibleColumns = [
   'electronicVotingEnabled',
   'committeeInitiated',
   'researchDocuments',
+  'companyName',
 ]
 
 export const unSortAbleColumnsOnServer = [
@@ -254,6 +255,7 @@ export const unSortAbleColumnsOnServer = [
   'percentageHolding',
   'holdingValueInMillions',
   'select',
+  'companyName',
 ]
 
 export const renderMeetingActions = (row: MeetingTableDataType) => {

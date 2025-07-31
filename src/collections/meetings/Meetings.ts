@@ -755,7 +755,6 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
-              maxDepth: 1,
               admin: {
                 allowCreate: false,
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
