@@ -6,7 +6,7 @@ import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
-import { futureDateFilterOptions, pastDateFilterOptions } from '../filterConst'
+import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 
 export function MeetingsTableServer() {
   const [currentPage, setCurrentPage] = useState(1)

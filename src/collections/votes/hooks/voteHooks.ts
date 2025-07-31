@@ -1,8 +1,35 @@
 import {
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
   type CollectionBeforeValidateHook,
   ValidationError,
 } from 'payload'
+import { Vote } from '@/payload-types'
+
+import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
+
+/**
+ * Hook to handle vote deletion and update meeting counts accordingly
+ * Note: This hook should be used as a CollectionAfterDeleteHook, not CollectionAfterChangeHook
+ */
+export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ doc, req }) => {
+  // Only process if we have a meeting ID and the vote was published
+  if (!doc.meeting || typeof doc.meeting !== 'string' || doc._status !== 'published') {
+    return
+  }
+
+  const meetingId = doc.meeting
+
+  try {
+    await recalculateMeetingVoteCounts(req, meetingId) // Decrement the vote count since a published vote was deleted
+  } catch (error) {
+    req.payload.logger.error(
+      `Error updating meeting vote counts after deletion for meeting ${meetingId}:`,
+      error,
+    )
+  }
+}
 
 export const updateReportedAndMeetingHoldings: CollectionBeforeChangeHook = async ({
   data,
@@ -66,6 +93,29 @@ export const updateReportedAndMeetingHoldings: CollectionBeforeChangeHook = asyn
   }
 
   return data
+}
+
+/**
+ * Hook to recalculate meeting vote counts when reported status changes
+ */
+export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vote> = async ({
+  doc,
+  previousDoc,
+  req,
+}) => {
+  const reportedChanged = doc.reported !== previousDoc?.reported
+
+  // Recalculate meeting vote counts when reported status changes
+  if (doc._status === 'published' && reportedChanged && doc.meeting) {
+    try {
+      await recalculateMeetingVoteCounts(req, doc.meeting as string)
+    } catch (error) {
+      req.payload.logger.error(
+        `Error recalculating meeting vote counts for meeting ${doc.meeting}:`,
+        error,
+      )
+    }
+  }
 }
 
 export const validateOwnedQuantityWhenUnauthorized: CollectionBeforeValidateHook = async ({

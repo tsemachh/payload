@@ -9,7 +9,12 @@ import {
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
-import { updateReportedAndMeetingHoldings, validateOwnedQuantityWhenUnauthorized } from './hooks'
+import {
+  handleVoteDeletionHook,
+  recalculateVoteCountsOnReportedChange,
+  updateReportedAndMeetingHoldings,
+  validateOwnedQuantityWhenUnauthorized,
+} from './hooks/voteHooks'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
@@ -390,6 +395,8 @@ export const Votes: CollectionConfig = {
   hooks: {
     beforeChange: [updateReportedAndMeetingHoldings],
     beforeValidate: [validateOwnedQuantityWhenUnauthorized],
+    afterChange: [recalculateVoteCountsOnReportedChange],
+    afterDelete: [handleVoteDeletionHook],
   },
   endpoints: [
     {

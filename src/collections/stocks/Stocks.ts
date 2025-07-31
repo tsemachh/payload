@@ -4,6 +4,7 @@ import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEnd
 import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { stockTypeOptions } from '@/consts/otipns-const'
+import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 
 const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
@@ -137,7 +138,8 @@ export const Stocks: CollectionConfig = {
                   label: 'סוג',
                   type: 'select',
                   interfaceName: 'StockType',
-                  options:stockTypeOptions,
+                  required: true,
+                  options: stockTypeOptions,
                   index: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
@@ -158,11 +160,7 @@ export const Stocks: CollectionConfig = {
                   label: 'מקור',
                   type: 'select',
                   interfaceName: 'StockOrigin',
-                  options: [
-                    { label: 'בורסה', value: 'TASE' },
-                    { label: 'חו״ל', value: 'Foreign' },
-                    { label: 'פרטי', value: 'Private' },
-                  ],
+                  options: stockOriginOptions,
                   index: true,
                   required: true,
                   defaultValue: 'TASE',

@@ -43,8 +43,8 @@ import {
   isValidDate,
 } from '../helpers/utils-data-table'
 import { Checkbox } from './ui/checkbox'
-import { MeetingState } from '@/payload-types'
-import { meetingStateMap } from '../helpers/maps'
+import { MeetingState, StockOrigin } from '@/payload-types'
+import { meetingStateMap, stockOriginMap } from '../helpers/maps'
 import {
   Column,
   DataTableProps,
@@ -228,6 +228,12 @@ export function DataTableStatic<T extends Record<string, any>>({
         return (
           meetingStateMap[item.meetingState as Exclude<MeetingState, null>] ||
           String(item.meetingState)
+        )
+      }
+      // Handling the meeting state field
+      if (columnKey === 'stockOrigin' && item.stockOrigin) {
+        return (
+          stockOriginMap[item.stockOrigin as Exclude<StockOrigin, null>] || String(item.stockOrigin)
         )
       }
 
@@ -695,6 +701,23 @@ export function DataTableStatic<T extends Record<string, any>>({
               value: state,
               count,
               translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
+            }),
+          )
+        } else if (column.key === 'stockOrigin') {
+          const stockOriginCounts = filteredData.reduce(
+            (acc, { stockOrigin }) => {
+              if (!stockOrigin) return acc // Skip null values
+              acc[stockOrigin as keyof typeof acc] = (acc[stockOrigin as keyof typeof acc] || 0) + 1
+              return acc
+            },
+            {} as Record<Exclude<MeetingState, null>, number>,
+          )
+
+          facets[column.key as string] = Object.entries(stockOriginCounts).map(
+            ([state, count]) => ({
+              value: state,
+              count,
+              translate: stockOriginMap[state as Exclude<StockOrigin, null>] || state,
             }),
           )
         } else {

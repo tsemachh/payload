@@ -172,3 +172,8 @@ export type CustomDate = {
   startDate?: Date
   endDate?: Date
 }
+
+export type selectOptionType = {
+  value: string
+  label: string
+}

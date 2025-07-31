@@ -26,6 +26,7 @@ import {
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
+import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -103,6 +104,8 @@ export const Meetings: CollectionConfig = {
       [
         { name: 'resultsConfirmationStatus' },
         { name: 'electronicVotingEnabled' },
+        { name: 'votesStatus' },
+        { name: 'votesReportStatus' },
         { name: '_status' },
       ],
     ],
@@ -121,13 +124,20 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'proxyVotingDate',
       'votesCount',
-      'reportedVotesCount',
+      'reportVotesCount',
+      'votesStatus',
+      'votesReportStatus',
       'electronicVotingEnabled',
       'invitationLink',
     ],
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
+    },
+    components: {
+      edit: {
+        beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
+      },
     },
   },
   versions: {
@@ -183,6 +193,7 @@ export const Meetings: CollectionConfig = {
                   index: true,
                   type: 'select',
                   interfaceName: 'MeetingType',
+                  required: true,
                   options: meetingTypeOptions,
                   admin: {
                     width: '150px',
@@ -286,6 +297,7 @@ export const Meetings: CollectionConfig = {
                   name: 'state',
                   label: 'מצב',
                   type: 'select',
+                  required: true,
                   hooks: {
                     beforeChange: [
                       ({ siblingData, value }) => {
@@ -601,28 +613,61 @@ export const Meetings: CollectionConfig = {
           label: 'הצבעות',
           fields: [
             {
-              name: 'votesCount',
-              label: 'הצבעות',
-              type: 'text',
-              admin: {
-                readOnly: true,
-                width: '600px',
-                components: {
-                  Cell: {
-                    path: '/admincomponents/icon/VotingCountsStatusCell',
-                  },
-                  Field: {
-                    path: '/admincomponents/icon/VotingCountsStatusTextField',
+              type: 'row',
+              fields: [
+                {
+                  name: 'votesCount',
+                  label: 'מספר הצבעות',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    readOnly: true,
+                    width: '150px',
                   },
                 },
-              },
-              hooks: {
-                afterRead: [
-                  ({ data }) => {
-                    return `${data?.votes?.docs?.length || 0}/${data?.companies?.length || 0}`
+                {
+                  name: 'votesStatus',
+                  label: 'סטטוס הצבעות',
+                  type: 'select',
+                  defaultValue: 'None',
+                  interfaceName: 'VotesStatus',
+                  options: [
+                    { label: 'ללא', value: 'None' },
+                    { label: 'חלקי', value: 'Partial' },
+                    { label: 'מלא', value: 'All' },
+                  ],
+                  admin: {
+                    readOnly: true,
+                    width: '150px',
                   },
-                ],
-              },
+                },
+                {
+                  name: 'reportVotesCount',
+                  label: 'מספר הצבעות בפועל',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    readOnly: true,
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'votesReportStatus',
+                  label: 'סטטוס הצבעות בפועל',
+                  type: 'select',
+                  interfaceName: 'VotesReportStatus',
+                  defaultValue: 'None',
+                  options: [
+                    { label: 'ללא', value: 'None' },
+                    { label: 'חלקי', value: 'Partial' },
+                    { label: 'מלא', value: 'All' },
+                  ],
+                  admin: {
+                    readOnly: true,
+                    width: '150px',
+                  },
+                },
+              ],
             },
             {
               type: 'relationship',
@@ -701,17 +746,7 @@ export const Meetings: CollectionConfig = {
                 },
               },
             },
-            {
-              name: 'reportedVotesCount',
-              label: 'דיווחים',
-              type: 'text',
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ReportedVotesStatusCell' },
-                },
-              },
-            },
+
             {
               name: 'votes',
               label: 'הצבעות',
@@ -719,6 +754,7 @@ export const Meetings: CollectionConfig = {
               collection: 'votes',
               on: 'meeting',
               defaultLimit: 0,
+              maxDepth: 1,
               maxDepth: 1,
               admin: {
                 allowCreate: false,
@@ -837,41 +873,6 @@ export const Meetings: CollectionConfig = {
   ],
 
   hooks: {
-    afterRead: [
-      async ({ doc, req }) => {
-        if (!doc) {
-          return { reportedVotesCount: '0/0' }
-        }
-        if (doc?.votes?.docs?.length) {
-          const voteIds = doc.votes.docs.map((vote: any) => vote.id)
-          try {
-            const votesResponse = await req.payload.find({
-              collection: 'votes',
-              where: {
-                and: [{ id: { in: voteIds } }, { _status: { equals: 'published' } }],
-              },
-              select: {
-                id: true,
-                reported: true,
-              },
-              depth: 0,
-              limit: 0,
-            })
-            const totalVotes = votesResponse.docs.length
-
-            const reportedVotes = votesResponse.docs.filter((vote) => vote.reported === true).length
-
-            doc.reportedVotesCount = `${reportedVotes}/${totalVotes}`
-          } catch (error) {
-            console.error('Error fetching votes for reportedVotesCount:', error)
-            doc.reportedVotesCount = '0/0'
-          }
-        } else {
-          doc.reportedVotesCount = '0/0'
-        }
-        return doc
-      },
-    ],
     afterChange: [
       async ({ req, doc, previousDoc, operation }) => {
         // Handle dual stock creation
@@ -942,6 +943,7 @@ export const Meetings: CollectionConfig = {
       handleRecommendationReason,
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
+      updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
     ],
   },
   endpoints: [

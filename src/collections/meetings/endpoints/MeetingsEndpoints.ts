@@ -96,6 +96,10 @@ function createRegularFilters(filters: Record<string, string[]>) {
         conditions.push({
           'stock.type': { in: values },
         })
+      } else if (field === 'stockOrigin') {
+        conditions.push({
+          'stock.origin': { in: values },
+        })
       } else if (field === 'meetingType') {
         conditions.push({
           type: { in: values.length ? values : [null] },
