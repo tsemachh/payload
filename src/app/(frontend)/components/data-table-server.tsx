@@ -27,7 +27,7 @@ import {
   Filter,
   FilterX,
   CalendarIcon,
-} from 'lucide-react' // Added ChevronDown, ChevronLeft
+} from 'lucide-react'
 import React from 'react'
 import { cn } from '@/lib/utils'
 import {
@@ -81,8 +81,8 @@ export function DataTableServer<T extends Record<string, any>>({
   serverSideProcessing = false,
   initialSearchTerm = '',
   tableHeightOffset = 250,
-  renderExpandedRowContent, // Added prop
-  expanderColumnKey, // Added prop
+  renderExpandedRowContent,
+  expanderColumnKey,
   columnsOption = true,
   searchOption = true,
   filterOption = true,
@@ -99,7 +99,6 @@ export function DataTableServer<T extends Record<string, any>>({
   }>({})
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [inputSearchTerm, setInputSearchTerm] = useState(initialSearchTerm)
-  // State for generic row expansion (used for agendas)
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<{ [key: string]: any }>(() => {
     const initialFilters: { [key: string]: any } = {}
@@ -132,13 +131,11 @@ export function DataTableServer<T extends Record<string, any>>({
   })
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
-  // Update searchTerm when initialSearchTerm changes
   useEffect(() => {
     setSearchTerm(initialSearchTerm)
-    setInputSearchTerm(initialSearchTerm) // Synchronize inputSearchTerm as well
+    setInputSearchTerm(initialSearchTerm)
   }, [initialSearchTerm])
 
-  // Effect to synchronize inputSearchTerm with searchTerm when searchTerm changes (e.g., clear button)
   useEffect(() => {
     if (searchTerm === '') {
       setInputSearchTerm('')
@@ -146,7 +143,6 @@ export function DataTableServer<T extends Record<string, any>>({
   }, [searchTerm])
 
   useEffect(() => {
-    // Load column visibility from localStorage
     const storageKey = `columnVisibility-${tableId}`
     const loadColumnVisibility = () => {
       const storedColumns = localStorage.getItem(storageKey)
@@ -159,7 +155,6 @@ export function DataTableServer<T extends Record<string, any>>({
           const parsedColumns = JSON.parse(storedColumns)
           const validColumns = columns.map((col) => String(col.key))
           const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
-          // Add alwaysVisible columns if they're not already in localStorage
           const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
           if (mergedColumns.length !== parsedColumns.length) {
             localStorage.setItem(storageKey, JSON.stringify(mergedColumns))
@@ -178,39 +173,32 @@ export function DataTableServer<T extends Record<string, any>>({
     }
 
     const setDefaultVisibility = () => {
-      // Always-visible column keys
       const alwaysVisible = columns
         .filter((col) => col.isAlwaysVisible)
         .map((col) => String(col.key))
-
-      // Merge defaultVisibleColumns with alwaysVisible, removing duplicates
       const mergedVisible = Array.from(
         new Set([...defaultVisibleColumns.map(String), ...alwaysVisible]),
       )
-      // Set visibility for each column
       const newVisibility = Object.fromEntries(
         columns.map((col) => [String(col.key), mergedVisible.includes(String(col.key))]),
       )
-
       setColumnVisibility(newVisibility)
       localStorage.setItem(storageKey, JSON.stringify(mergedVisible))
     }
 
     loadColumnVisibility()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columns, data, tableId])
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     pagination?.onPageChange?.(page)
   }
 
-  // Handle page size change
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize)
     pagination?.onPageSizeChange?.(newPageSize)
   }
+
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
@@ -219,12 +207,20 @@ export function DataTableServer<T extends Record<string, any>>({
     direction: defaultSortDirection,
   })
 
-  // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
     return columns.filter((column) => columnVisibility[column.key as string])
   }, [columns, columnVisibility])
 
-  // Toggle column visibility
+  const columnWidths = useMemo(() => {
+    const widths: { [key: string]: string } = {}
+    visibleColumns.forEach((column) => {
+      widths[String(column.key)] = `${
+        calculateColumnWidths(column.minWidth, visibleColumns.length, column.width) + 40
+      }px`
+    })
+    return widths
+  }, [visibleColumns])
+
   const toggleColumnVisibility = useCallback(
     (key: string) => {
       setColumnVisibility((prev) => {
@@ -239,32 +235,25 @@ export function DataTableServer<T extends Record<string, any>>({
     [tableId],
   )
 
-  // Filter and sort data  הלוגיקה בקליינט רחלי פרוש בבדיקה אפ לעשות משהו כתוב אפ האמפטי שווה true
   const filteredAndSortedData = useMemo(() => {
-    // If server-side processing is enabled, skip client-side filtering and sorting
     return [...data]
   }, [data])
 
-  // Handle sort
   const handleSort = useCallback(
     (key: keyof T) => {
       if (unSortAbleColumnsOnServer.includes(key as string)) return
       if (onServerSort) {
-        // Update the sort config UI
         setSortConfig((current) => {
           const newDirection =
             current.key === key ? (current.direction === 'asc' ? 'desc' : 'asc') : 'asc'
           return { key, direction: newDirection }
         })
-
-        // Use server-side sorting
         onServerSort(key as string)
       }
     },
     [onServerSort],
   )
 
-  // Handle filter
   const handleFilter = useCallback(
     (key: string, value: any, type?: string) => {
       if (serverSideProcessing && onServerFilter) {
@@ -284,7 +273,6 @@ export function DataTableServer<T extends Record<string, any>>({
         setFilters((prev) => {
           const newFilters = { ...prev }
           if (value === 'all') {
-            // Initialize all options as checked when resetting the filter
             newFilters[key] = getStaticFilterOptions(key, type).map((e) => e.value)
           } else if (Array.isArray(value)) {
             newFilters[key] = value
@@ -296,11 +284,9 @@ export function DataTableServer<T extends Record<string, any>>({
     [data, serverSideProcessing, onServerFilter],
   )
 
-  // Handle date filter
   const handleDateFilter = useCallback(
     (columnKey: string, option: string, checked: boolean, customDate?: CustomDate) => {
       if (option === '') {
-        // Clear all filters for this column
         const clearedFilter = {
           past: 'allPast',
           future: 'allFuture',
@@ -308,7 +294,6 @@ export function DataTableServer<T extends Record<string, any>>({
           custom: false,
           customDate: {},
         }
-
         if (onServerDateFilter) {
           onServerDateFilter(columnKey, clearedFilter)
           setDateFilters((prev) => ({
@@ -318,7 +303,6 @@ export function DataTableServer<T extends Record<string, any>>({
         }
         return
       }
-
       if (onServerDateFilter) {
         const currentFilter = dateFilters[columnKey] || {
           past: '',
@@ -355,11 +339,9 @@ export function DataTableServer<T extends Record<string, any>>({
       }))
     }
   }
-  // Reset filters
   const resetFilters = useCallback(() => {
     if (serverSideProcessing) {
       if (isFilterActive) {
-        // Clear all filters
         columns.forEach((column) => {
           if (column.filterable) {
             if (column.type === 'datetime') {
@@ -386,7 +368,6 @@ export function DataTableServer<T extends Record<string, any>>({
     }
   }, [data, columns, isFilterActive, serverSideProcessing, onServerFilter, onServerDateFilter])
 
-  // Highlight search term in text
   const highlightText = useCallback((text: string, highlight: string) => {
     if (!highlight.trim()) {
       return text
@@ -403,7 +384,6 @@ export function DataTableServer<T extends Record<string, any>>({
     )
   }, [])
 
-  // Get sort icon for column header
   const getSortIcon = (columnKey: keyof T) => {
     if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
@@ -414,7 +394,6 @@ export function DataTableServer<T extends Record<string, any>>({
     }
     return null
   }
-  // Toggle generic row expansion (used for agendas)
   const toggleRowExpand = useCallback(
     (rowId: string) => {
       if (!renderExpandedRowContent) return
@@ -431,11 +410,9 @@ export function DataTableServer<T extends Record<string, any>>({
     [renderExpandedRowContent],
   )
 
-  // Get filter icon for column header
   const getFilterIcon = (columnKey: string, columnType: string) => {
     if (!isFilterActive) return null
     const column = columns.find((col) => col.key === columnKey)
-
     if (column?.type === 'datetime') {
       const dateFilter = dateFilters[columnKey]
       if (
@@ -447,7 +424,6 @@ export function DataTableServer<T extends Record<string, any>>({
       }
       return <Filter />
     }
-
     const allOptions = getStaticFilterOptions(columnKey, columnType).map((e) => e.value)
     if (filters[columnKey].length < allOptions.length) {
       return <Filter className="h-4 w-4 " />
@@ -468,10 +444,9 @@ export function DataTableServer<T extends Record<string, any>>({
         ]
       }
     })
-
     return facets
   }, [columns])
-  // Render the data table
+
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
       <div className="flex justify-between items-center space-x-4 space-x-reverse w-full">
@@ -583,18 +558,21 @@ export function DataTableServer<T extends Record<string, any>>({
               maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
             }}
           >
-            <Table className="table-auto w-full border-collapse relative" dir="rtl">
+            <Table className="table-fixed w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
                     <TableHead
                       key={String(column.key)}
                       className={cn('text-right overflow-hidden text-ellipsis')}
+                      style={{
+                        width: columnWidths[String(column.key)],
+                      }}
                     >
                       <div
                         className="flex items-center justify-start"
                         style={{
-                          width: `${calculateColumnWidths(column.minWidth, visibleColumns.length, column.width)}px`,
+                          width: columnWidths[String(column.key)],
                         }}
                       >
                         <span
@@ -628,7 +606,6 @@ export function DataTableServer<T extends Record<string, any>>({
                             >
                               {column.type === 'datetime' ? (
                                 <div>
-                                  {/* Custom date range option */}
                                   <div className="p-2 border-t border-gray-200 w-[180px]">
                                     <DropdownMenuCheckboxItem
                                       checked={dateFilters[String(column.key)]?.custom || false}
@@ -657,9 +634,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                     </DropdownMenuCheckboxItem>
 
                                     <div className="mt-3">
-                                      {/* Date range pickers in same row */}
                                       <div className="flex flex-col space-y-3">
-                                        {/* Start date picker */}
                                         <div className="flex flex-row-reverse items-center gap-2">
                                           <label className="text-right text-xs ml-auto">
                                             החל מ
@@ -710,7 +685,6 @@ export function DataTableServer<T extends Record<string, any>>({
                                           </Popover>
                                         </div>
 
-                                        {/* End date picker */}
                                         <div className="flex flex-row-reverse items-center gap-2">
                                           <label className="text-right text-xs  ml-auto">עד</label>
                                           <Popover>
@@ -769,7 +743,6 @@ export function DataTableServer<T extends Record<string, any>>({
                                       </div>
                                     </div>
                                   </div>
-                                  {/* Empty date option */}
                                   <div className="p-2 border-t border-gray-200 mt-2">
                                     <DropdownMenuCheckboxItem
                                       checked={dateFilters[String(column.key)]?.empty}
@@ -886,7 +859,6 @@ export function DataTableServer<T extends Record<string, any>>({
                             )
                           }}
                         >
-                          {/* Add expander icon for generic expansion (agendas) - only if both props are provided */}
                           {expanderColumnKey === column.key && renderExpandedRowContent && (
                             <span
                               className="inline-flex items-center justify-center ml-2 cursor-pointer"
@@ -922,7 +894,6 @@ export function DataTableServer<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
-                    {/* Render expanded content row (for agendas) - only if renderExpandedRowContent is provided */}
                     {renderExpandedRowContent && expandedRowIds.has(row[idField] as string) && (
                       <TableRow className="">
                         <TableCell
@@ -943,10 +914,8 @@ export function DataTableServer<T extends Record<string, any>>({
                                 key={`company-${uuidv4()}`}
                                 className="bg-muted/40 border-t-0 hover:bg-primary/20"
                               >
-                                {/* Empty cell for companies column */}
                                 <TableCell className="py-2 px-3"></TableCell>
 
-                                {/* Map through visible columns and show relevant company data */}
                                 {visibleColumns.slice(1).map((column, columnIndex) => {
                                   if (column.key in company) {
                                     return (
@@ -1004,10 +973,8 @@ export function DataTableServer<T extends Record<string, any>>({
                                         key={`fund-${uuidv4()}`}
                                         className="bg-muted/70 border-t-0 hover:bg-primary/20"
                                       >
-                                        {/* Empty cell for companies column */}
                                         <TableCell className="py-2 px-6"></TableCell>
 
-                                        {/* Map through visible columns and show relevant fund data */}
                                         {visibleColumns.slice(1).map((column, columnIndex) => {
                                           if (column.key in fund) {
                                             return (
