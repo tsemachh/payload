@@ -74,7 +74,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'marketValue',
-    header: 'שווי שוק (מיליוני ₪)',
+    header: 'שווי שוק \n (מיליוני ₪)',
     type: 'number',
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
@@ -82,7 +82,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
         maximumFractionDigits: 0,
       }).format(marketValue / 1_000_000)
     },
-    minWidth: 80,
+    minWidth: 140,
   },
   {
     key: 'meetingType',
