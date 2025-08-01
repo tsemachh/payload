@@ -527,6 +527,7 @@ interface CompanyNode {
   name: string
   level: 1 | 2 | 3
   companyId?: number
+  privateRegistrationNumbers?: number[]
   children?: CompanyNode[]
 }
 
@@ -638,6 +639,11 @@ async function processCompany(
         updateData.companyId = company.companyId
       }
 
+      // Set privateRegistrationNumber if provided
+      if (company.privateRegistrationNumbers && company.privateRegistrationNumbers.length > 0) {
+        updateData.privateRegistrationNumber = company.privateRegistrationNumbers
+      }
+
       // Set parent company if provided and different from existing
       if (parentId && existingCompany.docs[0].parentCompany !== parentId) {
         updateData.parentCompany = parentId
@@ -661,6 +667,11 @@ async function processCompany(
       // Set companyId if provided
       if (company.companyId) {
         createData.companyId = company.companyId
+      }
+
+      // Set privateRegistrationNumber if provided
+      if (company.privateRegistrationNumbers && company.privateRegistrationNumbers.length > 0) {
+        createData.privateRegistrationNumber = company.privateRegistrationNumbers
       }
 
       const result = await payload.create({

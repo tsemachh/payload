@@ -14,6 +14,7 @@ interface CompanyNode {
   name: string
   level: 1 | 2 | 3
   companyId?: number
+  privateRegistrationNumbers?: number[]
   children?: CompanyNode[]
 }
 
@@ -23,6 +24,7 @@ interface FlatCompany {
   level: 1 | 2 | 3
   parentId?: string
   companyId?: number
+  privateRegistrationNumbers?: number[]
 }
 
 /**
@@ -82,6 +84,72 @@ function getCellValue(worksheet: XLSX.WorkSheet, jsonData: any[], row: number, c
   }
 
   return null
+}
+
+/**
+ * Checks if a cell in column D is part of a merged cell and collects all values from column E
+ * for the rows covered by the merged cell
+ * @param worksheet The worksheet
+ * @param jsonData The JSON data from the worksheet
+ * @param row Row index (0-based)
+ * @returns Array of private registration numbers or undefined
+ */
+function collectPrivateRegistrationNumbers(
+  worksheet: XLSX.WorkSheet,
+  jsonData: any[],
+  row: number,
+  companyId: number | undefined
+): number[] | undefined {
+  if (!companyId) return undefined;
+
+  // Use a Set to store unique registration numbers
+  const registrationNumbersSet = new Set<number>();
+
+  // First, check if the current row has a registration number in column E
+  const currentRowRegNum = getCellValue(worksheet, jsonData, row, 4);
+  if (currentRowRegNum) {
+    const regNumStr = String(currentRowRegNum).trim();
+    if (regNumStr) {
+      // Split by common delimiters and convert to numbers
+      const numbers = regNumStr
+        .split(/[,;\s]+/)
+        .filter(num => num.trim() !== '')
+        .map(num => Number(num.trim()))
+        .filter(num => !isNaN(num));
+
+      // Add to Set to ensure uniqueness
+      numbers.forEach(num => registrationNumbersSet.add(num));
+    }
+  }
+
+  // Now check all rows in the Excel file for the same company ID
+  for (let i = 1; i < jsonData.length; i++) {
+    if (i === row) continue; // Skip the current row as we already processed it
+
+    const rowCompanyId = getCellValue(worksheet, jsonData, i, 3);
+    if (rowCompanyId && Number(rowCompanyId) === companyId) {
+      // This row has the same company ID, collect registration number from column E
+      const regNum = getCellValue(worksheet, jsonData, i, 4);
+      if (regNum) {
+        const regNumStr = String(regNum).trim();
+        if (regNumStr) {
+          // Split by common delimiters and convert to numbers
+          const numbers = regNumStr
+            .split(/[,;\s]+/)
+            .filter(num => num.trim() !== '')
+            .map(num => Number(num.trim()))
+            .filter(num => !isNaN(num));
+
+          // Add to Set to ensure uniqueness
+          numbers.forEach(num => registrationNumbersSet.add(num));
+        }
+      }
+    }
+  }
+
+  // Convert Set back to array
+  const registrationNumbers = Array.from(registrationNumbersSet);
+  return registrationNumbers.length > 0 ? registrationNumbers : undefined;
 }
 
 /**
@@ -160,6 +228,7 @@ async function convertExcelToJson() {
         const colBValue = getCellValue(worksheet, jsonData, i, 1)
         const colCValue = getCellValue(worksheet, jsonData, i, 2)
         const colDValue = getCellValue(worksheet, jsonData, i, 3)
+        const colEValue = getCellValue(worksheet, jsonData, i, 4) // Column E contains private registration numbers
 
         // Process level 1 company (column A)
         if (colAValue && typeof colAValue === 'string' && colAValue.trim() !== '') {
@@ -241,6 +310,10 @@ async function convertExcelToJson() {
           const name = colCValue.trim()
           const companyId = colDValue ? Number(colDValue) : undefined
 
+          // Process private registration numbers from column E
+          // Use the new function to collect all registration numbers for this company ID
+          const privateRegistrationNumbers = collectPrivateRegistrationNumbers(worksheet, jsonData, i, companyId)
+
           // Skip companies named "-"
           if (name !== '-') {
             // Determine the parent based on the rule:
@@ -283,11 +356,12 @@ async function convertExcelToJson() {
                   level: 3 as const,
                   parentId: parentCompany.id,
                   companyId,
+                  privateRegistrationNumbers,
                 }
                 level3Companies.push(level3Company)
                 level3Map.set(key, level3Company)
                 console.log(
-                  `Found new level 3 company: ${name} (parent: ${parentCompany.name}, companyId: ${companyId})`,
+                  `Found new level 3 company: ${name} (parent: ${parentCompany.name}, companyId: ${companyId}, privateRegistrationNumbers: ${privateRegistrationNumbers})`,
                 )
               } else {
                 // If no parent is defined, still add the company but without a parentId
@@ -296,11 +370,12 @@ async function convertExcelToJson() {
                   name,
                   level: 3 as const,
                   companyId,
+                  privateRegistrationNumbers,
                 }
                 level3Companies.push(level3Company)
                 level3Map.set(key, level3Company)
                 console.log(
-                  `Found new level 3 company with no parent: ${name} (companyId: ${companyId})`,
+                  `Found new level 3 company with no parent: ${name} (companyId: ${companyId}, privateRegistrationNumbers: ${privateRegistrationNumbers})`,
                 )
               }
             } else {
@@ -471,6 +546,7 @@ async function convertExcelToJson() {
           name: level3.name,
           level: level3.level,
           companyId: level3.companyId,
+          privateRegistrationNumbers: level3.privateRegistrationNumbers,
         }
         level1Parent.children!.push(company)
         added = true
@@ -489,6 +565,7 @@ async function convertExcelToJson() {
               name: level3.name,
               level: level3.level,
               companyId: level3.companyId,
+              privateRegistrationNumbers: level3.privateRegistrationNumbers,
             }
             parentCompany.children!.push(company)
             added = true
@@ -534,11 +611,13 @@ async function convertExcelToJson() {
  */
 function generateCSV(companies: FlatCompany[]): string {
   // CSV header
-  let csv = 'id,name,level,parentId,companyId\n'
+  let csv = 'id,name,level,parentId,companyId,privateRegistrationNumbers\n'
 
   // Add each company as a row
   for (const company of companies) {
-    csv += `${company.id},${company.name},${company.level},${company.parentId || ''},${company.companyId || ''}\n`
+    const privateRegNums = company.privateRegistrationNumbers ? 
+      company.privateRegistrationNumbers.join(';') : '';
+    csv += `${company.id},${company.name},${company.level},${company.parentId || ''},${company.companyId || ''},${privateRegNums}\n`
   }
 
   return csv
