@@ -22,6 +22,7 @@ export interface Company {
     | Company[]
     | Company
   mainAccount?: Account[]
+  privateRegistrationNumber?: number[]
   silencedStocks?: string[]
   holdings?: { docs?: any[] }
   meetings?: { docs?: any[] }
@@ -43,6 +44,7 @@ export interface TreeNode {
   hasGrandParent?: boolean
   children?: TreeNode[]
   type: string
+  privateRegistrationNumber?: number[]
 }
 
 /**
@@ -75,6 +77,7 @@ export const fetchCompanies = async () => {
         'subCompanies.subCompanies.subCompanies.subCompanies': true,
         parentCompany: true,
         mainAccount: true,
+        privateRegistrationNumber: true,
       },
     }
 
@@ -111,6 +114,7 @@ export const fetchCompanyById = async (id: string) => {
         parentCompany: true,
         mainAccount: true,
         silencedStocks: true,
+        privateRegistrationNumber: true,
         meetings: {
           docs: true,
         },
@@ -163,6 +167,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
         hasGrandParent,
         companyId: companyData.companyId,
         type: companyData.company.type as string,
+        privateRegistrationNumber: company.privateRegistrationNumber,
       }
       companyMap.set(treeNode.id, treeNode)
     }
@@ -221,6 +226,8 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
               typeof subCompany === 'string' ? undefined : (subCompany.companyId ?? undefined),
             hasGrandParent: false,
             type: typeof subCompany !== 'string' ? (subCompany?.type as string) : 'regular',
+            privateRegistrationNumber:
+              typeof subCompany === 'string' ? undefined : subCompany.privateRegistrationNumber,
           }
           companyMap.set(subCompanyId, newNode)
           if (!parentNode.children) {
@@ -292,6 +299,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
             companyId: parentCompany.companyId ?? undefined,
             hasGrandParent: false,
             type: companyData.company.type as string,
+            privateRegistrationNumber: parentCompany.privateRegistrationNumber,
           }
           if (parentNode) {
             companyMap.set(parentId, parentNode)
@@ -346,5 +354,7 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
   )
 
   // Return all root companies and standalone companies
-  return [...rootCompanies, ...standaloneCompanies]
+  const result = [...rootCompanies, ...standaloneCompanies]
+  console.log('Transformed companies tree:', result)
+  return result
 }
