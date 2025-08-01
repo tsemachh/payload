@@ -129,6 +129,21 @@ export const Companies: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'privateRegistrationNumber',
+                  type: 'number',
+                  label: 'ח.פ.',
+                  index: true,
+                  hasMany: true,
+                  admin: {
+                    condition: (data) => data?.type == 'regular',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
                   name: 'subCompanies',
                   type: 'relationship',
                   label: 'חברות בת',

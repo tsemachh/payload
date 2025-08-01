@@ -413,6 +413,7 @@ export interface Company {
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
+  privateRegistrationNumber?: number[] | null;
   subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
@@ -1437,6 +1438,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
+  privateRegistrationNumber?: T;
   subCompanies?: T;
   parentCompany?: T;
   researchDocuments?:
