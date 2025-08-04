@@ -80,7 +80,7 @@ export default function CompactMeetingBar({
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                 <div className="flex justify-between w-full min-w-[120px]">
-                  <span>דווח:</span>
+                  <span>בפועל:</span>
                   <div className="flex gap-1">
                     <span className="text-right w-5">{reportedVotes}</span>
                     <span className="text-right w-10">
