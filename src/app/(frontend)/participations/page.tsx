@@ -106,14 +106,14 @@ export default function Participations() {
 
   const selectedCompaniesCount = useMemo(() => {
     const selectedCompanyIds = new Set<string>()
-    selectedFundIds.forEach((fundId) => {
+    appliedFilters.selectedFundIds.forEach((fundId) => {
       const fund = funds.find((f) => f.id === fundId)
       if (fund?.parentCompany) {
         selectedCompanyIds.add(fund.parentCompany)
       }
     })
     return selectedCompanyIds.size
-  }, [selectedFundIds, funds])
+  }, [appliedFilters.selectedFundIds, funds])
 
   useEffect(() => {
     if (companiesWithFunds.length > 0) {
@@ -245,19 +245,6 @@ export default function Participations() {
   const filteredData = useMemo(() => {
     let data = participationData
 
-    // // Apply search filter
-    // if (searchTerm) {
-    //   data = data.filter((row) => {
-    //     const searchLower = searchTerm.toLowerCase()
-    //     return (
-    //       row.stockName?.toLowerCase().includes(searchLower) ||
-    //       row.stockNumber?.toLowerCase().includes(searchLower) ||
-    //       row.currentCompany?.name?.toLowerCase().includes(searchLower) ||
-    //       row.meetingType?.toLowerCase().includes(searchLower)
-    //     )
-    //   })
-    // }
-
     // Apply vote filters - רק בצד הלקוח
     if (appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult) {
       data = data.filter((row) => {
@@ -315,16 +302,6 @@ export default function Participations() {
     appliedFilters.voteDifferentFromResult,
   ])
 
-  const actualCompaniesCount = useMemo(() => {
-    const uniqueCompanies = new Set<string>()
-    participationData.forEach((row) => {
-      if (row.currentCompany?.id) {
-        uniqueCompanies.add(row.currentCompany.id)
-      }
-    })
-    return uniqueCompanies.size
-  }, [participationData])
-
   const allSelected = deselectedIds.size === 0 && filteredData.length > 0
 
   const participationColumns: Column<ParticipationTableDataType>[] = useMemo(() => {
@@ -376,12 +353,13 @@ export default function Participations() {
     ]
 
     // הוספת עמודת שם החברה רק אם יש יותר מחברה אחת
-    if (actualCompaniesCount > 1) {
+    if (selectedCompaniesCount > 1) {
       baseColumns.push({
         key: 'companyName',
         header: 'שם החברה',
         type: 'string',
         minWidth: 120,
+        isAlwaysVisible: true,
         render: (row: any) => {
           return (
             row.currentCompany?.funds?.[0]?.parentCompany?.name ||
@@ -506,7 +484,7 @@ export default function Participations() {
     )
 
     return baseColumns
-  }, [allSelected, filteredData, deselectedIds, actualCompaniesCount])
+  }, [allSelected, filteredData, deselectedIds, selectedCompaniesCount])
 
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
@@ -649,7 +627,12 @@ export default function Participations() {
                             >
                               <div
                                 className="truncate cursor-pointer hover:text-blue-600"
-                                style={{ transform: 'translateX(50px)' }}
+                                style={{
+                                  transform:
+                                    selectedCompaniesCount > 1
+                                      ? 'translateX(70px)'
+                                      : 'translateX(50px)',
+                                }}
                               >
                                 {agenda.text}
                               </div>
@@ -673,10 +656,20 @@ export default function Participations() {
                           )
                           break
                         case 'advisoryRecommendation':
-                          content =
-                            agenda.recommendation?.votingRecommendation ||
-                            agenda.recommendation?.recommendationExplanation ||
-                            null
+                          content = (
+                            <div
+                              style={{
+                                transform:
+                                  selectedCompaniesCount > 1
+                                    ? 'translateX(-10px)'
+                                    : 'translateX(0px)',
+                              }}
+                            >
+                              {agenda.recommendation?.votingRecommendation ||
+                                agenda.recommendation?.recommendationExplanation ||
+                                null}
+                            </div>
+                          )
                           break
                         case 'vote':
                           content = agenda.vote || null
@@ -735,13 +728,14 @@ export default function Participations() {
                         column.key === 'percentageHolding' ||
                         column.key === 'holdingValueInMillions' ||
                         column.key === 'meetingDate' ||
-                        column.key === 'meetingType'
+                        column.key === 'meetingType' ||
+                        column.key === 'companyName'
                       ) {
                         return null
                       }
 
                       const baseColspan = 5
-                      const companyColumnExists = actualCompaniesCount > 1
+                      const companyColumnExists = selectedCompaniesCount > 1
                       const totalColspan =
                         column.key === 'stockName' ? baseColspan + (companyColumnExists ? 1 : 0) : 1
 
@@ -753,7 +747,12 @@ export default function Participations() {
                             column.positionCenter ? 'text-center' : 'text-right',
                           )}
                           style={{
-                            width: column.key === 'stockName' ? '650px' : `${column.minWidth}px`,
+                            width:
+                              column.key === 'stockName'
+                                ? selectedCompaniesCount > 1
+                                  ? '750px'
+                                  : '650px'
+                                : `${column.minWidth}px`,
                             minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
                             maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
                             textAlign: column.positionCenter ? 'center' : 'right',
@@ -773,7 +772,7 @@ export default function Participations() {
         </div>
       )
     },
-    [participationColumns, actualCompaniesCount],
+    [participationColumns, selectedCompaniesCount],
   )
 
   const paginatedData = useMemo(() => {
@@ -854,7 +853,6 @@ export default function Participations() {
                     totalItems: filteredData.length,
                     appliedFilters,
                     participationData: filteredData.length,
-                    actualCompaniesCount,
                   })
                 }}
                 variant="default"
@@ -935,7 +933,7 @@ export default function Participations() {
               tableId="participations-table"
               searchOption={true}
               filterOption={false}
-              columnsOption={true}
+              columnsOption={false}
               tableHeightOffset={280}
               isLoading={isLoading}
               renderExpandedRowContent={renderAgendaRows}
