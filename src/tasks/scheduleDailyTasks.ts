@@ -24,9 +24,7 @@ export const scheduleAdminMailNotificationsTask = async (payload: Payload): Prom
   })
 }
 
-export const scheduleCheckCompanyNotificationsTask = async (
-  payload: Payload,
-): Promise<void> => {
+export const scheduleCheckCompanyNotificationsTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
     task: 'checkCompanyNotifications',
     queue: 'daily',
@@ -44,6 +42,30 @@ export const scheduleSendCompanyMeetingNotificationsTask = async (
   })
 }
 
+export const scheduleSendDailyMeetingNotificationsTask = async (
+  payload: Payload,
+  agendaUpdatedMeetingIds?: string[],
+): Promise<void> => {
+  // Prepare input with agenda update data if provided, otherwise empty array (0 count)
+  const input = {
+    agendaUpdatedMeetingIds: agendaUpdatedMeetingIds
+      ? agendaUpdatedMeetingIds.map((id) => ({ id }))
+      : [],
+  }
+
+  await payload.jobs.queue({
+    task: 'sendDailyMeetingNotifications',
+    queue: 'daily10pm',
+    input,
+  })
+
+  // Log the scheduling with agenda update information
+  payload.logger.info('Scheduled daily meeting notifications task', {
+    agendaUpdatesCount: agendaUpdatedMeetingIds?.length || 0,
+    agendaUpdatedMeetingIds: agendaUpdatedMeetingIds || [],
+  })
+}
+
 export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
   try {
     await payload.delete({
@@ -56,6 +78,7 @@ export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
             'adminMailNotifications',
             'checkCompanyNotifications',
             'sendCompanyMeetingNotifications',
+            'sendDailyMeetingNotifications',
           ],
         },
         totalTried: {
@@ -73,6 +96,8 @@ export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {
     await scheduleCheckCompanyNotificationsTask(payload)
     // Schedule the sendCompanyMeetingNotifications task
     await scheduleSendCompanyMeetingNotificationsTask(payload)
+    // Schedule the sendDailyMeetingNotifications task
+    await scheduleSendDailyMeetingNotificationsTask(payload)
 
     payload.logger.info('Daily tasks scheduled successfully')
   } catch (error) {

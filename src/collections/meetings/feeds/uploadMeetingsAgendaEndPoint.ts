@@ -61,8 +61,9 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       file: file,
       req,
     })
-    req.payload.logger.info({meetingsFeed},"meetingsFeed was uploaded successfully")
-    const { errors, successCount, fileLength } = await processMeetingsAgendaFeedCsv(req, { file })
+    req.payload.logger.info({ meetingsFeed }, 'meetingsFeed was uploaded successfully')
+    const { errors, successCount, fileLength, agendaUpdatedMeetingIds } =
+      await processMeetingsAgendaFeedCsv(req, { file })
     const endTime = Date.now()
     const durationMs = endTime - startTime
     const durationSeconds = (durationMs / 1000).toFixed(2)
@@ -116,6 +117,8 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       stocksFeed: meetingsFeed,
       errors,
       isDuplicate: false,
+      agendaUpdatesCount: agendaUpdatedMeetingIds.length,
+      agendaUpdatedMeetingIds,
     })
   } catch (error) {
     req.payload.logger.error('Error uploading CSV file:', error)
