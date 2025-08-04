@@ -23,7 +23,7 @@ export default function CompactMeetingBar({
   return (
     <div className="relative w-full max-w-[150px]">
       <div
-        className="relative h-6 bg-gray-200 rounded-full overflow-hidden cursor-pointer"
+        className="relative h-6 bg-gray-500 rounded-full overflow-hidden cursor-pointer"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
@@ -39,10 +39,10 @@ export default function CompactMeetingBar({
           style={{ width: `${reportedPercentage}%` }}
         />
 
-        {/* Text overlay */}
+        {/* Text overlay - showing all 3 numbers */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-xs font-medium text-white drop-shadow-sm">
-            {reportedVotes}/{votes}
+            {reportedVotes}/{votes}/{companies}
           </span>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function CompactMeetingBar({
             <div className="space-y-0.5">
               {/* Step 1: Total Companies (Base) */}
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full flex-shrink-0"></div>
                 <div className="flex justify-between w-full min-w-[120px]">
                   <span>חברות:</span>
                   <div className="flex gap-1">
