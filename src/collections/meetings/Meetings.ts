@@ -115,7 +115,6 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-
     listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
     defaultColumns: [
       'fullName',
@@ -123,10 +122,7 @@ export const Meetings: CollectionConfig = {
       'meetingDate',
       'holdingsLimit',
       'proxyVotingDate',
-      'votesCount',
-      'reportVotesCount',
-      'votesStatus',
-      'votesReportStatus',
+      'activity',
       'electronicVotingEnabled',
       'invitationLink',
     ],
@@ -142,7 +138,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
-    maxPerDoc: 5,
+    maxPerDoc: 10,
   },
   fields: [
     {
@@ -196,6 +192,9 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   options: meetingTypeOptions,
                   admin: {
+                    custom: {
+                      cellWidth: '50px',
+                    },
                     width: '150px',
                   },
                 },
@@ -273,6 +272,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
+                    width: '220px',
                   },
                   index: true,
                   hooks: {
@@ -283,7 +283,7 @@ export const Meetings: CollectionConfig = {
                           const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
                           stockName = stock.fullName
                         }
-                        return `${stockName}-${data?.type ? data?.type : 'נדחתה/בוטלה'}`
+                        return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
                       },
                     ],
                   },
@@ -330,12 +330,11 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'proxyVotingDate',
-                  label: 'מועד מסירת ההצבעות',
+                  label: 'מועד מסירת הצבעה',
                   type: 'date',
                   index: true,
                   admin: {
                     width: '220px',
-
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
@@ -417,7 +416,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'electronicVotingEnabled',
-                  label: 'האם מופיעה במערכת האלק׳?',
+                  label: 'מע׳ אלק׳?',
                   type: 'checkbox',
                   admin: { width: 'auto', disableListFilter: true },
                 },
@@ -632,7 +631,7 @@ export const Meetings: CollectionConfig = {
                   defaultValue: 'None',
                   interfaceName: 'VotesStatus',
                   options: [
-                    { label: 'ללא', value: 'None' },
+                    { label: 'ריק', value: 'None' },
                     { label: 'חלקי', value: 'Partial' },
                     { label: 'מלא', value: 'All' },
                   ],
@@ -658,7 +657,7 @@ export const Meetings: CollectionConfig = {
                   interfaceName: 'VotesReportStatus',
                   defaultValue: 'None',
                   options: [
-                    { label: 'ללא', value: 'None' },
+                    { label: 'ריק', value: 'None' },
                     { label: 'חלקי', value: 'Partial' },
                     { label: 'מלא', value: 'All' },
                   ],
@@ -730,6 +729,30 @@ export const Meetings: CollectionConfig = {
                       (companyId: string) => !votedCompanyIds.includes(companyId),
                     )
                     return nonVotedCompanies
+                  },
+                ],
+              },
+            },
+            {
+              name: 'activity',
+              label: 'פעילות',
+              type: 'text',
+              virtual: true,
+              admin: {
+                hidden: true,
+                components: {
+                  Cell: { path: '/admincomponents/icon/CompactMeetingBarCell' },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    // Return the data needed for the component as a JSON string
+                    return JSON.stringify({
+                      companies: data?.companies?.length || 0,
+                      votes: data?.votesCount || 0,
+                      reportedVotes: data?.reportVotesCount || 0,
+                    })
                   },
                 ],
               },

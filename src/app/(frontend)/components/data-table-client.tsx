@@ -16,8 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -79,6 +77,8 @@ export function DataTableStatic<T extends Record<string, any>>({
   onlyFuture = false,
   tableHeightOffset = 200,
   isLoading = false,
+  selectAll = 'בחר הכל',
+  removeAll = 'הסר הכל',
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -490,7 +490,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     (key: string, value: any) => {
       setFilters((prev) => {
         const newFilters = { ...prev }
-        if (value === 'all') {
+        if (value === selectAll) {
           // Initialize all options as checked when resetting the filter
           newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
         } else if (Array.isArray(value)) {
@@ -675,16 +675,20 @@ export function DataTableStatic<T extends Record<string, any>>({
             (item) => item[column.key as keyof typeof item] === false,
           ).length
           facets[column.key as string] = []
-          facets[column.key as string].push({
-            value: 'true',
-            count: trueCount,
-            icon: <BooleanIcon iconType={true} />,
-          })
-          facets[column.key as string].push({
-            value: 'false',
-            count: falseCount,
-            icon: <BooleanIcon iconType={false} />,
-          })
+          if (trueCount) {
+            facets[column.key as string].push({
+              value: 'true',
+              count: trueCount,
+              icon: <BooleanIcon iconType={true} />,
+            })
+          }
+          if (falseCount) {
+            facets[column.key as string].push({
+              value: 'false',
+              count: falseCount,
+              icon: <BooleanIcon iconType={false} />,
+            })
+          }
         } else if (column.key === 'meetingState') {
           const meetingStateCounts = filteredData.reduce(
             (acc, { meetingState }) => {
@@ -695,14 +699,15 @@ export function DataTableStatic<T extends Record<string, any>>({
             },
             {} as Record<Exclude<MeetingState, null>, number>,
           )
-
-          facets[column.key as string] = Object.entries(meetingStateCounts).map(
-            ([state, count]) => ({
+          const hasMultipleOptions = Object.keys(meetingStateCounts).length > 1
+          facets[column.key as string] = [
+            ...(hasMultipleOptions ? [{ value: selectAll, count: filteredData.length }] : []),
+            ...Object.entries(meetingStateCounts).map(([state, count]) => ({
               value: state,
               count,
               translate: meetingStateMap[state as Exclude<MeetingState, null>] || state,
-            }),
-          )
+            })),
+          ]
         } else if (column.key === 'stockOrigin') {
           const stockOriginCounts = filteredData.reduce(
             (acc, { stockOrigin }) => {
@@ -712,20 +717,24 @@ export function DataTableStatic<T extends Record<string, any>>({
             },
             {} as Record<Exclude<MeetingState, null>, number>,
           )
-
-          facets[column.key as string] = Object.entries(stockOriginCounts).map(
-            ([state, count]) => ({
+          const hasMultipleOptions = Object.keys(stockOriginCounts).length > 1
+          facets[column.key as string] = [
+            ...(hasMultipleOptions ? [{ value: selectAll, count: filteredData.length }] : []),
+            ...Object.entries(stockOriginCounts).map(([state, count]) => ({
               value: state,
               count,
               translate: stockOriginMap[state as Exclude<StockOrigin, null>] || state,
-            }),
-          )
+            })),
+          ]
         } else {
           const values = new Set(filteredData.map((item) => String(item[column.key])))
-          facets[column.key as string] = Array.from(values).map((value) => ({
-            value,
-            count: filteredData.filter((item) => String(item[column.key]) === value).length,
-          }))
+          facets[column.key as string] = [
+            ...(values.size > 1 ? [{ value: selectAll, count: filteredData.length }] : []),
+            ...Array.from(values).map((value) => ({
+              value,
+              count: filteredData.filter((item) => String(item[column.key]) === value).length,
+            })),
+          ]
         }
       }
     })
@@ -870,7 +879,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                   <div className="flex">
                                     {!(column.key == 'meetingDate' && onlyFuture) && (
                                       <>
-                                        {/* Past dates column */}
+                                        {/* Past dates */}
                                         <div className="p-2">
                                           {pastDateFilterOptions.map((option) => {
                                             const counts = getDateFilterCounts(String(column.key))
@@ -891,13 +900,14 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 onSelect={(e) => e.preventDefault()}
                                               >
                                                 <CustomRadio checked={isChecked} size="md" />
-
                                                 <div
                                                   className="flex justify-between gap-2"
                                                   dir="rtl"
                                                 >
-                                                  <span className="text-right">{option.label}</span>
-                                                  <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                                  <span className="text-right text-xs">
+                                                    {option.label}
+                                                  </span>
+                                                  <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                                     {counts[option.value]}
                                                   </span>
                                                 </div>
@@ -905,10 +915,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                                             )
                                           })}
                                         </div>
-                                        <div className="border-r border-gray-200 mx-2"></div>
+                                        <div className="border-r border-gray-200 mx-2" />
                                       </>
                                     )}
-                                    {/* Future dates column */}
+                                    {/* Future dates */}
                                     <div className="p-2">
                                       {futureDateFilterOptions.map((option) => {
                                         const counts = getDateFilterCounts(String(column.key))
@@ -930,8 +940,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           >
                                             <CustomRadio checked={isChecked} size="md" />
                                             <div className="flex justify-between gap-2" dir="rtl">
-                                              <span className="text-right">{option.label}</span>
-                                              <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
+                                              <span className="text-right text-xs">
+                                                {option.label}
+                                              </span>
+                                              <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                                 {counts[option.value]}
                                               </span>
                                             </div>
@@ -940,88 +952,109 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       })}
                                     </div>
                                   </div>
+
                                   {/* Empty date option */}
-                                  <div className="p-2 border-t border-gray-200 mt-2">
-                                    <DropdownMenuCheckboxItem
-                                      checked={dateFilters[String(column.key)]?.empty}
-                                      onSelect={(e) => e.preventDefault()}
-                                      onCheckedChange={(checked) => {
-                                        handleDateFilter(String(column.key), 'empty', checked)
-                                      }}
-                                      className="flex items-center justify-between py-2 remove-checked"
-                                    >
-                                      <CustomRadio
-                                        checked={dateFilters[String(column.key)]?.empty}
-                                        size="md"
-                                      />
-                                      <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">{emptyDateOption.label}</span>
-                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                          {
-                                            getDateFilterCounts(String(column.key))[
-                                              emptyDateOption.value
-                                            ]
-                                          }
-                                        </span>
+                                  {(() => {
+                                    const emptyDateCount = getDateFilterCounts(String(column.key))[
+                                      emptyDateOption.value
+                                    ]
+                                    if (!emptyDateCount) return null
+                                    return (
+                                      <div className="p-2 border-t border-gray-200 mt-2">
+                                        <DropdownMenuCheckboxItem
+                                          checked={dateFilters[String(column.key)]?.empty}
+                                          onSelect={(e) => e.preventDefault()}
+                                          onCheckedChange={(checked) => {
+                                            handleDateFilter(String(column.key), 'empty', checked)
+                                          }}
+                                          className="flex items-center justify-between py-2 remove-checked"
+                                        >
+                                          <CustomRadio
+                                            checked={dateFilters[String(column.key)]?.empty}
+                                            size="md"
+                                          />
+                                          <div className="flex justify-between gap-2" dir="rtl">
+                                            <span className="text-right text-xs">
+                                              {emptyDateOption.label}
+                                            </span>
+                                            <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
+                                              {emptyDateCount}
+                                            </span>
+                                          </div>
+                                        </DropdownMenuCheckboxItem>
                                       </div>
-                                    </DropdownMenuCheckboxItem>
-                                  </div>
+                                    )
+                                  })()}
                                 </div>
                               ) : (
                                 facetedFilters[column.key as string]?.map(
-                                  ({ value, count, icon, translate }: FacetedFilterItem) => (
-                                    <DropdownMenuCheckboxItem
-                                      key={value}
-                                      checked={
-                                        !filters[column.key as string] ||
-                                        filters[column.key as string].includes(value)
-                                      }
-                                      onCheckedChange={(checked) => {
-                                        const currentFilters = filters[column.key as string] || []
-                                        const newFilters = checked
-                                          ? [...currentFilters, value]
-                                          : currentFilters.filter((v: any) => v !== value)
+                                  ({ value, count, icon, translate }: FacetedFilterItem) => {
+                                    const isSelectAllOption = value === selectAll
+                                    const allPossibleValues = facetedFilters[column.key as string]
+                                      .map((item) => item.value)
+                                      .filter((v) => v !== selectAll)
+                                    const currentSelectedFilters =
+                                      filters[column.key as string] || []
+
+                                    const isChecked = isSelectAllOption
+                                      ? currentSelectedFilters.length ===
+                                          allPossibleValues.length && allPossibleValues.length > 0
+                                      : currentSelectedFilters.includes(value)
+                                    const handleToggle = (checked: boolean) => {
+                                      if (isSelectAllOption) {
+                                        const newFilters = checked ? allPossibleValues : []
                                         handleFilter(String(column.key), newFilters)
-                                      }}
-                                      className="flex items-center justify-between py-2 remove-checked"
-                                      onSelect={(e) => e.preventDefault()}
-                                    >
-                                      <Checkbox
-                                        checked={
-                                          !filters[column.key as string] ||
-                                          filters[column.key as string].includes(value)
-                                        }
-                                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
-                                      />
-                                      <div className="flex justify-between gap-2" dir="rtl">
-                                        <span className="text-right">
-                                          {icon ? icon : translate ? translate : value}
-                                        </span>
-                                        <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left">
-                                          {count}
-                                        </span>
-                                      </div>
-                                    </DropdownMenuCheckboxItem>
-                                  ),
+                                      } else {
+                                        const newFilters = checked
+                                          ? [...currentSelectedFilters, value]
+                                          : currentSelectedFilters.filter(
+                                              (v: string) => v !== value,
+                                            )
+                                        handleFilter(String(column.key), newFilters)
+                                      }
+                                    }
+
+                                    return (
+                                      <DropdownMenuCheckboxItem
+                                        key={value}
+                                        checked={isChecked}
+                                        onCheckedChange={handleToggle}
+                                        className="flex items-center justify-between py-2 remove-checked"
+                                        onSelect={(e) => e.preventDefault()}
+                                      >
+                                        <Checkbox
+                                          checked={isChecked}
+                                          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ml-[-25px] mr-[15px]"
+                                        />
+                                        <div className="flex justify-between gap-2" dir="rtl">
+                                          <span
+                                            className="text-right text-xs"
+                                            style={isSelectAllOption ? { fontWeight: 'bold' } : {}}
+                                          >
+                                            {icon
+                                              ? icon
+                                              : translate
+                                                ? translate
+                                                : isSelectAllOption && isChecked
+                                                  ? removeAll
+                                                  : value}
+                                          </span>
+                                          <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
+                                            {count}
+                                          </span>
+                                        </div>
+                                      </DropdownMenuCheckboxItem>
+                                    )
+                                  },
                                 )
                               )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="justify-center text-center"
-                                onClick={() =>
-                                  column.type === 'datetime'
-                                    ? handleDateFilter(String(column.key), '', false)
-                                    : handleFilter(String(column.key), 'all')
-                                }
-                              >
-                                הסר סינון
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
                       </div>
                     </TableHead>
                   ))}
+
                   {renderRowActions && <TableHead className="sticky left-0 z-[-1] w-0"></TableHead>}
                 </TableRow>
               </TableHeader>

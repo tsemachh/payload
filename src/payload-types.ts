@@ -413,6 +413,7 @@ export interface Company {
   companyId?: number | null;
   legacyCompanyId?: number | null;
   order?: number | null;
+  privateRegistrationNumber?: number[] | null;
   subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
@@ -653,6 +654,7 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
+  activity?: string | null;
   participationReport?: (string | null) | Document;
   votes?: {
     docs?: (string | Vote)[];
@@ -1310,6 +1312,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   companiesNotYetVoted?: T;
+  activity?: T;
   participationReport?: T;
   votes?: T;
   funds?: T;
@@ -1437,6 +1440,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   companyId?: T;
   legacyCompanyId?: T;
   order?: T;
+  privateRegistrationNumber?: T;
   subCompanies?: T;
   parentCompany?: T;
   researchDocuments?:

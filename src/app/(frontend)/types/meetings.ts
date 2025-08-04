@@ -148,6 +148,8 @@ export interface DataTableProps<T extends Record<string, any>> {
   renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
   expanderColumnKey?: keyof T
   searchOption?: boolean
+  selectAll?:string
+  removeAll?:string
 }
 
 export interface UrlFilenameMap {

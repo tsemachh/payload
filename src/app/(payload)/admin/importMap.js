@@ -1,6 +1,9 @@
+import { default as default_5fbd841c8b14f3cf48187c39f54c5fc8 } from '../../../admincomponents/cell/TruncatedCell'
+import { default as default_97d1eef92187dcf642cb9ceba3351a09 } from '../../../admincomponents/cell/TruncatedSelectCell'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { default as default_4b828ebf050d5322d4780521d858b578 } from '../../../admincomponents/link/IconLinkTextField'
 import { default as default_8a48385349b730d44dd363e2968af3cd } from '../../../admincomponents/cell/EditableCheckboxCell'
+import { default as default_2967a26cba0d46878d9a96a6331f4df1 } from '../../../admincomponents/cell/TruncatedDateCell'
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
@@ -12,6 +15,7 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_a24640827b8631aabe9555dec2cee5cd } from '../../../collections/meetings/components/CompaniesRelationshipField'
+import { default as default_b5963f820ebd4c76ff582b865f9558e8 } from '../../../admincomponents/icon/CompactMeetingBarCell'
 import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../admincomponents/icon/ParticipationReportStatusCell'
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -41,9 +45,12 @@ import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 
 export const importMap = {
+  "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
+  "/admincomponents/cell/TruncatedSelectCell#default": default_97d1eef92187dcf642cb9ceba3351a09,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "/admincomponents/link/IconLinkTextField#default": default_4b828ebf050d5322d4780521d858b578,
   "/admincomponents/cell/EditableCheckboxCell#default": default_8a48385349b730d44dd363e2968af3cd,
+  "/admincomponents/cell/TruncatedDateCell#default": default_2967a26cba0d46878d9a96a6331f4df1,
   "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,
@@ -55,6 +62,7 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/collections/meetings/components/CompaniesRelationshipField#default": default_a24640827b8631aabe9555dec2cee5cd,
+  "/admincomponents/icon/CompactMeetingBarCell#default": default_b5963f820ebd4c76ff582b865f9558e8,
   "/admincomponents/icon/ParticipationReportStatusCell#default": default_5a75982cfe5104835982b0d49beee87f,
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,

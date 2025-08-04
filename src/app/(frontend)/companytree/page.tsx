@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import {
-  TreeNode,
-  transformCompaniesToTree,
-  Company,
   Account,
+  Company,
   fetchCompanies,
   fetchCompanyById,
+  transformCompaniesToTree,
+  TreeNode,
 } from '../helpers/utils-company'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 
@@ -413,6 +413,18 @@ function CompanyDetails({
             ))}
           </div>
         )}
+
+        {companyDetails.privateRegistrationNumber &&
+          companyDetails.privateRegistrationNumber.length > 0 && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">ח.פ.:</h3>
+                <div className="grid-cols-2 gap-2">
+                  <div>{companyDetails.privateRegistrationNumber.join(', ')}</div>
+                </div>
+              </div>
+            </>
+          )}
 
         {companyDetails.subCompanies && companyDetails.subCompanies.length > 0 && (
           <div>
