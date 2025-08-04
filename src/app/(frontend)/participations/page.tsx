@@ -125,9 +125,18 @@ export default function Participations() {
   }, [companiesWithFunds])
 
   const query = useMemo(() => {
+    const effectivePageSize =
+      appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
+        ? 10000
+        : pageSize
+    const effectivePage =
+      appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
+        ? 1
+        : currentPage
+
     const params = new URLSearchParams({
-      page: currentPage.toString(),
-      pageSize: pageSize.toString(),
+      page: effectivePage.toString(),
+      pageSize: effectivePageSize.toString(),
       sortField,
       sortDirection,
       search: searchTerm,
@@ -158,6 +167,8 @@ export default function Participations() {
     appliedFilters.selectedFundIds,
     appliedFilters.startDate,
     appliedFilters.endDate,
+    appliedFilters.voteAgainstRecommendation,
+    appliedFilters.voteDifferentFromResult,
     searchTerm,
     currentPage,
     pageSize,
@@ -188,10 +199,8 @@ export default function Participations() {
     })
 
     const expandedData: any[] = []
-
     baseData.forEach((meeting: any) => {
       const meetingVotes = meeting.votes?.docs || []
-
       const relevantCompanies =
         meeting.companies?.filter((company: any) => selectedCompanyIds.has(company.id)) || []
 
@@ -247,10 +256,8 @@ export default function Participations() {
   const filteredData = useMemo(() => {
     let data = participationData
 
-    // Apply vote filters - רק בצד הלקוח
     if (appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult) {
       data = data.filter((row) => {
-        console.log('Checking row:', row)
         const meetingVotes = row.votes
         const companyVoteDoc = meetingVotes.find(
           (doc: any) => doc.company === row.currentCompany?.id,
@@ -260,7 +267,6 @@ export default function Participations() {
           return false
         }
 
-        // Check if any agenda item matches the vote criteria
         return (
           row.agendas?.some((agenda: any) => {
             const vote = companyVoteDoc.votes?.find((v: any) => v.topicIndex === agenda.topicIndex)
@@ -354,7 +360,6 @@ export default function Participations() {
       { key: 'stockNumber', header: 'מספר נייר / נושאי האסיפה', type: 'string', minWidth: 120 },
     ]
 
-    // הוספת עמודת שם החברה רק אם יש יותר מחברה אחת
     if (selectedCompaniesCount > 1) {
       baseColumns.push({
         key: 'companyName',
@@ -778,11 +783,27 @@ export default function Participations() {
   )
 
   const currentSelectedCount = useMemo(() => {
+    // כאשר יש פילטרים פעילים - חשב על בסיס הנתונים המסוננים
+    if (appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult) {
+      if (allSelected) {
+        return filteredData.length
+      }
+      return Math.max(0, filteredData.length - deselectedIds.size)
+    }
+
+    // כאשר אין פילטרים - חשב על בסיס כל הנתונים מהשרת
     if (allSelected) {
       return meetingsResponse?.totalItems || 0
     }
     return Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
-  }, [allSelected, meetingsResponse?.totalItems, deselectedIds.size])
+  }, [
+    allSelected,
+    deselectedIds.size,
+    filteredData.length,
+    meetingsResponse?.totalItems,
+    appliedFilters.voteAgainstRecommendation,
+    appliedFilters.voteDifferentFromResult,
+  ])
 
   return (
     <div className="p-4 space-y-0" dir="rtl">
@@ -884,7 +905,6 @@ export default function Participations() {
           </div>
         ) : (
           <div className="-mt-4">
-            {/* הוספת ה-checkbox-ים כאן */}
             <div className="flex justify-end pr-10 pb-4">
               <div className="flex gap-6 items-center">
                 <div className="flex items-center gap-2">
@@ -933,15 +953,19 @@ export default function Participations() {
               isLoading={isLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"
-              pagination={{
-                pageSize,
-                totalItems: meetingsResponse?.totalItems || 0,
-                totalPages: meetingsResponse?.totalPages || 1,
-                currentPage,
-                onPageChange: handlePageChange,
-                onPageSizeChange: handlePageSizeChange,
-                pageSizeOptions: [10, 25, 50, 100, 500, 1000],
-              }}
+              pagination={
+                appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
+                  ? undefined
+                  : {
+                      pageSize,
+                      totalItems: meetingsResponse?.totalItems || 0,
+                      totalPages: meetingsResponse?.totalPages || 1,
+                      currentPage,
+                      onPageChange: handlePageChange,
+                      onPageSizeChange: handlePageSizeChange,
+                      pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+                    }
+              }
               onServerSort={handleSort}
               onServerSearch={handleSearch}
               initialSearchTerm={searchTerm}
