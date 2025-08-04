@@ -1,4 +1,5 @@
 import { PayloadRequest } from 'payload'
+import { scheduleSendDailyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
 
 export type TopicType = 'reporting' | 'decision'
 
@@ -31,16 +32,23 @@ export function convertMagnaAgendaToPayload(rowObj: Record<string, any>) {
 export const processMeetingsAgendaFeedCsv = async (
   req: PayloadRequest,
   doc: any,
-): Promise<{ errors: string[]; successCount: number; fileLength: number }> => {
+): Promise<{
+  errors: string[]
+  successCount: number
+  fileLength: number
+  agendaUpdatedMeetingIds: string[]
+}> => {
   const errors: string[] = []
   let successCount = 0
   let fileLength = 0
+  const agendaUpdatedMeetingIds: string[] = []
+
   try {
     const file = doc.file
     if (!file) {
       req.payload.logger.error(`No file found in request`)
       errors.push('לא נמצא קובץ בבקשה')
-      return { errors, successCount, fileLength }
+      return { errors, successCount, fileLength, agendaUpdatedMeetingIds }
     }
     const jsonData = JSON.parse(file.data.toString('utf8'))
     const schema = Object.keys(jsonData.schema)
@@ -85,7 +93,7 @@ export const processMeetingsAgendaFeedCsv = async (
     })
     req.payload.logger.info({ existingMeetings }, 'Getting meetings from CSV file')
     const meetingsMap = new Map<string, any>(
-      existingMeetings.docs.map((meeting) => [meeting.magnaId || '', meeting]),
+      existingMeetings.docs.map((meeting) => [String(meeting.magnaId || ''), meeting]),
     )
 
     // Calculate all magnaIds that don't exist in the database
@@ -99,7 +107,18 @@ export const processMeetingsAgendaFeedCsv = async (
       errors.push(`לא נמצאו אסיפות עם מספרי האסמכתא הבאים: ${nonExistingMagnaIds.join(', ')}`)
     }
 
-    for (const [magnaId, agendaRows] of rowsByMagnaId.entries()) {
+    // Log agenda update processing start
+    req.payload.logger.info(
+      `Starting agenda update processing for ${rowsByMagnaId.size} meetings`,
+      {
+        fileName: file.name,
+        totalMeetings: rowsByMagnaId.size,
+        existingMeetings: existingMeetings.docs.length,
+        nonExistingMeetings: nonExistingMagnaIds.length,
+      },
+    )
+
+    for (const [magnaId, agendaRows] of Array.from(rowsByMagnaId.entries())) {
       const meeting = meetingsMap.get(magnaId)
       processedRows++
 
@@ -123,7 +142,11 @@ export const processMeetingsAgendaFeedCsv = async (
               `   שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`,
             )
           })
+
+        // Track successfully updated meeting ID for daily notifications
+        agendaUpdatedMeetingIds.push(meeting.id)
         successCount++
+
         // Notify progress every 10 meetings
         if (processedRows % 10 === 0) {
           const progressMsg = `Progress: ${processedRows}/${rowsByMagnaId.size} meetings processed (${Math.round((processedRows / rowsByMagnaId.size) * 100)}%)`
@@ -138,6 +161,45 @@ export const processMeetingsAgendaFeedCsv = async (
         errors.push(`  שגיאה בעידכון אסיפה עם מספר  האסמכתא   ${magnaId}: ${e.message}`)
       }
     }
+
+    // Log agenda update processing completion
+    req.payload.logger.info(`Finished processing agenda updates`, {
+      fileName: file.name,
+      totalProcessed: processedRows,
+      successfulUpdates: successCount,
+      agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
+      agendaUpdatesCount: agendaUpdatedMeetingIds.length,
+      errors: errors.length,
+    })
+
+    // Schedule daily notification task with agenda update data
+    try {
+      // Delete any existing scheduled daily notification tasks to prevent duplicates
+      await req.payload.delete({
+        collection: 'payload-jobs',
+        where: {
+          taskSlug: {
+            equals: 'sendDailyMeetingNotifications',
+          },
+          totalTried: {
+            equals: 0,
+          },
+        },
+      })
+      await scheduleSendDailyMeetingNotificationsTask(req.payload, agendaUpdatedMeetingIds)
+
+      req.payload.logger.info(`Scheduled daily meeting notifications task with agenda updates`, {
+        agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
+        agendaUpdatesCount: agendaUpdatedMeetingIds.length,
+      })
+    } catch (schedulingError: any) {
+      req.payload.logger.error(`Failed to schedule daily meeting notifications task`, {
+        error: schedulingError.message,
+        agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
+      })
+      // Don't add to errors array as this is not a critical failure for the agenda processing
+    }
+
     req.payload.logger.info(`Finished processing file: ${file.name}`)
     if (errors.length > 0) {
       req.payload.logger.error(`\nFinished with ${errors.length} errors:`)
@@ -146,10 +208,10 @@ export const processMeetingsAgendaFeedCsv = async (
       })
     }
 
-    return { errors, successCount, fileLength }
+    return { errors, successCount, fileLength, agendaUpdatedMeetingIds }
   } catch (e: any) {
     req.payload.logger.error(`Error processing Meetings feed CSV: ${e.message})}`)
     errors.push(`שגיאה בעיבוד קובץ האסיפות: ${e.message}`)
-    return { errors, successCount, fileLength }
+    return { errors, successCount, fileLength, agendaUpdatedMeetingIds }
   }
 }

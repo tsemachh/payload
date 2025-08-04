@@ -41,6 +41,7 @@ import { adminMailNotificationsHandler } from '@/tasks/adminMailNotifications'
 import { processHoldingsChangeHandler } from '@/tasks/processHoldingsChange'
 import { checkCompanyNotificationsHandler } from '@/tasks/checkCompanyNotifications'
 import { sendCompanyMeetingNotificationsHandler } from '@/tasks/sendCompanyMeetingNotifications'
+import { sendDailyMeetingNotificationsHandler } from '@/tasks/sendDailyMeetingNotifications'
 import { openapi, swaggerUI } from 'payload-oapi'
 import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
 import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
@@ -152,6 +153,24 @@ export default buildConfig({
       {
         slug: 'sendCompanyMeetingNotifications',
         handler: sendCompanyMeetingNotificationsHandler,
+      },
+      {
+        slug: 'sendDailyMeetingNotifications',
+        handler: sendDailyMeetingNotificationsHandler,
+        inputSchema: [
+          {
+            name: 'agendaUpdatedMeetingIds',
+            type: 'array',
+            label: 'מזהי אסיפות עם עדכוני סדר יום',
+            fields: [
+              {
+                name: 'id',
+                type: 'text',
+                label: 'מזהה אסיפה',
+              },
+            ],
+          },
+        ],
       },
     ],
     // autoRun can optionally be a function that receives payload as an argument
