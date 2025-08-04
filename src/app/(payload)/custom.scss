@@ -174,3 +174,11 @@ form[action*="/api/research-documents"] .file-field__filename {
 .array-field .voteDecision.field-type.select {
   margin-left: 50px;
 }
+@layer payload-default {
+  .collection-list.collection-list--meetings {
+      .table th, .table td {
+        padding: calc(var(--base) * .1);
+        min-width: 10px;
+      }
+  }
+}

@@ -7,9 +7,12 @@ export const YesNoCell: React.FC<DefaultCellComponentProps<CheckboxFieldClient>>
   cellData,
 }) => {
   return (
-    <code>
-      <span>{cellData ? '✅' : '❌'}</span>
-    </code>
+    <span
+      title={cellData ? 'כן' : 'לא'}
+      className="inline-flex items-center justify-center w-[26px] h-[26px] text-base mx-auto px-6"
+    >
+      {cellData ? '✅' : '❌'}
+    </span>
   )
 }
 export default YesNoCell
