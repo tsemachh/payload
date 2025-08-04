@@ -1,6 +1,9 @@
+import { default as default_5fbd841c8b14f3cf48187c39f54c5fc8 } from '../../../admincomponents/cell/TruncatedCell'
+import { default as default_97d1eef92187dcf642cb9ceba3351a09 } from '../../../admincomponents/cell/TruncatedSelectCell'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { default as default_4b828ebf050d5322d4780521d858b578 } from '../../../admincomponents/link/IconLinkTextField'
 import { default as default_8a48385349b730d44dd363e2968af3cd } from '../../../admincomponents/cell/EditableCheckboxCell'
+import { default as default_2967a26cba0d46878d9a96a6331f4df1 } from '../../../admincomponents/cell/TruncatedDateCell'
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
@@ -42,9 +45,12 @@ import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 
 export const importMap = {
+  "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
+  "/admincomponents/cell/TruncatedSelectCell#default": default_97d1eef92187dcf642cb9ceba3351a09,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "/admincomponents/link/IconLinkTextField#default": default_4b828ebf050d5322d4780521d858b578,
   "/admincomponents/cell/EditableCheckboxCell#default": default_8a48385349b730d44dd363e2968af3cd,
+  "/admincomponents/cell/TruncatedDateCell#default": default_2967a26cba0d46878d9a96a6331f4df1,
   "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,

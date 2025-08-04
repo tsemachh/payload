@@ -274,6 +274,36 @@ export default buildConfig({
             },
           },
         },
+        {
+          fieldTypes: ['select'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/TruncatedSelectCell',
+              },
+            },
+          },
+        },
+        {
+          fieldTypes: ['date'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/TruncatedDateCell',
+              },
+            },
+          },
+        },
+        {
+          fieldTypes: ['text'],
+          overrides: {
+            admin: {
+              components: {
+                Cell: '/admincomponents/cell/TruncatedCell',
+              },
+            },
+          },
+        },
       ],
       excludedCollections: [],
     }),
