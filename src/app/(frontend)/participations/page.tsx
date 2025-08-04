@@ -126,8 +126,8 @@ export default function Participations() {
 
   const query = useMemo(() => {
     const params = new URLSearchParams({
-      page: '1',
-      pageSize: '10000',
+      page: currentPage.toString(),
+      pageSize: pageSize.toString(),
       sortField,
       sortDirection,
       search: searchTerm,
@@ -159,6 +159,8 @@ export default function Participations() {
     appliedFilters.startDate,
     appliedFilters.endDate,
     searchTerm,
+    currentPage,
+    pageSize,
   ])
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
@@ -775,18 +777,12 @@ export default function Participations() {
     [participationColumns, selectedCompaniesCount],
   )
 
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize
-    const endIndex = startIndex + pageSize
-    return filteredData.slice(startIndex, endIndex)
-  }, [filteredData, currentPage, pageSize])
-
   const currentSelectedCount = useMemo(() => {
     if (allSelected) {
-      return filteredData.length
+      return meetingsResponse?.totalItems || 0
     }
-    return Math.max(0, filteredData.length - deselectedIds.size)
-  }, [allSelected, filteredData.length, deselectedIds.size])
+    return Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
+  }, [allSelected, meetingsResponse?.totalItems, deselectedIds.size])
 
   return (
     <div className="p-4 space-y-0" dir="rtl">
@@ -875,41 +871,6 @@ export default function Participations() {
         </div>
       )}
 
-      {showParticipationTable && !isLoading && !meetingsResponse?.error && (
-        <div className="w-full lg:w-auto flex justify-end pr-50 ">
-          <div className="flex gap-6 items-center pl-[50px]">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="vote-against-recommendation"
-                checked={voteAgainstRecommendation}
-                onCheckedChange={handleVoteAgainstRecommendationChange}
-                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-              />
-              <Label
-                htmlFor="vote-against-recommendation"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-              >
-                הצבעה בניגוד להמלצה
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="vote-different-from-result"
-                checked={voteDifferentFromResult}
-                onCheckedChange={handleVoteDifferentFromResultChange}
-                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-              />
-              <Label
-                htmlFor="vote-different-from-result"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-              >
-                הצבעה שונה מהתוצאה
-              </Label>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showParticipationTable &&
         (isLoading ? (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
@@ -923,9 +884,43 @@ export default function Participations() {
           </div>
         ) : (
           <div className="-mt-4">
+            {/* הוספת ה-checkbox-ים כאן */}
+            <div className="flex justify-end pr-10 pb-4">
+              <div className="flex gap-6 items-center">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="vote-against-recommendation"
+                    checked={voteAgainstRecommendation}
+                    onCheckedChange={handleVoteAgainstRecommendationChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  />
+                  <Label
+                    htmlFor="vote-against-recommendation"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                  >
+                    הצבעה בניגוד להמלצה
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="vote-different-from-result"
+                    checked={voteDifferentFromResult}
+                    onCheckedChange={handleVoteDifferentFromResultChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  />
+                  <Label
+                    htmlFor="vote-different-from-result"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                  >
+                    הצבעה שונה מהתוצאה
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             <DataTableServer
               key="participations-table"
-              data={paginatedData}
+              data={filteredData}
               columns={participationColumns}
               idField="id"
               defaultSortField={'meetingDate'}
@@ -940,8 +935,8 @@ export default function Participations() {
               expanderColumnKey="stockNumber"
               pagination={{
                 pageSize,
-                totalItems: filteredData.length,
-                totalPages: Math.ceil(filteredData.length / pageSize),
+                totalItems: meetingsResponse?.totalItems || 0,
+                totalPages: meetingsResponse?.totalPages || 1,
                 currentPage,
                 onPageChange: handlePageChange,
                 onPageSizeChange: handlePageSizeChange,
