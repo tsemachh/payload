@@ -352,6 +352,7 @@ export interface Config {
       processHoldingsChange: TaskProcessHoldingsChange;
       checkCompanyNotifications: TaskCheckCompanyNotifications;
       sendCompanyMeetingNotifications: TaskSendCompanyMeetingNotifications;
+      sendDailyMeetingNotifications: TaskSendDailyMeetingNotifications;
       createCollectionExport: TaskCreateCollectionExport;
       inline: {
         input: unknown;
@@ -1020,6 +1021,7 @@ export interface PayloadJob {
           | 'processHoldingsChange'
           | 'checkCompanyNotifications'
           | 'sendCompanyMeetingNotifications'
+          | 'sendDailyMeetingNotifications'
           | 'createCollectionExport';
         taskID: string;
         input?:
@@ -1062,6 +1064,7 @@ export interface PayloadJob {
         | 'processHoldingsChange'
         | 'checkCompanyNotifications'
         | 'sendCompanyMeetingNotifications'
+        | 'sendDailyMeetingNotifications'
         | 'createCollectionExport'
       )
     | null;
@@ -1973,6 +1976,20 @@ export interface TaskCheckCompanyNotifications {
  */
 export interface TaskSendCompanyMeetingNotifications {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSendDailyMeetingNotifications".
+ */
+export interface TaskSendDailyMeetingNotifications {
+  input: {
+    agendaUpdatedMeetingIds?:
+      | {
+          id?: string | null;
+        }[]
+      | null;
+  };
   output?: unknown;
 }
 /**

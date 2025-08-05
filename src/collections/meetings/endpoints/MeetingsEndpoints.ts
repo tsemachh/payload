@@ -46,6 +46,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   fundsWithHolding: true,
   stockValue: true,
   invitationLink: true,
+  votes: true,
 }
 
 /**
@@ -235,10 +236,7 @@ function createSuccessResponse(
     totalPages,
   })
 }
-
-/**
- * Endpoint to fetch all meetings
- */
+/** * Endpoint to fetch all meetings */
 export const allMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
@@ -252,6 +250,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sortDirection = (req.query.sortDirection as string) || 'desc'
     const searchTerm = ((req.query.search as string) || '').trim()
     const selectedFundsParam = req.query.funds as string
+
+    // NEW: Get vote filter parameters
+    const voteAgainstRecommendation = req.query.voteAgainstRecommendation === 'true'
+    const voteDifferentFromResult = req.query.voteDifferentFromResult === 'true'
+
     let frontendSelectedFundIds: string[] | undefined
     if (selectedFundsParam) {
       frontendSelectedFundIds = selectedFundsParam.split(',')
@@ -312,6 +315,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
           { type: { contains: searchTerm } },
           { location: { contains: searchTerm } },
           { comments: { contains: searchTerm } },
+          { 'agenda.text': { contains: searchTerm } },
         ],
       })
     }
@@ -340,7 +344,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
+    let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -445,6 +449,7 @@ function createMeetingDataObject(
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
+    votes: meeting.votes || [],
   }
 }
 
@@ -463,6 +468,8 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
         votingRecommendation: item.recommendation?.votingRecommendation || '',
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
+      result: item.result || '',
+      vPercentSpecial: typeof item.vPercentSpecial === 'number' ? item.vPercentSpecial : null,
     }
   })
 }
