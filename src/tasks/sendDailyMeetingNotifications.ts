@@ -255,9 +255,6 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
         receiveMailNotification: {
           equals: true,
         },
-        companies: {
-          exists: true,
-        },
       },
       select: {
         email: true,
@@ -266,7 +263,7 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
         receiveMailNotification: true,
       },
       limit: 0, // Get all results
-      depth: 1, // Populate companies relation
+      depth: 0, // Populate companies relation
     })
 
     const queryDuration = Date.now() - startTime
