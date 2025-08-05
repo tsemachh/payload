@@ -12,6 +12,7 @@ import { getVotingPercentages } from './votingPercentagesEndPoint'
 import {
   handleVoteDeletionHook,
   recalculateVoteCountsOnReportedChange,
+  setVoteFlags,
   updateReportedAndMeetingHoldings,
   validateOwnedQuantityWhenUnauthorized,
 } from './hooks/voteHooks'
@@ -214,6 +215,22 @@ export const Votes: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: true,
                 },
+                {
+                  name: 'voteAgainstRecommendation',
+                  label: 'הצבעה בניגוד המלצה',
+                  type: 'checkbox',
+                  admin: {
+                    readOnly: true,
+                  },
+                },
+                {
+                  name: 'voteDifferentFromResult',
+                  label: 'הצבעה שונה מהתוצאה',
+                  type: 'checkbox',
+                  admin: {
+                    readOnly: true,
+                  },
+                },
               ],
             },
             {
@@ -395,7 +412,7 @@ export const Votes: CollectionConfig = {
   hooks: {
     beforeChange: [updateReportedAndMeetingHoldings],
     beforeValidate: [validateOwnedQuantityWhenUnauthorized],
-    afterChange: [recalculateVoteCountsOnReportedChange],
+    afterChange: [recalculateVoteCountsOnReportedChange, setVoteFlags],
     afterDelete: [handleVoteDeletionHook],
   },
   endpoints: [

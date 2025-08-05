@@ -723,6 +723,8 @@ export interface Vote {
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
+  voteAgainstRecommendation?: boolean | null;
+  voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
@@ -1630,6 +1632,8 @@ export interface VotesSelect<T extends boolean = true> {
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
+  voteAgainstRecommendation?: T;
+  voteDifferentFromResult?: T;
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;
