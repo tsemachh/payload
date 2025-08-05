@@ -431,7 +431,7 @@ export default function Participations() {
         header: 'הצבעה',
         type: 'string',
         render: (row) => null,
-        minWidth: 80,
+        minWidth: 100,
       },
       {
         key: 'meetingResults',
