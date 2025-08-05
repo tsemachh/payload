@@ -180,7 +180,10 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       results.emailsSent++
       companyDetail.emailStatus = 'sent'
     } catch (error) {
-      console.error(`Error sending email to ${companyName}:`, error)
+      req.payload.logger.error({
+        err: error,
+        msg: `Error sending email to ${companyName}`,
+      })
       results.emailErrors++
       companyDetail.emailStatus = 'error'
     }
@@ -223,7 +226,10 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
       output: result,
     }
   } catch (error) {
-    console.error('Error sending company meeting notifications:', error)
+    req.payload.logger.error({
+      err: error,
+      msg: 'Error sending company meeting notifications',
+    })
     return { output: { success: false, error } }
   }
 }
