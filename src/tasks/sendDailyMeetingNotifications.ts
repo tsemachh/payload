@@ -903,45 +903,142 @@ export const sendDailyMeetingNotifications = async (
     })
 
     try {
-      // Use payload.sendEmail to send to all recipients at once
-      await req.payload.sendEmail({
-        from: process.env.EMAIL_FROM,
-        to: emailContent.to,
-        subject: emailContent.subject,
-        html: emailContent.html,
-      })
+      // Split recipients into smaller batches to avoid rate limiting
+      const BATCH_SIZE = 10; // Adjust based on email provider's rate limits
+      const DELAY_BETWEEN_BATCHES = 1000; // 1 second delay between batches
+      const MAX_RETRIES = 3;
+      const INITIAL_RETRY_DELAY = 2000; // 2 seconds
+
+      // Function to send email to a batch of recipients with retry logic
+      const sendEmailBatch = async (batchRecipients:string[], retryCount = 0) => {
+        try {
+          await req.payload.sendEmail({
+            from: process.env.EMAIL_FROM,
+            bcc: batchRecipients,
+            subject: emailContent.subject,
+            html: emailContent.html,
+          });
+          return { success: true, count: batchRecipients.length };
+        } catch (error:any) {
+          // Check if it's a rate limiting error
+          const isRateLimited = error.message && (
+            error.message.includes('429') || 
+            error.message.includes('Rate limit') || 
+            error.message.toLowerCase().includes('rate limited')
+          );
+
+          if (isRateLimited && retryCount < MAX_RETRIES) {
+            // Exponential backoff for retries
+            const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+            logger.warn(`Rate limited when sending emails. Retrying in ${retryDelay}ms`, {
+              operation: 'sendDailyMeetingNotifications',
+              phase: 'email_sending_retry',
+              batchSize: batchRecipients.length,
+              retryCount: retryCount + 1,
+              retryDelay,
+              error: error.message
+            });
+
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            return sendEmailBatch(batchRecipients, retryCount + 1);
+          }
+
+          // If not rate limited or max retries reached, throw the error
+          throw error;
+        }
+      };
+
+      // Process batches of recipients
+      let successCount = 0;
+      const batches = [];
+
+      // Create batches of recipients
+      for (let i = 0; i < emailContent.to.length; i += BATCH_SIZE) {
+        batches.push(emailContent.to.slice(i, i + BATCH_SIZE));
+      }
+
+      logger.info('Sending emails in batches', {
+        operation: 'sendDailyMeetingNotifications',
+        phase: 'email_sending',
+        totalRecipients: emailContent.to.length,
+        batchSize: BATCH_SIZE,
+        totalBatches: batches.length
+      });
+
+      // Send emails batch by batch with delay between batches
+      for (let i = 0; i < batches.length; i++) {
+        try {
+          const batchResult = await sendEmailBatch(batches[i]);
+          successCount += batchResult.count;
+
+          logger.info(`Batch ${i + 1}/${batches.length} sent successfully`, {
+            operation: 'sendDailyMeetingNotifications',
+            phase: 'email_sending',
+            batchNumber: i + 1,
+            totalBatches: batches.length,
+            batchSize: batches[i].length,
+            successCount
+          });
+
+          // Add delay between batches (except after the last batch)
+          if (i < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+          }
+        } catch (batchError:any) {
+          logger.error(`Failed to send batch ${i + 1}/${batches.length}`, {
+            operation: 'sendDailyMeetingNotifications',
+            phase: 'email_sending',
+            batchNumber: i + 1,
+            totalBatches: batches.length,
+            batchSize: batches[i].length,
+            error: batchError.message
+          });
+
+          // Continue with next batch even if this one failed
+          results.details?.errors.push(
+            `Failed to send emails to batch ${i + 1}/${batches.length} (${batches[i].length} recipients): ${batchError.message}`
+          );
+        }
+      }
 
       const emailSendingDuration = Date.now() - emailSendingStartTime
 
       // Log successful email sending
-      results.summary.emailsSent = userEmails.length
+      results.summary.emailsSent = successCount;
+      results.summary.emailErrors = emailContent.to.length - successCount;
 
       // Enhanced success logging with comprehensive details
-      logger.info('Daily meeting notification emails sent successfully', {
+      logger.info('Daily meeting notification emails sending completed', {
         operation: 'sendDailyMeetingNotifications',
         phase: 'email_sending',
-        result: 'success',
+        result: successCount > 0 ? 'success' : 'failure',
         recipientCount: userEmails.length,
+        successCount,
+        errorCount: emailContent.to.length - successCount,
         newMeetingsCount: results.summary.newMeetingsCount,
         agendaUpdatesCount: results.summary.agendaUpdatesCount,
         emailSendingDuration,
         emailDetails: {
           subject: emailContent.subject,
           recipientCount: emailContent.to.length,
-          emailsSent: userEmails.length,
-          emailErrors: 0,
+          emailsSent: successCount,
+          emailErrors: emailContent.to.length - successCount,
         },
         performance: {
           emailSendingTimeMs: emailSendingDuration,
+          batchSize: BATCH_SIZE,
+          batchCount: batches.length,
         },
       })
 
       // Also log to payload logger for backward compatibility
-      req.payload.logger.info('Daily meeting notification emails sent successfully', {
+      req.payload.logger.info('Daily meeting notification emails sending completed', {
         recipientCount: userEmails.length,
+        successCount,
+        errorCount: emailContent.to.length - successCount,
         newMeetingsCount: results.summary.newMeetingsCount,
         agendaUpdatesCount: results.summary.agendaUpdatesCount,
-        recipients: userEmails,
       })
     } catch (error) {
       const emailSendingDuration = Date.now() - emailSendingStartTime
@@ -1009,7 +1106,10 @@ export const sendDailyMeetingNotifications = async (
     const totalExecutionDuration = Date.now() - taskStartTime
     const errorMessage = error instanceof Error ? error.message : String(error)
 
-    console.error('Error in sendDailyMeetingNotifications:', error)
+    req.payload.logger.error({
+      err: error,
+      msg: 'Error in sendDailyMeetingNotifications',
+    })
 
     // Enhanced error logging for unexpected task failures
     logger.error('Daily meeting notifications task failed with unexpected error', {
@@ -1127,7 +1227,10 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
     const handlerExecutionDuration = Date.now() - handlerStartTime
     const errorMessage = error instanceof Error ? error.message : String(error)
 
-    console.error('Error in sendDailyMeetingNotificationsHandler:', error)
+    req.payload.logger.error({
+      err: error,
+      msg: 'Error in sendDailyMeetingNotificationsHandler',
+    })
 
     // Enhanced error logging for task handler failures
     logger.error('Daily meeting notifications task handler failed with unexpected error', {
