@@ -8,6 +8,7 @@ import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from 
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
 import { default as default_4dd24e2ec1d9dc857c6d5bb6d71a585f } from '@shefing/quickfilter/QuickFilter'
+import { default as default_b0a3a783e6cc0bb1e23a8ff410a1a434 } from '../../../admincomponents/link/TableLinkCell'
 import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { default as default_e1e91278a16f25538739696dc1dee72a } from '../../../collections/meetings/components/RecommendationReasonSelect'
 import { default as default_01b6ede7689a44abe9ffe43b59ce999f } from '../../../collections/meetings/components/ConditionalReasonText'
@@ -55,6 +56,7 @@ export const importMap = {
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,
   "@shefing/quickfilter/QuickFilter#default": default_4dd24e2ec1d9dc857c6d5bb6d71a585f,
+  "/admincomponents/link/TableLinkCell#default": default_b0a3a783e6cc0bb1e23a8ff410a1a434,
   "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "/collections/meetings/components/RecommendationReasonSelect#default": default_e1e91278a16f25538739696dc1dee72a,
   "/collections/meetings/components/ConditionalReasonText#default": default_01b6ede7689a44abe9ffe43b59ce999f,
