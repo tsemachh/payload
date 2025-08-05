@@ -905,8 +905,8 @@ export default function Participations() {
           </div>
         ) : (
           <div className="-mt-4">
-            <div className="flex justify-end pr-10 pb-4">
-              <div className="flex gap-6 items-center">
+            <div className="flex justify-end pr-10 ">
+              <div className="flex gap-6 items-center pl-10">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="vote-against-recommendation"
