@@ -57,6 +57,9 @@ export const Companies: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '500px',
+                    custom:{
+                      cellWidth: '250px'
+                    }
                   },
                 },
                 {
@@ -169,6 +172,11 @@ export const Companies: CollectionConfig = {
                   defaultLimit: 1,
                   maxDepth: 2,
                   admin: {
+                    custom:{
+                      cellWidth: '100px'
+                    },
+                    width: '100px',
+                    className: 'truncate',
                     allowCreate: false,
                     defaultColumns: ['name', 'type', 'subCompanies', 'parentCompany', 'companyId'],
                     description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
