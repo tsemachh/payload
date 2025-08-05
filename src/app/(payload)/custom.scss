@@ -180,5 +180,14 @@ form[action*="/api/research-documents"] .file-field__filename {
         padding: calc(var(--base) * .1);
         min-width: 10px;
       }
+    #heading-invitationLink .sort-column__buttons,
+    #heading-resultsConfirmationStatus .sort-column__buttons,
+    #heading-electronicVotingEnabled .sort-column__buttons,
+    #heading-activity .sort-column__buttons {
+      display: none;
+    }
+
   }
+}
+@layer payload-default {
 }

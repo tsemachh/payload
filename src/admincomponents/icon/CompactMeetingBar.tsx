@@ -21,7 +21,7 @@ export default function CompactMeetingBar({
     companies > 0 ? Math.min((reportedVotes / companies) * 100, votesPercentage) : 0
 
   return (
-    <div className="relative w-full max-w-[150px]">
+    <div className="relative w-full min-w-[150px] ">
       <div
         className="relative h-6 bg-gray-500 rounded-full overflow-hidden cursor-pointer"
         onMouseEnter={() => setShowTooltip(true)}

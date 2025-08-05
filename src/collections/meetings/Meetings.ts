@@ -225,7 +225,7 @@ export const Meetings: CollectionConfig = {
 
                     components: {
                       Cell: {
-                        path: '/admincomponents/link/IconLinkCell',
+                        path: '/admincomponents/link/TableLinkCell',
                         clientProps: PropsManualLink,
                       },
                       Field: {
@@ -330,7 +330,7 @@ export const Meetings: CollectionConfig = {
                 },
                 {
                   name: 'proxyVotingDate',
-                  label: 'מועד מסירת הצבעה',
+                  label: 'מסירת הצבעה',
                   type: 'date',
                   index: true,
                   admin: {
