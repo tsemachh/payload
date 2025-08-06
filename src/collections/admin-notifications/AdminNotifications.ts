@@ -32,6 +32,10 @@ export const AdminNotifications: CollectionConfig = {
     components: {
       beforeList: ['/collections/admin-notifications/components/TaskMenu'],
     },
+    pagination: {
+      defaultLimit: 100,
+      limits: [10, 20, 50, 100, 200, 500],
+    },
   },
   defaultSort: '-createdAt',
   custom: {

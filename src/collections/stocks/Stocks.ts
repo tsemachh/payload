@@ -77,7 +77,7 @@ export const Stocks: CollectionConfig = {
     defaultColumns: ['stockId', 'type', 'longName', 'origin', 'tradable', 'active'],
     listSearchableFields: ['symbol', 'stockId', 'name', 'longName', 'comments'],
     pagination: {
-      defaultLimit: 500,
+      defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
     group: 'פעילות',
