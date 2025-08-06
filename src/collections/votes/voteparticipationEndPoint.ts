@@ -34,6 +34,7 @@ function processVotesData(
       stockNumber: meeting.stock?.stockId || '',
       stockName: meeting.stock?.name || '',
       marketValue: meeting.stockValue?.marketValue || 0,
+      stockType: meeting.stock?.origin ?? '',
       percentageHolding: meeting.percentageHolding || 0,
       holdingValueInMillions: meeting.holdingValueInMillions || 0,
       meetingDate: meeting.meetingDate || '',
@@ -81,6 +82,7 @@ function applyVoteFilters(
   data: any[],
   voteAgainstRecommendation: boolean,
   voteDifferentFromResult: boolean,
+  foreignStocksOnly: boolean,
 ) {
   let filtered = [...data]
 
@@ -95,6 +97,13 @@ function applyVoteFilters(
     filtered = filtered.filter((row) => {
       const vote = row.votes?.[0]
       return vote?.voteDifferentFromResult === true
+    })
+  }
+
+  if (foreignStocksOnly) {
+    filtered = filtered.filter((row) => {
+      console.log('Filtering for foreign stocks:', row.stockType)
+      return row.stockType === 'Foreign'
     })
   }
 
@@ -136,6 +145,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       search: searchParam,
       voteAgainstRecommendation: voteAgainstParam,
       voteDifferentFromResult: voteDifferentParam,
+      foreignStocksOnly: foreignStocksOnlyParam,
     } = req.query
 
     if (!companiesIds) {
@@ -149,6 +159,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const searchTerm = ((searchParam as string) || '').trim()
     const voteAgainstRecommendation = voteAgainstParam === 'true'
     const voteDifferentFromResult = voteDifferentParam === 'true'
+    const foreignStocksOnly = foreignStocksOnlyParam === 'true'
 
     const companiesIdsArray = (companiesIds as string).split(',')
     const statusString = status as string | undefined
@@ -180,9 +191,15 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
           { 'meeting.type': { contains: searchTerm } },
           { 'meeting.location': { contains: searchTerm } },
           { 'meeting.comments': { contains: searchTerm } },
-          { 'meeting.agenda.text': { contains: searchTerm } }, // זה הקסם!
+          { 'meeting.agenda.text': { contains: searchTerm } },
           { 'company.name': { contains: searchTerm } },
         ],
+      })
+    }
+
+    if (foreignStocksOnly) {
+      whereConditions.push({
+        'meeting.stock.origin': { equals: 'Foreign' },
       })
     }
 
@@ -190,7 +207,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       collection: 'votes',
       where: { and: whereConditions },
       depth: 1,
-      limit: 1000,
+      limit: 0,
       overrideAccess: true,
     })
 
@@ -208,7 +225,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       collection: 'meetings',
       where: { id: { in: uniqueMeetingIds } },
       depth: 2,
-      limit: 1000,
+      limit: 0,
       overrideAccess: true,
     })
 
@@ -228,7 +245,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       collection: 'companies',
       where: { id: { in: uniqueCompanyIds } },
       depth: 0,
-      limit: 1000,
+      limit: 0,
       overrideAccess: true,
     })
 
@@ -242,6 +259,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       processedData,
       voteAgainstRecommendation,
       voteDifferentFromResult,
+      foreignStocksOnly,
     )
 
     const totalItems = processedData.length

@@ -61,6 +61,7 @@ export default function Participations() {
     rangeType: undefined as DateRangeType | undefined,
     voteAgainstRecommendation: false,
     voteDifferentFromResult: false,
+    foreignStocksOnly: false,
   })
 
   // Server-side state (managed by endpoint)
@@ -71,6 +72,7 @@ export default function Participations() {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
+  const [foreignStocksOnly, setForeignStocksOnly] = useState(false)
 
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
@@ -154,6 +156,11 @@ export default function Participations() {
       params.append('voteDifferentFromResult', 'true')
     }
 
+    // הוספת הפילטר החדש
+    if (appliedFilters.foreignStocksOnly) {
+      params.append('foreignStocksOnly', 'true')
+    }
+
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
@@ -161,6 +168,7 @@ export default function Participations() {
     appliedFilters.endDate,
     appliedFilters.voteAgainstRecommendation,
     appliedFilters.voteDifferentFromResult,
+    appliedFilters.foreignStocksOnly,
     showParticipationTable,
     currentPage,
     pageSize,
@@ -177,6 +185,7 @@ export default function Participations() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
+
   // Server-side handlers
   const handleSearch = (term: string) => {
     setSearchTerm(term)
@@ -440,6 +449,20 @@ export default function Participations() {
     }
   }
 
+  const handleForeignStocksOnlyChange = (checked: boolean) => {
+    setForeignStocksOnly(checked)
+    if (showParticipationTable) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        foreignStocksOnly: checked,
+      }))
+      setCurrentPage(1)
+    }
+    if (hasDisplayed) {
+      setHasChanges(true)
+    }
+  }
+
   const handleExport = async () => {
     const newAppliedFilters = {
       selectedFundIds: [...selectedFundIds],
@@ -448,6 +471,7 @@ export default function Participations() {
       rangeType,
       voteAgainstRecommendation,
       voteDifferentFromResult,
+      foreignStocksOnly,
     }
 
     setAppliedFilters(newAppliedFilters)
@@ -819,6 +843,20 @@ export default function Participations() {
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
                   >
                     הצבעה שונה מהתוצאה
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="foreign-stocks-only"
+                    checked={foreignStocksOnly}
+                    onCheckedChange={handleForeignStocksOnlyChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  />
+                  <Label
+                    htmlFor="foreign-stocks-only"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                  >
+                    מניות חול בלבד
                   </Label>
                 </div>
               </div>
