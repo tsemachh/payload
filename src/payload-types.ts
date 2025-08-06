@@ -12,11 +12,11 @@
  */
 export type AdminNotificationType =
   | (
+      | 'newVoteAfterHoldingLimit'
       | 'predictaFeed'
       | 'usersUpdated'
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
-      | 'newVoteAfterHoldingLimit'
       | 'userImpersonation'
     )
   | null;
@@ -28,37 +28,6 @@ export type UserCompany =
   | {
       companyId: string | Company;
       permission?: ('read' | 'write') | null;
-      id?: string | null;
-    }[]
-  | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "RolePermissions".
- */
-export type RolePermissions =
-  | {
-      entity: (
-        | 'admin-notifications'
-        | 'meetings'
-        | 'stocks'
-        | 'holdings'
-        | 'companies'
-        | 'roles'
-        | 'stocks-feed'
-        | 'meetings-feed'
-        | 'recommendation-reasons'
-        | 'company-meeting-notifications'
-        | 'votes'
-        | 'holdings-feed'
-        | 'research-documents'
-        | 'documents'
-        | 'silenced-stocks'
-        | 'stock-migration-mapping'
-        | 'migration-faults'
-        | 'stock-values'
-        | 'exports'
-      )[];
-      type: ('write' | 'read' | 'publish')[];
       id?: string | null;
     }[]
   | null;
@@ -175,6 +144,37 @@ export type HoldingsPerDay = {
     | null;
   id?: string | null;
 }[];
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RolePermissions".
+ */
+export type RolePermissions =
+  | {
+      entity: (
+        | 'admin-notifications'
+        | 'meetings'
+        | 'stocks'
+        | 'holdings'
+        | 'companies'
+        | 'roles'
+        | 'stocks-feed'
+        | 'meetings-feed'
+        | 'recommendation-reasons'
+        | 'company-meeting-notifications'
+        | 'votes'
+        | 'holdings-feed'
+        | 'research-documents'
+        | 'documents'
+        | 'silenced-stocks'
+        | 'stock-migration-mapping'
+        | 'migration-faults'
+        | 'stock-values'
+        | 'exports'
+      )[];
+      type: ('write' | 'read' | 'publish')[];
+      id?: string | null;
+    }[]
+  | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
@@ -388,6 +388,7 @@ export interface AdminNotification {
   id: string;
   message: string;
   type?: AdminNotificationType;
+  assignee?: (string | null) | User;
   url?: string | null;
   handled?: boolean | null;
   companies?: (string | Company)[] | null;
@@ -398,8 +399,54 @@ export interface AdminNotification {
   relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
+  acquireTask?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  legacyId?: number | null;
+  active?: boolean | null;
+  companies?: UserCompany;
+  funds?: (string | Company)[] | null;
+  lastLogin?: string | null;
+  changePassword?: boolean | null;
+  receiveMailNotification?: boolean | null;
+  /**
+   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   */
+  userIp?: string | null;
+  isAdmin?: boolean | null;
+  isGeneratorUser?: boolean | null;
+  userRoles?: (string | Role)[] | null;
+  creator?: string | null;
+  updator?: string | null;
+  treeCompanies?: string | null;
+  qrCodeData?: {
+    showQr?: boolean | null;
+    createDate?: string | null;
+    lastCodeFailureDate?: string | null;
+    codeFailuresSinceLastSuccess?: number | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+  impersonate?: string | null;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -492,64 +539,6 @@ export interface ResearchDocument {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  name?: string | null;
-  legacyId?: number | null;
-  active?: boolean | null;
-  companies?: UserCompany;
-  funds?: (string | Company)[] | null;
-  lastLogin?: string | null;
-  changePassword?: boolean | null;
-  receiveMailNotification?: boolean | null;
-  /**
-   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
-   */
-  userIp?: string | null;
-  isAdmin?: boolean | null;
-  isGeneratorUser?: boolean | null;
-  userRoles?: (string | Role)[] | null;
-  creator?: string | null;
-  updator?: string | null;
-  treeCompanies?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
-  createdAt: string;
-  updatedAt: string;
-  impersonate?: string | null;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  password?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
- */
-export interface Role {
-  id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -746,6 +735,19 @@ export interface Vote {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  name?: string | null;
+  permissions?: RolePermissions;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1273,6 +1275,7 @@ export interface PayloadQueryPreset {
 export interface AdminNotificationsSelect<T extends boolean = true> {
   message?: T;
   type?: T;
+  assignee?: T;
   url?: T;
   handled?: T;
   companies?: T;
@@ -1283,6 +1286,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   relatedUser?: T;
   creator?: T;
   updator?: T;
+  acquireTask?: T;
   createdAt?: T;
   updatedAt?: T;
 }

@@ -176,18 +176,27 @@ form[action*="/api/research-documents"] .file-field__filename {
 }
 @layer payload-default {
   .collection-list.collection-list--meetings {
-      .table th, .table td {
-        padding: calc(var(--base) * .1);
-        min-width: 10px;
-      }
+    .table th, .table td {
+      padding: calc(var(--base) * .1);
+      min-width: 10px;
+    }
+
     #heading-invitationLink .sort-column__buttons,
     #heading-resultsConfirmationStatus .sort-column__buttons,
     #heading-electronicVotingEnabled .sort-column__buttons,
     #heading-activity .sort-column__buttons {
       display: none;
     }
-
   }
-}
-@layer payload-default {
-}
+  .collection-list.collection-list--admin-notifications {
+      .table th, .table td {
+        padding: calc(var(--base) * .2);
+        min-width: 10px;
+      }
+      #heading-url .sort-column__buttons,
+      #heading-handled .sort-column__buttons
+      {
+        display: none;
+      }
+    }
+  }

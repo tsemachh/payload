@@ -313,7 +313,6 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
           { 'stock.type': { contains: searchTerm } },
           { magnaId: { contains: searchTerm } },
           { type: { contains: searchTerm } },
-          { location: { contains: searchTerm } },
           { comments: { contains: searchTerm } },
           { 'agenda.text': { contains: searchTerm } },
         ],
@@ -344,7 +343,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
     return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
   } catch (error) {
@@ -630,10 +629,11 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
 
       const agendas: AgendasType[] = processAgendaItems(meeting.agenda as MeetingAgenda) || []
 
-      const usersCompanyIds =
-        user?.companies
-          .map((c: { companyId: string }) => c.companyId)
-          .filter((id: string): id is string => !!id) || []
+      const usersCompanyIds = user?.companies
+        ? user.companies
+            .map((c: { companyId: string }) => c.companyId)
+            .filter((id: string): id is string => !!id) || []
+        : []
 
       const commonCompanies = (meeting.companies ?? []).filter(
         (company): company is Company =>
