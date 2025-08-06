@@ -55,7 +55,7 @@ export const scheduleSendDailyMeetingNotificationsTask = async (
 
   await payload.jobs.queue({
     task: 'sendDailyMeetingNotifications',
-    queue: 'daily730am',
+    queue: 'daily10pm',
     input,
   })
 
