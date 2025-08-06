@@ -78,38 +78,6 @@ function processVotesData(
   return processedData
 }
 
-function applyVoteFilters(
-  data: any[],
-  voteAgainstRecommendation: boolean,
-  voteDifferentFromResult: boolean,
-  foreignStocksOnly: boolean,
-) {
-  let filtered = [...data]
-
-  if (voteAgainstRecommendation) {
-    filtered = filtered.filter((row) => {
-      const vote = row.votes?.[0]
-      return vote?.voteAgainstRecommendation === true
-    })
-  }
-
-  if (voteDifferentFromResult) {
-    filtered = filtered.filter((row) => {
-      const vote = row.votes?.[0]
-      return vote?.voteDifferentFromResult === true
-    })
-  }
-
-  if (foreignStocksOnly) {
-    filtered = filtered.filter((row) => {
-      console.log('Filtering for foreign stocks:', row.stockType)
-      return row.stockType === 'Foreign'
-    })
-  }
-
-  return filtered
-}
-
 function applySorting(data: any[], sortField: string, sortDirection: string) {
   return data.sort((a, b) => {
     let aVal = a[sortField]
@@ -197,6 +165,18 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       })
     }
 
+    if (voteAgainstRecommendation) {
+      whereConditions.push({
+        voteAgainstRecommendation: { equals: true },
+      })
+    }
+
+    if (voteDifferentFromResult) {
+      whereConditions.push({
+        voteDifferentFromResult: { equals: true },
+      })
+    }
+
     if (foreignStocksOnly) {
       whereConditions.push({
         'meeting.stock.origin': { equals: 'Foreign' },
@@ -221,18 +201,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       ),
     )
 
-    const fullMeetings = await req.payload.find({
-      collection: 'meetings',
-      where: { id: { in: uniqueMeetingIds } },
-      depth: 2,
-      limit: 0,
-      overrideAccess: true,
-    })
-
-    const fullMeetingsMap = Object.fromEntries(
-      fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
-    )
-
     const uniqueCompanyIds = Array.from(
       new Set(
         votes
@@ -241,26 +209,33 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       ),
     )
 
-    const companiesResult = await req.payload.find({
-      collection: 'companies',
-      where: { id: { in: uniqueCompanyIds } },
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-    })
+    // שלב שני – מקביל: meetings + companies
+    const [fullMeetings, companiesResult] = await Promise.all([
+      req.payload.find({
+        collection: 'meetings',
+        where: { id: { in: uniqueMeetingIds } },
+        depth: 2,
+        limit: 0,
+        overrideAccess: true,
+      }),
+      req.payload.find({
+        collection: 'companies',
+        where: { id: { in: uniqueCompanyIds } },
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      }),
+    ])
+
+    const fullMeetingsMap = Object.fromEntries(
+      fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
+    )
 
     const companiesMap = Object.fromEntries(
       companiesResult.docs.map((company: any) => [company.id, company]),
     )
 
     let processedData = processVotesData(votes, fullMeetingsMap, companiesMap)
-
-    processedData = applyVoteFilters(
-      processedData,
-      voteAgainstRecommendation,
-      voteDifferentFromResult,
-      foreignStocksOnly,
-    )
 
     const totalItems = processedData.length
     const totalPages = Math.ceil(totalItems / pageSize)
