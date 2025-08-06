@@ -1,14 +1,15 @@
 import { default as default_5fbd841c8b14f3cf48187c39f54c5fc8 } from '../../../admincomponents/cell/TruncatedCell'
 import { default as default_97d1eef92187dcf642cb9ceba3351a09 } from '../../../admincomponents/cell/TruncatedSelectCell'
-import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
+import { default as default_b0a3a783e6cc0bb1e23a8ff410a1a434 } from '../../../admincomponents/link/TableLinkCell'
 import { default as default_4b828ebf050d5322d4780521d858b578 } from '../../../admincomponents/link/IconLinkTextField'
 import { default as default_8a48385349b730d44dd363e2968af3cd } from '../../../admincomponents/cell/EditableCheckboxCell'
 import { default as default_2967a26cba0d46878d9a96a6331f4df1 } from '../../../admincomponents/cell/TruncatedDateCell'
+import { default as default_6314b77164f6ad2302b472eace4b56d0 } from '../../../collections/admin-notifications/components/AcquireTaskCell'
 import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
+import { default as default_805fe4906b6268b5debc0aa79d07f9dd } from '../../../collections/admin-notifications/components/TaskMenu'
 import { default as default_4dd24e2ec1d9dc857c6d5bb6d71a585f } from '@shefing/quickfilter/QuickFilter'
-import { default as default_b0a3a783e6cc0bb1e23a8ff410a1a434 } from '../../../admincomponents/link/TableLinkCell'
 import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { default as default_e1e91278a16f25538739696dc1dee72a } from '../../../collections/meetings/components/RecommendationReasonSelect'
 import { default as default_01b6ede7689a44abe9ffe43b59ce999f } from '../../../collections/meetings/components/ConditionalReasonText'
@@ -21,6 +22,7 @@ import { default as default_5a75982cfe5104835982b0d49beee87f } from '../../../ad
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
+import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
@@ -48,15 +50,16 @@ import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b6
 export const importMap = {
   "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
   "/admincomponents/cell/TruncatedSelectCell#default": default_97d1eef92187dcf642cb9ceba3351a09,
-  "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
+  "/admincomponents/link/TableLinkCell#default": default_b0a3a783e6cc0bb1e23a8ff410a1a434,
   "/admincomponents/link/IconLinkTextField#default": default_4b828ebf050d5322d4780521d858b578,
   "/admincomponents/cell/EditableCheckboxCell#default": default_8a48385349b730d44dd363e2968af3cd,
   "/admincomponents/cell/TruncatedDateCell#default": default_2967a26cba0d46878d9a96a6331f4df1,
+  "/collections/admin-notifications/components/AcquireTaskCell#default": default_6314b77164f6ad2302b472eace4b56d0,
   "@shefing/authors-info/client#CreatedAtCell": CreatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,
+  "/collections/admin-notifications/components/TaskMenu#default": default_805fe4906b6268b5debc0aa79d07f9dd,
   "@shefing/quickfilter/QuickFilter#default": default_4dd24e2ec1d9dc857c6d5bb6d71a585f,
-  "/admincomponents/link/TableLinkCell#default": default_b0a3a783e6cc0bb1e23a8ff410a1a434,
   "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "/collections/meetings/components/RecommendationReasonSelect#default": default_e1e91278a16f25538739696dc1dee72a,
   "/collections/meetings/components/ConditionalReasonText#default": default_01b6ede7689a44abe9ffe43b59ce999f,
@@ -69,6 +72,7 @@ export const importMap = {
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
+  "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
