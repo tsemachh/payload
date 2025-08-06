@@ -1,4 +1,6 @@
 import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { performance } from 'perf_hooks'
+import { Company, Meeting, Stock } from '@/payload-types'
 
 function createErrorResponse(error: any, message: string) {
   return Response.json({ success: false, error: message, details: error }, { status: 500 })
@@ -12,12 +14,15 @@ function processVotesData(
   votes: any[],
   fullMeetingsMap: Record<string, any>,
   companiesMap: Record<string, any>,
+  stockMap: Record<string, any>,
 ) {
   const processedData: any[] = []
 
   votes.forEach((vote: any) => {
     const meetingId = typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id
     const meeting = fullMeetingsMap[meetingId]
+    const stock: Stock = stockMap[meeting.stock]
+
 
     if (!meeting) {
       console.warn('Missing full meeting for vote:', vote.id)
@@ -31,10 +36,10 @@ function processVotesData(
       id: vote.id,
       originalMeetingId: meeting.id,
       meetingIdPayload: meeting.id,
-      stockNumber: meeting.stock?.stockId || '',
-      stockName: meeting.stock?.name || '',
-      marketValue: meeting.stockValue?.marketValue || 0,
-      stockType: meeting.stock?.origin ?? '',
+      stockNumber: stock.stockId || '',
+      stockName: stock.name || '',
+      marketValue: meeting.stockMarketValue || 0,
+      stockType: stock.origin ?? '',
       percentageHolding: meeting.percentageHolding || 0,
       holdingValueInMillions: meeting.holdingValueInMillions || 0,
       meetingDate: meeting.meetingDate || '',
@@ -183,6 +188,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       })
     }
 
+    const votesQueryStartTime = performance.now()
     const results = await req.payload.find({
       collection: 'votes',
       where: { and: whereConditions },
@@ -190,6 +196,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       limit: 0,
       overrideAccess: true,
     })
+    const votesQueryEndTime = performance.now()
+    console.log(`Performance: Votes query took ${(votesQueryEndTime - votesQueryStartTime).toFixed(2)}ms`)
 
     const votes = results.docs
 
@@ -210,11 +218,26 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     )
 
     // שלב שני – מקביל: meetings + companies
-    const [fullMeetings, companiesResult] = await Promise.all([
-      req.payload.find({
+    const parallelQueriesStartTime = performance.now()
+    const fullMeetings= await req.payload.find({
         collection: 'meetings',
         where: { id: { in: uniqueMeetingIds } },
-        depth: 2,
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      })
+    const uniqueStockIds = Array.from(
+      new Set(
+        fullMeetings.docs
+          .map((meeting: any) => (typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id))
+          .filter(Boolean),
+      ),
+    )
+    const [stocksResult,companiesResult] = await Promise.all([
+      req.payload.find({
+        collection: 'stocks',
+        where: { id: { in: uniqueStockIds } },
+        depth: 0,
         limit: 0,
         overrideAccess: true,
       }),
@@ -226,6 +249,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         overrideAccess: true,
       }),
     ])
+    const parallelQueriesEndTime = performance.now()
+    console.log(`Performance: Parallel queries (meetings + companies) took ${(parallelQueriesEndTime - parallelQueriesStartTime).toFixed(2)}ms`)
 
     const fullMeetingsMap = Object.fromEntries(
       fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
@@ -235,7 +260,11 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       companiesResult.docs.map((company: any) => [company.id, company]),
     )
 
-    let processedData = processVotesData(votes, fullMeetingsMap, companiesMap)
+    const stockMap = Object.fromEntries(
+      stocksResult.docs.map((stock: any) => [stock.id, stock]),
+    )
+
+    let processedData = processVotesData(votes, fullMeetingsMap, companiesMap,stockMap)
 
     const totalItems = processedData.length
     const totalPages = Math.ceil(totalItems / pageSize)
