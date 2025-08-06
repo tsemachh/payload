@@ -42,16 +42,18 @@ type DateRangeType = 'two-years' | 'one-year' | 'month' | 'week' | 'custom'
 export default function Participations() {
   const { companies, funds } = useCompaniesContext()
   const { user } = useAuth()
+
+  // Form state
   const [selectedFundIds, setSelectedFundIds] = useState<string[]>([])
   const [startDate, setStartDate] = useState<Date | undefined>()
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
-  const [showParticipationTable, setShowParticipationTable] = useState(false)
   const [reportName, setReportName] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
+  const [showParticipationTable, setShowParticipationTable] = useState(false)
   const [hasDisplayed, setHasDisplayed] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Applied filters (what's actually being used for the API call)
   const [appliedFilters, setAppliedFilters] = useState({
     selectedFundIds: [] as string[],
     startDate: undefined as Date | undefined,
@@ -60,33 +62,29 @@ export default function Participations() {
     voteAgainstRecommendation: false,
     voteDifferentFromResult: false,
   })
+
+  // Server-side state (managed by endpoint)
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-    setCurrentPage(1)
-  }
+  // Client-side selection state
+  const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
 
-  const handleSort = (field: string) => {
-    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
-    setSortField(field)
-    setSortDirection(newDirection)
-    setCurrentPage(1)
-  }
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
-  }
-
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize)
-    setCurrentPage(1)
-  }
+  const selectedCompanyIds = useMemo(() => {
+    const companyIds = new Set<string>()
+    appliedFilters.selectedFundIds.forEach((fundId) => {
+      const fund = funds.find((f) => f.id === fundId)
+      if (fund?.parentCompany) {
+        companyIds.add(fund.parentCompany)
+      }
+    })
+    return Array.from(companyIds)
+  }, [appliedFilters.selectedFundIds, funds])
 
   const companiesWithFunds: CompanyWithFunds[] = useMemo(() => {
     const companyMap = new Map<string, CompanyWithFunds>(
@@ -124,128 +122,90 @@ export default function Participations() {
     }
   }, [companiesWithFunds])
 
-  const query = useMemo(() => {
-    const effectivePageSize =
-      appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
-        ? 10000
-        : pageSize
-    const effectivePage =
-      appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
-        ? 1
-        : currentPage
+  // Build the API query with all server-side parameters
+  const votesQuery = useMemo(() => {
+    if (!showParticipationTable || selectedCompanyIds.length === 0) {
+      return null
+    }
 
     const params = new URLSearchParams({
-      page: effectivePage.toString(),
-      pageSize: effectivePageSize.toString(),
-      sortField,
-      sortDirection,
-      search: searchTerm,
+      companiesIds: selectedCompanyIds.join(','),
+      status: 'published',
+      page: currentPage.toString(),
+      pageSize: pageSize.toString(),
+      sortField: sortField,
+      sortDirection: sortDirection,
     })
 
-    if (appliedFilters.selectedFundIds.length > 0) {
-      params.append('funds', appliedFilters.selectedFundIds.join(','))
-    }
-
     if (appliedFilters.startDate && appliedFilters.endDate) {
-      const dateFilter = {
-        past: null,
-        future: null,
-        empty: false,
-        custom: true,
-        customDate: {
-          startDate: appliedFilters.startDate.toISOString(),
-          endDate: appliedFilters.endDate.toISOString(),
-        },
-      }
-      params.append('dateFilter_meetingDate', JSON.stringify(dateFilter))
+      params.append('startDate', appliedFilters.startDate.toISOString())
+      params.append('endDate', appliedFilters.endDate.toISOString())
     }
 
-    return `/api/meetings/all-meetings?${params.toString()}`
+    if (searchTerm) {
+      params.append('search', searchTerm)
+    }
+
+    if (appliedFilters.voteAgainstRecommendation) {
+      params.append('voteAgainstRecommendation', 'true')
+    }
+
+    if (appliedFilters.voteDifferentFromResult) {
+      params.append('voteDifferentFromResult', 'true')
+    }
+
+    return `/api/votes/by-companies?${params.toString()}`
   }, [
-    sortField,
-    sortDirection,
-    appliedFilters.selectedFundIds,
+    selectedCompanyIds,
     appliedFilters.startDate,
     appliedFilters.endDate,
     appliedFilters.voteAgainstRecommendation,
     appliedFilters.voteDifferentFromResult,
-    searchTerm,
+    showParticipationTable,
     currentPage,
     pageSize,
+    sortField,
+    sortDirection,
+    searchTerm,
   ])
 
-  const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
+  const {
+    data: votesResponse,
+    isLoading: votesLoading,
+    error: votesError,
+  } = useSWR(votesQuery, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
+  // Server-side handlers
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setCurrentPage(1)
+  }
 
+  const handleSort = (field: string) => {
+    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
+    setSortField(field)
+    setSortDirection(newDirection)
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+  }
+
+  // The data comes processed from the server
   const participationData: ParticipationTableDataType[] = useMemo(() => {
-    const baseData =
-      meetingsResponse?.data?.map((meeting: any) => ({
-        ...meeting,
-        id: meeting.meetingIdPayload,
-        holdingValueInMillions:
-          typeof meeting.holdingValueInMillions === 'string'
-            ? Number.parseFloat(meeting.holdingValueInMillions.replace(/,/g, ''))
-            : meeting.holdingValueInMillions,
-      })) || []
+    return votesResponse?.data || []
+  }, [votesResponse])
 
-    const selectedCompanyIds = new Set<string>()
-    appliedFilters.selectedFundIds.forEach((fundId) => {
-      const fund = funds.find((f) => f.id === fundId)
-      if (fund?.parentCompany) {
-        selectedCompanyIds.add(fund.parentCompany)
-      }
-    })
-
-    const expandedData: any[] = []
-    baseData.forEach((meeting: any) => {
-      const meetingVotes = meeting.votes?.docs || []
-      const relevantCompanies =
-        meeting.companies?.filter((company: any) => selectedCompanyIds.has(company.id)) || []
-
-      if (relevantCompanies.length === 0) {
-        return
-      }
-
-      relevantCompanies.forEach((company: any) => {
-        const updatedAgendas =
-          meeting.agendas?.map((agenda: any) => {
-            let agendaVote = null
-            for (const vote of meetingVotes) {
-              if (vote.company === company.id && vote.votes && Array.isArray(vote.votes)) {
-                const foundVote = vote.votes.find((v: any) => v.topicIndex === agenda.topicIndex)
-                if (foundVote) {
-                  agendaVote = foundVote
-                  break
-                }
-              }
-            }
-
-            return {
-              ...agenda,
-              vote: agendaVote?.voteDecision || null,
-              policyCompliance: agendaVote?.isInvestmentCommittee,
-              conflictOfInterest: agendaVote?.hasConflictOfInterest,
-              relatedParty: agendaVote?.isRelatedParty,
-              personalInterest: agendaVote?.hasPersonalInterest,
-            }
-          }) || []
-
-        expandedData.push({
-          ...meeting,
-          id: `${meeting.meetingIdPayload}_${company.id}`,
-          originalMeetingId: meeting.meetingIdPayload,
-          currentCompany: company,
-          agendas: updatedAgendas,
-          votes: meetingVotes,
-          hasVotes: meetingVotes.length > 0,
-        })
-      })
-    })
-
-    return expandedData
-  }, [meetingsResponse?.data, appliedFilters.selectedFundIds, funds])
+  const totalItems = votesResponse?.totalItems || 0
+  const totalPages = votesResponse?.totalPages || 0
 
   useEffect(() => {
     if (participationData.length > 0 && showParticipationTable) {
@@ -253,64 +213,7 @@ export default function Participations() {
     }
   }, [participationData.length, showParticipationTable])
 
-  const filteredData = useMemo(() => {
-    let data = participationData
-
-    if (appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult) {
-      data = data.filter((row) => {
-        const meetingVotes = row.votes
-        const companyVoteDoc = meetingVotes.find(
-          (doc: any) => doc.company === row.currentCompany?.id,
-        )
-
-        if (!companyVoteDoc) {
-          return false
-        }
-
-        return (
-          row.agendas?.some((agenda: any) => {
-            const vote = companyVoteDoc.votes?.find((v: any) => v.topicIndex === agenda.topicIndex)
-            if (!vote) return false
-
-            const voteDecision = vote.voteDecision
-            const recommendation = agenda.recommendation?.votingRecommendation
-            const result = agenda.result
-
-            let matches = true
-
-            if (appliedFilters.voteAgainstRecommendation) {
-              const rec = recommendation?.trim()
-              const voteText = voteDecision?.trim()
-              const isAgainstRecommendation = rec && voteText && rec !== voteText
-              matches = matches && isAgainstRecommendation
-            }
-
-            if (appliedFilters.voteDifferentFromResult) {
-              const resultMapping: { [key: string]: string } = {
-                '1': 'בעד',
-                '2': 'נגד',
-                '3': 'דיון',
-              }
-              const resultText = result !== undefined ? resultMapping[result] || result : result
-              const isDifferentFromResult = voteDecision !== resultText
-              matches = matches && isDifferentFromResult
-            }
-
-            return matches
-          }) || false
-        )
-      })
-    }
-
-    return data
-  }, [
-    participationData,
-    searchTerm,
-    appliedFilters.voteAgainstRecommendation,
-    appliedFilters.voteDifferentFromResult,
-  ])
-
-  const allSelected = deselectedIds.size === 0 && filteredData.length > 0
+  const allSelected = deselectedIds.size === 0 && participationData.length > 0
 
   const participationColumns: Column<ParticipationTableDataType>[] = useMemo(() => {
     const baseColumns: Column<ParticipationTableDataType>[] = [
@@ -327,7 +230,7 @@ export default function Participations() {
             className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
             onClick={() => {
               if (allSelected) {
-                const allIds = filteredData.map((row) => row.id)
+                const allIds = participationData.map((row) => row.id)
                 setDeselectedIds(new Set(allIds))
               } else {
                 setDeselectedIds(new Set())
@@ -368,12 +271,7 @@ export default function Participations() {
         minWidth: 120,
         isAlwaysVisible: true,
         render: (row: any) => {
-          return (
-            row.currentCompany?.funds?.[0]?.parentCompany?.name ||
-            row.currentCompany?.holdingsCompanyName ||
-            row.currentCompany?.name ||
-            '-'
-          )
+          return row.currentCompany?.name || '-'
         },
       })
     }
@@ -491,8 +389,9 @@ export default function Participations() {
     )
 
     return baseColumns
-  }, [allSelected, filteredData, deselectedIds, selectedCompaniesCount])
+  }, [allSelected, participationData, deselectedIds, selectedCompaniesCount])
 
+  // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
     if (hasDisplayed) {
@@ -541,15 +440,17 @@ export default function Participations() {
     }
   }
 
-  const handleExport = () => {
-    setAppliedFilters({
+  const handleExport = async () => {
+    const newAppliedFilters = {
       selectedFundIds: [...selectedFundIds],
       startDate,
       endDate,
       rangeType,
       voteAgainstRecommendation,
       voteDifferentFromResult,
-    })
+    }
+
+    setAppliedFilters(newAppliedFilters)
     setShowParticipationTable(true)
     setHasDisplayed(true)
     setHasChanges(false)
@@ -783,27 +684,11 @@ export default function Participations() {
   )
 
   const currentSelectedCount = useMemo(() => {
-    // כאשר יש פילטרים פעילים - חשב על בסיס הנתונים המסוננים
-    if (appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult) {
-      if (allSelected) {
-        return filteredData.length
-      }
-      return Math.max(0, filteredData.length - deselectedIds.size)
-    }
-
-    // כאשר אין פילטרים - חשב על בסיס כל הנתונים מהשרת
     if (allSelected) {
-      return meetingsResponse?.totalItems || 0
+      return totalItems
     }
-    return Math.max(0, (meetingsResponse?.totalItems || 0) - deselectedIds.size)
-  }, [
-    allSelected,
-    deselectedIds.size,
-    filteredData.length,
-    meetingsResponse?.totalItems,
-    appliedFilters.voteAgainstRecommendation,
-    appliedFilters.voteDifferentFromResult,
-  ])
+    return Math.max(0, totalItems - deselectedIds.size)
+  }, [allSelected, deselectedIds.size, totalItems])
 
   return (
     <div className="p-4 space-y-0" dir="rtl">
@@ -867,9 +752,10 @@ export default function Participations() {
                   console.log('Exporting file with data:', {
                     reportName,
                     selectedCount: currentSelectedCount,
-                    totalItems: filteredData.length,
+                    totalItems: totalItems,
                     appliedFilters,
-                    participationData: filteredData.length,
+                    participationData: participationData.length,
+                    votesData: votesResponse,
                   })
                 }}
                 variant="default"
@@ -882,7 +768,7 @@ export default function Participations() {
         </div>
       </div>
 
-      {showParticipationTable && !isLoading && !meetingsResponse?.error && (
+      {showParticipationTable && !votesLoading && !votesError && (
         <div className="flex justify-center">
           <div className="flex justify-start w-full pr-11">
             <span className="text-[rgb(71,122,133)] text-sm">
@@ -893,15 +779,15 @@ export default function Participations() {
       )}
 
       {showParticipationTable &&
-        (isLoading ? (
+        (votesLoading ? (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
               <LoadingSpinnerDiamond />
             </div>
           </div>
-        ) : meetingsResponse?.error ? (
+        ) : votesError ? (
           <div className="text-center text-red-500 mt-4">
-            שגיאה בטעינת נתונים: {meetingsResponse.error.message}
+            שגיאה בטעינת נתונים: {votesError.message}
           </div>
         ) : (
           <div className="-mt-4">
@@ -940,7 +826,7 @@ export default function Participations() {
 
             <DataTableServer
               key="participations-table"
-              data={filteredData}
+              data={participationData}
               columns={participationColumns}
               idField="id"
               defaultSortField={'meetingDate'}
@@ -950,22 +836,18 @@ export default function Participations() {
               filterOption={false}
               columnsOption={false}
               tableHeightOffset={280}
-              isLoading={isLoading}
+              isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"
-              pagination={
-                appliedFilters.voteAgainstRecommendation || appliedFilters.voteDifferentFromResult
-                  ? undefined
-                  : {
-                      pageSize,
-                      totalItems: meetingsResponse?.totalItems || 0,
-                      totalPages: meetingsResponse?.totalPages || 1,
-                      currentPage,
-                      onPageChange: handlePageChange,
-                      onPageSizeChange: handlePageSizeChange,
-                      pageSizeOptions: [10, 25, 50, 100, 500, 1000],
-                    }
-              }
+              pagination={{
+                pageSize,
+                totalItems: totalItems,
+                totalPages: totalPages,
+                currentPage,
+                onPageChange: handlePageChange,
+                onPageSizeChange: handlePageSizeChange,
+                pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+              }}
               onServerSort={handleSort}
               onServerSearch={handleSearch}
               initialSearchTerm={searchTerm}

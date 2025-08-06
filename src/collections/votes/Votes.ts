@@ -16,6 +16,7 @@ import {
   updateReportedAndMeetingHoldings,
   validateOwnedQuantityWhenUnauthorized,
 } from './hooks/voteHooks'
+import { getVotesByCompanies } from './voteparticipationEndPoint'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
@@ -222,6 +223,7 @@ export const Votes: CollectionConfig = {
                   admin: {
                     readOnly: true,
                   },
+                  defaultValue: false,
                 },
                 {
                   name: 'voteDifferentFromResult',
@@ -230,6 +232,7 @@ export const Votes: CollectionConfig = {
                   admin: {
                     readOnly: true,
                   },
+                  defaultValue: false,
                 },
               ],
             },
@@ -420,6 +423,11 @@ export const Votes: CollectionConfig = {
       path: '/by-meeting-and-companies',
       method: 'get',
       handler: getVoteByMeetingAndCompanies,
+    },
+    {
+      path: '/by-companies',
+      method: 'get',
+      handler: getVotesByCompanies,
     },
     {
       path: '/voted-companies',

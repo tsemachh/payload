@@ -1,0 +1,259 @@
+import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
+
+function createErrorResponse(error: any, message: string) {
+  return Response.json({ success: false, error: message, details: error }, { status: 500 })
+}
+
+function createSuccessResponse(data: any[], totalDocs: number, totalPages: number) {
+  return Response.json({ data, totalItems: totalDocs, totalPages })
+}
+
+function processVotesData(
+  votes: any[],
+  fullMeetingsMap: Record<string, any>,
+  companiesMap: Record<string, any>,
+) {
+  const processedData: any[] = []
+
+  votes.forEach((vote: any) => {
+    const meetingId = typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id
+    const meeting = fullMeetingsMap[meetingId]
+
+    if (!meeting) {
+      console.warn('Missing full meeting for vote:', vote.id)
+      return
+    }
+
+    const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+    const company = companiesMap[companyId]
+
+    const baseRecord = {
+      id: vote.id,
+      originalMeetingId: meeting.id,
+      meetingIdPayload: meeting.id,
+      stockNumber: meeting.stock?.stockId || '',
+      stockName: meeting.stock?.name || '',
+      marketValue: meeting.stockValue?.marketValue || 0,
+      percentageHolding: meeting.percentageHolding || 0,
+      holdingValueInMillions: meeting.holdingValueInMillions || 0,
+      meetingDate: meeting.meetingDate || '',
+      meetingType: meeting.type || '',
+      currentCompany: {
+        id: company?.id || companyId || '',
+        name: company?.name || '',
+      },
+      votes: [vote],
+      hasVotes: true,
+      agendas: (vote.votes || []).map((voteItem: any, index: number) => {
+        const agendaItem = meeting.agenda?.[index] || {}
+
+        return {
+          id: `${vote.id}_agenda_${index}`,
+          topicIndex: voteItem.topicIndex ?? index + 1,
+          text: agendaItem.text || voteItem.text || `פריט ${index + 1}`,
+          vote: voteItem.voteDecision || null,
+          policyCompliance: voteItem.isInvestmentCommittee ?? null,
+          conflictOfInterest: voteItem.hasConflictOfInterest ?? null,
+          relatedParty: voteItem.isRelatedParty ?? null,
+          personalInterest: voteItem.hasPersonalInterest ?? null,
+          recommendation: {
+            votingRecommendation: agendaItem.recommendation?.votingRecommendation || '',
+            recommendationExplanation: agendaItem.recommendation?.recommendationExplanation || '',
+          },
+          result: agendaItem.result || voteItem.meetingResult || null,
+          meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
+          privilegedMajority: agendaItem.privilegedMajority ?? voteItem.privilegedMajority ?? null,
+          vPercentSpecial:
+            agendaItem.privilegedMajority !== 'regular'
+              ? (agendaItem.vPercentSpecial ?? voteItem.vPercentSpecial ?? null)
+              : null,
+        }
+      }),
+    }
+
+    processedData.push(baseRecord)
+  })
+
+  return processedData
+}
+
+function applyVoteFilters(
+  data: any[],
+  voteAgainstRecommendation: boolean,
+  voteDifferentFromResult: boolean,
+) {
+  let filtered = [...data]
+
+  if (voteAgainstRecommendation) {
+    filtered = filtered.filter((row) => {
+      const vote = row.votes?.[0]
+      return vote?.voteAgainstRecommendation === true
+    })
+  }
+
+  if (voteDifferentFromResult) {
+    filtered = filtered.filter((row) => {
+      const vote = row.votes?.[0]
+      return vote?.voteDifferentFromResult === true
+    })
+  }
+
+  return filtered
+}
+
+function applySorting(data: any[], sortField: string, sortDirection: string) {
+  return data.sort((a, b) => {
+    let aVal = a[sortField]
+    let bVal = b[sortField]
+
+    if (sortField === 'meetingDate') {
+      aVal = new Date(aVal).getTime()
+      bVal = new Date(bVal).getTime()
+    }
+
+    if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase()
+      bVal = bVal.toLowerCase()
+    }
+
+    return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1
+  })
+}
+
+export const getVotesByCompanies = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
+
+  try {
+    const {
+      companiesIds,
+      status,
+      startDate,
+      endDate,
+      page: pageParam,
+      pageSize: pageSizeParam,
+      sortField: sortFieldParam,
+      sortDirection: sortDirectionParam,
+      search: searchParam,
+      voteAgainstRecommendation: voteAgainstParam,
+      voteDifferentFromResult: voteDifferentParam,
+    } = req.query
+
+    if (!companiesIds) {
+      return Response.json({ error: 'Company IDs are required' }, { status: 400 })
+    }
+
+    const page = parseInt((pageParam as string) || '1')
+    const pageSize = parseInt((pageSizeParam as string) || '50')
+    const sortField = (sortFieldParam as string) || 'meetingDate'
+    const sortDirection = (sortDirectionParam as string) || 'desc'
+    const searchTerm = ((searchParam as string) || '').trim()
+    const voteAgainstRecommendation = voteAgainstParam === 'true'
+    const voteDifferentFromResult = voteDifferentParam === 'true'
+
+    const companiesIdsArray = (companiesIds as string).split(',')
+    const statusString = status as string | undefined
+
+    const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
+
+    if (statusString === 'published') {
+      whereConditions.push({ _status: { equals: 'published' } })
+    }
+
+    if (startDate && endDate) {
+      whereConditions.push({
+        'meeting.meetingDate': {
+          greater_than_equal: startDate,
+          less_than_equal: endDate,
+        },
+      })
+    }
+
+    if (searchTerm) {
+      whereConditions.push({
+        or: [
+          { 'meeting.meetingId': { contains: searchTerm } },
+          { 'meeting.stock.stockId': { contains: searchTerm } },
+          { 'meeting.stock.name': { contains: searchTerm } },
+          { 'meeting.stock.symbol': { contains: searchTerm } },
+          { 'meeting.stock.type': { contains: searchTerm } },
+          { 'meeting.magnaId': { contains: searchTerm } },
+          { 'meeting.type': { contains: searchTerm } },
+          { 'meeting.location': { contains: searchTerm } },
+          { 'meeting.comments': { contains: searchTerm } },
+          { 'meeting.agenda.text': { contains: searchTerm } }, // זה הקסם!
+          { 'company.name': { contains: searchTerm } },
+        ],
+      })
+    }
+
+    const results = await req.payload.find({
+      collection: 'votes',
+      where: { and: whereConditions },
+      depth: 1,
+      limit: 1000,
+      overrideAccess: true,
+    })
+
+    const votes = results.docs
+
+    const uniqueMeetingIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id))
+          .filter(Boolean),
+      ),
+    )
+
+    const fullMeetings = await req.payload.find({
+      collection: 'meetings',
+      where: { id: { in: uniqueMeetingIds } },
+      depth: 2,
+      limit: 1000,
+      overrideAccess: true,
+    })
+
+    const fullMeetingsMap = Object.fromEntries(
+      fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
+    )
+
+    const uniqueCompanyIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.company === 'string' ? vote.company : vote.company?.id))
+          .filter(Boolean),
+      ),
+    )
+
+    const companiesResult = await req.payload.find({
+      collection: 'companies',
+      where: { id: { in: uniqueCompanyIds } },
+      depth: 0,
+      limit: 1000,
+      overrideAccess: true,
+    })
+
+    const companiesMap = Object.fromEntries(
+      companiesResult.docs.map((company: any) => [company.id, company]),
+    )
+
+    let processedData = processVotesData(votes, fullMeetingsMap, companiesMap)
+
+    processedData = applyVoteFilters(
+      processedData,
+      voteAgainstRecommendation,
+      voteDifferentFromResult,
+    )
+
+    const totalItems = processedData.length
+    const totalPages = Math.ceil(totalItems / pageSize)
+
+    processedData = applySorting(processedData, sortField, sortDirection)
+
+    const paginated = processedData.slice((page - 1) * pageSize, page * pageSize)
+
+    return createSuccessResponse(paginated, totalItems, totalPages)
+  } catch (error: any) {
+    console.error('❌ Error in getVotesByCompanies:', error)
+    return createErrorResponse(error, 'Failed to fetch votes')
+  }
+}
