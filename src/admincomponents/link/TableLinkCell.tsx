@@ -31,9 +31,7 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
       )
   }
   return isVisible ? (
-    <TableLink href={linkValue} external={true} variant={'default'}>
-      פתח
-    </TableLink>
+    <TableLink href={linkValue} external={true} variant={'default'}></TableLink>
   ) : null
 }
 export default IconLinkCell
