@@ -580,6 +580,7 @@ export interface Stock {
   active?: boolean | null;
   isFinancial?: boolean | null;
   isDual?: boolean | null;
+  Dual?: boolean | null;
   dualStock?: (string | null) | Stock;
   symbol?: string | null;
   name?: string | null;
@@ -628,6 +629,7 @@ export interface StockValue {
 export interface Meeting {
   id: string;
   stock: string | Stock;
+  dual?: boolean | null;
   type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
@@ -1292,6 +1294,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
  */
 export interface MeetingsSelect<T extends boolean = true> {
   stock?: T;
+  dual?: T;
   type?: T;
   meetingId?: T;
   magnaId?: T;
@@ -1389,6 +1392,7 @@ export interface StocksSelect<T extends boolean = true> {
   active?: T;
   isFinancial?: T;
   isDual?: T;
+  Dual?: T;
   dualStock?: T;
   symbol?: T;
   name?: T;

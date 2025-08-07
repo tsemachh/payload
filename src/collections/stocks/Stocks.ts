@@ -251,13 +251,24 @@ export const Stocks: CollectionConfig = {
 
                 {
                   name: 'isDual',
+                  label: 'מכילה דואלית',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '150px',
+                    condition: (siblingData) =>
+                      siblingData.tradable && siblingData.origin == 'TASE' && !siblingData.Dual,
+                  },
+                },
+                {
+                  name: 'Dual',
                   label: 'דואלית',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
                     width: '100px',
                     condition: (siblingData) =>
-                      siblingData.tradable && siblingData.origin == 'TASE',
+                      siblingData.tradable && siblingData.origin == 'TASE' && !siblingData.isDual,
                   },
                 },
                 {

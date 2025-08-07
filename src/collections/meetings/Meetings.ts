@@ -184,6 +184,15 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'dual',
+                  label: 'אסיפה דואלית',
+                  type: 'checkbox',
+                  virtual: 'stock.Dual',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'type',
                   label: 'סוג',
                   index: true,
@@ -891,8 +900,8 @@ export const Meetings: CollectionConfig = {
             {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
-              type: 'number'
-            }
+              type: 'number',
+            },
           ],
         },
       ],
@@ -908,15 +917,31 @@ export const Meetings: CollectionConfig = {
             collection: 'stocks',
             id: doc.stock,
           })
-
           if (stock?.isDual && stock?.dualStock) {
+            try {
+              if (typeof stock.dualStock !== 'string') {
+                await req.payload.update({
+                  collection: 'stocks',
+                  id: stock.dualStock.id,
+                  data: {
+                    Dual: true,
+                  },
+                })
+              }
+            } catch (error) {
+              console.error('Failed to update dual stock:', error)
+            }
+            const updatedDualStock = await req.payload.findByID({
+              collection: 'stocks',
+              id: typeof stock.dualStock === 'string' ? stock.dualStock : stock.dualStock.id,
+            })
+
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
             delete dualMeeting.meetingId
             delete dualMeeting.dualMeeting
-            dualMeeting.stock = stock.dualStock
-
+            dualMeeting.stock = updatedDualStock
             try {
               const createdDualMeeting = await req.payload.create({
                 collection: 'meetings',
