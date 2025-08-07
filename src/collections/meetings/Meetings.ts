@@ -888,6 +888,11 @@ export const Meetings: CollectionConfig = {
               },
               maxDepth: 1,
             },
+            {
+              name: 'stockMarketValue',
+              virtual: 'stockValue.marketValue',
+              type: 'number'
+            }
           ],
         },
       ],
