@@ -1,6 +1,6 @@
 'use client'
 
-import { BooleanIcon, SingleDocumentIcon, MultipleDocumentsIcon } from '@/components/ui/icons'
+import { BooleanIcon, MultipleDocumentsIcon, SingleDocumentIcon } from '@/components/ui/icons'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
 import { MeetingState, StockOrigin } from '@/payload-types'
@@ -51,7 +51,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     minWidth: 60,
   },
   { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
-  { key: 'companyName', header: 'שם חברה', type: 'string', minWidth: 120 },
+  { key: 'companyName', header: 'שם תאגיד', type: 'string', minWidth: 120 },
   { key: 'stockSymbol', header: 'סימול', type: 'string', minWidth: 100 },
   {
     key: 'stockTradable',
