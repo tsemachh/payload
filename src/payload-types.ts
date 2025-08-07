@@ -669,6 +669,7 @@ export interface Meeting {
       }[]
     | null;
   stockValue?: (string | null) | StockValue;
+  stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
@@ -713,6 +714,8 @@ export interface Vote {
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
+  voteAgainstRecommendation?: boolean | null;
+  voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
   reportedBy?: string | null;
   reportedTime?: string | null;
@@ -1340,6 +1343,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   stockValue?: T;
+  stockMarketValue?: T;
   creator?: T;
   updator?: T;
   publishDate?: T;
@@ -1637,6 +1641,8 @@ export interface VotesSelect<T extends boolean = true> {
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
+  voteAgainstRecommendation?: T;
+  voteDifferentFromResult?: T;
   reported?: T;
   reportedBy?: T;
   reportedTime?: T;

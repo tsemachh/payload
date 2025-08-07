@@ -30,6 +30,54 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
     )
   }
 }
+export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req }) => {
+  const meetingId = data?.meeting
+  const votes = data?.votes
+
+  if (!meetingId || !votes) return data
+
+  const meeting = await req.payload.findByID({
+    collection: 'meetings',
+    id: String(meetingId), // Explicitly cast to string
+    depth: 0,
+  })
+  const agenda = meeting?.agenda || []
+  let hasVoteAgainstRecommendation = false
+  let hasVoteDifferentFromResult = false
+
+  const resultToVoteMap: Record<string, string> = {
+    '1': 'בעד',
+    '2': 'נגד',
+    '3': 'דיון',
+  }
+
+  for (const vote of votes) {
+    const topicIndex = vote.topicIndex
+    const voteDecision = vote.voteDecision
+    const agendaItem = agenda[topicIndex - 1]
+    if (!agendaItem) continue
+
+    const recommendation = agendaItem.recommendation?.votingRecommendation
+    if (recommendation && voteDecision && voteDecision !== recommendation) {
+      hasVoteAgainstRecommendation = true
+    }
+
+    const result = agendaItem.result
+    if (!result) continue
+    const mappedResult = resultToVoteMap[result]
+    if (mappedResult && voteDecision && voteDecision !== mappedResult) {
+      hasVoteDifferentFromResult = true
+    }
+
+    if (hasVoteAgainstRecommendation && hasVoteDifferentFromResult) break
+  }
+
+  return {
+    ...data,
+    voteAgainstRecommendation: hasVoteAgainstRecommendation,
+    voteDifferentFromResult: hasVoteDifferentFromResult,
+  }
+}
 
 export const updateReportedAndMeetingHoldings: CollectionBeforeChangeHook = async ({
   data,
