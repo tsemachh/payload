@@ -101,6 +101,10 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     group: 'ניהול',
     defaultColumns: ['email', 'name', 'active', 'companies', 'isAdmin', 'impersonate'],
+    pagination: {
+      defaultLimit: 100,
+      limits: [10, 20, 50, 100, 200, 500],
+    },
   },
   custom: {
     filterList: [
