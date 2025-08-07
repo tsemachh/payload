@@ -299,7 +299,7 @@ export const Stocks: CollectionConfig = {
                 },
                 {
                   name: 'longName',
-                  label: 'שם חברה',
+                  label: 'שם תאגיד',
                   type: 'text',
                   admin: {
                     condition: (siblingData) =>
