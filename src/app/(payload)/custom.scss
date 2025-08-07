@@ -3,6 +3,7 @@
 .field-type.checkbox .checkbox-input {
   padding-top: 34px;
 }
+
 .link-from-relation {
   padding-top: 0;
   display: inline-flex;
@@ -12,15 +13,18 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
+
   &:hover {
     opacity: 0.8;
   }
+
   img {
     width: 32px;
     height: 32px;
     vertical-align: middle;
   }
 }
+
 .icon-link {
   padding-top: 0;
   display: inline-flex;
@@ -29,29 +33,36 @@
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s ease;
+
   &:hover {
     opacity: 0.8;
   }
+
   span {
     vertical-align: middle;
   }
+
   img {
     width: 24px;
     height: 24px;
     vertical-align: middle;
   }
 }
+
 .field-type.relationship .relationship--multi-value-label__content {
-  max-width:300px;
+  max-width: 300px;
 }
+
 .field-type.upload.invitationDocument {
-  max-width:300px;
+  max-width: 300px;
 }
-@layer payload-default{
-  .collection-list{
+
+@layer payload-default {
+  .collection-list {
     overflow: auto;
   }
 }
+
 form[action*="/api/research-documents"] .file-field__remove,
 form[action*="/api/research-documents"] .file-details__remove,
 .id-label,
@@ -59,34 +70,42 @@ form[action*="/api/research-documents"] .file-details__remove,
 .doc-controls__dots {
   display: none !important;
 }
+
 .bulk-upload--actions-bar__navigation {
   visibility: hidden;
 }
+
 form[action*="/api/research-documents"] .file-field__filename {
   pointer-events: none;
   background: var(--theme-elevation-100);
   color: var(--theme-elevation-400);
 }
+
 #field-agenda .group-field__header .field-label[for*="recommendation"],
 #field-agenda .group-field__header .field-label[for*="exceptionalRecommendation"] {
   display: none;
 }
+
 .field-type.upload.invitationDocument .upload__dropzoneAndUpload {
   .btn.upload__listToggler.btn--icon-style-without-border.btn--size-small.btn--withoutPopup.btn--style-pill.btn--withoutPopup {
     display: none;
   }
-  .upload__dropzoneContent__orText{
+
+  .upload__dropzoneContent__orText {
     display: none;
   }
-  .upload__dragAndDropText{
+
+  .upload__dragAndDropText {
     position: absolute;
     right: 100px;
   }
-  .dropzone.dropzoneStyle--default{
+
+  .dropzone.dropzoneStyle--default {
     padding: 7px;
   }
 }
-:root{
+
+:root {
   --nav-width: 180px;
 }
 
@@ -95,6 +114,7 @@ form[action*="/api/research-documents"] .file-field__filename {
 .field-type.join .table.table--appearance-condensed td:nth-child(1) {
   display: none;
 }
+
 .field-type.join .field-label[for="field-votes"] {
   font-weight: 700;
   font-size: 1.5rem;
@@ -102,7 +122,7 @@ form[action*="/api/research-documents"] .file-field__filename {
   padding: 0;
 }
 
-.agenda-style-wrapper {  
+.agenda-style-wrapper {
 
   .field-type.group-field[id*="__recommendation"] {
     margin: 0 !important;
@@ -119,16 +139,19 @@ form[action*="/api/research-documents"] .file-field__filename {
   .field-type.group-field[id*="__recommendation"] .group-field__header {
     display: none !important;
   }
+
   .field-label {
-  margin: 0 0 4px 0 !important;
-  padding: 0 !important;
-  line-height: 1.2 !important;
-}
-[id^="field-agenda__"][id*="__result"] > label {
-  font-weight: bold !important;
-  margin-top: -6px !important;
-  font-size: large;
-}
+    margin: 0 0 4px 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  [id^="field-agenda__"][id*="__result"] > label {
+    font-weight: bold !important;
+    margin-top: -6px !important;
+    font-size: large;
+  }
+
   .render-fields,
   .group-field__wrap,
   .field-type__wrap,
@@ -174,12 +197,9 @@ form[action*="/api/research-documents"] .file-field__filename {
 .array-field .voteDecision.field-type.select {
   margin-left: 50px;
 }
+
 @layer payload-default {
   .collection-list.collection-list--meetings {
-    .table th, .table td {
-      padding: calc(var(--base) * .1);
-      min-width: 10px;
-    }
 
     #heading-invitationLink .sort-column__buttons,
     #heading-resultsConfirmationStatus .sort-column__buttons,
@@ -188,15 +208,40 @@ form[action*="/api/research-documents"] .file-field__filename {
       display: none;
     }
   }
-  .collection-list.collection-list--admin-notifications {
-      .table th, .table td {
-        padding: calc(var(--base) * .2);
-        min-width: 10px;
-      }
-      #heading-url .sort-column__buttons,
-      #heading-handled .sort-column__buttons
-      {
-        display: none;
-      }
+
+  .collection-list{
+    .table {
+      max-height: calc(100vh - 260px); /* 100vh - (header + footer heights) */
+      overflow-y: auto !important; /* Enable vertical scrolling */
+      display: block !important;
+    }
+
+    .table th, .table td {
+      padding: calc(var(--base) * .2);
+      min-width: 10px;
+    }
+
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+    }
+
+    th {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important; /* Ensure headers stay above content */
+      background: #fff !important;
     }
   }
+
+  .collection-list.collection-list--admin-notifications {
+    .table {
+      max-height: calc(100vh - 310px); /* 100vh - (header + footer heights) */
+    }
+
+    #heading-url .sort-column__buttons,
+    #heading-handled .sort-column__buttons {
+      display: none;
+    }
+  }
+}
