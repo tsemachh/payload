@@ -20,15 +20,7 @@ export const AdminNotifications: CollectionConfig = {
   admin: {
     useAsTitle: 'message',
     group: 'פעילות',
-    defaultColumns: [
-      'message',
-      'url',
-      'handled',
-      'createdAt',
-      'companies',
-      'assignee',
-      'acquireTask',
-    ],
+    defaultColumns: ['message', 'url', 'handled', 'createdAt', 'assignee', 'acquireTask'],
     components: {
       beforeList: ['/collections/admin-notifications/components/TaskMenu'],
     },
@@ -47,6 +39,11 @@ export const AdminNotifications: CollectionConfig = {
       label: 'הודעה',
       type: 'text',
       required: true,
+      admin: {
+        custom: {
+          cellWidth: '400px',
+        },
+      },
     },
     {
       type: 'row',

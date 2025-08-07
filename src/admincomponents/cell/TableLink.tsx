@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 interface TableLinkProps {
   href: string
-  children: React.ReactNode
+  children?: React.ReactNode
   external?: boolean
   className?: string
   variant?: 'default' | 'muted' | 'destructive'
@@ -13,13 +13,12 @@ interface TableLinkProps {
 
 export function TableLink({
   href,
-  children,
   external = false,
   className,
   variant = 'default',
 }: TableLinkProps) {
   const baseStyles =
-    'inline-flex items-center gap-1 font-medium transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm px-2'
+    'inline-flex items-center gap-1 font-medium transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm px-2 py-1'
 
   const variantStyles = {
     default: 'text-primary hover:text-primary/80',
@@ -27,12 +26,7 @@ export function TableLink({
     destructive: 'text-destructive hover:text-destructive/80',
   }
 
-  const linkContent = (
-    <>
-      {children}
-      {external && <ExternalLink className="h-3 w-3" />}
-    </>
-  )
+  const linkContent = <>{external && <ExternalLink className="h-5 w-5" />}</>
 
   const combinedClassName = cn(baseStyles, variantStyles[variant], className)
 
