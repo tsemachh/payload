@@ -23,7 +23,6 @@ function processVotesData(
     const meeting = fullMeetingsMap[meetingId]
     const stock: Stock = stockMap[meeting.stock]
 
-
     if (!meeting) {
       console.warn('Missing full meeting for vote:', vote.id)
       return
@@ -68,11 +67,13 @@ function processVotesData(
           },
           result: agendaItem.result || voteItem.meetingResult || null,
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
-          privilegedMajority: agendaItem.privilegedMajority ?? voteItem.privilegedMajority ?? null,
-          vPercentSpecial:
-            agendaItem.privilegedMajority !== 'regular'
-              ? (agendaItem.vPercentSpecial ?? voteItem.vPercentSpecial ?? null)
-              : null,
+          privilegedMajority:
+            agendaItem.majorityType === 'privileged'
+              ? true
+              : voteItem.majorityType === 'privileged'
+                ? true
+                : false,
+          vPercentSpecial: agendaItem.vPercentSpecial || null,
         }
       }),
     }
@@ -197,7 +198,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       overrideAccess: true,
     })
     const votesQueryEndTime = performance.now()
-    console.log(`Performance: Votes query took ${(votesQueryEndTime - votesQueryStartTime).toFixed(2)}ms`)
 
     const votes = results.docs
 
@@ -219,21 +219,23 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
     // שלב שני – מקביל: meetings + companies
     const parallelQueriesStartTime = performance.now()
-    const fullMeetings= await req.payload.find({
-        collection: 'meetings',
-        where: { id: { in: uniqueMeetingIds } },
-        depth: 0,
-        limit: 0,
-        overrideAccess: true,
-      })
+    const fullMeetings = await req.payload.find({
+      collection: 'meetings',
+      where: { id: { in: uniqueMeetingIds } },
+      depth: 0,
+      limit: 0,
+      overrideAccess: true,
+    })
     const uniqueStockIds = Array.from(
       new Set(
         fullMeetings.docs
-          .map((meeting: any) => (typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id))
+          .map((meeting: any) =>
+            typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id,
+          )
           .filter(Boolean),
       ),
     )
-    const [stocksResult,companiesResult] = await Promise.all([
+    const [stocksResult, companiesResult] = await Promise.all([
       req.payload.find({
         collection: 'stocks',
         where: { id: { in: uniqueStockIds } },
@@ -250,7 +252,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       }),
     ])
     const parallelQueriesEndTime = performance.now()
-    console.log(`Performance: Parallel queries (meetings + companies) took ${(parallelQueriesEndTime - parallelQueriesStartTime).toFixed(2)}ms`)
 
     const fullMeetingsMap = Object.fromEntries(
       fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
@@ -260,11 +261,9 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       companiesResult.docs.map((company: any) => [company.id, company]),
     )
 
-    const stockMap = Object.fromEntries(
-      stocksResult.docs.map((stock: any) => [stock.id, stock]),
-    )
+    const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
-    let processedData = processVotesData(votes, fullMeetingsMap, companiesMap,stockMap)
+    let processedData = processVotesData(votes, fullMeetingsMap, companiesMap, stockMap)
 
     const totalItems = processedData.length
     const totalPages = Math.ceil(totalItems / pageSize)

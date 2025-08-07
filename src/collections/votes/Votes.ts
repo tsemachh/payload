@@ -413,9 +413,9 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [updateReportedAndMeetingHoldings],
+    beforeChange: [updateReportedAndMeetingHoldings, setVoteFlags],
     beforeValidate: [validateOwnedQuantityWhenUnauthorized],
-    afterChange: [recalculateVoteCountsOnReportedChange, setVoteFlags],
+    afterChange: [recalculateVoteCountsOnReportedChange],
     afterDelete: [handleVoteDeletionHook],
   },
   endpoints: [

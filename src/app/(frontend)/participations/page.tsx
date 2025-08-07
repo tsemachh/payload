@@ -156,7 +156,6 @@ export default function Participations() {
       params.append('voteDifferentFromResult', 'true')
     }
 
-    // הוספת הפילטר החדש
     if (appliedFilters.foreignStocksOnly) {
       params.append('foreignStocksOnly', 'true')
     }

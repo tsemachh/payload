@@ -30,7 +30,7 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
     )
   }
 }
-export const setVoteFlags: CollectionAfterChangeHook<Vote> = async ({ data, req }) => {
+export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req }) => {
   const meetingId = data?.meeting
   const votes = data?.votes
 
