@@ -62,6 +62,7 @@ export default function Participations() {
     voteAgainstRecommendation: false,
     voteDifferentFromResult: false,
     foreignStocksOnly: false,
+    dualMeetingsOnly: false,
   })
 
   // Server-side state (managed by endpoint)
@@ -73,7 +74,7 @@ export default function Participations() {
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
   const [foreignStocksOnly, setForeignStocksOnly] = useState(false)
-
+  const [dualMeetingsOnly, setDualMeetingsOnly] = useState(false)
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
 
@@ -159,7 +160,9 @@ export default function Participations() {
     if (appliedFilters.foreignStocksOnly) {
       params.append('foreignStocksOnly', 'true')
     }
-
+    if (appliedFilters.dualMeetingsOnly) {
+      params.append('dualMeetingsOnly', 'true')
+    }
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
@@ -168,6 +171,7 @@ export default function Participations() {
     appliedFilters.voteAgainstRecommendation,
     appliedFilters.voteDifferentFromResult,
     appliedFilters.foreignStocksOnly,
+    appliedFilters.dualMeetingsOnly,
     showParticipationTable,
     currentPage,
     pageSize,
@@ -461,7 +465,19 @@ export default function Participations() {
       setHasChanges(true)
     }
   }
-
+  const handleDualMeetingsOnlyChange = (checked: boolean) => {
+    setDualMeetingsOnly(checked)
+    if (showParticipationTable) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        dualMeetingsOnly: checked,
+      }))
+      setCurrentPage(1)
+    }
+    if (hasDisplayed) {
+      setHasChanges(true)
+    }
+  }
   const handleExport = async () => {
     const newAppliedFilters = {
       selectedFundIds: [...selectedFundIds],
@@ -471,6 +487,7 @@ export default function Participations() {
       voteAgainstRecommendation,
       voteDifferentFromResult,
       foreignStocksOnly,
+      dualMeetingsOnly,
     }
 
     setAppliedFilters(newAppliedFilters)
@@ -855,7 +872,21 @@ export default function Participations() {
                     htmlFor="foreign-stocks-only"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
                   >
-                    מניות חול בלבד
+                    מניות חו״ל{' '}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="dual-meetings-only"
+                    checked={dualMeetingsOnly}
+                    onCheckedChange={handleDualMeetingsOnlyChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  />
+                  <Label
+                    htmlFor="dual-meetings-only"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                  >
+                    אסיפות דואליות
                   </Label>
                 </div>
               </div>

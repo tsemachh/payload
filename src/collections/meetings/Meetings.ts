@@ -184,6 +184,15 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'isDualStock',
+                  label: 'אסיפה דואלית',
+                  type: 'checkbox',
+                  virtual: 'stock.isDual',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'type',
                   label: 'סוג',
                   index: true,
@@ -891,8 +900,8 @@ export const Meetings: CollectionConfig = {
             {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
-              type: 'number'
-            }
+              type: 'number',
+            },
           ],
         },
       ],
@@ -907,16 +916,20 @@ export const Meetings: CollectionConfig = {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
+            depth: 0
           })
+          if (stock?.hasDual && stock?.dualStock) {
+            const updatedDualStock = await req.payload.findByID({
+              collection: 'stocks',
+              id: getIdOfRelationField(stock.dualStock) as string
+            })
 
-          if (stock?.isDual && stock?.dualStock) {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
             delete dualMeeting.meetingId
             delete dualMeeting.dualMeeting
-            dualMeeting.stock = stock.dualStock
-
+            dualMeeting.stock = updatedDualStock
             try {
               const createdDualMeeting = await req.payload.create({
                 collection: 'meetings',
