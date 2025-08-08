@@ -38,7 +38,7 @@ const IconLinkCell = (props: DefaultCellComponentProps & IconLinkCellProps) => {
       )
   }
   return (
-    <span className="inline-flex items-center">
+    <span className="inline-flex items-center px-2">
       {!iconOnly && <DefaultCell {...props} />}
       {isVisible && (
         <img

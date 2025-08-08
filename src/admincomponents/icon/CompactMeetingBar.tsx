@@ -21,7 +21,7 @@ export default function CompactMeetingBar({
     companies > 0 ? Math.min((reportedVotes / companies) * 100, votesPercentage) : 0
 
   return (
-    <div className="relative w-full max-w-[150px]">
+    <div className="relative w-full min-w-[150px] ">
       <div
         className="relative h-6 bg-gray-500 rounded-full overflow-hidden cursor-pointer"
         onMouseEnter={() => setShowTooltip(true)}
@@ -80,7 +80,7 @@ export default function CompactMeetingBar({
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                 <div className="flex justify-between w-full min-w-[120px]">
-                  <span>דווח:</span>
+                  <span>בפועל:</span>
                   <div className="flex gap-1">
                     <span className="text-right w-5">{reportedVotes}</span>
                     <span className="text-right w-10">

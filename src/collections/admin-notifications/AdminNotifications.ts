@@ -20,11 +20,18 @@ export const AdminNotifications: CollectionConfig = {
   admin: {
     useAsTitle: 'message',
     group: 'פעילות',
-    defaultColumns: ['message', 'url', 'handled', 'createdAt', 'companies'],
+    defaultColumns: ['message', 'url', 'handled', 'createdAt', 'assignee', 'acquireTask'],
+    components: {
+      beforeList: ['/collections/admin-notifications/components/TaskMenu'],
+    },
+    pagination: {
+      defaultLimit: 100,
+      limits: [10, 20, 50, 100, 200, 500],
+    },
   },
-  defaultSort: 'createdAt',
+  defaultSort: '-createdAt',
   custom: {
-    filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled']],
+    filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled', 'acquireTask']],
   },
   fields: [
     {
@@ -32,66 +39,108 @@ export const AdminNotifications: CollectionConfig = {
       label: 'הודעה',
       type: 'text',
       required: true,
-    },
-    {
-      name: 'type',
-      label: 'סוג התראה',
-      type: 'select',
-      interfaceName: 'AdminNotificationType',
-      options: [
-        {
-          label: 'הזנת מערכת נ״ע ואסיפות',
-          value: 'predictaFeed',
-        },
-        {
-          label: 'עדכון משתמשים',
-          value: 'usersUpdated',
-        },
-        {
-          label: 'העדר דווח אחזקות',
-          value: 'companyNotReportedHoldings',
-        },
-        {
-          label: 'העדר הצבעה',
-          value: 'companyNotVotedMeetingNextDay',
-        },
-        {
-          label: 'הצבעה לטיפול',
-          value: 'newVoteAfterHoldingLimit',
-        },
-        {
-          label: 'התחזות למשתמש',
-          value: 'userImpersonation',
-        },
-      ],
-      defaultValue: 'general',
-    },
-    {
-      name: 'url',
-      label: 'קישור',
-      type: 'text',
       admin: {
-        components: {
-          Cell: {
-            path: '/admincomponents/link/IconLinkCell',
-            clientProps: NotificationLinkProps,
-          },
-          Field: {
-            path: '/admincomponents/link/IconLinkTextField',
-            clientProps: NotificationLinkProps,
-          },
+        custom: {
+          cellWidth: '400px',
         },
       },
     },
     {
-      name: 'handled',
-      label: 'טופל',
-      type: 'checkbox',
-      defaultValue: false,
+      type: 'row',
+      fields: [
+        {
+          name: 'type',
+          label: 'סוג התראה',
+          type: 'select',
+          interfaceName: 'AdminNotificationType',
+          options: [
+            {
+              label: 'הצבעה לטיפול',
+              value: 'newVoteAfterHoldingLimit',
+            },
+            {
+              label: 'הזנת מערכת נ״ע ואסיפות',
+              value: 'predictaFeed',
+            },
+            {
+              label: 'עדכון משתמשים',
+              value: 'usersUpdated',
+            },
+            {
+              label: 'העדר דווח אחזקות',
+              value: 'companyNotReportedHoldings',
+            },
+            {
+              label: 'העדר הצבעה',
+              value: 'companyNotVotedMeetingNextDay',
+            },
+            {
+              label: 'התחזות למשתמש',
+              value: 'userImpersonation',
+            },
+          ],
+          admin: {
+            width: '200px',
+          },
+        },
+        {
+          name: 'assignee',
+          label: 'אחראי',
+          type: 'relationship',
+          relationTo: 'users',
+          hasMany: false,
+          admin: {
+            allowCreate: false,
+            width: '300px',
+          },
+          filterOptions: {
+            isAdmin: { equals: true },
+          },
+        },
+        {
+          name: 'url',
+          label: 'קישור',
+          type: 'text',
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/link/TableLinkCell',
+                clientProps: NotificationLinkProps,
+              },
+              Field: {
+                path: '/admincomponents/link/IconLinkTextField',
+                clientProps: NotificationLinkProps,
+              },
+            },
+          },
+        },
+        {
+          name: 'handled',
+          label: 'טופל',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/EditableCheckboxCell',
+              },
+            },
+          },
+        },
+      ],
+    },
+
+    {
+      name: 'acquireTask',
+      label: 'פעולות',
+      type: 'text',
+      virtual: true,
       admin: {
+        condition: (_, siblingData) => siblingData.assignee !== null,
+        hidden: true,
         components: {
           Cell: {
-            path: '/admincomponents/cell/EditableCheckboxCell',
+            path: '/collections/admin-notifications/components/AcquireTaskCell',
           },
         },
       },

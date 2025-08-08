@@ -27,8 +27,8 @@ const typeMappings = new Map<number, { newType: string | null; newState: string 
   [14, { newType: 'יחידת השתתפות', newState: 'postponed' }],
   [16, { newType: 'תעודת סל', newState: null }],
   [17, { newType: 'תעודת סל', newState: 'postponed' }],
-  [19, { newType: null, newState: 'cancelled' }],
-  [20, { newType: null, newState: 'on-hold' }],
+  [19, { newType: 'שנתית', newState: 'cancelled' }],
+  [20, { newType: 'שנתית', newState: 'on-hold' }],
   [30, { newType: 'אג"ח כהונת נאמן', newState: null }],
 ])
 

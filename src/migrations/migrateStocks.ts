@@ -203,6 +203,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stockStatuses.hasLatestMeeting ||
               stockStatuses.isPredictaStock ||
               stockStatuses.isPrivateShaked ||
+              stockStatuses.isNotActiveShaked || //Should be active as well
               stockStatuses.isNonTradableShaked ||
               stockStatuses.isForeign
 
