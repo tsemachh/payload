@@ -191,7 +191,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     }
     if (dualMeetingsOnly) {
       whereConditions.push({
-        'meeting.dual': { equals: true },
+        'meeting.isDualStock': { equals: true },
       })
     }
     const results = await req.payload.find({

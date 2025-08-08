@@ -184,10 +184,10 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'dual',
+                  name: 'isDualStock',
                   label: 'אסיפה דואלית',
                   type: 'checkbox',
-                  virtual: 'stock.Dual',
+                  virtual: 'stock.isDual',
                   admin: {
                     hidden: true,
                   },
@@ -916,24 +916,12 @@ export const Meetings: CollectionConfig = {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
+            depth: 0
           })
-          if (stock?.isDual && stock?.dualStock) {
-            try {
-              if (typeof stock.dualStock !== 'string') {
-                await req.payload.update({
-                  collection: 'stocks',
-                  id: stock.dualStock.id,
-                  data: {
-                    Dual: true,
-                  },
-                })
-              }
-            } catch (error) {
-              console.error('Failed to update dual stock:', error)
-            }
+          if (stock?.hasDual && stock?.dualStock) {
             const updatedDualStock = await req.payload.findByID({
               collection: 'stocks',
-              id: typeof stock.dualStock === 'string' ? stock.dualStock : stock.dualStock.id,
+              id: getIdOfRelationField(stock.dualStock) as string
             })
 
             // Create dual meeting by cloning the current meeting
