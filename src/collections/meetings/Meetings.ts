@@ -918,18 +918,15 @@ export const Meetings: CollectionConfig = {
             id: doc.stock,
             depth: 0
           })
-          if (stock?.hasDual && stock?.dualStock) {
-            const updatedDualStock = await req.payload.findByID({
-              collection: 'stocks',
-              id: getIdOfRelationField(stock.dualStock) as string
-            })
 
+          if (stock?.hasDual && stock?.dualStock) {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
             delete dualMeeting.meetingId
             delete dualMeeting.dualMeeting
-            dualMeeting.stock = updatedDualStock
+            dualMeeting.stock = stock.dualStock
+
             try {
               const createdDualMeeting = await req.payload.create({
                 collection: 'meetings',
