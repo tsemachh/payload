@@ -93,6 +93,9 @@ export const Meetings: CollectionConfig = {
     singular: 'אסיפה',
   },
   custom: {
+    defaultFilter:{
+      'meetingDate': 'todayAndFuture'
+    },
     filterList: [
       [
         { name: 'meetingDate' },

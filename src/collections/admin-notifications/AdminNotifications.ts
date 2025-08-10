@@ -32,6 +32,7 @@ export const AdminNotifications: CollectionConfig = {
   defaultSort: '-createdAt',
   custom: {
     filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled', 'acquireTask']],
+    defaultFilter:{'handled':{equals:false}}
   },
   fields: [
     {

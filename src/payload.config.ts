@@ -12,7 +12,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionQuickFilterPlugin } from '@shefing/quickfilter'
+import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -211,6 +211,7 @@ export default buildConfig({
       graphics: {
         Logo: '/graphics/Logo',
       },
+      Nav: '/filters/quickfilter/nav/index',
     },
     meta: {
       title: 'עמדה',
