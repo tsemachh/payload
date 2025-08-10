@@ -145,6 +145,207 @@ export const Meetings: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
+          label: 'הצבעות',
+          admin: {
+            condition: (data) => data?._status === 'published',
+          },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'votesCount',
+                  label: 'מספר הצבעות',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    readOnly: true,
+                    hidden: true,
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'votesStatus',
+                  label: 'סטטוס הצבעות',
+                  type: 'select',
+                  defaultValue: 'None',
+                  interfaceName: 'VotesStatus',
+                  options: [
+                    { label: 'ריק', value: 'None' },
+                    { label: 'חלקי', value: 'Partial' },
+                    { label: 'מלא', value: 'All' },
+                  ],
+                  admin: {
+                    readOnly: true,
+                    hidden: true,
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'reportVotesCount',
+                  label: 'מספר הצבעות בפועל',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    readOnly: true,
+                    hidden: true,
+                    width: '150px',
+                  },
+                },
+                {
+                  name: 'votesReportStatus',
+                  label: 'סטטוס הצבעות בפועל',
+                  type: 'select',
+                  interfaceName: 'VotesReportStatus',
+                  defaultValue: 'None',
+                  options: [
+                    { label: 'ריק', value: 'None' },
+                    { label: 'חלקי', value: 'Partial' },
+                    { label: 'מלא', value: 'All' },
+                  ],
+                  admin: {
+                    readOnly: true,
+                    hidden: true,
+                    width: '150px',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companies',
+              label: 'חברות',
+              index: true,
+              maxDepth: 1,
+              filterOptions: ({ req }) => {
+                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
+                  return true
+
+                return {
+                  type: {
+                    equals: 'regular',
+                  },
+                }
+              },
+              admin: {
+                hidden: true,
+                readOnly: true,
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'companiesNotYetVoted',
+              label: 'חברות שטרם הצביעו',
+              virtual: true,
+              admin: {
+                hidden: true,
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data, req }) => {
+                    if (!data?.votes?.docs || !data?.companies) {
+                      return []
+                    }
+                    const votes = await req.payload.find({
+                      collection: 'votes',
+                      select: {
+                        company: true,
+                      },
+                      where: {
+                        id: {
+                          in: data?.votes?.docs,
+                        },
+                      },
+                      limit: 0,
+                      depth: 1,
+                    })
+                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
+                    const nonVotedCompanies = data.companies.filter(
+                      (companyId: string) => !votedCompanyIds.includes(companyId),
+                    )
+                    return nonVotedCompanies
+                  },
+                ],
+              },
+            },
+            {
+              name: 'activity',
+              label: 'פעילות',
+              type: 'text',
+              virtual: true,
+              admin: {
+                hidden: true,
+                components: {
+                  Cell: { path: '/admincomponents/icon/CompactMeetingBarCell' },
+                  Field: '/collections/meetings/components/ActivityStatsField',
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    // Return the data needed for the component as a JSON string
+                    return JSON.stringify({
+                      companies: data?.companies?.length || 0,
+                      votes: data?.votesCount || 0,
+                      reportedVotes: data?.reportVotesCount || 0,
+                    })
+                  },
+                ],
+              },
+            },
+            {
+              name: 'participationReport',
+              label: 'דוח השתתפות',
+              type: 'upload',
+              relationTo: 'documents',
+              admin: {
+                hidden: true,
+                components: {
+                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
+                },
+              },
+            },
+
+            {
+              name: 'votes',
+              label: 'הצבעות',
+              type: 'join',
+              collection: 'votes',
+              on: 'meeting',
+              defaultLimit: 0,
+              maxDepth: 1,
+              admin: {
+                allowCreate: false,
+                defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
+                components: {
+                  Field: '/collections/meetings/components/VotingTablesField',
+                },
+              },
+              where: {
+                or: [
+                  {
+                    _status: {
+                      equals: 'published',
+                    },
+                  },
+                  {
+                    _status: {
+                      equals: 'draft',
+                    },
+                    publishDate: {
+                      not_equals: null,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
           label: 'כללי',
           fields: [
             {
@@ -618,200 +819,6 @@ export const Meetings: CollectionConfig = {
           ],
         },
         {
-          label: 'הצבעות',
-          fields: [
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'votesCount',
-                  label: 'מספר הצבעות',
-                  type: 'number',
-                  defaultValue: 0,
-                  admin: {
-                    readOnly: true,
-                    width: '150px',
-                  },
-                },
-                {
-                  name: 'votesStatus',
-                  label: 'סטטוס הצבעות',
-                  type: 'select',
-                  defaultValue: 'None',
-                  interfaceName: 'VotesStatus',
-                  options: [
-                    { label: 'ריק', value: 'None' },
-                    { label: 'חלקי', value: 'Partial' },
-                    { label: 'מלא', value: 'All' },
-                  ],
-                  admin: {
-                    readOnly: true,
-                    width: '150px',
-                  },
-                },
-                {
-                  name: 'reportVotesCount',
-                  label: 'מספר הצבעות בפועל',
-                  type: 'number',
-                  defaultValue: 0,
-                  admin: {
-                    readOnly: true,
-                    width: '150px',
-                  },
-                },
-                {
-                  name: 'votesReportStatus',
-                  label: 'סטטוס הצבעות בפועל',
-                  type: 'select',
-                  interfaceName: 'VotesReportStatus',
-                  defaultValue: 'None',
-                  options: [
-                    { label: 'ריק', value: 'None' },
-                    { label: 'חלקי', value: 'Partial' },
-                    { label: 'מלא', value: 'All' },
-                  ],
-                  admin: {
-                    readOnly: true,
-                    width: '150px',
-                  },
-                },
-              ],
-            },
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companies',
-              label: 'חברות',
-              index: true,
-              maxDepth: 1,
-              filterOptions: ({ req }) => {
-                if (req?.context?.from == 'migration' || req?.context?.from == 'process')
-                  return true
-
-                return {
-                  type: {
-                    equals: 'regular',
-                  },
-                }
-              },
-              admin: {
-                hidden: true,
-                readOnly: true,
-              },
-            },
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companiesNotYetVoted',
-              label: 'חברות שטרם הצביעו',
-              virtual: true,
-              admin: {
-                components: {
-                  Field: {
-                    path: '/collections/meetings/components/CompaniesRelationshipField',
-                  },
-                },
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data, req }) => {
-                    if (!data?.votes?.docs || !data?.companies) {
-                      return []
-                    }
-                    const votes = await req.payload.find({
-                      collection: 'votes',
-                      select: {
-                        company: true,
-                      },
-                      where: {
-                        id: {
-                          in: data?.votes?.docs,
-                        },
-                      },
-                      limit: 0,
-                      depth: 1,
-                    })
-                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    const nonVotedCompanies = data.companies.filter(
-                      (companyId: string) => !votedCompanyIds.includes(companyId),
-                    )
-                    return nonVotedCompanies
-                  },
-                ],
-              },
-            },
-            {
-              name: 'activity',
-              label: 'פעילות',
-              type: 'text',
-              virtual: true,
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/CompactMeetingBarCell' },
-                },
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data }) => {
-                    // Return the data needed for the component as a JSON string
-                    return JSON.stringify({
-                      companies: data?.companies?.length || 0,
-                      votes: data?.votesCount || 0,
-                      reportedVotes: data?.reportVotesCount || 0,
-                    })
-                  },
-                ],
-              },
-            },
-            {
-              name: 'participationReport',
-              label: 'דוח השתתפות',
-              type: 'upload',
-              relationTo: 'documents',
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
-                },
-              },
-            },
-
-            {
-              name: 'votes',
-              label: 'הצבעות',
-              type: 'join',
-              collection: 'votes',
-              on: 'meeting',
-              defaultLimit: 0,
-              maxDepth: 1,
-              admin: {
-                allowCreate: false,
-                defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
-              },
-              where: {
-                or: [
-                  {
-                    _status: {
-                      equals: 'published',
-                    },
-                  },
-                  {
-                    _status: {
-                      equals: 'draft',
-                    },
-                    publishDate: {
-                      not_equals: null,
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-        {
           label: 'תיקים',
           fields: [
             {
@@ -850,6 +857,11 @@ export const Meetings: CollectionConfig = {
                     {
                       name: 'fund',
                       label: 'מזהה תיק',
+                      type: 'text',
+                    },
+                    {
+                      name: 'company',
+                      label: 'מזהה חברה',
                       type: 'text',
                     },
                     {
@@ -916,12 +928,12 @@ export const Meetings: CollectionConfig = {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
-            depth: 0
+            depth: 0,
           })
           if (stock?.hasDual && stock?.dualStock) {
             const updatedDualStock = await req.payload.findByID({
               collection: 'stocks',
-              id: getIdOfRelationField(stock.dualStock) as string
+              id: getIdOfRelationField(stock.dualStock) as string,
             })
 
             // Create dual meeting by cloning the current meeting
@@ -959,9 +971,7 @@ export const Meetings: CollectionConfig = {
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status === 'draft' &&
-          doc._status === 'published' &&
-          (!doc.meetings || doc.meetings.length === 0)
+          previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
 
         if (holdingsLimitChanged || stockChanged || firstPublish) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {

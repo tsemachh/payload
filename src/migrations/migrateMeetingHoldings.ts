@@ -4,12 +4,19 @@ import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { Stock } from '@/payload-types'
 import { createMSSqlPool } from '@/migrations/utils/utils'
+import { getCompanyIdFromFundId, initFundIdToCompanyIdMap } from '@/utils/utils'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
     console.log('Starting meeting holdings migration process...')
+
+    // Initialize the map of fundId -> companyId
+    console.log('Initializing fundId -> companyId map')
+    await initFundIdToCompanyIdMap(payload)
+    console.log('Map initialized successfully')
+
     pool = await createMSSqlPool()
 
     if (pool === null) {
@@ -129,6 +136,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
               if (fundId) {
                 fundsWithHolding.push({
+                  company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
                   ownedQuantity: holding.ownedQty,

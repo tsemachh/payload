@@ -108,7 +108,7 @@ export function calculateVoteStatuses(
   let votesReportStatus: VotesReportStatus = 'None'
   if (reportVotesCount === 0) {
     votesReportStatus = 'None'
-  } else if (reportVotesCount >= companiesCount && companiesCount > 0) {
+  } else if (reportVotesCount >= votesCount && votesCount > 0) {
     votesReportStatus = 'All'
   } else {
     votesReportStatus = 'Partial'
