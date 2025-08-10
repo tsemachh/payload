@@ -94,7 +94,7 @@
     "payload": "^3.50.0",
     "payload-oapi": "0.2.4-b.0",
     "pino": "^9.5.0",
-    "pino-abstract-transport": "^1.0.0",
+    "pino-abstract-transport": "^1.2.0",
     "process": "^0.11.10",
     "qs-esm": "^7.0.2",
     "react": "19.0.0",

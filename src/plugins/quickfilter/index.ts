@@ -1,7 +1,4 @@
 import type { CollectionSlug, Config } from 'payload';
-import { parseWhereClauseToFilterValues } from './QuickFilter';
-
-export { parseWhereClauseToFilterValues };
 
 export type CollectionFilterPluginConfig = {
   /**

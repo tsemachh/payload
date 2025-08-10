@@ -1,6 +1,5 @@
 import type { EntityToGroup } from '@payloadcms/ui/shared'
 import type {
-  Field,
   NavPreferences,
   PayloadRequest,
   SanitizedPermissions,
@@ -14,19 +13,62 @@ import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerCompo
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared'
 import React from 'react'
 import { formatAdminURL } from 'payload/shared'
-import { parseWhereClauseToFilterValues } from '../'
+import { parseWhereClauseToFilterValues, buildQuickFilterConditions } from '../lib/utils'
 import type { FilterDetaild } from '../filters/types/filters-type'
 import type { SupportedLocale } from '../labels'
+import { stringify } from 'qs-esm'
 
-import { NavHamburger } from './NavHamburger/index.js'
-import { NavWrapper } from './NavWrapper/index.js'
+import { NavHamburger } from './NavHamburger/index'
+import { NavWrapper } from './NavWrapper/index'
 import './index.scss'
 
 const baseClass = 'nav'
 
-import { getNavPrefs } from './getNavPrefs.js'
-import { DefaultNavClient } from './index.client.js'
+import { getNavPrefs } from './getNavPrefs'
+import { DefaultNavClient } from './index.client'
 import { FieldAffectingData } from 'payload'
+
+// Recursive function to find a field by name
+function findFieldByName(fields: any[], fieldName: string): any {
+  // First check at the current level
+  const directMatch = fields.find(
+    (f) => (f as FieldAffectingData).name === fieldName,
+  )
+  if (directMatch) return directMatch
+
+  // If not found, search recursively in nested structures
+  for (const item of fields) {
+    // Check in array, row, or collapsible fields
+    if (
+      (item.type === 'array' || item.type === 'row' || item.type === 'collapsible') &&
+      'fields' in item &&
+      Array.isArray(item.fields)
+    ) {
+      const nestedMatch = findFieldByName(item.fields, fieldName)
+      if (nestedMatch) return nestedMatch
+    } 
+    // Check in tabs
+    else if (item.type === 'tabs' && Array.isArray(item.tabs)) {
+      for (const tab of item.tabs) {
+        if ('fields' in tab && Array.isArray(tab.fields)) {
+          const tabMatch = findFieldByName(tab.fields, fieldName)
+          if (tabMatch) return tabMatch
+        }
+      }
+    } 
+    // Check in blocks
+    else if (item.type === 'blocks' && Array.isArray(item.blocks)) {
+      for (const block of item.blocks) {
+        if ('fields' in block && Array.isArray(block.fields)) {
+          const blockMatch = findFieldByName(block.fields, fieldName)
+          if (blockMatch) return blockMatch
+        }
+      }
+    }
+  }
+
+  return null
+}
 
 export type NavProps = {
   req?: PayloadRequest
@@ -91,7 +133,7 @@ export const DefaultNav: React.FC<NavProps> = async (props) => {
     const processedEntities = group.entities.map(entity => {
       if (entity.type === EntityType.collection) {
         const collection = collections.find(c => c.slug === entity.slug);
-
+        debugger
         // Check if collection has defaultFilter in custom props
         if (collection?.custom?.defaultFilter) {
           // Base URL without query parameters
@@ -106,9 +148,7 @@ export const DefaultNav: React.FC<NavProps> = async (props) => {
               ?.flat()
               .map((field: { name: any; width: string | undefined }) => {
                 const fieldName = field.name
-                const fieldConfig = collection.fields.find(
-                  (f) => (f as FieldAffectingData).name === fieldName,
-                )
+                const fieldConfig = findFieldByName(collection.fields, fieldName)
                 return {
                   name: fieldName,
                   type: fieldConfig?.type,
@@ -128,13 +168,19 @@ export const DefaultNav: React.FC<NavProps> = async (props) => {
               fields,
               i18n.language as SupportedLocale
             );
-
             // If we have filter values, add them to the URL
             if (Object.keys(filterValues).length > 0) {
-              const whereParam = encodeURIComponent(JSON.stringify(collection.custom.defaultFilter));
+              const quickFilterConditions = buildQuickFilterConditions(filterValues, fields, i18n.language as SupportedLocale)
+
+
+              const whereCondition = quickFilterConditions.length === 1 ? quickFilterConditions[0] : { and: quickFilterConditions };
+              const query = {
+                where: whereCondition,
+              };
+              const stringifiedQuery = stringify(query, { addQueryPrefix: true });
               return {
                 ...entity,
-                href: `${baseHref}?where=${whereParam}`
+                href: `${baseHref}${stringifiedQuery}`
               };
             }
           }

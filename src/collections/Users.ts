@@ -190,6 +190,9 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
+              admin:{
+                sortOptions: 'name'
+              },
               filterOptions: ({ data, siblingData, req }) => {
                 if (req.context?.from == 'migration' || req.context?.from == 'process') return true
                 const currentId = (siblingData as { companyId?: string })?.companyId

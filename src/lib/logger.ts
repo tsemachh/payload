@@ -3,7 +3,7 @@ import { Logtail } from '@logtail/node'
 import { Context, ILogtailOptions, LogLevel, StackContextHint } from '@logtail/types'
 import { getLogLevel } from './helpers'
 import os from 'os'
-import { pino } from 'pino'
+import  pino  from 'pino'
 
 export interface IPinoLogtailOptions {
   sourceToken: string
