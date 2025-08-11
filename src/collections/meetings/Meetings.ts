@@ -93,8 +93,8 @@ export const Meetings: CollectionConfig = {
     singular: 'אסיפה',
   },
   custom: {
-    defaultFilter:{
-      'meetingDate': 'todayAndFuture'
+    defaultFilter: {
+      meetingDate: 'todayAndFuture',
     },
     filterList: [
       [
@@ -130,8 +130,8 @@ export const Meetings: CollectionConfig = {
       'invitationLink',
     ],
     pagination: {
-      defaultLimit: 100,
-      limits: [10, 20, 50, 100, 200, 500],
+      defaultLimit: 300,
+      limits: [100, 200, 300, 500],
     },
     components: {
       edit: {
