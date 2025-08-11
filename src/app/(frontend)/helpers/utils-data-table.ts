@@ -97,31 +97,6 @@ export const calculatePrecedingColumnsWidth = (
   return `${totalWidth}px`
 }
 
-export const calculateHoldingValues = (
-  // account: Account | string, //TODO: add holdingsCompanyName
-  quantity: number,
-  stockValues: StockValue | null | undefined | string,
-) => {
-  let safeStockValue
-  if (typeof stockValues == 'object') {
-    safeStockValue = stockValues
-  } else {
-    safeStockValue = { registeredValue: 0, closingRate: 0 }
-  }
-
-  const registeredValue = parseNumber(safeStockValue?.registeredValue)
-  const closingRate = parseNumber(safeStockValue?.closingRate)
-  const percentageHolding = parseFloat(((quantity / registeredValue) * 100).toFixed(2))
-
-  const holdingValueInMillions = Math.round((quantity * closingRate) / 100000000)
-
-  return {
-    percentageHolding,
-    holdingValueInMillions,
-    nominalValue: Math.round(quantity),
-  }
-}
-
 export const isRTL = (text: string): boolean => {
   const rtlChars = /[\u0590-\u05FF\u0600-\u06FF]/ // Hebrew + Arabic ranges
   return rtlChars.test(text)

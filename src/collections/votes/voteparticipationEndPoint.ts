@@ -120,6 +120,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       voteAgainstRecommendation: voteAgainstParam,
       voteDifferentFromResult: voteDifferentParam,
       foreignStocksOnly: foreignStocksOnlyParam,
+      dualMeetingsOnly: dualMeetingsOnlyParam,
     } = req.query
 
     if (!companiesIds) {
@@ -134,7 +135,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const voteAgainstRecommendation = voteAgainstParam === 'true'
     const voteDifferentFromResult = voteDifferentParam === 'true'
     const foreignStocksOnly = foreignStocksOnlyParam === 'true'
-
+    const dualMeetingsOnly = dualMeetingsOnlyParam === 'true'
     const companiesIdsArray = (companiesIds as string).split(',')
     const statusString = status as string | undefined
 
@@ -188,8 +189,11 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         'meeting.stock.origin': { equals: 'Foreign' },
       })
     }
-
-    const votesQueryStartTime = performance.now()
+    if (dualMeetingsOnly) {
+      whereConditions.push({
+        'meeting.isDualStock': { equals: true },
+      })
+    }
     const results = await req.payload.find({
       collection: 'votes',
       where: { and: whereConditions },

@@ -68,8 +68,9 @@ export const Stocks: CollectionConfig = {
   custom: {
     filterList: [
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
-      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'isDual' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
     ],
+    defaultFilter: {'active': {equals: true}}
   },
   enableQueryPresets: true,
   admin: {
@@ -248,7 +249,6 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.type == 'מניות',
                   },
                 },
-
                 {
                   name: 'isDual',
                   label: 'דואלית',
@@ -257,7 +257,18 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     width: '100px',
                     condition: (siblingData) =>
-                      siblingData.tradable && siblingData.origin == 'TASE',
+                      siblingData.tradable && siblingData.origin == 'Foreign' && !siblingData.hasDual,
+                  },
+                },
+                {
+                  name: 'hasDual',
+                  label: 'מכילה דואלית',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '150px',
+                    condition: (siblingData) =>
+                      siblingData.tradable && siblingData.origin == 'TASE' && !siblingData.isDual,
                   },
                 },
                 {
@@ -266,7 +277,7 @@ export const Stocks: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'stocks',
                   admin: {
-                    condition: (siblingData) => siblingData.isDual,
+                    condition: (siblingData) => siblingData.hasDual,
                     width: '400px',
                   },
                   filterOptions: ({ req }: any) => {

@@ -136,8 +136,8 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
       }).format(row.percentageHolding),
     minWidth: 100,
   },

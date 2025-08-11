@@ -22,6 +22,7 @@ export const Holdings: CollectionConfig = {
   },
   custom: {
     filterList: [[{ name: 'valueDate' }]],
+    defaultFilter: {'valueDate': 'last30Days'}
   },
   disableBulkEdit: true,
   hooks: {

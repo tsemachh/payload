@@ -21,6 +21,7 @@ export const Documents: CollectionConfig = {
     filterList: [
       ['createdAt']
     ],
+    defaultFilter: {'createdAt': 'last30Days'}
   },
   fields: [
     {

@@ -22,6 +22,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
   },
   custom: {
     filterList: [[{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]],
+    defaultFilter: {'readStatus': {equals: false},createdAt:"last30Days"}
   },
   fields: [
     {

@@ -489,7 +489,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
         if (!foreignStock) {
           // Create a new Foreign Stock
-          const foreignStockId = await upsertStockFromImport(
+          const foreignStockId = (await upsertStockFromImport(
             null,
             {
               stockID: dualStock.foreignISIN,
@@ -497,13 +497,14 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
               symbol: taseStock.symbol as string,
               type: taseStock.type as StockType,
               longName: dualStock.englishName,
+              isDual: true,
             } as ImportStock,
             req,
             true, // tradable
             'Foreign', // origin
             true, // active
             `Created as dual-listed stock for ${dualStock.hebrewName}`,
-          )
+          )) as string
 
           if (foreignStockId) {
             foreignStock = await payload.findByID({
@@ -511,6 +512,18 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
               id: foreignStockId,
             })
           }
+        } else {
+          await payload.update({
+            collection: 'stocks',
+            id: foreignStock.id,
+            data: {
+              isDual: true,
+            },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration' },
+            },
+          })
         }
 
         if (!foreignStock) {
@@ -528,7 +541,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           collection: 'stocks',
           id: taseStock.id,
           data: {
-            isDual: true,
+            hasDual: true,
             dualStock: foreignStock.id,
           },
           req: {

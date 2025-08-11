@@ -62,6 +62,7 @@ export default function Participations() {
     voteAgainstRecommendation: false,
     voteDifferentFromResult: false,
     foreignStocksOnly: false,
+    dualMeetingsOnly: false,
   })
 
   // Server-side state (managed by endpoint)
@@ -73,7 +74,7 @@ export default function Participations() {
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
   const [foreignStocksOnly, setForeignStocksOnly] = useState(false)
-
+  const [dualMeetingsOnly, setDualMeetingsOnly] = useState(false)
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
 
@@ -159,7 +160,9 @@ export default function Participations() {
     if (appliedFilters.foreignStocksOnly) {
       params.append('foreignStocksOnly', 'true')
     }
-
+    if (appliedFilters.dualMeetingsOnly) {
+      params.append('dualMeetingsOnly', 'true')
+    }
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
@@ -168,6 +171,7 @@ export default function Participations() {
     appliedFilters.voteAgainstRecommendation,
     appliedFilters.voteDifferentFromResult,
     appliedFilters.foreignStocksOnly,
+    appliedFilters.dualMeetingsOnly,
     showParticipationTable,
     currentPage,
     pageSize,
@@ -229,7 +233,7 @@ export default function Participations() {
         key: 'select',
         header: 'בחר הכל',
         type: 'boolean',
-        minWidth: 80,
+        minWidth: 25,
         positionCenter: true,
         isAlwaysVisible: true,
         filterable: false,
@@ -461,7 +465,19 @@ export default function Participations() {
       setHasChanges(true)
     }
   }
-
+  const handleDualMeetingsOnlyChange = (checked: boolean) => {
+    setDualMeetingsOnly(checked)
+    if (showParticipationTable) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        dualMeetingsOnly: checked,
+      }))
+      setCurrentPage(1)
+    }
+    if (hasDisplayed) {
+      setHasChanges(true)
+    }
+  }
   const handleExport = async () => {
     const newAppliedFilters = {
       selectedFundIds: [...selectedFundIds],
@@ -471,6 +487,7 @@ export default function Participations() {
       voteAgainstRecommendation,
       voteDifferentFromResult,
       foreignStocksOnly,
+      dualMeetingsOnly,
     }
 
     setAppliedFilters(newAppliedFilters)
@@ -714,9 +731,9 @@ export default function Participations() {
   }, [allSelected, deselectedIds.size, totalItems])
 
   return (
-    <div className="p-4 space-y-0" dir="rtl">
+    <div className="p-4 space-y-0 pb-0" dir="rtl">
       <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
-        <div className="w-full lg:w-[280px] min-h-[200px]">
+        <div className="w-full lg:w-[280px]">
           <DateRangeSelector onRangeChange={handleRangeChange} />
         </div>
 
@@ -791,16 +808,6 @@ export default function Participations() {
         </div>
       </div>
 
-      {showParticipationTable && !votesLoading && !votesError && (
-        <div className="flex justify-center">
-          <div className="flex justify-start w-full pr-11">
-            <span className="text-[rgb(71,122,133)] text-sm">
-              נבחרו {currentSelectedCount} רשומות
-            </span>
-          </div>
-        </div>
-      )}
-
       {showParticipationTable &&
         (votesLoading ? (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
@@ -813,8 +820,8 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
         ) : (
-          <div className="-mt-4">
-            <div className="flex justify-end pr-10 ">
+          <div style={{ marginTop: '40px' }}>
+            <div className="flex justify-end pr-10 mb-[-25px]">
               <div className="flex gap-6 items-center pl-10">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -855,7 +862,21 @@ export default function Participations() {
                     htmlFor="foreign-stocks-only"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
                   >
-                    מניות חול בלבד
+                    מניות חו״ל{' '}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="dual-meetings-only"
+                    checked={dualMeetingsOnly}
+                    onCheckedChange={handleDualMeetingsOnlyChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  />
+                  <Label
+                    htmlFor="dual-meetings-only"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                  >
+                    אסיפות דואליות
                   </Label>
                 </div>
               </div>
@@ -872,7 +893,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={280}
+              tableHeightOffset={320}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"

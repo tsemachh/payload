@@ -65,9 +65,10 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name: 'meeting' }, { name: 'company' }, { name: 'reported' }],
+      [{ name: 'createdAt' }, { name: 'reported' },{name:'_status'}],
       [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
+    defaultFilter: {'createdAt': 'last30Days',_status:{equals:'published'}}
   },
   versions: {
     drafts: true,
