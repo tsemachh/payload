@@ -211,7 +211,7 @@ export default buildConfig({
       graphics: {
         Logo: '/graphics/Logo',
       },
-      Nav: '@/plugins/quickfilter/nav/index#DefaultNav',
+      Nav: '@shefing/quickfilter/nav',
     },
     meta: {
       title: 'עמדה',

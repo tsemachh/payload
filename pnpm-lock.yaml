@@ -138,8 +138,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@shefing/quickfilter':
-        specifier: ^1.0.37
-        version: 1.0.37(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
+        specifier: ^1.0.38
+        version: 1.0.38(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
       '@shefing/reset-list-view':
         specifier: ^0.2.4
         version: 0.2.4(payload@3.50.0(graphql@16.11.0)(typescript@5.7.3))
@@ -2215,8 +2215,8 @@ packages:
   '@shefing/field-type-component-override@1.0.5':
     resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
 
-  '@shefing/quickfilter@1.0.37':
-    resolution: {integrity: sha512-n7rXETsEYuxBlMrM0KvJHB0KclkmpUvCJe78Upkqty7OlF8whV1eZO6oSt9lkxzzvwRvKOPVgHmQt9BD5jyb8Q==}
+  '@shefing/quickfilter@1.0.38':
+    resolution: {integrity: sha512-6zR9Oe33eT3krO/l1fvmpdTtnpBirBS95PX3RyO/Qy+IAeFNOhDVvEn1uUc6zesMV5sEfSxOHFznb8p5l8Jy4g==}
 
   '@shefing/reset-list-view@0.2.4':
     resolution: {integrity: sha512-MJm8SjGnVhps9LxzGy8/G7ab3b1weN0DQ6cinZNkAX2nK9k4wzggxFmVkT/gzBD3q0mSWn3Y3LUITfcfZsXI0Q==}
@@ -3119,8 +3119,8 @@ packages:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
 
-  caniuse-lite@1.0.30001733:
-    resolution: {integrity: sha512-e4QKw/O2Kavj2VQTKZWrwzkt3IxOmIlU6ajRb6LP64LHpBo1J67k2Hi4Vu/TgJWsNtynurfS0uK3MaUTCPfu5Q==}
+  caniuse-lite@1.0.30001734:
+    resolution: {integrity: sha512-uhE1Ye5vgqju6OI71HTQqcBCZrvHugk0MjLak7Q+HfoBgoq5Bi+5YnwjP4fjDgrtYr/l8MVRBvzz9dPD4KyK0A==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -8670,7 +8670,7 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.5': {}
 
-  '@shefing/quickfilter@1.0.37(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
+  '@shefing/quickfilter@1.0.38(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
     dependencies:
       '@payloadcms/translations': 3.50.0
       '@payloadcms/ui': 3.50.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.50.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
@@ -9910,7 +9910,7 @@ snapshots:
   autoprefixer@10.4.21(postcss@8.5.6):
     dependencies:
       browserslist: 4.25.2
-      caniuse-lite: 1.0.30001733
+      caniuse-lite: 1.0.30001734
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.1
@@ -9973,7 +9973,7 @@ snapshots:
 
   browserslist@4.25.2:
     dependencies:
-      caniuse-lite: 1.0.30001733
+      caniuse-lite: 1.0.30001734
       electron-to-chromium: 1.5.199
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.2)
@@ -10033,7 +10033,7 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  caniuse-lite@1.0.30001733: {}
+  caniuse-lite@1.0.30001734: {}
 
   ccount@2.0.1: {}
 
@@ -11991,7 +11991,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001733
+      caniuse-lite: 1.0.30001734
       postcss: 8.4.31
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
