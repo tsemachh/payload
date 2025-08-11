@@ -1,5 +1,6 @@
 import type { EntityToGroup } from '@payloadcms/ui/shared'
 import type {
+  Field,
   NavPreferences,
   PayloadRequest,
   SanitizedPermissions,
@@ -144,10 +145,9 @@ export const DefaultNav: React.FC<NavProps> = async (props) => {
 
           // Get the fields from the collection for parsing the where clause
           const fields: FilterDetaild[] =
-            collection.custom.filterList
+            Object.keys(collection.custom.defaultFilter)
               ?.flat()
-              .map((field: { name: any; width: string | undefined }) => {
-                const fieldName = field.name
+              .map((fieldName: string) => {
                 const fieldConfig = findFieldByName(collection.fields, fieldName)
                 return {
                   name: fieldName,
@@ -155,29 +155,30 @@ export const DefaultNav: React.FC<NavProps> = async (props) => {
                   options: (fieldConfig as  SelectField )?.options,
                   label: (fieldConfig as UIField)?.label || fieldName,
                   row: 0,
-                  width: typeof field === 'object' && 'width' in field ? field.width : undefined,
                 } as FilterDetaild
               })
               .filter(Boolean) || []
 
           // If we have fields and a defaultFilter, calculate the URL with where clause
           if (fields.length > 0) {
+            console.log(JSON.stringify(collection.slug+":"+JSON.stringify(collection.custom.defaultFilter)))
             // Parse the defaultFilter to get filter values
             const filterValues = parseWhereClauseToFilterValues(
               collection.custom.defaultFilter,
               fields,
               i18n.language as SupportedLocale
             );
+            console.log(JSON.stringify(collection.slug+":"+JSON.stringify(filterValues)))
+
             // If we have filter values, add them to the URL
             if (Object.keys(filterValues).length > 0) {
               const quickFilterConditions = buildQuickFilterConditions(filterValues, fields, i18n.language as SupportedLocale)
-
-
               const whereCondition = quickFilterConditions.length === 1 ? quickFilterConditions[0] : { and: quickFilterConditions };
               const query = {
                 where: whereCondition,
               };
               const stringifiedQuery = stringify(query, { addQueryPrefix: true });
+              console.log(`${baseHref}${stringifiedQuery}`)
               return {
                 ...entity,
                 href: `${baseHref}${stringifiedQuery}`

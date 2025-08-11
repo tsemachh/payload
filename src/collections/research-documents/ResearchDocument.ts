@@ -22,6 +22,7 @@ export const ResearchDocument: CollectionConfig = {
     filterList: [
       [{ name:'uploadedAt'}]
     ],
+    defaultFilter: {'uploadedAt': 'last30Days'}
   },
   access: {
     admin: ({ req: { user } }) => {

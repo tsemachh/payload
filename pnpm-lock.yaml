@@ -138,8 +138,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@shefing/quickfilter':
-        specifier: ^1.0.30
-        version: 1.0.32(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
+        specifier: ^1.0.37
+        version: 1.0.37(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
       '@shefing/reset-list-view':
         specifier: ^0.2.4
         version: 0.2.4(payload@3.50.0(graphql@16.11.0)(typescript@5.7.3))
@@ -2215,8 +2215,8 @@ packages:
   '@shefing/field-type-component-override@1.0.5':
     resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
 
-  '@shefing/quickfilter@1.0.32':
-    resolution: {integrity: sha512-OwHDB21DVc9KxV4l37f3fCFyK8nA/B/n8Q0x1SKvoyqDjhqLcous93ckcxKklqTDSL9sG86XeklPWkhTWWi7Lg==}
+  '@shefing/quickfilter@1.0.37':
+    resolution: {integrity: sha512-n7rXETsEYuxBlMrM0KvJHB0KclkmpUvCJe78Upkqty7OlF8whV1eZO6oSt9lkxzzvwRvKOPVgHmQt9BD5jyb8Q==}
 
   '@shefing/reset-list-view@0.2.4':
     resolution: {integrity: sha512-MJm8SjGnVhps9LxzGy8/G7ab3b1weN0DQ6cinZNkAX2nK9k4wzggxFmVkT/gzBD3q0mSWn3Y3LUITfcfZsXI0Q==}
@@ -8670,7 +8670,7 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.5': {}
 
-  '@shefing/quickfilter@1.0.32(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
+  '@shefing/quickfilter@1.0.37(graphql@16.11.0)(monaco-editor@0.52.2)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
     dependencies:
       '@payloadcms/translations': 3.50.0
       '@payloadcms/ui': 3.50.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.50.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
@@ -8691,6 +8691,7 @@ snapshots:
       lucide-react: 0.475.0(react@19.0.0)
       next: 15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4)
       payload: 3.50.0(graphql@16.11.0)(typescript@5.7.3)
+      qs-esm: 7.0.2
       react: 19.0.0
       react-day-picker: 9.8.1(react@19.0.0)
       tailwind-merge: 3.3.1

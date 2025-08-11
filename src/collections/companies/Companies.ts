@@ -38,6 +38,7 @@ export const Companies: CollectionConfig = {
   },
   custom: {
     filterList: [['type', 'active', 'passiveFund']],
+    defaultFilter: {'active': {equals: 'true'}}
   },
   versions: {},
   fields: [

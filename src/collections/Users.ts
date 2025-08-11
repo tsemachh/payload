@@ -111,6 +111,7 @@ export const Users: CollectionConfig = {
       ['active', 'isAdmin', 'createdAt'],
       ['enableAPIKey', 'receiveMailNotification'],
     ],
+    defaultFilter: {'active': {equals: true}}
   },
   access: {
     // Only admins can create users
