@@ -13,7 +13,7 @@ const useTaskMenu = () => {
   // Use useEffect to update state from localStorage on client-side only
   useEffect(() => {
     // This code only runs on the client after initial render
-    const savedMenu = localStorage.getItem('taskMenu.activeMenu')
+    const savedMenu = localStorage.getItem('taskMenu.activeMenu') || 'all-tasks'
     if (savedMenu === 'my-tasks' || savedMenu === 'all-tasks') {
       setActiveMenu(savedMenu)
     }
@@ -48,12 +48,14 @@ const TaskMenu: React.FC = () => {
   }
 
   const handleMenuClick = (menu: 'my-tasks' | 'all-tasks') => {
+    if (activeMenu != menu) {
     setActiveMenu(menu)
     // Navigate to the appropriate URL
     const url = getTaskUrl(menu)
     if (typeof window !== 'undefined') {
       window.location.href = url
     }
+   }
   }
 
   return (
@@ -62,15 +64,6 @@ const TaskMenu: React.FC = () => {
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-1">
           <Button
-            variant={activeMenu === 'my-tasks' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleMenuClick('my-tasks')}
-            className="text-sm"
-            style={{ direction: 'rtl' }}
-          >
-            ההתראות שלי
-          </Button>
-          <Button
             variant={activeMenu === 'all-tasks' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => handleMenuClick('all-tasks')}
@@ -78,6 +71,15 @@ const TaskMenu: React.FC = () => {
             style={{ direction: 'rtl' }}
           >
             כל ההתראות
+          </Button>
+          <Button
+            variant={activeMenu === 'my-tasks' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => handleMenuClick('my-tasks')}
+            className="text-sm"
+            style={{ direction: 'rtl' }}
+          >
+            ההתראות שלי
           </Button>
         </div>
       </div>

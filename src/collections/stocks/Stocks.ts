@@ -70,6 +70,7 @@ export const Stocks: CollectionConfig = {
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
       [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
     ],
+    defaultFilter: {'active': {equals: true}}
   },
   enableQueryPresets: true,
   admin: {
