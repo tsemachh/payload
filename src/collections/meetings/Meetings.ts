@@ -908,7 +908,7 @@ export const Meetings: CollectionConfig = {
               relationTo: 'stock-values',
               hasMany: false,
               admin: {
-                hidden: true,
+                hidden: false,
               },
               maxDepth: 1,
             },
