@@ -3,85 +3,72 @@
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@payloadcms/ui'
-
-// Custom hook to manage task menu state
-const useTaskMenu = () => {
-  // Initialize state with default values for consistent server/client rendering
-  const [activeMenu, setActiveMenu] = useState<'my-tasks' | 'all-tasks'>('my-tasks')
-
-  // Use useEffect to update state from localStorage on client-side only
-  useEffect(() => {
-    // This code only runs on the client after initial render
-    const savedMenu = localStorage.getItem('taskMenu.activeMenu') || 'all-tasks'
-    if (savedMenu === 'my-tasks' || savedMenu === 'all-tasks') {
-      setActiveMenu(savedMenu)
-    }
-  }, [])
-
-  return {
-    activeMenu,
-    setActiveMenu: useCallback((menu: 'my-tasks' | 'all-tasks') => {
-      setActiveMenu(menu)
-      // You can add additional logic here if needed
-      // For example, you could save the preference to localStorage
-      localStorage.setItem('taskMenu.activeMenu', menu)
-    }, []),
-  }
-}
+import { useAuth, useListQuery } from '@payloadcms/ui'
 
 const TaskMenu: React.FC = () => {
   const { user } = useAuth()
-  const { activeMenu, setActiveMenu } = useTaskMenu()
+  const { refineListData, query } = useListQuery()
+  const [activeMenu, setActiveMenu] = useState<'my-tasks' | 'all-tasks'>('all-tasks')
 
-  const getTaskUrl = (menu: 'my-tasks' | 'all-tasks') => {
-    const baseUrl = '/admin/collections/admin-notifications'
-
-    if (menu === 'my-tasks') {
-      const assigneeFilter = `where[assignee][equals]=${user?.id}`
-      const handledFilter = `&where[handled][equals]=false`
-      return `${baseUrl}?${assigneeFilter}${handledFilter}`
+  // Determine active menu based on current query
+  useEffect(() => {
+    if (query.where && 
+        typeof query.where === 'object' && 
+        'assignee' in query.where && 
+        typeof query.where.assignee === 'object' &&
+        'equals' in query.where.assignee &&
+        query.where.assignee.equals === user?.id) {
+      setActiveMenu('my-tasks')
     } else {
-      const handledFilter = `where[handled][equals]=false`
-      return `${baseUrl}?${handledFilter}`
+      setActiveMenu('all-tasks')
     }
-  }
+  }, [query.where, user?.id])
 
-  const handleMenuClick = (menu: 'my-tasks' | 'all-tasks') => {
-    if (activeMenu != menu) {
-    setActiveMenu(menu)
-    // Navigate to the appropriate URL
-    const url = getTaskUrl(menu)
-    if (typeof window !== 'undefined') {
-      window.location.href = url
+  const handleMenuClick = useCallback((menu: 'my-tasks' | 'all-tasks') => {
+    if (activeMenu !== menu) {
+      setActiveMenu(menu)
+
+      // Build the where clause based on the selected menu
+      const whereClause: Record<string, any> = {
+        handled: { equals: false }
+      }
+
+      if (menu === 'my-tasks' && user?.id) {
+        whereClause.assignee = { equals: user.id }
+      }
+
+      // Update the query using refineListData
+      refineListData({
+        where: whereClause,
+        page: 1
+      })
     }
-   }
-  }
+  }, [activeMenu, refineListData, user?.id])
 
   return (
-    <div className="border-b bg-background">
-      {/* Tab buttons and checkbox on same line */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-1">
-          <Button
-            variant={activeMenu === 'all-tasks' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleMenuClick('all-tasks')}
-            className="text-sm"
-            style={{ direction: 'rtl' }}
-          >
-            כל ההתראות
-          </Button>
-          <Button
-            variant={activeMenu === 'my-tasks' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleMenuClick('my-tasks')}
-            className="text-sm"
-            style={{ direction: 'rtl' }}
-          >
-            ההתראות שלי
-          </Button>
-        </div>
+    <div className="flex items-center justify-start" style={{ direction: 'ltr' }}>
+      <div className="flex items-center gap-1 mx-20"  style={{
+        position: 'absolute',
+        left: 0, // Aligns to the left side of the parent (in RTL, this is visually left)
+        direction: 'ltr', // Ensures left-alignment respects LTR for positioning
+      }}>
+        <Button
+          variant={activeMenu === 'my-tasks' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => handleMenuClick('my-tasks')}
+          className="text-sm min-w-fit"
+          style={{ direction: 'rtl' }}
+        >
+          ההתראות שלי
+        </Button>        <Button
+          variant={activeMenu === 'all-tasks' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => handleMenuClick('all-tasks')}
+          className="text-sm min-w-fit"
+          style={{ direction: 'rtl' }}
+        >
+          כל ההתראות
+        </Button>
       </div>
     </div>
   )

@@ -22,7 +22,7 @@ export const AdminNotifications: CollectionConfig = {
     group: 'פעילות',
     defaultColumns: ['message', 'url', 'handled', 'createdAt', 'assignee', 'acquireTask'],
     components: {
-      beforeList: ['/collections/admin-notifications/components/TaskMenu'],
+      beforeListTable: ['/collections/admin-notifications/components/TaskMenu'],
     },
     pagination: {
       defaultLimit: 100,
