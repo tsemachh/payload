@@ -1,8 +1,5 @@
 import type { CollectionConfig } from 'payload'
 
-// Utility to format numbers with thousands separators
-const formatNumber = (value: any) =>
-  typeof value === 'number' ? value.toLocaleString('en-US') : value
 
 export const StockValues: CollectionConfig = {
   slug: 'stock-values',
@@ -11,7 +8,8 @@ export const StockValues: CollectionConfig = {
     singular: ' שווי נייר ערך',
   },
   admin: {
-    hidden: true,
+    hidden: false,
+    group: 'פיתוח',
     useAsTitle: 'stockId',
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
     pagination: {
@@ -21,7 +19,7 @@ export const StockValues: CollectionConfig = {
   },
   custom: {
     filterList: [
-      [{ name:'valueDate'}]
+      [{ name:'valueDate'},"createdAt"]
     ],
   },
   fields: [
@@ -58,9 +56,13 @@ export const StockValues: CollectionConfig = {
           name: 'closingRate',
           label: 'שער סגירה',
           type: 'number',
-          hooks: {
-            afterRead: [({ value }) => formatNumber(value)],
-          },
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
+          }
         },
         {
           name: 'marketValue',
@@ -68,31 +70,34 @@ export const StockValues: CollectionConfig = {
           type: 'number',
           admin: {
             readOnly: true,
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
           },
           hooks: {
-            beforeChange: [
-              ({ siblingData }) => {
-                delete siblingData['marketValue']
-              },
-            ],
-            afterRead: [
-              ({ data }) => {
-                if (data?.closingRate && data?.registeredValue) {
-                  const value = (data.closingRate * data.registeredValue) / 100
-                  return formatNumber(value)
-                }
-                return null
-              },
-            ],
-          },
+              beforeChange: [
+                async ({data}) => {
+                  if (data?.closingRate && data?.registeredValue) {
+                    return (data.closingRate * data.registeredValue) / 100
+                  }
+                  return null
+                },
+              ],
+            },
         },
         {
           name: 'registeredValue',
           label: 'הון רשום',
           type: 'number',
-          hooks: {
-            afterRead: [({ value }) => formatNumber(value)],
-          },
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
+          }
         },
       ],
     },
