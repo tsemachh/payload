@@ -1,4 +1,7 @@
-export async function getBufferFromStream(stream: ReadableStream<Uint8Array<ArrayBufferLike>>) {
+import { StockValue } from '@/payload-types'
+import { parseNumber } from '../app/(frontend)/helpers/utils-data-table'
+
+export async function getBufferFromStream(stream: ReadableStream<Uint8Array>) {
   // Convert the ReadableStream to a Buffer using the ReadableStream API
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
@@ -13,4 +16,31 @@ export async function getBufferFromStream(stream: ReadableStream<Uint8Array<Arra
     reader.releaseLock()
   }
   return Buffer.concat(chunks)
+}
+
+export const calculateHoldingValues = (
+  quantity: number,
+  stockValues: StockValue | null | undefined | string,
+) => {
+  let safeStockValue
+  if (typeof stockValues == 'object' && stockValues !== null) {
+    safeStockValue = stockValues
+  } else {
+    safeStockValue = { registeredValue: 0, closingRate: 0 }
+  }
+
+  const registeredValue = parseNumber(safeStockValue?.registeredValue) || 0
+  const closingRate = parseNumber(safeStockValue?.closingRate) || 0
+
+  // Handle division by zero for percentage calculation
+  const percentageHolding =
+    registeredValue > 0 ? parseFloat(((quantity / registeredValue) * 100).toFixed(4)) : 0
+
+  const holdingValueInMillions = Math.round((quantity * closingRate) / 100000000)
+
+  return {
+    percentageHolding,
+    holdingValueInMillions,
+    nominalValue: Math.round(quantity),
+  }
 }

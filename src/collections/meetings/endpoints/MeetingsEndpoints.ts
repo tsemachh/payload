@@ -7,7 +7,6 @@ import {
   Stock,
   StockValue,
 } from '@/payload-types'
-import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
 import {
   AgendasType,
   CompanyTableDate,
@@ -18,6 +17,7 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById } from '@/utils/utils'
+import { calculateHoldingValues } from '@/utils/dataUtils'
 // Response is available globally from lib.dom.d.ts
 
 /**
