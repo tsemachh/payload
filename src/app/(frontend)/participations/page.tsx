@@ -239,18 +239,19 @@ export default function Participations() {
         isAlwaysVisible: true,
         filterable: false,
         renderHeader: () => (
-          <div
-            className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
-            onClick={() => {
-              if (allSelected) {
-                const allIds = participationData.map((row) => row.id)
-                setDeselectedIds(new Set(allIds))
-              } else {
-                setDeselectedIds(new Set())
-              }
-            }}
-          >
-            {allSelected ? 'בטל הכל' : 'בחר הכל'}
+          <div className="flex justify-center mr-[18px]">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setDeselectedIds(new Set())
+                } else {
+                  const allIds = participationData.map((row) => row.id)
+                  setDeselectedIds(new Set(allIds))
+                }
+              }}
+              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground w-5 h-5"
+            />
           </div>
         ),
         render: (row) => (
@@ -439,9 +440,6 @@ export default function Participations() {
       }))
       setCurrentPage(1)
     }
-    if (hasDisplayed) {
-      setHasChanges(true)
-    }
   }
 
   const handleVoteDifferentFromResultChange = (checked: boolean) => {
@@ -452,9 +450,6 @@ export default function Participations() {
         voteDifferentFromResult: checked,
       }))
       setCurrentPage(1)
-    }
-    if (hasDisplayed) {
-      setHasChanges(true)
     }
   }
 
@@ -467,9 +462,6 @@ export default function Participations() {
       }))
       setCurrentPage(1)
     }
-    if (hasDisplayed) {
-      setHasChanges(true)
-    }
   }
   const handleDualMeetingsOnlyChange = (checked: boolean) => {
     setDualMeetingsOnly(checked)
@@ -479,9 +471,6 @@ export default function Participations() {
         dualMeetingsOnly: checked,
       }))
       setCurrentPage(1)
-    }
-    if (hasDisplayed) {
-      setHasChanges(true)
     }
   }
   const handleExport = async () => {
@@ -570,7 +559,6 @@ export default function Participations() {
       // Cleanup
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-
     } catch (error) {
       alert('שגיאה בייצוא הקובץ. אנא נסה שוב.')
     } finally {
@@ -723,14 +711,14 @@ export default function Participations() {
                         case 'policyCompliance':
                           content =
                             agenda.policyCompliance !== undefined &&
-                            agenda.policyCompliance !== null ? (
+                              agenda.policyCompliance !== null ? (
                               <BooleanIcon iconType={agenda.policyCompliance} />
                             ) : null
                           break
                         case 'conflictOfInterest':
                           content =
                             agenda.conflictOfInterest !== undefined &&
-                            agenda.conflictOfInterest !== null ? (
+                              agenda.conflictOfInterest !== null ? (
                               <BooleanIcon iconType={agenda.conflictOfInterest} />
                             ) : null
                           break
@@ -743,7 +731,7 @@ export default function Participations() {
                         case 'personalInterest':
                           content =
                             agenda.personalInterest !== undefined &&
-                            agenda.personalInterest !== null ? (
+                              agenda.personalInterest !== null ? (
                               <BooleanIcon iconType={agenda.personalInterest} />
                             ) : null
                           break
@@ -813,72 +801,72 @@ export default function Participations() {
 
   return (
     <div className="p-4 space-y-0 pb-0" dir="rtl">
-      <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
-        <div className="w-full lg:w-[280px]">
+      <div className="flex flex-col lg:flex-row justify-start gap-4 mr-10">
+        <div className="w-full lg:w-[350px]">
           <DateRangeSelector onRangeChange={handleRangeChange} />
         </div>
 
-        <div className="w-full lg:w-[280px]">
-          <label className="text-base font-semibold mb-2 block text-right">חברות</label>
-          <Select>
-            <SelectTrigger className="w-[280px] flex-row-reverse justify-between text-right">
-              <SelectValue placeholder={getCompanySelectSummary()} />
-            </SelectTrigger>
-            <SelectContent align="end" dir="rtl" className="p-0">
-              <CompanyTreeSelector
-                selectedCompanies={selectedFundIds}
-                onSelectionChangeAction={handleFundsSelectionChange}
-                className="w-full"
-                showSearch={false}
-              />
-            </SelectContent>
-          </Select>
+        <div className="w-full lg:w-[350px]">
+          <div className="flex items-center gap-3">
+            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
+            <Select>
+              <SelectTrigger className="w-[350px] flex-row-reverse justify-between text-right">
+                <SelectValue placeholder={getCompanySelectSummary()} />
+              </SelectTrigger>
+              <SelectContent align="end" dir="rtl" className="p-0">
+                <CompanyTreeSelector
+                  selectedCompanies={selectedFundIds}
+                  onSelectionChangeAction={handleFundsSelectionChange}
+                  className="w-full"
+                  showSearch={false}
+                />
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="w-full lg:w-[280px]">
-          <Label htmlFor="report-name" className="text-base font-semibold mb-2 block text-right">
-            שם הדו״ח
-          </Label>
+        <div className="w-full lg:w-[55px]">
           <div className="flex gap-2 items-end">
-            <Input
-              id="report-name"
-              type="text"
-              value={reportName}
-              onChange={(e) => {
-                setReportName(e.target.value)
-                if (hasDisplayed) {
-                  setHasChanges(true)
-                }
-              }}
-              placeholder="הכנס שם לדו״ח"
-              className="w-[280px] text-right"
-              dir="rtl"
-            />
             <Button
               onClick={handleExport}
               variant="default"
               disabled={
                 !rangeType ||
-                selectedFundIds.length === 0 ||
-                !reportName ||
-                (hasDisplayed && !hasChanges)
+                selectedFundIds.length === 0
               }
               className="whitespace-nowrap"
             >
               הצג
             </Button>
-            {showParticipationTable && (
+          </div>
+        </div>
+
+        {showParticipationTable && (
+          <div className="w-full lg:w-[450px]">
+            <div className="flex items-center gap-3">
+              <label className="text-base font-semibold text-right whitespace-nowrap"> שם הדו״ח</label>
+              <Input
+                id="report-name"
+                type="text"
+                value={reportName}
+                onChange={(e) => {
+                  setReportName(e.target.value)
+                }}
+                placeholder="הכנס שם לדו״ח"
+                className="w-[350px] text-right"
+                dir="rtl"
+              />
               <Button
                 onClick={handlePDFExport}
                 variant="default"
                 className="whitespace-nowrap"
-                disabled={votesLoading || isExporting}
+                disabled={votesLoading || isExporting || !reportName.trim()}
               >
                 {isExporting ? 'מייצא...' : 'ייצוא הקובץ'}
               </Button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {showParticipationTable &&
