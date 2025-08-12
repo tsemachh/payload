@@ -299,6 +299,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const isExport = exportParam === 'true'
     const reportName = (reportNameParam as string) || 'participation-report'
 
+
+
     // Build query parameters
     const queryParams: VotesQueryParams = {
       companiesIds: companiesIds as string,
@@ -338,11 +340,19 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
       const pdfBytes = await generateParticipationsPDF(processedData, pdfOptions)
 
+      // Encode filename for Hebrew characters in HTTP headers
+      const encodedFilename = encodeURIComponent(reportName)
+
+      // Use RFC 5987 format for non-ASCII filenames with fallback
+      const contentDisposition = /[^\x00-\x7F]/.test(reportName)
+        ? `attachment; filename*=UTF-8''${encodedFilename}.pdf; filename="report.pdf"`
+        : `attachment; filename="${reportName}.pdf"`
+
       return new Response(pdfBytes, {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${reportName}.pdf"`,
+          'Content-Disposition': contentDisposition,
           'Content-Length': pdfBytes.length.toString()
         }
       })
