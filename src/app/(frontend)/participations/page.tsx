@@ -77,6 +77,7 @@ export default function Participations() {
   const [dualMeetingsOnly, setDualMeetingsOnly] = useState(false)
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
+  const [isExporting, setIsExporting] = useState(false)
 
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -272,33 +273,38 @@ export default function Participations() {
           </div>
         ),
       },
-      { key: 'stockNumber', header: 'מספר נייר / נושאי האסיפה', type: 'string', minWidth: 120 },
+      {
+        key: 'stockNumber',
+        header: 'מספר נייר /  \n נושאי האסיפה',
+        type: 'string',
+        minWidth: 80,
+      },
     ]
 
-    if (selectedCompaniesCount > 1) {
-      baseColumns.push({
-        key: 'companyName',
-        header: 'שם החברה',
-        type: 'string',
-        minWidth: 120,
-        isAlwaysVisible: true,
-        render: (row: any) => {
-          return row.currentCompany?.name || '-'
-        },
-      })
-    }
+    // if (selectedCompaniesCount > 1) {
+    //   baseColumns.push({
+    //     key: 'companyName',
+    //     header: 'שם החברה',
+    //     type: 'string',
+    //     minWidth: 120,
+    //     isAlwaysVisible: true,
+    //     render: (row: any) => {
+    //       return row.currentCompany?.name || '-'
+    //     },
+    //   })
+    // }
 
     baseColumns.push(
       { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
       {
         key: 'marketValue',
-        header: 'שווי שוק',
+        header: 'שווי שוק (מ׳ ₪)',
         type: 'string',
         render: (row) => {
           const value = parseNumber(row.marketValue)
           return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(value)
         },
-        minWidth: 100,
+        minWidth: 80,
       },
       {
         key: 'percentageHolding',
@@ -309,24 +315,24 @@ export default function Participations() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           }).format(row.percentageHolding),
-        minWidth: 100,
+        minWidth: 80,
       },
       {
         key: 'holdingValueInMillions',
-        header: 'שווי אחזקה',
+        header: 'שווי אחזקה (מ׳ ₪)',
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
             row.holdingValueInMillions,
           ),
-        minWidth: 50,
+        minWidth: 80,
       },
       {
         key: 'meetingDate',
         header: 'מועד האסיפה',
         type: 'datetime',
         render: (row) => formatDateTime(row.meetingDate),
-        minWidth: 130,
+        minWidth: 120,
       },
       { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
       {
@@ -334,7 +340,7 @@ export default function Participations() {
         header: 'המלצת גורם מייעץ',
         type: 'string',
         render: (row) => null,
-        minWidth: 120,
+        minWidth: 80,
       },
       {
         key: 'vote',
@@ -352,7 +358,7 @@ export default function Participations() {
       },
       {
         key: 'simpleMajority',
-        header: 'רוב רגיל',
+        header: 'רוב רגיל (%)',
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
@@ -360,7 +366,7 @@ export default function Participations() {
       },
       {
         key: 'specialMajority',
-        header: 'רוב מיוחד',
+        header: 'רוב מיוחד (%)',
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
@@ -372,7 +378,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 150,
+        minWidth: 60,
       },
       {
         key: 'conflictOfInterest',
@@ -380,7 +386,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 80,
+        minWidth: 50,
       },
       {
         key: 'relatedParty',
@@ -388,7 +394,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 60,
+        minWidth: 50,
       },
       {
         key: 'personalInterest',
@@ -396,7 +402,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 60,
+        minWidth: 50,
       },
     )
 
@@ -495,6 +501,81 @@ export default function Participations() {
     setHasDisplayed(true)
     setHasChanges(false)
     setCurrentPage(1)
+  }
+
+  const handlePDFExport = async () => {
+    if (!reportName.trim()) {
+      alert('אנא הכנס שם לדוח')
+      return
+    }
+
+    if (!showParticipationTable) {
+      alert('אנא הצג את הטבלה תחילה')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      // Build the same query parameters as the regular API call, but with export=true
+      const params = new URLSearchParams({
+        companiesIds: selectedCompanyIds.join(','),
+        status: 'published',
+        export: 'true',
+        reportName: reportName.trim(),
+      })
+
+      if (appliedFilters.startDate && appliedFilters.endDate) {
+        params.append('startDate', appliedFilters.startDate.toISOString())
+        params.append('endDate', appliedFilters.endDate.toISOString())
+      }
+
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+
+      if (appliedFilters.voteAgainstRecommendation) {
+        params.append('voteAgainstRecommendation', 'true')
+      }
+
+      if (appliedFilters.voteDifferentFromResult) {
+        params.append('voteDifferentFromResult', 'true')
+      }
+
+      if (appliedFilters.foreignStocksOnly) {
+        params.append('foreignStocksOnly', 'true')
+      }
+
+      if (appliedFilters.dualMeetingsOnly) {
+        params.append('dualMeetingsOnly', 'true')
+      }
+
+      // Call the API endpoint with export=true
+      const response = await fetch(`/api/votes/by-companies?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob()
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${reportName.trim()}.pdf`
+      document.body.appendChild(a)
+      a.click()
+
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+    } catch (error) {
+      alert('שגיאה בייצוא הקובץ. אנא נסה שוב.')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const getCompanySelectSummary = () => {
@@ -788,20 +869,12 @@ export default function Participations() {
             </Button>
             {showParticipationTable && (
               <Button
-                onClick={() => {
-                  console.log('Exporting file with data:', {
-                    reportName,
-                    selectedCount: currentSelectedCount,
-                    totalItems: totalItems,
-                    appliedFilters,
-                    participationData: participationData.length,
-                    votesData: votesResponse,
-                  })
-                }}
+                onClick={handlePDFExport}
                 variant="default"
                 className="whitespace-nowrap"
+                disabled={votesLoading || isExporting}
               >
-                ייצוא הקובץ
+                {isExporting ? 'מייצא...' : 'ייצוא הקובץ'}
               </Button>
             )}
           </div>
