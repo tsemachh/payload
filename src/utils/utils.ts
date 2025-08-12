@@ -203,6 +203,84 @@ export const getIdOfRelationField = (item: TypeWithID | string) => {
   return typeof item == 'string' ? item : typeof item == 'object' ? item?.id : null
 }
 
+/**
+ * Gets the parent company ID for a given fund ID
+ * @param fundId - The ID of the fund
+ * @returns The ID of the parent company, or the fund ID itself if no parent company is found
+ */
+// Map to store the relationship between fund IDs and their parent company IDs
+let fundIdToCompanyIdMap: Map<string, string> = new Map<string, string>();
+let mapInitialized = false;
+
+/**
+ * Preloads the map of fundId -> companyId
+ * This function queries all companies of type 'regular' and maps their subCompanies (funds) to the company ID
+ * @param payload - The Payload CMS instance
+ * @returns A map where the key is the fund ID and the value is the parent company ID
+ */
+export async function initFundIdToCompanyIdMap(payload: BasePayload): Promise<Map<string, string>> {
+  try {
+    if (mapInitialized)
+      return fundIdToCompanyIdMap
+    // Query all companies of type 'regular'
+    const { docs } = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      select: {
+        id: true,
+        subCompanies: true,
+      },
+      where: {
+        type: {
+          equals: 'regular',
+        },
+      },
+    });
+
+    // Create a new map
+    const newMap = new Map<string, string>();
+
+    // For each company, map its subCompanies (funds) to the company ID
+    for (const company of docs) {
+      const companyId = company.id;
+      const subCompanies = company.subCompanies || [];
+
+      // Map each subCompany ID (fund ID) to the company ID
+      for (const subCompanyId of subCompanies) {
+        newMap.set(subCompanyId as string, companyId as string);
+      }
+    }
+
+    // Update the global map
+    fundIdToCompanyIdMap = newMap;
+    mapInitialized = true;
+
+    return fundIdToCompanyIdMap;
+  } catch (error) {
+    console.error('Error initializing fundIdToCompanyIdMap:', error);
+    return new Map<string, string>();
+  }
+}
+
+/**
+ * Gets the parent company ID for a given fund ID
+ * @param fundId - The ID of the fund
+ * @returns The ID of the parent company, or the fund ID itself if no parent company is found
+ */
+export const getCompanyIdFromFundId = (fundId: string): string | null=> {
+  // If no fund ID is provided, return an empty string
+  if (!fundId) return null;
+
+  // If the map is initialized, use it to look up the company ID
+  if (mapInitialized && fundIdToCompanyIdMap.has(fundId)) {
+    return fundIdToCompanyIdMap.get(fundId) as string;
+  }
+
+  // If the map is not initialized or the fund ID is not in the map, return null
+  return null;
+}
+
 export function findSubCompanyNameById(
   parentCompany: TreeCompanyType | undefined,
   idToFind: string,

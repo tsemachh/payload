@@ -59,6 +59,39 @@ export type StockType =
 export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesStatus".
+ */
+export type VotesStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesReportStatus".
+ */
+export type VotesReportStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicVote".
+ */
+export type TopicVote =
+  | {
+      topicIndex: number;
+      voteDecision?: VoteDecision;
+      hasConflictOfInterest?: boolean | null;
+      isRelatedParty?: boolean | null;
+      isInvestmentCommittee?: boolean | null;
+      hasPersonalInterest?: boolean | null;
+      relatedPartyExplanation?: string | null;
+      conflictOfInterestExplanation?: string | null;
+      personalInterestExplanation?: string | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
  */
 export type MeetingType = 'שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן';
@@ -94,39 +127,6 @@ export type MeetingAgenda =
       id?: string | null;
     }[]
   | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VotesStatus".
- */
-export type VotesStatus = ('None' | 'Partial' | 'All') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VotesReportStatus".
- */
-export type VotesReportStatus = ('None' | 'Partial' | 'All') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TopicVote".
- */
-export type TopicVote =
-  | {
-      topicIndex: number;
-      voteDecision?: VoteDecision;
-      hasConflictOfInterest?: boolean | null;
-      isRelatedParty?: boolean | null;
-      isInvestmentCommittee?: boolean | null;
-      hasPersonalInterest?: boolean | null;
-      relatedPartyExplanation?: string | null;
-      conflictOfInterestExplanation?: string | null;
-      personalInterestExplanation?: string | null;
-      id?: string | null;
-    }[]
-  | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VoteDecision".
- */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
@@ -618,6 +618,19 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
+  votesCount?: number | null;
+  votesStatus?: VotesStatus;
+  reportVotesCount?: number | null;
+  votesReportStatus?: VotesReportStatus;
+  companies?: (string | Company)[] | null;
+  companiesNotYetVoted?: (string | Company)[] | null;
+  activity?: string | null;
+  participationReport?: (string | null) | Document;
+  votes?: {
+    docs?: (string | Vote)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   stock: string | Stock;
   isDualStock?: boolean | null;
   type: MeetingType;
@@ -640,23 +653,11 @@ export interface Meeting {
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
    */
   researchDocuments?: (string | ResearchDocument)[] | null;
-  votesCount?: number | null;
-  votesStatus?: VotesStatus;
-  reportVotesCount?: number | null;
-  votesReportStatus?: VotesReportStatus;
-  companies?: (string | Company)[] | null;
-  companiesNotYetVoted?: (string | Company)[] | null;
-  activity?: string | null;
-  participationReport?: (string | null) | Document;
-  votes?: {
-    docs?: (string | Vote)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   funds?: (string | Company)[] | null;
   fundsWithHolding?:
     | {
         fund?: string | null;
+        company?: string | null;
         quantity?: number | null;
         ownedQuantity?: number | null;
         original?:
@@ -1300,6 +1301,15 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
  * via the `definition` "meetings_select".
  */
 export interface MeetingsSelect<T extends boolean = true> {
+  votesCount?: T;
+  votesStatus?: T;
+  reportVotesCount?: T;
+  votesReportStatus?: T;
+  companies?: T;
+  companiesNotYetVoted?: T;
+  activity?: T;
+  participationReport?: T;
+  votes?: T;
   stock?: T;
   isDualStock?: T;
   type?: T;
@@ -1319,20 +1329,12 @@ export interface MeetingsSelect<T extends boolean = true> {
   electronicVotingEnabled?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
-  votesCount?: T;
-  votesStatus?: T;
-  reportVotesCount?: T;
-  votesReportStatus?: T;
-  companies?: T;
-  companiesNotYetVoted?: T;
-  activity?: T;
-  participationReport?: T;
-  votes?: T;
   funds?: T;
   fundsWithHolding?:
     | T
     | {
         fund?: T;
+        company?: T;
         quantity?: T;
         ownedQuantity?: T;
         original?:

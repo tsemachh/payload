@@ -21,7 +21,7 @@ export async function getStocks(pool: sql.ConnectionPool) {
 
 export async function getStockValues(pool: sql.ConnectionPool) {
   // Query the last days of data based on environment variable
-  const days = process.env.MIGRATION_STOCK_VALUES_DAYS || '90';
+  const days = process.env.MIGRATION_STOCK_VALUES_DAYS || '90'
   console.log(`Executing SQL query for last ${days} days of stock data...`)
   const resultStockValues = await pool.request().query(`
       SELECT stockID,
@@ -224,7 +224,7 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
-  const historyDate = process.env.MIGRATION_MEETINGS_HISTORY_DATE_CUTOFF || '2018-01-01';
+  const historyDate = process.env.MIGRATION_MEETINGS_HISTORY_DATE_CUTOFF || '2018-01-01'
   const res = await pool.request().query(`
       SELECT distinct [stockID]
       FROM [dbEmda].[dbo].[meetings]  WHERE mdate > '${historyDate}' `)
@@ -236,7 +236,7 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInLatestMeetings(pool: sql.ConnectionPool) {
-  const cutoffDate = process.env.MIGRATION_MEETINGS_DATE_CUTOFF || '2024-01-01';
+  const cutoffDate = process.env.MIGRATION_MEETINGS_DATE_CUTOFF || '2024-01-01'
   const res = await pool.request().query(`
       SELECT distinct [stockID]
       FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${cutoffDate}'  `)
@@ -361,7 +361,7 @@ export async function upsertStockValueFromImport(
     valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-    req.payload.update({
+    await req.payload.update({
       collection: 'stock-values',
       id: valueId,
       data: stockValue as StockValue,
@@ -369,12 +369,14 @@ export async function upsertStockValueFromImport(
     })
   } else {
     // Insert into Payload CMS
-    req.payload.create({
+    const newStockValue = await req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
       req,
     })
+    valueId = newStockValue?.id
   }
+  return valueId
 }
 
 /**

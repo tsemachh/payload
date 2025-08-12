@@ -211,6 +211,7 @@ export default buildConfig({
       graphics: {
         Logo: '/graphics/Logo',
       },
+      Nav: '@shefing/quickfilter/nav',
     },
     meta: {
       title: 'עמדה',
@@ -267,7 +268,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: mongooseAdapter(dbArgs as Args),
-  logger: logger,
+  logger: logger as any,
   email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({
