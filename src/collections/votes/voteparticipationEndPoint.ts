@@ -362,7 +362,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const paginated = processedData.slice((page - 1) * pageSize, page * pageSize)
     return createSuccessResponse(paginated, totalItems, totalPages)
   } catch (error: any) {
-    console.error('❌ Error in getVotesByCompanies:', error)
     return createErrorResponse(error, 'Failed to fetch votes')
   }
 }

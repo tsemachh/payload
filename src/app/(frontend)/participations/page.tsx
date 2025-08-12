@@ -551,7 +551,6 @@ export default function Participations() {
 
       // Call the API endpoint with export=true
       const response = await fetch(`/api/votes/by-companies?${params.toString()}`)
-      console.log('--------response', response)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -559,7 +558,6 @@ export default function Participations() {
 
       // Get the PDF blob
       const blob = await response.blob()
-      console.log('--------blob', blob)
 
       // Create download link
       const url = window.URL.createObjectURL(blob)
@@ -573,10 +571,7 @@ export default function Participations() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      // Success message
-      console.log('PDF exported successfully:', reportName.trim())
     } catch (error) {
-      console.error('Error exporting PDF:', error)
       alert('שגיאה בייצוא הקובץ. אנא נסה שוב.')
     } finally {
       setIsExporting(false)

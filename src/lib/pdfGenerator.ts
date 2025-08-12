@@ -21,7 +21,7 @@ export interface GroupedMeetingData {
   marketValue: string
   percentageHolding: number
   holdingValueInMillions: number
-  meetingDate: string // יכול להגיע כ-string מה-API
+  meetingDate: string
   meetingType: string
   companyName?: string
   agendas: {
@@ -43,22 +43,18 @@ export interface GroupedMeetingData {
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]
-const PAGE_WIDTH = A4[1] // Landscape
+const PAGE_WIDTH = A4[1]
 const PAGE_HEIGHT = A4[0]
 const MARGIN = 15
 const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
 
-// קבועים חדשים לחישובים
-const MIN_ROW_HEIGHT = 20 // גובה מינימלי לשורה
-const DATA_LINE_HEIGHT = 12 // גובה שורה עבור טקסט שמתפרס על מספר שורות
+const MIN_ROW_HEIGHT = 20
+const DATA_LINE_HEIGHT = 12
 const LINE_HEIGHT_HEADER = 9
 const FONT_SIZE_HEADER = 7
 const FONT_SIZE_DATA = 7
 const COMPANY_INFO_HEIGHT = 35
-const PADDING = 5 // ריווח פנימי בתאים
-
-
-// ========== פונקציות עזר בסיסיות ==========
+const PADDING = 5
 
 async function initializePDFDocument(): Promise<{ pdfDoc: PDFDocument; alefRegular: any; alefBold: any; logoImage: any }> {
   const pdfDoc = await PDFDocument.create()
@@ -82,7 +78,6 @@ function fixBiDiText(text: any): string {
   if (typeof text !== 'string' || !text) {
     return text || '';
   }
-  // טריק נפוץ להחלפה בין שני תווים: משתמשים במחרוזת זמנית
   return text.replace(/\(/g, '__OPEN_PAREN__').replace(/\)/g, '(').replace(/__OPEN_PAREN__/g, ')');
 }
 
@@ -156,7 +151,7 @@ export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
 }
 
 
-// ========== פונקציות כותרות ופוטר ==========
+
 
 async function addDocumentHeader(
   page: PDFPage,
@@ -223,7 +218,6 @@ async function addPageFooter(
   totalPages: number,
   fonts: { regular: any }
 ): Promise<void> {
-  // הטקסט המלא שיוצג בפוטר
   const footerText = `${pageNumber} / ${totalPages}`;
   const textWidth = fonts.regular.widthOfTextAtSize(footerText, 10);
 
@@ -346,7 +340,7 @@ function drawAgendaTableHeader(
     lines.forEach(line => {
       const textWidth = fonts.bold.widthOfTextAtSize(line, FONT_SIZE_HEADER);
       const textX = currentX - colWidth + (colWidth - textWidth) / 2;
-      page.drawText(line, { // הטקסט כבר תוקן ב-wrapText
+      page.drawText(line, {
         x: textX,
         y: lineY,
         size: FONT_SIZE_HEADER,
@@ -420,7 +414,7 @@ function drawAgendaRow(
   wrappedAgendaLines.forEach(line => {
     const textWidth = fonts.regular.widthOfTextAtSize(line, FONT_SIZE_DATA);
     const textX = x - textWidth - PADDING;
-    page.drawText(line, { // הטקסט כבר תוקן
+    page.drawText(line, {
       x: textX,
       y: lineY,
       font: fonts.regular,
@@ -528,7 +522,6 @@ export async function generateParticipationsPDF(
     return pdfBytes;
 
   } catch (error) {
-    console.error('Error generating PDF:', error);
     throw new Error('Failed to generate PDF');
   }
 }
