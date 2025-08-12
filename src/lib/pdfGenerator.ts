@@ -60,14 +60,14 @@ async function initializePDFDocument(): Promise<{ pdfDoc: PDFDocument; alefRegul
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const fontsDir = path.resolve(process.cwd(), 'public/fonts')
+  const fontsDir = path.resolve(process.cwd(), 'src/assets/fonts')
   const alefRegularBytes = fs.readFileSync(path.join(fontsDir, 'regular-webfont.ttf'))
   const alefBoldBytes = fs.readFileSync(path.join(fontsDir, 'bold-webfont.ttf'))
 
   const alefRegular = await pdfDoc.embedFont(alefRegularBytes)
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
 
-  const logoPath = path.resolve(process.cwd(), 'public/emda_logo.png')
+  const logoPath = path.resolve(process.cwd(), 'src/assets/emda_logo.png')
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
 
