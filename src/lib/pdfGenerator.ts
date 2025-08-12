@@ -24,7 +24,21 @@ export interface GroupedMeetingData {
   meetingDate: string
   meetingType: string
   companyName?: string
-  agendas: any[]
+  agendas: {
+    text?: string
+    recommendation?: {
+      votingRecommendation?: string
+    }
+    vote?: string
+    result?: string
+    meetingResults?: string
+    regularMajority?: string
+    specialMajority?: string
+    boardPolicy?: string
+    conflictOfInterest?: string
+    relatedParty?: string
+    personalInterest?: string
+  }[]
 }
 
 // PDF configuration constants
@@ -65,10 +79,7 @@ function formatHebrewDate(date: Date): string {
   }).format(date)
 }
 
-function getRTLTextPosition(text: string, font: any, fontSize: number, fromX: number): number {
-  const textWidth = font.widthOfTextAtSize(text, fontSize)
-  return fromX - textWidth
-}
+
 
 // כותרת המסמך עם לוגו
 async function addDocumentHeader(
@@ -107,7 +118,7 @@ async function addDocumentHeader(
   const dateRangeText = `${formatHebrewDate(dateRange.startDate)} - ${formatHebrewDate(dateRange.endDate)}`
   page.drawText(dateRangeText, {
     x: titleX,
-    y: titleY - 20,
+    y: titleY - 25,
     size: 10,
     font: fonts.bold,
     color: rgb(0.3, 0.3, 0.3)
@@ -122,7 +133,7 @@ async function addPageFooter(
   totalPages: number,
   fonts: { regular: any }
 ): Promise<void> {
-  const footerText = `${totalPages}/${pageNumber}`
+  const footerText = `${pageNumber}/${totalPages}`
   page.drawText(footerText, {
     x: PAGE_WIDTH / 2 - 5,
     y: MARGIN - 5,
@@ -205,94 +216,209 @@ export async function generateParticipationsPDF(
   }
 }
 
+/**
+ * פונקציה שמקבלת מחרוזת טקסט ארוכה ומחלקת אותה למערך של שורות,
+ * כך שאף שורה לא תחרוג מהרוחב המקסימלי הנתון.
+ * @param text הטקסט המלא לעיטוף.
+ * @param font אובייקט הפונט של pdf-lib.
+ * @param fontSize גודל הפונט.
+ * @param maxWidth הרוחב המקסימלי המותר לשורה בפיקסלים.
+ * @returns מערך של מחרוזות, כאשר כל מחרוזת היא שורה.
+ */
+function wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  if (font.widthOfTextAtSize(text, fontSize) <= maxWidth) {
+    return [text];
+  }
+
+  for (const word of words) {
+    // בודק אם השורה הנוכחית בתוספת המילה החדשה חורגת מהרוחב
+    const testLine = currentLine === '' ? word : `${currentLine} ${word}`;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+
+    if (width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      // אם השורה חורגת, דחוף את השורה הנוכחית למערך והתחל שורה חדשה עם המילה הנוכחית
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  // הוספת השורה האחרונה שנותרה
+  lines.push(currentLine);
+
+  return lines.filter(line => line.trim() !== '');
+}
+
 async function generateMeetingTable(
   page: PDFPage,
   meetingData: GroupedMeetingData,
   startY: number,
   fonts: { regular: any; bold: any }
 ): Promise<number> {
-  let currentY = startY
+  let currentY = startY;
 
-  const headers = ['נושא', 'המלצה', 'הצבעה', 'תוצאה']
-  const columnWidths = [300, 100, 80, 80]
+  // ערכת צבעים וקבועים
+  const headerBgColor = rgb(229 / 255, 224 / 255, 236 / 255);
+  const companyInfoHeight = 35;
+  const FONT_SIZE_HEADER = 7;
+  const FONT_SIZE_DATA = 7;
+  const LINE_HEIGHT_HEADER = 9; // גובה שורה לכותרת (גודל פונט + מרווח)
 
-  const rowHeight = 20
-
-  // ערכת צבעים סגולה
-  const headerBgColor = rgb(229 / 255, 224 / 255, 236 / 255)
-  const headerTextColor = rgb(0.1, 0.1, 0.1)
-  const rowShadeBgColor = rgb(245 / 255, 242 / 255, 250 / 255)
-  const rowTextColor = rgb(0.2, 0.2, 0.2)
-
-  // רקע כותרת הטבלה
+  // --- חלק פרטי החברה (ללא שינוי) ---
   page.drawRectangle({
     x: MARGIN,
-    y: currentY - rowHeight + 5,
+    y: currentY - companyInfoHeight + 5,
     width: CONTENT_WIDTH,
-    height: rowHeight,
+    height: companyInfoHeight,
     color: headerBgColor
-  })
+  });
 
-  // כותרות ממורכזות
-  let currentX = PAGE_WIDTH - MARGIN
-  headers.forEach((header, i) => {
-    const colWidth = columnWidths[i]
-    const textWidth = fonts.bold.widthOfTextAtSize(header, 10)
-    // חישוב מיקום X למרכוז הטקסט בעמודה
-    const textX = currentX - colWidth + (colWidth - textWidth) / 2
+  const companyInfoY = currentY - 10;
+  const companyHeaders = ['שם נייר', 'מספר נייר', 'סוג האסיפה', 'מועד האסיפה', 'שווי אחזקה (במיליוני ₪)', 'אחזקה באחוזים', 'שווי שוק (במיליוני ₪)'];
+  const companyValues = [
+    meetingData.stockName || '',
+    meetingData.stockNumber || '',
+    meetingData.meetingType || '',
+    meetingData.meetingDate || '',
+    meetingData.holdingValueInMillions?.toString() || '',
+    `${meetingData.percentageHolding || 0}%`,
+    meetingData.marketValue || ''
+  ];
 
+  let headerX = PAGE_WIDTH - MARGIN - 20;
+  companyHeaders.forEach((header, i) => {
+    const headerWidth = fonts.bold.widthOfTextAtSize(header, 8);
     page.drawText(header, {
-      x: textX,
-      y: currentY - 10,
-      size: 9,
-      font: fonts.bold,
-      color: headerTextColor
+      x: headerX - headerWidth, y: companyInfoY, size: 8, font: fonts.bold, color: rgb(0.1, 0.1, 0.1)
+    });
+    const value = companyValues[i]
+    const valueWidth = fonts.regular.widthOfTextAtSize(value, 8);
+    page.drawText(value, {
+      x: headerX - valueWidth, y: companyInfoY - 12, size: 8, font: fonts.regular, color: rgb(0.2, 0.2, 0.2)
     })
-    currentX -= colWidth // הזזת הסמן לעמודה הבאה (לשמאל)
+    headerX -= 110
   })
 
-  currentY -= rowHeight
+  currentY -= companyInfoHeight - 3
 
-  // שורות הנתונים
+  const headers = [
+    'נושא',
+    'המלצת גורם מייעץ',
+    'הצבעה',
+    'תוצאות האסיפה',
+    'רוב רגיל (%)',
+    'רוב מיוחד (%)',
+    'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
+    'ניגוד עניינים',
+    'צד קשר',
+    'עניין אישי'
+  ];
+
+  const columnWidths = [190, 60, 50, 60, 50, 50, 90, 50, 50, 50]; // עודכן רוחב עמודות כדי לפנות מקום לכותרות המתפרסות
+  const rowHeightData = 20; // גובה שורה עבור שורות הנתונים
+
+  const headerTextColor = rgb(0.1, 0.1, 0.1);
+  const rowOddBgColor = rgb(245 / 255, 242 / 255, 250 / 255); // צבע הרקע לשורות אי-זוגיות (כמו שהיה)
+  const rowEvenBgColor = rgb(253 / 255, 252 / 255, 254 / 255);
+  const rowTextColor = rgb(0.2, 0.2, 0.2);
+
+  // 1. עטוף את כל הכותרות לשורות מרובות לפי רוחב העמודה
+  const wrappedHeaders = headers.map((header, i) =>
+    wrapText(header, fonts.bold, FONT_SIZE_HEADER, columnWidths[i] - 4) // -4 פיקסלים למרווח פנימי
+  );
+
+  // 2. חשב את גובה שורת הכותרת הדינאמי על בסיס הכותרת הארוכה ביותר
+  const maxLinesInHeader = Math.max(...wrappedHeaders.map(lines => lines.length));
+  const headerRowHeight = maxLinesInHeader * LINE_HEIGHT_HEADER + 8; // +8 פיקסלים למרווח אנכי
+
+  // 3. צייר את רקע הכותרת עם הגובה הדינאמי
+  page.drawRectangle({
+    x: MARGIN,
+    y: currentY - headerRowHeight,
+    width: CONTENT_WIDTH,
+    height: headerRowHeight,
+    color: headerBgColor
+  });
+
+  // 4. צייר את הכותרות הרב-שורתיות
+  let currentX = PAGE_WIDTH - MARGIN;
+  wrappedHeaders.forEach((lines, i) => {
+    const colWidth = columnWidths[i];
+    const startXForCol = currentX - colWidth;
+
+    // חישוב נקודת התחלה אנכית (Y) למרכוז גוש הטקסט כולו
+    const blockHeight = lines.length * LINE_HEIGHT_HEADER;
+    let lineY = currentY - (headerRowHeight - blockHeight) / 2 - FONT_SIZE_HEADER;
+
+    // עבור על כל שורה בגוש וצייר אותה
+    lines.forEach(line => {
+      const textWidth = fonts.bold.widthOfTextAtSize(line, FONT_SIZE_HEADER);
+      // מרכז את השורה אופקית בתוך העמודה
+      const textX = startXForCol + (colWidth - textWidth) / 2;
+
+      page.drawText(line, {
+        x: textX,
+        y: lineY,
+        size: FONT_SIZE_HEADER,
+        font: fonts.bold,
+        color: headerTextColor,
+        lineHeight: LINE_HEIGHT_HEADER
+      });
+      lineY -= LINE_HEIGHT_HEADER; // קדם את ה-Y לשורה הבאה
+    });
+
+    currentX -= colWidth;
+  });
+
+  currentY -= headerRowHeight; // קדם את Y הראשי בסוף ציור הכותרת
+
+  // --- שורות הנתונים (לוגיקה דומה לקודם, עם התאמות קלות) ---
   meetingData.agendas.forEach((agenda, idx) => {
-    // צביעת רקע לשורות זוגיות לסירוגין
-    if (idx % 2 !== 0) {
-      page.drawRectangle({
-        x: MARGIN,
-        y: currentY - rowHeight + 5,
-        width: CONTENT_WIDTH,
-        height: rowHeight,
-        color: rowShadeBgColor
-      })
-    }
+    page.drawRectangle({
+      x: MARGIN,
+      y: currentY - rowHeightData,
+      width: CONTENT_WIDTH,
+      height: rowHeightData,
+      color: idx % 2 == 0 ? rowOddBgColor : rowEvenBgColor
+    })
 
     const rowData = [
       agenda.text || '',
       agenda.recommendation?.votingRecommendation || '',
       agenda.vote || '',
-      agenda.result || agenda.meetingResults || ''
-    ]
+      agenda.result || agenda.meetingResults || '',
+      agenda.regularMajority || '',
+      agenda.specialMajority || '',
+      agenda.boardPolicy || '',
+      agenda.conflictOfInterest || '',
+      agenda.relatedParty || '',
+      agenda.personalInterest || ''
+    ];
 
-    let x = PAGE_WIDTH - MARGIN // איפוס מיקום X לכל שורה
+    let x = PAGE_WIDTH - MARGIN;
     rowData.forEach((cell, i) => {
-      const colWidth = columnWidths[i]
-      // קיצוץ הטקסט בהתאם לרוחב העמודה
-      const textToDraw = String(cell).substring(0, i === 3 ? 80 : 30)
-      const textWidth = fonts.regular.widthOfTextAtSize(textToDraw, 9)
-      const textX = x - colWidth + (colWidth - textWidth) / 2
+      const colWidth = columnWidths[i];
+      const maxLength = i === 0 ? 35 : (i === 6 ? 15 : 10); // התאמת אורך מקסימלי
+      const textToDraw = String(cell).substring(0, maxLength);
+      const textWidth = fonts.regular.widthOfTextAtSize(textToDraw, FONT_SIZE_DATA);
+      const textX = x - colWidth + (colWidth - textWidth) / 2;
 
       page.drawText(textToDraw, {
         x: textX,
-        y: currentY - 10,
-        size: 9,
+        y: currentY - (rowHeightData / 2) - 2,
+        size: FONT_SIZE_DATA,
         font: fonts.regular,
         color: rowTextColor
-      })
-      x -= colWidth
-    })
+      });
+      x -= colWidth;
+    });
 
-    currentY -= rowHeight
-  })
+    currentY -= rowHeightData;
+  });
 
-  return currentY
+  return currentY;
 }
