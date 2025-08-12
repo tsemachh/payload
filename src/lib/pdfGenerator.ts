@@ -65,20 +65,13 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  // --- התיקון האוניברסלי מתחיל כאן ---
-
-  // 1. נבדוק אם אנחנו בסביבת פרודקשן
   const isProduction = process.env.NODE_ENV === 'production'
 
-  // 2. נקבע את נתיב הבסיס לקבצים בהתאם לסביבה
-  const assetsBasePath = isProduction
-    ? process.cwd() // בפרודקשן, הנתיב הוא שורש תיקיית הבילד
-    : path.join(process.cwd(), 'public') // בפיתוח, הנתיב הוא תיקיית public
+  const assetsBasePath = isProduction ? process.cwd() : path.join(process.cwd(), 'public')
 
   console.log(`Running in ${isProduction ? 'Production' : 'Development'} mode.`)
   console.log(`Assets base path: ${assetsBasePath}`)
 
-  // 3. נטען את הקבצים באמצעות הנתיב הדינמי שיצרנו
   const alefRegularBytes = fs.readFileSync(
     path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),
   )
@@ -90,8 +83,6 @@ async function initializePDFDocument(): Promise<{
   const logoPath = path.join(assetsBasePath, 'emda_logo.png')
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
-
-  // --- סוף התיקון ---
 
   return { pdfDoc, alefRegular, alefBold, logoImage }
 }
