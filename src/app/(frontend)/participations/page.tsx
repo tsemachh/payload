@@ -842,7 +842,6 @@ export default function Participations() {
           <div className="w-full lg:w-[450px]">
             <div className="flex items-center gap-3">
               <label className="text-base font-semibold text-right whitespace-nowrap">
-                {' '}
                 שם הדו״ח
               </label>
               <Input
