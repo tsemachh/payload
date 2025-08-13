@@ -65,14 +65,9 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const isProduction = process.env.NODE_ENV === 'production'
-  console.log('process.env', process.env)
-  console.log('process.env.NODE_ENV', process.env.NODE_ENV)
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  const assetsBasePath = isDevelopment ? path.join(process.cwd(), 'public') : process.cwd()
 
-  const assetsBasePath = isProduction ? process.cwd() : path.join(process.cwd(), 'public')
-
-  console.log(`Running in ${isProduction ? 'Production' : 'Development'} mode.`)
-  console.log(`Assets base path: ${assetsBasePath}`)
 
   const alefRegularBytes = fs.readFileSync(
     path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),

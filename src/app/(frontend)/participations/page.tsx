@@ -711,14 +711,14 @@ export default function Participations() {
                         case 'policyCompliance':
                           content =
                             agenda.policyCompliance !== undefined &&
-                              agenda.policyCompliance !== null ? (
+                            agenda.policyCompliance !== null ? (
                               <BooleanIcon iconType={agenda.policyCompliance} />
                             ) : null
                           break
                         case 'conflictOfInterest':
                           content =
                             agenda.conflictOfInterest !== undefined &&
-                              agenda.conflictOfInterest !== null ? (
+                            agenda.conflictOfInterest !== null ? (
                               <BooleanIcon iconType={agenda.conflictOfInterest} />
                             ) : null
                           break
@@ -731,7 +731,7 @@ export default function Participations() {
                         case 'personalInterest':
                           content =
                             agenda.personalInterest !== undefined &&
-                              agenda.personalInterest !== null ? (
+                            agenda.personalInterest !== null ? (
                               <BooleanIcon iconType={agenda.personalInterest} />
                             ) : null
                           break
@@ -830,10 +830,7 @@ export default function Participations() {
             <Button
               onClick={handleExport}
               variant="default"
-              disabled={
-                !rangeType ||
-                selectedFundIds.length === 0
-              }
+              disabled={!rangeType || selectedFundIds.length === 0}
               className="whitespace-nowrap"
             >
               הצג
@@ -844,7 +841,10 @@ export default function Participations() {
         {showParticipationTable && (
           <div className="w-full lg:w-[450px]">
             <div className="flex items-center gap-3">
-              <label className="text-base font-semibold text-right whitespace-nowrap"> שם הדו״ח</label>
+              <label className="text-base font-semibold text-right whitespace-nowrap">
+                {' '}
+                שם הדו״ח
+              </label>
               <Input
                 id="report-name"
                 type="text"
@@ -954,7 +954,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={320}
+              tableHeightOffset={280}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"
