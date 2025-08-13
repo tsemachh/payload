@@ -2,6 +2,7 @@ import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import fs from 'fs'
 import path from 'path'
+import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
 
 // Interfaces for PDF export
 export interface PDFExportOptions {
@@ -34,7 +35,7 @@ export interface GroupedMeetingData {
     meetingResults?: string
     regularMajority?: string
     specialMajority?: string
-    boardPolicy?: string
+    policyCompliance?: string
     conflictOfInterest?: string
     relatedParty?: string
     personalInterest?: string
@@ -65,18 +66,56 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const assetsBasePath = path.join('src', 'lib')
+  console.log('Current working directory:', process.cwd())
 
-  const alefRegularBytes = fs.readFileSync(
-    path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),
-  )
-  const alefBoldBytes = fs.readFileSync(path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf'))
+  // Check public directory
+  const publicPath = path.join('public')
+  console.log('Public directory path:', publicPath)
+  console.log('Public directory exists:', fs.existsSync(publicPath))
+  if (fs.existsSync(publicPath)) {
+    console.log('Public directory contents:', fs.readdirSync(publicPath))
+  }
+
+  // Check if there's a fonts folder in public
+  const publicFontsPath = path.join('public', 'fonts')
+  console.log('Public fonts path:', publicFontsPath)
+  console.log('Public fonts exists:', fs.existsSync(publicFontsPath))
+  if (fs.existsSync(publicFontsPath)) {
+    console.log('Public fonts contents:', fs.readdirSync(publicFontsPath))
+  }
+
+  const assetsBasePath = path.join('src', 'lib')
+  console.log('Assets base path:', assetsBasePath)
+  console.log('Full assets path:', path.resolve(assetsBasePath))
+
+  // Check src/lib directory
+  if (fs.existsSync(assetsBasePath)) {
+    console.log('src/lib directory contents:', fs.readdirSync(assetsBasePath))
+
+    const srcLibFontsPath = path.join(assetsBasePath, 'fonts')
+    if (fs.existsSync(srcLibFontsPath)) {
+      console.log('src/lib/fonts contents:', fs.readdirSync(srcLibFontsPath))
+    }
+  }
+
+  const regularFontPath = path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf')
+  const boldFontPath = path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf')
+
+  console.log('Regular font path:', regularFontPath)
+  console.log('Bold font path:', boldFontPath)
+  console.log('Regular font exists:', fs.existsSync(regularFontPath))
+  console.log('Bold font exists:', fs.existsSync(boldFontPath))
+
+  const alefRegularBytes = fs.readFileSync(regularFontPath)
+  const alefBoldBytes = fs.readFileSync(boldFontPath)
 
   const alefRegular = await pdfDoc.embedFont(alefRegularBytes)
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
 
   const logoPath = path.join(assetsBasePath, 'emda_logo.png')
-  console.log('logoPath', logoPath)
+  console.log('Logo path:', logoPath)
+  console.log('Full logo path:', path.resolve(logoPath))
+  console.log('Logo exists:', fs.existsSync(logoPath))
 
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
@@ -167,6 +206,7 @@ async function addDocumentHeader(
   options: PDFExportOptions,
   fonts: { regular: any; bold: any },
   logoImage: any,
+  reportName: string,
 ): Promise<number> {
   const { dateRange } = options
   const logoWidth = 80
@@ -193,14 +233,15 @@ async function addDocumentHeader(
     color: rgb(0, 0, 0),
   })
 
-  const companyNameText = 'comapny name'
-  const companyNameTextWidth = fonts.bold.widthOfTextAtSize(companyNameText, fontSize)
-  const companyNameX = (PAGE_WIDTH - companyNameTextWidth) / 2
-  const companyNameY = titleY - 12
+  const reportNameText = reportName
 
-  page.drawText(fixBiDiText(companyNameText), {
-    x: companyNameX,
-    y: companyNameY,
+  const reportNameTextWidth = fonts.bold.widthOfTextAtSize(reportNameText, fontSize)
+  const reportNameX = (PAGE_WIDTH - reportNameTextWidth) / 2
+  const reportNameY = titleY - 12
+
+  page.drawText(fixBiDiText(reportNameText), {
+    x: reportNameX,
+    y: reportNameY,
     size: fontSize,
     font: fonts.regular,
     color: rgb(0, 0, 0),
@@ -233,7 +274,7 @@ async function addPageFooter(
   page.drawText(footerText, {
     x: (PAGE_WIDTH - textWidth) / 2,
     y: MARGIN,
-    size: 10,
+    size: 5,
     font: fonts.regular,
     color: rgb(0.5, 0.5, 0.5),
   })
@@ -305,7 +346,7 @@ function drawCompanyInfo(
     page.drawText(fixedHeader, {
       x: headerX - headerWidth - PADDING,
       y: companyInfoY,
-      size: 8,
+      size: 7,
       font: fonts.bold,
       color: rgb(0.1, 0.1, 0.1),
     })
@@ -316,7 +357,7 @@ function drawCompanyInfo(
     page.drawText(fixedValue, {
       x: headerX - valueWidth - PADDING,
       y: companyInfoY - 12,
-      size: 8,
+      size: 7,
       font: fonts.regular,
       color: rgb(0.2, 0.2, 0.2),
     })
@@ -394,18 +435,25 @@ function drawAgendaRow(
     color: (rowIndex + 1) % 2 === 0 ? rowEvenBgColor : rowOddBgColor,
   })
 
+  // Helper function to convert boolean to icon
+  const booleanToIcon = (value: any): string => {
+    if (value === true) return 'V'
+    if (value === false) return 'X'
+    return ''
+  }
+
   const rowData = [
     (rowIndex + 1).toString(),
     agenda.text || '',
     agenda.recommendation?.votingRecommendation || '',
     agenda.vote || '',
-    agenda.result || agenda.meetingResults || '',
-    agenda.regularMajority || '',
-    agenda.specialMajority || '',
-    agenda.boardPolicy || '',
-    agenda.conflictOfInterest || '',
-    agenda.relatedParty || '',
-    agenda.personalInterest || '',
+    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
+    booleanToIcon(agenda.regularMajority),
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
+    booleanToIcon(agenda.policyCompliance),
+    booleanToIcon(agenda.conflictOfInterest),
+    booleanToIcon(agenda.relatedParty),
+    booleanToIcon(agenda.personalInterest),
   ]
 
   let x = PAGE_WIDTH - MARGIN
@@ -455,12 +503,20 @@ function drawAgendaRow(
     const textWidth = fonts.regular.widthOfTextAtSize(textToDraw, FONT_SIZE_DATA)
     const textX = x - colWidth + (colWidth - textWidth) / 2
 
+    // Use different colors for boolean icons
+    let textColor = rowTextColor
+    if (textToDraw === 'V') {
+      textColor = rgb(0, 0.6, 0) // Green for V (true)
+    } else if (textToDraw === 'X') {
+      textColor = rgb(0.8, 0, 0) // Red for X (false)
+    }
+
     page.drawText(textToDraw, {
       x: textX,
       y: verticalCenterY,
       size: FONT_SIZE_DATA,
       font: fonts.regular,
-      color: rowTextColor,
+      color: textColor,
     })
     x -= colWidth
   }
@@ -476,10 +532,13 @@ export async function generateParticipationsPDF(
     const { pdfDoc, alefRegular, alefBold, logoImage } = await initializePDFDocument()
     const fonts = { regular: alefRegular, bold: alefBold }
     const groupedData = groupDataByMeeting(data)
+    console.log('-----data', data)
+    console.log('-----data', data[0])
+    console.log('-----data', data[10])
 
     if (groupedData.length === 0) {
       const page = addPage(pdfDoc)
-      await addDocumentHeader(page, options, fonts, logoImage)
+      await addDocumentHeader(page, options, fonts, logoImage, options.reportName)
       page.drawText(fixBiDiText('אין נתונים להצגה'), {
         x: (PAGE_WIDTH - 100) / 2,
         y: PAGE_HEIGHT / 2,
@@ -506,16 +565,28 @@ export async function generateParticipationsPDF(
     const columnWidths = [25, 375, 45, 45, 45, 45, 40, 60, 40, 40, 40]
 
     let currentPage = addPage(pdfDoc)
-    let currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+    let currentY = await addDocumentHeader(
+      currentPage,
+      options,
+      fonts,
+      logoImage,
+      options.reportName,
+    )
 
     for (const meeting of groupedData) {
       const tableHeights = calculateTableHeights(columns, fonts, columnWidths)
       const requiredHeightForStart =
         tableHeights.companyHeaderHeight + tableHeights.agendaHeaderHeight + MIN_ROW_HEIGHT
 
-      if (currentY < MARGIN + 40 + requiredHeightForStart) {
+      if (currentY < MARGIN + 60 + requiredHeightForStart) {
         currentPage = addPage(pdfDoc)
-        currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+        currentY = await addDocumentHeader(
+          currentPage,
+          options,
+          fonts,
+          logoImage,
+          options.reportName,
+        )
       }
 
       const isFirstTableOnPage = currentY >= PAGE_HEIGHT - MARGIN - 75
@@ -549,7 +620,13 @@ export async function generateParticipationsPDF(
 
         if (currentY < MARGIN + 40 + dynamicRowHeight) {
           currentPage = addPage(pdfDoc)
-          currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+          currentY = await addDocumentHeader(
+            currentPage,
+            options,
+            fonts,
+            logoImage,
+            options.reportName,
+          )
         }
 
         currentY = drawAgendaRow(
