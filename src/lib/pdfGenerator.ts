@@ -65,9 +65,7 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  const assetsBasePath = isDevelopment ? path.join(process.cwd(), 'public') : process.cwd()
-
+  const assetsBasePath = path.join(process.cwd(), 'public')
 
   const alefRegularBytes = fs.readFileSync(
     path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),
