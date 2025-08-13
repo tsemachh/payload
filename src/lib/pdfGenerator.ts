@@ -65,7 +65,7 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const assetsBasePath = path.join(process.cwd(), 'public')
+  const assetsBasePath = path.join('src', 'lib')
 
   const alefRegularBytes = fs.readFileSync(
     path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),
@@ -76,6 +76,8 @@ async function initializePDFDocument(): Promise<{
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
 
   const logoPath = path.join(assetsBasePath, 'emda_logo.png')
+  console.log('logoPath', logoPath)
+
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
 
