@@ -131,13 +131,14 @@ export const useVotingData = () => {
             percentageHolding: 0,
             holdingValueInMillions: 0,
           }
+          console.log('!!savedDocumentData.fundsWithHolding', savedDocumentData.fundsWithHolding)
 
           if (Array.isArray(savedDocumentData.fundsWithHolding)) {
             // Filter fundsWithHolding by company id to get quantity
             const companyHoldings = savedDocumentData.fundsWithHolding.filter((holding: any) => {
               return holding.company === company.id
             })
-
+            console.log('!!companyHoldings', companyHoldings)
             if (companyHoldings.length > 0) {
               // Sum up quantities for this company
               const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
