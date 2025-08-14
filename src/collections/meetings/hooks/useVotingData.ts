@@ -76,7 +76,6 @@ export const useVotingData = () => {
             )
             if (stockValueResponse.ok) {
               stockValueData = await stockValueResponse.json()
-              console.log('!!stockValueData', stockValueData)
             }
           } catch (error) {
             console.error('Error fetching stock value:', error)
@@ -105,12 +104,9 @@ export const useVotingData = () => {
 
             const votesStringifiedQuery = stringify(votesQuery, { addQueryPrefix: true })
             const votesResponse = await fetch(`/api/votes${votesStringifiedQuery}`)
-            console.log('!!votesResponse', votesResponse)
-
             if (votesResponse.ok) {
               const votesResponseData = await votesResponse.json()
               votesDetails = votesResponseData.docs || []
-              console.log('!!votesDetails', votesDetails)
             }
           }
         }
@@ -131,23 +127,19 @@ export const useVotingData = () => {
             percentageHolding: 0,
             holdingValueInMillions: 0,
           }
-          console.log('!!savedDocumentData.fundsWithHolding', savedDocumentData.fundsWithHolding)
 
           if (Array.isArray(savedDocumentData.fundsWithHolding)) {
             // Filter fundsWithHolding by company id to get quantity
             const companyHoldings = savedDocumentData.fundsWithHolding.filter((holding: any) => {
               return holding.company === company.id
             })
-            console.log('!!companyHoldings', companyHoldings)
             if (companyHoldings.length > 0) {
               // Sum up quantities for this company
               const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
                 return sum + (holding.quantity || 0)
               }, 0)
-              console.log('!!totalQuantity', totalQuantity)
               // Calculate holding values using the imported function
               calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
-              console.log('!!calculatedValues', calculatedValues)
             }
           }
 
@@ -178,8 +170,6 @@ export const useVotingData = () => {
               : undefined,
           }
         })
-        console.log('!!processedCompanies', processedCompanies)
-
         setCompanies(processedCompanies)
       } catch (error) {
         console.error('Error fetching companies data:', error)
