@@ -21,6 +21,7 @@ import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
+import { resultMapping } from './utils/pdfExport'
 
 export interface Company {
   id: string
@@ -596,13 +597,6 @@ export default function Participations() {
         )
       }
 
-      const resultMapping: { [key: string]: string } = {
-        '0': '---',
-        '1': 'אושר',
-        '2': 'לא אושר',
-        '3': 'דיון',
-      }
-
       return (
         <div className="w-full">
           <table className="w-full table-fixed border-collapse" style={{ tableLayout: 'fixed' }}>
@@ -643,7 +637,7 @@ export default function Participations() {
                               dir={isEnglish ? 'ltr' : 'rtl'}
                             >
                               <div
-                                className="truncate cursor-pointer hover:text-blue-600"
+                                className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[55rem]"
                                 style={{
                                   transform:
                                     selectedCompaniesCount > 1

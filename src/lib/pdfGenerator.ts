@@ -2,6 +2,7 @@ import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import fs from 'fs'
 import path from 'path'
+import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
 
 // Interfaces for PDF export
 export interface PDFExportOptions {
@@ -34,7 +35,7 @@ export interface GroupedMeetingData {
     meetingResults?: string
     regularMajority?: string
     specialMajority?: string
-    boardPolicy?: string
+    policyCompliance?: string
     conflictOfInterest?: string
     relatedParty?: string
     personalInterest?: string
@@ -48,8 +49,8 @@ const PAGE_HEIGHT = A4[0]
 const MARGIN = 15
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
 
-const MIN_ROW_HEIGHT = 20
-const DATA_LINE_HEIGHT = 12
+const MIN_ROW_HEIGHT = 15
+const DATA_LINE_HEIGHT = 10
 const LINE_HEIGHT_HEADER = 9
 const FONT_SIZE_HEADER = 7
 const FONT_SIZE_DATA = 7
@@ -65,18 +66,56 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  const assetsBasePath = path.join('src', 'lib')
+  console.log('Current working directory:', process.cwd())
 
-  const alefRegularBytes = fs.readFileSync(
-    path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf'),
-  )
-  const alefBoldBytes = fs.readFileSync(path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf'))
+  // Check public directory
+  const publicPath = path.join('public')
+  console.log('Public directory path:', publicPath)
+  console.log('Public directory exists:', fs.existsSync(publicPath))
+  if (fs.existsSync(publicPath)) {
+    console.log('Public directory contents:', fs.readdirSync(publicPath))
+  }
+
+  // Check if there's a fonts folder in public
+  const publicFontsPath = path.join('public', 'fonts')
+  console.log('Public fonts path:', publicFontsPath)
+  console.log('Public fonts exists:', fs.existsSync(publicFontsPath))
+  if (fs.existsSync(publicFontsPath)) {
+    console.log('Public fonts contents:', fs.readdirSync(publicFontsPath))
+  }
+
+  const assetsBasePath = path.join('src', 'lib')
+  console.log('Assets base path:', assetsBasePath)
+  console.log('Full assets path:', path.resolve(assetsBasePath))
+
+  // Check src/lib directory
+  if (fs.existsSync(assetsBasePath)) {
+    console.log('src/lib directory contents:', fs.readdirSync(assetsBasePath))
+
+    const srcLibFontsPath = path.join(assetsBasePath, 'fonts')
+    if (fs.existsSync(srcLibFontsPath)) {
+      console.log('src/lib/fonts contents:', fs.readdirSync(srcLibFontsPath))
+    }
+  }
+
+  const regularFontPath = path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf')
+  const boldFontPath = path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf')
+
+  console.log('Regular font path:', regularFontPath)
+  console.log('Bold font path:', boldFontPath)
+  console.log('Regular font exists:', fs.existsSync(regularFontPath))
+  console.log('Bold font exists:', fs.existsSync(boldFontPath))
+
+  const alefRegularBytes = fs.readFileSync(regularFontPath)
+  const alefBoldBytes = fs.readFileSync(boldFontPath)
 
   const alefRegular = await pdfDoc.embedFont(alefRegularBytes)
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
 
   const logoPath = path.join(assetsBasePath, 'emda_logo.png')
-  console.log('logoPath', logoPath)
+  console.log('Logo path:', logoPath)
+  console.log('Full logo path:', path.resolve(logoPath))
+  console.log('Logo exists:', fs.existsSync(logoPath))
 
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
@@ -167,6 +206,9 @@ async function addDocumentHeader(
   options: PDFExportOptions,
   fonts: { regular: any; bold: any },
   logoImage: any,
+  reportName: string,
+  columns: string[],
+  columnWidths: number[],
 ): Promise<number> {
   const { dateRange } = options
   const logoWidth = 80
@@ -193,16 +235,17 @@ async function addDocumentHeader(
     color: rgb(0, 0, 0),
   })
 
-  const companyNameText = 'comapny name'
-  const companyNameTextWidth = fonts.bold.widthOfTextAtSize(companyNameText, fontSize)
-  const companyNameX = (PAGE_WIDTH - companyNameTextWidth) / 2
-  const companyNameY = titleY - 12
+  const reportNameText = reportName
 
-  page.drawText(fixBiDiText(companyNameText), {
-    x: companyNameX,
-    y: companyNameY,
+  const reportNameTextWidth = fonts.bold.widthOfTextAtSize(reportNameText, fontSize)
+  const reportNameX = (PAGE_WIDTH - reportNameTextWidth) / 2
+  const reportNameY = titleY - 12
+
+  page.drawText(fixBiDiText(reportNameText), {
+    x: reportNameX,
+    y: reportNameY,
     size: fontSize,
-    font: fonts.regular,
+    font: fonts.bold,
     color: rgb(0, 0, 0),
   })
 
@@ -213,12 +256,25 @@ async function addDocumentHeader(
   page.drawText(fixBiDiText(dateRangeText), {
     x: dateRangeX,
     y: dateRangeY,
-    size: fontSize,
-    font: fonts.regular,
+    size: fontSize - 1,
+    font: fonts.bold,
     color: rgb(0.3, 0.3, 0.3),
   })
 
-  return PAGE_HEIGHT - MARGIN - 50
+  // Add table header
+  const tableHeaderY = dateRangeY - 30
+  const tableHeaderHeight = calculateTableHeights(columns, fonts, columnWidths).agendaHeaderHeight
+
+  drawAgendaTableHeader(
+    page,
+    tableHeaderY,
+    fonts,
+    { agendaHeaderHeight: tableHeaderHeight },
+    columns,
+    columnWidths,
+  )
+
+  return tableHeaderY - tableHeaderHeight - 2
 }
 
 async function addPageFooter(
@@ -233,7 +289,7 @@ async function addPageFooter(
   page.drawText(footerText, {
     x: (PAGE_WIDTH - textWidth) / 2,
     y: MARGIN,
-    size: 10,
+    size: 7,
     font: fonts.regular,
     color: rgb(0.5, 0.5, 0.5),
   })
@@ -249,7 +305,8 @@ function calculateTableHeights(
   )
 
   const maxLinesInHeader = Math.max(...wrappedHeaders.map((lines) => lines.length))
-  const agendaHeaderHeight = maxLinesInHeader * LINE_HEIGHT_HEADER + 8
+  // Add extra height for sub-headers in the subject column
+  const agendaHeaderHeight = maxLinesInHeader * LINE_HEIGHT_HEADER + 15
 
   return {
     companyHeaderHeight: COMPANY_INFO_HEIGHT,
@@ -262,31 +319,26 @@ function drawCompanyInfo(
   meetingData: GroupedMeetingData,
   startY: number,
   fonts: { regular: any; bold: any },
+  columnWidths: number[],
 ): number {
-  const companyHeaderBgColor = rgb(235 / 255, 232 / 255, 240 / 255)
+  const companyRowHeight = MIN_ROW_HEIGHT
+  const companyHeaderBgColor = rgb(220 / 255, 215 / 255, 227 / 255)
 
+  const subjectColumnWidth = columnWidths[1]
+
+  // Draw background for the entire row width
   page.drawRectangle({
     x: MARGIN,
-    y: startY - COMPANY_INFO_HEIGHT + 5,
+    y: startY - companyRowHeight,
     width: CONTENT_WIDTH,
-    height: COMPANY_INFO_HEIGHT,
+    height: companyRowHeight,
     color: companyHeaderBgColor,
   })
 
-  const companyInfoY = startY - 10
   const formattedDate = meetingData.meetingDate
     ? formatNormalDate(new Date(meetingData.meetingDate))
     : ''
 
-  const companyHeaders = [
-    'שם נייר',
-    'מספר נייר',
-    'סוג האסיפה',
-    'מועד האסיפה',
-    'שווי אחזקה (מיליוני)',
-    'אחזקה באחוזים',
-    'שווי שוק (מיליוני)',
-  ]
   const companyValues = [
     meetingData.stockName || '',
     meetingData.stockNumber || '',
@@ -297,33 +349,30 @@ function drawCompanyInfo(
     meetingData.marketValue || '',
   ]
 
-  let headerX = PAGE_WIDTH - MARGIN
-  const colWidth = 110
-  companyHeaders.forEach((header, i) => {
-    const fixedHeader = fixBiDiText(header)
-    const headerWidth = fonts.bold.widthOfTextAtSize(fixedHeader, 8)
-    page.drawText(fixedHeader, {
-      x: headerX - headerWidth - PADDING,
-      y: companyInfoY,
-      size: 8,
-      font: fonts.bold,
-      color: rgb(0.1, 0.1, 0.1),
-    })
+  // Calculate width for each value (same as sub-headers)
+  const availableWidth = subjectColumnWidth - PADDING * 2
+  const valueWidth = availableWidth / companyValues.length
 
-    const value = companyValues[i]
+  let currentX = PAGE_WIDTH - MARGIN - PADDING
+  const textY = startY - companyRowHeight / 2 - FONT_SIZE_DATA / 2
+
+  companyValues.forEach((value) => {
     const fixedValue = fixBiDiText(value)
-    const valueWidth = fonts.regular.widthOfTextAtSize(fixedValue, 8)
+    const textWidth = fonts.regular.widthOfTextAtSize(fixedValue, FONT_SIZE_DATA)
+    const textX = currentX - valueWidth + (valueWidth - textWidth) / 2
+
     page.drawText(fixedValue, {
-      x: headerX - valueWidth - PADDING,
-      y: companyInfoY - 12,
-      size: 8,
+      x: textX,
+      y: textY,
+      size: FONT_SIZE_DATA,
       font: fonts.regular,
       color: rgb(0.2, 0.2, 0.2),
     })
-    headerX -= colWidth
+
+    currentX -= valueWidth
   })
 
-  return startY - COMPANY_INFO_HEIGHT + 3
+  return startY - companyRowHeight
 }
 
 function drawAgendaTableHeader(
@@ -334,7 +383,7 @@ function drawAgendaTableHeader(
   headers: string[],
   columnWidths: number[],
 ): number {
-  const agendaHeaderBgColor = rgb(220 / 255, 215 / 255, 227 / 255)
+  const agendaHeaderBgColor = rgb(240 / 255, 240 / 255, 240 / 255)
   const headerTextColor = rgb(0.1, 0.1, 0.1)
 
   const wrappedHeaders = headers.map((header, i) =>
@@ -343,7 +392,7 @@ function drawAgendaTableHeader(
 
   page.drawRectangle({
     x: MARGIN,
-    y: startY - heights.agendaHeaderHeight,
+    y: startY - heights.agendaHeaderHeight + 15,
     width: CONTENT_WIDTH,
     height: heights.agendaHeaderHeight,
     color: agendaHeaderBgColor,
@@ -352,21 +401,78 @@ function drawAgendaTableHeader(
   let currentX = PAGE_WIDTH - MARGIN
   wrappedHeaders.forEach((lines, i) => {
     const colWidth = columnWidths[i]
-    const blockHeight = lines.length * LINE_HEIGHT_HEADER
-    let lineY = startY - (heights.agendaHeaderHeight - blockHeight) / 2 - FONT_SIZE_HEADER
 
-    lines.forEach((line) => {
-      const textWidth = fonts.bold.widthOfTextAtSize(line, FONT_SIZE_HEADER)
-      const textX = currentX - colWidth + (colWidth - textWidth) / 2
-      page.drawText(line, {
-        x: textX,
-        y: lineY,
+    if (i === 1) {
+      // Subject column - add sub-headers
+      // Calculate center position for the entire header block
+      const totalHeaderHeight = heights.agendaHeaderHeight
+      const headerBlockHeight = FONT_SIZE_HEADER + LINE_HEIGHT_HEADER + (FONT_SIZE_HEADER - 1) + 4 // main + spacing + sub
+      const centerOffset = (totalHeaderHeight - headerBlockHeight) / 2
+
+      // Draw main "נושא" header
+      const mainHeaderY = startY - centerOffset - FONT_SIZE_HEADER + 10
+      const mainHeaderText = fixBiDiText('נושא')
+      const mainHeaderWidth = fonts.bold.widthOfTextAtSize(mainHeaderText, FONT_SIZE_HEADER)
+      const mainHeaderX = currentX - colWidth + (colWidth - mainHeaderWidth) / 2
+
+      page.drawText(mainHeaderText, {
+        x: mainHeaderX,
+        y: mainHeaderY,
         size: FONT_SIZE_HEADER,
         font: fonts.bold,
         color: headerTextColor,
       })
-      lineY -= LINE_HEIGHT_HEADER
-    })
+
+      // Draw sub-headers below
+      const companySubHeaders = [
+        'שם נייר',
+        'מספר נייר',
+        'סוג האסיפה',
+        'מועד האסיפה',
+        'שווי אחזקה (מיליוני)',
+        'אחזקה באחוזים',
+        'שווי שוק (מיליוני)',
+      ]
+
+      const availableWidth = colWidth - PADDING * 2
+      const subHeaderWidth = availableWidth / companySubHeaders.length
+      let subCurrentX = currentX - PADDING
+      const subHeaderY = mainHeaderY - LINE_HEIGHT_HEADER - 4
+
+      companySubHeaders.forEach((subHeader) => {
+        const fixedSubHeader = fixBiDiText(subHeader)
+        const subTextWidth = fonts.bold.widthOfTextAtSize(fixedSubHeader, FONT_SIZE_HEADER - 1)
+        const subTextX = subCurrentX - subHeaderWidth + (subHeaderWidth - subTextWidth) / 2
+
+        page.drawText(fixedSubHeader, {
+          x: subTextX,
+          y: subHeaderY,
+          size: FONT_SIZE_HEADER - 1,
+          font: fonts.bold,
+          color: headerTextColor,
+        })
+
+        subCurrentX -= subHeaderWidth
+      })
+    } else {
+      // Other columns - regular headers
+      const blockHeight = lines.length * LINE_HEIGHT_HEADER
+      let lineY = startY - (heights.agendaHeaderHeight - blockHeight) / 2 - FONT_SIZE_HEADER + 15
+
+      lines.forEach((line) => {
+        const textWidth = fonts.bold.widthOfTextAtSize(line, FONT_SIZE_HEADER)
+        const textX = currentX - colWidth + (colWidth - textWidth) / 2
+        page.drawText(line, {
+          x: textX,
+          y: lineY,
+          size: FONT_SIZE_HEADER,
+          font: fonts.bold,
+          color: headerTextColor,
+        })
+        lineY -= LINE_HEIGHT_HEADER
+      })
+    }
+
     currentX -= colWidth
   })
 
@@ -394,18 +500,25 @@ function drawAgendaRow(
     color: (rowIndex + 1) % 2 === 0 ? rowEvenBgColor : rowOddBgColor,
   })
 
+  // Helper function to convert boolean to icon
+  const booleanToIcon = (value: any): string => {
+    if (value === true) return 'V'
+    if (value === false) return 'X'
+    return ''
+  }
+
   const rowData = [
     (rowIndex + 1).toString(),
     agenda.text || '',
     agenda.recommendation?.votingRecommendation || '',
     agenda.vote || '',
-    agenda.result || agenda.meetingResults || '',
-    agenda.regularMajority || '',
-    agenda.specialMajority || '',
-    agenda.boardPolicy || '',
-    agenda.conflictOfInterest || '',
-    agenda.relatedParty || '',
-    agenda.personalInterest || '',
+    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
+    booleanToIcon(agenda.regularMajority),
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
+    booleanToIcon(agenda.policyCompliance),
+    booleanToIcon(agenda.conflictOfInterest),
+    booleanToIcon(agenda.relatedParty),
+    booleanToIcon(agenda.personalInterest),
   ]
 
   let x = PAGE_WIDTH - MARGIN
@@ -455,12 +568,20 @@ function drawAgendaRow(
     const textWidth = fonts.regular.widthOfTextAtSize(textToDraw, FONT_SIZE_DATA)
     const textX = x - colWidth + (colWidth - textWidth) / 2
 
+    // Use different colors for boolean icons
+    let textColor = rowTextColor
+    if (textToDraw === 'V') {
+      textColor = rgb(0, 0.6, 0) // Green for V (true)
+    } else if (textToDraw === 'X') {
+      textColor = rgb(0.8, 0, 0) // Red for X (false)
+    }
+
     page.drawText(textToDraw, {
       x: textX,
       y: verticalCenterY,
       size: FONT_SIZE_DATA,
       font: fonts.regular,
-      color: rowTextColor,
+      color: textColor,
     })
     x -= colWidth
   }
@@ -479,7 +600,17 @@ export async function generateParticipationsPDF(
 
     if (groupedData.length === 0) {
       const page = addPage(pdfDoc)
-      await addDocumentHeader(page, options, fonts, logoImage)
+      const columns = ['']
+      const columnWidths = [CONTENT_WIDTH]
+      await addDocumentHeader(
+        page,
+        options,
+        fonts,
+        logoImage,
+        options.reportName,
+        columns,
+        columnWidths,
+      )
       page.drawText(fixBiDiText('אין נתונים להצגה'), {
         x: (PAGE_WIDTH - 100) / 2,
         y: PAGE_HEIGHT / 2,
@@ -503,35 +634,42 @@ export async function generateParticipationsPDF(
       'צד קשר',
       'עניין אישי',
     ]
-    const columnWidths = [25, 375, 45, 45, 45, 45, 40, 60, 40, 40, 40]
+    const columnWidths = [15, 375, 45, 45, 45, 45, 40, 60, 40, 40, 40]
 
     let currentPage = addPage(pdfDoc)
-    let currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+    let currentY = await addDocumentHeader(
+      currentPage,
+      options,
+      fonts,
+      logoImage,
+      options.reportName,
+      columns,
+      columnWidths,
+    )
 
     for (const meeting of groupedData) {
       const tableHeights = calculateTableHeights(columns, fonts, columnWidths)
       const requiredHeightForStart =
         tableHeights.companyHeaderHeight + tableHeights.agendaHeaderHeight + MIN_ROW_HEIGHT
 
-      if (currentY < MARGIN + 40 + requiredHeightForStart) {
+      if (currentY < MARGIN + 60 + requiredHeightForStart) {
         currentPage = addPage(pdfDoc)
-        currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+        currentY = await addDocumentHeader(
+          currentPage,
+          options,
+          fonts,
+          logoImage,
+          options.reportName,
+          columns,
+          columnWidths,
+        )
       }
 
       const isFirstTableOnPage = currentY >= PAGE_HEIGHT - MARGIN - 75
       if (!isFirstTableOnPage) {
-        currentY -= 30
+        currentY -= 10 // Full spacing between tables on same page
       }
-
-      currentY = drawCompanyInfo(currentPage, meeting, currentY, fonts)
-      currentY = drawAgendaTableHeader(
-        currentPage,
-        currentY,
-        fonts,
-        tableHeights,
-        columns,
-        columnWidths,
-      )
+      currentY = drawCompanyInfo(currentPage, meeting, currentY, fonts, columnWidths)
 
       for (let i = 0; i < meeting.agendas.length; i++) {
         const agenda = meeting.agendas[i]
@@ -547,9 +685,17 @@ export async function generateParticipationsPDF(
           wrappedLines.length * DATA_LINE_HEIGHT + PADDING * 2,
         )
 
-        if (currentY < MARGIN + 40 + dynamicRowHeight) {
+        if (currentY < MARGIN + 20 + dynamicRowHeight) {
           currentPage = addPage(pdfDoc)
-          currentY = await addDocumentHeader(currentPage, options, fonts, logoImage)
+          currentY = await addDocumentHeader(
+            currentPage,
+            options,
+            fonts,
+            logoImage,
+            options.reportName,
+            columns,
+            columnWidths,
+          )
         }
 
         currentY = drawAgendaRow(
