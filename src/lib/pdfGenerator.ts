@@ -362,7 +362,7 @@ function drawCompanyInfo(
 function drawAgendaTableHeader(
   page: PDFPage,
   startY: number,
-  fonts: { bold: any },
+  fonts: { bold: any; regular: any },
   heights: { agendaHeaderHeight: number },
   headers: string[],
   columnWidths: number[],
@@ -432,7 +432,7 @@ function drawAgendaTableHeader(
           x: subTextX,
           y: subHeaderY,
           size: FONT_SIZE_HEADER - 1,
-          font: fonts.bold,
+          font: fonts.regular,
           color: headerTextColor,
         })
 
@@ -493,17 +493,19 @@ function drawAgendaRow(
   }
 
   const rowData = [
-    (rowIndex + 1).toString(),
-    agenda.text || '',
-    agenda.recommendation?.votingRecommendation || '',
-    agenda.vote || '',
-    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
-    booleanToIcon(agenda.regularMajority),
-    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
-    booleanToIcon(agenda.policyCompliance),
-    booleanToIcon(agenda.conflictOfInterest),
-    booleanToIcon(agenda.relatedParty),
-    booleanToIcon(agenda.personalInterest),
+    (rowIndex + 1).toString(), // Row number
+    agenda.text || '', // נושא
+    agenda.recommendation?.votingRecommendation ||
+      agenda.recommendation?.recommendationExplanation ||
+      '', // המלצה
+    agenda.vote || '', // הצבעה
+    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
+    booleanToIcon(!agenda.privilegedMajority), // רוב רגיל
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '', // רוב מיוחד
+    booleanToIcon(agenda.policyCompliance), // בהתאם למדיניות דירקטוריון ו/או וועדת השקעות
+    booleanToIcon(agenda.conflictOfInterest), // ניגוד עניינים
+    booleanToIcon(agenda.relatedParty), // צד קשר
+    booleanToIcon(agenda.personalInterest), // עניין אישי
   ]
 
   let x = PAGE_WIDTH - MARGIN
@@ -599,7 +601,7 @@ export async function generateParticipationsPDF(
       page.drawText(fixBiDiText('אין נתונים להצגה'), {
         x: (PAGE_WIDTH - 100) / 2,
         y: PAGE_HEIGHT / 2,
-        font: fonts.bold,
+        font: fonts.regular,
         size: 16,
       })
       await addPageFooter(page, 1, 1, fonts)

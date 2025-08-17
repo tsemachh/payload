@@ -342,14 +342,14 @@ export default function Participations() {
         header: 'המלצת גורם מייעץ',
         type: 'string',
         render: (row) => null,
-        minWidth: 80,
+        minWidth: 70,
       },
       {
         key: 'vote',
         header: 'הצבעה',
         type: 'string',
         render: (row) => null,
-        minWidth: 100,
+        minWidth: 70,
       },
       {
         key: 'meetingResults',
@@ -360,7 +360,7 @@ export default function Participations() {
       },
       {
         key: 'simpleMajority',
-        header: 'רוב רגיל (%)',
+        header: 'רוב רגיל',
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
@@ -369,7 +369,7 @@ export default function Participations() {
       {
         key: 'specialMajority',
         header: 'רוב מיוחד (%)',
-        type: 'boolean',
+        type: 'string',
         render: (row) => null,
         positionCenter: true,
         minWidth: 60,
@@ -691,10 +691,7 @@ export default function Participations() {
                             : agenda.meetingResults || null
                           break
                         case 'simpleMajority':
-                          content =
-                            agenda.privilegedMajority === false ? (
-                              <BooleanIcon iconType={true} />
-                            ) : null
+                          content = <BooleanIcon iconType={!agenda.privilegedMajority} />
                           break
                         case 'specialMajority':
                           content =
@@ -761,7 +758,7 @@ export default function Participations() {
                             width:
                               column.key === 'stockName'
                                 ? selectedCompaniesCount > 1
-                                  ? '750px'
+                                  ? '510px'
                                   : '650px'
                                 : `${column.minWidth}px`,
                             minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
