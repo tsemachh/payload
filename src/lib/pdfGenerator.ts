@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit'
 import fs from 'fs'
 import path from 'path'
 import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
+import { logger } from '@/lib/logger'
 
 // Interfaces for PDF export
 export interface PDFExportOptions {
@@ -66,45 +67,45 @@ async function initializePDFDocument(): Promise<{
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
 
-  console.log('Current working directory:', process.cwd())
+  logger.warn('Current working directory:', process.cwd())
 
   // Check public directory
   const publicPath = path.join('public')
-  console.log('Public directory path:', publicPath)
-  console.log('Public directory exists:', fs.existsSync(publicPath))
+  logger.warn('Public directory path:', publicPath)
+  logger.warn('Public directory exists:', fs.existsSync(publicPath))
   if (fs.existsSync(publicPath)) {
-    console.log('Public directory contents:', fs.readdirSync(publicPath))
+    logger.warn('Public directory contents:', fs.readdirSync(publicPath))
   }
 
   // Check if there's a fonts folder in public
   const publicFontsPath = path.join('public', 'fonts')
-  console.log('Public fonts path:', publicFontsPath)
-  console.log('Public fonts exists:', fs.existsSync(publicFontsPath))
+  logger.warn('Public fonts path:', publicFontsPath)
+  logger.warn('Public fonts exists:', fs.existsSync(publicFontsPath))
   if (fs.existsSync(publicFontsPath)) {
-    console.log('Public fonts contents:', fs.readdirSync(publicFontsPath))
+    logger.warn('Public fonts contents:', fs.readdirSync(publicFontsPath))
   }
 
   const assetsBasePath = path.join('src', 'lib')
-  console.log('Assets base path:', assetsBasePath)
-  console.log('Full assets path:', path.resolve(assetsBasePath))
+  logger.warn('Assets base path:', assetsBasePath)
+  logger.warn('Full assets path:', path.resolve(assetsBasePath))
 
   // Check src/lib directory
   if (fs.existsSync(assetsBasePath)) {
-    console.log('src/lib directory contents:', fs.readdirSync(assetsBasePath))
+    logger.warn('src/lib directory contents:', fs.readdirSync(assetsBasePath))
 
     const srcLibFontsPath = path.join(assetsBasePath, 'fonts')
     if (fs.existsSync(srcLibFontsPath)) {
-      console.log('src/lib/fonts contents:', fs.readdirSync(srcLibFontsPath))
+      logger.warn('src/lib/fonts contents:', fs.readdirSync(srcLibFontsPath))
     }
   }
 
   const regularFontPath = path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf')
   const boldFontPath = path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf')
 
-  console.log('Regular font path:', regularFontPath)
-  console.log('Bold font path:', boldFontPath)
-  console.log('Regular font exists:', fs.existsSync(regularFontPath))
-  console.log('Bold font exists:', fs.existsSync(boldFontPath))
+  logger.warn('Regular font path:', regularFontPath)
+  logger.warn('Bold font path:', boldFontPath)
+  logger.warn('Regular font exists:', fs.existsSync(regularFontPath))
+  logger.warn('Bold font exists:', fs.existsSync(boldFontPath))
 
   const alefRegularBytes = fs.readFileSync(regularFontPath)
   const alefBoldBytes = fs.readFileSync(boldFontPath)
@@ -113,9 +114,9 @@ async function initializePDFDocument(): Promise<{
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
 
   const logoPath = path.join(assetsBasePath, 'emda_logo.png')
-  console.log('Logo path:', logoPath)
-  console.log('Full logo path:', path.resolve(logoPath))
-  console.log('Logo exists:', fs.existsSync(logoPath))
+  logger.warn('Logo path:', logoPath)
+  logger.warn('Full logo path:', path.resolve(logoPath))
+  logger.warn('Logo exists:', fs.existsSync(logoPath))
 
   const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
@@ -719,6 +720,7 @@ export async function generateParticipationsPDF(
     const pdfBytes = await pdfDoc.save()
     return pdfBytes
   } catch (error) {
+    logger.warn('Error generating PDF:', error)
     throw new Error('Failed to generate PDF')
   }
 }

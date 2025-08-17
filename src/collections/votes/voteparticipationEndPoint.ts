@@ -148,20 +148,21 @@ function buildWhereConditions(params: VotesQueryParams) {
     })
   }
 
-  if (search?.trim()) {
+  const searchTrim = search?.trim()
+  if (searchTrim) {
     whereConditions.push({
       or: [
-        { 'meeting.meetingId': { contains: search.trim() } },
-        { 'meeting.stock.stockId': { contains: search.trim() } },
-        { 'meeting.stock.name': { contains: search.trim() } },
-        { 'meeting.stock.symbol': { contains: search.trim() } },
-        { 'meeting.stock.type': { contains: search.trim() } },
-        { 'meeting.magnaId': { contains: search.trim() } },
-        { 'meeting.type': { contains: search.trim() } },
-        { 'meeting.location': { contains: search.trim() } },
-        { 'meeting.comments': { contains: search.trim() } },
-        { 'meeting.agenda.text': { contains: search.trim() } },
-        { 'company.name': { contains: search.trim() } },
+        { 'meeting.meetingId': { contains: searchTrim } },
+        { 'meeting.stock.stockId': { contains: searchTrim } },
+        { 'meeting.stock.name': { contains: searchTrim } },
+        { 'meeting.stock.symbol': { contains: searchTrim } },
+        { 'meeting.stock.type': { contains: searchTrim } },
+        { 'meeting.magnaId': { contains: searchTrim } },
+        { 'meeting.type': { contains: searchTrim } },
+        { 'meeting.location': { contains: searchTrim } },
+        { 'meeting.comments': { contains: searchTrim } },
+        { 'meeting.agenda.text': { contains: searchTrim } },
+        { 'company.name': { contains: searchTrim } },
       ],
     })
   }
@@ -299,8 +300,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const isExport = exportParam === 'true'
     const reportName = (reportNameParam as string) || 'participation-report'
 
-
-
     // Build query parameters
     const queryParams: VotesQueryParams = {
       companiesIds: companiesIds as string,
@@ -331,14 +330,22 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         reportName,
         dateRange: {
           startDate: startDate ? new Date(startDate as string) : new Date(),
-          endDate: endDate ? new Date(endDate as string) : new Date()
+          endDate: endDate ? new Date(endDate as string) : new Date(),
         },
         selectedCompaniesCount: (companiesIds as string).split(',').length,
         totalRecords: totalItems,
-        selectedRecords: totalItems
+        selectedRecords: totalItems,
       }
 
+      console.log('=== SERVER: About to generate PDF ===')
+      console.log('Report name:', reportName)
+      console.log('Processed data length:', processedData.length)
+      console.log('PDF options:', pdfOptions)
+
       const pdfBytes = await generateParticipationsPDF(processedData, pdfOptions)
+
+      console.log('=== SERVER: PDF generated successfully ===')
+      console.log('PDF size:', pdfBytes.length, 'bytes')
 
       // Encode filename for Hebrew characters in HTTP headers
       const encodedFilename = encodeURIComponent(reportName)
@@ -353,8 +360,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': contentDisposition,
-          'Content-Length': pdfBytes.length.toString()
-        }
+          'Content-Length': pdfBytes.length.toString(),
+        },
       })
     }
 
@@ -365,5 +372,3 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     return createErrorResponse(error, 'Failed to fetch votes')
   }
 }
-
-
