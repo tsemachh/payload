@@ -233,7 +233,7 @@ async function addDocumentHeader(
   })
 
   const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
-  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize)
+  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize - 1)
   const dateRangeX = (PAGE_WIDTH - dateRangeTextWidth) / 2
   const dateRangeY = titleY - 24
   page.drawText(fixBiDiText(dateRangeText), {
@@ -305,7 +305,7 @@ function drawCompanyInfo(
   columnWidths: number[],
 ): number {
   const companyRowHeight = MIN_ROW_HEIGHT
-  const companyHeaderBgColor = rgb(220 / 255, 215 / 255, 227 / 255)
+  const companyHeaderBgColor = rgb(210 / 255, 228 / 255, 1)
 
   const subjectColumnWidth = columnWidths[1]
 
@@ -362,12 +362,12 @@ function drawCompanyInfo(
 function drawAgendaTableHeader(
   page: PDFPage,
   startY: number,
-  fonts: { bold: any },
+  fonts: { bold: any; regular: any },
   heights: { agendaHeaderHeight: number },
   headers: string[],
   columnWidths: number[],
 ): number {
-  const agendaHeaderBgColor = rgb(240 / 255, 240 / 255, 240 / 255)
+  const agendaHeaderBgColor = rgb(249 / 255, 250 / 255, 250 / 255)
   const headerTextColor = rgb(0.1, 0.1, 0.1)
 
   const wrappedHeaders = headers.map((header, i) =>
@@ -432,7 +432,7 @@ function drawAgendaTableHeader(
           x: subTextX,
           y: subHeaderY,
           size: FONT_SIZE_HEADER - 1,
-          font: fonts.bold,
+          font: fonts.regular,
           color: headerTextColor,
         })
 
@@ -472,8 +472,9 @@ function drawAgendaRow(
   columnWidths: number[],
   rowHeight: number,
 ): number {
-  const rowEvenBgColor = rgb(245 / 255, 242 / 255, 250 / 255)
-  const rowOddBgColor = rgb(253 / 255, 252 / 255, 254 / 255)
+  const rowEvenBgColor = rgb(231 / 255, 240 / 255, 1)
+
+  const rowOddBgColor = rgb(245 / 255, 250 / 255, 1)
   const rowTextColor = rgb(0.2, 0.2, 0.2)
 
   page.drawRectangle({
@@ -492,17 +493,19 @@ function drawAgendaRow(
   }
 
   const rowData = [
-    (rowIndex + 1).toString(),
-    agenda.text || '',
-    agenda.recommendation?.votingRecommendation || '',
-    agenda.vote || '',
-    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
-    booleanToIcon(agenda.regularMajority),
-    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
-    booleanToIcon(agenda.policyCompliance),
-    booleanToIcon(agenda.conflictOfInterest),
-    booleanToIcon(agenda.relatedParty),
-    booleanToIcon(agenda.personalInterest),
+    (rowIndex + 1).toString(), // Row number
+    agenda.text || '', // נושא
+    agenda.recommendation?.votingRecommendation ||
+      agenda.recommendation?.recommendationExplanation ||
+      '', // המלצה
+    agenda.vote || '', // הצבעה
+    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
+    booleanToIcon(!agenda.privilegedMajority), // רוב רגיל
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '', // רוב מיוחד
+    booleanToIcon(agenda.policyCompliance), // בהתאם למדיניות דירקטוריון ו/או וועדת השקעות
+    booleanToIcon(agenda.conflictOfInterest), // ניגוד עניינים
+    booleanToIcon(agenda.relatedParty), // צד קשר
+    booleanToIcon(agenda.personalInterest), // עניין אישי
   ]
 
   let x = PAGE_WIDTH - MARGIN
@@ -598,7 +601,7 @@ export async function generateParticipationsPDF(
       page.drawText(fixBiDiText('אין נתונים להצגה'), {
         x: (PAGE_WIDTH - 100) / 2,
         y: PAGE_HEIGHT / 2,
-        font: fonts.bold,
+        font: fonts.regular,
         size: 16,
       })
       await addPageFooter(page, 1, 1, fonts)

@@ -342,37 +342,36 @@ export default function Participations() {
         header: 'המלצת גורם מייעץ',
         type: 'string',
         render: (row) => null,
-        minWidth: 80,
+        minWidth: 70,
       },
       {
         key: 'vote',
         header: 'הצבעה',
         type: 'string',
         render: (row) => null,
-        minWidth: 100,
+        minWidth: 70,
       },
       {
         key: 'meetingResults',
         header: 'תוצאות האסיפה',
         type: 'string',
         render: (row) => null,
-        minWidth: 100,
+        minWidth: 75,
       },
       {
         key: 'simpleMajority',
-        header: 'רוב רגיל (%)',
-        type: 'boolean',
-        render: (row) => null,
-        positionCenter: true,
-        minWidth: 90,
-      },
-      {
-        key: 'specialMajority',
-        header: 'רוב מיוחד (%)',
+        header: 'רוב רגיל',
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
         minWidth: 60,
+      },
+      {
+        key: 'specialMajority',
+        header: 'רוב מיוחד (%)',
+        type: 'string',
+        render: (row) => null,
+        minWidth: 40,
       },
       {
         key: 'policyCompliance',
@@ -637,13 +636,13 @@ export default function Participations() {
                               dir={isEnglish ? 'ltr' : 'rtl'}
                             >
                               <div
-                                className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[55rem]"
-                                style={{
-                                  transform:
-                                    selectedCompaniesCount > 1
-                                      ? 'translateX(70px)'
-                                      : 'translateX(50px)',
-                                }}
+                                className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[50rem]"
+                                // style={{
+                                //   transform:
+                                //     selectedCompaniesCount > 1
+                                //       ? 'translateX(70px)'
+                                //       : 'translateX(50px)',
+                                // }}
                               >
                                 {agenda.text}
                               </div>
@@ -669,12 +668,12 @@ export default function Participations() {
                         case 'advisoryRecommendation':
                           content = (
                             <div
-                              style={{
-                                transform:
-                                  selectedCompaniesCount > 1
-                                    ? 'translateX(-10px)'
-                                    : 'translateX(0px)',
-                              }}
+                            // style={{
+                            //   transform:
+                            //     selectedCompaniesCount > 1
+                            //       ? 'translateX(-10px)'
+                            //       : 'translateX(0px)',
+                            // }}
                             >
                               {agenda.recommendation?.votingRecommendation ||
                                 agenda.recommendation?.recommendationExplanation ||
@@ -691,10 +690,7 @@ export default function Participations() {
                             : agenda.meetingResults || null
                           break
                         case 'simpleMajority':
-                          content =
-                            agenda.privilegedMajority === false ? (
-                              <BooleanIcon iconType={true} />
-                            ) : null
+                          content = <BooleanIcon iconType={!agenda.privilegedMajority} />
                           break
                         case 'specialMajority':
                           content =
@@ -761,8 +757,8 @@ export default function Participations() {
                             width:
                               column.key === 'stockName'
                                 ? selectedCompaniesCount > 1
-                                  ? '750px'
-                                  : '650px'
+                                  ? '450px'
+                                  : '450px'
                                 : `${column.minWidth}px`,
                             minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
                             maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
