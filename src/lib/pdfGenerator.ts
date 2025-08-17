@@ -233,7 +233,7 @@ async function addDocumentHeader(
   })
 
   const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
-  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize)
+  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize - 1)
   const dateRangeX = (PAGE_WIDTH - dateRangeTextWidth) / 2
   const dateRangeY = titleY - 24
   page.drawText(fixBiDiText(dateRangeText), {
@@ -305,7 +305,7 @@ function drawCompanyInfo(
   columnWidths: number[],
 ): number {
   const companyRowHeight = MIN_ROW_HEIGHT
-  const companyHeaderBgColor = rgb(220 / 255, 215 / 255, 227 / 255)
+  const companyHeaderBgColor = rgb(210 / 255, 228 / 255, 1)
 
   const subjectColumnWidth = columnWidths[1]
 
@@ -367,7 +367,7 @@ function drawAgendaTableHeader(
   headers: string[],
   columnWidths: number[],
 ): number {
-  const agendaHeaderBgColor = rgb(240 / 255, 240 / 255, 240 / 255)
+  const agendaHeaderBgColor = rgb(249 / 255, 250 / 255, 250 / 255)
   const headerTextColor = rgb(0.1, 0.1, 0.1)
 
   const wrappedHeaders = headers.map((header, i) =>
@@ -472,8 +472,9 @@ function drawAgendaRow(
   columnWidths: number[],
   rowHeight: number,
 ): number {
-  const rowEvenBgColor = rgb(245 / 255, 242 / 255, 250 / 255)
-  const rowOddBgColor = rgb(253 / 255, 252 / 255, 254 / 255)
+  const rowEvenBgColor = rgb(231 / 255, 240 / 255, 1)
+
+  const rowOddBgColor = rgb(245 / 255, 250 / 255, 1)
   const rowTextColor = rgb(0.2, 0.2, 0.2)
 
   page.drawRectangle({
