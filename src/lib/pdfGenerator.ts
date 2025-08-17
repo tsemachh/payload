@@ -69,64 +69,46 @@ async function initializePDFDocument(): Promise<{
 
   logger.warn('Current working directory:', process.cwd())
 
-  // Check public directory
-  const publicPath = path.join('public')
-  logger.warn('Public directory path:', publicPath)
-  logger.warn('Public directory exists:', fs.existsSync(publicPath))
-  if (fs.existsSync(publicPath)) {
-    logger.warn('Public directory contents:', fs.readdirSync(publicPath))
+  // Use public directory for fonts and logo (no fallbacks)
+  const regularFontPath = path.join('public', 'fonts', 'regular-webfont.ttf')
+  const boldFontPath = path.join('public', 'fonts', 'bold-webfont.ttf')
+  const logoPath = path.join('public', 'emda_logo.png')
+
+  logger.warn(`Regular font path: ${regularFontPath}, exists: ${fs.existsSync(regularFontPath)}`)
+  logger.warn(`Bold font path: ${boldFontPath}, exists: ${fs.existsSync(boldFontPath)}`)
+  logger.warn(`Logo path: ${logoPath}, exists: ${fs.existsSync(logoPath)}`)
+
+  if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath) || !fs.existsSync(logoPath)) {
+    throw new Error(
+      'Could not find font files or logo in public directory. Please check the paths and file permissions.',
+    )
   }
 
-  // Check if there's a fonts folder in public
-  const publicFontsPath = path.join('public', 'fonts')
-  logger.warn('Public fonts path:', publicFontsPath)
-  logger.warn('Public fonts exists:', fs.existsSync(publicFontsPath))
-  if (fs.existsSync(publicFontsPath)) {
-    logger.warn('Public fonts contents:', fs.readdirSync(publicFontsPath))
+  let alefRegularBytes, alefBoldBytes, logoBytes
+
+  try {
+    alefRegularBytes = fs.readFileSync(regularFontPath)
+    alefBoldBytes = fs.readFileSync(boldFontPath)
+    logoBytes = fs.readFileSync(logoPath)
+    logger.warn('Successfully loaded assets from public directory')
+  } catch (error) {
+    logger.warn('Error reading files from public directory:', error)
+    throw new Error('Failed to read font files or logo from public directory')
   }
-
-  const assetsBasePath = path.join('src', 'lib')
-  logger.warn('Assets base path:', assetsBasePath)
-  logger.warn('Full assets path:', path.resolve(assetsBasePath))
-
-  // Check src/lib directory
-  if (fs.existsSync(assetsBasePath)) {
-    logger.warn('src/lib directory contents:', fs.readdirSync(assetsBasePath))
-
-    const srcLibFontsPath = path.join(assetsBasePath, 'fonts')
-    if (fs.existsSync(srcLibFontsPath)) {
-      logger.warn('src/lib/fonts contents:', fs.readdirSync(srcLibFontsPath))
-    }
-  }
-
-  const regularFontPath = path.join(assetsBasePath, 'fonts', 'regular-webfont.ttf')
-  const boldFontPath = path.join(assetsBasePath, 'fonts', 'bold-webfont.ttf')
-
-  logger.warn('Regular font path:', regularFontPath)
-  logger.warn('Bold font path:', boldFontPath)
-  logger.warn('Regular font exists:', fs.existsSync(regularFontPath))
-  logger.warn('Bold font exists:', fs.existsSync(boldFontPath))
-
-  const alefRegularBytes = fs.readFileSync(regularFontPath)
-  const alefBoldBytes = fs.readFileSync(boldFontPath)
 
   const alefRegular = await pdfDoc.embedFont(alefRegularBytes)
   const alefBold = await pdfDoc.embedFont(alefBoldBytes)
-
-  const logoPath = path.join(assetsBasePath, 'emda_logo.png')
-  logger.warn('Logo path:', logoPath)
-  logger.warn('Full logo path:', path.resolve(logoPath))
-  logger.warn('Logo exists:', fs.existsSync(logoPath))
-
-  const logoBytes = fs.readFileSync(logoPath)
   const logoImage = await pdfDoc.embedPng(logoBytes)
 
   return { pdfDoc, alefRegular, alefBold, logoImage }
 }
 
 function fixBiDiText(text: any): string {
-  if (typeof text !== 'string' || !text) {
-    return text || ''
+  if (!text && text !== 0) {
+    return ''
+  }
+  if (typeof text !== 'string') {
+    text = String(text)
   }
   return text
     .replace(/\(/g, '__OPEN_PAREN__')
@@ -359,6 +341,7 @@ function drawCompanyInfo(
 
   companyValues.forEach((value) => {
     const fixedValue = fixBiDiText(value)
+    //    console.log(JSON.stringify(fonts))
     const textWidth = fonts.regular.widthOfTextAtSize(fixedValue, FONT_SIZE_DATA)
     const textX = currentX - valueWidth + (valueWidth - textWidth) / 2
 
@@ -717,10 +700,10 @@ export async function generateParticipationsPDF(
       await addPageFooter(pages[i], i + 1, totalPages, fonts)
     }
 
-    const pdfBytes = await pdfDoc.save()
-    return pdfBytes
+    return await pdfDoc.save()
   } catch (error) {
-    logger.warn('Error generating PDF:', error)
+    console.trace(error)
+    logger.error('Error generating PDF:', error)
     throw new Error('Failed to generate PDF')
   }
 }
