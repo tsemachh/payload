@@ -71,6 +71,11 @@ RUN chmod -R 755 /app
 RUN mkdir media
 RUN chown nextjs:nodejs media
 
+# Copy fonts for PDF generation (from public directory only)
+RUN mkdir -p public/fonts
+COPY --from=builder --chown=nextjs:nodejs /app/public/fonts ./public/fonts
+COPY --from=builder --chown=nextjs:nodejs /app/public/*.png ./public/
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
