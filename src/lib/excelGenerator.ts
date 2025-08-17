@@ -1,4 +1,6 @@
 import ExcelJS from 'exceljs'
+import path from 'path'
+import fs from 'fs'
 import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
 import { logger } from '@/lib/logger'
 
@@ -42,29 +44,6 @@ export interface GroupedMeetingData {
   }[]
 }
 
-// Excel row data interface for flattened structure
-interface ExcelRowData {
-  rowNumber: number
-  stockNumber: string
-  stockName: string
-  marketValue: string
-  percentageHolding: number
-  holdingValueInMillions: number
-  meetingDate: string
-  meetingType: string
-  companyName?: string
-  agendaText: string
-  recommendation: string
-  vote: string
-  result: string
-  regularMajority: string
-  specialMajority: string
-  policyCompliance: string
-  conflictOfInterest: string
-  relatedParty: string
-  personalInterest: string
-}
-
 function formatNormalDate(date: Date): string {
   return new Intl.DateTimeFormat('he-IL', {
     year: 'numeric',
@@ -97,76 +76,6 @@ function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
   return Array.from(groupedData.values())
 }
 
-function transformDataToExcelRows(groupedData: GroupedMeetingData[]): ExcelRowData[] {
-  const rows: ExcelRowData[] = []
-  let rowNumber = 1
-
-  groupedData.forEach((meeting) => {
-    if (meeting.agendas.length === 0) {
-      // If no agendas, create a single row with meeting data
-      rows.push({
-        rowNumber: rowNumber++,
-        stockNumber: meeting.stockNumber,
-        stockName: meeting.stockName,
-        marketValue: meeting.marketValue,
-        percentageHolding: meeting.percentageHolding,
-        holdingValueInMillions: meeting.holdingValueInMillions,
-        meetingDate: meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
-        meetingType: meeting.meetingType,
-        companyName: meeting.companyName,
-        agendaText: '',
-        recommendation: '',
-        vote: '',
-        result: '',
-        regularMajority: '',
-        specialMajority: '',
-        policyCompliance: '',
-        conflictOfInterest: '',
-        relatedParty: '',
-        personalInterest: '',
-      })
-    } else {
-      // Create a row for each agenda item
-      meeting.agendas.forEach((agenda) => {
-        const booleanToText = (value: any): string => {
-          if (value === true) return 'כן'
-          if (value === false) return 'לא'
-          return ''
-        }
-
-        rows.push({
-          rowNumber: rowNumber++,
-          stockNumber: meeting.stockNumber,
-          stockName: meeting.stockName,
-          marketValue: meeting.marketValue,
-          percentageHolding: meeting.percentageHolding,
-          holdingValueInMillions: meeting.holdingValueInMillions,
-          meetingDate: meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
-          meetingType: meeting.meetingType,
-          companyName: meeting.companyName,
-          agendaText: agenda.text || '',
-          recommendation:
-            agenda.recommendation?.votingRecommendation ||
-            '',
-          vote: agenda.vote || '',
-          result: agenda.result
-            ? resultMapping[agenda.result] || agenda.result
-            : agenda.meetingResults || '',
-          regularMajority: booleanToText(!agenda.privilegedMajority),
-          specialMajority:
-            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
-          policyCompliance: booleanToText(agenda.policyCompliance),
-          conflictOfInterest: booleanToText(agenda.conflictOfInterest),
-          relatedParty: booleanToText(agenda.relatedParty),
-          personalInterest: booleanToText(agenda.personalInterest),
-        })
-      })
-    }
-  })
-
-  return rows
-}
-
 export async function generateParticipationsExcel(
   data: any[],
   options: ExcelExportOptions,
@@ -176,20 +85,11 @@ export async function generateParticipationsExcel(
     const worksheet = workbook.addWorksheet('דוח השתתפות באסיפות')
     worksheet.views = [{ rightToLeft: true }]
 
-    // Group and transform data
+    // Group data
     const groupedData = groupDataByMeeting(data)
-    const excelRows = transformDataToExcelRows(groupedData)
 
-    if (excelRows.length === 0) {
-      // Create empty worksheet with headers only
-      const headers = ['אין נתונים להצגה']
-      worksheet.addRow(headers)
-      return Buffer.from(await workbook.xlsx.writeBuffer())
-    }
-
-    // Define column headers in Hebrew
-    const headers = [
-      'מס״ד',
+    // Define column headers in Hebrew (without 'מס״ד')
+    const baseHeaders = [
       'מספר נייר',
       'שם נייר',
       'שווי שוק (מ׳ ₪)',
@@ -197,7 +97,11 @@ export async function generateParticipationsExcel(
       'שווי אחזקה (מ׳ ₪)',
       'מועד האסיפה',
       'סוג האסיפה',
-      ...(options.selectedCompaniesCount > 1 ? ['שם החברה'] : []),
+    ]
+    if (options.selectedCompaniesCount > 1) {
+      baseHeaders.push('שם החברה')
+    }
+    const agendaHeaders = [
       'נושא',
       'המלצת גורם מייעץ',
       'הצבעה',
@@ -209,86 +113,156 @@ export async function generateParticipationsExcel(
       'צד קשר',
       'עניין אישי',
     ]
+    const headers = [...baseHeaders, ...agendaHeaders]
+
+    // Find indices for specific columns for later formatting
+    const meetingDateIndex = headers.indexOf('מועד האסיפה') + 1
+    const agendaTextIndex = headers.indexOf('נושא') + 1
+    
+    // Add Logo
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'emda_logo.png')
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath)
+        const logoImageId = workbook.addImage({
+          buffer: logoBuffer,
+          extension: 'png',
+        })
+        worksheet.addImage(logoImageId, {
+          tl: { col: headers.length - 1, row: 0 },
+          ext: { width: 100, height: 40 },
+        })
+      }
+    } catch (logoError) {
+      logger.error('Could not add logo to Excel:', logoError)
+    }
 
     // Add title rows
-    const titleRow = worksheet.addRow([`דו"ח השתתפות באסיפות - ${options.reportName}`])
-    titleRow.font = { bold: true, size: 14 }
+    const titleRow = worksheet.addRow(['דו"ח השתתפות באסיפות'])
+    titleRow.font = { bold: true, size: 16 }
     titleRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(1, 1, 1, headers.length)
+    
+    const reportNameRow = worksheet.addRow([options.reportName])
+    reportNameRow.font = { bold: true, size: 14 }
+    reportNameRow.alignment = { horizontal: 'center' }
+    worksheet.mergeCells(2, 1, 2, headers.length)
 
     const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
     const dateRow = worksheet.addRow([dateRangeText])
     dateRow.font = { bold: true, size: 12 }
+    // FIX: Center the row itself, consistent with other title rows, to ensure it spans all columns.
     dateRow.alignment = { horizontal: 'center' }
-    worksheet.mergeCells(2, 1, 2, headers.length)
+    worksheet.mergeCells(3, 1, 3, headers.length)
 
-    // Add empty row for spacing
     worksheet.addRow([])
+    const headerRowOffset = 5
 
     // Add headers
     const headerRow = worksheet.addRow(headers)
-    headerRow.font = { bold: true }
+    headerRow.font = { bold: true, color: {argb: 'FF000000'} }
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFE6F3FF' }, // Light blue background
+      fgColor: { argb: 'FFF9FAFA' }, // Light gray
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
-    // Add data rows
-    excelRows.forEach((row) => {
-      const dataRow = [
-        row.rowNumber,
-        row.stockNumber,
-        row.stockName,
-        row.marketValue,
-        row.percentageHolding,
-        row.holdingValueInMillions,
-        row.meetingDate,
-        row.meetingType,
-        ...(options.selectedCompaniesCount > 1 ? [row.companyName] : []),
-        row.agendaText,
-        row.recommendation,
-        row.vote,
-        row.result,
-        row.regularMajority,
-        row.specialMajority,
-        row.policyCompliance,
-        row.conflictOfInterest,
-        row.relatedParty,
-        row.personalInterest,
-      ]
+    if (groupedData.length === 0) {
+      worksheet.addRow(['אין נתונים להצגה'])
+      return Buffer.from(await workbook.xlsx.writeBuffer())
+    }
 
-      const excelRow = worksheet.addRow(dataRow)
-      excelRow.alignment = { horizontal: 'right', vertical: 'middle' }
+    // Add data rows
+    groupedData.forEach((meeting) => {
+        const booleanToText = (value: any): string => {
+            if (value === true) return 'כן'
+            if (value === false) return 'לא'
+            return ''
+        }
+      
+      const meetingData = [
+        meeting.stockNumber,
+        meeting.stockName,
+        meeting.marketValue,
+        meeting.percentageHolding,
+        meeting.holdingValueInMillions,
+        meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
+        meeting.meetingType,
+      ]
+      if (options.selectedCompaniesCount > 1) {
+        meetingData.push(meeting.companyName || '')
+      }
+
+      if (meeting.agendas.length === 0) {
+        const emptyAgendaData = Array(agendaHeaders.length).fill('')
+        const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
+        excelRow.alignment = { horizontal: 'right', vertical: 'middle' }
+        excelRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD2E4FF' } }
+      } else {
+        meeting.agendas.forEach((agenda, index) => {
+          const isFirstAgenda = index === 0
+          const agendaData = [
+            agenda.text || '',
+            agenda.recommendation?.votingRecommendation || '',
+            agenda.vote || '',
+            agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
+            booleanToText(!agenda.privilegedMajority),
+            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
+            booleanToText(agenda.policyCompliance),
+            booleanToText(agenda.conflictOfInterest),
+            booleanToText(agenda.relatedParty),
+            booleanToText(agenda.personalInterest),
+          ]
+          const excelRow = worksheet.addRow([...meetingData, ...agendaData])
+          
+          excelRow.alignment = { horizontal: 'right', vertical: 'middle' }
+          excelRow.getCell(agendaTextIndex).alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+          
+          excelRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'FFE7F0FF' },
+          }
+        })
+      }
     })
 
     // Auto-fit columns
-    worksheet.columns.forEach((column, index) => {
-      if (column && column.eachCell) {
-        let maxLength = 0
-        column.eachCell({ includeEmpty: false }, (cell) => {
-          const columnLength = cell.value ? cell.value.toString().length : 0
+    worksheet.columns.forEach((column, i) => {
+      let maxLength = 0
+      if (typeof column.eachCell === 'function') {
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? cell.value.toString().split('\n').reduce((max, line) => Math.max(max, line.length), 0) : 0
           if (columnLength > maxLength) {
             maxLength = columnLength
           }
         })
-        column.width = Math.min(Math.max(maxLength + 2, 10), 50) // Min 10, Max 50
+      }
+      let newWidth = Math.max(maxLength + 2, 10)
+      
+      // FIX: Increase width of the 'נושא' column by 20%
+      if (i + 1 === agendaTextIndex) {
+        newWidth *= 1.2
+        column.width = Math.min(newWidth, 70) // Cap at 70 for the subject column
+      } else {
+        column.width = Math.min(newWidth, 50) // Cap at 50 for other columns
       }
     })
 
-    // Add borders to all cells with data
+    // Add borders to all data cells
     const lastRow = worksheet.rowCount
     const lastCol = headers.length
+    const whiteBorder = { style: 'thin' as const, color: { argb: 'FFFFFFFF' } }
+    const grayBorder = { style: 'thin' as const, color: { argb: 'FFD3D3D3' } }; // Light gray for header
 
-    for (let row = 4; row <= lastRow; row++) {
+    for (let row = headerRowOffset; row <= lastRow; row++) {
       for (let col = 1; col <= lastCol; col++) {
         const cell = worksheet.getCell(row, col)
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+        if (row === headerRowOffset) {
+            cell.border = { top: grayBorder, left: grayBorder, bottom: grayBorder, right: grayBorder }
+        } else {
+            cell.border = { top: whiteBorder, left: whiteBorder, bottom: whiteBorder, right: whiteBorder }
         }
       }
     }
