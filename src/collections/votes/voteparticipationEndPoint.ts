@@ -337,15 +337,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         selectedRecords: totalItems,
       }
 
-      console.log('=== SERVER: About to generate PDF ===')
-      console.log('Report name:', reportName)
-      console.log('Processed data length:', processedData.length)
-      console.log('PDF options:', pdfOptions)
-
       const pdfBytes = await generateParticipationsPDF(processedData, pdfOptions)
-
-      console.log('=== SERVER: PDF generated successfully ===')
-      console.log('PDF size:', pdfBytes.length, 'bytes')
 
       // Encode filename for Hebrew characters in HTTP headers
       const encodedFilename = encodeURIComponent(reportName)
