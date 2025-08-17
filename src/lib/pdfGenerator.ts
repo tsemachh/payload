@@ -432,7 +432,7 @@ function drawAgendaTableHeader(
           x: subTextX,
           y: subHeaderY,
           size: FONT_SIZE_HEADER - 1,
-          font: fonts.regular,
+          font: fonts.bold,
           color: headerTextColor,
         })
 
@@ -496,7 +496,6 @@ function drawAgendaRow(
     (rowIndex + 1).toString(), // Row number
     agenda.text || '', // נושא
     agenda.recommendation?.votingRecommendation ||
-      agenda.recommendation?.recommendationExplanation ||
       '', // המלצה
     agenda.vote || '', // הצבעה
     agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
