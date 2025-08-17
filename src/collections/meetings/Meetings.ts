@@ -93,8 +93,8 @@ export const Meetings: CollectionConfig = {
     singular: 'אסיפה',
   },
   custom: {
-    defaultFilter:{
-      'meetingDate': 'todayAndFuture'
+    defaultFilter: {
+      meetingDate: 'todayAndFuture',
     },
     filterList: [
       [
@@ -264,13 +264,12 @@ export const Meetings: CollectionConfig = {
                         },
                       },
                       limit: 0,
-                      depth: 1,
+                      depth: 0,
                     })
                     const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    const nonVotedCompanies = data.companies.filter(
+                    return data.companies.filter(
                       (companyId: string) => !votedCompanyIds.includes(companyId),
                     )
-                    return nonVotedCompanies
                   },
                 ],
               },
