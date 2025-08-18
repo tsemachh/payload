@@ -210,6 +210,15 @@ form[action*="/api/research-documents"] .file-field__filename {
   }
 
   .collection-list{
+    .query-preset-bar {
+      width: auto;
+      position: absolute;
+      left: 230px;
+      z-index: 3;
+      padding-left: 20px;
+      margin-left: 0;
+    }
+
     .table {
       max-height: calc(100vh - 260px); /* 100vh - (header + footer heights) */
       overflow-y: auto !important; /* Enable vertical scrolling */
@@ -231,8 +240,9 @@ form[action*="/api/research-documents"] .file-field__filename {
       position: sticky !important;
       top: 0 !important;
       z-index: 2 !important; /* Ensure headers stay above content */
-      background: #fff !important;
+      background: var(--theme-input-bg) !important;
     }
+
     .condition{
       z-index: 3;
     }
