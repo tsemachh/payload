@@ -292,6 +292,9 @@ export default function HoldingsFeedView() {
                 selectedCompanies={selectedCompanies}
                 onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
+                allCompaniesIds={user?.funds?.map((company) =>
+                  typeof company === 'string' ? company : company.id,
+                )}
               />
             </div>
 

@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 
 export type ExportFormat = 'pdf' | 'excel'
 
@@ -62,7 +62,7 @@ export function ExportDropdownButton({
       </Button>
 
       {/* Dropdown trigger */}
-      <DropdownMenu>
+      <DropdownMenu dir="rtl">
         <DropdownMenuTrigger asChild className="h-auto">
           <Button
             disabled={disabled || isExporting}
@@ -73,14 +73,15 @@ export function ExportDropdownButton({
             <ChevronDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent className="w-40" align="start">
           {exportFormats.map((format) => (
             <DropdownMenuItem
               key={format.value}
               onClick={() => handleFormatSelect(format.value)}
-              className={`text-right ${selectedFormat === format.value ? 'bg-accent' : ''}`}
+              className="text-right cursor-pointer hover:bg-muted flex items-center justify-between"
             >
-              {format.label}
+              <span>{format.label}</span>
+              {selectedFormat === format.value && <Check className="w-4 h-4 text-primary" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
