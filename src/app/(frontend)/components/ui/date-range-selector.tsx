@@ -151,7 +151,7 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="outlineWithputHover"
             className={cn(
               'w-[350px] h-10 px-3 py-2 justify-between text-right font-normal flex-row-reverse', // Added h-10 and px-3 py-2
               !selectedRangeOption && 'text-muted-foreground',
