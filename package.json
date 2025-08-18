@@ -79,6 +79,7 @@
     "date-holidays": "^3.24.2",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.5.2",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.4.7",
     "graphql": "^16.10.0",
     "iconv-lite": "^0.6.3",

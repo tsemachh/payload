@@ -2,6 +2,7 @@
  * Utility functions for date parsing and formatting
  */
 import { parse } from 'date-fns'
+import moment from 'moment'
 
 /**
  * Sets a date to midnight (00:00:00)
@@ -65,4 +66,14 @@ export const addDays = (date: Date, days: number): Date => {
   const result = new Date(date)
   result.setDate(date.getDate() + days)
   return result
+}
+
+/**
+ * Formats a date string into a relative time string in Hebrew
+ * @param dateString - The date string to format
+ * @returns A string representing the relative time in Hebrew
+ */
+export const formatRelativeTime = (dateString: string) => {
+  const date = moment(dateString)
+  return moment(date).locale('he').fromNow()
 }

@@ -1,6 +1,7 @@
 import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { Stock } from '@/payload-types'
-import { generateParticipationsPDF, PDFExportOptions } from '@/lib/pdfGenerator'
+import { generateParticipationsPDF } from '@/lib/pdfGenerator'
+import { generateParticipationsExcel } from '@/lib/excelGenerator'
 
 // Shared interfaces for both endpoints
 interface VotesQueryParams {
@@ -286,6 +287,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       foreignStocksOnly: foreignStocksOnlyParam,
       dualMeetingsOnly: dualMeetingsOnlyParam,
       export: exportParam,
+      exportFormat: exportFormatParam,
       reportName: reportNameParam,
     } = req.query
 
@@ -298,6 +300,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const sortField = (sortFieldParam as string) || 'meetingDate'
     const sortDirection = (sortDirectionParam as string) || 'desc'
     const isExport = exportParam === 'true'
+    const exportFormat = (exportFormatParam as string) || 'pdf'
     const reportName = (reportNameParam as string) || 'participation-report'
 
     // Build query parameters
@@ -324,9 +327,9 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     // Apply sorting
     processedData = applySorting(processedData, sortField, sortDirection)
 
-    // If export mode, generate PDF
+    // If export mode, generate file based on format
     if (isExport) {
-      const pdfOptions: PDFExportOptions = {
+      const exportOptions = {
         reportName,
         dateRange: {
           startDate: startDate ? new Date(startDate as string) : new Date(),
@@ -337,24 +340,44 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         selectedRecords: totalItems,
       }
 
-      const pdfBytes = await generateParticipationsPDF(processedData, pdfOptions)
-
       // Encode filename for Hebrew characters in HTTP headers
       const encodedFilename = encodeURIComponent(reportName)
 
-      // Use RFC 5987 format for non-ASCII filenames with fallback
-      const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-        ? `attachment; filename*=UTF-8''${encodedFilename}.pdf; filename="report.pdf"`
-        : `attachment; filename="${reportName}.pdf"`
+      if (exportFormat === 'excel') {
+        // Generate Excel file
+        const excelBuffer = await generateParticipationsExcel(processedData, exportOptions)
 
-      return new Response(pdfBytes, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': contentDisposition,
-          'Content-Length': pdfBytes.length.toString(),
-        },
-      })
+        // Use RFC 5987 format for non-ASCII filenames with fallback
+        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
+          ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
+          : `attachment; filename="${reportName}.xlsx"`
+
+        return new Response(excelBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': contentDisposition,
+            'Content-Length': excelBuffer.length.toString(),
+          },
+        })
+      } else {
+        // Generate PDF file (default)
+        const pdfBytes = await generateParticipationsPDF(processedData, exportOptions)
+
+        // Use RFC 5987 format for non-ASCII filenames with fallback
+        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
+          ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
+          : `attachment; filename="${reportName}.pdf"`
+
+        return new Response(pdfBytes, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': contentDisposition,
+            'Content-Length': pdfBytes.length.toString(),
+          },
+        })
+      }
     }
 
     // Regular pagination for non-export requests

@@ -2,46 +2,17 @@ import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import fs from 'fs'
 import path from 'path'
-import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
 import { logger } from '@/lib/logger'
-
-// Interfaces for PDF export
-export interface PDFExportOptions {
-  reportName: string
-  dateRange: {
-    startDate: Date
-    endDate: Date
-  }
-  selectedCompaniesCount: number
-  totalRecords: number
-  selectedRecords: number
-}
-
-export interface GroupedMeetingData {
-  stockNumber: string
-  stockName: string
-  marketValue: string
-  percentageHolding: number
-  holdingValueInMillions: number
-  meetingDate: string
-  meetingType: string
-  companyName?: string
-  agendas: {
-    text?: string
-    recommendation?: {
-      votingRecommendation?: string
-    }
-    vote?: string
-    result?: string
-    meetingResults?: string
-    regularMajority?: string
-    specialMajority?: string
-    policyCompliance?: string
-    conflictOfInterest?: string
-    relatedParty?: string
-    personalInterest?: string
-  }[]
-}
+import {
+  ExportOptions,
+  GroupedMeetingData,
+  resultMapping,
+  SHARED_COLUMNS,
+  COMPANY_SUB_HEADERS,
+  formatNormalDate,
+  groupDataByMeeting,
+  booleanToIcon,
+} from './exportTypes'
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]
@@ -120,14 +91,6 @@ function addPage(pdfDoc: PDFDocument): PDFPage {
   return pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
 }
 
-function formatNormalDate(date: Date): string {
-  return new Intl.DateTimeFormat('he-IL', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
-}
-
 function wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
   if (!text) return ['']
   const lines: string[] = []
@@ -160,33 +123,9 @@ function wrapText(text: string, font: any, fontSize: number, maxWidth: number): 
   return lines.filter((line) => line.trim() !== '')
 }
 
-export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
-  const groupedData = new Map<string, GroupedMeetingData>()
-  data.forEach((item) => {
-    const key = item.stockNumber
-    if (!groupedData.has(key)) {
-      groupedData.set(key, {
-        stockNumber: item.stockNumber,
-        stockName: item.stockName,
-        marketValue: item.marketValue,
-        percentageHolding: item.percentageHolding,
-        holdingValueInMillions: item.holdingValueInMillions,
-        meetingDate: item.meetingDate,
-        meetingType: item.meetingType,
-        companyName: item.currentCompany?.name || item.companyName,
-        agendas: item.agendas || [],
-      })
-    } else {
-      const existing = groupedData.get(key)!
-      existing.agendas = [...existing.agendas, ...(item.agendas || [])]
-    }
-  })
-  return Array.from(groupedData.values())
-}
-
 async function addDocumentHeader(
   page: PDFPage,
-  options: PDFExportOptions,
+  options: ExportOptions,
   fonts: { regular: any; bold: any },
   logoImage: any,
   reportName: string,
@@ -233,7 +172,7 @@ async function addDocumentHeader(
   })
 
   const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
-  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize)
+  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize - 1)
   const dateRangeX = (PAGE_WIDTH - dateRangeTextWidth) / 2
   const dateRangeY = titleY - 24
   page.drawText(fixBiDiText(dateRangeText), {
@@ -305,7 +244,7 @@ function drawCompanyInfo(
   columnWidths: number[],
 ): number {
   const companyRowHeight = MIN_ROW_HEIGHT
-  const companyHeaderBgColor = rgb(220 / 255, 215 / 255, 227 / 255)
+  const companyHeaderBgColor = rgb(210 / 255, 228 / 255, 1)
 
   const subjectColumnWidth = columnWidths[1]
 
@@ -362,12 +301,12 @@ function drawCompanyInfo(
 function drawAgendaTableHeader(
   page: PDFPage,
   startY: number,
-  fonts: { bold: any },
+  fonts: { bold: any; regular: any },
   heights: { agendaHeaderHeight: number },
   headers: string[],
   columnWidths: number[],
 ): number {
-  const agendaHeaderBgColor = rgb(240 / 255, 240 / 255, 240 / 255)
+  const agendaHeaderBgColor = rgb(249 / 255, 250 / 255, 250 / 255)
   const headerTextColor = rgb(0.1, 0.1, 0.1)
 
   const wrappedHeaders = headers.map((header, i) =>
@@ -408,15 +347,7 @@ function drawAgendaTableHeader(
       })
 
       // Draw sub-headers below
-      const companySubHeaders = [
-        'שם נייר',
-        'מספר נייר',
-        'סוג האסיפה',
-        'מועד האסיפה',
-        'שווי אחזקה (מיליוני)',
-        'אחזקה באחוזים',
-        'שווי שוק (מיליוני)',
-      ]
+      const companySubHeaders = COMPANY_SUB_HEADERS
 
       const availableWidth = colWidth - PADDING * 2
       const subHeaderWidth = availableWidth / companySubHeaders.length
@@ -472,8 +403,9 @@ function drawAgendaRow(
   columnWidths: number[],
   rowHeight: number,
 ): number {
-  const rowEvenBgColor = rgb(245 / 255, 242 / 255, 250 / 255)
-  const rowOddBgColor = rgb(253 / 255, 252 / 255, 254 / 255)
+  const rowEvenBgColor = rgb(231 / 255, 240 / 255, 1)
+
+  const rowOddBgColor = rgb(245 / 255, 250 / 255, 1)
   const rowTextColor = rgb(0.2, 0.2, 0.2)
 
   page.drawRectangle({
@@ -484,25 +416,18 @@ function drawAgendaRow(
     color: (rowIndex + 1) % 2 === 0 ? rowEvenBgColor : rowOddBgColor,
   })
 
-  // Helper function to convert boolean to icon
-  const booleanToIcon = (value: any): string => {
-    if (value === true) return 'V'
-    if (value === false) return 'X'
-    return ''
-  }
-
   const rowData = [
-    (rowIndex + 1).toString(),
-    agenda.text || '',
-    agenda.recommendation?.votingRecommendation || '',
-    agenda.vote || '',
-    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '',
-    booleanToIcon(agenda.regularMajority),
-    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
-    booleanToIcon(agenda.policyCompliance),
-    booleanToIcon(agenda.conflictOfInterest),
-    booleanToIcon(agenda.relatedParty),
-    booleanToIcon(agenda.personalInterest),
+    (rowIndex + 1).toString(), // Row number
+    agenda.text || '', // נושא
+    agenda.recommendation?.votingRecommendation || '', // המלצה
+    agenda.vote || '', // הצבעה
+    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
+    booleanToIcon(!agenda.privilegedMajority), // רוב רגיל
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '', // רוב מיוחד
+    booleanToIcon(agenda.policyCompliance), // בהתאם למדיניות דירקטוריון ו/או וועדת השקעות
+    booleanToIcon(agenda.conflictOfInterest), // ניגוד עניינים
+    booleanToIcon(agenda.relatedParty), // צד קשר
+    booleanToIcon(agenda.personalInterest), // עניין אישי
   ]
 
   let x = PAGE_WIDTH - MARGIN
@@ -575,7 +500,7 @@ function drawAgendaRow(
 
 export async function generateParticipationsPDF(
   data: any[],
-  options: PDFExportOptions,
+  options: ExportOptions,
 ): Promise<Uint8Array> {
   try {
     const { pdfDoc, alefRegular, alefBold, logoImage } = await initializePDFDocument()
@@ -598,7 +523,7 @@ export async function generateParticipationsPDF(
       page.drawText(fixBiDiText('אין נתונים להצגה'), {
         x: (PAGE_WIDTH - 100) / 2,
         y: PAGE_HEIGHT / 2,
-        font: fonts.bold,
+        font: fonts.regular,
         size: 16,
       })
       await addPageFooter(page, 1, 1, fonts)
@@ -607,16 +532,16 @@ export async function generateParticipationsPDF(
 
     const columns = [
       '',
-      'נושא',
-      'המלצת גורם מייעץ',
-      'הצבעה',
-      'תוצאות האסיפה',
-      'רוב רגיל',
-      'רוב מיוחד',
-      'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
-      'ניגוד עניינים',
-      'צד קשר',
-      'עניין אישי',
+      SHARED_COLUMNS.SUBJECT,
+      SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
+      SHARED_COLUMNS.VOTE,
+      SHARED_COLUMNS.MEETING_RESULTS,
+      SHARED_COLUMNS.REGULAR_MAJORITY,
+      SHARED_COLUMNS.SPECIAL_MAJORITY,
+      SHARED_COLUMNS.POLICY_COMPLIANCE,
+      SHARED_COLUMNS.CONFLICT_OF_INTEREST,
+      SHARED_COLUMNS.RELATED_PARTY,
+      SHARED_COLUMNS.PERSONAL_INTEREST,
     ]
     const columnWidths = [15, 375, 45, 45, 45, 45, 40, 60, 40, 40, 40]
 
