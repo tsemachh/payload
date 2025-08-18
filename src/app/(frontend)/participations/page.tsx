@@ -22,6 +22,7 @@ import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
 import { resultMapping } from './utils/pdfExport'
+import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 
 export interface Company {
   id: string
@@ -492,7 +493,7 @@ export default function Participations() {
     setCurrentPage(1)
   }
 
-  const handlePDFExport = async () => {
+  const handleExportFile = async (format: ExportFormat) => {
     if (!reportName.trim()) {
       alert('אנא הכנס שם לדוח')
       return
@@ -510,6 +511,7 @@ export default function Participations() {
         companiesIds: selectedCompanyIds.join(','),
         status: 'published',
         export: 'true',
+        exportFormat: format,
         reportName: reportName.trim(),
       })
 
@@ -545,14 +547,17 @@ export default function Participations() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Get the PDF blob
+      // Get the file blob
       const blob = await response.blob()
+
+      // Determine file extension based on format
+      const fileExtension = format === 'excel' ? 'xlsx' : 'pdf'
 
       // Create download link
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${reportName.trim()}.pdf`
+      a.download = `${reportName.trim()}.${fileExtension}`
       document.body.appendChild(a)
       a.click()
 
@@ -845,14 +850,12 @@ export default function Participations() {
                 className="w-[350px] text-right"
                 dir="rtl"
               />
-              <Button
-                onClick={handlePDFExport}
-                variant="default"
+              <ExportDropdownButton
+                onExport={handleExportFile}
+                isExporting={isExporting}
+                disabled={votesLoading || !reportName.trim()}
                 className="whitespace-nowrap"
-                disabled={votesLoading || isExporting || !reportName.trim()}
-              >
-                {isExporting ? 'מייצא...' : 'ייצוא הקובץ'}
-              </Button>
+              />
             </div>
           </div>
         )}
