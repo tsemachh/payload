@@ -2,12 +2,7 @@ import { type CollectionConfig } from 'payload'
 
 import { TopicVote, Vote } from '@/payload-types'
 
-import {
-  getVoteByMeetingAndCompanies,
-  getVotedCompanies,
-  publishVotes,
-  upsertVote,
-} from './voteEndPoint'
+import { getVoteByMeetingAndCompanies, getVotedCompanies, publishVotes } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
 import {
   handleVoteDeletionHook,
@@ -65,10 +60,10 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name: 'createdAt' }, { name: 'reported' },{name:'_status'}],
+      [{ name: 'createdAt' }, { name: 'reported' }, { name: '_status' }],
       [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
-    defaultFilter: {'createdAt': 'last30Days',_status:{equals:'published'}}
+    defaultFilter: { createdAt: 'last30Days', _status: { equals: 'published' } },
   },
   versions: {
     drafts: true,
@@ -434,11 +429,6 @@ export const Votes: CollectionConfig = {
       path: '/voted-companies',
       method: 'get',
       handler: getVotedCompanies,
-    },
-    {
-      path: '/upsert-draft',
-      method: 'post',
-      handler: upsertVote,
     },
     {
       path: '/publish-votes',

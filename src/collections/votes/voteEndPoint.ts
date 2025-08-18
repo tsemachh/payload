@@ -31,7 +31,7 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
           statusString === 'draft' ? {} : { _status: { equals: statusString } },
         ],
       },
-      draft: statusString === 'draft' ? true : false,
+      draft: statusString === 'draft',
       depth: 1,
       limit: companiesIdsArray.length,
     })
@@ -69,28 +69,6 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
     })
 
     return Response.json(existingVotes.docs, { status: 200 })
-  } catch (error: any) {
-    return Response.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 },
-    )
-  }
-}
-
-export const upsertVote = async (req: PayloadRequest) => {
-  await addDataAndFileToRequest(req)
-  try {
-    const body = req.json ? await req.json() : null
-    if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
-
-    const { meetingId, votingData, companiesIds } = body
-
-    if (!meetingId || !companiesIds?.length) {
-      return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
-    }
-
-    await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
-    return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
     return Response.json(
       { error: 'Internal server error', message: error.message },
@@ -149,13 +127,13 @@ export const publishVotes = async (req: PayloadRequest) => {
 
     // Check if votes were published after holding limit and create admin notification
     try {
+      await recalculateMeetingVoteCounts(req, meetingId)
       // Get meeting details
       const meeting = (await req.payload.findByID({
         collection: 'meetings',
         select: { holdingsLimit: true, fullName: true },
         id: meetingId,
       })) as Meeting
-      await recalculateMeetingVoteCounts(req, meetingId)
       if (meeting?.holdingsLimit) {
         const holdingsLimit = new Date(meeting.holdingsLimit)
         const dayAfterHoldings = addDays(holdingsLimit, 1)
