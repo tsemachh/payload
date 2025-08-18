@@ -1,84 +1,19 @@
 import ExcelJS from 'exceljs'
 import path from 'path'
 import fs from 'fs'
-import { resultMapping } from '@/app/(frontend)/participations/utils/pdfExport'
 import { logger } from '@/lib/logger'
-
-// Interfaces for Excel export (reusing from PDF generator)
-export interface ExcelExportOptions {
-  reportName: string
-  dateRange: {
-    startDate: Date
-    endDate: Date
-  }
-  selectedCompaniesCount: number
-  totalRecords: number
-  selectedRecords: number
-}
-
-export interface GroupedMeetingData {
-  stockNumber: string
-  stockName: string
-  marketValue: string
-  percentageHolding: number
-  holdingValueInMillions: number
-  meetingDate: string
-  meetingType: string
-  companyName?: string
-  agendas: {
-    text?: string
-    recommendation?: {
-      votingRecommendation?: string
-    }
-    vote?: string
-    result?: string
-    meetingResults?: string
-    regularMajority?: string
-    specialMajority?: string
-    policyCompliance?: string
-    conflictOfInterest?: string
-    relatedParty?: string
-    personalInterest?: string
-    privilegedMajority?: boolean
-    vPercentSpecial?: number
-  }[]
-}
-
-function formatNormalDate(date: Date): string {
-  return new Intl.DateTimeFormat('he-IL', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
-}
-
-function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
-  const groupedData = new Map<string, GroupedMeetingData>()
-  data.forEach((item) => {
-    const key = item.stockNumber
-    if (!groupedData.has(key)) {
-      groupedData.set(key, {
-        stockNumber: item.stockNumber,
-        stockName: item.stockName,
-        marketValue: item.marketValue,
-        percentageHolding: item.percentageHolding,
-        holdingValueInMillions: item.holdingValueInMillions,
-        meetingDate: item.meetingDate,
-        meetingType: item.meetingType,
-        companyName: item.currentCompany?.name || item.companyName,
-        agendas: item.agendas || [],
-      })
-    } else {
-      const existing = groupedData.get(key)!
-      existing.agendas = [...existing.agendas, ...(item.agendas || [])]
-    }
-  })
-  return Array.from(groupedData.values())
-}
+import {
+  ExportOptions,
+  resultMapping,
+  SHARED_COLUMNS,
+  formatNormalDate,
+  groupDataByMeeting,
+  booleanToText,
+} from './exportTypes'
 
 export async function generateParticipationsExcel(
   data: any[],
-  options: ExcelExportOptions,
+  options: ExportOptions,
 ): Promise<Buffer> {
   try {
     const workbook = new ExcelJS.Workbook()
@@ -90,34 +25,33 @@ export async function generateParticipationsExcel(
 
     // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders = [
-      'מספר נייר',
-      'שם נייר',
+      SHARED_COLUMNS.STOCK_NUMBER,
+      SHARED_COLUMNS.STOCK_NAME,
       'שווי שוק (מ׳ ₪)',
       'אחזקה (%)',
       'שווי אחזקה (מ׳ ₪)',
-      'מועד האסיפה',
-      'סוג האסיפה',
+      SHARED_COLUMNS.MEETING_DATE,
+      SHARED_COLUMNS.MEETING_TYPE,
     ]
     if (options.selectedCompaniesCount > 1) {
-      baseHeaders.push('שם החברה')
+      baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
     }
     const agendaHeaders = [
-      'נושא',
-      'המלצת גורם מייעץ',
-      'הצבעה',
-      'תוצאות האסיפה',
-      'רוב רגיל',
+      SHARED_COLUMNS.SUBJECT,
+      SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
+      SHARED_COLUMNS.VOTE,
+      SHARED_COLUMNS.MEETING_RESULTS,
+      SHARED_COLUMNS.REGULAR_MAJORITY,
       'רוב מיוחד (%)',
-      'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
-      'ניגוד עניינים',
-      'צד קשר',
-      'עניין אישי',
+      SHARED_COLUMNS.POLICY_COMPLIANCE,
+      SHARED_COLUMNS.CONFLICT_OF_INTEREST,
+      SHARED_COLUMNS.RELATED_PARTY,
+      SHARED_COLUMNS.PERSONAL_INTEREST,
     ]
     const headers = [...baseHeaders, ...agendaHeaders]
 
     // Find indices for specific columns for later formatting
-    const meetingDateIndex = headers.indexOf('מועד האסיפה') + 1
-    const agendaTextIndex = headers.indexOf('נושא') + 1
+    const agendaTextIndex = headers.indexOf(SHARED_COLUMNS.SUBJECT) + 1
 
     // Add Logo
     try {
@@ -177,12 +111,6 @@ export async function generateParticipationsExcel(
 
     // Add data rows
     groupedData.forEach((meeting) => {
-      const booleanToText = (value: any): string => {
-        if (value === true) return 'כן'
-        if (value === false) return 'לא'
-        return ''
-      }
-
       const meetingData = [
         meeting.stockNumber,
         meeting.stockName,

@@ -21,7 +21,7 @@ import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
-import { resultMapping } from './utils/pdfExport'
+import { resultMapping } from '@/lib/exportTypes'
 import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 
 export interface Company {
