@@ -349,7 +349,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
         // Use RFC 5987 format for non-ASCII filenames with fallback
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx; filename="report.xlsx"`
+          ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
           : `attachment; filename="${reportName}.xlsx"`
 
         return new Response(excelBuffer, {
@@ -366,7 +366,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
         // Use RFC 5987 format for non-ASCII filenames with fallback
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.pdf; filename="report.pdf"`
+          ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
           : `attachment; filename="${reportName}.pdf"`
 
         return new Response(pdfBytes, {
