@@ -212,6 +212,11 @@ export default buildConfig({
         Logo: '/graphics/Logo',
       },
       Nav: '@shefing/quickfilter/nav',
+      views: {
+        dashboard: {
+          Component: '@shefing/quickfilter/Dashboard',
+        },
+      },
     },
     meta: {
       title: 'עמדה',
