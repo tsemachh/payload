@@ -62,7 +62,7 @@ export function ExportDropdownButton({
       </Button>
 
       {/* Dropdown trigger */}
-      <DropdownMenu>
+      <DropdownMenu dir="rtl">
         <DropdownMenuTrigger asChild className="h-auto">
           <Button
             disabled={disabled || isExporting}
@@ -73,7 +73,7 @@ export function ExportDropdownButton({
             <ChevronDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" align="start" dir="rtl">
+        <DropdownMenuContent className="w-40" align="start">
           {exportFormats.map((format) => (
             <DropdownMenuItem
               key={format.value}

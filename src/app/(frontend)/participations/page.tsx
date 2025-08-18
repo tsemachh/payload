@@ -284,19 +284,6 @@ export default function Participations() {
       },
     ]
 
-    // if (selectedCompaniesCount > 1) {
-    //   baseColumns.push({
-    //     key: 'companyName',
-    //     header: 'שם החברה',
-    //     type: 'string',
-    //     minWidth: 120,
-    //     isAlwaysVisible: true,
-    //     render: (row: any) => {
-    //       return row.currentCompany?.name || '-'
-    //     },
-    //   })
-    // }
-
     baseColumns.push(
       { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
       {
@@ -787,13 +774,6 @@ export default function Participations() {
     [participationColumns, selectedCompaniesCount],
   )
 
-  const currentSelectedCount = useMemo(() => {
-    if (allSelected) {
-      return totalItems
-    }
-    return Math.max(0, totalItems - deselectedIds.size)
-  }, [allSelected, deselectedIds.size, totalItems])
-
   return (
     <div className="p-4 space-y-0 pb-0" dir="rtl">
       <div className="flex flex-col lg:flex-row justify-start gap-4 mr-10">
@@ -814,6 +794,9 @@ export default function Participations() {
                   onSelectionChangeAction={handleFundsSelectionChange}
                   className="w-full"
                   showSearch={false}
+                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
+                    company.funds.map((fund) => fund.id),
+                  )}
                 />
               </SelectContent>
             </Select>
