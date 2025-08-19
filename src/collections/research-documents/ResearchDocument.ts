@@ -19,10 +19,8 @@ export const ResearchDocument: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'uploadedAt'}]
-    ],
-    defaultFilter: {'uploadedAt': 'last30Days'}
+    filterList: [[{ name: 'uploadedAt' }]],
+    defaultFilter: { uploadedAt: 'last30Days' },
   },
   access: {
     admin: ({ req: { user } }) => {
@@ -69,6 +67,7 @@ export const ResearchDocument: CollectionConfig = {
       admin: {
         date: {
           displayFormat: 'dd/MM/yyyy HH:mm',
+          timeFormat: 'HH:mm',
         },
 
         components: {

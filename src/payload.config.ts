@@ -103,6 +103,9 @@ export default buildConfig({
             '<br><br>אם לא ביקשת זאת, פנה למנהל המערכת עמדה מיידית<br><br>מערכת עמדה',
           resetYourPassword: 'איפוס סיסמה',
         },
+        general: {
+          successfullyCreated: 'אובייקט ה{{label}} נוצר בהצלחה.',
+        },
       },
     },
   },

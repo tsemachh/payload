@@ -416,7 +416,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '100px' },
+                  admin: { width: '100px', hidden: true },
                 },
                 {
                   name: 'magnaId',
@@ -548,6 +548,7 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: '220px',
                     date: {
+                      timeFormat: 'HH:mm',
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
                     },
@@ -565,6 +566,7 @@ export const Meetings: CollectionConfig = {
                     width: '220px',
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
+                      timeFormat: 'HH:mm',
                       pickerAppearance: 'dayAndTime',
                     },
                   },
@@ -681,6 +683,7 @@ export const Meetings: CollectionConfig = {
                       label: 'סוג נושא',
                       type: 'select',
                       required: true,
+                      defaultValue: 'decision',
                       options: [
                         { label: 'לדיווח בלבד', value: 'reporting' },
                         { label: 'להחלטה', value: 'decision' },
@@ -693,6 +696,7 @@ export const Meetings: CollectionConfig = {
                       name: 'majorityType',
                       label: 'סוג רוב נדרש',
                       type: 'select',
+                      defaultValue: 'regular',
                       options: [
                         { label: 'רוב רגיל', value: 'regular' },
                         { label: 'רוב מיוחד', value: 'privileged' },
