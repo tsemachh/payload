@@ -249,10 +249,6 @@ form[action*="/api/research-documents"] .file-field__filename {
   }
 
   .collection-list.collection-list--admin-notifications {
-    .table {
-      max-height: calc(100vh - 310px); /* 100vh - (header + footer heights) */
-    }
-
     #heading-url .sort-column__buttons,
     #heading-handled .sort-column__buttons {
       display: none;
