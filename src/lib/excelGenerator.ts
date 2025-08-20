@@ -3,12 +3,12 @@ import path from 'path'
 import fs from 'fs'
 import { logger } from '@/lib/logger'
 import {
+  booleanToText,
   ExportOptions,
-  resultMapping,
-  SHARED_COLUMNS,
   formatNormalDate,
   groupDataByMeeting,
-  booleanToText,
+  resultMapping,
+  SHARED_COLUMNS,
 } from './exportTypes'
 
 export async function generateParticipationsExcel(
@@ -28,8 +28,8 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.STOCK_NAME,
       'שווי שוק (מ׳ ₪)',
-      'אחזקה (%)',
-      'שווי אחזקה (מ׳ ₪)',
+      'החזקה (%)',
+      'שווי החזקה (מ׳ ₪)',
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]

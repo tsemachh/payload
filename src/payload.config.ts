@@ -147,7 +147,7 @@ export default buildConfig({
       {
         slug: 'processHoldingsChange',
         handler: processHoldingsChangeHandler,
-        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
+        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה החזקה' }],
       },
       {
         slug: 'checkCompanyNotifications',

@@ -264,7 +264,7 @@ export const Votes: CollectionConfig = {
               fields: [
                 {
                   name: 'fundsWithHoldingsUpdates',
-                  label: 'עדכוני אחזקות תיקים',
+                  label: 'עדכוני החזקות תיקים',
                   type: 'json',
                   //hidden: true,
                   defaultValue: {},
