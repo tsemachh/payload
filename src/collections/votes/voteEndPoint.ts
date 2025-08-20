@@ -77,6 +77,32 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
   }
 }
 
+export const upsertVote = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
+  try {
+    const body = req.json ? await req.json() : null
+    if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
+
+    const { meetingId, votingData, companiesIds } = body
+
+    if (!meetingId || !companiesIds?.length) {
+      return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
+    }
+
+    await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
+
+    // Recalculate meeting vote counts to ensure consistency
+    await recalculateMeetingVoteCounts(req, meetingId)
+
+    return Response.json({ success: true }, { status: 200 })
+  } catch (error: any) {
+    return Response.json(
+      { error: 'Internal server error', message: error.message },
+      { status: 500 },
+    )
+  }
+}
+
 export const publishVotes = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
   try {
