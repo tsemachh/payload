@@ -4,14 +4,14 @@ import fs from 'fs'
 import path from 'path'
 import { logger } from '@/lib/logger'
 import {
+  booleanToIcon,
+  COMPANY_SUB_HEADERS,
   ExportOptions,
+  formatNormalDate,
+  groupDataByMeeting,
   GroupedMeetingData,
   resultMapping,
   SHARED_COLUMNS,
-  COMPANY_SUB_HEADERS,
-  formatNormalDate,
-  groupDataByMeeting,
-  booleanToIcon,
 } from './exportTypes'
 
 // PDF configuration constants
@@ -628,7 +628,7 @@ export async function generateParticipationsPDF(
     return await pdfDoc.save()
   } catch (error) {
     console.trace(error)
-    logger.error('Error generating PDF:', error)
-    throw new Error('Failed to generate PDF')
+    logger.error({ err: error, msg: 'Error generating PDF:' })
+    throw new Error('Failed to generate PDF', { cause: error })
   }
 }
