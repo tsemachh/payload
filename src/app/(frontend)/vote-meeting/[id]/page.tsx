@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { CompanyTableDate } from '../../types/meetings'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import VoteDetails from '../components/VoteDetails'
@@ -51,19 +51,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../components/ui/tooltip'
-import { useParams } from 'next/navigation'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
+import { hasCompanyPermission } from '@/utils/permissions'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function VotingForm() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const meetingIdFromUrl = params?.id || '-'
 
   const [isReadOnly, setIsReadOnly] = useState(false)
+  const [readOnlyReason, setReadOnlyReason] = useState<'date' | 'permission' | null>(null)
   const [uploadedDocs, setUploadedDocs] = useState<Document[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
@@ -99,14 +102,43 @@ export default function VotingForm() {
   )
 
   useEffect(() => {
-    if (meetingData?.proxyVotingDate) {
-      const proxyVotingDate = new Date(meetingData.proxyVotingDate)
-      const now = new Date()
-      if (proxyVotingDate < now) {
-        setIsReadOnly(true)
+    if (meetingData) {
+      // Check date restriction
+      let isReadOnlyDueToDate = false
+      if (meetingData.proxyVotingDate) {
+        const proxyVotingDate = new Date(meetingData.proxyVotingDate)
+        const now = new Date()
+        if (proxyVotingDate < now) {
+          isReadOnlyDueToDate = true
+        }
       }
+
+      // Check permission restriction
+      let isReadOnlyDueToPermission = false
+      if (user && meetingData?.companies.length > 0) {
+        // Check if user has write permission for this company
+        const hasWritePermission = hasCompanyPermission(user, meetingData?.companies[0].id, 'write')
+        if (!hasWritePermission) {
+          isReadOnlyDueToPermission = true
+        }
+      }
+      console.log(
+        `isReadOnlyDueToDate:${isReadOnlyDueToDate}  isReadOnlyDueToPermission:${isReadOnlyDueToPermission}`,
+      )
+
+      // Set read-only reason based on which restriction applies
+      if (isReadOnlyDueToPermission) {
+        setReadOnlyReason('permission')
+      } else if (isReadOnlyDueToDate) {
+        setReadOnlyReason('date')
+      } else {
+        setReadOnlyReason(null)
+      }
+
+      // Set read-only if either restriction applies
+      setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-  }, [meetingData])
+  }, [meetingData, user])
 
   useEffect(() => {
     if (meetingDataError) {
@@ -242,7 +274,7 @@ export default function VotingForm() {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
 
   useEffect(() => {
@@ -769,6 +801,7 @@ export default function VotingForm() {
                   : meetingData.stockName || meetingData.stockNumber || '',
             }}
             isReadOnly={isReadOnly}
+            readOnlyReason={readOnlyReason}
             isDirty={isDirty}
             lastPublishedVoteInfo={lastPublishedVoteInfo}
             fetchedVotes={fetchedVotes}

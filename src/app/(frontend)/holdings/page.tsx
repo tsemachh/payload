@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
+import { getCompaniesWithPermission } from '@/utils/permissions'
 import { HoldingFeedLine } from '@/payload-types'
 import {
   FeedFatalError,
@@ -37,6 +38,7 @@ export default function HoldingsFeedView() {
   const [isValidating, setIsValidating] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
   const [silencedRecords, setSilencedRecords] = useState<HoldingFeedLine[]>([])
@@ -48,13 +50,25 @@ export default function HoldingsFeedView() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user?.funds) {
-      const tmpSelectedCompanies = user?.funds.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
-      setSelectedCompanies(tmpSelectedCompanies)
+    if (user) {
+      // Get companies with write permission
+      const companiesWithWritePermission = getCompaniesWithPermission(user, 'write')
+      // Set read-only mode if user has no write permissions
+      const hasWritePermissions = companiesWithWritePermission.length > 0
+      setIsReadOnly(!hasWritePermissions)
+
+      if (hasWritePermissions) {
+        // If user has write permissions, initialize with those companies
+        setSelectedCompanies(companiesWithWritePermission)
+      } else if (user.funds) {
+        // If no write permissions, initialize with read-only companies
+        const readOnlyCompanies = user.funds.map((company) =>
+          typeof company === 'string' ? company : company.id,
+        )
+        setSelectedCompanies(readOnlyCompanies)
+      }
     }
-  }, [user?.funds])
+  }, [user])
 
   // Warning when user tries to leave the page while in edit mode
   const handleBeforeUnload = useCallback(
@@ -286,6 +300,13 @@ export default function HoldingsFeedView() {
       {editForm ? (
         <>
           <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-right md:gap-6 md:px-10">
+            {/* Add a read-only notice if needed */}
+            {isReadOnly && (
+              <div className="w-full bg-yellow-100 p-4 rounded-md text-yellow-800 mb-4">
+                אין לך הרשאות להזנת החזקות לחברות אלו. צפייה בלבד.
+              </div>
+            )}
+
             <div>
               <label className="text-base font-semibold mb-2 block">חברות</label>
               <CompanyTreeSelector
@@ -317,7 +338,7 @@ export default function HoldingsFeedView() {
               <label className="text-base font-semibold mb-2 block">קובץ החזקות</label>
               <FileUploader
                 onFileChangeAction={handleFileChangeAction}
-                disabled={isUploading}
+                disabled={isUploading || isReadOnly}
                 className="w-full"
               />
             </div>
@@ -326,23 +347,23 @@ export default function HoldingsFeedView() {
           <div className="flex justify-center mt-6">
             <Button
               variant={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? 'default'
                   : 'defaultHover'
               }
               onClick={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? () => {}
                   : handleSubmit
               }
               className="px-40"
               style={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? { cursor: 'not-allowed', opacity: 0.5 }
                   : {}
               }
             >
-              {isUploading ? 'מעלה...' : 'הזן החזקות'}
+              {isReadOnly ? 'צפייה בלבד' : isUploading ? 'מעלה...' : 'הזן החזקות'}
             </Button>
           </div>
         </>
