@@ -850,11 +850,11 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'fundsWithHolding',
-              label: 'תיקים עם אחזקות',
+              label: 'תיקים עם החזקות',
               admin: {
                 readOnly: true,
               },
-              labels: { plural: 'תיקים עם אחזקות', singular: 'תיק עם אחזקות' },
+              labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
               fields: [
                 {

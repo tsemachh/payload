@@ -1,12 +1,12 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { FileText, Eye } from 'lucide-react'
+import { Eye, FileText } from 'lucide-react'
 import { cn, handleNavigation } from '@/lib/utils'
 
 const navItems = [
-  { value: 'feed', label: 'הזנת אחזקות', icon: FileText, path: '/holdings' },
-  { value: 'view', label: 'צפייה באחזקות', icon: Eye, path: '/holdings/view' },
+  { value: 'feed', label: 'הזנת החזקות', icon: FileText, path: '/holdings' },
+  { value: 'view', label: 'צפייה בהחזקות', icon: Eye, path: '/holdings/view' },
 ]
 
 export function HoldingsNav() {

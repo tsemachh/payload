@@ -1,9 +1,8 @@
 'use client'
 
 import type React from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { useCallback } from 'react'
-import { useState, useMemo, useEffect } from 'react'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -13,9 +12,8 @@ import { DateRangeSelector } from '../components/ui/date-range-selector'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { useAuth } from '@payloadcms/ui'
 import useSWR from 'swr'
-import { fetcher } from '../helpers/utils-data-table'
+import { fetcher, formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
-import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { BooleanIcon } from '@/components/ui/icons'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
@@ -298,7 +296,7 @@ export default function Participations() {
       },
       {
         key: 'percentageHolding',
-        header: 'אחזקה (%)',
+        header: 'החזקה (%)',
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {
@@ -309,7 +307,7 @@ export default function Participations() {
       },
       {
         key: 'holdingValueInMillions',
-        header: 'שווי אחזקה (מ׳ ₪)',
+        header: 'שווי החזקה (מ׳ ₪)',
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -10,6 +10,7 @@ import {
   FeedFatalError,
   FeedValidationResult,
   FeedWarning,
+  StandardizedRow,
 } from '@/collections/holdings/feeds/FeedTypes'
 import { CompanyTreeSelector } from './components/CompanySelector'
 import { DateSelector } from './components/DateSelector'
@@ -24,7 +25,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
-import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 
 export default function HoldingsFeedView() {
@@ -314,7 +314,7 @@ export default function HoldingsFeedView() {
             </div>
 
             <div className="">
-              <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
+              <label className="text-base font-semibold mb-2 block">קובץ החזקות</label>
               <FileUploader
                 onFileChangeAction={handleFileChangeAction}
                 disabled={isUploading}
@@ -342,7 +342,7 @@ export default function HoldingsFeedView() {
                   : {}
               }
             >
-              {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+              {isUploading ? 'מעלה...' : 'הזן החזקות'}
             </Button>
           </div>
         </>
@@ -350,7 +350,7 @@ export default function HoldingsFeedView() {
         <>
           {date && file && (
             <h4 className="text-xl text-center">
-              אחזקות מקובץ{' '}
+              החזקות מקובץ{' '}
               <bdi className="inline-block font-mono" dir={'ltr'}>
                 {file.name}
               </bdi>{' '}

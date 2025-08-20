@@ -32,7 +32,7 @@ export const AdminNotifications: CollectionConfig = {
   defaultSort: '-createdAt',
   custom: {
     filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled', 'acquireTask']],
-    defaultFilter:{'handled':{equals:false}}
+    defaultFilter: { handled: { equals: false }, type: { equals: 'newVoteAfterHoldingLimit' } },
   },
   fields: [
     {
@@ -68,7 +68,7 @@ export const AdminNotifications: CollectionConfig = {
               value: 'usersUpdated',
             },
             {
-              label: 'העדר דווח אחזקות',
+              label: 'העדר דווח החזקות',
               value: 'companyNotReportedHoldings',
             },
             {

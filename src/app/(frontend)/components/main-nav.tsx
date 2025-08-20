@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, CalendarCheck, BarChart3, Briefcase } from 'lucide-react'
+import { BarChart3, Briefcase, Calendar, CalendarCheck } from 'lucide-react'
 import { cn, handleNavigation } from '@/lib/utils'
 
 export function MainNav() {
@@ -48,7 +48,7 @@ export function MainNav() {
         )}
       >
         <Briefcase className="h-4 w-4 ml-2" />
-        אחזקות
+        החזקות
       </button>
       <button
         onClick={(e) => handleNavigationClick('/dashboard', e)}

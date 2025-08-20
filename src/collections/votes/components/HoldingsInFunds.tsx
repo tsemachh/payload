@@ -1,7 +1,7 @@
 'use client'
 
 import { useField, useFormFields } from '@payloadcms/ui'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { stringify } from 'qs-esm'
 import { CheckboxFilter } from './CheckboxFilter'
 import { JSONFieldClientProps } from 'payload'
@@ -197,7 +197,7 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
               <tr className="bg-[#f5f5f5] text-[#a0a0a0] font-normal">
                 <th className="px-6 py-3 text-right font-semibold">שם תיק</th>
                 <th className="px-6 py-3 text-right font-semibold">ערך נקוב במערכת</th>
-                <th className="px-6 py-3 text-right font-semibold">אימות אחזקות</th>
+                <th className="px-6 py-3 text-right font-semibold">אימות החזקות</th>
                 <th className="px-6 py-3 text-right font-semibold">ערך נקוב ברשות</th>
               </tr>
             </thead>

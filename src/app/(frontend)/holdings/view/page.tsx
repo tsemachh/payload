@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
@@ -48,11 +48,11 @@ export default function HoldingsView() {
         setDate(dateTmp)
         setError('')
       } catch (e) {
-        setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+        setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
         console.error('Invalid data', e)
       }
     } else {
-      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+      setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
     }
   }, [dateFormUrl])
 
@@ -195,7 +195,7 @@ export default function HoldingsView() {
           date && (
             <div>
               <h4 className="text-xl text-center pb-3">
-                אחזקות לתאריך {format(date, 'dd/MM/yyyy')}
+                החזקות לתאריך {format(date, 'dd/MM/yyyy')}
               </h4>
               <DataTable
                 columns={columns}

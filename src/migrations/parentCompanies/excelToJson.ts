@@ -98,58 +98,58 @@ function collectPrivateRegistrationNumbers(
   worksheet: XLSX.WorkSheet,
   jsonData: any[],
   row: number,
-  companyId: number | undefined
+  companyId: number | undefined,
 ): number[] | undefined {
-  if (!companyId) return undefined;
+  if (!companyId) return undefined
 
   // Use a Set to store unique registration numbers
-  const registrationNumbersSet = new Set<number>();
+  const registrationNumbersSet = new Set<number>()
 
   // First, check if the current row has a registration number in column E
-  const currentRowRegNum = getCellValue(worksheet, jsonData, row, 4);
+  const currentRowRegNum = getCellValue(worksheet, jsonData, row, 4)
   if (currentRowRegNum) {
-    const regNumStr = String(currentRowRegNum).trim();
+    const regNumStr = String(currentRowRegNum).trim()
     if (regNumStr) {
       // Split by common delimiters and convert to numbers
       const numbers = regNumStr
         .split(/[,;\s]+/)
-        .filter(num => num.trim() !== '')
-        .map(num => Number(num.trim()))
-        .filter(num => !isNaN(num));
+        .filter((num) => num.trim() !== '')
+        .map((num) => Number(num.trim()))
+        .filter((num) => !isNaN(num))
 
       // Add to Set to ensure uniqueness
-      numbers.forEach(num => registrationNumbersSet.add(num));
+      numbers.forEach((num) => registrationNumbersSet.add(num))
     }
   }
 
   // Now check all rows in the Excel file for the same company ID
   for (let i = 1; i < jsonData.length; i++) {
-    if (i === row) continue; // Skip the current row as we already processed it
+    if (i === row) continue // Skip the current row as we already processed it
 
-    const rowCompanyId = getCellValue(worksheet, jsonData, i, 3);
+    const rowCompanyId = getCellValue(worksheet, jsonData, i, 3)
     if (rowCompanyId && Number(rowCompanyId) === companyId) {
       // This row has the same company ID, collect registration number from column E
-      const regNum = getCellValue(worksheet, jsonData, i, 4);
+      const regNum = getCellValue(worksheet, jsonData, i, 4)
       if (regNum) {
-        const regNumStr = String(regNum).trim();
+        const regNumStr = String(regNum).trim()
         if (regNumStr) {
           // Split by common delimiters and convert to numbers
           const numbers = regNumStr
             .split(/[,;\s]+/)
-            .filter(num => num.trim() !== '')
-            .map(num => Number(num.trim()))
-            .filter(num => !isNaN(num));
+            .filter((num) => num.trim() !== '')
+            .map((num) => Number(num.trim()))
+            .filter((num) => !isNaN(num))
 
           // Add to Set to ensure uniqueness
-          numbers.forEach(num => registrationNumbersSet.add(num));
+          numbers.forEach((num) => registrationNumbersSet.add(num))
         }
       }
     }
   }
 
   // Convert Set back to array
-  const registrationNumbers = Array.from(registrationNumbersSet);
-  return registrationNumbers.length > 0 ? registrationNumbers : undefined;
+  const registrationNumbers = Array.from(registrationNumbersSet)
+  return registrationNumbers.length > 0 ? registrationNumbers : undefined
 }
 
 /**
@@ -312,7 +312,12 @@ async function convertExcelToJson() {
 
           // Process private registration numbers from column E
           // Use the new function to collect all registration numbers for this company ID
-          const privateRegistrationNumbers = collectPrivateRegistrationNumbers(worksheet, jsonData, i, companyId)
+          const privateRegistrationNumbers = collectPrivateRegistrationNumbers(
+            worksheet,
+            jsonData,
+            i,
+            companyId,
+          )
 
           // Skip companies named "-"
           if (name !== '-') {
@@ -473,7 +478,7 @@ async function convertExcelToJson() {
         },
         {
           id: 'level3_5',
-          name: 'מגדל אחזקות',
+          name: 'מגדל החזקות',
           level: 3 as const,
           parentId: 'level2_4',
           companyId: 1005,
@@ -615,8 +620,9 @@ function generateCSV(companies: FlatCompany[]): string {
 
   // Add each company as a row
   for (const company of companies) {
-    const privateRegNums = company.privateRegistrationNumbers ? 
-      company.privateRegistrationNumbers.join(';') : '';
+    const privateRegNums = company.privateRegistrationNumbers
+      ? company.privateRegistrationNumbers.join(';')
+      : ''
     csv += `${company.id},${company.name},${company.level},${company.parentId || ''},${company.companyId || ''},${privateRegNums}\n`
   }
 
