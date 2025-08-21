@@ -88,7 +88,7 @@ export const processHoldingsFeedCsv = async (
 
     // Validate the whole feed
     const validateStartTime = performance.now()
-    const fatalErrors = validateWholeFeed(results)
+    const { fatalErrors, headerWarning } = validateWholeFeed(results)
     const validateEndTime = performance.now()
     req.payload.logger.info(`Feed validation completed in ${validateEndTime - validateStartTime}ms`)
 
@@ -99,6 +99,16 @@ export const processHoldingsFeedCsv = async (
         `Process aborted due to fatal errors after ${processEndTime - processStartTime}ms`,
       )
       return validationResult
+    }
+
+    // Add the header warning if present and skip the first row if it's a Hebrew header
+    if (headerWarning) {
+      validationResult.warnings.push(headerWarning)
+
+      // Skip the first row if it's a Hebrew header
+      if (results.length > 0) {
+        results.shift()
+      }
     }
 
     // Preload accounts

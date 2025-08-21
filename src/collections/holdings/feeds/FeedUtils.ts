@@ -8,6 +8,17 @@ import csvToJson from 'convert-csv-to-json'
 import * as XLSX from 'xlsx'
 
 /**
+ * Check if a string contains Hebrew characters
+ * @param text The text to check
+ * @returns True if the text contains Hebrew characters
+ */
+export const containsHebrewText = (text: string): boolean => {
+  // Hebrew Unicode range: 0x0590-0x05FF
+  const hebrewRegex = /[\u0590-\u05FF]/
+  return hebrewRegex.test(text)
+}
+
+/**
  * Parse file content based on file extension
  * @param file The file to parse
  * @returns Parsed file content as an array
