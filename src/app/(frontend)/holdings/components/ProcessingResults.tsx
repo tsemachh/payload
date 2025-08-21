@@ -118,7 +118,7 @@ export function ProcessingResults({
           <div className="mt-4">
             <p className="text-base font-medium mb-4">נמצאו מספר בעיות בקובץ ההחזקות:</p>
 
-            <ul className="space-y-3">
+            <ul className="space-y-3 max-h-[calc(100vh-400px)] overflow-auto">
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
                   <div className="pr-6">

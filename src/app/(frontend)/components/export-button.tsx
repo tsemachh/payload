@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button'
 
 export function ExportButton({ data, filename }: { data: any[]; filename: string }) {
   const handleExport = () => {
-    // Convert data to CSV
-    const headers = Object.keys(data[0]).join(',')
-    const csv = [headers, ...data.map((row) => Object.values(row).join(','))].join('\n')
-
+    // Convert data to CSV - extract only stockNumber, accountNumber, quantity in that order
+    const csv = [...data.map((row) => [row.stockId, row.quantity, row.accountId].join(','))].join(
+      '\n',
+    )
+    console.log(data)
     // Create a Blob with the CSV data
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
 

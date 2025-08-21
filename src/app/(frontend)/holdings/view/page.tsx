@@ -124,7 +124,6 @@ export default function HoldingsView() {
       const formattedDate = date.toISOString()
       const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
       const data = await response.json()
-
       if (response.ok) {
         if (!data.docs.length) {
           setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
@@ -136,7 +135,7 @@ export default function HoldingsView() {
         const processed = []
         for (const holdingDay of data.docs) {
           const fundName = holdingDay.fund?.name || 'N/A'
-
+          const accountId = holdingDay.fund.mainAccount[0].accountNumber
           // Process each holding item in the holdings array
           if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
             for (const item of holdingDay.holdings) {
@@ -146,6 +145,7 @@ export default function HoldingsView() {
                 stockName: item.stock?.name || 'N/A',
                 quantity: item.quantity || 'N/A',
                 company: fundName,
+                accountId: accountId,
               })
             }
           }
