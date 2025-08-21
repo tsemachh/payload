@@ -79,6 +79,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   isLoading = false,
   selectAll = 'בחר הכל',
   removeAll = 'הסר הכל',
+  pagination,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -100,11 +101,19 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
   }>({})
+  const [currentPage, setCurrentPage] = useState<number>(pagination?.currentPage || 1)
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
   useEffect(() => {
     setInputSearchTerm(searchTerm)
   }, [searchTerm])
+
+  // Update current page when pagination prop changes
+  useEffect(() => {
+    if (pagination?.currentPage) {
+      setCurrentPage(pagination.currentPage)
+    }
+  }, [pagination?.currentPage])
 
   useEffect(() => {
     if (columnsOption) {
@@ -741,6 +750,27 @@ export function DataTableStatic<T extends Record<string, any>>({
     return facets
   }, [columns, getFilteredDataExcludingColumn])
 
+  // Get paginated data if pagination is enabled
+  const paginatedData = useMemo(() => {
+    if (!pagination) {
+      return filteredAndSortedData // Return all data if pagination is not enabled
+    }
+
+    const { pageSize } = pagination
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+
+    return filteredAndSortedData.slice(startIndex, endIndex)
+  }, [filteredAndSortedData, pagination, currentPage])
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    if (pagination?.onPageChange) {
+      pagination.onPageChange(page)
+    }
+  }
+
   // Render the data table
   return (
     <div className="space-y-4 text-right pr-10 pl-10" dir="rtl">
@@ -1059,7 +1089,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAndSortedData.map((row) => (
+                {paginatedData.map((row) => (
                   <React.Fragment key={row.meetingId + uuidv4()}>
                     <TableRow key={uuidv4()} className="group hover:bg-primary/20">
                       {visibleColumns.map((column) => (
@@ -1241,6 +1271,49 @@ export function DataTableStatic<T extends Record<string, any>>({
             </Table>
           </div>
         </div>
+
+        {/* Pagination Controls */}
+        {pagination && (
+          <div className="flex justify-center items-center mt-4 space-x-2 space-x-reverse">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1 || isLoading}
+            >
+              ראשון
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+            >
+              הקודם
+            </Button>
+
+            <span className="mx-2">
+              עמוד {currentPage} מתוך {pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize) || 1}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === (pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading}
+            >
+              הבא
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize))}
+              disabled={currentPage === (pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading}
+            >
+              אחרון
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

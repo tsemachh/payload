@@ -20,7 +20,7 @@ export const columns: Column<any>[] = [
   },
   {
     key: 'company',
-    header: 'חברה',
+    header: 'תיק',
     type: 'string',
     filterable: true,
     minWidth: 120,
