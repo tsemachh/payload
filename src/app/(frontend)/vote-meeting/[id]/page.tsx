@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
+import { AlertTriangle, Upload } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -19,6 +19,13 @@ import VoteDetails from '../components/VoteDetails'
 import VoteCompanySelector from '../components/VoteCompanySelector'
 import GeneralQuestions from '../components/GeneralQuestions'
 import AgendaQuestions from '../components/AgendaQuestions'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   AgendaQuestionId,
   AgendaQuestionsType,
@@ -88,6 +95,9 @@ export default function VotingForm() {
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [showNavigationWarning, setShowNavigationWarning] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [isDraftSaved, setIsDraftSaved] = useState(false)
 
   const {
     data: meetingData,
@@ -281,6 +291,8 @@ export default function VotingForm() {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
       return
     }
+    // Reset isDraftSaved when loading a new meeting
+    setIsDraftSaved(false)
     let initialData: VoteDataType
     let publishedData: VoteDataType | null = null
 
@@ -393,11 +405,50 @@ export default function VotingForm() {
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
+  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes, setIsDraftSaved])
 
   useEffect(() => {
     setLocalVoterNotes(votingData.voterNotes || '')
   }, [votingData.voterNotes])
+
+  // Warning when user tries to leave the page with unsaved changes
+  const handleBeforeUnload = useCallback(
+    (e: BeforeUnloadEvent) => {
+      if ((isDirty || isDraftSaved) && !isReadOnly) {
+        e.preventDefault()
+        return 'לא שלחת את שינויים שלך והם לא ייראו למנהלי המערכת. האם אתה רוצה להשאיר את השינויים כטיוטה או לחזור לדף הצבעה להשלים ולשלוח את ההצבעה'
+      }
+    },
+    [isDirty, isReadOnly, isDraftSaved],
+  )
+
+  useEffect(() => {
+    if (isDirty && !isReadOnly) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [handleBeforeUnload, isDirty, isReadOnly, isDraftSaved])
+
+  // Navigation warning for internal navigation
+  const handleNavigation = useCallback(
+    (href: string) => {
+      if (isDirty && !isReadOnly) {
+        setPendingNavigation(href)
+        setShowNavigationWarning(true)
+        return false
+      }
+      return true
+    },
+    [isDirty, isReadOnly, isDraftSaved],
+  )
+
+  // Expose the navigation handler globally
+  useEffect(() => {
+    ;(window as unknown as Record<string, unknown>).voteNavigationHandler = handleNavigation
+    return () => {
+      delete (window as unknown as Record<string, unknown>).voteNavigationHandler
+    }
+  }, [handleNavigation])
 
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
@@ -584,6 +635,7 @@ export default function VotingForm() {
           body: JSON.stringify(requestBody),
         })
         if (response.ok) {
+          setIsDraftSaved(true)
           toast({
             title: '✅ נתונים נשמרו',
             description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
@@ -610,7 +662,7 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
+    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
   )
 
   const handleQuestionChange = useCallback(
@@ -1116,6 +1168,47 @@ export default function VotingForm() {
       )}
       <Toaster />
       <PublishSuccessPopup isOpen={publishSuccess} onClose={() => setPublishSuccess(false)} />
+
+      {/* Navigation Warning Dialog */}
+      <Dialog open={showNavigationWarning}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-amber-600 m-0">שינויים לא נשלחו</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-center">
+              לא שלחת את שינויים שלך והם לא ייראו למנהלי המערכת. האם אתה רוצה להשאיר את השינויים
+              כטיוטה או לחזור לדף הצבעה להשלים ולשלוח את ההצבעה
+            </p>
+          </div>
+
+          <DialogFooter className="flex justify-center gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNavigationWarning(false)
+                setPendingNavigation(null)
+              }}
+            >
+              חזור לדף הצבעה
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowNavigationWarning(false)
+                if (pendingNavigation) {
+                  router.push(pendingNavigation)
+                }
+                setPendingNavigation(null)
+              }}
+            >
+              השאר כטיוטה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
