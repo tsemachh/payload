@@ -217,7 +217,7 @@ const FundsWithHoldings: React.FC<JSONFieldClientProps> = ({ path }) => {
                   <td className="px-6 py-2 align-middle min-w-[140px]">
                     <CheckboxFilter
                       value={fund.isAuthorized}
-                      onChange={(state) => handleCheckboxChange(fund.id, state)}
+                      onChangeAction={(state) => handleCheckboxChange(fund.id, state)}
                     />
                   </td>
                   <td className="w-48 pl-2 text-center align-middle">
