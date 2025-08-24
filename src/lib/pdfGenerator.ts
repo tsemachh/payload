@@ -37,8 +37,8 @@ async function initializePDFDocument(): Promise<{
 }> {
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
-
-  logger.warn('Current working directory:', process.cwd())
+  const cwd = process.cwd() as unknown as string
+  logger.warn(`Current working directory: ${cwd}`)
 
   // Use public directory for fonts and logo (no fallbacks)
   const regularFontPath = path.join('public', 'fonts', 'regular-webfont.ttf')
@@ -62,7 +62,7 @@ async function initializePDFDocument(): Promise<{
     alefBoldBytes = fs.readFileSync(boldFontPath)
     logoBytes = fs.readFileSync(logoPath)
     logger.warn('Successfully loaded assets from public directory')
-  } catch (error) {
+  } catch (error: any) {
     logger.warn('Error reading files from public directory:', error)
     throw new Error('Failed to read font files or logo from public directory')
   }
@@ -629,6 +629,8 @@ export async function generateParticipationsPDF(
   } catch (error) {
     console.trace(error)
     logger.error({ err: error, msg: 'Error generating PDF:' })
-    throw new Error('Failed to generate PDF', { cause: error })
+    throw new Error(
+      `Failed to generate PDF: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 }

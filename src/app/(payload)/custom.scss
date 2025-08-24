@@ -207,6 +207,9 @@ form[action*="/api/research-documents"] .file-field__filename {
     #heading-activity .sort-column__buttons {
       display: none;
     }
+    td.fullName{
+      width: 270px;
+    }
   }
 
   .collection-list{

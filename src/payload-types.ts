@@ -646,6 +646,7 @@ export interface Meeting {
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
+  changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   agenda?: MeetingAgenda;
@@ -1327,6 +1328,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   dualMeeting?: T;
   location?: T;
   comments?: T;
+  changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   agenda?: T | MeetingAgendaSelect<T>;

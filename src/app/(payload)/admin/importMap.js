@@ -23,6 +23,7 @@ import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../co
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
+import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
@@ -79,6 +80,7 @@ export const importMap = {
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
+  "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,
