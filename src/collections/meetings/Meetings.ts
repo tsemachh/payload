@@ -136,6 +136,7 @@ export const Meetings: CollectionConfig = {
     components: {
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
+        PublishButton: '/collections/meetings/components/MeetingPublishButton',
       },
     },
   },
@@ -484,7 +485,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
-                    width: '220px',
+                    width: '270px',
                   },
                   index: true,
                   hooks: {
