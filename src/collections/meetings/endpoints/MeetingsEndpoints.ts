@@ -16,8 +16,8 @@ import {
   UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
-import { findSubCompanyNameById } from '@/utils/utils'
-import { calculateHoldingValues } from '@/utils/dataUtils'
+import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
+import { calculateHoldingValues } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -50,13 +50,20 @@ const MEETING_SELECT_FIELDS: SelectType = {
 }
 
 /**
- * Creates a companies filter condition based on user's leaf companies
+ * Creates a companies filter condition based on user's leaf companies and selected companies
  */
-function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
+function createCompaniesFilter(
+  userFunds: (string | Company)[] | undefined | null,
+  fundIds: string[] | null = null,
+) {
+  let funds = userFunds?.map(getIdOfRelationField)
+  if (fundIds) {
+    funds = funds?.filter((fund) => fundIds.includes(fund as string))
+  }
   return userFunds
     ? {
         funds: {
-          in: userFunds,
+          in: funds,
         },
       }
     : {
@@ -363,6 +370,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayISO = today.toISOString()
+
+    // Extract companyIds from query parameters
+    const fundIdsParam = req.query.fundIds as string
+    const selectedFundIds = fundIdsParam ? fundIdsParam.split(',') : null
+
     const meetings = await payload.find({
       collection: 'meetings',
       select: MEETING_SELECT_FIELDS,
@@ -372,12 +384,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
         and: [
           { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
           { meetingDate: { greater_than_equal: todayISO } },
-          createCompaniesFilter(user?.funds),
+          createCompaniesFilter(user?.funds, selectedFundIds),
           createPublishedStatusFilter(),
         ],
       },
     })
-
     const safeFunds = getSafeFunds(user?.funds)
 
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
@@ -665,9 +676,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             'url' in doc &&
             'filename' in doc &&
             typeof doc.url === 'string' &&
-            typeof doc.filename === 'string' &&
-            doc.url !== null &&
-            doc.filename !== null,
+            typeof doc.filename === 'string',
         )
         .filter((doc) => {
           const docCompanyIds = doc.companies ?? []
@@ -738,7 +747,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
           {
             id: { equals: meetingId },
           },
-          createCompaniesFilter(user?.funds),
+          createCompaniesFilter(user?.funds, []),
           createPublishedStatusFilter(),
         ],
       },
