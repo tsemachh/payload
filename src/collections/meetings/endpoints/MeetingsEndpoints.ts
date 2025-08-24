@@ -747,7 +747,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
           {
             id: { equals: meetingId },
           },
-          createCompaniesFilter(user?.funds, []),
+          createCompaniesFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },
