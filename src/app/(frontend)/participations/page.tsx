@@ -776,7 +776,7 @@ export default function Participations() {
     <div className="p-4 space-y-0 pb-0" dir="rtl">
       <div className="flex flex-col lg:flex-row justify-start gap-4 mr-10">
         <div className="w-full lg:w-[350px]">
-          <DateRangeSelector onRangeChange={handleRangeChange} />
+          <DateRangeSelector onRangeChangeAction={handleRangeChange} />
         </div>
 
         <div className="w-full lg:w-[350px]">
@@ -832,7 +832,7 @@ export default function Participations() {
                 dir="rtl"
               />
               <ExportDropdownButton
-                onExport={handleExportFile}
+                onExportAction={handleExportFile}
                 isExporting={isExporting}
                 disabled={votesLoading || !reportName.trim()}
                 className="whitespace-nowrap"

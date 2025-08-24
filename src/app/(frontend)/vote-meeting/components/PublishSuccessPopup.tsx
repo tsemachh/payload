@@ -6,10 +6,10 @@ import { useEffect, useState } from 'react'
 
 interface CustomSuccessPopupProps {
   isOpen: boolean
-  onClose: () => void
+  onCloseAction: () => void
 }
 
-export function PublishSuccessPopup({ isOpen, onClose }: CustomSuccessPopupProps) {
+export function PublishSuccessPopup({ isOpen, onCloseAction }: CustomSuccessPopupProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function PublishSuccessPopup({ isOpen, onClose }: CustomSuccessPopupProps
   const handleClose = () => {
     setIsVisible(false)
     setTimeout(() => {
-      onClose()
+      onCloseAction()
     }, 300) // Wait for animation to complete
   }
 

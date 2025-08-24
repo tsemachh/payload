@@ -19,7 +19,7 @@ interface ExportFormatOption {
 }
 
 interface ExportDropdownButtonProps {
-  onExport: (format: ExportFormat) => void
+  onExportAction: (format: ExportFormat) => void
   isExporting: boolean
   disabled: boolean
   className?: string
@@ -31,7 +31,7 @@ const exportFormats: ExportFormatOption[] = [
 ]
 
 export function ExportDropdownButton({
-  onExport,
+  onExportAction,
   isExporting,
   disabled,
   className = '',
@@ -46,7 +46,7 @@ export function ExportDropdownButton({
   }
 
   const handleExport = () => {
-    onExport(selectedFormat)
+    onExportAction(selectedFormat)
   }
 
   return (

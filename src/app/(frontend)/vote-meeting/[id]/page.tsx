@@ -1167,7 +1167,7 @@ export default function VotingForm() {
         </div>
       )}
       <Toaster />
-      <PublishSuccessPopup isOpen={publishSuccess} onClose={() => setPublishSuccess(false)} />
+      <PublishSuccessPopup isOpen={publishSuccess} onCloseAction={() => setPublishSuccess(false)} />
 
       {/* Navigation Warning Dialog */}
       <Dialog open={showNavigationWarning}>
