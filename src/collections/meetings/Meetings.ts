@@ -136,7 +136,7 @@ export const Meetings: CollectionConfig = {
     components: {
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
-        PublishButton: '/collections/meetings/components/MeetingPublishButton',
+        PublishButton: '/components/buttons/CustomPublishButton',
       },
     },
   },
@@ -613,6 +613,20 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   admin: {
                     width: '50%',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'changeDetails',
+                  label: 'פירוט השינויים',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    hidden: true,
                   },
                 },
               ],
