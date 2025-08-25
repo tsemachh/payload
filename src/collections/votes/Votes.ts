@@ -13,8 +13,6 @@ import {
   handleVoteDeletionHook,
   recalculateVoteCountsOnReportedChange,
   setVoteFlags,
-  updateReportedAndMeetingHoldings,
-  validateOwnedQuantityWhenUnauthorized,
 } from './hooks/voteHooks'
 import { getVotesByCompanies } from './voteparticipationEndPoint'
 
@@ -414,8 +412,7 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [updateReportedAndMeetingHoldings, setVoteFlags],
-    beforeValidate: [validateOwnedQuantityWhenUnauthorized],
+    beforeChange: [setVoteFlags],
     afterChange: [recalculateVoteCountsOnReportedChange],
     afterDelete: [handleVoteDeletionHook],
   },
