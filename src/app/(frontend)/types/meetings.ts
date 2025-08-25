@@ -34,7 +34,7 @@ export type MeetingTableDataType = {
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
   votes: any
-  displayMode: string
+  displayMode?: string
 }
 
 export type DateFilterOption = {
