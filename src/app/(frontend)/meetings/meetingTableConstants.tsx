@@ -28,12 +28,19 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'companies',
-    header: 'נושאים/חברות',
+    header: 'חברות',
     type: 'string',
     sortKey: 'companies',
     minWidth: 50,
-    width: 85,
-    isAlwaysVisible: true,
+    width: 50,
+  },
+  {
+    key: 'agenda',
+    header: 'סדר יום',
+    type: 'string',
+    sortKey: 'agendas',
+    minWidth: 50,
+    width: 50,
   },
   {
     key: 'stockNumber',

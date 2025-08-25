@@ -208,9 +208,21 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
-    if (!columnsOption) return columns
-    return columns.filter((column) => columnVisibility[column.key as string])
-  }, [columnsOption, columns, columnVisibility])
+    let filteredColumns = columnsOption
+      ? columns.filter((column) => columnVisibility[column.key as string])
+      : columns
+
+    // Filter columns based on displayMode
+    if (displayMode === 'companies') {
+      // Show companies column, hide agenda column
+      filteredColumns = filteredColumns.filter((column) => column.key !== 'agenda')
+    } else if (displayMode === 'agenda') {
+      // Show agenda column, hide companies column
+      filteredColumns = filteredColumns.filter((column) => column.key !== 'companies')
+    }
+
+    return filteredColumns
+  }, [columnsOption, columns, columnVisibility, displayMode])
 
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
@@ -1121,13 +1133,13 @@ export function DataTableStatic<T extends Record<string, any>>({
                             )
                           }}
                         >
-                          {column.key === 'companies' && displayMode == 'companies'
+                          {column.key === 'companies'
                             ? renderCompaniesCell(
                                 row,
                                 companiesExpandedRows,
                                 setCompaniesExpandedRows,
                               )
-                            : column.key === 'companies' && displayMode === 'agenda'
+                            : column.key === 'agenda'
                               ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
                               : column.render
                                 ? column.render(row)

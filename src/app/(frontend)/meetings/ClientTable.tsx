@@ -112,7 +112,7 @@ export function MeetingsTableClient() {
         style={{ position: 'absolute', left: '400px', top: '128px' }}
       >
         <div className="w-[300px]">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mr-[50px]">
             <Select>
               <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-9">
                 <SelectValue placeholder={getCompanySelectSummary()} />
