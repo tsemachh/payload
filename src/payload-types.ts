@@ -646,6 +646,7 @@ export interface Meeting {
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
+  changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   agenda?: MeetingAgenda;
@@ -941,7 +942,9 @@ export interface Export {
   name?: string | null;
   format?: ('csv' | 'json') | null;
   limit?: number | null;
+  page?: number | null;
   sort?: string | null;
+  sortOrder?: ('asc' | 'desc') | null;
   drafts?: ('yes' | 'no') | null;
   selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
   fields?: string[] | null;
@@ -1325,6 +1328,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   dualMeeting?: T;
   location?: T;
   comments?: T;
+  changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   agenda?: T | MeetingAgendaSelect<T>;
@@ -1825,7 +1829,9 @@ export interface ExportsSelect<T extends boolean = true> {
   name?: T;
   format?: T;
   limit?: T;
+  page?: T;
   sort?: T;
+  sortOrder?: T;
   drafts?: T;
   selectionToUse?: T;
   fields?: T;
@@ -2017,7 +2023,9 @@ export interface TaskCreateCollectionExport {
     name?: string | null;
     format?: ('csv' | 'json') | null;
     limit?: number | null;
+    page?: number | null;
     sort?: string | null;
+    sortOrder?: ('asc' | 'desc') | null;
     drafts?: ('yes' | 'no') | null;
     selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
     fields?: string[] | null;

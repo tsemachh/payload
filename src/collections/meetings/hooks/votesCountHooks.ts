@@ -9,23 +9,28 @@ import { Meeting, Vote, VotesReportStatus, VotesStatus } from '@/payload-types'
 export async function recalculateMeetingVoteCounts(
   req: PayloadRequest,
   meetingId: string,
-): Promise<{
-  success: boolean
-  message: string
-  data: {
-    votesCount: number
-    reportVotesCount: number
-    votesStatus: VotesStatus
-    votesReportStatus: VotesReportStatus
-  }
-}> {
+): Promise<
+  | {
+      success: boolean
+      message: string
+      data: {
+        votesCount: number
+        reportVotesCount: number
+        votesStatus: VotesStatus
+        votesReportStatus: VotesReportStatus
+      }
+    }
+  | undefined
+> {
   try {
-    // Get the meeting
+    // Get the meeting with all votes and companies
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       select: {
         votes: true,
         companies: true,
+        votesCount: true,
+        reportVotesCount: true,
       },
       id: meetingId,
       depth: 1,
@@ -36,45 +41,46 @@ export async function recalculateMeetingVoteCounts(
     }
 
     // Count reported votes
-    const reportVotesCount =
+    const newReportVotesCount =
       meeting?.votes?.docs?.filter((vote) => (vote as Vote).reported === true).length || 0
     // Calculate status indicators
     const companiesCount = meeting.companies?.length || 0
     //vote Count
-    const votesCount = meeting?.votes?.docs?.length || 0
+    const newVotesCount = meeting?.votes?.docs?.length || 0
     // Calculate vote statuses using the utility function
-    const { votesStatus, votesReportStatus } = calculateVoteStatuses(
-      votesCount,
-      reportVotesCount,
-      companiesCount,
-    )
+    if (newReportVotesCount != meeting.reportVotesCount || newVotesCount != meeting.votesCount) {
+      const { votesStatus, votesReportStatus } = calculateVoteStatuses(
+        newVotesCount,
+        newReportVotesCount,
+        companiesCount,
+      )
 
-    // Update the meeting with calculated values
-    await req.payload.update({
-      collection: 'meetings',
-      id: meetingId,
-      data: {
-        votesCount,
-        reportVotesCount,
-        votesStatus,
-        votesReportStatus,
-      },
-      depth: 0,
-      req: {
-        ...req,
-        context: { ...req.context, from: 'migration' },
-      },
-    })
+      // Update the meeting with calculated values
+      await req.payload.update({
+        collection: 'meetings',
+        id: meetingId,
+        data: {
+          votesCount: newVotesCount,
+          reportVotesCount: newReportVotesCount,
+          votesStatus,
+          votesReportStatus,
+        },
+        req: {
+          ...req,
+          context: { ...req.context, from: 'migration' },
+        },
+      })
 
-    return {
-      success: true,
-      message: `Updated meeting ${meetingId}: votes=${votesCount}, reported=${reportVotesCount}`,
-      data: {
-        votesCount,
-        reportVotesCount,
-        votesStatus,
-        votesReportStatus,
-      },
+      return {
+        success: true,
+        message: `Updated meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
+        data: {
+          votesCount: newVotesCount,
+          reportVotesCount: newReportVotesCount,
+          votesStatus,
+          votesReportStatus,
+        },
+      }
     }
   } catch (error) {
     console.error(`Error recalculating vote counts for meeting ${meetingId}:`, error)
@@ -163,9 +169,13 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
  * This is a copy of the function from the votes collection to avoid circular dependencies
  */
 async function updateMeetingVoteStatuses(meeting: Meeting): Promise<void> {
+  // Get the latest companies count directly from the meeting object
+  const companiesCount = Array.isArray(meeting.companies) ? meeting.companies.length : 0
+
+  // For votes count and reported votes count, we'll use the values from the meeting object
+  // but ensure they're properly converted to numbers and defaulted to 0 if undefined
   const votesCount = Number(meeting.votesCount) || 0
   const reportVotesCount = Number(meeting.reportVotesCount) || 0
-  const companiesCount = Array.isArray(meeting.companies) ? meeting.companies.length : 0
 
   // Calculate vote statuses using the utility function
   const { votesStatus, votesReportStatus } = calculateVoteStatuses(
@@ -174,6 +184,7 @@ async function updateMeetingVoteStatuses(meeting: Meeting): Promise<void> {
     companiesCount,
   )
 
+  // Update the meeting object with the calculated statuses
   meeting.votesStatus = votesStatus
   meeting.votesReportStatus = votesReportStatus
 }

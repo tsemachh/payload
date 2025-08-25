@@ -56,7 +56,7 @@ export const getDateRange = (
 }
 
 interface DateRangeSelectorProps {
-  onRangeChange: (
+  onRangeChangeAction: (
     startDate: Date | undefined,
     endDate: Date | undefined,
     type: DateRangeOption,
@@ -64,7 +64,7 @@ interface DateRangeSelectorProps {
   className?: string
 }
 
-export function DateRangeSelector({ onRangeChange, className }: DateRangeSelectorProps) {
+export function DateRangeSelector({ onRangeChangeAction, className }: DateRangeSelectorProps) {
   const [selectedRangeOption, setSelectedRangeOption] = useState<DateRangeOption | undefined>(
     undefined,
   )
@@ -76,8 +76,8 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
 
   // Effect to update parent when startDate/endDate/rangeType change
   useEffect(() => {
-    onRangeChange(startDate, endDate, selectedRangeOption!)
-  }, [startDate, endDate, selectedRangeOption, onRangeChange])
+    onRangeChangeAction(startDate, endDate, selectedRangeOption!)
+  }, [startDate, endDate, selectedRangeOption, onRangeChangeAction])
 
   const handleOptionSelect = (option: DateRangeOption) => {
     setSelectedRangeOption(option)

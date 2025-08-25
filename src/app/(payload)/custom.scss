@@ -207,13 +207,26 @@ form[action*="/api/research-documents"] .file-field__filename {
     #heading-activity .sort-column__buttons {
       display: none;
     }
+    td.fullName{
+      width: 270px;
+    }
   }
 
   .collection-list{
+    .query-preset-bar {
+      width: auto;
+      position: absolute;
+      left: 230px;
+      z-index: 3;
+      padding-left: 20px;
+      margin-left: 0;
+    }
+
     .table {
       max-height: calc(100vh - 260px); /* 100vh - (header + footer heights) */
       overflow-y: auto !important; /* Enable vertical scrolling */
       display: block !important;
+      margin-top: 2px;
     }
 
     .table th, .table td {
@@ -229,16 +242,16 @@ form[action*="/api/research-documents"] .file-field__filename {
     th {
       position: sticky !important;
       top: 0 !important;
-      z-index: 10 !important; /* Ensure headers stay above content */
-      background: #fff !important;
+      z-index: 2 !important; /* Ensure headers stay above content */
+      background: var(--theme-input-bg) !important;
+    }
+
+    .condition{
+      z-index: 3;
     }
   }
 
   .collection-list.collection-list--admin-notifications {
-    .table {
-      max-height: calc(100vh - 310px); /* 100vh - (header + footer heights) */
-    }
-
     #heading-url .sort-column__buttons,
     #heading-handled .sort-column__buttons {
       display: none;

@@ -111,7 +111,7 @@ export const Users: CollectionConfig = {
       ['active', 'isAdmin', 'createdAt'],
       ['enableAPIKey', 'receiveMailNotification'],
     ],
-    defaultFilter: {'active': {equals: true}}
+    defaultFilter: { active: { equals: true } },
   },
   access: {
     // Only admins can create users
@@ -191,8 +191,8 @@ export const Users: CollectionConfig = {
               type: 'relationship',
               relationTo: 'companies',
               required: true,
-              admin:{
-                sortOptions: 'name'
+              admin: {
+                sortOptions: 'name',
               },
               filterOptions: ({ data, siblingData, req }) => {
                 if (req.context?.from == 'migration' || req.context?.from == 'process') return true
@@ -227,7 +227,7 @@ export const Users: CollectionConfig = {
               options: [
                 { label: 'צפיה בהצבעות ודוחות', value: 'read' },
                 {
-                  label: 'הזנת אחזקות והצבעה',
+                  label: 'הזנת החזקות והצבעה',
                   value: 'write',
                 },
               ],

@@ -183,7 +183,7 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
     return (
       <>
         <NotificationAlert
-          onOpenNotifications={handleOpenNotifications}
+          onOpenNotificationsAction={handleOpenNotifications}
           notifications={notifications}
         />
         <TooltipProvider>

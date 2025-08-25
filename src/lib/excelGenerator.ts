@@ -3,12 +3,12 @@ import path from 'path'
 import fs from 'fs'
 import { logger } from '@/lib/logger'
 import {
+  booleanToText,
   ExportOptions,
-  resultMapping,
-  SHARED_COLUMNS,
   formatNormalDate,
   groupDataByMeeting,
-  booleanToText,
+  resultMapping,
+  SHARED_COLUMNS,
 } from './exportTypes'
 
 export async function generateParticipationsExcel(
@@ -28,8 +28,8 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.STOCK_NAME,
       'שווי שוק (מ׳ ₪)',
-      'אחזקה (%)',
-      'שווי אחזקה (מ׳ ₪)',
+      'החזקה (%)',
+      'שווי החזקה (מ׳ ₪)',
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
@@ -67,7 +67,7 @@ export async function generateParticipationsExcel(
           ext: { width: 100, height: 40 },
         })
       }
-    } catch (logoError) {
+    } catch (logoError: any) {
       logger.error('Could not add logo to Excel:', logoError)
     }
 
@@ -217,7 +217,7 @@ export async function generateParticipationsExcel(
     // Generate buffer
     const buffer = await workbook.xlsx.writeBuffer()
     return Buffer.from(buffer)
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error generating Excel:', error)
     throw new Error('Failed to generate Excel file')
   }

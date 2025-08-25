@@ -182,8 +182,65 @@ export const useVotingData = () => {
     fetchCompaniesData()
   }, [savedDocumentData])
 
+  const exportToCSV = (data: any[], filename: string, columns: any) => {
+    const exportData = data.filter((item) => !item.isGroupHeader)
+
+    const columnMapping: any = {
+      company: { header: 'חברה', field: 'name' },
+      motherCompany: { header: 'חברת אם', field: 'motherCompany' },
+      nominalValue: { header: 'ערך נקוב', field: 'nominalValue' },
+      percentageHolding: { header: 'אחוזים', field: 'percentageHolding' },
+      voter: { header: 'מצביע', field: 'vote.voter' },
+      voteTime: { header: 'זמן הצבעה', field: 'vote.votedAt' },
+      actualVoteAction: { header: 'הצבעה בפועל', field: 'vote.decision' },
+      checksum: { header: 'Checksum', field: 'vote.checksum' },
+    }
+
+    const selectedColumns = Object.keys(columns).filter((key) => columns[key] && columnMapping[key])
+    const headers = selectedColumns.map((key) => columnMapping[key].header)
+
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map((row) =>
+        selectedColumns
+          .map((columnKey) => {
+            const field = columnMapping[columnKey].field
+            let value = ''
+
+            if (field.includes('.')) {
+              const [parent, child] = field.split('.')
+              value = row[parent]?.[child] || ''
+            } else {
+              value = row[field] || ''
+            }
+
+            if (columnKey === 'nominalValue' && value) {
+              value = Number(value).toLocaleString()
+            } else if (columnKey === 'percentageHolding' && value) {
+              value = `${Number(value).toFixed(4)}%`
+            } else if (columnKey === 'voteTime' && value) {
+              value = new Date(value).toLocaleString('he-IL')
+            }
+
+            return value.toString().includes(',') ? `"${value}"` : value
+          })
+          .join(','),
+      ),
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
   return {
     companies,
     loading,
+    exportToCSV,
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Column } from '../../types/meetings'
 import { DataTableStatic } from '@/components/data-table-client'
 import { HoldingFeedLine } from '@/payload-types'
@@ -112,6 +112,13 @@ export const RecordsTable: React.FC<{
   valid?: HoldingFeedLine[]
   silenced?: HoldingFeedLine[]
 }> = ({ records, invalid, companies, onRefresh, valid, silenced }) => {
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
   const dataWithIds: RecordType[] = records.map((holding, index) => ({
     id: index + 1,
     lineNumber: holding.lineNumber ?? 'N/A',
@@ -151,6 +158,13 @@ export const RecordsTable: React.FC<{
         tableId={invalid ? 'holdings-table-invalid' : 'holdings-table'}
         columnsOption={false}
         tableHeightOffset={400}
+        pagination={{
+          pageSize: 50,
+          totalItems: dataWithIds.length,
+          totalPages: Math.ceil(dataWithIds.length / 50),
+          currentPage: currentPage,
+          onPageChange: handlePageChange
+        }}
       />
     </div>
   )

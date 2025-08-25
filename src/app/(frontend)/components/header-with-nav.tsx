@@ -13,7 +13,7 @@ export function HeaderWithNav() {
   const pathname = usePathname()
 
   // Log the auth object to debug
-  console.log('Auth object:', auth)
+  //  console.log('Auth object:', auth)
 
   // Don't render the top menu if the user is not logged in
   // Check if auth.user exists, is not null, and is a valid user object with expected properties
@@ -53,7 +53,7 @@ export function HeaderWithNav() {
           </div>
         )
       )}
-     <ImpersonationBanner position="top" locale="he" />
+      <ImpersonationBanner position="top" locale="he" />
     </header>
   )
 }

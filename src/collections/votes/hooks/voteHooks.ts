@@ -15,7 +15,7 @@ import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votes
  */
 export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ doc, req }) => {
   // Only process if we have a meeting ID and the vote was published
-  if (!doc.meeting || typeof doc.meeting !== 'string' || doc._status !== 'published') {
+  if (!doc.meeting || typeof doc.meeting !== 'string') {
     return
   }
 
@@ -30,6 +30,7 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
     )
   }
 }
+
 export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req }) => {
   const meetingId = data?.meeting
   const votes = data?.votes
@@ -144,7 +145,7 @@ export const updateReportedAndMeetingHoldings: CollectionBeforeChangeHook = asyn
 }
 
 /**
- * Hook to recalculate meeting vote counts when reported status changes
+ * Hook to recalculate meeting vote counts when reported status changes or status changes between published and draft
  */
 export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vote> = async ({
   doc,
@@ -152,9 +153,17 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   req,
 }) => {
   const reportedChanged = doc.reported !== previousDoc?.reported
+  const statusChangedFromPublishedToDraft =
+    previousDoc?._status === 'published' && doc._status === 'draft'
+  const statusChangedFromDraftToPublished =
+    previousDoc?._status === 'draft' && doc._status === 'published'
+  const statusChanged = statusChangedFromPublishedToDraft || statusChangedFromDraftToPublished
 
-  // Recalculate meeting vote counts when reported status changes
-  if (doc._status === 'published' && reportedChanged && doc.meeting) {
+  // Recalculate meeting vote counts when reported status changes or status changes between published and draft
+  if (
+    (doc._status === 'published' && reportedChanged && doc.meeting) ||
+    (statusChanged && doc.meeting)
+  ) {
     try {
       await recalculateMeetingVoteCounts(req, doc.meeting as string)
     } catch (error) {

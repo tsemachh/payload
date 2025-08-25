@@ -28,5 +28,23 @@ export function handleNavigation(
       return
     }
   }
+
+  // Check if we're on vote-meeting page and there's a navigation handler
+  if (
+    pathname.startsWith('/vote-meeting/') &&
+    typeof window !== 'undefined' &&
+    (window as unknown as Record<string, unknown>).voteNavigationHandler
+  ) {
+    const canNavigate = (
+      (window as unknown as Record<string, unknown>).voteNavigationHandler as (
+        href: string,
+      ) => boolean
+    )(href)
+    if (!canNavigate) {
+      e.preventDefault()
+      return
+    }
+  }
+
   router.push(href)
 }

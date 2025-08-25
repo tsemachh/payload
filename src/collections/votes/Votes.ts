@@ -65,10 +65,10 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name: 'createdAt' }, { name: 'reported' },{name:'_status'}],
+      [{ name: 'createdAt' }, { name: 'reported' }, { name: '_status' }],
       [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
-    defaultFilter: {'createdAt': 'last30Days',_status:{equals:'published'}}
+    defaultFilter: { createdAt: 'last30Days', _status: { equals: 'published' } },
   },
   versions: {
     drafts: true,
@@ -269,7 +269,7 @@ export const Votes: CollectionConfig = {
               fields: [
                 {
                   name: 'fundsWithHoldingsUpdates',
-                  label: 'עדכוני אחזקות תיקים',
+                  label: 'עדכוני החזקות תיקים',
                   type: 'json',
                   //hidden: true,
                   defaultValue: {},

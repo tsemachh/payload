@@ -1,5 +1,5 @@
 import type { TaskHandler } from 'payload'
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
@@ -75,7 +75,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 
     // Group notifications by type
     const holdingsNotifications = unreadNotifications.filter((notification) =>
-      notification.message.includes('לא דיווחה על אחזקות'),
+      notification.message.includes('לא דיווחה על החזקות'),
     )
 
     const meetingsNotifications = unreadNotifications.filter((notification) =>
@@ -88,7 +88,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 
     const otherNotifications = unreadNotifications.filter(
       (notification) =>
-        !notification.message.includes('לא דיווחה על אחזקות') &&
+        !notification.message.includes('לא דיווחה על החזקות') &&
         !notification.message.includes('לא הצביעה באסיפה') &&
         !notification.message.includes('לא התקבל פיד'),
     )
@@ -116,7 +116,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 `
 
     if (holdingsNotifications.length > 0) {
-      emailContent += `<h2>התראות אחזקות (${holdingsNotifications.length})</h2><ul>`
+      emailContent += `<h2>התראות החזקות (${holdingsNotifications.length})</h2><ul>`
       holdingsNotifications.forEach((notification) => {
         emailContent += `<li><a href="${req.payload.config.serverURL}/admin/collections/admin-notifications/${notification.id}">${notification.message}</a></li>`
       })

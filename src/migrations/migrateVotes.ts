@@ -23,7 +23,7 @@ const votingResultMap: Record<string, string | null> = {
   '14': 'נמנע',
   '15': 'לא משתתף',
   '16': null, // 'ללא הצבעה' -
-  '17': null, //נמכרה אחזקה
+  '17': null, //נמכרה החזקה
 }
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {

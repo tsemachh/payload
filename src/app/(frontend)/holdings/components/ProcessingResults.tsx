@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { XCircle, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, XCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -116,9 +116,9 @@ export function ProcessingResults({
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-base font-medium mb-4">נמצאו מספר בעיות בקובץ האחזקות:</p>
+            <p className="text-base font-medium mb-4">נמצאו מספר בעיות בקובץ ההחזקות:</p>
 
-            <ul className="space-y-3">
+            <ul className="space-y-3 max-h-[calc(100vh-400px)] overflow-auto">
               {warnings.map((warning, index) => (
                 <li key={index} className="text-gray-800">
                   <div className="pr-6">
@@ -200,7 +200,7 @@ export function ProcessingResults({
                   }`}
                   onClick={() => setActiveTab('valid')}
                 >
-                  תקינות {`(${validRecords.length})`}
+                  קליטות תקינות {`(${validRecords.length})`}
                 </button>
               )}
               {recordErrors.length > 0 && (
@@ -212,7 +212,7 @@ export function ProcessingResults({
                   }`}
                   onClick={() => setActiveTab('invalid')}
                 >
-                  שגויות {`(${recordErrors.length})`}
+                  קליטות שגויות {`(${recordErrors.length})`}
                 </button>
               )}
               {(silencedRecords?.length ?? 0) > 0 && (
@@ -256,7 +256,7 @@ export function ProcessingResults({
               ביטול
             </Button>
             <Button onClick={handleFinalConfirm} className="font-medium">
-              שמירת האחזקות התקינות
+              שמירת ההחזקות התקינות
             </Button>
           </div>
         </>

@@ -93,8 +93,8 @@ export const Meetings: CollectionConfig = {
     singular: 'אסיפה',
   },
   custom: {
-    defaultFilter:{
-      'meetingDate': 'todayAndFuture'
+    defaultFilter: {
+      meetingDate: 'todayAndFuture',
     },
     filterList: [
       [
@@ -136,6 +136,7 @@ export const Meetings: CollectionConfig = {
     components: {
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
+        PublishButton: '/components/buttons/CustomPublishButton',
       },
     },
   },
@@ -264,13 +265,12 @@ export const Meetings: CollectionConfig = {
                         },
                       },
                       limit: 0,
-                      depth: 1,
+                      depth: 0,
                     })
                     const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    const nonVotedCompanies = data.companies.filter(
+                    return data.companies.filter(
                       (companyId: string) => !votedCompanyIds.includes(companyId),
                     )
-                    return nonVotedCompanies
                   },
                 ],
               },
@@ -417,7 +417,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text',
                   unique: true,
                   index: true,
-                  admin: { width: '100px' },
+                  admin: { width: '100px', hidden: true },
                 },
                 {
                   name: 'magnaId',
@@ -485,7 +485,7 @@ export const Meetings: CollectionConfig = {
                   type: 'text', // Stored in the database
                   admin: {
                     hidden: true, // Hide in admin UI to prevent manual edits
-                    width: '220px',
+                    width: '270px',
                   },
                   index: true,
                   hooks: {
@@ -549,6 +549,7 @@ export const Meetings: CollectionConfig = {
                   admin: {
                     width: '220px',
                     date: {
+                      timeFormat: 'HH:mm',
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
                     },
@@ -566,6 +567,7 @@ export const Meetings: CollectionConfig = {
                     width: '220px',
                     date: {
                       displayFormat: 'HH:mm dd/MM/yyyy',
+                      timeFormat: 'HH:mm',
                       pickerAppearance: 'dayAndTime',
                     },
                   },
@@ -611,6 +613,20 @@ export const Meetings: CollectionConfig = {
                   type: 'textarea',
                   admin: {
                     width: '50%',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'changeDetails',
+                  label: 'פירוט השינויים',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    hidden: true,
                   },
                 },
               ],
@@ -682,6 +698,7 @@ export const Meetings: CollectionConfig = {
                       label: 'סוג נושא',
                       type: 'select',
                       required: true,
+                      defaultValue: 'decision',
                       options: [
                         { label: 'לדיווח בלבד', value: 'reporting' },
                         { label: 'להחלטה', value: 'decision' },
@@ -694,6 +711,7 @@ export const Meetings: CollectionConfig = {
                       name: 'majorityType',
                       label: 'סוג רוב נדרש',
                       type: 'select',
+                      defaultValue: 'regular',
                       options: [
                         { label: 'רוב רגיל', value: 'regular' },
                         { label: 'רוב מיוחד', value: 'privileged' },
@@ -847,11 +865,11 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'fundsWithHolding',
-              label: 'תיקים עם אחזקות',
+              label: 'תיקים עם החזקות',
               admin: {
                 readOnly: true,
               },
-              labels: { plural: 'תיקים עם אחזקות', singular: 'תיק עם אחזקות' },
+              labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
               fields: [
                 {

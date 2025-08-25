@@ -12,6 +12,7 @@ import { up as migrateRecommendationReasons } from './migrateRecommendationReaso
 import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
 import { up as migrateMeetingStockValues } from './migrateMeetingStockValues'
 import { up as unifyMeetings } from './UnifyMeetings'
+import { up as migrateVoteCounts } from './migrateVoteCounts'
 import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
@@ -107,6 +108,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting processCompaniesMeetings ===')
     await processCompaniesMeetings(req)
     console.log('=== processCompaniesMeetings Completed ===\n')
+
+    // 20. Migrate Vote Counts
+    console.log('\n=== Starting Vote Counts Migration ===')
+    await migrateVoteCounts({ payload, req })
+    console.log('=== Vote Counts Migration Completed ===\n')
+
     console.log('migrateAll process completed successfully!')
   } catch (error) {
     console.error('Error during migrateAll process:', error)

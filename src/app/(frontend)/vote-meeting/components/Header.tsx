@@ -9,6 +9,7 @@ interface MeetingHeaderProps {
     stockName: string
   }
   isReadOnly: boolean
+  readOnlyReason?: 'date' | 'permission' | null
   isDirty: boolean
   lastPublishedVoteInfo: { user: string; date: Date } | undefined
   fetchedVotes: Vote[]
@@ -17,6 +18,7 @@ interface MeetingHeaderProps {
 const VoteHeader = ({
   meetingData,
   isReadOnly,
+  readOnlyReason,
   isDirty,
   lastPublishedVoteInfo,
   fetchedVotes,
@@ -29,7 +31,9 @@ const VoteHeader = ({
             <div className="flex flex-col items-center justify-center space-y-2">
               <Lock className="w-6 h-6 text-gray-600" />
               <div className="text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                האסיפה נעולה להצבעה
+                {readOnlyReason === 'permission' 
+                  ? 'אין לך הרשאות להצביע באסיפה זו'
+                  : 'האסיפה נעולה להצבעה'}
               </div>
             </div>
           </div>

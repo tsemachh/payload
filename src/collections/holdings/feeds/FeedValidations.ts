@@ -9,6 +9,8 @@ import {
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
+import { containsHebrewText } from '@/collections/holdings/feeds/FeedUtils'
+
 export type HoldingFeedLineWithName = HoldingFeedLine & {
   stockName?: string | null
   companyName?: string | null
@@ -17,10 +19,13 @@ export type HoldingFeedLineWithName = HoldingFeedLine & {
 /**
  * Validate the whole feed for fatal errors
  * @param results The parsed file content
- * @returns Array of fatal errors
+ * @returns Object containing fatal errors and optional header warning
  */
-export const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
+export const validateWholeFeed = (
+  results: Array<any>,
+): { fatalErrors: FeedFatalError[]; headerWarning?: FeedWarning } => {
   const fatalErrors: FeedFatalError[] = []
+  let headerWarning: FeedWarning | undefined
 
   // Check if file is empty
   if (!results || results.length === 0) {
@@ -28,7 +33,28 @@ export const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
       type: 'emptyFile',
       message: 'הקובץ שהוזן ריק',
     })
-    return fatalErrors
+    return { fatalErrors }
+  }
+
+  // Check for Hebrew header in the first row
+  let firstRow = results[0]
+  let hasHebrewHeader = false
+
+  if (Array.isArray(firstRow)) {
+    // For XLSX files
+    hasHebrewHeader = firstRow.some((cell) => typeof cell === 'string' && containsHebrewText(cell))
+  } else {
+    // For CSV files
+    const values = Object.values(firstRow)
+    hasHebrewHeader = values.some((value) => typeof value === 'string' && containsHebrewText(value))
+  }
+
+  if (hasHebrewHeader) {
+    headerWarning = {
+      type: 'other',
+      message: 'נמצאה שורת כותרת בעברית בקובץ. השורה תתעלם בעיבוד.',
+    }
+    firstRow = results[1]
   }
 
   // Check column format
@@ -36,7 +62,6 @@ export const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
   const formatDetails: string[] = []
 
   // Check if the first row has the expected columns
-  const firstRow = results[0]
 
   if (Array.isArray(firstRow)) {
     // For XLSX files
@@ -54,7 +79,7 @@ export const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
   }
 
   // Check data types in the first few rows
-  for (let i = 0; i < Math.min(results.length, 5); i++) {
+  for (let i = hasHebrewHeader ? 1 : 0; i < Math.min(results.length, 5); i++) {
     const row = results[i]
     let stockId: string | number | undefined
     let quantity: string | number | undefined
@@ -95,7 +120,7 @@ export const validateWholeFeed = (results: Array<any>): FeedFatalError[] => {
     })
   }
 
-  return fatalErrors
+  return { fatalErrors, headerWarning }
 }
 /**
  * Check for warnings in the feed

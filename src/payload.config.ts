@@ -103,6 +103,9 @@ export default buildConfig({
             '<br><br>אם לא ביקשת זאת, פנה למנהל המערכת עמדה מיידית<br><br>מערכת עמדה',
           resetYourPassword: 'איפוס סיסמה',
         },
+        general: {
+          successfullyCreated: 'אובייקט ה{{label}} נוצר בהצלחה.',
+        },
       },
     },
   },
@@ -144,7 +147,7 @@ export default buildConfig({
       {
         slug: 'processHoldingsChange',
         handler: processHoldingsChangeHandler,
-        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
+        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה החזקה' }],
       },
       {
         slug: 'checkCompanyNotifications',
@@ -212,6 +215,11 @@ export default buildConfig({
         Logo: '/graphics/Logo',
       },
       Nav: '@shefing/quickfilter/nav',
+      views: {
+        dashboard: {
+          Component: '@shefing/quickfilter/Dashboard',
+        },
+      },
     },
     meta: {
       title: 'עמדה',

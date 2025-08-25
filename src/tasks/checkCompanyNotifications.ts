@@ -331,7 +331,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
       // If no holdings feed found, create a notification
       if (!hasHoldings) {
-        const message = `חברה ${company.name} לא דיווחה על אחזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
+        const message = `חברה ${company.name} לא דיווחה על החזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         // Delete any existing notifications for this company and type
         await payload.delete({
