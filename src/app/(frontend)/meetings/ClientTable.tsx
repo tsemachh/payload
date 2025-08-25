@@ -26,7 +26,7 @@ export function MeetingsTableClient() {
     if (companies.length > 0 || funds.length > 0) {
       const companyIds = companies.map((company) => company.id)
       const fundIds = funds.map((fund) => fund.id)
-      setSelectedCompanyIds([...companyIds, ...fundIds])
+      setSelectedCompanyIds([...fundIds])
     }
   }, [companies, funds])
 
@@ -93,10 +93,8 @@ export function MeetingsTableClient() {
       return 'בחר חברות'
     }
 
-    const totalCompanyIds = companies.map((company) => company.id)
     const totalFundIds = funds.map((fund) => fund.id)
-    const allIds = [...totalCompanyIds, ...totalFundIds]
-
+    const allIds = [...totalFundIds]
     const allSelected =
       selectedCompanyIds.length === allIds.length &&
       selectedCompanyIds.every((id) => allIds.includes(id))
@@ -124,13 +122,10 @@ export function MeetingsTableClient() {
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
                   selectedCompanies={selectedCompanyIds}
+                  showSearch={false}
                   onSelectionChangeAction={handleCompanySelectionChange}
                   className="w-full"
-                  showSearch={true}
-                  allCompaniesIds={[
-                    ...companies.map((company) => company.id),
-                    ...funds.map((fund) => fund.id),
-                  ]}
+                  allCompaniesIds={[...funds.map((fund) => fund.id)]}
                 />
               </SelectContent>
             </Select>
