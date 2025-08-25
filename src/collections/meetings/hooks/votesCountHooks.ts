@@ -48,41 +48,68 @@ export async function recalculateMeetingVoteCounts(
     //vote Count
     const newVotesCount = meeting?.votes?.docs?.length || 0
     // Calculate vote statuses using the utility function
+    const { votesStatus, votesReportStatus } = calculateVoteStatuses(
+      newVotesCount,
+      newReportVotesCount,
+      companiesCount,
+    )
     if (newReportVotesCount != meeting.reportVotesCount || newVotesCount != meeting.votesCount) {
-      const { votesStatus, votesReportStatus } = calculateVoteStatuses(
-        newVotesCount,
-        newReportVotesCount,
-        companiesCount,
-      )
-
-      // Update the meeting with calculated values
-      await req.payload.update({
+      // Get current meeting to access its changeDetails
+      const currentMeeting = await req.payload.findByID({
         collection: 'meetings',
         id: meetingId,
-        data: {
-          votesCount: newVotesCount,
-          reportVotesCount: newReportVotesCount,
-          votesStatus,
-          votesReportStatus,
-        },
-        req: {
-          ...req,
-          context: { ...req.context, from: 'migration' },
-        },
+        select: { changeDetails: true, votesCount: true, reportVotesCount: true },
+        depth: 0,
       })
+      const data = {
+        votesCount: newVotesCount,
+        reportVotesCount: newReportVotesCount,
+        votesStatus,
+        votesReportStatus,
+      }
 
-      return {
-        success: true,
-        message: `Updated meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
-        data: {
-          votesCount: newVotesCount,
-          reportVotesCount: newReportVotesCount,
-          votesStatus,
-          votesReportStatus,
-        },
+      if (
+        newVotesCount != currentMeeting.votesCount ||
+        newReportVotesCount != currentMeeting.reportVotesCount
+      ) {
+        // Prepare change details
+        const changeDate = new Date().toISOString()
+        const changeSource = req.context?.from || 'system'
+        const changeDescription = `עדכון מספר הצבעות: ${newVotesCount}, הצבעות מדווחות: ${newReportVotesCount}`
+        const existingChangeDetails = currentMeeting?.changeDetails || ''
+        const changeDetails = `${changeDate} - [${changeSource}] ${changeDescription}\n${existingChangeDetails}`
+
+        // Update the meeting with calculated values
+        await req.payload.update({
+          collection: 'meetings',
+          id: meetingId,
+          data: {
+            votesCount: newVotesCount,
+            reportVotesCount: newReportVotesCount,
+            votesStatus,
+            votesReportStatus,
+            changeDetails,
+          },
+          req: {
+            ...req,
+            context: { ...req.context, from: 'migration' },
+          },
+        })
+
+        return {
+          success: true,
+          message: `Updated meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
+          data,
+        }
+      } else {
+        return {
+          success: true,
+          message: `No Changes were made meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
+          data,
+        }
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error recalculating vote counts for meeting ${meetingId}:`, error)
     throw error
   }
@@ -151,7 +178,9 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
 
   if (companiesChanged) {
     try {
-      await updateMeetingVoteStatuses(data as Meeting)
+      // Pass the source from the request context or default to 'system'
+      const source = req.context?.from || 'system'
+      await updateMeetingVoteStatuses(data as Meeting, source as string)
     } catch (error) {
       req.payload.logger.error(
         `Error updating vote statuses after companies change for meeting ${data.id}:`,
@@ -167,8 +196,13 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
 /**
  * Update the vote status indicators for a meeting based on current counts
  * This is a copy of the function from the votes collection to avoid circular dependencies
+ * @param meeting - The meeting object to update
+ * @param source - The source of the change (e.g., 'user', 'system', 'migration')
  */
-async function updateMeetingVoteStatuses(meeting: Meeting): Promise<void> {
+async function updateMeetingVoteStatuses(
+  meeting: Meeting,
+  source: string = 'system',
+): Promise<void> {
   // Get the latest companies count directly from the meeting object
   const companiesCount = Array.isArray(meeting.companies) ? meeting.companies.length : 0
 
@@ -184,7 +218,15 @@ async function updateMeetingVoteStatuses(meeting: Meeting): Promise<void> {
     companiesCount,
   )
 
-  // Update the meeting object with the calculated statuses
-  meeting.votesStatus = votesStatus
-  meeting.votesReportStatus = votesReportStatus
+  // Check if statuses have changed
+  if (meeting.votesStatus !== votesStatus || meeting.votesReportStatus !== votesReportStatus) {
+    // Update the meeting object with the calculated statuses
+    meeting.votesStatus = votesStatus
+    meeting.votesReportStatus = votesReportStatus
+
+    // Update changeDetails field with status change information
+    const changeDate = new Date().toISOString()
+    const changeDescription = `עדכון סטטוס הצבעות: ${votesStatus}, סטטוס הצבעות מדווחות: ${votesReportStatus}`
+    meeting.changeDetails = `${changeDate} - [${source}] ${changeDescription}`
+  }
 }

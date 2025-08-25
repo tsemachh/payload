@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 
-
 export const StockValues: CollectionConfig = {
   slug: 'stock-values',
   labels: {
@@ -18,9 +17,7 @@ export const StockValues: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'valueDate'},"createdAt"]
-    ],
+    filterList: [[{ name: 'valueDate' }, 'createdAt']],
   },
   fields: [
     {
@@ -62,7 +59,7 @@ export const StockValues: CollectionConfig = {
                 path: '/admincomponents/cell/FormattedNumber',
               },
             },
-          }
+          },
         },
         {
           name: 'marketValue',
@@ -77,15 +74,15 @@ export const StockValues: CollectionConfig = {
             },
           },
           hooks: {
-              beforeChange: [
-                async ({data}) => {
-                  if (data?.closingRate && data?.registeredValue) {
-                    return (data.closingRate * data.registeredValue) / 100
-                  }
-                  return null
-                },
-              ],
-            },
+            beforeChange: [
+              async ({ data }) => {
+                if (data?.closingRate && data?.registeredValue) {
+                  return (data.closingRate * data.registeredValue) / 100
+                }
+                return null
+              },
+            ],
+          },
         },
         {
           name: 'registeredValue',
@@ -97,7 +94,7 @@ export const StockValues: CollectionConfig = {
                 path: '/admincomponents/cell/FormattedNumber',
               },
             },
-          }
+          },
         },
       ],
     },
@@ -119,6 +116,7 @@ export const StockValues: CollectionConfig = {
           },
           where: {
             and: [
+              { stockValue: { not_equals: id } },
               { stock: { equals: stockId } },
               {
                 or: [

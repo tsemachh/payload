@@ -1,6 +1,10 @@
 import { PayloadRequest, Where } from 'payload'
 import type { Meeting } from '@/payload-types'
-import { getCompanyIdFromFundId, getCompanyIdToChildCompanies, getIdOfRelationField, initFundIdToCompanyIdMap } from '@/utils/utils'
+import {
+  getCompanyIdFromFundId,
+  getIdOfRelationField,
+  initFundIdToCompanyIdMap,
+} from '@/utils/utils'
 
 async function processMeeting(
   meeting: Meeting,
@@ -84,7 +88,7 @@ async function processMeeting(
         ? h.holdings[0].originalForeignData
         : [h.holdings[0].originalForeignData]
 
-      const fundId=String(getIdOfRelationField(h.fund))
+      const fundId = String(getIdOfRelationField(h.fund))
       return {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
@@ -130,6 +134,18 @@ async function processMeeting(
         return comp.parentCompany.docs[0]
       }
     })
+
+    // Prepare change details
+    const changeDate = new Date().toISOString()
+    const changeSource = req.context?.from || 'process'
+
+    // Create a detailed description of what was changed
+    const companiesCount = Array.from(new Set(compIds)).length
+    const fundsCount = newFunds.length
+    const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
+
+    const changeDetails = `${changeDate} - [${changeSource}] ${changeDescription}`
+
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -142,6 +158,7 @@ async function processMeeting(
         funds: [...newFunds],
         fundsWithHolding,
         stockValue,
+        changeDetails,
       },
     })
   }
