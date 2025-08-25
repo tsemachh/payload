@@ -9,7 +9,7 @@ import {
   UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
-import { findSubCompanyNameById } from '@/utils/utils'
+import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
 import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
 // Response is available globally from lib.dom.d.ts
 
