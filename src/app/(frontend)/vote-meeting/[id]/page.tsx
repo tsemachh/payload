@@ -1174,14 +1174,11 @@ export default function VotingForm() {
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
-            <DialogTitle className="text-xl text-amber-600 m-0">שינויים לא נשלחו</DialogTitle>
+            <DialogTitle className="text-xl text-amber-600 m-0">שינויים ישמרו כטיוטה</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-center">
-              לא שלחת את שינויים שלך והם לא ייראו למנהלי המערכת. האם אתה רוצה להשאיר את השינויים
-              כטיוטה או לחזור לדף הצבעה להשלים ולשלוח את ההצבעה
-            </p>
+            <p>טיוטה לא נשלחת למנהלי המערכת. אם ברצונך לשלוח את השינוים יש ללחוץ על שלח הצבעה</p>
           </div>
 
           <DialogFooter className="flex justify-center gap-3 mt-6">
