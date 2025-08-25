@@ -141,6 +141,10 @@ export default function Participations() {
       sortDirection: sortDirection,
     })
 
+    if (appliedFilters.selectedFundIds.length > 0) {
+      params.append('fundIds', appliedFilters.selectedFundIds.join(','))
+    }
+
     if (appliedFilters.startDate && appliedFilters.endDate) {
       params.append('startDate', appliedFilters.startDate.toISOString())
       params.append('endDate', appliedFilters.endDate.toISOString())
@@ -167,6 +171,7 @@ export default function Participations() {
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
+    appliedFilters.selectedFundIds,
     appliedFilters.startDate,
     appliedFilters.endDate,
     appliedFilters.voteAgainstRecommendation,
@@ -282,6 +287,19 @@ export default function Participations() {
       },
     ]
 
+    if (selectedCompaniesCount > 1) {
+      baseColumns.push({
+        key: 'companyName',
+        header: 'שם החברה',
+        type: 'string',
+        minWidth: 120,
+        isAlwaysVisible: true,
+        render: (row: any) => {
+          return row.currentCompany?.name || '-'
+        },
+      })
+    }
+
     baseColumns.push(
       { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
       {
@@ -289,8 +307,10 @@ export default function Participations() {
         header: 'שווי שוק (מ׳ ₪)',
         type: 'string',
         render: (row) => {
-          const value = parseNumber(row.marketValue)
-          return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(value)
+          const marketValue = parseNumber(row.marketValue)
+          return new Intl.NumberFormat('he-IL', {
+            maximumFractionDigits: 0,
+          }).format(marketValue / 1_000_000)
         },
         minWidth: 80,
       },
