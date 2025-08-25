@@ -304,7 +304,7 @@ export default function Participations() {
       { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
       {
         key: 'marketValue',
-        header: 'שווי שוק (מ׳ ₪)',
+        header: `שווי שוק (מ' ₪)`,
         type: 'string',
         render: (row) => {
           const marketValue = parseNumber(row.marketValue)
@@ -327,7 +327,7 @@ export default function Participations() {
       },
       {
         key: 'holdingValueInMillions',
-        header: 'שווי החזקה (מ׳ ₪)',
+        header: `שווי החזקה (מ' ₪)`,
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
@@ -519,6 +519,10 @@ export default function Participations() {
         exportFormat: format,
         reportName: reportName.trim(),
       })
+
+      if (appliedFilters.selectedFundIds.length > 0) {
+        params.append('fundIds', appliedFilters.selectedFundIds.join(','))
+      }
 
       if (appliedFilters.startDate && appliedFilters.endDate) {
         params.append('startDate', appliedFilters.startDate.toISOString())
