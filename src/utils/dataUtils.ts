@@ -44,3 +44,13 @@ export const calculateHoldingValues = (
     nominalValue: Math.round(quantity),
   }
 }
+
+
+export function findRelevantCompanyIds(
+  meetingCompanies: string[] | undefined,
+  funds: string[] | null | undefined,
+): string[] {
+  return (meetingCompanies || [])
+    .filter((companyID) => funds?.some((fund) => fund === companyID))
+    .filter((id) => id !== null) as string[]
+}
