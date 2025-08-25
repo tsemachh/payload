@@ -14,10 +14,12 @@ import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
 
   // Initialize with all companies and funds selected
   useEffect(() => {
@@ -108,8 +110,11 @@ export function MeetingsTableClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-row justify-start gap-4 mr-10 mb-4" style={{ position: 'absolute', left: '400px', top: '128px' }}>
-        <div className="w-[350px]">
+      <div
+        className="flex flex-row justify-start gap-4 mr-10 mb-4"
+        style={{ position: 'absolute', left: '400px', top: '128px' }}
+      >
+        <div className="w-[300px]">
           <div className="flex items-center gap-3">
             <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
             <Select>
@@ -131,6 +136,22 @@ export function MeetingsTableClient() {
             </Select>
           </div>
         </div>
+        <div className="flex items-center gap-3">
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(value) => value && setViewMode(value as 'companies' | 'agenda')}
+            variant="outline"
+            className="bg-background"
+          >
+            <ToggleGroupItem value="companies" className="text-sm font-medium px-4">
+              הצג חברות
+            </ToggleGroupItem>
+            <ToggleGroupItem value="agenda" className="text-sm font-medium px-4">
+              הצג סדר יום
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
 
       <DataTableStatic
@@ -148,6 +169,7 @@ export function MeetingsTableClient() {
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
         tableHeightOffset={200}
+        displayMode={viewMode as 'companies' | 'agenda'}
       />
     </div>
   )

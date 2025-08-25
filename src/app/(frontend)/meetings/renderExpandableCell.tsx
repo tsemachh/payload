@@ -10,7 +10,6 @@ export function renderCompaniesCell<T>(
   setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
 ) {
   if ((row as any).companies?.length === 0) return null
-
   return (
     <div className="flex items-center justify-start w-[20px] p-0 m-0">
       <Button
@@ -29,6 +28,38 @@ export function renderCompaniesCell<T>(
         )}
       </Button>
       <span className="mr-1">{(row as any).companies?.length || 0}</span>
+    </div>
+  )
+}
+export function renderAgendaCell<T>(
+  row: T,
+  agendasExpandedRows: Record<string, boolean>,
+  setAgendasExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+) {
+  const agendas = (row as any).agendas
+  if (!agendas || agendas.length === 0) return null
+
+  return (
+    <div className="flex items-center justify-start w-[20px] p-0 m-0">
+      <Button
+        variant="icon"
+        size="sm"
+        className="p-0 h-6 w-6"
+        onClick={(e) => {
+          e.stopPropagation()
+          setAgendasExpandedRows((prev) => ({
+            ...prev,
+            [(row as any).meetingId]: !prev[(row as any).meetingId],
+          }))
+        }}
+      >
+        {agendasExpandedRows[(row as any).meetingId] ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
+      </Button>
+      <span className="mr-1">{agendas?.length || 0}</span>
     </div>
   )
 }
