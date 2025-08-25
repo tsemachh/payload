@@ -1283,7 +1283,6 @@ export function DataTableStatic<T extends Record<string, any>>({
                           >
                             {/* Empty cell for companies column */}
                             <TableCell className="py-2 px-3"></TableCell>
-
                             {/* Map through visible columns and show agenda text in first column */}
                             {visibleColumns.slice(1).map((column, columnIndex) => (
                               <TableCell
@@ -1292,37 +1291,60 @@ export function DataTableStatic<T extends Record<string, any>>({
                                 style={{ textAlign: 'right' }}
                               >
                                 {columnIndex === 0 && (
-                                  <div className="relative h-6">
+                                  <div className="relative ">
                                     {(() => {
                                       const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
                                       const direction = isEnglish ? 'ltr' : 'rtl'
                                       const alignment = isEnglish ? 'text-left' : 'text-right'
-
                                       return (
-                                        <span
-                                          className="absolute right-0 top-1/2 -translate-y-1/2 truncate flex items-center gap-1 cursor-help group"
-                                          style={{ maxWidth: '1700px' }}
+                                        <div
+                                          className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 cursor-help group"
+                                          style={{ maxWidth: '1500px' }}
                                         >
+                                          {/* Index always on the right */}
                                           <span className="shrink-0 font-bold order-1">
                                             {index + 1}.
                                           </span>
-
-                                          <span
+                                          {/* Text content with proper direction and tooltip */}
+                                          <div
                                             dir={direction}
-                                            className={cn('font-bold relative order-2', alignment)}
+                                            className={cn('font-bold relative order-2 ', alignment)}
+                                            style={{ maxWidth: '1500px' }} // Account for index width
                                           >
-                                            {agenda.text}
+                                            <span
+                                              className={cn(
+                                                'block',
+                                                isEnglish
+                                                  ? 'truncate' // Normal left-to-right truncation for English
+                                                  : 'text-ellipsis overflow-hidden whitespace-nowrap', // Right-to-left truncation for Hebrew
+                                              )}
+                                              style={
+                                                !isEnglish
+                                                  ? {
+                                                      direction: 'rtl',
+                                                      textOverflow: 'ellipsis',
+                                                      unicodeBidi: 'plaintext',
+                                                    }
+                                                  : {}
+                                              }
+                                            >
+                                              {agenda.text}
+                                            </span>
 
-                                            {agenda.text && agenda.text.length > 50 && (
+                                            {/* Tooltip - show if text exists and might be truncated */}
+                                            {agenda.text && agenda.text.length > 30 && (
                                               <div
-                                                className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
                                                 style={{
                                                   [isEnglish ? 'left' : 'right']: 0,
                                                   maxWidth: '400px',
                                                   wordWrap: 'break-word',
+                                                  direction: direction,
+                                                  textAlign: isEnglish ? 'left' : 'right',
                                                 }}
                                               >
                                                 {agenda.text}
+                                                {/* Tooltip arrow */}
                                                 <div
                                                   className={cn(
                                                     'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900',
@@ -1331,15 +1353,14 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 />
                                               </div>
                                             )}
-                                          </span>
-                                        </span>
+                                          </div>
+                                        </div>
                                       )
                                     })()}
                                   </div>
                                 )}
                               </TableCell>
                             ))}
-
                             {renderRowActions && (
                               <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
                                 {renderRowActions(row)}

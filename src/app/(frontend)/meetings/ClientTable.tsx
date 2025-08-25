@@ -14,7 +14,6 @@ import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -100,7 +99,7 @@ export function MeetingsTableClient() {
       selectedCompanyIds.every((id) => allIds.includes(id))
 
     if (allSelected) {
-      return 'נבחרו הכל'
+      return 'נבחרו כל החברות'
     }
 
     return `נבחרו ${selectedCompanyIds.length} חברות`
@@ -114,9 +113,8 @@ export function MeetingsTableClient() {
       >
         <div className="w-[300px]">
           <div className="flex items-center gap-3">
-            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
             <Select>
-              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right">
+              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-9">
                 <SelectValue placeholder={getCompanySelectSummary()} />
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
@@ -132,20 +130,41 @@ export function MeetingsTableClient() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <ToggleGroup
-            type="single"
-            value={viewMode}
-            onValueChange={(value) => value && setViewMode(value as 'companies' | 'agenda')}
-            variant="outline"
-            className="bg-background"
-          >
-            <ToggleGroupItem value="companies" className="text-sm font-medium px-4">
-              הצג חברות
-            </ToggleGroupItem>
-            <ToggleGroupItem value="agenda" className="text-sm font-medium px-4">
-              הצג סדר יום
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <label className="inline-flex items-center cursor-pointer gap-3">
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'companies' ? 'font-semibold' : 'text-gray-500'
+              }`}
+              style={{
+                color: viewMode === 'companies' ? 'rgb(71,122,133)' : undefined,
+              }}
+            >
+              חברות
+            </span>
+            <input
+              type="checkbox"
+              checked={viewMode === 'agenda'}
+              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
+              className="sr-only peer"
+            />
+            <div
+              className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
+              style={{
+                backgroundColor: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
+                boxShadow: viewMode === 'agenda' ? '0 0 0 4px rgba(71,122,133,0.3)' : undefined,
+              }}
+            ></div>
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'agenda' ? 'font-semibold' : 'text-gray-500'
+              }`}
+              style={{
+                color: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
+              }}
+            >
+              סדר יום
+            </span>
+          </label>
         </div>
       </div>
 
