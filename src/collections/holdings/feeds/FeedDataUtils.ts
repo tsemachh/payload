@@ -1,7 +1,6 @@
-import { PayloadRequest } from 'payload'
+import { BasePayload, PayloadRequest } from 'payload'
 import { Company, HoldingFeedLine, HoldingsFeed, HoldingsPerDay, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
-import { getStockByStockId } from '@/utils/utils'
 
 export type AggregatedRecord = {
   company: string
@@ -198,6 +197,44 @@ export const preloadStocks = async (
  * @param stockMap
  * @param valueDate The value date
  */
+/**
+ * Preload stock data for a set of stock IDs
+ * @param payload The payload instance
+ * @param stockIds Set of stock IDs to preload
+ * @returns Map of stock IDs to stock data
+ */
+export const preloadStockData = async (
+  payload: BasePayload,
+  stockIds: Set<string>,
+): Promise<Map<string, any>> => {
+  const stockDataMap = new Map<string, any>()
+
+  try {
+    // Convert Set to Array for the query
+    const stockIdsArray = Array.from(stockIds)
+
+    // Make a single query to get all stock data
+    const stocks = await payload.find({
+      collection: 'stocks',
+      select: { origin: true, stockId: true },
+      where: {
+        stockId: { in: stockIdsArray },
+      },
+      depth: 0,
+      limit: 0,
+    })
+
+    // Create a map of stock IDs to stock data
+    stocks.docs.forEach((stock) => {
+      stockDataMap.set(stock.stockId as string, stock)
+    })
+  } catch (error) {
+    console.error('Error preloading stock data:', error)
+  }
+
+  return stockDataMap
+}
+
 export const createHoldings = async (
   req: PayloadRequest,
   processedRecords: HoldingFeedLine[],
@@ -205,7 +242,19 @@ export const createHoldings = async (
   stockMap: Map<string, string>,
   valueDate: string,
 ): Promise<void> => {
+  console.log(`Processing ${processedRecords.length} records`)
   const aggregatedRecords = new Map<string, AggregatedRecord>()
+
+  // Collect all unique stock IDs
+  const stockIds = new Set<string>()
+  for (const record of processedRecords) {
+    if (record.status === 'success' && record.stockId) {
+      stockIds.add(record.stockId as string)
+    }
+  }
+
+  // Preload all stock data at once
+  const stockDataMap = await preloadStockData(req.payload, stockIds)
 
   for (const record of processedRecords) {
     if (record.status === 'success') {
@@ -215,7 +264,10 @@ export const createHoldings = async (
       const key = `${company}-${stock}-${record.stockId}`
 
       const existingRecord = aggregatedRecords.get(key)
-      const stockData = await getStockByStockId(req.payload, record.stockId)
+
+      // Use preloaded stock data instead of individual queries
+      const stockData = stockDataMap.get(record.stockId as string)
+
       if (existingRecord) {
         if (stockData?.origin === 'Foreign') {
           existingRecord.originalForeignData = existingRecord.originalForeignData || []
@@ -292,4 +344,8 @@ export const createHoldings = async (
         return null
       })
   }
+
+  console.log(
+    `Finished processing ${processedRecords.length} records, created holdings for ${companyRecordsMap.size} companies`,
+  )
 }

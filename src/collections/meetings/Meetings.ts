@@ -142,7 +142,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
-    maxPerDoc: 10,
+    maxPerDoc: 20,
   },
   fields: [
     {
@@ -944,8 +944,15 @@ export const Meetings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc, previousDoc, operation }) => {
+        // Track changes for changeDetails field
+        const changeDate = new Date().toISOString()
+        const changeSource = req.context?.from || 'user'
+
         // Handle dual stock creation
-        if (operation === 'create' && req.context?.from !== 'process') {
+        if (
+          operation === 'create' &&
+          !['process', 'migration'].includes(req.context?.from as string)
+        ) {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
@@ -975,6 +982,7 @@ export const Meetings: CollectionConfig = {
                 id: doc.id,
                 data: {
                   dualMeeting: createdDualMeeting.id,
+                  changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
               })
