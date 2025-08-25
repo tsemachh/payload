@@ -18,13 +18,14 @@ import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
 
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0 || funds.length > 0) {
       const companyIds = companies.map((company) => company.id)
       const fundIds = funds.map((fund) => fund.id)
-      setSelectedCompanyIds([...companyIds, ...fundIds])
+      setSelectedCompanyIds([...fundIds])
     }
   }, [companies, funds])
 
@@ -91,16 +92,14 @@ export function MeetingsTableClient() {
       return 'בחר חברות'
     }
 
-    const totalCompanyIds = companies.map((company) => company.id)
     const totalFundIds = funds.map((fund) => fund.id)
-    const allIds = [...totalCompanyIds, ...totalFundIds]
-
+    const allIds = [...totalFundIds]
     const allSelected =
       selectedCompanyIds.length === allIds.length &&
       selectedCompanyIds.every((id) => allIds.includes(id))
 
     if (allSelected) {
-      return 'נבחרו הכל'
+      return 'נבחרו כל החברות'
     }
 
     return `נבחרו ${selectedCompanyIds.length} חברות`
@@ -108,28 +107,64 @@ export function MeetingsTableClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-row justify-start gap-4 mr-10 mb-4" style={{ position: 'absolute', left: '400px', top: '128px' }}>
-        <div className="w-[350px]">
-          <div className="flex items-center gap-3">
-            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
+      <div
+        className="flex flex-row justify-start gap-4 mr-10 mb-4"
+        style={{ position: 'absolute', left: '400px', top: '128px' }}
+      >
+        <div className="w-[300px]">
+          <div className="flex items-center gap-3 mr-[50px]">
             <Select>
-              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right">
+              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-9">
                 <SelectValue placeholder={getCompanySelectSummary()} />
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
                   selectedCompanies={selectedCompanyIds}
+                  showSearch={false}
                   onSelectionChangeAction={handleCompanySelectionChange}
                   className="w-full"
-                  showSearch={true}
-                  allCompaniesIds={[
-                    ...companies.map((company) => company.id),
-                    ...funds.map((fund) => fund.id),
-                  ]}
+                  allCompaniesIds={[...funds.map((fund) => fund.id)]}
                 />
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center cursor-pointer gap-3">
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'companies' ? 'font-semibold' : 'text-gray-500'
+              }`}
+              style={{
+                color: viewMode === 'companies' ? 'rgb(71,122,133)' : undefined,
+              }}
+            >
+              חברות
+            </span>
+            <input
+              type="checkbox"
+              checked={viewMode === 'agenda'}
+              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
+              className="sr-only peer"
+            />
+            <div
+              className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
+              style={{
+                backgroundColor: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
+                boxShadow: viewMode === 'agenda' ? '0 0 0 4px rgba(71,122,133,0.3)' : undefined,
+              }}
+            ></div>
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'agenda' ? 'font-semibold' : 'text-gray-500'
+              }`}
+              style={{
+                color: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
+              }}
+            >
+              סדר יום
+            </span>
+          </label>
         </div>
       </div>
 
@@ -148,6 +183,7 @@ export function MeetingsTableClient() {
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
         tableHeightOffset={200}
+        displayMode={viewMode as 'companies' | 'agenda'}
       />
     </div>
   )

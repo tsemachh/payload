@@ -33,7 +33,14 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     sortKey: 'companies',
     minWidth: 50,
     width: 50,
-    isAlwaysVisible: true,
+  },
+  {
+    key: 'agenda',
+    header: 'סדר יום',
+    type: 'string',
+    sortKey: 'agendas',
+    minWidth: 50,
+    width: 50,
   },
   {
     key: 'stockNumber',
