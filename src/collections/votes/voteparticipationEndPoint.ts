@@ -40,12 +40,12 @@ async function processVotesData(
     const meetingId = typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id
     const meeting = fullMeetingsMap[meetingId]
 
-    const stockId = typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id
-    const stock: Stock = stockMap[stockId]
     if (!meeting) {
       console.warn('Missing full meeting for vote:', vote.id)
-      continue 
+      continue
     }
+    const stockId = typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id
+    const stock: Stock = stockMap[stockId]
 
     const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
     const company = companiesMap[companyId]
@@ -87,12 +87,15 @@ async function processVotesData(
       stockName: stock.name || '',
       marketValue: meeting.stockMarketValue || 0,
       stockType: stock.origin ?? '',
-      percentageHolding: fundsArray.reduce((sum, fund) => {
-        return sum + ((fund?.percentageHolding ?? 0) as number)
-      }, 0),
-      holdingValueInMillions: fundsArray.reduce((sum, fund) => {
-        return sum + ((fund?.holdingValueInMillions ?? 0) as number)
-      }, 0),
+
+      percentageHolding: fundsArray.reduce(
+        (sum, fund) => sum + ((fund?.percentageHolding ?? 0) as number),
+        0,
+      ),
+      holdingValueInMillions: fundsArray.reduce(
+        (sum, fund) => sum + ((fund?.holdingValueInMillions ?? 0) as number),
+        0,
+      ),
       meetingDate: meeting.meetingDate || '',
       meetingType: meeting.type || '',
       currentCompany: {
@@ -336,7 +339,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       return Response.json({ error: 'Company IDs are required' }, { status: 400 })
     }
 
-    const fundsIds = (fundIdsParams as string).split(',') || []
+    const fundsIds = fundIdsParams ? (fundIdsParams as string).split(',') : []
     const page = parseInt((pageParam as string) || '1')
     const pageSize = parseInt((pageSizeParam as string) || '50')
     const sortField = (sortFieldParam as string) || 'meetingDate'
@@ -428,7 +431,4 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
   } catch (error: any) {
     return createErrorResponse(error, 'Failed to fetch votes')
   }
-}
-function getSafeFunds(funds: any) {
-  throw new Error('Function not implemented.')
 }
