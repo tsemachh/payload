@@ -78,7 +78,7 @@ export const Votes: CollectionConfig = {
       'title',
       'meeting',
       'reported',
-      'reportedBy',
+      'publisher',
       'isInterested',
       'isSeniorOfficial',
       'isInstitutionalInvestor',
@@ -244,42 +244,8 @@ export const Votes: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                 },
-                {
-                  name: 'reportedBy',
-                  label: 'דווח על ידי',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'reportedTime',
-                  label: 'תאריך דיווח',
-                  type: 'date',
-                  admin: {
-                    hidden: true,
-                  },
-                },
               ],
             },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'fundsWithHoldingsUpdates',
-                  label: 'עדכוני החזקות תיקים',
-                  type: 'json',
-                  //hidden: true,
-                  defaultValue: {},
-                  admin: {
-                    components: {
-                      Field: '/collections/votes/components/HoldingsInFunds',
-                    },
-                  },
-                },
-              ],
-            },
-
             {
               name: 'votes',
               label: 'סעיפי הצבעה',
