@@ -14,6 +14,7 @@ import {
   SHARED_COLUMNS,
 } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
+import { formatNumberWithLocale } from './utils'
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]
@@ -260,29 +261,12 @@ function drawCompanyInfo(
   const formattedDate = meetingData.meetingDate
     ? formatNormalDate(new Date(meetingData.meetingDate))
     : ''
-
-  const marketValue = parseNumber(meetingData.marketValue) || 0
-  const formattedMarketValue = new Intl.NumberFormat('he-IL', {
-    maximumFractionDigits: 0,
-  })
-    .format(marketValue / 1_000_000)
-    .toString()
-
-  const holdingValueInMillions = parseNumber(meetingData.holdingValueInMillions) || 0
-  const formattedHoldingValueInMillions = new Intl.NumberFormat('he-IL', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-    .format(holdingValueInMillions)
-    .toString()
-
-  const percentageHolding = parseNumber(meetingData.percentageHolding) || 0
-  const formattedPercentageHolding = new Intl.NumberFormat('he-IL', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
-  })
-    .format(percentageHolding)
-    .toString()
+  const formattedMarketValue = formatNumberWithLocale(parseNumber(meetingData.marketValue) / 1_000_000, 0)
+  const formattedPercentageHolding = formatNumberWithLocale(meetingData.percentageHolding, 4)
+  const formattedHoldingValueInMillions = formatNumberWithLocale(
+    meetingData.holdingValueInMillions,
+    2,
+  )
 
   const companyValues = [
     meetingData.stockNumber || '',

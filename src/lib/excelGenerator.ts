@@ -11,6 +11,7 @@ import {
   SHARED_COLUMNS,
 } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
+import { formatNumberWithLocale } from './utils'
 
 export async function generateParticipationsExcel(
   data: any[],
@@ -112,29 +113,15 @@ export async function generateParticipationsExcel(
 
     // Add data rows
     groupedData.forEach((meeting) => {
-      const marketValue = parseNumber(meeting.marketValue)
-      const formattedMarketValue = new Intl.NumberFormat('he-IL', {
-        maximumFractionDigits: 0,
-      })
-        .format(marketValue / 1_000_000)
-        .toString()
-
-      const holdingValueInMillions = parseNumber(meeting.holdingValueInMillions) || 0
-      const formattedHoldingValueInMillions = new Intl.NumberFormat('he-IL', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-        .format(holdingValueInMillions)
-        .toString()
-
-      const percentageHolding = parseNumber(meeting.percentageHolding) || 0
-      const formattedPercentageHolding = new Intl.NumberFormat('he-IL', {
-        minimumFractionDigits: 4,
-        maximumFractionDigits: 4,
-      })
-        .format(percentageHolding)
-        .toString()
-
+      const formattedMarketValue = formatNumberWithLocale(
+        parseNumber(meeting.marketValue) / 1_000_000,
+        0,
+      )
+      const formattedPercentageHolding = formatNumberWithLocale(meeting.percentageHolding, 4)
+      const formattedHoldingValueInMillions = formatNumberWithLocale(
+        meeting.holdingValueInMillions,
+        2,
+      )
       const meetingData = [
         meeting.stockNumber,
         meeting.stockName,
