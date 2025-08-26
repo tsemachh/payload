@@ -9,7 +9,7 @@ export const StockValues: CollectionConfig = {
   admin: {
     hidden: false,
     group: 'פיתוח',
-    useAsTitle: 'stockId',
+    useAsTitle: 'stockName',
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
     pagination: {
       defaultLimit: 100,
@@ -30,6 +30,15 @@ export const StockValues: CollectionConfig = {
           relationTo: 'stocks',
           required: true,
           index: true,
+        },
+        {
+          name: 'stockName',
+          label: 'שם המניה',
+          type: 'text',
+          virtual: 'stockId.fullName',
+          admin: {
+            hidden: true,
+          },
         },
         {
           name: 'valueDate',

@@ -183,12 +183,17 @@ export default buildConfig({
           {
             cron: '00 19 * * *', // every day at 19:00
             limit: 10, // limit jobs to process each run
-            queue: 'daily', // name of the queue
+            queue: 'daily07pm', // name of the queue
           },
           {
             cron: '00 22 * * *', // every day at 22:00
             limit: 10, // limit jobs to process each run
             queue: 'daily10pm', // name of the queue
+          },
+          {
+            cron: '00 08 * * *', // every day at 08:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily08am', // name of the queue
           },
           {
             cron: '*/30 * * * *', // every 30 minutes
