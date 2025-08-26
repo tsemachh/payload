@@ -8,7 +8,7 @@ export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
     plural: 'החזקות יומיות',
-    singular: 'אחזקה יומית',
+    singular: 'החזקה יומית',
   },
   enableQueryPresets: true,
   admin: {
@@ -107,7 +107,7 @@ export const Holdings: CollectionConfig = {
             },
             {
               name: 'originalForeignData',
-              label: 'אחזקה מקורית מניית חול',
+              label: 'החזקה מקורית מניית חול',
               type: 'array',
               admin: {
                 initCollapsed: true,

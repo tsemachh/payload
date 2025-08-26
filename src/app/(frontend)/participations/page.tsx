@@ -316,7 +316,7 @@ export default function Participations() {
       },
       {
         key: 'percentageHolding',
-        header: 'אחזקה (%)',
+        header: 'החזקה (%)',
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {
@@ -327,7 +327,7 @@ export default function Participations() {
       },
       {
         key: 'holdingValueInMillions',
-        header: `שווי אחזקה (מ' ₪)`,
+        header: `שווי החזקה (מ' ₪)`,
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {

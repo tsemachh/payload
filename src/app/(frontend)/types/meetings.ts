@@ -19,7 +19,7 @@ export type MeetingTableDataType = {
   marketValue: number //שווי שוק
   nominalValue: number // ערך נקוב ליום קובע
   percentageHolding: number //אחוז החזקות
-  holdingValueInMillions: number //שווי אחזקה במיליונים
+  holdingValueInMillions: number //שווי החזקה במיליונים
   meetingType: string //סוג האסיפה
   meetingDate: string //מועד האסיפה
   reference: string
