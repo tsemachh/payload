@@ -151,7 +151,7 @@ export function MeetingsTableClient() {
         </div>
 
         {/* COMPANY SELECTOR */}
-        <div className="w-[300px] mr-[-55] ml-[-25] ">
+        <div className=" flex w-[300px] -mr-14 -ml-6 ">
           <div className="flex items-center gap-3 mr-[50px]">
             <Select>
               <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-8 mt-[3px]">
