@@ -10,6 +10,7 @@ import {
   resultMapping,
   SHARED_COLUMNS,
 } from './exportTypes'
+import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 
 export async function generateParticipationsExcel(
   data: any[],
@@ -24,12 +25,12 @@ export async function generateParticipationsExcel(
     const groupedData = groupDataByMeeting(data)
 
     // Define column headers in Hebrew (without 'מס״ד')
-    const baseHeaders = [
+    const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.STOCK_NAME,
-      'שווי שוק (מ׳ ₪)',
-      'החזקה (%)',
-      'שווי החזקה (מ׳ ₪)',
+      SHARED_COLUMNS.MARKET_VALUE,
+      SHARED_COLUMNS.PERCENTAGE_HOLDING,
+      SHARED_COLUMNS.HOLDING_VALUE,
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
@@ -42,7 +43,7 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.VOTE,
       SHARED_COLUMNS.MEETING_RESULTS,
       SHARED_COLUMNS.REGULAR_MAJORITY,
-      'רוב מיוחד (%)',
+      SHARED_COLUMNS.SPECIAL_MAJORITY,
       SHARED_COLUMNS.POLICY_COMPLIANCE,
       SHARED_COLUMNS.CONFLICT_OF_INTEREST,
       SHARED_COLUMNS.RELATED_PARTY,
@@ -73,18 +74,18 @@ export async function generateParticipationsExcel(
 
     // Add title rows
     const titleRow = worksheet.addRow(['דו"ח השתתפות באסיפות'])
-    titleRow.font = { bold: true, size: 16 }
+    titleRow.font = { bold: true, size: 16, name: 'Arial' }
     titleRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(1, 1, 1, headers.length)
 
     const reportNameRow = worksheet.addRow([options.reportName])
-    reportNameRow.font = { bold: true, size: 14 }
+    reportNameRow.font = { bold: true, size: 14, name: 'Arial' }
     reportNameRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(2, 1, 2, headers.length)
 
     const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
     const dateRow = worksheet.addRow([dateRangeText])
-    dateRow.font = { bold: true, size: 14 }
+    dateRow.font = { bold: true, size: 14, name: 'Arial' }
     dateRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(3, 1, 3, headers.length)
 
@@ -96,7 +97,7 @@ export async function generateParticipationsExcel(
 
     // Add headers
     const headerRow = worksheet.addRow(headers)
-    headerRow.font = { bold: true, color: { argb: 'FF000000' } }
+    headerRow.font = { bold: true, color: { argb: 'FF000000' }, name: 'Arial' }
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
@@ -111,12 +112,35 @@ export async function generateParticipationsExcel(
 
     // Add data rows
     groupedData.forEach((meeting) => {
+      const marketValue = parseNumber(meeting.marketValue)
+      const formattedMarketValue = new Intl.NumberFormat('he-IL', {
+        maximumFractionDigits: 0,
+      })
+        .format(marketValue / 1_000_000)
+        .toString()
+
+      const holdingValueInMillions = parseNumber(meeting.holdingValueInMillions) || 0
+      const formattedHoldingValueInMillions = new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+        .format(holdingValueInMillions)
+        .toString()
+
+      const percentageHolding = parseNumber(meeting.percentageHolding) || 0
+      const formattedPercentageHolding = new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      })
+        .format(percentageHolding)
+        .toString()
+
       const meetingData = [
         meeting.stockNumber,
         meeting.stockName,
-        meeting.marketValue,
-        meeting.percentageHolding,
-        meeting.holdingValueInMillions,
+        formattedMarketValue,
+        formattedPercentageHolding,
+        formattedHoldingValueInMillions,
         meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
         meeting.meetingType,
       ]
@@ -127,8 +151,15 @@ export async function generateParticipationsExcel(
       if (meeting.agendas.length === 0) {
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
         const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
-        excelRow.alignment = { horizontal: 'right', vertical: 'middle' }
-        excelRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD2E4FF' } }
+        excelRow.eachCell((cell) => {
+          cell.font = { name: 'Arial', size: 10 }
+          cell.alignment = { horizontal: 'right', vertical: 'middle' }
+        })
+        excelRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFD2E4FF' },
+        }
       } else {
         meeting.agendas.forEach((agenda, index) => {
           const isFirstAgenda = index === 0
@@ -140,7 +171,7 @@ export async function generateParticipationsExcel(
               ? resultMapping[agenda.result] || agenda.result
               : agenda.meetingResults || '',
             booleanToText(!agenda.privilegedMajority),
-            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '',
+            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '',
             booleanToText(agenda.policyCompliance),
             booleanToText(agenda.conflictOfInterest),
             booleanToText(agenda.relatedParty),
@@ -186,7 +217,6 @@ export async function generateParticipationsExcel(
         newWidth *= 1.2
         column.width = Math.min(newWidth, 70)
       } else {
-        // FIX 2: Reduce the width of other columns by 25%.
         newWidth *= 0.75
         column.width = Math.min(newWidth, 50)
       }

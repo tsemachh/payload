@@ -316,23 +316,24 @@ export default function Participations() {
       },
       {
         key: 'percentageHolding',
-        header: 'החזקה (%)',
+        header: 'אחזקה (%)',
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4,
           }).format(row.percentageHolding),
         minWidth: 80,
       },
       {
         key: 'holdingValueInMillions',
-        header: `שווי החזקה (מ' ₪)`,
+        header: `שווי אחזקה (מ' ₪)`,
         type: 'number',
         render: (row) =>
-          new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-            row.holdingValueInMillions,
-          ),
+          new Intl.NumberFormat('he-IL', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(row.holdingValueInMillions),
         minWidth: 80,
       },
       {

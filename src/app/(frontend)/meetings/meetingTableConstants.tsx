@@ -132,7 +132,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'percentageHolding',
-    header: 'החזקה (%)',
+    header: 'אחזקה (%)',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', {
@@ -143,7 +143,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'holdingValueInMillions',
-    header: 'שווי החזקה  (מיליוני ₪)',
+    header: 'שווי אחזקה  (מיליוני ₪)',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(

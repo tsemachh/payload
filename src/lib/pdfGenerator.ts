@@ -13,6 +13,7 @@ import {
   resultMapping,
   SHARED_COLUMNS,
 } from './exportTypes'
+import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]
@@ -41,8 +42,8 @@ async function initializePDFDocument(): Promise<{
   logger.warn(`Current working directory: ${cwd}`)
 
   // Use public directory for fonts and logo (no fallbacks)
-  const regularFontPath = path.join('public', 'fonts', 'regular-webfont.ttf')
-  const boldFontPath = path.join('public', 'fonts', 'bold-webfont.ttf')
+  const regularFontPath = path.join('public', 'fonts', 'ariel.ttf')
+  const boldFontPath = path.join('public', 'fonts', 'ariel-bold.ttf')
   const logoPath = path.join('public', 'emda_logo.png')
 
   logger.warn(`Regular font path: ${regularFontPath}, exists: ${fs.existsSync(regularFontPath)}`)
@@ -180,7 +181,7 @@ async function addDocumentHeader(
     y: dateRangeY,
     size: fontSize - 1,
     font: fonts.bold,
-    color: rgb(0.3, 0.3, 0.3),
+    color: rgb(0, 0, 0),
   })
 
   // Add table header
@@ -248,7 +249,6 @@ function drawCompanyInfo(
 
   const subjectColumnWidth = columnWidths[1]
 
-  // Draw background for the entire row width
   page.drawRectangle({
     x: MARGIN,
     y: startY - companyRowHeight,
@@ -261,26 +261,47 @@ function drawCompanyInfo(
     ? formatNormalDate(new Date(meetingData.meetingDate))
     : ''
 
+  const marketValue = parseNumber(meetingData.marketValue) || 0
+  const formattedMarketValue = new Intl.NumberFormat('he-IL', {
+    maximumFractionDigits: 0,
+  })
+    .format(marketValue / 1_000_000)
+    .toString()
+
+  const holdingValueInMillions = parseNumber(meetingData.holdingValueInMillions) || 0
+  const formattedHoldingValueInMillions = new Intl.NumberFormat('he-IL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+    .format(holdingValueInMillions)
+    .toString()
+
+  const percentageHolding = parseNumber(meetingData.percentageHolding) || 0
+  const formattedPercentageHolding = new Intl.NumberFormat('he-IL', {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  })
+    .format(percentageHolding)
+    .toString()
+
   const companyValues = [
-    meetingData.stockName || '',
     meetingData.stockNumber || '',
-    meetingData.meetingType || '',
+    meetingData.stockName || '',
+    formattedMarketValue,
+    formattedPercentageHolding,
+    formattedHoldingValueInMillions,
     formattedDate,
-    meetingData.holdingValueInMillions?.toString() || '',
-    `${meetingData.percentageHolding || 0}%`,
-    meetingData.marketValue || '',
+    meetingData.meetingType || '',
   ]
 
-  // Calculate width for each value (same as sub-headers)
-  const availableWidth = subjectColumnWidth - PADDING * 2
-  const valueWidth = availableWidth / companyValues.length
+  const availableWidth = subjectColumnWidth - PADDING * 2 // 375 - 10 = 365
+  const valueWidth = availableWidth / companyValues.length // 365 / 7 ≈ 52.14
 
-  let currentX = PAGE_WIDTH - MARGIN - PADDING
+  let currentX = PAGE_WIDTH - MARGIN - columnWidths[0]
   const textY = startY - companyRowHeight / 2 - FONT_SIZE_DATA / 2
 
   companyValues.forEach((value) => {
     const fixedValue = fixBiDiText(value)
-    //    console.log(JSON.stringify(fonts))
     const textWidth = fonts.regular.widthOfTextAtSize(fixedValue, FONT_SIZE_DATA)
     const textX = currentX - valueWidth + (valueWidth - textWidth) / 2
 
@@ -326,13 +347,10 @@ function drawAgendaTableHeader(
     const colWidth = columnWidths[i]
 
     if (i === 1) {
-      // Subject column - add sub-headers
-      // Calculate center position for the entire header block
       const totalHeaderHeight = heights.agendaHeaderHeight
-      const headerBlockHeight = FONT_SIZE_HEADER + LINE_HEIGHT_HEADER + (FONT_SIZE_HEADER - 1) + 4 // main + spacing + sub
+      const headerBlockHeight = FONT_SIZE_HEADER + LINE_HEIGHT_HEADER + (FONT_SIZE_HEADER - 1) + 4
       const centerOffset = (totalHeaderHeight - headerBlockHeight) / 2
 
-      // Draw main "נושא" header
       const mainHeaderY = startY - centerOffset - FONT_SIZE_HEADER + 10
       const mainHeaderText = fixBiDiText('נושא')
       const mainHeaderWidth = fonts.bold.widthOfTextAtSize(mainHeaderText, FONT_SIZE_HEADER)
@@ -346,12 +364,10 @@ function drawAgendaTableHeader(
         color: headerTextColor,
       })
 
-      // Draw sub-headers below
       const companySubHeaders = COMPANY_SUB_HEADERS
-
-      const availableWidth = colWidth - PADDING * 2
-      const subHeaderWidth = availableWidth / companySubHeaders.length
-      let subCurrentX = currentX - PADDING
+      const availableWidth = colWidth - PADDING * 2 // 375 - 10 = 365
+      const subHeaderWidth = availableWidth / companySubHeaders.length // 365 / 7 ≈ 52.14
+      let subCurrentX = currentX
       const subHeaderY = mainHeaderY - LINE_HEIGHT_HEADER - 4
 
       companySubHeaders.forEach((subHeader) => {
@@ -370,7 +386,6 @@ function drawAgendaTableHeader(
         subCurrentX -= subHeaderWidth
       })
     } else {
-      // Other columns - regular headers
       const blockHeight = lines.length * LINE_HEIGHT_HEADER
       let lineY = startY - (heights.agendaHeaderHeight - blockHeight) / 2 - FONT_SIZE_HEADER + 15
 
@@ -423,7 +438,7 @@ function drawAgendaRow(
     agenda.vote || '', // הצבעה
     agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
     booleanToIcon(!agenda.privilegedMajority), // רוב רגיל
-    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}%` : '', // רוב מיוחד
+    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // רוב מיוחד
     booleanToIcon(agenda.policyCompliance), // בהתאם למדיניות דירקטוריון ו/או וועדת השקעות
     booleanToIcon(agenda.conflictOfInterest), // ניגוד עניינים
     booleanToIcon(agenda.relatedParty), // צד קשר

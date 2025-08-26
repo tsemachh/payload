@@ -51,9 +51,9 @@ export const resultMapping: { [key: string]: string } = {
 export const SHARED_COLUMNS = {
   STOCK_NUMBER: 'מספר נייר',
   STOCK_NAME: 'שם נייר',
-  MARKET_VALUE: 'שווי שוק (מיליוני)',
-  PERCENTAGE_HOLDING: 'החזקה באחוזים',
-  HOLDING_VALUE: 'שווי החזקה (מיליוני)',
+  MARKET_VALUE: `שווי שוק (מ' ₪)`,
+  PERCENTAGE_HOLDING: 'אחזקה (%)',
+  HOLDING_VALUE: ` שווי אחזקה (מ' ₪)`,
   MEETING_DATE: 'מועד האסיפה',
   MEETING_TYPE: 'סוג האסיפה',
   COMPANY_NAME: 'שם החברה',
@@ -62,7 +62,7 @@ export const SHARED_COLUMNS = {
   VOTE: 'הצבעה',
   MEETING_RESULTS: 'תוצאות האסיפה',
   REGULAR_MAJORITY: 'רוב רגיל',
-  SPECIAL_MAJORITY: 'רוב מיוחד',
+  SPECIAL_MAJORITY: 'רוב מיוחד )%(',
   POLICY_COMPLIANCE: 'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
   CONFLICT_OF_INTEREST: 'ניגוד עניינים',
   RELATED_PARTY: 'צד קשר',
@@ -71,13 +71,13 @@ export const SHARED_COLUMNS = {
 
 // Company sub-headers for detailed view
 export const COMPANY_SUB_HEADERS = [
-  SHARED_COLUMNS.STOCK_NAME,
   SHARED_COLUMNS.STOCK_NUMBER,
-  SHARED_COLUMNS.MEETING_TYPE,
-  SHARED_COLUMNS.MEETING_DATE,
-  SHARED_COLUMNS.HOLDING_VALUE,
-  SHARED_COLUMNS.PERCENTAGE_HOLDING,
+  SHARED_COLUMNS.STOCK_NAME,
   SHARED_COLUMNS.MARKET_VALUE,
+  SHARED_COLUMNS.PERCENTAGE_HOLDING,
+  SHARED_COLUMNS.HOLDING_VALUE,
+  SHARED_COLUMNS.MEETING_DATE,
+  SHARED_COLUMNS.MEETING_TYPE,
 ] as const
 
 // Agenda headers
@@ -96,11 +96,10 @@ export const AGENDA_HEADERS = [
 
 // Utility functions
 export function formatNormalDate(date: Date): string {
-  return new Intl.DateTimeFormat('he-IL', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
 }
 
 export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
