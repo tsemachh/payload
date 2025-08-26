@@ -3,7 +3,7 @@ import { Payload } from 'payload'
 export const scheduleCheckAdminNotificationsTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
     task: 'checkAdminNotifications',
-    queue: 'daily',
+    queue: 'daily07pm',
     input: {},
   })
 }
@@ -11,7 +11,7 @@ export const scheduleCheckAdminNotificationsTask = async (payload: Payload): Pro
 export const scheduleProcessMeetingStateTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
     task: 'processMeetingState',
-    queue: 'daily',
+    queue: 'daily07pm',
     input: {},
   })
 }
@@ -27,7 +27,7 @@ export const scheduleAdminMailNotificationsTask = async (payload: Payload): Prom
 export const scheduleCheckCompanyNotificationsTask = async (payload: Payload): Promise<void> => {
   await payload.jobs.queue({
     task: 'checkCompanyNotifications',
-    queue: 'daily',
+    queue: 'daily07pm',
     input: {},
   })
 }
@@ -37,7 +37,7 @@ export const scheduleSendCompanyMeetingNotificationsTask = async (
 ): Promise<void> => {
   await payload.jobs.queue({
     task: 'sendCompanyMeetingNotifications',
-    queue: 'daily10pm',
+    queue: 'daily08am',
     input: {},
   })
 }
@@ -55,7 +55,7 @@ export const scheduleSendDailyMeetingNotificationsTask = async (
 
   await payload.jobs.queue({
     task: 'sendDailyMeetingNotifications',
-    queue: 'daily10pm',
+    queue: 'daily08am',
     input,
   })
 

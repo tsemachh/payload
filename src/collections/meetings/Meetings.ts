@@ -934,6 +934,9 @@ export const Meetings: CollectionConfig = {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
               type: 'number',
+              admin: {
+                readOnly: true,
+              },
             },
           ],
         },

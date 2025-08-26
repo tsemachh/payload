@@ -603,6 +603,7 @@ export interface Stock {
 export interface StockValue {
   id: string;
   stockId: string | Stock;
+  stockName?: string | null;
   valueDate: string;
   closingRate?: number | null;
   marketValue?: number | null;
@@ -1798,6 +1799,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  */
 export interface StockValuesSelect<T extends boolean = true> {
   stockId?: T;
+  stockName?: T;
   valueDate?: T;
   closingRate?: T;
   marketValue?: T;
