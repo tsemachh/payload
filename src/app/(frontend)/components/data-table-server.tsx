@@ -154,7 +154,9 @@ export function DataTableServer<T extends Record<string, any>>({
         try {
           const parsedColumns = JSON.parse(storedColumns)
           const validColumns = columns.map((col) => String(col.key))
-          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
+          const filteredColumns = parsedColumns.filter(
+            (col: string) => validColumns.includes(col) && col !== 'agenda',
+          )
           const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
           if (mergedColumns.length !== parsedColumns.length) {
             localStorage.setItem(storageKey, JSON.stringify(mergedColumns))

@@ -218,6 +218,21 @@ export function DataTableStatic<T extends Record<string, any>>({
       filteredColumns = filteredColumns.filter((column) => column.key !== 'agenda')
     } else if (displayMode === 'agenda') {
       // Show agenda column, hide companies column
+      if (!filteredColumns.some((col) => col.key === 'agenda')) {
+        const [first, ...rest] = filteredColumns
+        filteredColumns = [
+          first,
+          {
+            key: 'agenda',
+            header: 'סדר יום',
+            type: 'string',
+            sortKey: 'agendas',
+            minWidth: 50,
+            width: 50,
+          },
+          ...rest,
+        ]
+      }
       filteredColumns = filteredColumns.filter((column) => column.key !== 'companies')
     }
 
