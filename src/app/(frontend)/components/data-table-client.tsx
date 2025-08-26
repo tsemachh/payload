@@ -1192,7 +1192,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       >
                                         {columnIndex === 0 && (
                                           <div className="relative h-40px">
-                                            <span className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate">
+                                            <span className="absolute right-0 top-1/2 -translate-y-1/2  truncate">
                                               {renderFundsCell(
                                                 company,
                                                 companies.find((c) => c.id === company.id)?.name ||
@@ -1255,7 +1255,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 {columnIndex === 0 && (
                                                   <div className="relative h-40px mr-7">
                                                     <span
-                                                      className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
+                                                      className="absolute right-0 top-1/2 -translate-y-1/2  truncate"
                                                       style={{
                                                         maxWidth: calculatePrecedingColumnsWidth(
                                                           visibleColumns as unknown as Column<MeetingTableDataType>[],
@@ -1314,13 +1314,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           style={{ maxWidth: '1500px' }}
                                         >
                                           {/* Index always on the right */}
-                                          <span className="shrink-0 font-bold order-1">
-                                            {index + 1}.
-                                          </span>
+                                          <span className="shrink-0  order-1">{index + 1}.</span>
                                           {/* Text content with proper direction and tooltip */}
                                           <div
                                             dir={direction}
-                                            className={cn('font-bold relative order-2 ', alignment)}
+                                            className={cn(' relative order-2 ', alignment)}
                                             style={{ maxWidth: '1500px' }} // Account for index width
                                           >
                                             <span

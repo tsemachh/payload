@@ -99,7 +99,7 @@ export function renderFundsCell(
           <ChevronLeft className="h-4 w-4" />
         )}
       </Button>
-      <span className="truncate font-medium">
+      <span className="truncate ">
         <span className="ml-4">{company.funds?.length}</span>
         {companyName}
       </span>
