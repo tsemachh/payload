@@ -952,7 +952,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={280}
+              tableHeightOffset={300}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"

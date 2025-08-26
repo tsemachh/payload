@@ -1066,27 +1066,29 @@ export function DataTableServer<T extends Record<string, any>>({
                 </div>
               )}
           </div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
-              disabled={currentPage === 1 || isLoading}
-              className="min-w-[80px]"
-            >
-              {'הקודם'}
-            </Button>
-            <div className="text-sm font-medium min-w-[120px] text-center">{`עמוד ${currentPage} מתוך ${pagination.totalPages}`}</div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(Math.min(currentPage + 1, pagination.totalPages))}
-              disabled={currentPage === pagination.totalPages || isLoading}
-              className="min-w-[80px]"
-            >
-              {'הבא'}
-            </Button>
-          </div>
+          {pagination.totalPages && (
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1 || isLoading}
+                className="min-w-[80px]"
+              >
+                {'הקודם'}
+              </Button>
+              <div className="text-sm font-medium min-w-[120px] text-center">{`עמוד ${currentPage} מתוך ${pagination.totalPages}`}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(Math.min(currentPage + 1, pagination.totalPages))}
+                disabled={currentPage === pagination.totalPages || isLoading}
+                className="min-w-[80px]"
+              >
+                {'הבא'}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
