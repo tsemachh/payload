@@ -69,6 +69,7 @@ async function processVotesData(
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
           quantity,
           meeting.stockValue,
+          false,
         )
 
         return {

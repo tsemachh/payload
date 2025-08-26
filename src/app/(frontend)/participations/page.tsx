@@ -320,8 +320,8 @@ export default function Participations() {
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4,
           }).format(row.percentageHolding),
         minWidth: 80,
       },
@@ -330,9 +330,10 @@ export default function Participations() {
         header: `שווי החזקה (מ' ₪)`,
         type: 'number',
         render: (row) =>
-          new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-            row.holdingValueInMillions,
-          ),
+          new Intl.NumberFormat('he-IL', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(row.holdingValueInMillions),
         minWidth: 80,
       },
       {

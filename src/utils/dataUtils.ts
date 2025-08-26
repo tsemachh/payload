@@ -21,6 +21,7 @@ export async function getBufferFromStream(stream: ReadableStream<Uint8Array>) {
 export const calculateHoldingValues = (
   quantity: number,
   stockValues: StockValue | null | undefined | string,
+  isRounded = true,
 ) => {
   let safeStockValue
   if (typeof stockValues == 'object' && stockValues !== null) {
@@ -36,7 +37,9 @@ export const calculateHoldingValues = (
   const percentageHolding =
     registeredValue > 0 ? parseFloat(((quantity / registeredValue) * 100).toFixed(4)) : 0
 
-  const holdingValueInMillions = Math.round((quantity * closingRate) / 100000000)
+  const holdingValueInMillions = isRounded
+    ? Math.round((quantity * closingRate) / 100000000)
+    : (quantity * closingRate) / 100000000
 
   return {
     percentageHolding,
@@ -44,7 +47,6 @@ export const calculateHoldingValues = (
     nominalValue: Math.round(quantity),
   }
 }
-
 
 export function findRelevantCompanyIds(
   meetingCompanies: string[] | undefined,
