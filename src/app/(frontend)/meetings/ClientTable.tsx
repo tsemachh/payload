@@ -111,10 +111,50 @@ export function MeetingsTableClient() {
         className="flex flex-row justify-start gap-4 mr-10 mb-4"
         style={{ position: 'absolute', left: '400px', top: '128px' }}
       >
-        <div className="w-[300px]">
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center cursor-pointer gap-3">
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'companies' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
+              }`}
+            >
+              חברות
+            </span>
+
+            <input
+              type="checkbox"
+              checked={viewMode === 'agenda'}
+              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
+              className="sr-only peer"
+            />
+            <div
+              className="relative w-11 h-6 rounded-full transition-all"
+              style={{
+                backgroundColor: 'rgb(71,122,133)', // תמיד טורקיז
+              }}
+            >
+              <div
+                className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full bg-white border border-gray-300 transition-transform ${
+                  viewMode === 'companies' ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              ></div>
+            </div>
+
+            <span
+              className={`text-sm font-medium transition-colors ${
+                viewMode === 'agenda' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
+              }`}
+            >
+              סדר יום
+            </span>
+          </label>
+        </div>
+
+        {/* COMPANY SELECTOR */}
+        <div className="w-[300px] mr-[-55] ml-[-25] ">
           <div className="flex items-center gap-3 mr-[50px]">
             <Select>
-              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-9">
+              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-8 mt-[3px]">
                 <SelectValue placeholder={getCompanySelectSummary()} />
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
@@ -128,43 +168,6 @@ export function MeetingsTableClient() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center cursor-pointer gap-3">
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'companies' ? 'font-semibold' : 'text-gray-500'
-              }`}
-              style={{
-                color: viewMode === 'companies' ? 'rgb(71,122,133)' : undefined,
-              }}
-            >
-              חברות
-            </span>
-            <input
-              type="checkbox"
-              checked={viewMode === 'agenda'}
-              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
-              className="sr-only peer"
-            />
-            <div
-              className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
-              style={{
-                backgroundColor: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
-                boxShadow: viewMode === 'agenda' ? '0 0 0 4px rgba(71,122,133,0.3)' : undefined,
-              }}
-            ></div>
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'agenda' ? 'font-semibold' : 'text-gray-500'
-              }`}
-              style={{
-                color: viewMode === 'agenda' ? 'rgb(71,122,133)' : undefined,
-              }}
-            >
-              סדר יום
-            </span>
-          </label>
         </div>
       </div>
 
@@ -183,7 +186,7 @@ export function MeetingsTableClient() {
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
         tableHeightOffset={200}
-        displayMode={viewMode as 'companies' | 'agenda'}
+        displayMode={viewMode}
       />
     </div>
   )
