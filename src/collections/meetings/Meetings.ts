@@ -871,6 +871,7 @@ export const Meetings: CollectionConfig = {
               },
               labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
+              interfaceName: 'FundWithHolding',
               fields: [
                 {
                   type: 'row',
@@ -915,6 +916,11 @@ export const Meetings: CollectionConfig = {
                         { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
                         { name: 'quantity', label: 'כמות', type: 'number' },
                       ],
+                    },
+                    {
+                      name: 'verifiedHoldings',
+                      type: 'checkbox',
+                      label: 'אימות החזקות',
                     },
                   ],
                 },

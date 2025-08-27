@@ -214,6 +214,7 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+
     components: {
       providers: ['/providers/CustomContext#CustomContextProvider'],
       graphics: {
@@ -221,6 +222,10 @@ export default buildConfig({
       },
       Nav: '@shefing/quickfilter/nav',
       views: {
+        CustomView: {
+          Component: '/admincomponents/custom-views/VotePage',
+          path: '/grouped-votes',
+        },
         dashboard: {
           Component: '@shefing/quickfilter/Dashboard',
         },

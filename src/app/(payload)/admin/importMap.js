@@ -51,6 +51,7 @@ import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../gr
 import { CustomContextProvider as CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092 } from '../../../providers/CustomContext'
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
+import { default as default_b7ce0dd15673c054966f89b2a35e3a65 } from '../../../admincomponents/custom-views/VotePage'
 import { default as default_f828cce1950382b69f94d117f188940f } from '@shefing/quickfilter/Dashboard'
 
 export const importMap = {
@@ -107,5 +108,6 @@ export const importMap = {
   "/providers/CustomContext#CustomContextProvider": CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092,
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
+  "/admincomponents/custom-views/VotePage#default": default_b7ce0dd15673c054966f89b2a35e3a65,
   "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f
 }

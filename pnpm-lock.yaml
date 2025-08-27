@@ -308,7 +308,7 @@ importers:
         version: 9.1.7
       '@types/node':
         specifier: ^22.13.4
-        version: 22.17.2
+        version: 22.18.0
       '@types/react':
         specifier: 19.0.7
         version: 19.0.7
@@ -2677,8 +2677,8 @@ packages:
   '@types/node@14.18.63':
     resolution: {integrity: sha512-fAtCfv4jJg+ExtXhvCkCqUKZ+4ok/JQk01qDKhL5BDDoS3AxKXhV5/MAVUZyQnSEd2GT92fkgZl0pz0Q0AzcIQ==}
 
-  '@types/node@22.17.2':
-    resolution: {integrity: sha512-gL6z5N9Jm9mhY+U2KXZpteb+09zyffliRkZyZOHODGATyC5B1Jt/7TzuuiLkFsSUMLbS1OLmlj/E+/3KF4Q/4w==}
+  '@types/node@22.18.0':
+    resolution: {integrity: sha512-m5ObIqwsUp6BZzyiy4RdZpzWGub9bqLJMvZDD0QMXhxjqMHMENlj+SqF5QxoUwaQNFe+8kz8XM8ZQhqkQPTgMQ==}
 
   '@types/parse-json@4.0.2':
     resolution: {integrity: sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==}
@@ -5560,8 +5560,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-syntax-highlighter@15.6.3:
-    resolution: {integrity: sha512-HebdyA9r20hgmA0q8RyRJ4c/vB4E6KL2HeWb5MNjU3iJEiT2w9jfU2RJsmI6f3Cy3SGE5tm0AIkBzM/E7e9/lQ==}
+  react-syntax-highlighter@15.6.5:
+    resolution: {integrity: sha512-Sscw/qACcdp3UIuDVN+PhdKkQZTmAv55+RTzwTJZS+UFFpLilogVnKelDqHuc4E//d7lgEAo2dcDY9h4xhEtJw==}
     peerDependencies:
       react: '>= 0.14.0'
 
@@ -9740,7 +9740,7 @@ snapshots:
 
   '@types/busboy@1.5.4':
     dependencies:
-      '@types/node': 22.17.2
+      '@types/node': 22.18.0
 
   '@types/caseless@0.12.5': {}
 
@@ -9802,7 +9802,7 @@ snapshots:
 
   '@types/mssql@9.1.7':
     dependencies:
-      '@types/node': 22.17.2
+      '@types/node': 22.18.0
       tarn: 3.0.2
       tedious: 18.6.1
     transitivePeerDependencies:
@@ -9810,7 +9810,7 @@ snapshots:
 
   '@types/node@14.18.63': {}
 
-  '@types/node@22.17.2':
+  '@types/node@22.18.0':
     dependencies:
       undici-types: 6.21.0
 
@@ -9834,12 +9834,12 @@ snapshots:
 
   '@types/readable-stream@4.0.21':
     dependencies:
-      '@types/node': 22.17.2
+      '@types/node': 22.18.0
 
   '@types/request@2.48.13':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 22.17.2
+      '@types/node': 22.18.0
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.5
 
@@ -10997,7 +10997,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.40.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@1.21.7)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.40.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.34.0(jiti@1.21.7)))(eslint@9.34.0(jiti@1.21.7)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -11019,7 +11019,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.34.0(jiti@1.21.7)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.40.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@1.21.7))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.40.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.34.0(jiti@1.21.7)))(eslint@9.34.0(jiti@1.21.7))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -13064,7 +13064,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.0.7
 
-  react-syntax-highlighter@15.6.3(react@19.0.0):
+  react-syntax-highlighter@15.6.5(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.28.3
       highlight.js: 10.7.3
@@ -13617,7 +13617,7 @@ snapshots:
       react-immutable-pure-component: 2.2.2(immutable@3.8.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-inspector: 6.0.2(react@19.0.0)
       react-redux: 9.2.0(@types/react@19.0.7)(react@19.0.0)(redux@5.0.1)
-      react-syntax-highlighter: 15.6.3(react@19.0.0)
+      react-syntax-highlighter: 15.6.5(react@19.0.0)
       redux: 5.0.1
       redux-immutable: 4.0.0(immutable@3.8.2)
       remarkable: 2.0.1
@@ -13699,7 +13699,7 @@ snapshots:
       '@azure/identity': 4.11.1
       '@azure/keyvault-keys': 4.10.0
       '@js-joda/core': 5.6.5
-      '@types/node': 22.17.2
+      '@types/node': 22.18.0
       bl: 6.1.2
       iconv-lite: 0.6.3
       js-md4: 0.3.2

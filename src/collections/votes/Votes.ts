@@ -6,6 +6,7 @@ import {
   getVoteByMeetingAndCompanies,
   getVotedCompanies,
   publishVotes,
+  updateGroupedVotes,
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
@@ -412,6 +413,11 @@ export const Votes: CollectionConfig = {
       path: '/voting-percentages',
       method: 'post', // it get method use post for boy
       handler: getVotingPercentages,
+    },
+    {
+      path: '/update-grouped-votes',
+      method: 'post',
+      handler: updateGroupedVotes,
     },
   ],
   indexes: [
