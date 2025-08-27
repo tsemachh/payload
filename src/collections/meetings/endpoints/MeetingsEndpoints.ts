@@ -52,6 +52,12 @@ const MEETING_SELECT_FIELDS: SelectType = {
 /**
  * Creates a companies filter condition based on user's leaf companies and selected companies
  */
+function createAllMeetingsCompaniesFilter(companiesIds: string[] | null | undefined) {
+  if (!companiesIds || companiesIds.length === 0) {
+    return { companies: { in: [] } }
+  }
+  return { companies: { in: companiesIds } }
+}
 function createCompaniesFilter(
   userCompany: (string | Company)[] | undefined | null | any,
   companiesIds: string[] | null | any,
@@ -286,7 +292,17 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // NEW: Get vote filter parameters
     const voteAgainstRecommendation = req.query.voteAgainstRecommendation === 'true'
     const voteDifferentFromResult = req.query.voteDifferentFromResult === 'true'
-
+    const companyIdsParam = req.query.companyIds as string
+    let companyIds: string[] | undefined
+    if (companyIdsParam && companyIdsParam.trim() !== '') {
+      try {
+        companyIds = JSON.parse(companyIdsParam)
+      } catch (e) {
+        companyIds = companyIdsParam.split(',').map((id: string) => id.trim())
+      }
+    } else {
+      companyIds = []
+    }
     let frontendSelectedFundIds: string[] | undefined
     if (selectedFundsParam) {
       frontendSelectedFundIds = selectedFundsParam.split(',')
@@ -330,6 +346,9 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Apply frontend selected funds filter (further restriction)
     if (frontendSelectedFundIds && frontendSelectedFundIds.length > 0) {
       whereConditions.push(createFundsFilter(frontendSelectedFundIds))
+    }
+    if (companyIds) {
+      whereConditions.push(createAllMeetingsCompaniesFilter(companyIds))
     }
     // Add search condition
     if (searchTerm) {
