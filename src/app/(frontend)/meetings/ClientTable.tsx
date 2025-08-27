@@ -25,7 +25,7 @@ export function MeetingsTableClient() {
     if (companies.length > 0 || funds.length > 0) {
       const companyIds = companies.map((company) => company.id)
       const fundIds = funds.map((fund) => fund.id)
-      setSelectedCompanyIds([...fundIds])
+      setSelectedCompanyIds([...companyIds])
     }
   }, [companies, funds])
 
@@ -34,7 +34,7 @@ export function MeetingsTableClient() {
     let url = `/api/meetings/future-meetings`
 
     if (selectedCompanyIds.length > 0) {
-      url += `?fundIds=${selectedCompanyIds.join(',')}`
+      url += `?companyIds=${selectedCompanyIds.join(',')}`
     }
 
     return url
@@ -44,7 +44,6 @@ export function MeetingsTableClient() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
       return null
@@ -93,7 +92,8 @@ export function MeetingsTableClient() {
     }
 
     const totalFundIds = funds.map((fund) => fund.id)
-    const allIds = [...totalFundIds]
+    const totalCompaniesIds = companies.map((com) => com.id)
+    const allIds = [...totalCompaniesIds]
     const allSelected =
       selectedCompanyIds.length === allIds.length &&
       selectedCompanyIds.every((id) => allIds.includes(id))
@@ -130,7 +130,7 @@ export function MeetingsTableClient() {
             <div
               className="relative w-11 h-6 rounded-full transition-all"
               style={{
-                backgroundColor: 'rgb(71,122,133)', // תמיד טורקיז
+                backgroundColor: 'rgb(71,122,133)',
               }}
             >
               <div
@@ -163,7 +163,8 @@ export function MeetingsTableClient() {
                   showSearch={false}
                   onSelectionChangeAction={handleCompanySelectionChange}
                   className="w-full"
-                  allCompaniesIds={[...funds.map((fund) => fund.id)]}
+                  allCompaniesIds={[...companies.map((com) => com.id)]}
+                  showFunds={false}
                 />
               </SelectContent>
             </Select>
