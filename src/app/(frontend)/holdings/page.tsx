@@ -47,8 +47,6 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
-  const [showNavigationWarning, setShowNavigationWarning] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -73,7 +71,14 @@ export default function HoldingsFeedView() {
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
-    enabled: !editForm,
+    enabled: (params) => {
+      // Disable for programmatic navigation (push/replace)
+      if (params.to.includes('/holdings/view?date')) {
+        return false
+      }
+      // Enable for user-initiated navigation (popstate/beforeunload) when form is being edited
+      return !editForm
+    },
   })
 
   // Create an action to update selected companies

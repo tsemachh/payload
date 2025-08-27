@@ -1,4 +1,4 @@
-import { BasePayload, PayloadRequest } from 'payload'
+import { PayloadRequest } from 'payload'
 import { Company, HoldingFeedLine, HoldingsFeed, HoldingsPerDay, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
@@ -109,26 +109,29 @@ export const preloadAccountsToCompanyMap = async (
 }> => {
   const companies = await req.payload.find({
     collection: 'companies',
+    select: {
+      mainAccount: true,
+    },
     where: {
       id: {
         in: selectedCompanies,
       },
     },
     limit: 0,
-    depth: 2,
+    depth: 0,
   })
 
   const accountToCompanyMapI: Map<number, string> = new Map()
   const accountNameMap: Map<number, string> = new Map()
 
-  companies.docs.forEach((company: Company) => {
+  companies.docs.forEach((company: Partial<Company>) => {
     const accounts = company?.mainAccount
     accounts?.forEach((account) => {
-      accountToCompanyMapI.set(parseInt(account?.accountNumber), company?.id)
-      accountNameMap.set(parseInt(account?.accountNumber), company?.name)
+      accountToCompanyMapI.set(parseInt(account?.accountNumber), company?.id as string)
+      accountNameMap.set(parseInt(account?.accountNumber), company?.name as string)
       account?.subAccounts?.forEach((subAccount) => {
-        accountToCompanyMapI.set(parseInt(subAccount), company?.id)
-        accountNameMap.set(parseInt(account?.accountNumber), company?.name)
+        accountToCompanyMapI.set(parseInt(subAccount), company?.id as string)
+        accountNameMap.set(parseInt(account?.accountNumber), company?.name as string)
       })
     })
   })
@@ -139,26 +142,46 @@ export const preloadAccountsToCompanyMap = async (
  * Preload stocks from stock IDs
  * @param req The payload request
  * @param standardizedRows
- * @returns Map of stock IDs to stock documents
+ * @returns Map of stock IDs to stock information objects
  */
 export const preloadStocks = async (
   req: PayloadRequest,
   standardizedRows: StandardizedRow[],
-): Promise<{
-  stockIdMap: Map<string, string>
-  stockNameMap: Map<string, string>
-  stockActiveMap: Map<string, boolean>
-}> => {
+): Promise<
+  Map<
+    string,
+    {
+      stockParentMongoId: string
+      stockName: string
+      isActive: boolean
+      origin: string
+    }
+  >
+> => {
   const feedStocks: string[] = standardizedRows
     .map((row) => row.stockId)
     .filter((stockId): stockId is string => typeof stockId === 'string' && stockId !== '')
 
-  const stockIdMap: Map<string, string> = new Map()
-  const stockNameMap: Map<string, string> = new Map()
-  const stockActiveMap: Map<string, boolean> = new Map()
+  const stocksMap = new Map<
+    string,
+    {
+      stockParentMongoId: string
+      stockName: string
+      isActive: boolean
+      origin: string
+    }
+  >()
 
   const stocksResult = await req.payload.find({
     collection: 'stocks',
+    select: {
+      relations: true,
+      stockId: true,
+      relatedStock: true,
+      name: true,
+      active: true,
+      origin: true,
+    },
     where: {
       stockId: {
         in: feedStocks,
@@ -168,81 +191,55 @@ export const preloadStocks = async (
     limit: 0,
   })
 
-  stocksResult.docs.forEach((stock: Stock) => {
+  stocksResult.docs.forEach((stock: Partial<Stock>) => {
     // Ensure related.docs exists and check if it's not empty
     const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
     const stockKey = stock?.stockId
-    const stockValue =
+    const stockParentMongoId =
       stock?.relatedStock && hasRelatedDocs
         ? ((stock.relatedStock as Stock).id as string)
         : stock?.id
     const stockName =
       stock?.relatedStock && hasRelatedDocs
-        ? ((stock.relatedStock as Stock).fullName as string)
+        ? ((stock.relatedStock as Stock).name as string)
         : stock?.name
     const isActive = stock?.active !== false // Default to true if undefined or null
+    const origin = stock?.origin as string
 
-    stockIdMap.set(stockKey, stockValue)
-    stockNameMap.set(stockKey, stockName as string)
-    stockActiveMap.set(stockKey, isActive)
+    stocksMap.set(stockKey as string, {
+      stockParentMongoId: stockParentMongoId as string,
+      stockName: stockName as string,
+      isActive,
+      origin,
+    })
   })
 
-  return { stockIdMap, stockNameMap, stockActiveMap }
+  return stocksMap
 }
 /**
  * Create holdings from processed records
  * @param req The payload request
  * @param processedRecords The processed records
- * @param accountToCompanyMap
- * @param stockMap
+ * @param accountToCompanyMap Map of account numbers to company IDs
+ * @param stocksMap Map of stock IDs to stock information objects
  * @param valueDate The value date
  */
-/**
- * Preload stock data for a set of stock IDs
- * @param payload The payload instance
- * @param stockIds Set of stock IDs to preload
- * @returns Map of stock IDs to stock data
- */
-export const preloadStockData = async (
-  payload: BasePayload,
-  stockIds: Set<string>,
-): Promise<Map<string, any>> => {
-  const stockDataMap = new Map<string, any>()
-
-  try {
-    // Convert Set to Array for the query
-    const stockIdsArray = Array.from(stockIds)
-
-    // Make a single query to get all stock data
-    const stocks = await payload.find({
-      collection: 'stocks',
-      select: { origin: true, stockId: true },
-      where: {
-        stockId: { in: stockIdsArray },
-      },
-      depth: 0,
-      limit: 0,
-    })
-
-    // Create a map of stock IDs to stock data
-    stocks.docs.forEach((stock) => {
-      stockDataMap.set(stock.stockId as string, stock)
-    })
-  } catch (error) {
-    console.error('Error preloading stock data:', error)
-  }
-
-  return stockDataMap
-}
 
 export const createHoldings = async (
   req: PayloadRequest,
   processedRecords: HoldingFeedLine[],
   accountToCompanyMap: Map<number, string>,
-  stockMap: Map<string, string>,
+  stocksMap: Map<
+    string,
+    {
+      stockParentMongoId: string
+      stockName: string
+      isActive: boolean
+      origin: string
+    }
+  >,
   valueDate: string,
 ): Promise<void> => {
-  console.log(`Processing ${processedRecords.length} records`)
   const aggregatedRecords = new Map<string, AggregatedRecord>()
 
   // Collect all unique stock IDs
@@ -253,23 +250,22 @@ export const createHoldings = async (
     }
   }
 
-  // Preload all stock data at once
-  const stockDataMap = await preloadStockData(req.payload, stockIds)
-
+  // Process and aggregate records
   for (const record of processedRecords) {
     if (record.status === 'success') {
       const accountId = parseInt(record.accountId as string)
       const company = accountToCompanyMap.get(accountId) as string
-      const stock = stockMap.get(record.stockId as string) as string
+      const stockInfo = stocksMap.get(record.stockId as string)
+      const stock = stockInfo?.stockParentMongoId as string
       const key = `${company}-${stock}-${record.stockId}`
 
       const existingRecord = aggregatedRecords.get(key)
 
-      // Use preloaded stock data instead of individual queries
-      const stockData = stockDataMap.get(record.stockId as string)
+      // Check if stock is foreign based on its origin property
+      const isForeignStock = stockInfo?.origin === 'Foreign'
 
       if (existingRecord) {
-        if (stockData?.origin === 'Foreign') {
+        if (isForeignStock) {
           existingRecord.originalForeignData = existingRecord.originalForeignData || []
           existingRecord.originalForeignData.push({
             stockId: record.stockId as string,
@@ -279,7 +275,7 @@ export const createHoldings = async (
         }
         existingRecord.quantity += record.quantity ?? 0
       } else {
-        if (stockData?.origin === 'Foreign') {
+        if (isForeignStock) {
           aggregatedRecords.set(key, {
             company,
             stock,
@@ -303,6 +299,7 @@ export const createHoldings = async (
     }
   }
 
+  // Create company records map
   const companyRecordsMap = new Map<string, Array<any>>()
 
   for (const record of aggregatedRecords.values()) {
@@ -326,6 +323,8 @@ export const createHoldings = async (
     }
   }
 
+  // Create holdings in database
+  let successCount = 0
   for (const [company, holdings] of companyRecordsMap.entries()) {
     await req.payload
       .create({
@@ -337,6 +336,9 @@ export const createHoldings = async (
         },
         req,
       })
+      .then(() => {
+        successCount++
+      })
       .catch((error) => {
         req.payload.logger.error(
           `Error creating holding for company ${company}: ${JSON.stringify(error)}`,
@@ -344,8 +346,4 @@ export const createHoldings = async (
         return null
       })
   }
-
-  console.log(
-    `Finished processing ${processedRecords.length} records, created holdings for ${companyRecordsMap.size} companies`,
-  )
 }
