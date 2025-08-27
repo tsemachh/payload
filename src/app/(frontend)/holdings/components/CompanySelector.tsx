@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown, ChevronLeft, Loader2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
-import { TreeCompanyType } from '@/types/companies'
+import type { TreeCompanyType } from '@/types/companies'
 import { useAuth } from '@/providers/auth-provider'
 
 interface CompanyTreeSelectorProps {
@@ -16,6 +16,7 @@ interface CompanyTreeSelectorProps {
   isLoading?: boolean
   showSearch?: boolean
   allCompaniesIds?: string[]
+  showFunds?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -25,6 +26,7 @@ export function CompanyTreeSelector({
   isLoading = false,
   showSearch = true,
   allCompaniesIds = [],
+  showFunds = true,
 }: CompanyTreeSelectorProps) {
   const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
@@ -122,7 +124,7 @@ export function CompanyTreeSelector({
   const getNodeSelectionState = (
     node: TreeCompanyType,
   ): 'checked' | 'unchecked' | 'indeterminate' => {
-    if (!node.subCompanies || node.subCompanies.length === 0) {
+    if (!showFunds || !node.subCompanies || node.subCompanies.length === 0) {
       return internalSelectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
     }
 
@@ -153,6 +155,26 @@ export function CompanyTreeSelector({
     const node = findNode(companies, companyId)
     if (!node) return
 
+    // When subsidiaries are hidden, use simple toggle logic
+    if (!showFunds) {
+      const isCurrentlySelected = internalSelectedCompanies.includes(companyId)
+      const newState = forceState !== undefined ? forceState : !isCurrentlySelected
+
+      let newSelection = [...internalSelectedCompanies]
+      if (newState) {
+        if (!newSelection.includes(companyId)) {
+          newSelection.push(companyId)
+        }
+      } else {
+        newSelection = newSelection.filter((id) => id !== companyId)
+      }
+
+      setInternalSelectedCompanies(newSelection)
+      onSelectionChangeAction(newSelection)
+      return
+    }
+
+    // Original hierarchical logic for when subsidiaries are shown
     const currentState = getNodeSelectionState(node)
     const newState = forceState !== undefined ? forceState : currentState !== 'checked'
 
@@ -179,6 +201,23 @@ export function CompanyTreeSelector({
   }
 
   const handleChildSelect = (childId: string, checked: boolean) => {
+    // When subsidiaries are hidden, use simple selection logic
+    if (!showFunds) {
+      let newSelection = [...internalSelectedCompanies]
+      if (checked) {
+        if (!newSelection.includes(childId)) {
+          newSelection.push(childId)
+        }
+      } else {
+        newSelection = newSelection.filter((id) => id !== childId)
+      }
+
+      setInternalSelectedCompanies(newSelection)
+      onSelectionChangeAction(newSelection)
+      return
+    }
+
+    // Original hierarchical logic for when subsidiaries are shown
     const findNodeAndParent = (
       nodes: TreeCompanyType[],
       id: string,
@@ -296,14 +335,21 @@ export function CompanyTreeSelector({
     } else {
       const allIds = [...allCompaniesIds]
       setInternalSelectedCompanies(allIds)
-      onSelectionChangeAction(getLeafNodesOnly(allIds))
+      // When subsidiaries are hidden, pass all IDs directly
+      if (!showFunds) {
+        onSelectionChangeAction(allIds)
+      } else {
+        onSelectionChangeAction(getLeafNodesOnly(allIds))
+      }
     }
   }
 
   const TreeItems = ({ nodes, level = 0 }: { nodes: TreeCompanyType[]; level?: number }) => {
     return nodes.map((node, index) => {
       const selectionState = getNodeSelectionState(node)
-      const isNodeLeaf = isLeafNode(node)
+      const isNodeLeaf = !showFunds || isLeafNode(node)
+      const hasSubsidiaries = showFunds && node.subCompanies && node.subCompanies.length > 0
+      const shouldshowFunds = showFunds && hasSubsidiaries
 
       return (
         <div key={`${node.id}-${index}-${level}`} className="w-full">
@@ -319,7 +365,7 @@ export function CompanyTreeSelector({
             }}
           >
             <div className="flex items-center min-w-0">
-              {node.subCompanies && node.subCompanies.length > 0 ? (
+              {shouldshowFunds ? (
                 <div onClick={(e) => toggleExpand(node.id, e)}>
                   {expandedNodes.includes(node.id) ? (
                     <ChevronDown className="z-99 mr-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
@@ -330,6 +376,7 @@ export function CompanyTreeSelector({
               ) : (
                 <div className="w-5" />
               )}
+
               <div className="relative mr-3 h-3.5 w-3.5">
                 <Checkbox
                   id={`checkbox-${node.id}`}
@@ -344,7 +391,9 @@ export function CompanyTreeSelector({
                   }}
                   className={cn(
                     'h-3.5 w-3.5 rounded-[3px] border-gray-400 [&>span]:scale-75',
-                    selectionState === 'indeterminate' && 'data-[state=indeterminate]:bg-gray-400',
+                    showFunds &&
+                      selectionState === 'indeterminate' &&
+                      'data-[state=indeterminate]:bg-gray-400',
                   )}
                   aria-label={`Select ${node.name}`}
                   onClick={(e) => e.stopPropagation()}
@@ -361,8 +410,8 @@ export function CompanyTreeSelector({
             </div>
           </div>
 
-          {node.subCompanies && node.subCompanies.length > 0 && expandedNodes.includes(node.id) && (
-            <TreeItems nodes={node.subCompanies} level={level + 1} />
+          {shouldshowFunds && expandedNodes.includes(node.id) && (
+            <TreeItems nodes={node.subCompanies || []} level={level + 1} />
           )}
         </div>
       )

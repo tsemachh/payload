@@ -46,6 +46,32 @@ const MEETING_SELECT_FIELDS: SelectType = {
  * Creates a companies filter condition based on user's leaf companies and selected companies
  */
 function createCompaniesFilter(
+  userCompany: (string | Company)[] | undefined | null | any,
+  companiesIds: string[] | null | any,
+) {
+  let companies = userCompany?.map((c: any) => c?.companyId)
+  if (!companiesIds || companiesIds.length === 0) {
+    console.log('No companies selected → returning empty filter')
+    return {
+      companies: { in: [] },
+    }
+  }
+  if (companiesIds) {
+    companies = companies?.filter((com: any) => companiesIds.includes(com as string))
+  }
+  return userCompany
+    ? {
+        companies: {
+          in: companies,
+        },
+      }
+    : {
+        companies: {
+          in: [], // no matches if user.funds is missing or empty
+        },
+      }
+}
+function createFundsFilter(
   userFunds: (string | Company)[] | undefined | null,
   fundIds: string[] | null = null,
 ) {
@@ -65,7 +91,6 @@ function createCompaniesFilter(
         },
       }
 }
-
 /**
  * Creates a published status filter condition
  */
@@ -286,13 +311,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
 
     // Build filter conditions
-    const whereConditions: any[] = [
-      createCompaniesFilter(user?.funds),
-      createPublishedStatusFilter(),
-    ]
+    const whereConditions: any[] = [createFundsFilter(user?.funds), createPublishedStatusFilter()]
     const userFunds = getSafeFunds(user?.funds)
     if (userFunds && userFunds.length > 0) {
-      whereConditions.push(createCompaniesFilter(userFunds))
+      whereConditions.push(createFundsFilter(userFunds))
     } else {
       // If user has no funds, they shouldn't see any meetings
       whereConditions.push({ funds: { in: [] } })
@@ -300,7 +322,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Apply frontend selected funds filter (further restriction)
     if (frontendSelectedFundIds && frontendSelectedFundIds.length > 0) {
-      whereConditions.push(createCompaniesFilter(frontendSelectedFundIds))
+      whereConditions.push(createFundsFilter(frontendSelectedFundIds))
     }
     // Add search condition
     if (searchTerm) {
@@ -365,9 +387,8 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const todayISO = today.toISOString()
 
     // Extract companyIds from query parameters
-    const fundIdsParam = req.query.fundIds as string
-    const selectedFundIds = fundIdsParam ? fundIdsParam.split(',') : null
-
+    const companyIdsParam = req.query.companyIds as string
+    const selectedCompaniesIds = companyIdsParam ? companyIdsParam.split(',') : null
     const meetings = await payload.find({
       collection: 'meetings',
       select: MEETING_SELECT_FIELDS,
@@ -377,7 +398,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
         and: [
           { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
           { meetingDate: { greater_than_equal: todayISO } },
-          createCompaniesFilter(user?.funds, selectedFundIds),
+          createCompaniesFilter(user?.companies, selectedCompaniesIds),
           createPublishedStatusFilter(),
         ],
       },
@@ -727,7 +748,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
           {
             id: { equals: meetingId },
           },
-          createCompaniesFilter(user?.funds),
+          createFundsFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },
