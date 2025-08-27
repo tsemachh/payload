@@ -35,6 +35,7 @@ export type MeetingTableDataType = {
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
   votes: any
   displayMode?: string
+  selectedCompanyIds?: string[]
 }
 
 export type DateFilterOption = {
@@ -152,6 +153,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   selectAll?: string
   removeAll?: string
   displayMode?: 'companies' | 'agenda' // New prop for display mode
+  selectedCompanyIds?: string[]
 }
 
 export interface UrlFilenameMap {

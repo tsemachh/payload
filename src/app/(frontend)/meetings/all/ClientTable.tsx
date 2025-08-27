@@ -223,6 +223,7 @@ export function MeetingsTableServer() {
         serverSideProcessing={true}
         pastDateFilterOptions={pastDateFilterOptions}
         futureDateFilterOptions={futureDateFilterOptions}
+        selectedCompanyIds={selectedCompanyIds}
       />
     </div>
   )

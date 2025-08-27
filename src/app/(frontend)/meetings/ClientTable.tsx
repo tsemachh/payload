@@ -188,6 +188,7 @@ export function MeetingsTableClient() {
         defaultVisibleColumns={defaultVisibleColumns}
         tableHeightOffset={200}
         displayMode={viewMode}
+        selectedCompanyIds={selectedCompanyIds}
       />
     </div>
   )
