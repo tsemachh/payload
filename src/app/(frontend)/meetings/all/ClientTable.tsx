@@ -1,23 +1,35 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import useSWR from 'swr'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
+import { useCompaniesContext } from '../../context/companiesContext'
+import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CompanyTreeSelector } from '../../holdings/components/CompanySelector'
 
 export function MeetingsTableServer() {
+  const { companies, funds } = useCompaniesContext()
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
+
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [sortField, setSortField] = useState<string>('meetingDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [filters, setFilters] = useState<Record<string, string[]>>({})
-  const [dateFilters, setDateFilters] = useState<
-    Record<string, DateFilterType>
-  >({})
+  const [dateFilters, setDateFilters] = useState<Record<string, DateFilterType>>({})
+
+  // Initialize with all companies and funds selected
+  useEffect(() => {
+    if (companies.length > 0 || funds.length > 0) {
+      const companyIds = companies.map((company) => company.id)
+      setSelectedCompanyIds([...companyIds])
+    }
+  }, [companies, funds])
 
   const query = useMemo(() => {
     const params = new URLSearchParams({
@@ -27,6 +39,11 @@ export function MeetingsTableServer() {
       sortDirection,
       search: searchTerm,
     })
+
+    // Add company filter if companies are selected
+    if (selectedCompanyIds.length > 0) {
+      params.append('companyIds', selectedCompanyIds.join(','))
+    }
 
     // Add regular filters
     Object.entries(filters).forEach(([key, values]) => {
@@ -43,7 +60,16 @@ export function MeetingsTableServer() {
     })
 
     return `/api/meetings/all-meetings?${params.toString()}`
-  }, [currentPage, pageSize, sortField, sortDirection, searchTerm, filters, dateFilters])
+  }, [
+    currentPage,
+    pageSize,
+    sortField,
+    sortDirection,
+    searchTerm,
+    filters,
+    dateFilters,
+    selectedCompanyIds,
+  ])
 
   const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
@@ -88,6 +114,29 @@ export function MeetingsTableServer() {
     })
   }, [meetingsResponse?.data, votingPercentagesMap])
 
+  const handleCompanySelectionChange = useCallback((selected: string[]) => {
+    setSelectedCompanyIds(selected)
+    setCurrentPage(1) // reset to first page when companies change
+  }, [])
+
+  const getCompanySelectSummary = () => {
+    if (selectedCompanyIds.length === 0) {
+      return 'בחר חברות'
+    }
+
+    const totalCompaniesIds = companies.map((com) => com.id)
+    const allIds = [...totalCompaniesIds]
+    const allSelected =
+      selectedCompanyIds.length === allIds.length &&
+      selectedCompanyIds.every((id) => allIds.includes(id))
+
+    if (allSelected) {
+      return 'נבחרו כל החברות'
+    }
+
+    return `נבחרו ${selectedCompanyIds.length} חברות`
+  }
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -116,10 +165,7 @@ export function MeetingsTableServer() {
     setCurrentPage(1) // reset to first page
   }
 
-  const handleDateFilter = (
-    field: string,
-    filter: DateFilterType,
-  ) => {
+  const handleDateFilter = (field: string, filter: DateFilterType) => {
     setDateFilters((prev) => ({
       ...prev,
       [field]: filter,
@@ -128,33 +174,56 @@ export function MeetingsTableServer() {
   }
 
   return (
-    <DataTableServer
-      data={dataWithPercentages}
-      columns={meetingColumns}
-      idField="meetingId"
-      defaultSortField={sortField as keyof MeetingTableDataType}
-      defaultSortDirection={sortDirection}
-      tableId="meetings-table"
-      renderRowActions={renderMeetingActions}
-      pagination={{
-        pageSize,
-        totalItems: meetingsResponse?.totalItems || 0,
-        totalPages: meetingsResponse?.totalPages || 0,
-        currentPage,
-        onPageChange: handlePageChange,
-        onPageSizeChange: handlePageSizeChange,
-        pageSizeOptions: [10, 25, 50, 100, 500, 1000],
-      }}
-      isLoading={isLoading}
-      onServerSort={handleSort}
-      onServerSearch={handleSearch}
-      onServerFilter={handleFilter}
-      onServerDateFilter={handleDateFilter}
-      initialSearchTerm={searchTerm}
-      searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
-      serverSideProcessing={true}
-      pastDateFilterOptions={pastDateFilterOptions}
-      futureDateFilterOptions={futureDateFilterOptions}
-    />
+    <div className="space-y-4">
+      {/* COMPANY SELECTOR */}
+      <div className="absolute mr-[50.5rem] mt-[1.2rem] ">
+        <div className="flex items-center">
+          <Select>
+            <SelectTrigger className="w-64 flex-row-reverse justify-between text-right h-8">
+              <SelectValue placeholder={getCompanySelectSummary()} />
+            </SelectTrigger>
+            <SelectContent align="end" dir="rtl" className="p-0">
+              <CompanyTreeSelector
+                selectedCompanies={selectedCompanyIds}
+                showSearch={false}
+                onSelectionChangeAction={handleCompanySelectionChange}
+                className="w-full"
+                allCompaniesIds={[...companies.map((com) => com.id)]}
+                showFunds={false}
+              />
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <DataTableServer
+        data={dataWithPercentages}
+        columns={meetingColumns}
+        idField="meetingId"
+        defaultSortField={sortField as keyof MeetingTableDataType}
+        defaultSortDirection={sortDirection}
+        tableId="meetings-table"
+        renderRowActions={renderMeetingActions}
+        pagination={{
+          pageSize,
+          totalItems: meetingsResponse?.totalItems || 0,
+          totalPages: meetingsResponse?.totalPages || 0,
+          currentPage,
+          onPageChange: handlePageChange,
+          onPageSizeChange: handlePageSizeChange,
+          pageSizeOptions: [10, 25, 50, 100, 500, 1000],
+        }}
+        isLoading={isLoading}
+        onServerSort={handleSort}
+        onServerSearch={handleSearch}
+        onServerFilter={handleFilter}
+        onServerDateFilter={handleDateFilter}
+        initialSearchTerm={searchTerm}
+        searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
+        serverSideProcessing={true}
+        pastDateFilterOptions={pastDateFilterOptions}
+        futureDateFilterOptions={futureDateFilterOptions}
+      />
+    </div>
   )
 }
