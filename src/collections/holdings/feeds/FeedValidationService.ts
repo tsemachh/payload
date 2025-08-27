@@ -15,7 +15,7 @@ export async function processValidationData(
 ): Promise<FeedValidationResult> {
   const { accountToCompanyMapI: accountToCompanyMap, accountNameMap } =
     await preloadAccountsToCompanyMap(req, selectedCompanies)
-  const { stockIdMap: stockMap, stockNameMap, stockActiveMap } = await preloadStocks(req, rows)
+  const stocksMap = await preloadStocks(req, rows)
   const allSilencedStocks = await fetchAllSilencedStocks(req, selectedCompanies)
   const silencedStockIds = allSilencedStocks.map((stock) => stock.stockId)
 
@@ -24,10 +24,8 @@ export async function processValidationData(
       row,
       index,
       accountToCompanyMap,
-      stockMap,
-      stockNameMap,
+      stocksMap,
       accountNameMap,
-      stockActiveMap,
       silencedStockIds,
     )
 

@@ -151,6 +151,7 @@ export const checkFeedWarnings = async (
         contains: selectedCompanies,
       },
     },
+    depth: 0,
     limit: 0,
   })
 
@@ -247,27 +248,33 @@ export const checkFeedWarnings = async (
  * Validate a single row
  * @param row The row to validate
  * @param index The index of the row
- * @param accountMap
- * @param stockMap
- * @param stockNameMap
- * @param stockActiveMap
- * @param silencedStockIds
+ * @param accountMap Map of account numbers to company IDs
+ * @param stocksMap Map of stock IDs to stock information objects
+ * @param accountNameMap Map of account numbers to account names
+ * @param silencedStockIds Array of silenced stock IDs
  * @returns Validation result
  */
 export const validateRow = async (
   row: StandardizedRow,
   index: number,
   accountMap: Map<number, string>,
-  stockMap: Map<string, string>,
-  stockNameMap: Map<string, string>,
+  stocksMap: Map<
+    string,
+    {
+      stockParentMongoId: string
+      stockName: string
+      isActive: boolean
+      origin: string
+    }
+  >,
   accountNameMap: Map<number, string>,
-  stockActiveMap: Map<string, boolean>,
   silencedStockIds: string[],
 ): Promise<{
   processedRecord: HoldingFeedLineWithName
 }> => {
   const { stockId, quantity, accountId } = row
-  const stockName = stockNameMap.get(stockId!)
+  const stockInfo = stocksMap.get(stockId!)
+  const stockName = stockInfo?.stockName
   const companyName = accountNameMap.get(Number(accountId))
 
   const lineNumber = index + 1
@@ -285,7 +292,7 @@ export const validateRow = async (
   } else if (!accountId) {
     status = 'error'
     errorMessage = 'מספר חשבון חסר'
-  } else if (!stockMap.has(stockId)) {
+  } else if (!stocksMap.has(stockId)) {
     if (silencedStockIds.includes(stockId)) {
       status = 'silenced'
     } else {
@@ -295,7 +302,7 @@ export const validateRow = async (
   } else if (!accountMap.has(Number(accountId))) {
     status = 'error'
     errorMessage = 'מספר חשבון לא מוכר'
-  } else if (stockActiveMap.has(stockId) && !stockActiveMap.get(stockId)) {
+  } else if (!stockInfo?.isActive) {
     // Check if stock is inactive
     if (silencedStockIds.includes(stockId)) {
       status = 'silenced'
