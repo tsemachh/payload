@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
+import { useNavigationGuard } from 'next-navigation-guard'
 
 export default function HoldingsFeedView() {
   const router = useRouter()
@@ -70,44 +71,10 @@ export default function HoldingsFeedView() {
     }
   }, [user])
 
-  // Warning when user tries to leave the page while in edit mode
-  const handleBeforeUnload = useCallback(
-    (e: BeforeUnloadEvent) => {
-      if (!editForm) {
-        e.preventDefault()
-        return 'האם להפסיק את הזנת החזקות לפני שמירתן? לצאת ללא שמירה להאשר בהזנות'
-      }
-    },
-    [editForm, selectedCompanies.length, date, file],
-  )
-
-  useEffect(() => {
-    if (!editForm) {
-      window.addEventListener('beforeunload', handleBeforeUnload)
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [handleBeforeUnload, editForm, selectedCompanies.length, date, file])
-
-  // Navigation warning for internal navigation
-  const handleNavigation = useCallback(
-    (href: string) => {
-      if (!editForm) {
-        setPendingNavigation(href)
-        setShowNavigationWarning(true)
-        return false
-      }
-      return true
-    },
-    [editForm, selectedCompanies.length, date, file],
-  )
-
-  // Expose the navigation handler globally
-  useEffect(() => {
-    ;(window as unknown as Record<string, unknown>).holdingsNavigationHandler = handleNavigation
-    return () => {
-      delete (window as unknown as Record<string, unknown>).holdingsNavigationHandler
-    }
-  }, [handleNavigation])
+  // Use navigation guard hook for back button and browser navigation
+  const navGuard = useNavigationGuard({
+    enabled: !editForm,
+  })
 
   // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {
@@ -417,7 +384,7 @@ export default function HoldingsFeedView() {
       )}
 
       {/* Navigation Warning Dialog */}
-      <Dialog open={showNavigationWarning}>
+      <Dialog open={navGuard.active}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
@@ -429,25 +396,10 @@ export default function HoldingsFeedView() {
           </div>
 
           <DialogFooter className="flex justify-center gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                setPendingNavigation(null)
-              }}
-            >
+            <Button variant="outline" onClick={navGuard.reject}>
               להמשיך בהזנות
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                if (pendingNavigation) {
-                  router.push(pendingNavigation)
-                }
-                setPendingNavigation(null)
-              }}
-            >
+            <Button variant="destructive" onClick={navGuard.accept}>
               לצאת ללא שמירה
             </Button>
           </DialogFooter>
