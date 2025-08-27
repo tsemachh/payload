@@ -1,5 +1,4 @@
 'use client'
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useParams, useRouter } from 'next/navigation'
+import { useNavigationGuard } from 'next-navigation-guard'
 import { CompanyTableDate } from '../../types/meetings'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import VoteDetails from '../components/VoteDetails'
@@ -52,12 +52,7 @@ import {
   isGeneralVote,
 } from '../../helpers/utils-vote'
 import useSWR from 'swr'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../../components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
@@ -95,8 +90,6 @@ export default function VotingForm() {
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
-  const [showNavigationWarning, setShowNavigationWarning] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
   const [isDraftSaved, setIsDraftSaved] = useState(false)
 
   const {
@@ -132,9 +125,6 @@ export default function VotingForm() {
           isReadOnlyDueToPermission = true
         }
       }
-      console.log(
-        `isReadOnlyDueToDate:${isReadOnlyDueToDate}  isReadOnlyDueToPermission:${isReadOnlyDueToPermission}`,
-      )
 
       // Set read-only reason based on which restriction applies
       if (isReadOnlyDueToPermission) {
@@ -243,12 +233,11 @@ export default function VotingForm() {
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
-    const votedCompaniesTmp = new Set<string>(
+    return new Set<string>(
       votedCompaniesArray.map((vote: any) =>
         typeof vote.company === 'string' ? vote.company : vote.company.id,
       ),
     )
-    return votedCompaniesTmp
   }, [votedCompaniesArray, isVotedCompaniesArray])
 
   useEffect(() => {
@@ -411,44 +400,14 @@ export default function VotingForm() {
     setLocalVoterNotes(votingData.voterNotes || '')
   }, [votingData.voterNotes])
 
-  // Warning when user tries to leave the page with unsaved changes
-  const handleBeforeUnload = useCallback(
-    (e: BeforeUnloadEvent) => {
-      if ((isDirty || isDraftSaved) && !isReadOnly) {
-        e.preventDefault()
-        return 'לא שלחת את שינויים שלך והם לא ייראו למנהלי המערכת. האם אתה רוצה להשאיר את השינויים כטיוטה או לחזור לדף הצבעה להשלים ולשלוח את ההצבעה'
-      }
-    },
-    [isDirty, isReadOnly, isDraftSaved],
-  )
+  // Use navigation guard hook for back button and browser navigation
+  const navGuard = useNavigationGuard({
+    enabled: (isDirty || isDraftSaved) && !isReadOnly,
+  })
 
-  useEffect(() => {
-    if (isDirty && !isReadOnly) {
-      window.addEventListener('beforeunload', handleBeforeUnload)
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [handleBeforeUnload, isDirty, isReadOnly, isDraftSaved])
-
-  // Navigation warning for internal navigation
-  const handleNavigation = useCallback(
-    (href: string) => {
-      if (isDirty && !isReadOnly) {
-        setPendingNavigation(href)
-        setShowNavigationWarning(true)
-        return false
-      }
-      return true
-    },
-    [isDirty, isReadOnly, isDraftSaved],
-  )
-
-  // Expose the navigation handler globally
-  useEffect(() => {
-    ;(window as unknown as Record<string, unknown>).voteNavigationHandler = handleNavigation
-    return () => {
-      delete (window as unknown as Record<string, unknown>).voteNavigationHandler
-    }
-  }, [handleNavigation])
+  // Note: beforeunload handler removed to prevent browser's default "Leave site" alert
+  // The auto-draft system handles data persistence, and useNavigationGuard handles in-app navigation
+  // For external navigation (browser back to different site, refresh, close), we rely on auto-saves
 
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
@@ -841,6 +800,29 @@ export default function VotingForm() {
 
   return (
     <>
+      {/* Navigation Guard Dialog */}
+      <Dialog open={navGuard.active}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-amber-600 m-0">שינויים ישמרו כטיוטה</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p>טיוטה לא נשלחת למנהלי המערכת. אם ברצונך לשלוח את השינוים יש ללחוץ על שלח הצבעה</p>
+          </div>
+
+          <DialogFooter className="flex justify-center gap-3 mt-6">
+            <Button variant="outline" onClick={navGuard.reject}>
+              חזור לדף הצבעה
+            </Button>
+            <Button variant="destructive" onClick={navGuard.accept}>
+              השאר כטיוטה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
           <VoteHeader
@@ -1166,46 +1148,9 @@ export default function VotingForm() {
           </div>
         </div>
       )}
+
       <Toaster />
       <PublishSuccessPopup isOpen={publishSuccess} onCloseAction={() => setPublishSuccess(false)} />
-
-      {/* Navigation Warning Dialog */}
-      <Dialog open={showNavigationWarning}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader className="flex flex-row items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
-            <DialogTitle className="text-xl text-amber-600 m-0">שינויים ישמרו כטיוטה</DialogTitle>
-          </DialogHeader>
-
-          <div className="py-4">
-            <p>טיוטה לא נשלחת למנהלי המערכת. אם ברצונך לשלוח את השינוים יש ללחוץ על שלח הצבעה</p>
-          </div>
-
-          <DialogFooter className="flex justify-center gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                setPendingNavigation(null)
-              }}
-            >
-              חזור לדף הצבעה
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                if (pendingNavigation) {
-                  router.push(pendingNavigation)
-                }
-                setPendingNavigation(null)
-              }}
-            >
-              השאר כטיוטה
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
