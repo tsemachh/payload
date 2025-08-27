@@ -239,7 +239,100 @@ export function DataTableStatic<T extends Record<string, any>>({
 
     return filteredColumns
   }, [columnsOption, columns, columnVisibility, displayMode])
+  // Component for individual agenda item with tooltip
+  const AgendaItem = ({ agenda, index }: { agenda: any; index: number }) => {
+    const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
+    const direction = isEnglish ? 'ltr' : 'rtl'
+    const alignment = isEnglish ? 'text-left' : 'text-right'
 
+    const [tooltipPosition, setTooltipPosition] = React.useState<{
+      x: number
+      y: number
+      visible: boolean
+    }>({ x: 0, y: 0, visible: false })
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      const tooltipWidth = 400
+      const tooltipHeight = 100
+
+      let x = e.clientX + 10 // 10px to the right of cursor
+      let y = e.clientY - tooltipHeight - 10 // 10px above cursor
+
+      // Check if tooltip goes off screen horizontally
+      if (x + tooltipWidth > window.innerWidth) {
+        x = e.clientX - tooltipWidth - 10 // Show to the left instead
+      }
+
+      // Check if tooltip goes off screen vertically
+      if (y < 0) {
+        y = e.clientY + 10 // Show below cursor instead
+      }
+
+      setTooltipPosition({ x, y, visible: true })
+    }
+
+    const handleMouseLeave = () => {
+      setTooltipPosition((prev) => ({ ...prev, visible: false }))
+    }
+
+    return (
+      <div className="relative">
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 cursor-help"
+          style={{ maxWidth: 'calc(100vw - 150px)' }}
+          onMouseMove={agenda.text && agenda.text.length > 30 ? handleMouseMove : undefined}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Index always on the right */}
+          <span className="shrink-0 order-1">{index + 1}.</span>
+          {/* Text content with proper direction */}
+          <div
+            dir={direction}
+            className={cn('relative order-2', alignment)}
+            style={{ maxWidth: 'calc(100vw - 200px)' }} // Adjust based on your layout
+          >
+            <span
+              className={cn(
+                'block',
+                isEnglish ? 'truncate' : 'text-ellipsis overflow-hidden whitespace-nowrap',
+              )}
+              style={
+                !isEnglish
+                  ? {
+                      direction: 'rtl',
+                      textOverflow: 'ellipsis',
+                      unicodeBidi: 'plaintext',
+                      maxWidth: 'calc(100vw - 200px)',
+                    }
+                  : {
+                      maxWidth: 'calc(100vw - 200px)',
+                    }
+              }
+            >
+              {agenda.text}
+            </span>
+          </div>
+        </div>
+
+        {/* Dynamic positioned tooltip */}
+        {agenda.text && agenda.text.length > 30 && tooltipPosition.visible && (
+          <div
+            className="fixed z-50 bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words pointer-events-none transition-opacity duration-200"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+              maxWidth: '400px',
+              wordWrap: 'break-word',
+              direction: direction,
+              textAlign: isEnglish ? 'left' : 'right',
+            }}
+          >
+            {agenda.text}
+          </div>
+        )}
+      </div>
+    )
+  }
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
     (key: string) => {
@@ -1327,73 +1420,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                 className="py-2 px-3 whitespace-nowrap"
                                 style={{ textAlign: 'right' }}
                               >
-                                {columnIndex === 0 && (
-                                  <div className="relative ">
-                                    {(() => {
-                                      const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
-                                      const direction = isEnglish ? 'ltr' : 'rtl'
-                                      const alignment = isEnglish ? 'text-left' : 'text-right'
-                                      return (
-                                        <div
-                                          className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 cursor-help group"
-                                          style={{ maxWidth: '1500px' }}
-                                        >
-                                          {/* Index always on the right */}
-                                          <span className="shrink-0  order-1">{index + 1}.</span>
-                                          {/* Text content with proper direction and tooltip */}
-                                          <div
-                                            dir={direction}
-                                            className={cn(' relative order-2 ', alignment)}
-                                            style={{ maxWidth: '1500px' }} // Account for index width
-                                          >
-                                            <span
-                                              className={cn(
-                                                'block',
-                                                isEnglish
-                                                  ? 'truncate' // Normal left-to-right truncation for English
-                                                  : 'text-ellipsis overflow-hidden whitespace-nowrap', // Right-to-left truncation for Hebrew
-                                              )}
-                                              style={
-                                                !isEnglish
-                                                  ? {
-                                                      direction: 'rtl',
-                                                      textOverflow: 'ellipsis',
-                                                      unicodeBidi: 'plaintext',
-                                                    }
-                                                  : {}
-                                              }
-                                            >
-                                              {agenda.text}
-                                            </span>
-
-                                            {/* Tooltip - show if text exists and might be truncated */}
-                                            {agenda.text && agenda.text.length > 30 && (
-                                              <div
-                                                className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                                                style={{
-                                                  [isEnglish ? 'left' : 'right']: 0,
-                                                  maxWidth: '400px',
-                                                  wordWrap: 'break-word',
-                                                  direction: direction,
-                                                  textAlign: isEnglish ? 'left' : 'right',
-                                                }}
-                                              >
-                                                {agenda.text}
-                                                {/* Tooltip arrow */}
-                                                <div
-                                                  className={cn(
-                                                    'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900',
-                                                    isEnglish ? 'left-4' : 'right-4',
-                                                  )}
-                                                />
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )
-                                    })()}
-                                  </div>
-                                )}
+                                {columnIndex === 0 && <AgendaItem agenda={agenda} index={index} />}
                               </TableCell>
                             ))}
                             {renderRowActions && (

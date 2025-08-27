@@ -105,49 +105,37 @@ export function MeetingsTableClient() {
     return `נבחרו ${selectedCompanyIds.length} חברות`
   }
 
+  const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
+
+  const getButtonClasses = (isSelected: boolean) => {
+    const selectedStyle = 'bg-primary text-primary-foreground shadow-sm'
+    const unselectedStyle = 'text-muted-foreground hover:bg-muted-foreground/10'
+    return `${commonButtonClasses} ${isSelected ? selectedStyle : unselectedStyle}`
+  }
+
   return (
     <div className="space-y-4">
       <div
         className="flex flex-row justify-start gap-4 mr-10 mb-4"
         style={{ position: 'absolute', left: '400px', top: '128px' }}
       >
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center cursor-pointer gap-3">
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'companies' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
-              }`}
+        <div className="flex items-center justify-between">
+          <div className="flex bg-muted rounded-full p-0.5 mr-2">
+            <button
+              type="button"
+              onClick={() => setViewMode('companies')}
+              className={getButtonClasses(viewMode === 'companies')}
             >
               חברות
-            </span>
-
-            <input
-              type="checkbox"
-              checked={viewMode === 'agenda'}
-              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
-              className="sr-only peer"
-            />
-            <div
-              className="relative w-11 h-6 rounded-full transition-all"
-              style={{
-                backgroundColor: 'rgb(71,122,133)',
-              }}
-            >
-              <div
-                className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full bg-white border border-gray-300 transition-transform ${
-                  viewMode === 'companies' ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              ></div>
-            </div>
-
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'agenda' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
-              }`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('agenda')}
+              className={getButtonClasses(viewMode === 'agenda')}
             >
               סדר יום
-            </span>
-          </label>
+            </button>
+          </div>
         </div>
 
         {/* COMPANY SELECTOR */}
