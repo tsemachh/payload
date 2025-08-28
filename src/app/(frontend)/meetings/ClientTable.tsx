@@ -6,7 +6,7 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
-import { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -14,12 +14,14 @@ import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
+import { Button } from '@/components/ui/button'
+import { FileSpreadsheet } from 'lucide-react'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
-
+  const [isExporting, setIsExporting] = useState(false)
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0 || funds.length > 0) {
@@ -113,6 +115,56 @@ export function MeetingsTableClient() {
     return `${commonButtonClasses} ${isSelected ? selectedStyle : unselectedStyle}`
   }
 
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+
+    try {
+      let exportUrl = `/api/meetings/future-meetings`
+      const params = new URLSearchParams()
+
+      if (selectedCompanyIds.length > 0) {
+        params.append('companyIds', selectedCompanyIds.join(','))
+      }
+
+      // Add export parameter
+      params.append('export', 'true')
+      const storedColumns = localStorage.getItem(`columnVisibility-${'meetings-table'}`)
+      console.log('storedColumns', storedColumns)
+      if (storedColumns) {
+        params.append('columns', storedColumns)
+      }
+      if (viewMode) {
+        params.append('viewMode', viewMode)
+      }
+      if (params.toString()) {
+        exportUrl += `?${params.toString()}`
+      }
+      // Make API call to get export data
+      const response = await fetch(exportUrl)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'דו"ח השתתפות באסיפות.xlsx'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      console.log('הקובץ הורד בהצלחה!')
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('הייתה שגיאה בהורדת הקובץ')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div
@@ -178,6 +230,18 @@ export function MeetingsTableClient() {
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
       />
+
+      <div className="mt-4 flex justify-end pl-4">
+        <Button
+          onClick={handleExportExcel}
+          variant="default"
+          className="rounded-md whitespace-nowrap ml-4"
+          disabled={isExporting}
+        >
+          {isExporting ? 'מייצא...' : 'ייצוא כקובץ Excel'}
+          <FileSpreadsheet className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 }
