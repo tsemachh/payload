@@ -253,6 +253,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   <div
                     className="flex-1 text-right text-base text-gray-900 mx-3 truncate min-w-0"
                     title={item.text}
+                    dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                   >
                     {item.text}
                   </div>
