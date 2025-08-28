@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 
 interface VoteData {
   fundsData: Array<{
@@ -114,8 +115,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
 
   const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
+    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
-    updatedFunds[index] = { ...updatedFunds[index], [field]: value }
+    updatedFunds[index] = { ...updatedFunds[index], [field]: booleanValue }
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
@@ -180,34 +182,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button
-                        variant={fund.verifiedHoldings ? 'default' : 'outline'}
-                        size="sm"
-                        className={`${
-                          fund.verifiedHoldings
-                            ? 'bg-green-600 hover:bg-green-700 text-white border-green-600'
-                            : 'border-green-600 text-green-600 hover:bg-green-50'
-                        }`}
-                        onClick={() => {
-                          updateFundData(index, 'verifiedHoldings', true)
-                        }}
-                      >
-                        כן
-                      </Button>
-                      <Button
-                        variant={!fund.verifiedHoldings ? 'default' : 'outline'}
-                        size="sm"
-                        className={`${
-                          !fund.verifiedHoldings
-                            ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
-                            : 'border-red-600 text-red-600 hover:bg-red-50'
-                        }`}
-                        onClick={() => {
-                          updateFundData(index, 'verifiedHoldings', false)
-                        }}
-                      >
-                        לא
-                      </Button>
+                      <CheckboxFilter
+                        value={
+                          fund.verifiedHoldings === false
+                            ? 'unchecked'
+                            : fund.verifiedHoldings === true
+                              ? 'checked'
+                              : 'indeterminate'
+                        }
+                        onChangeAction={(state) => updateFundData(index, 'verifiedHoldings', state)}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>
