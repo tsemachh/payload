@@ -265,8 +265,15 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-between mt-2 w-full">
-                  <div className="flex items-center justify-start gap-4" dir="rtl">
+                <div
+                  className={`flex justify-${item.majorityType === 'privileged' ? 'between' : 'end'} mt-2 w-full`}
+                >
+                  {item.majorityType === 'privileged' && (
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                      דורש רוב מיוחד
+                    </span>
+                  )}
+                  <div className="flex items-center gap-4" dir="rtl">
                     <div className="flex items-center gap-1">
                       <span className="text-gray-700 text-sm">ניגוד עניינים:</span>
                       <div
@@ -303,11 +310,6 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                       </div>
                     </div>
                   </div>
-                  {item.majorityType === 'privileged' && (
-                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                      דורש רוב מיוחד
-                    </span>
-                  )}
                 </div>
               </div>
             )
