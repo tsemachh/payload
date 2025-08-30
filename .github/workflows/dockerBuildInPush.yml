@@ -78,6 +78,7 @@ jobs:
           docker build \
             --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
             --build-arg DATABASE_URI="$DATABASE_URI" \
+            --build-arg BUILD_TIME="$(date +%s)" \
             -t payload-image:local-test .
 
           # Run container
