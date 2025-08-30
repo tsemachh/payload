@@ -22,8 +22,13 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const appVersion = process.env.APP_VERSION || process.env.BUILD_TIME || Date.now().toString()
+  
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
+      <head>
+        <meta name="app-version" content={appVersion} />
+      </head>
       <body className={`useTw ${inter.className}`} suppressHydrationWarning>
         <AuthProvider>
           <ImpersonationProvider checkInterval={600000}>
