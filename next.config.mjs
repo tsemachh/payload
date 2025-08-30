@@ -7,34 +7,41 @@ const nextConfig = {
   },
   productionBrowserSourceMaps: true,
   output: 'standalone',
-  headers: async () => [
-    {
-      source: '/_next/static/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-    {
-      source: '/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'no-cache, no-store, must-revalidate',
-        },
-        {
-          key: 'Pragma',
-          value: 'no-cache',
-        },
-        {
-          key: 'Expires',
-          value: '0',
-        },
-      ],
-    },
-  ],
+  headers: async () => {
+    const appVersion = process.env.APP_VERSION || process.env.BUILD_TIME || 'dev'
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'X-App-Version',
+            value: appVersion,
+          },
+        ],
+      },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'X-App-Version', 
+            value: appVersion,
+          },
+          {
+            key: 'ETag',
+            value: `"${appVersion}"`,
+          },
+        ],
+      },
+    ]
+  },
   webpack: (config, { dev }) => {
     config.cache = false;
     if (!dev) {
