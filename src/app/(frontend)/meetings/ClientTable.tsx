@@ -226,12 +226,12 @@ export function MeetingsTableClient() {
         onlyFuture={true}
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
-        tableHeightOffset={200}
+        tableHeightOffset={260}
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
       />
 
-      <div className="mt-4 flex justify-end pl-4">
+      <div className="flex justify-end pl-4">
         <Button
           onClick={handleExportExcel}
           variant="default"
