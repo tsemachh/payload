@@ -19,7 +19,10 @@ export async function downloadMeetingsExcel(
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
   headerRow.eachCell((cell) => {
     cell.border = {
+      top: { style: 'thin', color: { argb: 'FFF9FAFA' } },
       bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+      left: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+      right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
     }
   })
 
@@ -58,6 +61,7 @@ export async function downloadMeetingsExcel(
       const maxLength = 120
       return m.location.length > maxLength ? m.location.substring(0, maxLength) + '...' : m.location
     },
+    הערות: (m) => m.comments,
   }
 
   const formatValue = (header: string, meeting: any) => {
@@ -73,25 +77,24 @@ export async function downloadMeetingsExcel(
     mainRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFD2E4FF' }, // Light blue to match participation report
+      fgColor: { argb: 'FFD2E4FF' }, // Light blue
     }
     mainRow.font = { bold: true }
     mainRow.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin', color: { argb: 'FFF9FAFA' } },
         bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+        left: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+        right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
       }
     })
     mainRow.height = Math.min(mainRow.height || 30, 80)
 
-    // הצגת agenda רק במצב agenda
     if (viewMode === 'agenda') {
       meeting.agendas?.forEach((agenda: any, idx: number) => {
         const agendaRow = Array(columns.length).fill('')
         const agendaIndex = columns.indexOf('סדר היום')
-
         const agendaText = `\u202B${idx + 1}. ${agenda.text || ''}\u202C`
-
         if (agendaIndex >= 0) {
           agendaRow[agendaIndex] = agendaText
         } else {
@@ -104,18 +107,17 @@ export async function downloadMeetingsExcel(
         row.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE7F0FF' }, // Lighter blue to match participation report
+          fgColor: { argb: 'FFE7F0FF' }, // lighter blue
         }
         row.eachCell((cell) => {
           cell.border = {
+            top: { style: 'thin', color: { argb: 'FFF9FAFA' } },
             bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+            left: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+            right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
           }
         })
-
-        // הגדרת גובה שורה קבוע
         row.height = 15
-
-        // מיזוג תאים עבור שורות agenda - מהעמודה הנוכחית עד סוף השורה
         if (agendaIndex >= 0 && agendaIndex < columns.length - 1) {
           worksheet.mergeCells(row.number, agendaIndex + 1, row.number, columns.length)
         }
@@ -131,9 +133,7 @@ export async function downloadMeetingsExcel(
 
         const parentCompanyRow = Array(columns.length).fill('')
         const companiesIndex = columns.indexOf('חברות')
-
         const parentCompanyText = `\u202B${company.funds?.[0]?.parentCompany?.name || company.companyName || company.name}\u202C`
-
         if (companiesIndex >= 0) {
           parentCompanyRow[companiesIndex] = parentCompanyText
         } else {
@@ -150,11 +150,13 @@ export async function downloadMeetingsExcel(
         }
         parentRow.eachCell((cell) => {
           cell.border = {
+            top: { style: 'thin', color: { argb: 'FFF9FAFA' } },
             bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+            left: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+            right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
           }
         })
         parentRow.height = 15
-
         if (companiesIndex >= 0 && companiesIndex < columns.length - 1) {
           worksheet.mergeCells(
             parentRow.number,
@@ -166,9 +168,7 @@ export async function downloadMeetingsExcel(
 
         company.funds?.forEach((fund: any) => {
           const fundRow = Array(columns.length).fill('')
-
           const fundText = `\u202B ${fund.holdingsCompanyName || ''}\u202C`
-
           if (companiesIndex >= 0) {
             fundRow[companiesIndex] = fundText
           } else {
@@ -181,16 +181,17 @@ export async function downloadMeetingsExcel(
           row.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFF5F5F5' }, // Even lighter background for child items
+            fgColor: { argb: 'FFF5F5F5' },
           }
           row.eachCell((cell) => {
             cell.border = {
+              top: { style: 'thin', color: { argb: 'FFF9FAFA' } },
               bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+              left: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+              right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
             }
           })
-
           row.height = 15
-
           if (companiesIndex >= 0 && companiesIndex < columns.length - 1) {
             worksheet.mergeCells(row.number, companiesIndex + 1, row.number, columns.length)
           }
@@ -210,7 +211,6 @@ export async function downloadMeetingsExcel(
 
     const companiesIndex = columns.indexOf('חברות')
     const agendaIndex = columns.indexOf('סדר היום')
-
     if (viewMode === 'companies' && columnHeader === 'סדר היום') {
       col.hidden = true
     } else if (viewMode === 'agenda' && columnHeader === 'חברות') {
