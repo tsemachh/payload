@@ -41,6 +41,7 @@ interface VoteData {
   voteAgainstRecommendation: boolean
   voteDifferentFromResult: boolean
   reported: boolean
+  clientComment?: string
   votes: Array<{
     topicIndex: number
     voteDecision: string
@@ -391,6 +392,18 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
           })}
         </CardContent>
       </Card>
+      <Card className="border border-gray-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-right text-base text-gray-900">נספחים להצבעה</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col border border-gray-100 rounded p-2">
+            <div className="text-gray-900 font-medium">הערות ללקוח:</div>
+            <div>{formData.clientComment ? formData.clientComment : 'אין הערות'}</div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-start pt-2">
         <Button onClick={handleSave} disabled={isLoading} className="px-6">
           {isLoading ? 'שומר...' : 'שמור'}
