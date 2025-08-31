@@ -3,7 +3,8 @@ import { Logtail } from '@logtail/node'
 import { Context, ILogtailOptions, LogLevel, StackContextHint } from '@logtail/types'
 import { getLogLevel } from './helpers'
 import os from 'os'
-import { pino } from 'pino'
+// @ts-ignore
+import { multistream, pino } from 'pino'
 
 export interface IPinoLogtailOptions {
   sourceToken: string
@@ -87,4 +88,4 @@ const streams = [
   { level: 'info', stream: logtailTransport() },
   { level: 'info', stream: process.stdout },
 ]
-export const logger = pino(baseConfig, pino.multistream(streams))
+export const logger = pino(baseConfig, multistream(streams))

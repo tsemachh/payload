@@ -70,6 +70,7 @@ export const Stocks: CollectionConfig = {
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
       [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
     ],
+    defaultFilter: { active: { equals: true } },
   },
   enableQueryPresets: true,
   admin: {
@@ -128,7 +129,7 @@ export const Stocks: CollectionConfig = {
                   hooks: {
                     beforeChange: [
                       async ({ data }) => {
-                        return `${data?.name}(${data?.stockId})`
+                        return `${data?.name} - ${data?.stockId}`
                       },
                     ],
                   },
@@ -256,7 +257,9 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     width: '100px',
                     condition: (siblingData) =>
-                      siblingData.tradable && siblingData.origin == 'Foreign' && !siblingData.hasDual,
+                      siblingData.tradable &&
+                      siblingData.origin == 'Foreign' &&
+                      !siblingData.hasDual,
                   },
                 },
                 {

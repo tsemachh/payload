@@ -56,7 +56,7 @@ export const getDateRange = (
 }
 
 interface DateRangeSelectorProps {
-  onRangeChange: (
+  onRangeChangeAction: (
     startDate: Date | undefined,
     endDate: Date | undefined,
     type: DateRangeOption,
@@ -64,7 +64,7 @@ interface DateRangeSelectorProps {
   className?: string
 }
 
-export function DateRangeSelector({ onRangeChange, className }: DateRangeSelectorProps) {
+export function DateRangeSelector({ onRangeChangeAction, className }: DateRangeSelectorProps) {
   const [selectedRangeOption, setSelectedRangeOption] = useState<DateRangeOption | undefined>(
     undefined,
   )
@@ -76,8 +76,8 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
 
   // Effect to update parent when startDate/endDate/rangeType change
   useEffect(() => {
-    onRangeChange(startDate, endDate, selectedRangeOption!)
-  }, [startDate, endDate, selectedRangeOption, onRangeChange])
+    onRangeChangeAction(startDate, endDate, selectedRangeOption!)
+  }, [startDate, endDate, selectedRangeOption, onRangeChangeAction])
 
   const handleOptionSelect = (option: DateRangeOption) => {
     setSelectedRangeOption(option)
@@ -146,89 +146,87 @@ export function DateRangeSelector({ onRangeChange, className }: DateRangeSelecto
   )
 
   return (
-    <div className={cn('space-y-4', className)} dir="rtl">
-      <div>
-        <label className="text-base font-semibold mb-2 block text-right"> טווח תאריכים</label>
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-[280px] h-10 px-3 py-2 justify-between text-right font-normal flex-row-reverse', // Added h-10 and px-3 py-2
-                !selectedRangeOption && 'text-muted-foreground',
-              )}
-            >
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-              <span className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis text-right">
-                {formatSelectedRange()}
-              </span>
-              <CalendarIcon className="h-4 w-4 shrink-0 ml-2" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[320px] p-0" align="start" dir="rtl">
-            <div className="p-4">
-              <div className="space-y-2 text-sm">
-                <OptionItem option="two-years" label="שנתיים" />
-                <OptionItem option="one-year" label="שנה" />
-                <OptionItem option="month" label="חודש" />
-                <OptionItem option="week" label="שבוע" />
-                <OptionItem option="custom" label="טווח מותאם אישית" />
-              </div>
+    <div className={cn('flex items-center gap-3', className)} dir="rtl">
+      <label className="text-base font-semibold text-right whitespace-nowrap"> טווח תאריכים</label>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outlineWithputHover"
+            className={cn(
+              'w-[350px] h-10 px-3 py-2 justify-between text-right font-normal flex-row-reverse', // Added h-10 and px-3 py-2
+              !selectedRangeOption && 'text-muted-foreground',
+            )}
+          >
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <span className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis text-right">
+              {formatSelectedRange()}
+            </span>
+            <CalendarIcon className="h-4 w-4 shrink-0 ml-2" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[320px] p-0" align="start" dir="rtl">
+          <div className="p-4">
+            <div className="space-y-2 text-sm">
+              <OptionItem option="two-years" label="שנתיים" />
+              <OptionItem option="one-year" label="שנה" />
+              <OptionItem option="month" label="חודש" />
+              <OptionItem option="week" label="שבוע" />
+              <OptionItem option="custom" label="טווח מותאם אישית" />
+            </div>
 
-              {selectedRangeOption === 'custom' && (
-                <div className="mt-6 pt-4 border-t">
-                  <h3 className="font-bold mb-2 text-center">טווח מותאם אישית</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
-                        מתאריך
-                      </label>
-                      <DateSelector
-                        date={tempStartDate}
-                        onDateChangeAction={setTempStartDate}
-                        className="flex-1"
-                        filterDate={(date) => {
-                          const now = new Date()
-                          now.setHours(0, 0, 0, 0)
-                          const day = date.getDay()
-                          return day === 5 || day === 6 || date > now
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
-                        עד{' '}
-                      </label>
-                      <DateSelector
-                        date={tempEndDate}
-                        onDateChangeAction={setTempEndDate}
-                        className="flex-1"
-                        filterDate={(date) => {
-                          const now = new Date()
-                          now.setHours(0, 0, 0, 0)
-                          const day = date.getDay()
-                          return day === 5 || day === 6 || date > now
-                        }}
-                      />
-                    </div>
+            {selectedRangeOption === 'custom' && (
+              <div className="mt-6 pt-4 border-t">
+                <h3 className="font-bold mb-2 text-center">טווח מותאם אישית</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
+                      מתאריך
+                    </label>
+                    <DateSelector
+                      date={tempStartDate}
+                      onDateChangeAction={setTempStartDate}
+                      className="flex-1"
+                      filterDate={(date) => {
+                        const now = new Date()
+                        now.setHours(0, 0, 0, 0)
+                        const day = date.getDay()
+                        return day === 5 || day === 6 || date > now
+                      }}
+                    />
                   </div>
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      onClick={handleApplyCustomRange}
-                      disabled={!tempStartDate || !tempEndDate}
-                    >
-                      החל
-                    </Button>{' '}
-                    <Button variant="outline" onClick={handleCancelCustomRange}>
-                      ביטול
-                    </Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
+                      עד{' '}
+                    </label>
+                    <DateSelector
+                      date={tempEndDate}
+                      onDateChangeAction={setTempEndDate}
+                      className="flex-1"
+                      filterDate={(date) => {
+                        const now = new Date()
+                        now.setHours(0, 0, 0, 0)
+                        const day = date.getDay()
+                        return day === 5 || day === 6 || date > now
+                      }}
+                    />
                   </div>
                 </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    onClick={handleApplyCustomRange}
+                    disabled={!tempStartDate || !tempEndDate}
+                  >
+                    החל
+                  </Button>{' '}
+                  <Button variant="outline" onClick={handleCancelCustomRange}>
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

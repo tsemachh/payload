@@ -7,6 +7,7 @@ import { AuthProvider } from '@/providers/auth-provider'
 import { HeaderWithNav } from './components/header-with-nav'
 import { CompaniesProvider } from './context/companiesContext'
 import { ImpersonationProvider } from '@/plugins/impersonate/components'
+import { NavigationGuardProvider } from 'next-navigation-guard'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,8 +22,13 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const appVersion = process.env.APP_VERSION || process.env.BUILD_TIME || Date.now().toString()
+  
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
+      <head>
+        <meta name="app-version" content={appVersion} />
+      </head>
       <body className={`useTw ${inter.className}`} suppressHydrationWarning>
         <AuthProvider>
           <ImpersonationProvider checkInterval={600000}>
@@ -34,11 +40,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               disableTransitionOnChange
               themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
             >
-              <div className="flex flex-col h-screen">
-                <HeaderWithNav />
-                <main className="flex-1 py-4">{children}</main>
-              </div>
-              <Notifications />
+              <NavigationGuardProvider>
+                <div className="flex flex-col h-screen">
+                  <HeaderWithNav />
+                  <main className="flex-1 py-4">{children}</main>
+                </div>
+                <Notifications />
+              </NavigationGuardProvider>
             </ThemeProvider>
           </CompaniesProvider>
           </ImpersonationProvider>

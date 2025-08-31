@@ -38,6 +38,7 @@ export const Companies: CollectionConfig = {
   },
   custom: {
     filterList: [['type', 'active', 'passiveFund']],
+    defaultFilter: { active: { equals: 'true' } },
   },
   versions: {},
   fields: [
@@ -57,9 +58,9 @@ export const Companies: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '500px',
-                    custom:{
-                      cellWidth: '250px'
-                    }
+                    custom: {
+                      cellWidth: '250px',
+                    },
                   },
                 },
                 {
@@ -172,8 +173,8 @@ export const Companies: CollectionConfig = {
                   defaultLimit: 1,
                   maxDepth: 2,
                   admin: {
-                    custom:{
-                      cellWidth: '100px'
+                    custom: {
+                      cellWidth: '100px',
                     },
                     width: '100px',
                     className: 'truncate',
@@ -335,7 +336,7 @@ export const Companies: CollectionConfig = {
         },
 
         {
-          label: 'אחזקות',
+          label: 'החזקות',
           admin: {
             condition: (data) => data?.type == 'fund',
           },

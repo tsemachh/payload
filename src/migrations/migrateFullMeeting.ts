@@ -142,7 +142,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             : row.result.toString()
           : '0', // Map -2 and 4 to 0, otherwise use string representation
         vpercent: row.vpercent,
-        vPercentSpecial: row.vPercentSpecial,
+        vPercentSpecial: row.vPercentSpecial === -1 ? null : row.vPercentSpecial,
         dealChanged: row.dealChanged === 1, // Convert to boolean
         recommendation: {
           votingRecommendation: getVotingRecommendation(row.rec),
@@ -261,7 +261,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 majorityType: item.majorityType,
                 result: item.result,
                 vpercent: item.vpercent,
-                vPercentSpecial: item.vPercentSpecial,
+                vPercentSpecial: item.vPercentSpecial === -1 ? null : item.vPercentSpecial,
                 dealChanged: item.dealChanged,
                 recommendation: item.recommendation,
                 isRemovedFromAgenda: item.isRemovedFromAgenda,

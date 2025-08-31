@@ -151,7 +151,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Create a new object with the correct property name
             const companyObj = {
               companyId: existingCompany,
-              permission: 'write' as const,
+              permission: firm.votePermission ? ('write' as const) : ('read' as const),
             }
             companies.push(companyObj)
           } catch (error: any) {

@@ -22,7 +22,7 @@ export const AdminNotifications: CollectionConfig = {
     group: 'פעילות',
     defaultColumns: ['message', 'url', 'handled', 'createdAt', 'assignee', 'acquireTask'],
     components: {
-      beforeList: ['/collections/admin-notifications/components/TaskMenu'],
+      beforeListTable: ['/collections/admin-notifications/components/TaskMenu'],
     },
     pagination: {
       defaultLimit: 100,
@@ -32,6 +32,7 @@ export const AdminNotifications: CollectionConfig = {
   defaultSort: '-createdAt',
   custom: {
     filterList: [['type', 'createdAt', 'meetingDate', 'holdingsLimit', 'handled', 'acquireTask']],
+    defaultFilter: { handled: { equals: false }, type: { equals: 'newVoteAfterHoldingLimit' } },
   },
   fields: [
     {
@@ -67,7 +68,7 @@ export const AdminNotifications: CollectionConfig = {
               value: 'usersUpdated',
             },
             {
-              label: 'העדר דווח אחזקות',
+              label: 'העדר דווח החזקות',
               value: 'companyNotReportedHoldings',
             },
             {

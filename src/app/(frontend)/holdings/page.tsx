@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { useAuth } from '@/providers/auth-provider'
+import { getCompaniesWithPermission } from '@/utils/permissions'
 import { HoldingFeedLine } from '@/payload-types'
 import {
   FeedFatalError,
   FeedValidationResult,
   FeedWarning,
+  StandardizedRow,
 } from '@/collections/holdings/feeds/FeedTypes'
 import { CompanyTreeSelector } from './components/CompanySelector'
 import { DateSelector } from './components/DateSelector'
@@ -24,8 +26,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
-import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
+import { useNavigationGuard } from 'next-navigation-guard'
 
 export default function HoldingsFeedView() {
   const router = useRouter()
@@ -37,6 +39,7 @@ export default function HoldingsFeedView() {
   const [isValidating, setIsValidating] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
   const [silencedRecords, setSilencedRecords] = useState<HoldingFeedLine[]>([])
@@ -44,56 +47,39 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
-  const [showNavigationWarning, setShowNavigationWarning] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user?.funds) {
-      const tmpSelectedCompanies = user?.funds.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
-      setSelectedCompanies(tmpSelectedCompanies)
-    }
-  }, [user?.funds])
+    if (user) {
+      // Get companies with write permission
+      const companiesWithWritePermission = getCompaniesWithPermission(user, 'write')
+      // Set read-only mode if user has no write permissions
+      const hasWritePermissions = companiesWithWritePermission.length > 0
+      setIsReadOnly(!hasWritePermissions)
 
-  // Warning when user tries to leave the page while in edit mode
-  const handleBeforeUnload = useCallback(
-    (e: BeforeUnloadEvent) => {
-      if (!editForm) {
-        e.preventDefault()
-        return 'האם להפסיק את הזנת החזקות לפני שמירתן? לצאת ללא שמירה להאשר בהזנות'
+      if (hasWritePermissions) {
+        // If user has write permissions, initialize with those companies
+        setSelectedCompanies(companiesWithWritePermission)
+      } else if (user.funds) {
+        // If no write permissions, initialize with read-only companies
+        const readOnlyCompanies = user.funds.map((company) =>
+          typeof company === 'string' ? company : company.id,
+        )
+        setSelectedCompanies(readOnlyCompanies)
       }
-    },
-    [editForm, selectedCompanies.length, date, file],
-  )
-
-  useEffect(() => {
-    if (!editForm) {
-      window.addEventListener('beforeunload', handleBeforeUnload)
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [handleBeforeUnload, editForm, selectedCompanies.length, date, file])
+  }, [user])
 
-  // Navigation warning for internal navigation
-  const handleNavigation = useCallback(
-    (href: string) => {
-      if (!editForm) {
-        setPendingNavigation(href)
-        setShowNavigationWarning(true)
+  // Use navigation guard hook for back button and browser navigation
+  const navGuard = useNavigationGuard({
+    enabled: (params) => {
+      // Disable for programmatic navigation (push/replace)
+      if (params.to.includes('/holdings/view?date')) {
         return false
       }
-      return true
+      // Enable for user-initiated navigation (popstate/beforeunload) when form is being edited
+      return !editForm
     },
-    [editForm, selectedCompanies.length, date, file],
-  )
-
-  // Expose the navigation handler globally
-  useEffect(() => {
-    ;(window as unknown as Record<string, unknown>).holdingsNavigationHandler = handleNavigation
-    return () => {
-      delete (window as unknown as Record<string, unknown>).holdingsNavigationHandler
-    }
-  }, [handleNavigation])
+  })
 
   // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {
@@ -286,12 +272,22 @@ export default function HoldingsFeedView() {
       {editForm ? (
         <>
           <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-right md:gap-6 md:px-10">
+            {/* Add a read-only notice if needed */}
+            {isReadOnly && (
+              <div className="w-full bg-yellow-100 p-4 rounded-md text-yellow-800 mb-4">
+                אין לך הרשאות להזנת החזקות לחברות אלו. צפייה בלבד.
+              </div>
+            )}
+
             <div>
               <label className="text-base font-semibold mb-2 block">חברות</label>
               <CompanyTreeSelector
                 selectedCompanies={selectedCompanies}
                 onSelectionChangeAction={handleSelectionChangeAction}
                 className="w-full"
+                allCompaniesIds={user?.funds?.map((company) =>
+                  typeof company === 'string' ? company : company.id,
+                )}
               />
             </div>
 
@@ -311,10 +307,10 @@ export default function HoldingsFeedView() {
             </div>
 
             <div className="">
-              <label className="text-base font-semibold mb-2 block">קובץ אחזקות</label>
+              <label className="text-base font-semibold mb-2 block">קובץ החזקות</label>
               <FileUploader
                 onFileChangeAction={handleFileChangeAction}
-                disabled={isUploading}
+                disabled={isUploading || isReadOnly}
                 className="w-full"
               />
             </div>
@@ -323,23 +319,23 @@ export default function HoldingsFeedView() {
           <div className="flex justify-center mt-6">
             <Button
               variant={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? 'default'
                   : 'defaultHover'
               }
               onClick={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? () => {}
                   : handleSubmit
               }
               className="px-40"
               style={
-                !date || !file || isUploading || selectedCompanies.length === 0
+                !date || !file || isUploading || selectedCompanies.length === 0 || isReadOnly
                   ? { cursor: 'not-allowed', opacity: 0.5 }
                   : {}
               }
             >
-              {isUploading ? 'מעלה...' : 'הזן אחזקות'}
+              {isReadOnly ? 'צפייה בלבד' : isUploading ? 'מעלה...' : 'הזן החזקות'}
             </Button>
           </div>
         </>
@@ -347,7 +343,7 @@ export default function HoldingsFeedView() {
         <>
           {date && file && (
             <h4 className="text-xl text-center">
-              אחזקות מקובץ{' '}
+              החזקות מקובץ{' '}
               <bdi className="inline-block font-mono" dir={'ltr'}>
                 {file.name}
               </bdi>{' '}
@@ -393,7 +389,7 @@ export default function HoldingsFeedView() {
       )}
 
       {/* Navigation Warning Dialog */}
-      <Dialog open={showNavigationWarning}>
+      <Dialog open={navGuard.active}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
@@ -405,25 +401,10 @@ export default function HoldingsFeedView() {
           </div>
 
           <DialogFooter className="flex justify-center gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                setPendingNavigation(null)
-              }}
-            >
+            <Button variant="outline" onClick={navGuard.reject}>
               להמשיך בהזנות
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setShowNavigationWarning(false)
-                if (pendingNavigation) {
-                  router.push(pendingNavigation)
-                }
-                setPendingNavigation(null)
-              }}
-            >
+            <Button variant="destructive" onClick={navGuard.accept}>
               לצאת ללא שמירה
             </Button>
           </DialogFooter>

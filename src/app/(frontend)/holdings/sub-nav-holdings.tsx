@@ -1,21 +1,17 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
-import { FileText, Eye } from 'lucide-react'
-import { cn, handleNavigation } from '@/lib/utils'
+import { usePathname } from 'next/navigation'
+import { Eye, FileText } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 const navItems = [
-  { value: 'feed', label: 'הזנת אחזקות', icon: FileText, path: '/holdings' },
-  { value: 'view', label: 'צפייה באחזקות', icon: Eye, path: '/holdings/view' },
+  { value: 'feed', label: 'הזנת החזקות', icon: FileText, path: '/holdings' },
+  { value: 'view', label: 'צפייה בהחזקות', icon: Eye, path: '/holdings/view' },
 ]
 
 export function HoldingsNav() {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const handleNavigationClick = (href: string, e: React.MouseEvent) => {
-    handleNavigation(href, e, pathname, router)
-  }
 
   return (
     <div className="flex justify-start pb-[15px] pr-8" dir="rtl">
@@ -25,9 +21,9 @@ export function HoldingsNav() {
           const isActive = pathname === item.path
 
           return (
-            <button
+            <Link
               key={item.value}
-              onClick={(e) => handleNavigationClick(item.path, e)}
+              href={item.path}
               className={cn(
                 'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-2 py-1 rounded-md cursor-pointer',
                 isActive
@@ -37,7 +33,7 @@ export function HoldingsNav() {
             >
               <Icon className="h-4 w-4 ml-2" />
               {item.label}
-            </button>
+            </Link>
           )
         })}
       </nav>

@@ -1,9 +1,8 @@
 'use client'
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
+import { AlertTriangle, Upload } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -12,13 +11,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import { useNavigationGuard } from 'next-navigation-guard'
 import { CompanyTableDate } from '../../types/meetings'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import VoteDetails from '../components/VoteDetails'
 import VoteCompanySelector from '../components/VoteCompanySelector'
 import GeneralQuestions from '../components/GeneralQuestions'
 import AgendaQuestions from '../components/AgendaQuestions'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   AgendaQuestionId,
   AgendaQuestionsType,
@@ -45,25 +52,23 @@ import {
   isGeneralVote,
 } from '../../helpers/utils-vote'
 import useSWR from 'swr'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../../components/ui/tooltip'
-import { useParams } from 'next/navigation'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
+import { hasCompanyPermission } from '@/utils/permissions'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function VotingForm() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const meetingIdFromUrl = params?.id || '-'
 
   const [isReadOnly, setIsReadOnly] = useState(false)
+  const [readOnlyReason, setReadOnlyReason] = useState<'date' | 'permission' | null>(null)
   const [uploadedDocs, setUploadedDocs] = useState<Document[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
@@ -85,6 +90,7 @@ export default function VotingForm() {
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [isDraftSaved, setIsDraftSaved] = useState(false)
 
   const {
     data: meetingData,
@@ -99,14 +105,40 @@ export default function VotingForm() {
   )
 
   useEffect(() => {
-    if (meetingData?.proxyVotingDate) {
-      const proxyVotingDate = new Date(meetingData.proxyVotingDate)
-      const now = new Date()
-      if (proxyVotingDate < now) {
-        setIsReadOnly(true)
+    if (meetingData) {
+      // Check date restriction
+      let isReadOnlyDueToDate = false
+      if (meetingData.proxyVotingDate) {
+        const proxyVotingDate = new Date(meetingData.proxyVotingDate)
+        const now = new Date()
+        if (proxyVotingDate < now) {
+          isReadOnlyDueToDate = true
+        }
       }
+
+      // Check permission restriction
+      let isReadOnlyDueToPermission = false
+      if (user && meetingData?.companies.length > 0) {
+        // Check if user has write permission for this company
+        const hasWritePermission = hasCompanyPermission(user, meetingData?.companies[0].id, 'write')
+        if (!hasWritePermission) {
+          isReadOnlyDueToPermission = true
+        }
+      }
+
+      // Set read-only reason based on which restriction applies
+      if (isReadOnlyDueToPermission) {
+        setReadOnlyReason('permission')
+      } else if (isReadOnlyDueToDate) {
+        setReadOnlyReason('date')
+      } else {
+        setReadOnlyReason(null)
+      }
+
+      // Set read-only if either restriction applies
+      setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-  }, [meetingData])
+  }, [meetingData, user])
 
   useEffect(() => {
     if (meetingDataError) {
@@ -201,12 +233,11 @@ export default function VotingForm() {
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
-    const votedCompaniesTmp = new Set<string>(
+    return new Set<string>(
       votedCompaniesArray.map((vote: any) =>
         typeof vote.company === 'string' ? vote.company : vote.company.id,
       ),
     )
-    return votedCompaniesTmp
   }, [votedCompaniesArray, isVotedCompaniesArray])
 
   useEffect(() => {
@@ -242,13 +273,15 @@ export default function VotingForm() {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
       return
     }
+    // Reset isDraftSaved when loading a new meeting
+    setIsDraftSaved(false)
     let initialData: VoteDataType
     let publishedData: VoteDataType | null = null
 
@@ -361,11 +394,20 @@ export default function VotingForm() {
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
-  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes])
+  }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes, setIsDraftSaved])
 
   useEffect(() => {
     setLocalVoterNotes(votingData.voterNotes || '')
   }, [votingData.voterNotes])
+
+  // Use navigation guard hook for back button and browser navigation
+  const navGuard = useNavigationGuard({
+    enabled: (isDirty || isDraftSaved) && !isReadOnly,
+  })
+
+  // Note: beforeunload handler removed to prevent browser's default "Leave site" alert
+  // The auto-draft system handles data persistence, and useNavigationGuard handles in-app navigation
+  // For external navigation (browser back to different site, refresh, close), we rely on auto-saves
 
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
@@ -552,6 +594,7 @@ export default function VotingForm() {
           body: JSON.stringify(requestBody),
         })
         if (response.ok) {
+          setIsDraftSaved(true)
           toast({
             title: '✅ נתונים נשמרו',
             description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
@@ -578,7 +621,7 @@ export default function VotingForm() {
         })
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft],
+    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
   )
 
   const handleQuestionChange = useCallback(
@@ -757,6 +800,29 @@ export default function VotingForm() {
 
   return (
     <>
+      {/* Navigation Guard Dialog */}
+      <Dialog open={navGuard.active}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader className="flex flex-row items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />
+            <DialogTitle className="text-xl text-amber-600 m-0">שינויים ישמרו כטיוטה</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p>טיוטה לא נשלחת למנהלי המערכת. אם ברצונך לשלוח את השינוים יש ללחוץ על שלח הצבעה</p>
+          </div>
+
+          <DialogFooter className="flex justify-center gap-3 mt-6">
+            <Button variant="outline" onClick={navGuard.reject}>
+              חזור לדף הצבעה
+            </Button>
+            <Button variant="destructive" onClick={navGuard.accept}>
+              השאר כטיוטה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {meetingData && !isMeetingLoading && !isSWRLoading ? (
         <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
           <VoteHeader
@@ -769,6 +835,7 @@ export default function VotingForm() {
                   : meetingData.stockName || meetingData.stockNumber || '',
             }}
             isReadOnly={isReadOnly}
+            readOnlyReason={readOnlyReason}
             isDirty={isDirty}
             lastPublishedVoteInfo={lastPublishedVoteInfo}
             fetchedVotes={fetchedVotes}
@@ -1081,8 +1148,9 @@ export default function VotingForm() {
           </div>
         </div>
       )}
+
       <Toaster />
-      <PublishSuccessPopup isOpen={publishSuccess} onClose={() => setPublishSuccess(false)} />
+      <PublishSuccessPopup isOpen={publishSuccess} onCloseAction={() => setPublishSuccess(false)} />
     </>
   )
 }

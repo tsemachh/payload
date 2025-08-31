@@ -33,7 +33,14 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     sortKey: 'companies',
     minWidth: 50,
     width: 50,
-    isAlwaysVisible: true,
+  },
+  {
+    key: 'agenda',
+    header: 'סדר יום',
+    type: 'string',
+    sortKey: 'agendas',
+    minWidth: 50,
+    width: 50,
   },
   {
     key: 'stockNumber',
@@ -132,18 +139,18 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
   },
   {
     key: 'percentageHolding',
-    header: 'אחזקה (%)',
+    header: 'החזקה (%)',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
       }).format(row.percentageHolding),
     minWidth: 100,
   },
   {
     key: 'holdingValueInMillions',
-    header: 'שווי אחזקה  (מיליוני ₪)',
+    header: 'שווי החזקה  (מיליוני ₪)',
     type: 'number',
     render: (row) =>
       new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(

@@ -33,6 +33,10 @@ ARG PAYLOAD_SECRET
 ENV PAYLOAD_SECRET ${PAYLOAD_SECRET}
 ARG LOGTAIL_SOURCE_TOKEN
 ENV LOGTAIL_SOURCE_TOKEN ${LOGTAIL_SOURCE_TOKEN}
+ARG BUILD_TIME
+ENV BUILD_TIME ${BUILD_TIME}
+ARG APP_VERSION
+ENV APP_VERSION ${APP_VERSION}
 # ARG GCS_BUCKET
 # ENV GCS_BUCKET ${GCS_BUCKET}
 # ARG GCS_PROJECT_ID
@@ -70,6 +74,11 @@ RUN chmod -R 755 /app
 
 RUN mkdir media
 RUN chown nextjs:nodejs media
+
+# Copy fonts for PDF generation (from public directory only)
+RUN mkdir -p public/fonts
+COPY --from=builder --chown=nextjs:nodejs /app/public/fonts ./public/fonts
+COPY --from=builder --chown=nextjs:nodejs /app/public/*.png ./public/
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing

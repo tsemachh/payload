@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
@@ -48,11 +48,11 @@ export default function HoldingsView() {
         setDate(dateTmp)
         setError('')
       } catch (e) {
-        setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+        setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
         console.error('Invalid data', e)
       }
     } else {
-      setError('לצפייה באחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
+      setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
     }
   }, [dateFormUrl])
 
@@ -124,7 +124,6 @@ export default function HoldingsView() {
       const formattedDate = date.toISOString()
       const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
       const data = await response.json()
-
       if (response.ok) {
         if (!data.docs.length) {
           setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
@@ -136,7 +135,7 @@ export default function HoldingsView() {
         const processed = []
         for (const holdingDay of data.docs) {
           const fundName = holdingDay.fund?.name || 'N/A'
-
+          const accountId = holdingDay.fund.mainAccount[0].accountNumber
           // Process each holding item in the holdings array
           if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
             for (const item of holdingDay.holdings) {
@@ -146,6 +145,7 @@ export default function HoldingsView() {
                 stockName: item.stock?.name || 'N/A',
                 quantity: item.quantity || 'N/A',
                 company: fundName,
+                accountId: accountId,
               })
             }
           }
@@ -195,7 +195,7 @@ export default function HoldingsView() {
           date && (
             <div>
               <h4 className="text-xl text-center pb-3">
-                אחזקות לתאריך {format(date, 'dd/MM/yyyy')}
+                החזקות לתאריך {format(date, 'dd/MM/yyyy')}
               </h4>
               <DataTable
                 columns={columns}

@@ -1,13 +1,5 @@
 import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'payload'
-import {
-  Company,
-  Meeting,
-  MeetingAgenda,
-  ResearchDocument,
-  Stock,
-  StockValue,
-} from '@/payload-types'
-import { calculateHoldingValues } from '@/app/(frontend)/helpers/utils-data-table'
+import { Company, Meeting, MeetingAgenda, ResearchDocument, Stock } from '@/payload-types'
 import {
   AgendasType,
   CompanyTableDate,
@@ -17,7 +9,8 @@ import {
   UrlFilenameMap,
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
-import { findSubCompanyNameById } from '@/utils/utils'
+import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
+import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -50,13 +43,52 @@ const MEETING_SELECT_FIELDS: SelectType = {
 }
 
 /**
- * Creates a companies filter condition based on user's leaf companies
+ * Creates a companies filter condition based on user's leaf companies and selected companies
  */
-function createCompaniesFilter(userFunds: (string | Company)[] | undefined | null) {
+function createAllMeetingsCompaniesFilter(companiesIds: string[] | null | undefined) {
+  if (!companiesIds || companiesIds.length === 0) {
+    return { companies: { in: [] } }
+  }
+  return { companies: { in: companiesIds } }
+}
+function createCompaniesFilter(
+  userCompany: (string | Company)[] | undefined | null | any,
+  companiesIds: string[] | null | any,
+) {
+  let companies = userCompany?.map((c: any) => c?.companyId)
+  if (!companiesIds || companiesIds.length === 0) {
+    console.log('No companies selected → returning empty filter')
+    return {
+      companies: { in: [] },
+    }
+  }
+  if (companiesIds) {
+    companies = companies?.filter((com: any) => companiesIds.includes(com as string))
+  }
+  return userCompany
+    ? {
+        companies: {
+          in: companies,
+        },
+      }
+    : {
+        companies: {
+          in: [], // no matches if user.funds is missing or empty
+        },
+      }
+}
+function createFundsFilter(
+  userFunds: (string | Company)[] | undefined | null,
+  fundIds: string[] | null = null,
+) {
+  let funds = userFunds?.map(getIdOfRelationField)
+  if (fundIds) {
+    funds = funds?.filter((fund) => fundIds.includes(fund as string))
+  }
   return userFunds
     ? {
         funds: {
-          in: userFunds,
+          in: funds,
         },
       }
     : {
@@ -65,7 +97,6 @@ function createCompaniesFilter(userFunds: (string | Company)[] | undefined | nul
         },
       }
 }
-
 /**
  * Creates a published status filter condition
  */
@@ -254,7 +285,17 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // NEW: Get vote filter parameters
     const voteAgainstRecommendation = req.query.voteAgainstRecommendation === 'true'
     const voteDifferentFromResult = req.query.voteDifferentFromResult === 'true'
-
+    const companyIdsParam = req.query.companyIds as string
+    let companyIds: string[] | undefined
+    if (companyIdsParam && companyIdsParam.trim() !== '') {
+      try {
+        companyIds = JSON.parse(companyIdsParam)
+      } catch (e) {
+        companyIds = companyIdsParam.split(',').map((id: string) => id.trim())
+      }
+    } else {
+      companyIds = []
+    }
     let frontendSelectedFundIds: string[] | undefined
     if (selectedFundsParam) {
       frontendSelectedFundIds = selectedFundsParam.split(',')
@@ -286,13 +327,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
 
     // Build filter conditions
-    const whereConditions: any[] = [
-      createCompaniesFilter(user?.funds),
-      createPublishedStatusFilter(),
-    ]
+    const whereConditions: any[] = [createFundsFilter(user?.funds), createPublishedStatusFilter()]
     const userFunds = getSafeFunds(user?.funds)
     if (userFunds && userFunds.length > 0) {
-      whereConditions.push(createCompaniesFilter(userFunds))
+      whereConditions.push(createFundsFilter(userFunds))
     } else {
       // If user has no funds, they shouldn't see any meetings
       whereConditions.push({ funds: { in: [] } })
@@ -300,7 +338,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Apply frontend selected funds filter (further restriction)
     if (frontendSelectedFundIds && frontendSelectedFundIds.length > 0) {
-      whereConditions.push(createCompaniesFilter(frontendSelectedFundIds))
+      whereConditions.push(createFundsFilter(frontendSelectedFundIds))
+    }
+    if (companyIds) {
+      whereConditions.push(createAllMeetingsCompaniesFilter(companyIds))
     }
     // Add search condition
     if (searchTerm) {
@@ -363,6 +404,10 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayISO = today.toISOString()
+
+    // Extract companyIds from query parameters
+    const companyIdsParam = req.query.companyIds as string
+    const selectedCompaniesIds = companyIdsParam ? companyIdsParam.split(',') : null
     const meetings = await payload.find({
       collection: 'meetings',
       select: MEETING_SELECT_FIELDS,
@@ -372,12 +417,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
         and: [
           { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
           { meetingDate: { greater_than_equal: todayISO } },
-          createCompaniesFilter(user?.funds),
+          createCompaniesFilter(user?.companies, selectedCompaniesIds),
           createPublishedStatusFilter(),
         ],
       },
     })
-
     const safeFunds = getSafeFunds(user?.funds)
 
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
@@ -392,23 +436,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 }
 
 /**
- * Finds the intersection of meeting companies and user's leaf companies
- */
-function findRelevantCompanyIds(
-  meetingCompanies: string[] | undefined,
-  funds: string[] | null | undefined,
-): string[] {
-  return (meetingCompanies || [])
-    .filter((companyID) => funds?.some((fund) => fund === companyID))
-    .filter((id) => id !== null) as string[]
-}
-/**
  * Creates a standardized meeting data object for the frontend
  */
 function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: Stock,
-  stockValue: StockValue,
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
   researchDocuments: UrlFilenameMap[],
@@ -430,7 +462,7 @@ function createMeetingDataObject(
     companyName: stockPresent?.longName || '-',
     stockTradable: stockPresent?.tradable || false,
     stockOrigin: stockPresent?.origin || '-',
-    marketValue: stockValue?.marketValue || 0,
+    marketValue: meeting.stockMarketValue || 0,
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
     reference: meeting.magnaId || '-',
@@ -665,9 +697,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             'url' in doc &&
             'filename' in doc &&
             typeof doc.url === 'string' &&
-            typeof doc.filename === 'string' &&
-            doc.url !== null &&
-            doc.filename !== null,
+            typeof doc.filename === 'string',
         )
         .filter((doc) => {
           const docCompanyIds = doc.companies ?? []
@@ -707,7 +737,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       return createMeetingDataObject(
         meeting,
         stockPresent,
-        meeting.stockValue as StockValue,
         agendas,
         companiesArray,
         researchDocuments,
@@ -738,7 +767,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
           {
             id: { equals: meetingId },
           },
-          createCompaniesFilter(user?.funds),
+          createFundsFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },

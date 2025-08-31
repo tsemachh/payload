@@ -6,10 +6,10 @@ export type CheckboxFilterState = 'checked' | 'unchecked' | 'indeterminate'
 
 interface CheckboxFilterProps {
   value?: CheckboxFilterState
-  onChange: (state: CheckboxFilterState) => void
+  onChangeAction: (state: CheckboxFilterState) => void
 }
 
-export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFilterProps) {
+export function CheckboxFilter({ value = 'indeterminate', onChangeAction }: CheckboxFilterProps) {
   const [internalState, setInternalState] = useState<CheckboxFilterState>(value)
 
   useEffect(() => {
@@ -18,12 +18,12 @@ export function CheckboxFilter({ value = 'indeterminate', onChange }: CheckboxFi
 
   const handleToggle = (newState: 'checked' | 'unchecked') => {
     setInternalState(newState)
-    onChange(newState)
+    onChangeAction(newState)
   }
 
   const handleClear = () => {
     setInternalState('indeterminate')
-    onChange('indeterminate')
+    onChangeAction('indeterminate')
   }
 
   return (

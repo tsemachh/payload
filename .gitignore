@@ -61,3 +61,7 @@ continue.config.yaml
 **/.claude/settings.local.json
 /docs/**
 /research-documents/**
+/meetings-*.csv
+/meetings-feed/*.json
+/stocks-feed/*.json
+/tmp/*.json

@@ -18,8 +18,8 @@ export type MeetingTableDataType = {
   stockOrigin: StockOrigin // מקור נייר הערך
   marketValue: number //שווי שוק
   nominalValue: number // ערך נקוב ליום קובע
-  percentageHolding: number //אחוז אחזקות
-  holdingValueInMillions: number //שווי אחזקה במיליונים
+  percentageHolding: number //אחוז החזקות
+  holdingValueInMillions: number //שווי החזקה במיליונים
   meetingType: string //סוג האסיפה
   meetingDate: string //מועד האסיפה
   reference: string
@@ -34,6 +34,8 @@ export type MeetingTableDataType = {
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
   votes: any
+  displayMode?: string
+  selectedCompanyIds?: string[]
 }
 
 export type DateFilterOption = {
@@ -148,8 +150,10 @@ export interface DataTableProps<T extends Record<string, any>> {
   renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
   expanderColumnKey?: keyof T
   searchOption?: boolean
-  selectAll?:string
-  removeAll?:string
+  selectAll?: string
+  removeAll?: string
+  displayMode?: 'companies' | 'agenda' // New prop for display mode
+  selectedCompanyIds?: string[]
 }
 
 export interface UrlFilenameMap {

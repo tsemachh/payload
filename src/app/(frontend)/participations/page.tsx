@@ -1,9 +1,8 @@
 'use client'
 
 import type React from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { useCallback } from 'react'
-import { useState, useMemo, useEffect } from 'react'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -13,14 +12,15 @@ import { DateRangeSelector } from '../components/ui/date-range-selector'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { useAuth } from '@payloadcms/ui'
 import useSWR from 'swr'
-import { fetcher } from '../helpers/utils-data-table'
+import { fetcher, formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
-import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { BooleanIcon } from '@/components/ui/icons'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
 import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
+import { resultMapping } from '@/lib/exportTypes'
+import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 
 export interface Company {
   id: string
@@ -77,6 +77,7 @@ export default function Participations() {
   const [dualMeetingsOnly, setDualMeetingsOnly] = useState(false)
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
+  const [isExporting, setIsExporting] = useState(false)
 
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -140,6 +141,10 @@ export default function Participations() {
       sortDirection: sortDirection,
     })
 
+    if (appliedFilters.selectedFundIds.length > 0) {
+      params.append('fundIds', appliedFilters.selectedFundIds.join(','))
+    }
+
     if (appliedFilters.startDate && appliedFilters.endDate) {
       params.append('startDate', appliedFilters.startDate.toISOString())
       params.append('endDate', appliedFilters.endDate.toISOString())
@@ -166,6 +171,7 @@ export default function Participations() {
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
+    appliedFilters.selectedFundIds,
     appliedFilters.startDate,
     appliedFilters.endDate,
     appliedFilters.voteAgainstRecommendation,
@@ -238,18 +244,19 @@ export default function Participations() {
         isAlwaysVisible: true,
         filterable: false,
         renderHeader: () => (
-          <div
-            className="cursor-pointer text-[rgb(71,122,133)] hover:text-[rgb(61,112,123)] font-medium text-sm border-b border-[rgb(71,122,133)] pb-1"
-            onClick={() => {
-              if (allSelected) {
-                const allIds = participationData.map((row) => row.id)
-                setDeselectedIds(new Set(allIds))
-              } else {
-                setDeselectedIds(new Set())
-              }
-            }}
-          >
-            {allSelected ? 'בטל הכל' : 'בחר הכל'}
+          <div className="flex justify-center mr-[18px]">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setDeselectedIds(new Set())
+                } else {
+                  const allIds = participationData.map((row) => row.id)
+                  setDeselectedIds(new Set(allIds))
+                }
+              }}
+              className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground w-5 h-5"
+            />
           </div>
         ),
         render: (row) => (
@@ -272,7 +279,12 @@ export default function Participations() {
           </div>
         ),
       },
-      { key: 'stockNumber', header: 'מספר נייר / נושאי האסיפה', type: 'string', minWidth: 120 },
+      {
+        key: 'stockNumber',
+        header: 'מספר נייר /  \n נושאי האסיפה',
+        type: 'string',
+        minWidth: 80,
+      },
     ]
 
     if (selectedCompaniesCount > 1) {
@@ -292,41 +304,44 @@ export default function Participations() {
       { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
       {
         key: 'marketValue',
-        header: 'שווי שוק',
+        header: `שווי שוק (מ' ₪)`,
         type: 'string',
         render: (row) => {
-          const value = parseNumber(row.marketValue)
-          return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(value)
+          const marketValue = parseNumber(row.marketValue)
+          return new Intl.NumberFormat('he-IL', {
+            maximumFractionDigits: 0,
+          }).format(marketValue / 1_000_000)
         },
-        minWidth: 100,
+        minWidth: 80,
       },
       {
         key: 'percentageHolding',
-        header: 'אחזקה (%)',
+        header: 'החזקה (%)',
+        type: 'number',
+        render: (row) =>
+          new Intl.NumberFormat('he-IL', {
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4,
+          }).format(row.percentageHolding),
+        minWidth: 80,
+      },
+      {
+        key: 'holdingValueInMillions',
+        header: `שווי החזקה (מ' ₪)`,
         type: 'number',
         render: (row) =>
           new Intl.NumberFormat('he-IL', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          }).format(row.percentageHolding),
-        minWidth: 100,
-      },
-      {
-        key: 'holdingValueInMillions',
-        header: 'שווי אחזקה',
-        type: 'number',
-        render: (row) =>
-          new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-            row.holdingValueInMillions,
-          ),
-        minWidth: 50,
+          }).format(row.holdingValueInMillions),
+        minWidth: 80,
       },
       {
         key: 'meetingDate',
         header: 'מועד האסיפה',
         type: 'datetime',
         render: (row) => formatDateTime(row.meetingDate),
-        minWidth: 130,
+        minWidth: 120,
       },
       { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
       {
@@ -334,21 +349,21 @@ export default function Participations() {
         header: 'המלצת גורם מייעץ',
         type: 'string',
         render: (row) => null,
-        minWidth: 120,
+        minWidth: 70,
       },
       {
         key: 'vote',
         header: 'הצבעה',
         type: 'string',
         render: (row) => null,
-        minWidth: 100,
+        minWidth: 70,
       },
       {
         key: 'meetingResults',
         header: 'תוצאות האסיפה',
         type: 'string',
         render: (row) => null,
-        minWidth: 100,
+        minWidth: 75,
       },
       {
         key: 'simpleMajority',
@@ -356,15 +371,14 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 90,
+        minWidth: 60,
       },
       {
         key: 'specialMajority',
-        header: 'רוב מיוחד',
-        type: 'boolean',
+        header: 'רוב מיוחד (%)',
+        type: 'string',
         render: (row) => null,
-        positionCenter: true,
-        minWidth: 60,
+        minWidth: 40,
       },
       {
         key: 'policyCompliance',
@@ -372,7 +386,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 150,
+        minWidth: 60,
       },
       {
         key: 'conflictOfInterest',
@@ -380,7 +394,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 80,
+        minWidth: 50,
       },
       {
         key: 'relatedParty',
@@ -388,7 +402,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 60,
+        minWidth: 50,
       },
       {
         key: 'personalInterest',
@@ -396,7 +410,7 @@ export default function Participations() {
         type: 'boolean',
         render: (row) => null,
         positionCenter: true,
-        minWidth: 60,
+        minWidth: 50,
       },
     )
 
@@ -433,9 +447,6 @@ export default function Participations() {
       }))
       setCurrentPage(1)
     }
-    if (hasDisplayed) {
-      setHasChanges(true)
-    }
   }
 
   const handleVoteDifferentFromResultChange = (checked: boolean) => {
@@ -446,9 +457,6 @@ export default function Participations() {
         voteDifferentFromResult: checked,
       }))
       setCurrentPage(1)
-    }
-    if (hasDisplayed) {
-      setHasChanges(true)
     }
   }
 
@@ -461,9 +469,6 @@ export default function Participations() {
       }))
       setCurrentPage(1)
     }
-    if (hasDisplayed) {
-      setHasChanges(true)
-    }
   }
   const handleDualMeetingsOnlyChange = (checked: boolean) => {
     setDualMeetingsOnly(checked)
@@ -473,9 +478,6 @@ export default function Participations() {
         dualMeetingsOnly: checked,
       }))
       setCurrentPage(1)
-    }
-    if (hasDisplayed) {
-      setHasChanges(true)
     }
   }
   const handleExport = async () => {
@@ -495,6 +497,88 @@ export default function Participations() {
     setHasDisplayed(true)
     setHasChanges(false)
     setCurrentPage(1)
+  }
+
+  const handleExportFile = async (format: ExportFormat) => {
+    if (!reportName.trim()) {
+      alert('אנא הכנס שם לדוח')
+      return
+    }
+
+    if (!showParticipationTable) {
+      alert('אנא הצג את הטבלה תחילה')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      // Build the same query parameters as the regular API call, but with export=true
+      const params = new URLSearchParams({
+        companiesIds: selectedCompanyIds.join(','),
+        status: 'published',
+        export: 'true',
+        exportFormat: format,
+        reportName: reportName.trim(),
+      })
+
+      if (appliedFilters.selectedFundIds.length > 0) {
+        params.append('fundIds', appliedFilters.selectedFundIds.join(','))
+      }
+
+      if (appliedFilters.startDate && appliedFilters.endDate) {
+        params.append('startDate', appliedFilters.startDate.toISOString())
+        params.append('endDate', appliedFilters.endDate.toISOString())
+      }
+
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+
+      if (appliedFilters.voteAgainstRecommendation) {
+        params.append('voteAgainstRecommendation', 'true')
+      }
+
+      if (appliedFilters.voteDifferentFromResult) {
+        params.append('voteDifferentFromResult', 'true')
+      }
+
+      if (appliedFilters.foreignStocksOnly) {
+        params.append('foreignStocksOnly', 'true')
+      }
+
+      if (appliedFilters.dualMeetingsOnly) {
+        params.append('dualMeetingsOnly', 'true')
+      }
+
+      // Call the API endpoint with export=true
+      const response = await fetch(`/api/votes/by-companies?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Get the file blob
+      const blob = await response.blob()
+
+      // Determine file extension based on format
+      const fileExtension = format === 'excel' ? 'xlsx' : 'pdf'
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${reportName.trim()}.${fileExtension}`
+      document.body.appendChild(a)
+      a.click()
+
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      alert('שגיאה בייצוא הקובץ. אנא נסה שוב.')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const getCompanySelectSummary = () => {
@@ -525,13 +609,6 @@ export default function Participations() {
             אין פריטי סדר יום עבור אסיפה זו.
           </div>
         )
-      }
-
-      const resultMapping: { [key: string]: string } = {
-        '0': '---',
-        '1': 'אושר',
-        '2': 'לא אושר',
-        '3': 'דיון',
       }
 
       return (
@@ -574,13 +651,13 @@ export default function Participations() {
                               dir={isEnglish ? 'ltr' : 'rtl'}
                             >
                               <div
-                                className="truncate cursor-pointer hover:text-blue-600"
-                                style={{
-                                  transform:
-                                    selectedCompaniesCount > 1
-                                      ? 'translateX(70px)'
-                                      : 'translateX(50px)',
-                                }}
+                                className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[50rem]"
+                                // style={{
+                                //   transform:
+                                //     selectedCompaniesCount > 1
+                                //       ? 'translateX(70px)'
+                                //       : 'translateX(50px)',
+                                // }}
                               >
                                 {agenda.text}
                               </div>
@@ -606,12 +683,12 @@ export default function Participations() {
                         case 'advisoryRecommendation':
                           content = (
                             <div
-                              style={{
-                                transform:
-                                  selectedCompaniesCount > 1
-                                    ? 'translateX(-10px)'
-                                    : 'translateX(0px)',
-                              }}
+                            // style={{
+                            //   transform:
+                            //     selectedCompaniesCount > 1
+                            //       ? 'translateX(-10px)'
+                            //       : 'translateX(0px)',
+                            // }}
                             >
                               {agenda.recommendation?.votingRecommendation ||
                                 agenda.recommendation?.recommendationExplanation ||
@@ -628,10 +705,7 @@ export default function Participations() {
                             : agenda.meetingResults || null
                           break
                         case 'simpleMajority':
-                          content =
-                            agenda.privilegedMajority === false ? (
-                              <BooleanIcon iconType={true} />
-                            ) : null
+                          content = <BooleanIcon iconType={!agenda.privilegedMajority} />
                           break
                         case 'specialMajority':
                           content =
@@ -698,8 +772,8 @@ export default function Participations() {
                             width:
                               column.key === 'stockName'
                                 ? selectedCompaniesCount > 1
-                                  ? '750px'
-                                  : '650px'
+                                  ? '450px'
+                                  : '450px'
                                 : `${column.minWidth}px`,
                             minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
                             maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
@@ -723,89 +797,74 @@ export default function Participations() {
     [participationColumns, selectedCompaniesCount],
   )
 
-  const currentSelectedCount = useMemo(() => {
-    if (allSelected) {
-      return totalItems
-    }
-    return Math.max(0, totalItems - deselectedIds.size)
-  }, [allSelected, deselectedIds.size, totalItems])
-
   return (
     <div className="p-4 space-y-0 pb-0" dir="rtl">
-      <div className="flex flex-col lg:flex-row justify-center gap-4 mx-auto">
-        <div className="w-full lg:w-[280px]">
-          <DateRangeSelector onRangeChange={handleRangeChange} />
+      <div className="flex flex-col lg:flex-row justify-start gap-4 mr-10">
+        <div className="w-full lg:w-[350px]">
+          <DateRangeSelector onRangeChangeAction={handleRangeChange} />
         </div>
 
-        <div className="w-full lg:w-[280px]">
-          <label className="text-base font-semibold mb-2 block text-right">חברות</label>
-          <Select>
-            <SelectTrigger className="w-[280px] flex-row-reverse justify-between text-right">
-              <SelectValue placeholder={getCompanySelectSummary()} />
-            </SelectTrigger>
-            <SelectContent align="end" dir="rtl" className="p-0">
-              <CompanyTreeSelector
-                selectedCompanies={selectedFundIds}
-                onSelectionChangeAction={handleFundsSelectionChange}
-                className="w-full"
-                showSearch={false}
-              />
-            </SelectContent>
-          </Select>
+        <div className="w-full lg:w-[350px]">
+          <div className="flex items-center gap-3">
+            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
+            <Select>
+              <SelectTrigger className="w-[350px] flex-row-reverse justify-between text-right">
+                <SelectValue placeholder={getCompanySelectSummary()} />
+              </SelectTrigger>
+              <SelectContent align="end" dir="rtl" className="p-0">
+                <CompanyTreeSelector
+                  selectedCompanies={selectedFundIds}
+                  onSelectionChangeAction={handleFundsSelectionChange}
+                  className="w-full"
+                  showSearch={false}
+                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
+                    company.funds.map((fund) => fund.id),
+                  )}
+                />
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="w-full lg:w-[280px]">
-          <Label htmlFor="report-name" className="text-base font-semibold mb-2 block text-right">
-            שם הדו״ח
-          </Label>
+        <div className="w-full lg:w-[55px]">
           <div className="flex gap-2 items-end">
-            <Input
-              id="report-name"
-              type="text"
-              value={reportName}
-              onChange={(e) => {
-                setReportName(e.target.value)
-                if (hasDisplayed) {
-                  setHasChanges(true)
-                }
-              }}
-              placeholder="הכנס שם לדו״ח"
-              className="w-[280px] text-right"
-              dir="rtl"
-            />
             <Button
               onClick={handleExport}
               variant="default"
-              disabled={
-                !rangeType ||
-                selectedFundIds.length === 0 ||
-                !reportName ||
-                (hasDisplayed && !hasChanges)
-              }
+              disabled={!rangeType || selectedFundIds.length === 0}
               className="whitespace-nowrap"
             >
               הצג
             </Button>
-            {showParticipationTable && (
-              <Button
-                onClick={() => {
-                  console.log('Exporting file with data:', {
-                    reportName,
-                    selectedCount: currentSelectedCount,
-                    totalItems: totalItems,
-                    appliedFilters,
-                    participationData: participationData.length,
-                    votesData: votesResponse,
-                  })
-                }}
-                variant="default"
-                className="whitespace-nowrap"
-              >
-                ייצוא הקובץ
-              </Button>
-            )}
           </div>
         </div>
+
+        {showParticipationTable && (
+          <div className="w-full lg:w-[450px]">
+            <div className="flex items-center gap-3">
+              <label className="text-base font-semibold text-right whitespace-nowrap">
+                שם הדו״ח
+              </label>
+              <Input
+                id="report-name"
+                type="text"
+                value={reportName}
+                onChange={(e) => {
+                  setReportName(e.target.value)
+                }}
+                placeholder="הכנס שם לדו״ח"
+                className="w-[350px] text-right"
+                dir="rtl"
+              />
+              <ExportDropdownButton
+                onExportAction={handleExportFile}
+                isExporting={isExporting}
+                disabled={votesLoading || !reportName.trim()}
+                className="whitespace-nowrap"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {showParticipationTable &&
@@ -893,7 +952,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={320}
+              tableHeightOffset={280}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"

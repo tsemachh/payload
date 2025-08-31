@@ -59,6 +59,39 @@ export type StockType =
 export type StockOrigin = 'TASE' | 'Foreign' | 'Private';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesStatus".
+ */
+export type VotesStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VotesReportStatus".
+ */
+export type VotesReportStatus = ('None' | 'Partial' | 'All') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicVote".
+ */
+export type TopicVote =
+  | {
+      topicIndex: number;
+      voteDecision?: VoteDecision;
+      hasConflictOfInterest?: boolean | null;
+      isRelatedParty?: boolean | null;
+      isInvestmentCommittee?: boolean | null;
+      hasPersonalInterest?: boolean | null;
+      relatedPartyExplanation?: string | null;
+      conflictOfInterestExplanation?: string | null;
+      personalInterestExplanation?: string | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VoteDecision".
+ */
+export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MeetingType".
  */
 export type MeetingType = 'שנתית' | 'מיוחדת' | 'אג"ח' | 'אופציה' | 'יחידת השתתפות' | 'תעודת סל' | 'אג"ח כהונת נאמן';
@@ -96,37 +129,26 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VotesStatus".
+ * via the `definition` "FundWithHolding".
  */
-export type VotesStatus = ('None' | 'Partial' | 'All') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VotesReportStatus".
- */
-export type VotesReportStatus = ('None' | 'Partial' | 'All') | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TopicVote".
- */
-export type TopicVote =
+export type FundWithHolding =
   | {
-      topicIndex: number;
-      voteDecision?: VoteDecision;
-      hasConflictOfInterest?: boolean | null;
-      isRelatedParty?: boolean | null;
-      isInvestmentCommittee?: boolean | null;
-      hasPersonalInterest?: boolean | null;
-      relatedPartyExplanation?: string | null;
-      conflictOfInterestExplanation?: string | null;
-      personalInterestExplanation?: string | null;
+      fund?: string | null;
+      company?: string | null;
+      quantity?: number | null;
+      ownedQuantity?: number | null;
+      original?:
+        | {
+            stockId?: string | null;
+            accountNum?: number | null;
+            quantity?: number | null;
+            id?: string | null;
+          }[]
+        | null;
+      verifiedHoldings?: boolean | null;
       id?: string | null;
     }[]
   | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "VoteDecision".
- */
-export type VoteDecision = ('----' | 'בעד' | 'נגד' | 'נמנע' | 'אין חובת השתתפות' | 'דיון' | 'לא משתתף') | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
@@ -603,6 +625,7 @@ export interface Stock {
 export interface StockValue {
   id: string;
   stockId: string | Stock;
+  stockName?: string | null;
   valueDate: string;
   closingRate?: number | null;
   marketValue?: number | null;
@@ -618,6 +641,19 @@ export interface StockValue {
  */
 export interface Meeting {
   id: string;
+  votesCount?: number | null;
+  votesStatus?: VotesStatus;
+  reportVotesCount?: number | null;
+  votesReportStatus?: VotesReportStatus;
+  companies?: (string | Company)[] | null;
+  companiesNotYetVoted?: (string | Company)[] | null;
+  activity?: string | null;
+  participationReport?: (string | null) | Document;
+  votes?: {
+    docs?: (string | Vote)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   stock: string | Stock;
   isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
@@ -634,6 +670,7 @@ export interface Meeting {
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
+  changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
   agenda?: MeetingAgenda;
@@ -641,36 +678,8 @@ export interface Meeting {
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
    */
   researchDocuments?: (string | ResearchDocument)[] | null;
-  votesCount?: number | null;
-  votesStatus?: VotesStatus;
-  reportVotesCount?: number | null;
-  votesReportStatus?: VotesReportStatus;
-  companies?: (string | Company)[] | null;
-  companiesNotYetVoted?: (string | Company)[] | null;
-  activity?: string | null;
-  participationReport?: (string | null) | Document;
-  votes?: {
-    docs?: (string | Vote)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   funds?: (string | Company)[] | null;
-  fundsWithHolding?:
-    | {
-        fund?: string | null;
-        quantity?: number | null;
-        ownedQuantity?: number | null;
-        original?:
-          | {
-              stockId?: string | null;
-              accountNum?: number | null;
-              quantity?: number | null;
-              id?: string | null;
-            }[]
-          | null;
-        id?: string | null;
-      }[]
-    | null;
+  fundsWithHolding?: FundWithHolding;
   stockValue?: (string | null) | StockValue;
   stockMarketValue?: number | null;
   creator?: string | null;
@@ -720,17 +729,6 @@ export interface Vote {
   voteAgainstRecommendation?: boolean | null;
   voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
-  reportedBy?: string | null;
-  reportedTime?: string | null;
-  fundsWithHoldingsUpdates?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
@@ -941,7 +939,9 @@ export interface Export {
   name?: string | null;
   format?: ('csv' | 'json') | null;
   limit?: number | null;
+  page?: number | null;
   sort?: string | null;
+  sortOrder?: ('asc' | 'desc') | null;
   drafts?: ('yes' | 'no') | null;
   selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
   fields?: string[] | null;
@@ -1301,6 +1301,15 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
  * via the `definition` "meetings_select".
  */
 export interface MeetingsSelect<T extends boolean = true> {
+  votesCount?: T;
+  votesStatus?: T;
+  reportVotesCount?: T;
+  votesReportStatus?: T;
+  companies?: T;
+  companiesNotYetVoted?: T;
+  activity?: T;
+  participationReport?: T;
+  votes?: T;
   stock?: T;
   isFinancialStock?: T;
   isDualStock?: T;
@@ -1317,36 +1326,13 @@ export interface MeetingsSelect<T extends boolean = true> {
   dualMeeting?: T;
   location?: T;
   comments?: T;
+  changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
-  votesCount?: T;
-  votesStatus?: T;
-  reportVotesCount?: T;
-  votesReportStatus?: T;
-  companies?: T;
-  companiesNotYetVoted?: T;
-  activity?: T;
-  participationReport?: T;
-  votes?: T;
   funds?: T;
-  fundsWithHolding?:
-    | T
-    | {
-        fund?: T;
-        quantity?: T;
-        ownedQuantity?: T;
-        original?:
-          | T
-          | {
-              stockId?: T;
-              accountNum?: T;
-              quantity?: T;
-              id?: T;
-            };
-        id?: T;
-      };
+  fundsWithHolding?: T | FundWithHoldingSelect<T>;
   stockValue?: T;
   stockMarketValue?: T;
   creator?: T;
@@ -1384,6 +1370,26 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
       };
   result?: T;
   vPercentSpecial?: T;
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FundWithHolding_select".
+ */
+export interface FundWithHoldingSelect<T extends boolean = true> {
+  fund?: T;
+  company?: T;
+  quantity?: T;
+  ownedQuantity?: T;
+  original?:
+    | T
+    | {
+        stockId?: T;
+        accountNum?: T;
+        quantity?: T;
+        id?: T;
+      };
+  verifiedHoldings?: T;
   id?: T;
 }
 /**
@@ -1650,9 +1656,6 @@ export interface VotesSelect<T extends boolean = true> {
   voteAgainstRecommendation?: T;
   voteDifferentFromResult?: T;
   reported?: T;
-  reportedBy?: T;
-  reportedTime?: T;
-  fundsWithHoldingsUpdates?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;
@@ -1808,6 +1811,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  */
 export interface StockValuesSelect<T extends boolean = true> {
   stockId?: T;
+  stockName?: T;
   valueDate?: T;
   closingRate?: T;
   marketValue?: T;
@@ -1825,7 +1829,9 @@ export interface ExportsSelect<T extends boolean = true> {
   name?: T;
   format?: T;
   limit?: T;
+  page?: T;
   sort?: T;
+  sortOrder?: T;
   drafts?: T;
   selectionToUse?: T;
   fields?: T;
@@ -2017,7 +2023,9 @@ export interface TaskCreateCollectionExport {
     name?: string | null;
     format?: ('csv' | 'json') | null;
     limit?: number | null;
+    page?: number | null;
     sort?: string | null;
+    sortOrder?: ('asc' | 'desc') | null;
     drafts?: ('yes' | 'no') | null;
     selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
     fields?: string[] | null;

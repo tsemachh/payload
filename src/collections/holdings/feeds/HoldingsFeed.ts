@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const HoldingsFeed: CollectionConfig = {
   slug: 'holdings-feed',
   labels: {
-    plural: 'הזנות אחזקות',
-    singular: 'הזנת אחזקות',
+    plural: 'הזנות החזקות',
+    singular: 'הזנת החזקות',
   },
   admin: {
     useAsTitle: 'filename',
@@ -15,9 +15,7 @@ export const HoldingsFeed: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'valueDate'}, { name:'processingStatus'}]
-    ],
+    filterList: [[{ name: 'valueDate' }, { name: 'processingStatus' }]],
   },
   access: {
     read: () => true,
@@ -33,6 +31,7 @@ export const HoldingsFeed: CollectionConfig = {
       label: 'תאריך ערך',
       type: 'date',
       required: true,
+      index: true,
       admin: {
         date: {
           displayFormat: 'dd MMM yyy',

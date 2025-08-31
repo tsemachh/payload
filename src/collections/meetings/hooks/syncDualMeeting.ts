@@ -89,6 +89,54 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
       committeeInitiated: currentDoc.committeeInitiated,
     }
 
+    // Create change details for the dual meeting
+    let changeDetails = ''
+
+    // Add new change details entry with specific changes
+    const changeDate = new Date().toISOString()
+
+    // Build a detailed description of what was changed
+    const changesDescription = []
+
+    // Check for changes in general fields
+    const fieldsToCheck = [
+      { field: 'type', label: 'סוג אסיפה' },
+      { field: 'state', label: 'מצב אסיפה' },
+      { field: 'holdingsLimit', label: 'מועד קובע' },
+      { field: 'proxyVotingDate', label: 'מועד מסירת הצבעה' },
+      { field: 'meetingDate', label: 'מועד האסיפה' },
+      { field: 'location', label: 'כתובת' },
+      { field: 'electronicVotingEnabled', label: 'הצבעה אלקטרונית' },
+      { field: 'resultsConfirmationStatus', label: 'אימות תוצאות' },
+    ]
+
+    for (const { field, label } of fieldsToCheck) {
+      if (JSON.stringify(currentDoc[field]) !== JSON.stringify(previousDoc?.[field])) {
+        changesDescription.push(`${label}`)
+      }
+    }
+
+    // Check for agenda changes
+    if (
+      currentDoc.agenda &&
+      previousDoc?.agenda &&
+      JSON.stringify(currentDoc.agenda) !== JSON.stringify(previousDoc.agenda)
+    ) {
+      changesDescription.push('סדר יום')
+    }
+
+    // Check for research documents changes
+    if (researchDocsChanged) {
+      changesDescription.push('מסמכי מחקר')
+    }
+
+    const changeDescription =
+      changesDescription.length > 0
+        ? `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id}): ${changesDescription.join(', ')}`
+        : `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id})`
+
+    changeDetails = `${changeDate} - [sync] ${changeDescription}`
+
     // Update the dual meeting directly using its ID
     await payload.update({
       collection: 'meetings',
@@ -97,6 +145,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
         ...generalFields,
         agenda: updatedAgenda,
         ...(researchDocsChanged && { researchDocuments: genericResearchDocs }),
+        changeDetails: changeDetails,
       },
       context: { from: 'process' },
     })

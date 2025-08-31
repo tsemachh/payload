@@ -10,7 +10,9 @@ import { up as migrateFullFirms } from './migrateFullFirms'
 import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
 import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
+import { up as migrateMeetingStockValues } from './migrateMeetingStockValues'
 import { up as unifyMeetings } from './UnifyMeetings'
+import { up as migrateVoteCounts } from './migrateVoteCounts'
 import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
@@ -25,7 +27,8 @@ import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCo
  * 13. Recommendation Reasons
  * 14. Unify Meetings (removes duplicate meetings and merges their data)
  * 15. Meeting Holdings (updates meetings with holdings data from MSSQL)
- * 16. Process Companies Meetings
+ * 16. Meeting Stock Values (links meetings with stock values)
+ * 17. Process Companies Meetings
  *
  * Note: Other migrations are currently commented out in the code.
  * For users migration, it also creates users from test.users.json after migrating users.
@@ -81,6 +84,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateMeetingHoldings({ payload, req })
     console.log('=== Meeting Holdings Migration Completed ===\n')
 
+    // 18. Migrate Meeting Stock Values
+    console.log('\n=== Starting Meeting Stock Values Migration ===')
+    await migrateMeetingStockValues({ payload, req })
+    console.log('=== Meeting Stock Values Migration Completed ===\n')
+
     // 14. Migrate Votes
     console.log('\n=== Starting Votes Migration ===')
     await migrateVotes({ payload, req })
@@ -96,10 +104,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await unifyMeetings({ payload, req })
     console.log('=== Unify Meetings Migration Completed ===\n')
 
-    // 18. Migrate processCompaniesMeetings
+    // 19. Migrate processCompaniesMeetings
     console.log('\n=== Starting processCompaniesMeetings ===')
     await processCompaniesMeetings(req)
     console.log('=== processCompaniesMeetings Completed ===\n')
+
+    // 20. Migrate Vote Counts
+    console.log('\n=== Starting Vote Counts Migration ===')
+    await migrateVoteCounts({ payload, req })
+    console.log('=== Vote Counts Migration Completed ===\n')
+
     console.log('migrateAll process completed successfully!')
   } catch (error) {
     console.error('Error during migrateAll process:', error)

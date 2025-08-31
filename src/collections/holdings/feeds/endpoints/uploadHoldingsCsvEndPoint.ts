@@ -1,4 +1,4 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { processHoldingsFeedCsv } from '../processHoldingsFeedCsv'
 import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
@@ -19,6 +19,34 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
     const isValidationOnly = validateOnly === 'true'
     if (!valueDate) {
       return Response.json({ error: 'Value date is required' }, { status: 400 })
+    }
+
+    // Parse companies parameter
+    let selectedCompanies: string[] = []
+    if (companies) {
+      try {
+        selectedCompanies = JSON.parse(companies as string)
+      } catch (e) {
+        // If parsing fails, try treating it as a comma-separated string
+        selectedCompanies = (companies as string).split(',')
+      }
+    }
+
+    // Check if user has write permission for all selected companies
+    if (!isValidationOnly) {
+      // Only check permissions for actual uploads, not validations
+      const hasPermission = true
+
+      // selectedCompanies.every(companyId =>
+      //   hasCompanyPermission(req.user, companyId, 'write')
+      // )
+      //TODO check for parent fund company and write permissjons
+      if (!hasPermission) {
+        return Response.json(
+          { error: 'Permission denied for one or more companies' },
+          { status: 403 },
+        )
+      }
     }
 
     // Get the ReadableStream from the request body
@@ -56,16 +84,7 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Optional companies parameter as JSON string of company IDs
-    let selectedCompanies: string[] = []
-    if (companies) {
-      try {
-        selectedCompanies = JSON.parse(companies as string)
-      } catch (e) {
-        // If parsing fails, try treating it as a comma-separated string
-        selectedCompanies = (companies as string).split(',')
-      }
-    }
+    // selectedCompanies is already parsed above
 
     // Create a new HoldingsFeed document
     const holdingsFeed = {

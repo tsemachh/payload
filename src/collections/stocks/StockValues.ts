@@ -1,9 +1,5 @@
 import type { CollectionConfig } from 'payload'
 
-// Utility to format numbers with thousands separators
-const formatNumber = (value: any) =>
-  typeof value === 'number' ? value.toLocaleString('en-US') : value
-
 export const StockValues: CollectionConfig = {
   slug: 'stock-values',
   labels: {
@@ -11,8 +7,9 @@ export const StockValues: CollectionConfig = {
     singular: ' שווי נייר ערך',
   },
   admin: {
-    hidden: true,
-    useAsTitle: 'stockId',
+    hidden: false,
+    group: 'פיתוח',
+    useAsTitle: 'stockName',
     defaultColumns: ['stockId', 'valueDate', 'registeredValue', 'closingRate', 'marketValue'],
     pagination: {
       defaultLimit: 100,
@@ -20,9 +17,7 @@ export const StockValues: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'valueDate'}]
-    ],
+    filterList: [[{ name: 'valueDate' }, 'createdAt']],
   },
   fields: [
     {
@@ -35,6 +30,15 @@ export const StockValues: CollectionConfig = {
           relationTo: 'stocks',
           required: true,
           index: true,
+        },
+        {
+          name: 'stockName',
+          label: 'שם המניה',
+          type: 'text',
+          virtual: 'stockId.fullName',
+          admin: {
+            hidden: true,
+          },
         },
         {
           name: 'valueDate',
@@ -58,8 +62,12 @@ export const StockValues: CollectionConfig = {
           name: 'closingRate',
           label: 'שער סגירה',
           type: 'number',
-          hooks: {
-            afterRead: [({ value }) => formatNumber(value)],
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
           },
         },
         {
@@ -68,18 +76,17 @@ export const StockValues: CollectionConfig = {
           type: 'number',
           admin: {
             readOnly: true,
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
           },
           hooks: {
             beforeChange: [
-              ({ siblingData }) => {
-                delete siblingData['marketValue']
-              },
-            ],
-            afterRead: [
-              ({ data }) => {
+              async ({ data }) => {
                 if (data?.closingRate && data?.registeredValue) {
-                  const value = (data.closingRate * data.registeredValue) / 100
-                  return formatNumber(value)
+                  return (data.closingRate * data.registeredValue) / 100
                 }
                 return null
               },
@@ -90,8 +97,12 @@ export const StockValues: CollectionConfig = {
           name: 'registeredValue',
           label: 'הון רשום',
           type: 'number',
-          hooks: {
-            afterRead: [({ value }) => formatNumber(value)],
+          admin: {
+            components: {
+              Cell: {
+                path: '/admincomponents/cell/FormattedNumber',
+              },
+            },
           },
         },
       ],
@@ -114,6 +125,7 @@ export const StockValues: CollectionConfig = {
           },
           where: {
             and: [
+              { stockValue: { not_equals: id } },
               { stock: { equals: stockId } },
               {
                 or: [

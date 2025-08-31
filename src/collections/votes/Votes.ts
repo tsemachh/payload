@@ -6,6 +6,7 @@ import {
   getVoteByMeetingAndCompanies,
   getVotedCompanies,
   publishVotes,
+  updateGroupedVotes,
   upsertVote,
 } from './voteEndPoint'
 import { getVotingPercentages } from './votingPercentagesEndPoint'
@@ -13,8 +14,6 @@ import {
   handleVoteDeletionHook,
   recalculateVoteCountsOnReportedChange,
   setVoteFlags,
-  updateReportedAndMeetingHoldings,
-  validateOwnedQuantityWhenUnauthorized,
 } from './hooks/voteHooks'
 import { getVotesByCompanies } from './voteparticipationEndPoint'
 
@@ -65,9 +64,10 @@ export const Votes: CollectionConfig = {
   enableQueryPresets: true,
   custom: {
     filterList: [
-      [{ name: 'meeting' }, { name: 'company' }, { name: 'reported' }],
+      [{ name: 'createdAt' }, { name: 'reported' }, { name: '_status' }],
       [{ name: 'isInterested' }, { name: 'isSeniorOfficial' }, { name: 'isInstitutionalInvestor' }],
     ],
+    defaultFilter: { createdAt: 'last30Days', _status: { equals: 'published' } },
   },
   versions: {
     drafts: true,
@@ -79,7 +79,7 @@ export const Votes: CollectionConfig = {
       'title',
       'meeting',
       'reported',
-      'reportedBy',
+      'publisher',
       'isInterested',
       'isSeniorOfficial',
       'isInstitutionalInvestor',
@@ -245,42 +245,8 @@ export const Votes: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                 },
-                {
-                  name: 'reportedBy',
-                  label: 'דווח על ידי',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'reportedTime',
-                  label: 'תאריך דיווח',
-                  type: 'date',
-                  admin: {
-                    hidden: true,
-                  },
-                },
               ],
             },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'fundsWithHoldingsUpdates',
-                  label: 'עדכוני אחזקות תיקים',
-                  type: 'json',
-                  //hidden: true,
-                  defaultValue: {},
-                  admin: {
-                    components: {
-                      Field: '/collections/votes/components/HoldingsInFunds',
-                    },
-                  },
-                },
-              ],
-            },
-
             {
               name: 'votes',
               label: 'סעיפי הצבעה',
@@ -413,8 +379,7 @@ export const Votes: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [updateReportedAndMeetingHoldings, setVoteFlags],
-    beforeValidate: [validateOwnedQuantityWhenUnauthorized],
+    beforeChange: [setVoteFlags],
     afterChange: [recalculateVoteCountsOnReportedChange],
     afterDelete: [handleVoteDeletionHook],
   },
@@ -448,6 +413,11 @@ export const Votes: CollectionConfig = {
       path: '/voting-percentages',
       method: 'post', // it get method use post for boy
       handler: getVotingPercentages,
+    },
+    {
+      path: '/update-grouped-votes',
+      method: 'post',
+      handler: updateGroupedVotes,
     },
   ],
   indexes: [

@@ -103,6 +103,9 @@ export default buildConfig({
             '<br><br>אם לא ביקשת זאת, פנה למנהל המערכת עמדה מיידית<br><br>מערכת עמדה',
           resetYourPassword: 'איפוס סיסמה',
         },
+        general: {
+          successfullyCreated: 'אובייקט ה{{label}} נוצר בהצלחה.',
+        },
       },
     },
   },
@@ -144,7 +147,7 @@ export default buildConfig({
       {
         slug: 'processHoldingsChange',
         handler: processHoldingsChangeHandler,
-        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה אחזקה' }],
+        inputSchema: [{ name: 'holdingId', type: 'text', label: 'מזהה החזקה' }],
       },
       {
         slug: 'checkCompanyNotifications',
@@ -180,12 +183,17 @@ export default buildConfig({
           {
             cron: '00 19 * * *', // every day at 19:00
             limit: 10, // limit jobs to process each run
-            queue: 'daily', // name of the queue
+            queue: 'daily07pm', // name of the queue
           },
           {
             cron: '00 22 * * *', // every day at 22:00
             limit: 10, // limit jobs to process each run
             queue: 'daily10pm', // name of the queue
+          },
+          {
+            cron: '00 08 * * *', // every day at 08:00
+            limit: 10, // limit jobs to process each run
+            queue: 'daily08am', // name of the queue
           },
           {
             cron: '*/30 * * * *', // every 30 minutes
@@ -206,10 +214,21 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+
     components: {
       providers: ['/providers/CustomContext#CustomContextProvider'],
       graphics: {
         Logo: '/graphics/Logo',
+      },
+      Nav: '@shefing/quickfilter/nav',
+      views: {
+        CustomView: {
+          Component: '/admincomponents/custom-views/VotePage',
+          path: '/grouped-votes',
+        },
+        dashboard: {
+          Component: '@shefing/quickfilter/Dashboard',
+        },
       },
     },
     meta: {
@@ -267,7 +286,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: mongooseAdapter(dbArgs as Args),
-  logger: logger,
+  logger: logger as any,
   email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({

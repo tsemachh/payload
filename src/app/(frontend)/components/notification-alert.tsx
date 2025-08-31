@@ -17,11 +17,11 @@ interface Notification {
 }
 
 interface NotificationAlertProps {
-  onOpenNotifications: () => void
+  onOpenNotificationsAction: () => void
   notifications: Notification[]
 }
 
-export function NotificationAlert({ onOpenNotifications, notifications }: NotificationAlertProps) {
+export function NotificationAlert({ onOpenNotificationsAction, notifications }: NotificationAlertProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showAlert, setShowAlert] = useState(false)
   const [hasShownAlert, setHasShownAlert] = useState(false)
@@ -54,7 +54,7 @@ export function NotificationAlert({ onOpenNotifications, notifications }: Notifi
   }
 
   const handleAlertClick = () => {
-    onOpenNotifications()
+    onOpenNotificationsAction()
     setShowAlert(false)
   }
 

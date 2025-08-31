@@ -7,8 +7,8 @@ import { scheduleProcessHoldingsChangeTask } from '@/tasks/processHoldingsChange
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
   labels: {
-    plural: 'אחזקות יומיות',
-    singular: 'אחזקה יומית',
+    plural: 'החזקות יומיות',
+    singular: 'החזקה יומית',
   },
   enableQueryPresets: true,
   admin: {
@@ -22,6 +22,7 @@ export const Holdings: CollectionConfig = {
   },
   custom: {
     filterList: [[{ name: 'valueDate' }]],
+    defaultFilter: { valueDate: 'last30Days' },
   },
   disableBulkEdit: true,
   hooks: {
@@ -69,7 +70,7 @@ export const Holdings: CollectionConfig = {
     },
     {
       name: 'holdings',
-      label: 'אחזקות',
+      label: 'החזקות',
       type: 'array',
       required: true,
       interfaceName: 'HoldingsPerDay',
@@ -106,7 +107,7 @@ export const Holdings: CollectionConfig = {
             },
             {
               name: 'originalForeignData',
-              label: 'אחזקה מקורית מניית חול',
+              label: 'החזקה מקורית מניית חול',
               type: 'array',
               admin: {
                 initCollapsed: true,
