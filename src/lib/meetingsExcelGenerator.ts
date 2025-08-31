@@ -45,10 +45,7 @@ export async function downloadMeetingsExcel(
     'החזקה (%)': (m) => m.percentageHolding,
     'מועד מסירת הצבעות': (m) =>
       m.proxyVotingDate ? new Date(m.proxyVotingDate).toLocaleString('he-IL') : '',
-    'שווי שוק (מיליוני ₪)': (m) =>
-      m.marketValue
-        ? (m.marketValue / 1_000_000).toLocaleString('he-IL', { maximumFractionDigits: 0 })
-        : '',
+    'שווי שוק \n (מיליוני ₪)': (m) => m.marketValue,
     'תאגיד פיננסי דורש ועדה': (m) => (m.committeeInitiated ? '✅' : '❌'),
     'מופיעה במערכת האלק׳': (m) => (m.electronicVotingEnabled ? '✅' : '❌'),
     'אימות תוצאות': (m) => (m.resultsConfirmationStatus ? '✅' : '❌'),

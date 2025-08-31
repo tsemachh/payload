@@ -410,7 +410,7 @@ export const meetingColumnsForServer = [
   { key: 'stockSymbol', header: 'סימול' },
   { key: 'stockTradable', header: 'נייר ערך נסחר' },
   { key: 'stockOrigin', header: 'מקור נייר' },
-  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)' },
+  { key: 'marketValue', header: 'שווי שוק \n (מיליוני ₪)' },
   { key: 'meetingType', header: 'סוג אסיפה' },
   { key: 'meetingDate', header: 'מועד אסיפה' },
   { key: 'holdingsLimit', header: 'מועד קובע' },
