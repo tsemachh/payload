@@ -53,6 +53,11 @@ export async function downloadMeetingsExcel(
     מחקר: (m) => m.researchDocuments?.length || 0,
     'ערך נקוב ליום קובע': (m) => m.nominalValue,
     'סדר היום': () => '',
+    מיקום: (m) => {
+      if (!m.location) return ''
+      const maxLength = 120
+      return m.location.length > maxLength ? m.location.substring(0, maxLength) + '...' : m.location
+    },
   }
 
   const formatValue = (header: string, meeting: any) => {
@@ -77,6 +82,7 @@ export async function downloadMeetingsExcel(
         bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
       }
     })
+    mainRow.height = Math.min(mainRow.height || 30, 80)
 
     // הצגת agenda רק במצב agenda
     if (viewMode === 'agenda') {
@@ -195,9 +201,15 @@ export async function downloadMeetingsExcel(
 
   worksheet.columns.forEach((col: any, index: number) => {
     col.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
-    col.width = 10
-
     const columnHeader = columns[index]
+    if (columnHeader === 'מיקום') {
+      col.width = 25
+    } else {
+      col.width = 10
+    }
+
+    const companiesIndex = columns.indexOf('חברות')
+    const agendaIndex = columns.indexOf('סדר היום')
 
     if (viewMode === 'companies' && columnHeader === 'סדר היום') {
       col.hidden = true

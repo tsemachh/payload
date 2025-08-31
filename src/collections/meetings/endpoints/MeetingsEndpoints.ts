@@ -1,12 +1,5 @@
 import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'payload'
-import {
-  Company,
-  Meeting,
-  MeetingAgenda,
-  ResearchDocument,
-  Stock,
-  StockValue,
-} from '@/payload-types'
+import { Company, Meeting, MeetingAgenda, ResearchDocument, Stock } from '@/payload-types'
 import {
   AgendasType,
   CompanyTableDate,
@@ -17,7 +10,7 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
-import { calculateHoldingValues } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
+import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
 import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
@@ -475,7 +468,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
       const mappedColumns = columns.map((colKey: string) => headerMap[colKey] || colKey)
       const viewMode = req.query.viewMode || ''
-      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode)
+      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
 
       const encodedFilename = encodeURIComponent('דו"ח השתתפות באסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
@@ -497,23 +490,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 }
 
 /**
- * Finds the intersection of meeting companies and user's leaf companies
- */
-function findRelevantCompanyIds(
-  meetingCompanies: string[] | undefined,
-  funds: string[] | null | undefined,
-): string[] {
-  return (meetingCompanies || [])
-    .filter((companyID) => funds?.some((fund) => fund === companyID))
-    .filter((id) => id !== null) as string[]
-}
-/**
  * Creates a standardized meeting data object for the frontend
  */
 function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: Stock,
-  stockValue: StockValue,
   agendas: AgendasType[],
   companiesArray: CompanyTableDate[],
   researchDocuments: UrlFilenameMap[],
@@ -535,7 +516,7 @@ function createMeetingDataObject(
     companyName: stockPresent?.longName || '-',
     stockTradable: stockPresent?.tradable || false,
     stockOrigin: stockPresent?.origin || '-',
-    marketValue: stockValue?.marketValue || 0,
+    marketValue: meeting.stockMarketValue || 0,
     meetingType: meeting.type || '-',
     meetingDate: meeting.meetingDate || '-',
     reference: meeting.magnaId || '-',
@@ -810,7 +791,6 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
       return createMeetingDataObject(
         meeting,
         stockPresent,
-        meeting.stockValue as StockValue,
         agendas,
         companiesArray,
         researchDocuments,

@@ -11,14 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Download,
-  Settings,
   Clock,
   User,
   Building2,
@@ -27,7 +20,6 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
-  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
@@ -55,22 +47,6 @@ export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
   const { companies, loading, exportToCSV } = useVotingData()
 
-  // Column visibility states
-  const [selectedNotVotedColumns, setSelectedNotVotedColumns] = useState({
-    company: true,
-    nominalValue: true,
-    percentageHolding: true,
-  })
-
-  const [selectedVotedColumns, setSelectedVotedColumns] = useState({
-    company: true,
-    nominalValue: true,
-    percentageHolding: true,
-    voter: true,
-    voteTime: true,
-    actualVoteAction: true,
-  })
-
   // Grouping states
   const [groupByNotVoted, setGroupByNotVoted] = useState(true)
   const [groupByVoted, setGroupByVoted] = useState(true)
@@ -89,11 +65,16 @@ export const VotingTablesField = () => {
     direction: 'asc' | 'desc'
   }>({ field: null, direction: 'asc' })
 
-  // Handle grouped vote page navigation
-  const handleGroupedVoteLink = (checksum: string, companies: Company[]) => {
-    const companyIds = companies.map((c) => c.id).join(',')
-    const url = `/admin/collections/votes/grouped?checksum=${encodeURIComponent(checksum)}&companies=${encodeURIComponent(companyIds)}&meeting=${id}`
-    window.open(url, '_blank')
+  // Generate grouped vote URL for href
+  const getGroupedVoteUrl = (item: any) => {
+    const motherCompany = item.motherCompany || item.name
+    const checksum = item.vote?.checksum
+    const groupedCompanies = votedCompanies.filter((company) => {
+      const companyMotherCompany = company.motherCompany || company.name
+      return companyMotherCompany === motherCompany && company.vote?.checksum === checksum
+    })
+    const companyIds = groupedCompanies.map((c) => c.id).join(',')
+    return `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
   }
 
   // Sorting functions
@@ -358,6 +339,21 @@ export const VotingTablesField = () => {
     return result
   }, [votedCompanies, groupByVoted, collapsedVotedGroups, collapsedChecksumGroups, votedSort])
 
+  const notVotedColumns = {
+    company: true,
+    nominalValue: true,
+    percentageHolding: true,
+  }
+
+  const votedColumns = {
+    company: true,
+    nominalValue: true,
+    percentageHolding: true,
+    voter: true,
+    voteTime: true,
+    actualVoteAction: true,
+  }
+
   if (loading) {
     return (
       <div className="p-4 text-center">
@@ -375,7 +371,7 @@ export const VotingTablesField = () => {
   }
 
   return (
-    <div className="space-y-6 p-6" dir="rtl">
+    <div className="useTw space-y-6 p-6 text-base" dir="rtl">
       {/* Companies that haven't voted */}
       {processedNotVotedData.length ? (
         <Card style={{ width: '40%' }}>
@@ -392,7 +388,7 @@ export const VotingTablesField = () => {
                     boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
                   }}
                   className={cn(
-                    'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 shadow-sm',
+                    'inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 shadow-sm',
                     groupByNotVoted
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 border border-primary'
                       : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
@@ -417,62 +413,14 @@ export const VotingTablesField = () => {
                     </>
                   )}
                 </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <span
-                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
-                      style={{
-                        border: '1px solid rgb(0 0 0 / 0.3)',
-                        boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                      }}
-                    >
-                      <Settings className="h-4 w-4 ml-2" />
-                      עמודות
-                    </span>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuCheckboxItem
-                      checked={selectedNotVotedColumns.company}
-                      onCheckedChange={(checked) =>
-                        setSelectedNotVotedColumns((prev) => ({ ...prev, company: checked }))
-                      }
-                    >
-                      חברה
-                    </DropdownMenuCheckboxItem>
-
-                    <DropdownMenuCheckboxItem
-                      checked={selectedNotVotedColumns.nominalValue}
-                      onCheckedChange={(checked) =>
-                        setSelectedNotVotedColumns((prev) => ({ ...prev, nominalValue: checked }))
-                      }
-                    >
-                      ערך נקוב
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem
-                      checked={selectedNotVotedColumns.percentageHolding}
-                      onCheckedChange={(checked) =>
-                        setSelectedNotVotedColumns((prev) => ({
-                          ...prev,
-                          percentageHolding: checked,
-                        }))
-                      }
-                    >
-                      אחוזים
-                    </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
                 <span
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
                   style={{
                     border: '1px solid rgb(0 0 0 / 0.3)',
                     boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
                   }}
                   onClick={() =>
-                    exportToCSV(
-                      processedNotVotedData,
-                      'companies-not-voted.csv',
-                      selectedNotVotedColumns,
-                    )
+                    exportToCSV(processedNotVotedData, 'companies-not-voted.csv', notVotedColumns)
                   }
                 >
                   <Download className="h-4 w-4 ml-2" />
@@ -485,46 +433,41 @@ export const VotingTablesField = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {selectedNotVotedColumns.company && <TableHead>חברה</TableHead>}
-
-                  {selectedNotVotedColumns.nominalValue && (
-                    <TableHead>
-                      <div
-                        className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                        onClick={() => handleNotVotedSort('nominalValue')}
-                      >
-                        ערך נקוב
-                        {notVotedSort.field === 'nominalValue' ? (
-                          notVotedSort.direction === 'asc' ? (
-                            <ChevronUp className="h-4 w-4 opacity-100 text-black" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 opacity-100 text-black" />
-                          )
+                  <TableHead>חברה</TableHead>
+                  <TableHead>
+                    <div
+                      className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                      onClick={() => handleNotVotedSort('nominalValue')}
+                    >
+                      ערך נקוב
+                      {notVotedSort.field === 'nominalValue' ? (
+                        notVotedSort.direction === 'asc' ? (
+                          <ChevronUp className="h-4 w-4 opacity-100 text-black" />
                         ) : (
-                          <ChevronDown className="h-4 w-4 opacity-30" />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
-                  {selectedNotVotedColumns.percentageHolding && (
-                    <TableHead>
-                      <div
-                        className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                        onClick={() => handleNotVotedSort('percentageHolding')}
-                      >
-                        אחוזים
-                        {notVotedSort.field === 'percentageHolding' ? (
-                          notVotedSort.direction === 'asc' ? (
-                            <ChevronUp className="h-4 w-4 opacity-100 text-black" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 opacity-100 text-black" />
-                          )
+                          <ChevronDown className="h-4 w-4 opacity-100 text-black" />
+                        )
+                      ) : (
+                        <ChevronDown className="h-4 w-4 opacity-30" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div
+                      className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                      onClick={() => handleNotVotedSort('percentageHolding')}
+                    >
+                      אחוזים
+                      {notVotedSort.field === 'percentageHolding' ? (
+                        notVotedSort.direction === 'asc' ? (
+                          <ChevronUp className="h-4 w-4 opacity-100 text-black" />
                         ) : (
-                          <ChevronDown className="h-4 w-4 opacity-30" />
-                        )}
-                      </div>
-                    </TableHead>
-                  )}
+                          <ChevronDown className="h-4 w-4 opacity-100 text-black" />
+                        )
+                      ) : (
+                        <ChevronDown className="h-4 w-4 opacity-30" />
+                      )}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -532,47 +475,40 @@ export const VotingTablesField = () => {
                   <TableRow
                     key={item.id}
                     className={cn(
-                      item.isGroupHeader && 'bg-muted/50 font-semibold border-t-2',
+                      item.isGroupHeader && 'bg-muted/50 font-semibold',
                       item.isGroupItem && 'bg-muted/20',
                     )}
                   >
-                    {selectedNotVotedColumns.company && (
-                      <TableCell>
-                        <div className={cn('flex items-center gap-2', item.isGroupItem && 'mr-6')}>
+                    <TableCell>
+                      <div className={cn('flex items-center gap-2', item.isGroupItem && 'mr-6')}>
+                        {item.isGroupHeader && (
+                          <>
+                            <span
+                              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-6 w-6 p-0 hover:bg-accent hover:text-accent-foreground"
+                              onClick={() => toggleNotVotedGroup(item.id)}
+                            >
+                              {item.isCollapsed ? (
+                                <ChevronRight className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </span>
+                            <Building2 className="h-4 w-4" />
+                          </>
+                        )}
+                        <span className={cn(item.isGroupHeader && 'font-semibold')}>
+                          {item.name}
                           {item.isGroupHeader && (
-                            <>
-                              <span
-                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-6 w-6 p-0 hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => toggleNotVotedGroup(item.id)}
-                              >
-                                {item.isCollapsed ? (
-                                  <ChevronRight className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                              </span>
-                              <Building2 className="h-4 w-4" />
-                            </>
+                            <span className="text-base text-muted-foreground mr-2">
+                              ({item.subsidiaryCount} חברות)
+                              {item.isCollapsed && ' - מכווץ'}
+                            </span>
                           )}
-                          <span className={cn(item.isGroupHeader && 'font-semibold')}>
-                            {item.name}
-                            {item.isGroupHeader && (
-                              <span className="text-sm text-muted-foreground mr-2">
-                                ({item.subsidiaryCount} חברות)
-                                {item.isCollapsed && ' - מכווץ'}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </TableCell>
-                    )}
-
-                    {selectedNotVotedColumns.nominalValue && (
-                      <TableCell>{item.nominalValue.toLocaleString()}</TableCell>
-                    )}
-                    {selectedNotVotedColumns.percentageHolding && (
-                      <TableCell>{`${item.percentageHolding.toFixed(4)}%`}</TableCell>
-                    )}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{item.nominalValue.toLocaleString()}</TableCell>
+                    <TableCell>{`${item.percentageHolding.toFixed(4)}%`}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -598,7 +534,7 @@ export const VotingTablesField = () => {
                   boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
                 }}
                 className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 shadow-sm',
+                  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 shadow-sm',
                   groupByVoted
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90 border border-primary'
                     : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
@@ -623,80 +559,13 @@ export const VotingTablesField = () => {
                   </>
                 )}
               </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <span
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
-                    style={{
-                      border: '1px solid rgb(0 0 0 / 0.3)',
-                      boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                    }}
-                  >
-                    <Settings className="h-4 w-4 ml-2" />
-                    עמודות
-                  </span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.company}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, company: checked }))
-                    }
-                  >
-                    חברה
-                  </DropdownMenuCheckboxItem>
-
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.nominalValue}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, nominalValue: checked }))
-                    }
-                  >
-                    ערך נקוב
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.percentageHolding}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, percentageHolding: checked }))
-                    }
-                  >
-                    אחוזים
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.voter}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, voter: checked }))
-                    }
-                  >
-                    מצביע
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.voteTime}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, voteTime: checked }))
-                    }
-                  >
-                    זמן הצבעה
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={selectedVotedColumns.actualVoteAction}
-                    onCheckedChange={(checked) =>
-                      setSelectedVotedColumns((prev) => ({ ...prev, actualVoteAction: checked }))
-                    }
-                  >
-                    הצבעה בפועל
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <span
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm"
                 style={{
                   border: '1px solid rgb(0 0 0 / 0.3)',
                   boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
                 }}
-                onClick={() =>
-                  exportToCSV(processedVotedData, 'companies-voted.csv', selectedVotedColumns)
-                }
+                onClick={() => exportToCSV(processedVotedData, 'companies-voted.csv', votedColumns)}
               >
                 <Download className="h-4 w-4 ml-2" />
                 ייצא CSV
@@ -708,67 +577,58 @@ export const VotingTablesField = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                {selectedVotedColumns.company && <TableHead>חברה</TableHead>}
-
-                {selectedVotedColumns.nominalValue && (
-                  <TableHead>
-                    <div
-                      className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                      onClick={() => handleVotedSort('nominalValue')}
-                    >
-                      ערך נקוב
-                      {votedSort.field === 'nominalValue' ? (
-                        votedSort.direction === 'asc' ? (
-                          <ChevronUp className="h-4 w-4 opacity-100 text-black" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 opacity-100 text-black" />
-                        )
+                <TableHead>חברה</TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                    onClick={() => handleVotedSort('nominalValue')}
+                  >
+                    ערך נקוב
+                    {votedSort.field === 'nominalValue' ? (
+                      votedSort.direction === 'asc' ? (
+                        <ChevronUp className="h-4 w-4 opacity-100 text-black" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 opacity-30" />
-                      )}
-                    </div>
-                  </TableHead>
-                )}
-                {selectedVotedColumns.percentageHolding && (
-                  <TableHead>
-                    <div
-                      className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                      onClick={() => handleVotedSort('percentageHolding')}
-                    >
-                      אחוזים
-                      {votedSort.field === 'percentageHolding' ? (
-                        votedSort.direction === 'asc' ? (
-                          <ChevronUp className="h-4 w-4 opacity-100 text-black" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 opacity-100 text-black" />
-                        )
+                        <ChevronDown className="h-4 w-4 opacity-100 text-black" />
+                      )
+                    ) : (
+                      <ChevronDown className="h-4 w-4 opacity-30" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                    onClick={() => handleVotedSort('percentageHolding')}
+                  >
+                    אחוזים
+                    {votedSort.field === 'percentageHolding' ? (
+                      votedSort.direction === 'asc' ? (
+                        <ChevronUp className="h-4 w-4 opacity-100 text-black" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 opacity-30" />
-                      )}
-                    </div>
-                  </TableHead>
-                )}
-                {selectedVotedColumns.voter && <TableHead>מצביע (שם משתמש)</TableHead>}
-                {selectedVotedColumns.voteTime && (
-                  <TableHead>
-                    <div
-                      className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                      onClick={() => handleVotedSort('voteTime')}
-                    >
-                      זמן הצבעה (יחסי)
-                      {votedSort.field === 'voteTime' ? (
-                        votedSort.direction === 'asc' ? (
-                          <ChevronUp className="h-4 w-4 opacity-100 text-black" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 opacity-100 text-black" />
-                        )
+                        <ChevronDown className="h-4 w-4 opacity-100 text-black" />
+                      )
+                    ) : (
+                      <ChevronDown className="h-4 w-4 opacity-30" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                    onClick={() => handleVotedSort('voteTime')}
+                  >
+                    זמן הצבעה (יחסי)
+                    {votedSort.field === 'voteTime' ? (
+                      votedSort.direction === 'asc' ? (
+                        <ChevronUp className="h-4 w-4 opacity-100 text-black" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 opacity-30" />
-                      )}
-                    </div>
-                  </TableHead>
-                )}
-                {selectedVotedColumns.actualVoteAction && <TableHead>הצבעה בפועל</TableHead>}
+                        <ChevronDown className="h-4 w-4 opacity-100 text-black" />
+                      )
+                    ) : (
+                      <ChevronDown className="h-4 w-4 opacity-30" />
+                    )}
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -780,141 +640,98 @@ export const VotingTablesField = () => {
                       item.isGroupHeader &&
                         item.isMotherGroup &&
                         !item.isChecksumGroup &&
-                        'bg-muted/50 font-semibold border-t-2',
-                      item.isLastInChecksumGroup && 'border-b-2 border-muted-foreground/60',
+                        'bg-muted/50 font-semibold',
                     )}
                     style={{
                       backgroundColor: item.groupColor ? `${item.groupColor}40` : undefined,
                     }}
                   >
-                    {selectedVotedColumns.company && (
-                      <TableCell>
-                        <div
-                          className={cn(
-                            'flex items-center gap-2',
-                            item.isGroupItem && !item.isGroupHeader && 'mr-6',
-                            item.isChecksumGroup && 'mr-6',
-                            item.isCompanyItem && 'mr-12',
-                          )}
-                        >
-                          {item.isGroupHeader && !item.isChecksumGroup && (
-                            <>
-                              <span
-                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-6 w-6 p-0 hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => toggleVotedGroup(item.id)}
-                              >
-                                {item.isCollapsed ? (
-                                  <ChevronRight className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                              </span>
-                              <Building2 className="h-4 w-4" />
-                              <span className="font-semibold">
-                                {item.name}
-                                <span className="text-sm text-muted-foreground mr-2">
-                                  ({item.subsidiaryCount} חברות)
-                                  {item.isCollapsed && ' - מכווץ'}
-                                </span>
-                              </span>
-                            </>
-                          )}
-
-                          {!item.isGroupHeader && (
-                            <>
-                              {item.isCompanyItem && item.vote ? (
-                                <a
-                                  href={`/admin/collections/votes/${item.vote.id}`}
-                                  className="flex items-center gap-2 text-inherit no-underline hover:no-underline cursor-pointer"
-                                  title="פתח דף הצבעה של החברה"
-                                >
-                                  <span>{item.name}</span>
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
+                    <TableCell>
+                      <div
+                        className={cn(
+                          'flex items-center gap-2',
+                          item.isGroupItem && !item.isGroupHeader && 'mr-6',
+                          item.isChecksumGroup && 'mr-6',
+                          item.isCompanyItem && 'mr-12',
+                        )}
+                      >
+                        {item.isGroupHeader && !item.isChecksumGroup && (
+                          <>
+                            <span
+                              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-6 w-6 p-0 hover:bg-accent hover:text-accent-foreground"
+                              onClick={() => toggleVotedGroup(item.id)}
+                            >
+                              {item.isCollapsed ? (
+                                <ChevronRight className="h-4 w-4" />
                               ) : (
-                                <span>{item.name}</span>
+                                <ChevronDown className="h-4 w-4" />
                               )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
+                            </span>
+                            <Building2 className="h-4 w-4" />
+                            <span className="font-semibold">
+                              {item.name}
+                              <span className="text-base text-muted-foreground mr-2">
+                                ({item.subsidiaryCount} חברות)
+                                {item.isCollapsed && ' - מכווץ'}
+                              </span>
+                            </span>
+                          </>
+                        )}
 
-                    {selectedVotedColumns.nominalValue && (
-                      <TableCell>
-                        <div className="flex items-center justify-between">
-                          {item.nominalValue.toLocaleString()}
+                        {!item.isGroupHeader && (
+                          <>
+                            {item.isCompanyItem && item.vote ? (
+                              <a
+                                href={getGroupedVoteUrl(item)}
+                                className="flex items-center gap-2 text-inherit no-underline hover:no-underline cursor-pointer hover:text-blue-600"
+                                title="פתח דף הצבעה קבוצתי"
+                              >
+                                <span>{item.name}</span>
+                              </a>
+                            ) : (
+                              <span>{item.name}</span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="flex items-center justify-between">
+                        {item.nominalValue.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-between">
+                        {`${item.percentageHolding.toFixed(4)}%`}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      {!item.isGroupHeader && item.vote?.voter && (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {item.vote.voter}
                         </div>
-                      </TableCell>
-                    )}
-                    {selectedVotedColumns.percentageHolding && (
-                      <TableCell>
-                        <div className="flex items-center justify-between">
-                          {`${item.percentageHolding.toFixed(4)}%`}
-                        </div>
-                      </TableCell>
-                    )}
-                    {selectedVotedColumns.voter && (
-                      <TableCell>
-                        {!item.isGroupHeader && item.vote?.voter && (
+                      )}
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="flex items-center justify-between">
+                        {!item.isGroupHeader && item.vote?.votedAt && (
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {item.vote.voter}
+                            <Clock className="h-4 w-4" />
+                            {formatRelativeTime(item.vote.votedAt)}
                           </div>
                         )}
-                      </TableCell>
-                    )}
-                    {selectedVotedColumns.voteTime && (
-                      <TableCell>
-                        <div className="flex items-center justify-between">
-                          {!item.isGroupHeader && item.vote?.votedAt && (
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              {formatRelativeTime(item.vote.votedAt)}
-                            </div>
-                          )}
-                          {item.isFirstInChecksumGroup &&
-                            !selectedVotedColumns.actualVoteAction && (
-                              <div className="relative">
-                                <span
-                                  className="absolute text-4xl font-bold text-muted-foreground/60 -right-2"
-                                  style={{
-                                    height: `${item.checksumGroupSize * 2.5}rem`,
-                                    top: `${(item.checksumGroupSize - 1) * 1.25}rem`,
-                                  }}
-                                >
-                                  ]
-                                </span>
-                                <span
-                                  className="absolute cursor-pointer hover:bg-accent hover:text-accent-foreground p-1 rounded -right-8"
-                                  style={{
-                                    top: `${(item.checksumGroupSize - 1) * 1.25 - 0.5}rem`,
-                                  }}
-                                  onClick={() => {
-                                    const checksum = item.vote?.checksum || ''
-                                    const sameChecksumCompanies = processedVotedData.filter(
-                                      (dataItem) =>
-                                        !dataItem.isGroupHeader &&
-                                        dataItem.vote?.checksum === checksum,
-                                    )
-                                    handleGroupedVoteLink(checksum, sameChecksumCompanies)
-                                  }}
-                                  title="פתח דף הצבעה קבוצתית"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </span>
-                              </div>
-                            )}
-                        </div>
-                      </TableCell>
-                    )}
-                    {selectedVotedColumns.actualVoteAction && (
-                      <TableCell>
-                        {!item.isGroupHeader && (
-                          <span className="text-lg">{item.vote?.isReported ? '✅' : '❌'}</span>
-                        )}
-                      </TableCell>
-                    )}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      {!item.isGroupHeader && (
+                        <span className="text-lg">{item.vote?.isReported ? '✅' : '❌'}</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 )
               })}

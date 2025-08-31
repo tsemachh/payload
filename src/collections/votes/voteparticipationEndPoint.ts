@@ -2,6 +2,7 @@ import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
+import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
 
 // Shared interfaces for both endpoints
 interface VotesQueryParams {
@@ -26,7 +27,8 @@ function createSuccessResponse(data: any[], totalDocs: number, totalPages: numbe
   return Response.json({ data, totalItems: totalDocs, totalPages })
 }
 
-function processVotesData(
+async function processVotesData(
+  fundsIds: string[],
   votes: any[],
   fullMeetingsMap: Record<string, any>,
   companiesMap: Record<string, any>,
@@ -34,18 +36,49 @@ function processVotesData(
 ) {
   const processedData: any[] = []
 
-  votes.forEach((vote: any) => {
+  for (const vote of votes) {
     const meetingId = typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id
     const meeting = fullMeetingsMap[meetingId]
-    const stock: Stock = stockMap[meeting.stock]
 
     if (!meeting) {
       console.warn('Missing full meeting for vote:', vote.id)
-      return
+      continue
     }
+    const stockId = typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id
+    const stock: Stock = stockMap[stockId]
 
     const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
     const company = companiesMap[companyId]
+
+    const relevantFundIds = findRelevantCompanyIds(meeting.funds as string[], fundsIds)
+
+    const fundsArray = await Promise.all(
+      relevantFundIds.map(async (fundId) => {
+        let quantity
+        const match = meeting?.fundsWithHolding?.find((item: { fund: string }) => {
+          return item.fund && (item.fund as string) == fundId
+        })
+        if (match && match.fund && match?.quantity) {
+          quantity = match.quantity
+        } else {
+          console.error(
+            `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+          )
+          return null
+        }
+        const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
+          quantity,
+          meeting.stockValue,
+          false,
+        )
+
+        return {
+          id: fundId,
+          percentageHolding,
+          holdingValueInMillions,
+        }
+      }),
+    ).then((results) => results.filter((result) => result !== null))
 
     const baseRecord = {
       id: vote.id,
@@ -55,8 +88,15 @@ function processVotesData(
       stockName: stock.name || '',
       marketValue: meeting.stockMarketValue || 0,
       stockType: stock.origin ?? '',
-      percentageHolding: meeting.percentageHolding || 0,
-      holdingValueInMillions: meeting.holdingValueInMillions || 0,
+
+      percentageHolding: fundsArray.reduce(
+        (sum, fund) => sum + ((fund?.percentageHolding ?? 0) as number),
+        0,
+      ),
+      holdingValueInMillions: fundsArray.reduce(
+        (sum, fund) => sum + ((fund?.holdingValueInMillions ?? 0) as number),
+        0,
+      ),
       meetingDate: meeting.meetingDate || '',
       meetingType: meeting.type || '',
       currentCompany: {
@@ -95,7 +135,7 @@ function processVotesData(
     }
 
     processedData.push(baseRecord)
-  })
+  }
 
   return processedData
 }
@@ -133,7 +173,7 @@ function buildWhereConditions(params: VotesQueryParams) {
     dualMeetingsOnly,
   } = params
 
-  const companiesIdsArray = companiesIds.split(',')
+  const companiesIdsArray = companiesIds.split(',') //TODO: הוספת בדיקה שזה גם קיים חברות של המשתמש
   const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
 
   if (status === 'published') {
@@ -188,7 +228,11 @@ function buildWhereConditions(params: VotesQueryParams) {
 }
 
 // Shared function to fetch and process votes data
-async function fetchAndProcessVotesData(req: PayloadRequest, params: VotesQueryParams) {
+async function fetchAndProcessVotesData(
+  fundsIds: string[],
+  req: PayloadRequest,
+  params: VotesQueryParams,
+) {
   const whereConditions = buildWhereConditions(params)
 
   // Fetch votes
@@ -223,7 +267,7 @@ async function fetchAndProcessVotesData(req: PayloadRequest, params: VotesQueryP
   const fullMeetings = await req.payload.find({
     collection: 'meetings',
     where: { id: { in: uniqueMeetingIds } },
-    depth: 0,
+    depth: 1,
     limit: 0,
     overrideAccess: true,
   })
@@ -265,7 +309,7 @@ async function fetchAndProcessVotesData(req: PayloadRequest, params: VotesQueryP
   const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
   // Process and return data
-  return processVotesData(votes, fullMeetingsMap, companiesMap, stockMap)
+  return processVotesData(fundsIds, votes, fullMeetingsMap, companiesMap, stockMap)
 }
 
 export const getVotesByCompanies = async (req: PayloadRequest) => {
@@ -273,6 +317,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
   try {
     const {
+      fundIds: fundIdsParams,
       companiesIds,
       status,
       startDate,
@@ -295,6 +340,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       return Response.json({ error: 'Company IDs are required' }, { status: 400 })
     }
 
+    const fundsIds = fundIdsParams ? (fundIdsParams as string).split(',') : []
     const page = parseInt((pageParam as string) || '1')
     const pageSize = parseInt((pageSizeParam as string) || '50')
     const sortField = (sortFieldParam as string) || 'meetingDate'
@@ -319,7 +365,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     }
 
     // Fetch and process data using shared function
-    let processedData = await fetchAndProcessVotesData(req, queryParams)
+    let processedData = await fetchAndProcessVotesData(fundsIds, req, queryParams)
 
     const totalItems = processedData.length
     const totalPages = Math.ceil(totalItems / pageSize)
