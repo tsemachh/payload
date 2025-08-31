@@ -26,11 +26,7 @@ export async function downloadMeetingsExcel(
   const columnMapping: Record<string, (meeting: any) => any> = {
     חברות: (m) => {
       if (viewMode === 'companies') {
-        return (
-          m.companies
-            ?.map((c: any) => c.funds?.[0]?.parentCompany?.name || c.companyName || c.name)
-            .join(', ') || ''
-        )
+        return ''
       }
       return m.companies?.map((c: any) => c.companyName || c.name).join(', ') || ''
     },
@@ -127,11 +123,45 @@ export async function downloadMeetingsExcel(
           spacerRow.height = 5
         }
 
+        const parentCompanyRow = Array(columns.length).fill('')
+        const companiesIndex = columns.indexOf('חברות')
+
+        const parentCompanyText = `\u202B${company.funds?.[0]?.parentCompany?.name || company.companyName || company.name}\u202C`
+
+        if (companiesIndex >= 0) {
+          parentCompanyRow[companiesIndex] = parentCompanyText
+        } else {
+          parentCompanyRow[0] = parentCompanyText
+        }
+
+        const parentRow = worksheet.addRow(parentCompanyRow)
+        parentRow.alignment = { horizontal: 'right', vertical: 'middle', wrapText: false }
+        parentRow.font = { bold: true }
+        parentRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE7F0FF' },
+        }
+        parentRow.eachCell((cell) => {
+          cell.border = {
+            bottom: { style: 'thin', color: { argb: 'FFF9FAFA' } },
+          }
+        })
+        parentRow.height = 15
+
+        if (companiesIndex >= 0 && companiesIndex < columns.length - 1) {
+          worksheet.mergeCells(
+            parentRow.number,
+            companiesIndex + 1,
+            parentRow.number,
+            columns.length,
+          )
+        }
+
         company.funds?.forEach((fund: any) => {
           const fundRow = Array(columns.length).fill('')
-          const companiesIndex = columns.indexOf('חברות')
 
-          const fundText = `\u202B${fund.holdingsCompanyName || ''}\u202C`
+          const fundText = `\u202B ${fund.holdingsCompanyName || ''}\u202C`
 
           if (companiesIndex >= 0) {
             fundRow[companiesIndex] = fundText
@@ -145,7 +175,7 @@ export async function downloadMeetingsExcel(
           row.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFE7F0FF' }, // Lighter blue to match participation report
+            fgColor: { argb: 'FFF5F5F5' }, // Even lighter background for child items
           }
           row.eachCell((cell) => {
             cell.border = {
