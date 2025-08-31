@@ -496,7 +496,6 @@ export default function Participations() {
             <ExportDropdownButton
               onExportAction={handleExportFile}
               isExporting={isExporting}
-              disabled={votesLoading || isExporting}
               className="w-full mt-1 h-10"
             />
           </div>
