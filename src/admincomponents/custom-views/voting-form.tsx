@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
+import { formatDateTime } from '../../app/(frontend)/helpers/utils-data-table'
 
 interface VoteData {
   fundsData: Array<{
@@ -28,9 +29,14 @@ interface VoteData {
   id: string
   title: string
   company: string
+  displayVotingRecommendation: boolean
   meeting: string
+  meetingDate: string
+  holdingsLimit: string
   isInterested: boolean
+  interestedExplanation?: string
   isSeniorOfficial: boolean
+  seniorOfficialExplanation?: string
   isInstitutionalInvestor: boolean
   voteAgainstRecommendation: boolean
   voteDifferentFromResult: boolean
@@ -148,6 +154,19 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     <div className="useTw space-y-3 p-4 max-w-[80%]" dir="rtl">
       <Card className="border border-gray-200">
         <CardHeader className="pb-6">
+          <CardTitle className="text-center text-xl font-bold text-gray-900">
+            {voteData.meeting}
+          </CardTitle>
+          <div className="flex items-center text-base text-gray-700 gap-12 justify-center pt-2">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">תאריך האסיפה:</span>
+              <span>{formatDateTime(formData.meetingDate)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">מועד קובע:</span>
+              <span>{formatDateTime(formData.holdingsLimit)}</span>
+            </div>
+          </div>
           <CardTitle className="text-right text-base text-gray-900">חברות </CardTitle>
           <div className="flex flex-wrap gap-2 text-right">
             {formData.companies?.map((company, index) => (
@@ -188,7 +207,12 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     {fund.fund.name}
                   </TableCell>
                   <TableCell>
-                    <span className="text-right text-gray-600 text-base">{fund.quantity}</span>
+                    <span className="text-right text-gray-600 text-base">
+                      {new Intl.NumberFormat('he-IL', {
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 2,
+                      }).format(fund.quantity)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -206,12 +230,17 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <Input
-                      value={fund.ownedQuantity}
+                      value={new Intl.NumberFormat('he-IL', {
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 2,
+                      }).format(fund.ownedQuantity)}
                       onChange={(e) => updateFundData(index, 'ownedQuantity', e.target.value)}
                       className="text-right h-8 text-base border-gray-300 max-w-[100px]"
-                      disabled={fund.verifiedHoldings === null}
                       style={{
-                        visibility: fund.verifiedHoldings ? 'hidden' : 'visible',
+                        visibility:
+                          fund.verifiedHoldings || fund.verifiedHoldings === undefined
+                            ? 'hidden'
+                            : 'visible',
                       }}
                     />
                   </TableCell>
@@ -224,17 +253,33 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
       <Card className="border border-gray-200">
         <CardContent className="space-y-3">
           <div className="grid grid-cols-3 gap-4 pt-6 text-base">
-            <div className="flex items-center space-x-reverse space-x-2 justify-start">
-              <label className="text-gray-900 ml-3">מעוניין</label>
-              <Checkbox checked={formData.isInterested} disabled={true} />
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                <label className="text-gray-900 font-medium ml-3">בעל עניין</label>
+                <Checkbox checked={formData.isInterested} disabled={true} />
+              </div>
+              {formData.isInterested && formData.interestedExplanation && (
+                <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                  {formData.interestedExplanation}
+                </span>
+              )}
             </div>
-            <div className="flex items-center space-x-reverse space-x-2 justify-start">
-              <label className="text-gray-900 ml-3">בעל תפקיד בכיר</label>
-              <Checkbox checked={formData.isSeniorOfficial} disabled={true} />
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                <label className="text-gray-900 font-medium ml-3">נושא משרה בכירה</label>
+                <Checkbox checked={formData.isSeniorOfficial} disabled={true} />
+              </div>
+              {formData.isSeniorOfficial && formData.seniorOfficialExplanation && (
+                <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                  {formData.seniorOfficialExplanation}
+                </span>
+              )}
             </div>
-            <div className="flex items-center space-x-reverse space-x-2 justify-start">
-              <label className="text-gray-900 ml-3">משקיע מוסדי</label>
-              <Checkbox checked={formData.isInstitutionalInvestor} disabled={true} />
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                <label className="text-gray-900 font-medium ml-3">משקיע מוסדי</label>
+                <Checkbox checked={formData.isInstitutionalInvestor} disabled={true} />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -257,9 +302,18 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   >
                     {item.text}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-6 flex-shrink-0">
+                    {formData.displayVotingRecommendation &&
+                      item.recommendation?.votingRecommendation && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-700">המלצה:</span>
+                          <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                            {item.recommendation.votingRecommendation}{' '}
+                          </span>
+                        </div>
+                      )}
                     <div
-                      className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision || '----')}`}
+                      className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision)}`}
                     >
                       {voteData.votes[index].voteDecision || '----'}
                     </div>
@@ -269,45 +323,66 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   className={`flex justify-${item.majorityType === 'privileged' ? 'between' : 'end'} mt-2 w-full`}
                 >
                   {item.majorityType === 'privileged' && (
-                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900 h-fit">
                       דורש רוב מיוחד
                     </span>
                   )}
-                  <div className="flex items-center gap-4" dir="rtl">
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-700 text-sm">ניגוד עניינים:</span>
-                      <div
-                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
-                      >
-                        {voteItem?.hasConflictOfInterest ? 'כן' : 'לא'}
+                  <div className="flex gap-4" dir="rtl">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 text-sm font-medium">ניגוד עניינים:</span>
+                        <div
+                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
+                        >
+                          {voteItem?.hasConflictOfInterest ? 'כן' : 'לא'}
+                        </div>
+                      </div>
+                      {voteItem?.hasConflictOfInterest &&
+                        voteItem?.conflictOfInterestExplanation && (
+                          <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                            {voteItem?.conflictOfInterestExplanation}
+                          </span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 text-sm font-medium">צד קשור:</span>
+                        <div
+                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
+                        >
+                          {voteItem?.isRelatedParty ? 'כן' : 'לא'}
+                        </div>
+                      </div>
+                      {voteItem?.isRelatedParty && voteItem?.relatedPartyExplanation && (
+                        <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                          {voteItem?.relatedPartyExplanation}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 text-sm font-medium">ועדת השקעות:</span>
+                        <div
+                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
+                        >
+                          {voteItem?.isInvestmentCommittee ? 'כן' : 'לא'}
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-700 text-sm">צד קשור:</span>
-                      <div
-                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
-                      >
-                        {voteItem?.isRelatedParty ? 'כן' : 'לא'}
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 text-sm font-medium">עניין אישי:</span>
+                        <div
+                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
+                        >
+                          {voteItem?.hasPersonalInterest ? 'כן' : 'לא'}
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-700 text-sm">ועדת השקעות:</span>
-                      <div
-                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
-                      >
-                        {voteItem?.isInvestmentCommittee ? 'כן' : 'לא'}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-700 text-sm">עניין אישי:</span>
-                      <div
-                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
-                      >
-                        {voteItem?.hasPersonalInterest ? 'כן' : 'לא'}
-                      </div>
+                      {voteItem?.hasPersonalInterest && voteItem?.personalInterestExplanation && (
+                        <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                          {voteItem?.personalInterestExplanation}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
