@@ -1,21 +1,17 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
-import { BarChart3, Briefcase, Calendar, CalendarCheck } from 'lucide-react'
-import { cn, handleNavigation } from '@/lib/utils'
+import { usePathname } from 'next/navigation'
+import { Briefcase, Calendar, CalendarCheck } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 export function MainNav() {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const handleNavigationClick = (href: string, e: React.MouseEvent) => {
-    handleNavigation(href, e, pathname, router)
-  }
 
   return (
     <nav className="flex items-center space-x-4 lg:space-x-6 rtl:space-x-reverse">
-      <button
-        onClick={(e) => handleNavigationClick('/', e)}
+      <Link
+        href="/"
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/' || pathname === '/meetings/all'
@@ -25,9 +21,9 @@ export function MainNav() {
       >
         <Calendar className="h-4 w-4 ml-2" />
         אסיפות
-      </button>
-      <button
-        onClick={(e) => handleNavigationClick('/participations', e)}
+      </Link>
+      <Link
+        href="/participations"
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/participations'
@@ -37,9 +33,9 @@ export function MainNav() {
       >
         <CalendarCheck className="h-4 w-4 ml-2" />
         השתתפות
-      </button>
-      <button
-        onClick={(e) => handleNavigationClick('/holdings', e)}
+      </Link>
+      <Link
+        href="/holdings"
         className={cn(
           'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
           pathname === '/holdings' || pathname === '/holdings/view'
@@ -49,19 +45,7 @@ export function MainNav() {
       >
         <Briefcase className="h-4 w-4 ml-2" />
         החזקות
-      </button>
-      <button
-        onClick={(e) => handleNavigationClick('/dashboard', e)}
-        className={cn(
-          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
-          pathname === '/dashboard'
-            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
-            : 'text-muted-foreground hover:bg-muted',
-        )}
-      >
-        <BarChart3 className="h-4 w-4 ml-2" />
-        לוח בקרה
-      </button>
+      </Link>
     </nav>
   )
 }

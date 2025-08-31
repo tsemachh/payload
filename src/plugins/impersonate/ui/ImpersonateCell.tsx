@@ -30,14 +30,14 @@ export const ImpersonateCell: React.FC<ImpersonateCellProps> = (props) => {
   // 3. Target user is not an admin
   const canImpersonate = loggedInUser?.id !== idUser && loggedInUser?.isAdmin && !isAdmin
   return (
-    <>
+    <div className="useTw">
       {canImpersonate && (
         <ConfirmationButton
           url={`/api/${authCollectionSlug}/${idUser}/impersonate`}
           userName={rowData.name}
-          variant="secondary"
+          variant="outline"
         />
       )}
-    </>
+    </div>
   )
 }

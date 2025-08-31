@@ -6,7 +6,7 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
-import { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -14,17 +14,20 @@ import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
+import { Button } from '@/components/ui/button'
+import { FileSpreadsheet } from 'lucide-react'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
-
+  const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
+  const [isExporting, setIsExporting] = useState(false)
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0 || funds.length > 0) {
       const companyIds = companies.map((company) => company.id)
       const fundIds = funds.map((fund) => fund.id)
-      setSelectedCompanyIds([...companyIds, ...fundIds])
+      setSelectedCompanyIds([...companyIds])
     }
   }, [companies, funds])
 
@@ -33,7 +36,7 @@ export function MeetingsTableClient() {
     let url = `/api/meetings/future-meetings`
 
     if (selectedCompanyIds.length > 0) {
-      url += `?fundIds=${selectedCompanyIds.join(',')}`
+      url += `?companyIds=${selectedCompanyIds.join(',')}`
     }
 
     return url
@@ -43,7 +46,6 @@ export function MeetingsTableClient() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
-
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
       return null
@@ -91,41 +93,118 @@ export function MeetingsTableClient() {
       return 'בחר חברות'
     }
 
-    const totalCompanyIds = companies.map((company) => company.id)
     const totalFundIds = funds.map((fund) => fund.id)
-    const allIds = [...totalCompanyIds, ...totalFundIds]
-
+    const totalCompaniesIds = companies.map((com) => com.id)
+    const allIds = [...totalCompaniesIds]
     const allSelected =
       selectedCompanyIds.length === allIds.length &&
       selectedCompanyIds.every((id) => allIds.includes(id))
 
     if (allSelected) {
-      return 'נבחרו הכל'
+      return 'נבחרו כל החברות'
     }
 
     return `נבחרו ${selectedCompanyIds.length} חברות`
   }
 
+  const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
+
+  const getButtonClasses = (isSelected: boolean) => {
+    const selectedStyle = 'bg-primary text-primary-foreground shadow-sm'
+    const unselectedStyle = 'text-muted-foreground hover:bg-muted-foreground/10'
+    return `${commonButtonClasses} ${isSelected ? selectedStyle : unselectedStyle}`
+  }
+
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+
+    try {
+      let exportUrl = `/api/meetings/future-meetings`
+      const params = new URLSearchParams()
+
+      if (selectedCompanyIds.length > 0) {
+        params.append('companyIds', selectedCompanyIds.join(','))
+      }
+
+      // Add export parameter
+      params.append('export', 'true')
+      const storedColumns = localStorage.getItem(`columnVisibility-${'meetings-table'}`)
+      console.log('storedColumns', storedColumns)
+      if (storedColumns) {
+        params.append('columns', storedColumns)
+      }
+      if (viewMode) {
+        params.append('viewMode', viewMode)
+      }
+      if (params.toString()) {
+        exportUrl += `?${params.toString()}`
+      }
+      // Make API call to get export data
+      const response = await fetch(exportUrl)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'דו"ח השתתפות באסיפות.xlsx'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      console.log('הקובץ הורד בהצלחה!')
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('הייתה שגיאה בהורדת הקובץ')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-row justify-start gap-4 mr-10 mb-4" style={{ position: 'absolute', left: '400px', top: '128px' }}>
-        <div className="w-[350px]">
-          <div className="flex items-center gap-3">
-            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
+      <div
+        className="flex flex-row justify-start gap-4 mr-10 mb-4"
+        style={{ position: 'absolute', left: '400px', top: '128px' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex bg-muted rounded-full p-0.5 mr-2">
+            <button
+              type="button"
+              onClick={() => setViewMode('companies')}
+              className={getButtonClasses(viewMode === 'companies')}
+            >
+              חברות
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('agenda')}
+              className={getButtonClasses(viewMode === 'agenda')}
+            >
+              סדר יום
+            </button>
+          </div>
+        </div>
+
+        {/* COMPANY SELECTOR */}
+        <div className=" flex w-[300px] -mr-14 -ml-6 ">
+          <div className="flex items-center gap-3 mr-[50px]">
             <Select>
-              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right">
+              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-8 mt-[3px]">
                 <SelectValue placeholder={getCompanySelectSummary()} />
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
                   selectedCompanies={selectedCompanyIds}
+                  showSearch={false}
                   onSelectionChangeAction={handleCompanySelectionChange}
                   className="w-full"
-                  showSearch={true}
-                  allCompaniesIds={[
-                    ...companies.map((company) => company.id),
-                    ...funds.map((fund) => fund.id),
-                  ]}
+                  allCompaniesIds={[...companies.map((com) => com.id)]}
+                  showFunds={false}
                 />
               </SelectContent>
             </Select>
@@ -147,8 +226,22 @@ export function MeetingsTableClient() {
         onlyFuture={true}
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
-        tableHeightOffset={200}
+        tableHeightOffset={260}
+        displayMode={viewMode}
+        selectedCompanyIds={selectedCompanyIds}
       />
+
+      <div className="flex justify-end pl-4">
+        <Button
+          onClick={handleExportExcel}
+          variant="default"
+          className="rounded-md whitespace-nowrap ml-4"
+          disabled={isExporting}
+        >
+          {isExporting ? 'מייצא...' : 'ייצוא כקובץ Excel'}
+          <FileSpreadsheet className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 }

@@ -316,3 +316,59 @@ const upsertVotesInternal = async ({
 
   return [...existingVotes.docs, ...createdVotes]
 }
+
+export const updateGroupedVotes = async (req: PayloadRequest) => {
+  await addDataAndFileToRequest(req)
+  try {
+    const body = req.json ? await req.json() : null
+    if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
+
+    const { meetingId, votesData, companyIds } = body
+
+    if (!meetingId) {
+      return Response.json({ error: 'Meeting ID is required' }, { status: 400 })
+    }
+
+    await req.payload.update({
+      collection: 'votes',
+      where: {
+        and: [{ meeting: { equals: meetingId } }, { company: { in: companyIds } }],
+      },
+      data: {
+        reported: votesData.reported,
+      },
+    })
+
+    if (votesData.fundsWithHolding?.length) {
+      // Get current meeting and merge fundsWithHolding
+      const currentMeeting = await req.payload.findByID({
+        collection: 'meetings',
+        id: meetingId,
+        select: { fundsWithHolding: true },
+      })
+
+      const existingFundsWithHolding = currentMeeting?.fundsWithHolding || []
+
+      const merged = existingFundsWithHolding.map((existingFund: any) => {
+        const matchingFund = votesData.fundsWithHolding.find(
+          (vote: any) => vote.fund === existingFund.fund,
+        )
+        return matchingFund ? { ...existingFund, ...matchingFund } : existingFund
+      })
+
+      const updatedfundsWithHolding = await req.payload.update({
+        collection: 'meetings',
+        id: meetingId,
+        data: { fundsWithHolding: merged },
+      })
+      console.log('!updated', updatedfundsWithHolding)
+    }
+
+    return Response.json({ success: true }, { status: 200 })
+  } catch (error: any) {
+    return Response.json(
+      { error: 'Internal server error', message: error.message },
+      { status: 500 },
+    )
+  }
+}

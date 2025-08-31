@@ -34,7 +34,6 @@ async function processVotesData(
   companiesMap: Record<string, any>,
   stockMap: Record<string, any>,
 ) {
-  console.time('Process Votes Data')
   const processedData: any[] = []
 
   for (const vote of votes) {
@@ -116,12 +115,10 @@ async function processVotesData(
     processedData.push(baseRecord)
   }
 
-  console.timeEnd('Process Votes Data')
   return processedData
 }
 
 function applySorting(data: any[], sortField: string, sortDirection: string) {
-  console.time('Apply Sorting')
   const sortedData = data.sort((a, b) => {
     let aVal = a[sortField]
     let bVal = b[sortField]
@@ -135,7 +132,6 @@ function applySorting(data: any[], sortField: string, sortDirection: string) {
     }
     return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1
   })
-  console.timeEnd('Apply Sorting')
   return sortedData
 }
 
@@ -207,7 +203,6 @@ function buildWhereConditions(params: VotesQueryParams) {
 }
 
 async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], batchSize = 1000) {
-  console.time('Fetch Votes (Batched)')
   let allVotes: any[] = []
   let page = 1
   let hasMore = true
@@ -230,7 +225,6 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
     hasMore = batch.hasNextPage
     page++
   }
-  console.timeEnd('Fetch Votes (Batched)')
   return allVotes
 }
 
@@ -240,13 +234,11 @@ async function fetchAndProcessVotesData(
   params: VotesQueryParams,
   isExport: boolean,
 ) {
-  console.time('Fetch and Process Votes Data')
   const whereConditions = buildWhereConditions(params)
 
   const votes = isExport
     ? await fetchVotesInBatches(req, whereConditions)
     : await (async () => {
-        console.time('Fetch Votes (Single)')
         const result = await req.payload.find({
           collection: 'votes',
           where: { and: whereConditions },
@@ -260,11 +252,9 @@ async function fetchAndProcessVotesData(
           limit: 0,
           overrideAccess: true,
         })
-        console.timeEnd('Fetch Votes (Single)')
         return result.docs
       })()
 
-  console.time('Fetch Related Data')
   const uniqueMeetingIds = Array.from(
     new Set(
       votes
@@ -309,6 +299,7 @@ async function fetchAndProcessVotesData(
     },
     collection: 'meetings',
     where: { id: { in: uniqueMeetingIds } },
+    depth: 1,
     limit: 0,
     overrideAccess: true,
   })
@@ -339,7 +330,6 @@ async function fetchAndProcessVotesData(
       overrideAccess: true,
     }),
   ])
-  console.timeEnd('Fetch Related Data')
 
   const fullMeetingsMap = Object.fromEntries(
     fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
@@ -356,7 +346,6 @@ async function fetchAndProcessVotesData(
     companiesMap,
     stockMap,
   )
-  console.timeEnd('Fetch and Process Votes Data')
   return processedData
 }
 
@@ -437,9 +426,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       const encodedFilename = encodeURIComponent(reportName)
 
       if (exportFormat === 'excel') {
-        console.time('Generate Excel')
         const excelBuffer = await generateParticipationsExcel(processedData, exportOptions)
-        console.timeEnd('Generate Excel')
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
           : `attachment; filename="${reportName}.xlsx"`
@@ -452,9 +439,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
           },
         })
       } else {
-        console.time('Generate PDF')
         const pdfBytes = await generateParticipationsPDF(processedData, exportOptions)
-        console.timeEnd('Generate PDF')
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
           : `attachment; filename="${reportName}.pdf"`

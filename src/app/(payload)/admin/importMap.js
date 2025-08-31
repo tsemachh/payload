@@ -28,7 +28,6 @@ import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../ad
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
-import { default as default_569907a85db59f6d8c1deaba81af6db9 } from '../../../collections/votes/components/HoldingsInFunds'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
@@ -52,6 +51,7 @@ import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../gr
 import { CustomContextProvider as CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092 } from '../../../providers/CustomContext'
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
+import { default as default_b7ce0dd15673c054966f89b2a35e3a65 } from '../../../admincomponents/custom-views/VotePage'
 import { default as default_f828cce1950382b69f94d117f188940f } from '@shefing/quickfilter/Dashboard'
 
 export const importMap = {
@@ -85,7 +85,6 @@ export const importMap = {
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
-  "/collections/votes/components/HoldingsInFunds#default": default_569907a85db59f6d8c1deaba81af6db9,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
@@ -109,5 +108,6 @@ export const importMap = {
   "/providers/CustomContext#CustomContextProvider": CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092,
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
+  "/admincomponents/custom-views/VotePage#default": default_b7ce0dd15673c054966f89b2a35e3a65,
   "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f
 }

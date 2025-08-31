@@ -58,7 +58,7 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
       req,
     })
 
-    const { errors, successCount, fileLength, successPrevCount, countTotalPrev } =
+    const { errors, successCount, fileLength, successPrevCount, countTotalPrev, processedMeetingIds } =
       await processMeetingsFeedCsv(req, { file })
     const endTime = Date.now()
     const durationMs = endTime - startTime
@@ -75,6 +75,7 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
         summary: `Meetings processed successfully: ${successCount} / ${fileLength}\n
 Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev}
  `,
+        meetings: processedMeetingIds,
       },
       req,
     })

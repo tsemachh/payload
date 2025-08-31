@@ -152,6 +152,7 @@ export async function processJsonMeetingRows(
                   req,
                 })
                 context.successPrevCount++
+                context.processedMeetingIds.push(prevMeetingId)
               } catch (e: any) {
                 context.errors.push(
                   `שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`,
@@ -178,18 +179,20 @@ export async function processJsonMeetingRows(
                 req,
               })
               context.successCount++
+              context.processedMeetingIds.push(meetingId)
             } catch (e: any) {
               context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
             }
           } else {
             try {
-              await req.payload.create({
+              const newMeeting = await req.payload.create({
                 collection: 'meetings',
                 data: row,
                 context: { ...req.context, from: 'migration' },
                 req,
               })
               context.successCount++
+              context.processedMeetingIds.push(newMeeting.id)
             } catch (e: any) {
               context.errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
             }
@@ -209,6 +212,7 @@ export type MeetingFeedContext = {
   fileLength: number
   successPrevCount: number
   countTotalPrev: number
+  processedMeetingIds: string[] // IDs of meetings that were processed (created or updated)
 }
 export const processMeetingsFeedCsv = async (
   req: PayloadRequest,
@@ -220,6 +224,7 @@ export const processMeetingsFeedCsv = async (
     fileLength: 0,
     successPrevCount: 0,
     countTotalPrev: 0,
+    processedMeetingIds: [],
   }
   try {
     // The file is at req.file as specified in the issue description
@@ -258,6 +263,7 @@ export const processMeetingsFeedCsv = async (
     context.countTotalPrev = __ret.countTotalPrev
     context.successPrevCount = __ret.successPrevCount
     context.successCount = __ret.successCount
+    context.processedMeetingIds = __ret.processedMeetingIds
     req.payload.logger.info(
       `Successfully processed ${rows.length} rows from CSV file: ${file.name}`,
     )

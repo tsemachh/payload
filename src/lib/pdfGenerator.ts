@@ -79,12 +79,34 @@ function fixBiDiText(text: any): string {
     .replace(/__OPEN_PAREN__/g, ')')
 }
 
-function prepareText(text: string): string {
+function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): string {
+  if (!text) {
+    return ''
+  }
+
+  if (typeof text !== 'string') {
+    text = String(text)
+  }
+
   text = fixBiDiText(text)
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === 'X' || text === '') {
+
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
     return text
   }
-  // Reverse for RTL display in jsPDF
+
+  const lines = doc.splitTextToSize(text, maxWidth)
+  const reversedLines = lines.map((line: string) => {
+    return line.split('').reverse().join('')
+  })
+
+  return reversedLines.join('\n')
+}
+
+function prepareText(text: string): string {
+  text = fixBiDiText(text)
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
+    return text
+  }
   return text.split('').reverse().join('')
 }
 
@@ -112,9 +134,8 @@ function addHeader(
   doc.text(reportNameText, (PAGE_WIDTH - reportNameWidth) / 2, MARGIN + 17)
 
   doc.setFontSize(10)
-  const dateRangeText = prepareText(
-    `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`,
-  )
+  const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
+
   const dateRangeWidth = doc.getTextWidth(dateRangeText)
   doc.text(dateRangeText, (PAGE_WIDTH - dateRangeWidth) / 2, MARGIN + 29)
 }
@@ -173,73 +194,114 @@ export async function generateParticipationsPDF(
 
     const subWidth = 330 / 5
     const widths = [
-      40,
-      40,
-      40,
-      60,
-      40,
-      45,
-      45,
-      45,
-      45,
-      subWidth,
-      subWidth,
-      subWidth,
-      subWidth,
-      subWidth,
-      subWidth,
-      subWidth,
-      15,
+      40, // עמודה 0 - אינטרס אישי
+      40, // עמודה 1 - צד קשור
+      40, // עמודה 2 - ניגוד עניינים
+      60, // עמודה 3 - ציות למדיניות
+      40, // עמודה 4 - רוב מיוחד
+      45, // עמודה 5 - רוב רגיל
+      45, // עמודה 6 - תוצאות ישיבה
+      45, // עמודה 7 - הצבעה
+      45, // עמודה 8 - המלצת יועץ
+      subWidth, // עמודה 9 - מספר מניה
+      subWidth, // עמודה 10 - שם מניה
+      subWidth, // עמודה 11 - שווי שוק
+      subWidth, // עמודה 12 - אחוז החזקה
+      subWidth, // עמודה 13 - שווי החזקה
+      subWidth, // עמודה 14 - תאריך ישיבה
+      subWidth, // עמודה 15 - סוג ישיבה
+      15, // עמודה 16 - מספר סעיף
     ]
 
-    const columnStyles = {
-      0: { halign: 'center' },
-      1: { halign: 'center' },
-      2: { halign: 'center' },
-      3: { halign: 'center' },
-      4: { halign: 'center' },
-      5: { halign: 'center' },
-      6: { halign: 'center' },
-      7: { halign: 'center' },
-      8: { halign: 'center' },
-      9: { halign: 'right' },
-      10: { halign: 'center' },
-      11: { halign: 'center' },
-      12: { halign: 'center' },
-      13: { halign: 'center' },
-      14: { halign: 'center' },
-      15: { halign: 'center' },
-      16: { halign: 'center' },
+    const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } = {
+      '0': { halign: 'center' as const },
+      '1': { halign: 'center' as const },
+      '2': { halign: 'center' as const },
+      '3': { halign: 'center' as const },
+      '4': { halign: 'center' as const },
+      '5': { halign: 'center' as const },
+      '6': { halign: 'center' as const },
+      '7': { halign: 'center' as const },
+      '8': { halign: 'center' as const },
+      '9': { halign: 'center' as const },
+      '10': { halign: 'center' as const },
+      '11': { halign: 'center' as const },
+      '12': { halign: 'center' as const },
+      '13': { halign: 'center' as const },
+      '14': { halign: 'center' as const },
+      '15': { halign: 'center' as const },
+      '16': { halign: 'center' as const },
     }
 
-    const head = [
-      [
-        { content: prepareText(SHARED_COLUMNS.PERSONAL_INTEREST), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.RELATED_PARTY), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.CONFLICT_OF_INTEREST), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.POLICY_COMPLIANCE), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.SPECIAL_MAJORITY), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.REGULAR_MAJORITY), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.MEETING_RESULTS), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.VOTE), rowSpan: 2 },
-        { content: prepareText(SHARED_COLUMNS.ADVISOR_RECOMMENDATION), rowSpan: 2 },
-        {
-          content: prepareText('נושא'),
-          colSpan: 7,
-          halign: 'center',
-          styles: {
-            fontSize: FONT_SIZE_HEADER,
-            cellPadding: { top: PADDING + 13 },
-          },
+    // יצירת הכותרות - שורה ראשונה עם המיזוג
+    const headerRow1 = [
+      { content: prepareText(SHARED_COLUMNS.PERSONAL_INTEREST), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.RELATED_PARTY), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.CONFLICT_OF_INTEREST), rowSpan: 2 },
+      {
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.POLICY_COMPLIANCE, doc, 70),
+        rowSpan: 2,
+      },
+      { content: prepareText(SHARED_COLUMNS.SPECIAL_MAJORITY), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.REGULAR_MAJORITY), rowSpan: 2 },
+      { content: prepareTextWithLineBreaks(SHARED_COLUMNS.MEETING_RESULTS, doc, 55), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.VOTE), rowSpan: 2 },
+      {
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.ADVISOR_RECOMMENDATION, doc, 55),
+        rowSpan: 2,
+      },
+      {
+        content: prepareText('נושא'),
+        colSpan: 7, // מיזוג 7 עמודות - עמודות 9-15
+        halign: 'center',
+        styles: {
+          fontSize: FONT_SIZE_HEADER,
+          cellPadding: { top: PADDING + 13 },
         },
-        { content: '', rowSpan: 2 },
-      ],
-      COMPANY_SUB_HEADERS.map((sub) => ({
-        content: prepareText(sub),
+      },
+      { content: '', rowSpan: 2 }, // עמודה 16 - מספר סעיף
+    ]
+
+    const headerRow2 = [
+      // תתי כותרות מסודרות בסדר הנכון (לא הפוך)
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[0]),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      })),
+      }, // מספר מניה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[1]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שם מניה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[2]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שווי שוק
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[3]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // אחוז החזקה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[4]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שווי החזקה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[5]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // תאריך ישיבה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[6]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // סוג ישיבה
     ]
+
+    const head = [headerRow1, headerRow2.reverse()]
 
     const body: any[] = []
 
@@ -260,19 +322,20 @@ export async function generateParticipationsPDF(
         2,
       )
 
+      // ארגון נתוני החברה בסדר הנכון (עמודות 9-15)
       const companyValues = [
-        meeting.stockNumber || '',
-        meeting.stockName || '',
-        formattedMarketValue,
-        formattedPercentageHolding,
-        formattedHoldingValueInMillions,
-        formattedDate,
-        meeting.meetingType || '',
+        meeting.meetingType || '', // עמודה 15
+        formattedDate, // עמודה 14
+        formattedHoldingValueInMillions, // עמודה 13
+        formattedPercentageHolding, // עמודה 12
+        formattedMarketValue, // עמודה 11
+        meeting.stockName || '', // עמודה 10
+        meeting.stockNumber || '', // עמודה 9
       ]
-        .reverse()
-        .map(prepareText)
 
+      // יצירת שורת כותרת חברה עם רקע צבעוני
       const companyRow = [
+        // עמודות 0-8 ריקות עם רקע צבעוני
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
@@ -282,84 +345,107 @@ export async function generateParticipationsPDF(
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
+        // עמודות 9-15 עם נתוני החברה
         {
-          content: companyValues[0],
+          content:
+            companyValues[0].length > 15
+              ? prepareTextWithLineBreaks(companyValues[0], doc, 15)
+              : prepareText(companyValues[0]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[1],
+          content:
+            companyValues[1].length > 15
+              ? prepareTextWithLineBreaks(companyValues[1], doc, 15)
+              : prepareText(companyValues[1]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[2],
+          content: prepareText(companyValues[2]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[3],
+          content: prepareText(companyValues[3]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[4],
+          content: prepareText(companyValues[4]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[5],
+          content: prepareText(companyValues[5]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: companyValues[6],
+          content:
+            companyValues[6].length > 15
+              ? prepareTextWithLineBreaks(companyValues[6], doc, 15)
+              : prepareText(companyValues[6]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
+        // עמודה 16 ריקה
         { content: '', styles: { fillColor: companyHeaderBgColor } },
       ]
       body.push(companyRow)
 
+      // הוספת שורות הסעיפים
       meeting.agendas.forEach((agenda: any, i: number) => {
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [231, 240, 255]
         const defaultTextColor = [51, 51, 51]
 
-        const rowData = [
-          booleanToIcon(agenda.personalInterest),
-          booleanToIcon(agenda.relatedParty),
-          booleanToIcon(agenda.conflictOfInterest),
-          booleanToIcon(agenda.policyCompliance),
-          agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '',
-          booleanToIcon(!agenda.privilegedMajority),
+        // ארגון נתוני הסעיף בסדר הנכון (עמודות 0-8, 16)
+        const agendaData = [
+          booleanToIcon(agenda.personalInterest), // עמודה 0
+          booleanToIcon(agenda.relatedParty), // עמודה 1
+          booleanToIcon(agenda.conflictOfInterest), // עמודה 2
+          booleanToIcon(agenda.policyCompliance), // עמודה 3
+          agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // עמודה 4
+          booleanToIcon(!agenda.privilegedMajority), // עמודה 5
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
-            : agenda.meetingResults || '',
-          agenda.vote || '',
-          agenda.recommendation?.votingRecommendation || '',
-          agenda.text || '',
-          (i + 1).toString(),
+            : agenda.meetingResults || '', // עמודה 6
+          agenda.vote || '', // עמודה 7
+          agenda.recommendation?.votingRecommendation || '', // עמודה 8
         ]
 
-        const row = rowData.map((content, index) => {
-          let thisTextColor = defaultTextColor
-          if (content === 'V') {
-            thisTextColor = [0, 153, 0]
-          } else if (content === 'X') {
-            thisTextColor = [204, 0, 0]
-          }
-          const cell: any = {
-            content: prepareText(content),
-            styles: { fillColor: rowBg, textColor: thisTextColor },
-          }
-          // Apply colSpan and halign for agenda text cell (index 9)
-          if (index === 9) {
-            cell.colSpan = 7
-            cell.styles.halign = 'right'
-          }
-          return cell
-        })
+        const row = [
+          ...agendaData.map((content) => {
+            let thisTextColor = defaultTextColor
+            if (content === 'V') {
+              thisTextColor = [0, 153, 0]
+            }
+
+            return {
+              content: prepareText(content),
+              styles: { fillColor: rowBg, textColor: thisTextColor },
+            }
+          }),
+          // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
+          {
+            content: prepareTextWithLineBreaks(agenda.text || '', doc, subWidth * 11),
+            colSpan: 7, // מיזוג עמודות 9-15
+            styles: {
+              fillColor: rowBg,
+              textColor: defaultTextColor,
+              halign: 'right',
+              valign: 'top',
+            },
+          },
+          // עמודה 16 - מספר הסעיף
+          {
+            content: prepareText('.' + (i + 1).toString()),
+            styles: { fillColor: rowBg, textColor: defaultTextColor, halign: 'center' },
+          },
+        ]
 
         body.push(row)
       })
 
+      // הוספת שורה ריקה להפרדה בין חברות
       body.push([
         {
           content: '',
-          colSpan: widths.length,
+          colSpan: 17, // מיזוג כל העמודות
           styles: { minCellHeight: 10, fillColor: [255, 255, 255] },
         },
       ])
@@ -371,6 +457,7 @@ export async function generateParticipationsPDF(
       startY: HEADER_HEIGHT,
       margin: { top: HEADER_HEIGHT, left: MARGIN, right: MARGIN, bottom: MARGIN + 20 },
       theme: 'plain',
+      columnStyles,
       headStyles: {
         font: 'Ariel',
         fontStyle: 'bold',
@@ -390,9 +477,7 @@ export async function generateParticipationsPDF(
         valign: 'middle',
         overflow: 'linebreak',
         minCellHeight: MIN_ROW_HEIGHT,
-        // textDirection: 'rtl',
       },
-      // columnStyles,
       didDrawPage: () => {
         addHeader(doc, options, logoBase64, logoWidth, logoHeight)
       },

@@ -41,9 +41,9 @@ import {
   isValidDate,
 } from '../helpers/utils-data-table'
 import { Checkbox } from './ui/checkbox'
-import { MeetingState, StockOrigin } from '@/payload-types'
+import type { MeetingState, StockOrigin } from '@/payload-types'
 import { meetingStateMap, stockOriginMap } from '../helpers/maps'
-import {
+import type {
   Column,
   DataTableProps,
   FacetedFilterItem,
@@ -54,7 +54,11 @@ import {
 import { getDateRange } from '../helpers/utils-data-table'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
-import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
+import {
+  renderAgendaCell,
+  renderCompaniesCell,
+  renderFundsCell,
+} from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
 import CustomRadio from './custom-radio'
 
@@ -80,6 +84,8 @@ export function DataTableStatic<T extends Record<string, any>>({
   selectAll = 'בחר הכל',
   removeAll = 'הסר הכל',
   pagination,
+  displayMode,
+  selectedCompanyIds,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -93,6 +99,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     [key: string]: boolean
   }>({})
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
+  const [agendasExpandedRows, setAgendasExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [inputSearchTerm, setInputSearchTerm] = useState('')
@@ -202,10 +209,130 @@ export function DataTableStatic<T extends Record<string, any>>({
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
-    if (!columnsOption) return columns
-    return columns.filter((column) => columnVisibility[column.key as string])
-  }, [columnsOption, columns, columnVisibility])
+    let filteredColumns = columnsOption
+      ? columns.filter((column) => columnVisibility[column.key as string])
+      : columns
 
+    // Filter columns based on displayMode
+    if (displayMode === 'companies') {
+      // Show companies column, hide agenda column
+      filteredColumns = filteredColumns.filter((column) => column.key !== 'agenda')
+    } else if (displayMode === 'agenda') {
+      // Show agenda column, hide companies column
+      if (!filteredColumns.some((col) => col.key === 'agenda')) {
+        const [first, ...rest] = filteredColumns
+        filteredColumns = [
+          first,
+          {
+            key: 'agenda',
+            header: 'סדר יום',
+            type: 'string',
+            sortKey: 'agendas',
+            minWidth: 50,
+            width: 50,
+          },
+          ...rest,
+        ]
+      }
+      filteredColumns = filteredColumns.filter((column) => column.key !== 'companies')
+    }
+
+    return filteredColumns
+  }, [columnsOption, columns, columnVisibility, displayMode])
+  // Component for individual agenda item with tooltip
+  const AgendaItem = ({ agenda, index }: { agenda: any; index: number }) => {
+    const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
+    const direction = isEnglish ? 'ltr' : 'rtl'
+    const alignment = isEnglish ? 'text-left' : 'text-right'
+
+    const [tooltipPosition, setTooltipPosition] = React.useState<{
+      x: number
+      y: number
+      visible: boolean
+    }>({ x: 0, y: 0, visible: false })
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      const tooltipWidth = 400
+      const tooltipHeight = 100
+
+      let x = e.clientX + 10 // 10px to the right of cursor
+      let y = e.clientY - tooltipHeight - 10 // 10px above cursor
+
+      // Check if tooltip goes off screen horizontally
+      if (x + tooltipWidth > window.innerWidth) {
+        x = e.clientX - tooltipWidth - 10 // Show to the left instead
+      }
+
+      // Check if tooltip goes off screen vertically
+      if (y < 0) {
+        y = e.clientY + 10 // Show below cursor instead
+      }
+
+      setTooltipPosition({ x, y, visible: true })
+    }
+
+    const handleMouseLeave = () => {
+      setTooltipPosition((prev) => ({ ...prev, visible: false }))
+    }
+
+    return (
+      <div className="relative">
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 cursor-help"
+          style={{ maxWidth: 'calc(100vw - 150px)' }}
+          onMouseMove={agenda.text && agenda.text.length > 30 ? handleMouseMove : undefined}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Index always on the right */}
+          <span className="shrink-0 order-1">{index + 1}.</span>
+          {/* Text content with proper direction */}
+          <div
+            dir={direction}
+            className={cn('relative order-2', alignment)}
+            style={{ maxWidth: 'calc(100vw - 200px)' }} // Adjust based on your layout
+          >
+            <span
+              className={cn(
+                'block',
+                isEnglish ? 'truncate' : 'text-ellipsis overflow-hidden whitespace-nowrap',
+              )}
+              style={
+                !isEnglish
+                  ? {
+                      direction: 'rtl',
+                      textOverflow: 'ellipsis',
+                      unicodeBidi: 'plaintext',
+                      maxWidth: 'calc(100vw - 200px)',
+                    }
+                  : {
+                      maxWidth: 'calc(100vw - 200px)',
+                    }
+              }
+            >
+              {agenda.text}
+            </span>
+          </div>
+        </div>
+
+        {/* Dynamic positioned tooltip */}
+        {agenda.text && agenda.text.length > 30 && tooltipPosition.visible && (
+          <div
+            className="fixed z-50 bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words pointer-events-none transition-opacity duration-200"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+              maxWidth: '400px',
+              wordWrap: 'break-word',
+              direction: direction,
+              textAlign: isEnglish ? 'left' : 'right',
+            }}
+          >
+            {agenda.text}
+          </div>
+        )}
+      </div>
+    )
+  }
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
     (key: string) => {
@@ -823,7 +950,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex justify-between items-center w-40"
+                  className="flex justify-between items-center w-40 bg-transparent"
                   disabled={isLoading}
                 >
                   <span>{columnsLabel}</span>
@@ -1117,13 +1244,20 @@ export function DataTableStatic<T extends Record<string, any>>({
                         >
                           {column.key === 'companies'
                             ? renderCompaniesCell(
-                                row,
+                                {
+                                  ...row,
+                                  companies: row.companies?.filter((c: any) =>
+                                    selectedCompanyIds?.includes(c.id),
+                                  ),
+                                },
                                 companiesExpandedRows,
                                 setCompaniesExpandedRows,
                               )
-                            : column.render
-                              ? column.render(row)
-                              : highlightText(getDisplayValue(row, column.key), searchTerm)}
+                            : column.key === 'agenda'
+                              ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
+                              : column.render
+                                ? column.render(row)
+                                : highlightText(getDisplayValue(row, column.key), searchTerm)}
                         </TableCell>
                       ))}
                       {renderRowActions && (
@@ -1134,137 +1268,170 @@ export function DataTableStatic<T extends Record<string, any>>({
                     </TableRow>
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
-                      row.companies.length > 0 && (
+                      row.companies.length > 0 &&
+                      displayMode === 'companies' && (
                         <>
-                          {row.companies.map((company: CompanyTableDate) => (
-                            <React.Fragment key={row.meetingId + uuidv4()}>
-                              <TableRow
-                                key={`company-${uuidv4()}`}
-                                className="bg-muted/40 border-t-0 hover:bg-primary/20"
-                              >
-                                {/* Empty cell for companies column */}
-                                <TableCell className="py-2 px-3"></TableCell>
+                          {row.companies
+                            .filter((company: CompanyTableDate) =>
+                              selectedCompanyIds?.includes(company.id),
+                            )
+                            .map((company: CompanyTableDate) => (
+                              <React.Fragment key={row.meetingId + uuidv4()}>
+                                <TableRow
+                                  key={`company-${uuidv4()}`}
+                                  className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                                >
+                                  {/* Empty cell for companies column */}
+                                  <TableCell className="py-2 px-3"></TableCell>
 
-                                {/* Map through visible columns and show relevant company data */}
-                                {visibleColumns.slice(1).map((column, columnIndex) => {
-                                  if (column.key in company) {
-                                    return (
-                                      <TableCell
-                                        key={`company-${uuidv4()}-${String(column.key)}`}
-                                        className="py-2 px-3 whitespace-nowrap"
-                                        style={{ textAlign: 'right' }}
-                                      >
-                                        {(() => {
-                                          const value =
-                                            company[column.key as keyof CompanyTableDate]
-                                          if (typeof value === 'number') {
-                                            return new Intl.NumberFormat('he-IL').format(value)
-                                          }
-                                        })()}
-                                      </TableCell>
-                                    )
-                                  } else {
-                                    return (
-                                      <TableCell
-                                        key={`company-${uuidv4()}-${String(column.key)}`}
-                                        className="py-2 px-3 whitespace-nowrap"
-                                      >
-                                        {columnIndex === 0 && (
-                                          <div className="relative h-40px">
-                                            <span className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate">
-                                              {renderFundsCell(
-                                                company,
-                                                companies.find((c) => c.id === company.id)?.name ||
-                                                  '',
-                                                fundsExpandedRows,
-                                                setFundsExpandedRows,
-                                                visibleColumns,
-                                              )}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </TableCell>
-                                    )
-                                  }
-                                })}
-
-                                {renderRowActions && (
-                                  <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                    {renderRowActions(row)}
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                              {fundsExpandedRows[company.id] &&
-                                company.funds &&
-                                company.funds.length > 0 && (
-                                  <>
-                                    {company.funds.map((fund: FundType) => (
-                                      <TableRow
-                                        key={`fund-${uuidv4()}`}
-                                        className="bg-muted/70 border-t-0 hover:bg-primary/20"
-                                      >
-                                        {/* Empty cell for companies column */}
-                                        <TableCell className="py-2 px-6"></TableCell>
-
-                                        {/* Map through visible columns and show relevant fund data */}
-                                        {visibleColumns.slice(1).map((column, columnIndex) => {
-                                          if (column.key in fund) {
-                                            return (
-                                              <TableCell
-                                                key={`fund-${uuidv4()}-${String(column.key)}`}
-                                                className="py-2 px-3 whitespace-nowrap"
-                                                style={{ textAlign: 'right' }}
-                                              >
-                                                {(() => {
-                                                  const value = fund[column.key as keyof FundType]
-                                                  if (typeof value === 'number') {
-                                                    return new Intl.NumberFormat('he-IL').format(
-                                                      value,
-                                                    )
-                                                  }
-                                                })()}
-                                              </TableCell>
-                                            )
-                                          } else {
-                                            return (
-                                              <TableCell
-                                                key={`fund-${uuidv4()}-${String(column.key)}`}
-                                                className="py-2 px-3 pr-14 whitespace-nowrap"
-                                              >
-                                                {columnIndex === 0 && (
-                                                  <div className="relative h-40px mr-7">
-                                                    <span
-                                                      className="absolute right-0 top-1/2 -translate-y-1/2 font-medium truncate"
-                                                      style={{
-                                                        maxWidth: calculatePrecedingColumnsWidth(
-                                                          visibleColumns as unknown as Column<MeetingTableDataType>[],
-                                                          company,
-                                                          true,
-                                                        ),
-                                                      }}
-                                                    >
-                                                      {fund.holdingsCompanyName}
-                                                    </span>
-                                                  </div>
+                                  {/* Map through visible columns and show relevant company data */}
+                                  {visibleColumns.slice(1).map((column, columnIndex) => {
+                                    if (column.key in company) {
+                                      return (
+                                        <TableCell
+                                          key={`company-${uuidv4()}-${String(column.key)}`}
+                                          className="py-2 px-3 whitespace-nowrap"
+                                          style={{ textAlign: 'right' }}
+                                        >
+                                          {(() => {
+                                            const value =
+                                              company[column.key as keyof CompanyTableDate]
+                                            if (typeof value === 'number') {
+                                              return new Intl.NumberFormat('he-IL').format(value)
+                                            }
+                                          })()}
+                                        </TableCell>
+                                      )
+                                    } else {
+                                      return (
+                                        <TableCell
+                                          key={`company-${uuidv4()}-${String(column.key)}`}
+                                          className="py-2 px-3 whitespace-nowrap"
+                                        >
+                                          {columnIndex === 0 && (
+                                            <div className="relative h-40px">
+                                              <span className="absolute right-0 top-1/2 -translate-y-1/2  truncate">
+                                                {renderFundsCell(
+                                                  company,
+                                                  companies.find((c) => c.id === company.id)
+                                                    ?.name || '',
+                                                  fundsExpandedRows,
+                                                  setFundsExpandedRows,
+                                                  visibleColumns,
                                                 )}
-                                              </TableCell>
-                                            )
-                                          }
-                                        })}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </TableCell>
+                                      )
+                                    }
+                                  })}
 
-                                        {renderRowActions && (
-                                          <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                            {renderRowActions(row)}
-                                          </TableCell>
-                                        )}
-                                      </TableRow>
-                                    ))}
-                                  </>
-                                )}
-                            </React.Fragment>
-                          ))}
+                                  {renderRowActions && (
+                                    <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                      {renderRowActions(row)}
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                                {fundsExpandedRows[company.id] &&
+                                  company.funds &&
+                                  company.funds.length > 0 && (
+                                    <>
+                                      {company.funds.map((fund: FundType) => (
+                                        <TableRow
+                                          key={`fund-${uuidv4()}`}
+                                          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+                                        >
+                                          {/* Empty cell for companies column */}
+                                          <TableCell className="py-2 px-6"></TableCell>
+
+                                          {/* Map through visible columns and show relevant fund data */}
+                                          {visibleColumns.slice(1).map((column, columnIndex) => {
+                                            if (column.key in fund) {
+                                              return (
+                                                <TableCell
+                                                  key={`fund-${uuidv4()}-${String(column.key)}`}
+                                                  className="py-2 px-3 whitespace-nowrap"
+                                                  style={{ textAlign: 'right' }}
+                                                >
+                                                  {(() => {
+                                                    const value = fund[column.key as keyof FundType]
+                                                    if (typeof value === 'number') {
+                                                      return new Intl.NumberFormat('he-IL').format(
+                                                        value,
+                                                      )
+                                                    }
+                                                  })()}
+                                                </TableCell>
+                                              )
+                                            } else {
+                                              return (
+                                                <TableCell
+                                                  key={`fund-${uuidv4()}-${String(column.key)}`}
+                                                  className="py-2 px-3 pr-14 whitespace-nowrap"
+                                                >
+                                                  {columnIndex === 0 && (
+                                                    <div className="relative h-40px mr-7">
+                                                      <span
+                                                        className="absolute right-0 top-1/2 -translate-y-1/2  truncate"
+                                                        style={{
+                                                          maxWidth: calculatePrecedingColumnsWidth(
+                                                            visibleColumns as unknown as Column<MeetingTableDataType>[],
+                                                            company,
+                                                            true,
+                                                          ),
+                                                        }}
+                                                      >
+                                                        {fund.holdingsCompanyName}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </TableCell>
+                                              )
+                                            }
+                                          })}
+
+                                          {renderRowActions && (
+                                            <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                              {renderRowActions(row)}
+                                            </TableCell>
+                                          )}
+                                        </TableRow>
+                                      ))}
+                                    </>
+                                  )}
+                              </React.Fragment>
+                            ))}
                         </>
                       )}
+                    {displayMode === 'agenda' && agendasExpandedRows[row.meetingId] && (
+                      <>
+                        {row.agendas.map((agenda: any, index: number) => (
+                          <TableRow
+                            key={`agenda-${row.meetingId}-${index}`}
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                          >
+                            {/* Empty cell for companies column */}
+                            <TableCell className="py-2 px-3"></TableCell>
+                            {/* Map through visible columns and show agenda text in first column */}
+                            {visibleColumns.slice(1).map((column, columnIndex) => (
+                              <TableCell
+                                key={`agenda-${row.meetingId}-${index}-${String(column.key)}`}
+                                className="py-2 px-3 whitespace-nowrap"
+                                style={{ textAlign: 'right' }}
+                              >
+                                {columnIndex === 0 && <AgendaItem agenda={agenda} index={index} />}
+                              </TableCell>
+                            ))}
+                            {renderRowActions && (
+                              <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                {renderRowActions(row)}
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
                   </React.Fragment>
                 ))}
               </TableBody>
@@ -1293,22 +1460,38 @@ export function DataTableStatic<T extends Record<string, any>>({
             </Button>
 
             <span className="mx-2">
-              עמוד {currentPage} מתוך {pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize) || 1}
+              עמוד {currentPage} מתוך{' '}
+              {pagination.totalPages ||
+                Math.ceil(filteredAndSortedData.length / pagination.pageSize) ||
+                1}
             </span>
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === (pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading}
+              disabled={
+                currentPage ===
+                  (pagination.totalPages ||
+                    Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading
+              }
             >
               הבא
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handlePageChange(pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize))}
-              disabled={currentPage === (pagination.totalPages || Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading}
+              onClick={() =>
+                handlePageChange(
+                  pagination.totalPages ||
+                    Math.ceil(filteredAndSortedData.length / pagination.pageSize),
+                )
+              }
+              disabled={
+                currentPage ===
+                  (pagination.totalPages ||
+                    Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading
+              }
             >
               אחרון
             </Button>
