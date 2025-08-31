@@ -120,6 +120,7 @@ async function processVotesData(
 }
 
 function applySorting(data: any[], sortField: string, sortDirection: string) {
+  //TODO:() implement sort by query - for all data
   const sortedData = data.sort((a, b) => {
     let aVal = a[sortField]
     let bVal = b[sortField]
@@ -149,7 +150,7 @@ function buildWhereConditions(params: VotesQueryParams) {
     dualMeetingsOnly,
   } = params
 
-  const companiesIdsArray = companiesIds.split(',')
+  const companiesIdsArray = companiesIds.split(',') //TODO:() validate IDs if it in user
   const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
 
   if (status === 'published') {
@@ -174,6 +175,7 @@ function buildWhereConditions(params: VotesQueryParams) {
         { 'meeting.stock.name': { contains: searchTrim } },
         { 'meeting.stock.symbol': { contains: searchTrim } },
         { 'meeting.stock.type': { contains: searchTrim } },
+        { 'meeting.stock.longName': { contains: searchTrim } },
         { 'meeting.magnaId': { contains: searchTrim } },
         { 'meeting.type': { contains: searchTrim } },
         { 'meeting.location': { contains: searchTrim } },
@@ -203,7 +205,7 @@ function buildWhereConditions(params: VotesQueryParams) {
   return whereConditions
 }
 
-async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], batchSize = 1000) {
+async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], batchSize = 500) {
   let allVotes: any[] = []
   let page = 1
   let hasMore = true
@@ -331,6 +333,10 @@ async function fetchAndProcessVotesData(
     const totalResult = await req.payload.find({
       collection: 'votes',
       where: { and: whereConditions },
+      select: {
+        id: true,
+        meeting: true,
+      },
       limit: 0,
       overrideAccess: true,
     })

@@ -591,7 +591,7 @@ export default function Participations() {
               tableId="participations-table"
               searchOption={true}
               filterOption={false}
-              columnsOption={true}
+              columnsOption={false}
               tableHeightOffset={300}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRowsCallback}
