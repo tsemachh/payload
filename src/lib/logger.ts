@@ -1,7 +1,7 @@
 import { Transform } from 'stream'
 import { Logtail } from '@logtail/node'
 import { Context, ILogtailOptions, LogLevel, StackContextHint } from '@logtail/types'
-import { getLogLevel } from './helpers'
+import { getLogLevel } from './exportUtils'
 import os from 'os'
 // @ts-ignore
 import { multistream, pino } from 'pino'
