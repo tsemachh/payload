@@ -134,6 +134,6 @@ export function booleanToText(value: any): string {
 
 export function booleanToIcon(value: any): string {
   if (value === true) return 'V'
-  if (value === false) return 'X'
+  if (value === false) return '-'
   return ''
 }
