@@ -15,9 +15,7 @@ export const MeetingsFeed: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'createdAt'}]
-    ],
+    filterList: [[{ name: 'createdAt' }]],
   },
   access: {
     read: () => true,
@@ -51,6 +49,12 @@ export const MeetingsFeed: CollectionConfig = {
       admin: {
         readOnly: true,
       },
+    },
+    {
+      name: 'meetings',
+      type: 'relationship',
+      hasMany: true,
+      relationTo: 'meetings',
     },
     {
       name: 'hash',
