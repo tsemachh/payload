@@ -3,17 +3,10 @@ import autoTable from 'jspdf-autotable'
 import fs from 'fs'
 import path from 'path'
 import { logger } from '@/lib/logger'
-import {
-  booleanToIcon,
-  COMPANY_SUB_HEADERS,
-  ExportOptions,
-  formatNormalDate,
-  groupDataByMeeting,
-  resultMapping,
-  SHARED_COLUMNS,
-} from './exportTypes'
+import { COMPANY_SUB_HEADERS, ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from './utils'
+import { booleanToIcon, formatNormalDate, groupDataByMeeting } from './exportUtils'
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]

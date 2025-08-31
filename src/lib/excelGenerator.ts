@@ -2,16 +2,10 @@ import ExcelJS from 'exceljs'
 import path from 'path'
 import fs from 'fs'
 import { logger } from '@/lib/logger'
-import {
-  booleanToText,
-  ExportOptions,
-  formatNormalDate,
-  groupDataByMeeting,
-  resultMapping,
-  SHARED_COLUMNS,
-} from './exportTypes'
+import { ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from './utils'
+import { booleanToText, formatNormalDate, groupDataByMeeting } from './exportUtils'
 
 export async function generateParticipationsExcel(
   data: any[],
