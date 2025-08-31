@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 
 interface VoteData {
   fundsData: Array<{
@@ -114,8 +115,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
 
   const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
+    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
-    updatedFunds[index] = { ...updatedFunds[index], [field]: value }
+    updatedFunds[index] = { ...updatedFunds[index], [field]: booleanValue }
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
@@ -129,6 +131,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
         return 'text-blue-700 bg-blue-100 border-blue-200'
       default:
         return 'text-gray-700 bg-gray-100 border-gray-200'
+    }
+  }
+
+  const getAgendaItemColor = (result: boolean) => {
+    if (result === true) {
+      return 'text-green-700 bg-green-100 border-green-200'
+    } else if (result === false) {
+      return 'text-red-700 bg-red-100 border-red-200'
+    } else {
+      return 'text-gray-700 bg-gray-100 border-gray-200'
     }
   }
 
@@ -180,34 +192,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button
-                        variant={fund.verifiedHoldings ? 'default' : 'outline'}
-                        size="sm"
-                        className={`${
-                          fund.verifiedHoldings
-                            ? 'bg-green-600 hover:bg-green-700 text-white border-green-600'
-                            : 'border-green-600 text-green-600 hover:bg-green-50'
-                        }`}
-                        onClick={() => {
-                          updateFundData(index, 'verifiedHoldings', true)
-                        }}
-                      >
-                        כן
-                      </Button>
-                      <Button
-                        variant={!fund.verifiedHoldings ? 'default' : 'outline'}
-                        size="sm"
-                        className={`${
-                          !fund.verifiedHoldings
-                            ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
-                            : 'border-red-600 text-red-600 hover:bg-red-50'
-                        }`}
-                        onClick={() => {
-                          updateFundData(index, 'verifiedHoldings', false)
-                        }}
-                      >
-                        לא
-                      </Button>
+                      <CheckboxFilter
+                        value={
+                          fund.verifiedHoldings === false
+                            ? 'unchecked'
+                            : fund.verifiedHoldings === true
+                              ? 'checked'
+                              : 'indeterminate'
+                        }
+                        onChangeAction={(state) => updateFundData(index, 'verifiedHoldings', state)}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>
@@ -259,6 +253,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   <div
                     className="flex-1 text-right text-base text-gray-900 mx-3 truncate min-w-0"
                     title={item.text}
+                    dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                   >
                     {item.text}
                   </div>
@@ -270,155 +265,49 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-start gap-4 text-xs mt-2" dir="rtl">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-700">דורש רוב מיוחד:</span>
-                    <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          item.majorityType === 'privileged'
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
+                <div
+                  className={`flex justify-${item.majorityType === 'privileged' ? 'between' : 'end'} mt-2 w-full`}
+                >
+                  {item.majorityType === 'privileged' && (
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                      דורש רוב מיוחד
+                    </span>
+                  )}
+                  <div className="flex items-center gap-4" dir="rtl">
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-700 text-sm">ניגוד עניינים:</span>
+                      <div
+                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
                       >
-                        כן
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          item.majorityType !== 'privileged'
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        לא
-                      </Button>
+                        {voteItem?.hasConflictOfInterest ? 'כן' : 'לא'}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-700">ניגוד עניינים:</span>
-                    <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          voteItem?.hasConflictOfInterest
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-700 text-sm">צד קשור:</span>
+                      <div
+                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
                       >
-                        כן
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          !voteItem?.hasConflictOfInterest
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        לא
-                      </Button>
+                        {voteItem?.isRelatedParty ? 'כן' : 'לא'}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-700">צד קשור:</span>
-                    <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          voteItem?.isRelatedParty
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-700 text-sm">ועדת השקעות:</span>
+                      <div
+                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
                       >
-                        כן
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          !voteItem?.isRelatedParty
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        לא
-                      </Button>
+                        {voteItem?.isInvestmentCommittee ? 'כן' : 'לא'}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-700">ועדת השקעות:</span>
-                    <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          voteItem?.isInvestmentCommittee
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-700 text-sm">עניין אישי:</span>
+                      <div
+                        className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
                       >
-                        כן
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          !voteItem?.isInvestmentCommittee
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        לא
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-700">עניין אישי:</span>
-                    <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          voteItem?.hasPersonalInterest
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        כן
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 px-3 text-xs rounded-sm transition-all ${
-                          !voteItem?.hasPersonalInterest
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        disabled
-                      >
-                        לא
-                      </Button>
+                        {voteItem?.hasPersonalInterest ? 'כן' : 'לא'}
+                      </div>
                     </div>
                   </div>
                 </div>
