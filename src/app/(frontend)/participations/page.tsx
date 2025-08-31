@@ -5,12 +5,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DateRangeSelector } from '../components/ui/date-range-selector'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
-import { useAuth } from '@payloadcms/ui'
 import useSWR from 'swr'
 import { fetcher, formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
@@ -41,7 +39,6 @@ type DateRangeType = 'two-years' | 'one-year' | 'month' | 'week' | 'custom'
 
 export default function Participations() {
   const { companies, funds } = useCompaniesContext()
-  const { user } = useAuth()
 
   // Form state
   const [selectedFundIds, setSelectedFundIds] = useState<string[]>([])
@@ -49,9 +46,6 @@ export default function Participations() {
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
   const [reportName, setReportName] = useState<string>('')
-  const [showParticipationTable, setShowParticipationTable] = useState(false)
-  const [hasDisplayed, setHasDisplayed] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
 
   // Applied filters (what's actually being used for the API call)
   const [appliedFilters, setAppliedFilters] = useState({
@@ -78,6 +72,7 @@ export default function Participations() {
   // Client-side selection state
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
   const [isExporting, setIsExporting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -126,9 +121,22 @@ export default function Participations() {
     }
   }, [companiesWithFunds])
 
+  useEffect(() => {
+    if (rangeType && selectedFundIds.length > 0) {
+      setAppliedFilters((prev) => ({
+        ...prev,
+        selectedFundIds: [...selectedFundIds],
+        startDate,
+        endDate,
+        rangeType,
+      }))
+      setCurrentPage(1)
+    }
+  }, [selectedFundIds, startDate, endDate, rangeType])
+
   // Build the API query with all server-side parameters
   const votesQuery = useMemo(() => {
-    if (!showParticipationTable || selectedCompanyIds.length === 0) {
+    if (selectedCompanyIds.length === 0 || !appliedFilters.rangeType) {
       return null
     }
 
@@ -171,14 +179,7 @@ export default function Participations() {
     return `/api/votes/by-companies?${params.toString()}`
   }, [
     selectedCompanyIds,
-    appliedFilters.selectedFundIds,
-    appliedFilters.startDate,
-    appliedFilters.endDate,
-    appliedFilters.voteAgainstRecommendation,
-    appliedFilters.voteDifferentFromResult,
-    appliedFilters.foreignStocksOnly,
-    appliedFilters.dualMeetingsOnly,
-    showParticipationTable,
+    appliedFilters,
     currentPage,
     pageSize,
     sortField,
@@ -226,10 +227,10 @@ export default function Participations() {
   const totalPages = votesResponse?.totalPages || 0
 
   useEffect(() => {
-    if (participationData.length > 0 && showParticipationTable) {
+    if (participationData.length > 0) {
       setDeselectedIds(new Set())
     }
-  }, [participationData.length, showParticipationTable])
+  }, [participationData.length])
 
   const allSelected = deselectedIds.size === 0 && participationData.length > 0
 
@@ -420,9 +421,7 @@ export default function Participations() {
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
-    if (hasDisplayed) {
-      setHasChanges(true)
-    }
+    setValidationErrors((prev) => prev.filter((err) => err !== 'companies'))
   }
 
   const handleRangeChange = (
@@ -433,86 +432,73 @@ export default function Participations() {
     setStartDate(newStartDate)
     setEndDate(newEndDate)
     setRangeType(type)
-    if (hasDisplayed) {
-      setHasChanges(true)
+    if (newStartDate && newEndDate && type) {
+      setValidationErrors((prev) => prev.filter((err) => err !== 'dateRange'))
     }
   }
 
   const handleVoteAgainstRecommendationChange = (checked: boolean) => {
     setVoteAgainstRecommendation(checked)
-    if (showParticipationTable) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        voteAgainstRecommendation: checked,
-      }))
-      setCurrentPage(1)
-    }
+    setAppliedFilters((prev) => ({
+      ...prev,
+      voteAgainstRecommendation: checked,
+    }))
+    setCurrentPage(1)
   }
 
   const handleVoteDifferentFromResultChange = (checked: boolean) => {
     setVoteDifferentFromResult(checked)
-    if (showParticipationTable) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        voteDifferentFromResult: checked,
-      }))
-      setCurrentPage(1)
-    }
+    setAppliedFilters((prev) => ({
+      ...prev,
+      voteDifferentFromResult: checked,
+    }))
+    setCurrentPage(1)
   }
 
   const handleForeignStocksOnlyChange = (checked: boolean) => {
     setForeignStocksOnly(checked)
-    if (showParticipationTable) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        foreignStocksOnly: checked,
-      }))
-      setCurrentPage(1)
-    }
-  }
-  const handleDualMeetingsOnlyChange = (checked: boolean) => {
-    setDualMeetingsOnly(checked)
-    if (showParticipationTable) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        dualMeetingsOnly: checked,
-      }))
-      setCurrentPage(1)
-    }
-  }
-  const handleExport = async () => {
-    const newAppliedFilters = {
-      selectedFundIds: [...selectedFundIds],
-      startDate,
-      endDate,
-      rangeType,
-      voteAgainstRecommendation,
-      voteDifferentFromResult,
-      foreignStocksOnly,
-      dualMeetingsOnly,
-    }
-
-    setAppliedFilters(newAppliedFilters)
-    setShowParticipationTable(true)
-    setHasDisplayed(true)
-    setHasChanges(false)
+    setAppliedFilters((prev) => ({
+      ...prev,
+      foreignStocksOnly: checked,
+    }))
     setCurrentPage(1)
   }
 
-  const handleExportFile = async (format: ExportFormat) => {
-    if (!reportName.trim()) {
-      alert('אנא הכנס שם לדוח')
-      return
-    }
+  const handleDualMeetingsOnlyChange = (checked: boolean) => {
+    setDualMeetingsOnly(checked)
+    setAppliedFilters((prev) => ({
+      ...prev,
+      dualMeetingsOnly: checked,
+    }))
+    setCurrentPage(1)
+  }
 
-    if (!showParticipationTable) {
-      alert('אנא הצג את הטבלה תחילה')
+  const handleReportNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setReportName(e.target.value)
+    if (e.target.value.trim()) {
+      setValidationErrors((prev) => prev.filter((err) => err !== 'reportName'))
+    }
+  }
+
+  const handleExportFile = async (format: ExportFormat) => {
+    const errors: string[] = []
+    if (!reportName.trim()) {
+      errors.push('reportName')
+    }
+    if (!appliedFilters.rangeType) {
+      errors.push('dateRange')
+    }
+    if (selectedFundIds.length === 0) {
+      errors.push('companies')
+    }
+    if (errors.length > 0) {
+      setValidationErrors(errors)
       return
     }
+    setValidationErrors([])
 
     setIsExporting(true)
     try {
-      // Build the same query parameters as the regular API call, but with export=true
       const params = new URLSearchParams({
         companiesIds: selectedCompanyIds.join(','),
         status: 'published',
@@ -550,20 +536,16 @@ export default function Participations() {
         params.append('dualMeetingsOnly', 'true')
       }
 
-      // Call the API endpoint with export=true
       const response = await fetch(`/api/votes/by-companies?${params.toString()}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Get the file blob
       const blob = await response.blob()
 
-      // Determine file extension based on format
       const fileExtension = format === 'excel' ? 'xlsx' : 'pdf'
 
-      // Create download link
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -571,7 +553,6 @@ export default function Participations() {
       document.body.appendChild(a)
       a.click()
 
-      // Cleanup
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
     } catch (error) {
@@ -580,7 +561,6 @@ export default function Participations() {
       setIsExporting(false)
     }
   }
-
   const getCompanySelectSummary = () => {
     if (selectedFundIds.length === 0) {
       return 'בחר חברות/חשבונות'
@@ -621,7 +601,7 @@ export default function Participations() {
                     key={agenda.id}
                     className={cn(agendaIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
                   >
-                    {participationColumns.map((column, columnIndex) => {
+                    {participationColumns.map((column) => {
                       let content: React.ReactNode = null
 
                       switch (column.key) {
@@ -650,15 +630,7 @@ export default function Participations() {
                               )}
                               dir={isEnglish ? 'ltr' : 'rtl'}
                             >
-                              <div
-                                className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[50rem]"
-                                // style={{
-                                //   transform:
-                                //     selectedCompaniesCount > 1
-                                //       ? 'translateX(70px)'
-                                //       : 'translateX(50px)',
-                                // }}
-                              >
+                              <div className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[50rem]">
                                 {agenda.text}
                               </div>
                               <div
@@ -682,14 +654,7 @@ export default function Participations() {
                           break
                         case 'advisoryRecommendation':
                           content = (
-                            <div
-                            // style={{
-                            //   transform:
-                            //     selectedCompaniesCount > 1
-                            //       ? 'translateX(-10px)'
-                            //       : 'translateX(0px)',
-                            // }}
-                            >
+                            <div>
                               {agenda.recommendation?.votingRecommendation ||
                                 agenda.recommendation?.recommendationExplanation ||
                                 null}
@@ -797,18 +762,39 @@ export default function Participations() {
     [participationColumns, selectedCompaniesCount],
   )
 
+  const showTable = !!appliedFilters.rangeType && selectedCompanyIds.length > 0
+
   return (
     <div className="p-4 space-y-0 pb-0" dir="rtl">
-      <div className="flex flex-col lg:flex-row justify-start gap-4 mr-10">
-        <div className="w-full lg:w-[350px]">
-          <DateRangeSelector onRangeChangeAction={handleRangeChange} />
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2 mr-4 lg:mr-10" dir="rtl">
+        {/* Date Range Selector */}
+        <div className="w-[300px]">
+          <div className="relative pb-5">
+            <label className="text-sm text-right whitespace-nowrap">טווח תאריכים</label>
+            <DateRangeSelector
+              onRangeChangeAction={handleRangeChange}
+              className={cn(
+                'mt-1 w-full',
+                validationErrors.includes('dateRange') && 'border-red-500 ring-1 ring-red-500',
+              )}
+            />
+            {validationErrors.includes('dateRange') && (
+              <div className="absolute bottom-0 text-red-500 text-xs text-right">שדה חובה</div>
+            )}
+          </div>
         </div>
 
-        <div className="w-full lg:w-[350px]">
-          <div className="flex items-center gap-3">
-            <label className="text-base font-semibold text-right whitespace-nowrap">חברות</label>
+        {/* Company Selector */}
+        <div className="w-[300px]">
+          <div className="relative pb-5">
+            <label className="text-sm text-right whitespace-nowrap">חברות</label>
             <Select>
-              <SelectTrigger className="w-[350px] flex-row-reverse justify-between text-right">
+              <SelectTrigger
+                className={cn(
+                  'w-full flex-row-reverse justify-between text-right mt-1 h-10',
+                  validationErrors.includes('companies') && 'border-red-500 ring-1 ring-red-500',
+                )}
+              >
                 <SelectValue placeholder={getCompanySelectSummary()} />
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
@@ -823,51 +809,51 @@ export default function Participations() {
                 />
               </SelectContent>
             </Select>
+            {validationErrors.includes('companies') && (
+              <div className="absolute bottom-0 text-red-500 text-xs text-right">שדה חובה</div>
+            )}
           </div>
         </div>
 
-        <div className="w-full lg:w-[55px]">
-          <div className="flex gap-2 items-end">
-            <Button
-              onClick={handleExport}
-              variant="default"
-              disabled={!rangeType || selectedFundIds.length === 0}
-              className="whitespace-nowrap"
-            >
-              הצג
-            </Button>
-          </div>
-        </div>
-
-        {showParticipationTable && (
-          <div className="w-full lg:w-[450px]">
-            <div className="flex items-center gap-3">
-              <label className="text-base font-semibold text-right whitespace-nowrap">
-                שם הדו״ח
-              </label>
+        {/* Report Name */}
+        <div className="w-[300px]">
+          <div className="relative pb-5">
+            <label className="text-sm text-right whitespace-nowrap">שם הדו״ח</label>
+            <div className="flex items-center mt-1">
               <Input
                 id="report-name"
                 type="text"
                 value={reportName}
-                onChange={(e) => {
-                  setReportName(e.target.value)
-                }}
+                onChange={handleReportNameChange}
                 placeholder="הכנס שם לדו״ח"
-                className="w-[350px] text-right"
+                className={cn(
+                  'w-full text-right rounded-md border border-input bg-background h-10 shadow-sm',
+                  validationErrors.includes('reportName') && 'border-red-500 ring-1 ring-red-500',
+                )}
                 dir="rtl"
               />
-              <ExportDropdownButton
-                onExportAction={handleExportFile}
-                isExporting={isExporting}
-                disabled={votesLoading || !reportName.trim()}
-                className="whitespace-nowrap"
-              />
             </div>
+            {validationErrors.includes('reportName') && (
+              <div className="absolute bottom-0 text-red-500 text-xs text-right">שדה חובה</div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Export Button */}
+        <div className="w-[300px]">
+          <div className="relative pb-5">
+            <label className="text-sm text-right whitespace-nowrap invisible">ייצוא</label>
+            <ExportDropdownButton
+              onExportAction={handleExportFile}
+              isExporting={isExporting}
+              disabled={votesLoading || isExporting}
+              className="w-full mt-1 h-10"
+            />
+          </div>
+        </div>
       </div>
 
-      {showParticipationTable &&
+      {showTable &&
         (votesLoading ? (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
@@ -878,8 +864,12 @@ export default function Participations() {
           <div className="text-center text-red-500 mt-4">
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
+        ) : participationData.length === 0 ? (
+          <div className="text-center text-muted-foreground mt-4">
+            אין נתונים זמינים עבור הבחירות הנוכחיות.
+          </div>
         ) : (
-          <div style={{ marginTop: '40px' }}>
+          <div style={{ marginTop: '5px' }}>
             <div className="flex justify-end pr-10 mb-[-25px]">
               <div className="flex gap-6 items-center pl-10">
                 <div className="flex items-center gap-2">
@@ -921,7 +911,7 @@ export default function Participations() {
                     htmlFor="foreign-stocks-only"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
                   >
-                    מניות חו״ל{' '}
+                    מניות חו״ל
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -952,7 +942,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={280}
+              tableHeightOffset={300}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"

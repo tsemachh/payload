@@ -53,7 +53,7 @@ export const SHARED_COLUMNS = {
   STOCK_NAME: 'שם נייר',
   MARKET_VALUE: `שווי שוק (מ' ₪)`,
   PERCENTAGE_HOLDING: 'החזקה (%)',
-  HOLDING_VALUE: ` שווי החזקה (מ' ₪)`,
+  HOLDING_VALUE: `שווי החזקה (מ' ₪)`,
   MEETING_DATE: 'מועד האסיפה',
   MEETING_TYPE: 'סוג האסיפה',
   COMPANY_NAME: 'שם החברה',
@@ -62,7 +62,7 @@ export const SHARED_COLUMNS = {
   VOTE: 'הצבעה',
   MEETING_RESULTS: 'תוצאות האסיפה',
   REGULAR_MAJORITY: 'רוב רגיל',
-  SPECIAL_MAJORITY: 'רוב מיוחד )%(',
+  SPECIAL_MAJORITY: 'רוב מיוחד (%)',
   POLICY_COMPLIANCE: 'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
   CONFLICT_OF_INTEREST: 'ניגוד עניינים',
   RELATED_PARTY: 'צד קשר',
@@ -93,47 +93,3 @@ export const AGENDA_HEADERS = [
   SHARED_COLUMNS.RELATED_PARTY,
   SHARED_COLUMNS.PERSONAL_INTEREST,
 ] as const
-
-// Utility functions
-export function formatNormalDate(date: Date): string {
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
-}
-
-export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
-  const groupedData = new Map<string, GroupedMeetingData>()
-  data.forEach((item) => {
-    const key = item.stockNumber
-    if (!groupedData.has(key)) {
-      groupedData.set(key, {
-        stockNumber: item.stockNumber,
-        stockName: item.stockName,
-        marketValue: item.marketValue,
-        percentageHolding: item.percentageHolding,
-        holdingValueInMillions: item.holdingValueInMillions,
-        meetingDate: item.meetingDate,
-        meetingType: item.meetingType,
-        companyName: item.currentCompany?.name || item.companyName,
-        agendas: item.agendas || [],
-      })
-    } else {
-      const existing = groupedData.get(key)!
-      existing.agendas = [...existing.agendas, ...(item.agendas || [])]
-    }
-  })
-  return Array.from(groupedData.values())
-}
-
-export function booleanToText(value: any): string {
-  if (value === true) return 'כן'
-  if (value === false) return 'לא'
-  return ''
-}
-
-export function booleanToIcon(value: any): string {
-  if (value === true) return 'V'
-  if (value === false) return 'X'
-  return ''
-}

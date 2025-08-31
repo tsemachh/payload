@@ -885,6 +885,7 @@ export const Meetings: CollectionConfig = {
                       name: 'company',
                       label: 'מזהה חברה',
                       type: 'text',
+                      index: true,
                     },
                     {
                       name: 'quantity',

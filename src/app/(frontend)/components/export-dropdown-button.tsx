@@ -56,7 +56,7 @@ export function ExportDropdownButton({
         onClick={handleExport}
         disabled={disabled || isExporting}
         variant="default"
-        className="rounded-r-md rounded-l-none border-l-0 whitespace-nowrap"
+        className="rounded-r-md rounded-l-none border-l-0 whitespace-nowrap h-10"
       >
         {buttonText}
       </Button>

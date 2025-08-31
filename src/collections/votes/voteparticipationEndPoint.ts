@@ -39,11 +39,8 @@ async function processVotesData(
   for (const vote of votes) {
     const meetingId = typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id
     const meeting = fullMeetingsMap[meetingId]
+    if (!meeting) continue
 
-    if (!meeting) {
-      console.warn('Missing full meeting for vote:', vote.id)
-      continue
-    }
     const stockId = typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id
     const stock: Stock = stockMap[stockId]
 
@@ -52,33 +49,20 @@ async function processVotesData(
 
     const relevantFundIds = findRelevantCompanyIds(meeting.funds as string[], fundsIds)
 
-    const fundsArray = await Promise.all(
-      relevantFundIds.map(async (fundId) => {
-        let quantity
-        const match = meeting?.fundsWithHolding?.find((item: { fund: string }) => {
-          return item.fund && (item.fund as string) == fundId
-        })
-        if (match && match.fund && match?.quantity) {
-          quantity = match.quantity
-        } else {
-          console.error(
-            `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
-          )
-          return null
-        }
+    const fundsArray = relevantFundIds
+      .map((fundId) => {
+        const match = meeting?.fundsWithHolding?.find(
+          (item: { fund: string }) => item.fund === fundId,
+        )
+        if (!match || !match.quantity) return null
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
-          quantity,
+          match.quantity,
           meeting.stockValue,
           false,
         )
-
-        return {
-          id: fundId,
-          percentageHolding,
-          holdingValueInMillions,
-        }
-      }),
-    ).then((results) => results.filter((result) => result !== null))
+        return { id: fundId, percentageHolding, holdingValueInMillions }
+      })
+      .filter((result) => result !== null)
 
     const baseRecord = {
       id: vote.id,
@@ -88,7 +72,6 @@ async function processVotesData(
       stockName: stock.name || '',
       marketValue: meeting.stockMarketValue || 0,
       stockType: stock.origin ?? '',
-
       percentageHolding: fundsArray.reduce(
         (sum, fund) => sum + ((fund?.percentageHolding ?? 0) as number),
         0,
@@ -107,7 +90,6 @@ async function processVotesData(
       hasVotes: true,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
         const agendaItem = meeting.agenda?.[index] || {}
-
         return {
           id: `${vote.id}_agenda_${index}`,
           topicIndex: voteItem.topicIndex ?? index + 1,
@@ -124,11 +106,7 @@ async function processVotesData(
           result: agendaItem.result || voteItem.meetingResult || null,
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
           privilegedMajority:
-            agendaItem.majorityType === 'privileged'
-              ? true
-              : voteItem.majorityType === 'privileged'
-                ? true
-                : false,
+            agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged',
           vPercentSpecial: agendaItem.vPercentSpecial || null,
         }
       }),
@@ -141,25 +119,22 @@ async function processVotesData(
 }
 
 function applySorting(data: any[], sortField: string, sortDirection: string) {
-  return data.sort((a, b) => {
+  const sortedData = data.sort((a, b) => {
     let aVal = a[sortField]
     let bVal = b[sortField]
-
     if (sortField === 'meetingDate') {
       aVal = new Date(aVal).getTime()
       bVal = new Date(bVal).getTime()
     }
-
     if (typeof aVal === 'string') {
       aVal = aVal.toLowerCase()
       bVal = bVal.toLowerCase()
     }
-
     return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1
   })
+  return sortedData
 }
 
-// Shared function to build where conditions
 function buildWhereConditions(params: VotesQueryParams) {
   const {
     companiesIds,
@@ -173,7 +148,7 @@ function buildWhereConditions(params: VotesQueryParams) {
     dualMeetingsOnly,
   } = params
 
-  const companiesIdsArray = companiesIds.split(',') //TODO: הוספת בדיקה שזה גם קיים חברות של המשתמש
+  const companiesIdsArray = companiesIds.split(',')
   const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
 
   if (status === 'published') {
@@ -227,26 +202,59 @@ function buildWhereConditions(params: VotesQueryParams) {
   return whereConditions
 }
 
-// Shared function to fetch and process votes data
+async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], batchSize = 1000) {
+  let allVotes: any[] = []
+  let page = 1
+  let hasMore = true
+  while (hasMore) {
+    const batch = await req.payload.find({
+      collection: 'votes',
+      where: { and: whereConditions },
+      depth: 0,
+      select: {
+        id: true,
+        meeting: true,
+        company: true,
+        votes: true,
+      },
+      limit: batchSize,
+      page,
+      overrideAccess: true,
+    })
+    allVotes = allVotes.concat(batch.docs)
+    hasMore = batch.hasNextPage
+    page++
+  }
+  return allVotes
+}
+
 async function fetchAndProcessVotesData(
   fundsIds: string[],
   req: PayloadRequest,
   params: VotesQueryParams,
+  isExport: boolean,
 ) {
   const whereConditions = buildWhereConditions(params)
 
-  // Fetch votes
-  const results = await req.payload.find({
-    collection: 'votes',
-    where: { and: whereConditions },
-    depth: 1,
-    limit: 0,
-    overrideAccess: true,
-  })
+  const votes = isExport
+    ? await fetchVotesInBatches(req, whereConditions)
+    : await (async () => {
+        const result = await req.payload.find({
+          collection: 'votes',
+          where: { and: whereConditions },
+          depth: 0,
+          select: {
+            id: true,
+            meeting: true,
+            company: true,
+            votes: true,
+          },
+          limit: 0,
+          overrideAccess: true,
+        })
+        return result.docs
+      })()
 
-  const votes = results.docs
-
-  // Get unique IDs for related data
   const uniqueMeetingIds = Array.from(
     new Set(
       votes
@@ -254,7 +262,6 @@ async function fetchAndProcessVotesData(
         .filter(Boolean),
     ),
   )
-
   const uniqueCompanyIds = Array.from(
     new Set(
       votes
@@ -263,8 +270,33 @@ async function fetchAndProcessVotesData(
     ),
   )
 
-  // Fetch related data
   const fullMeetings = await req.payload.find({
+    select: {
+      id: true,
+      meetingId: true,
+      agenda: true,
+      companies: true,
+      funds: true,
+      stock: true,
+      stockMarketValue: true,
+      holdingsLimit: true,
+      type: true,
+      meetingDate: true,
+      recommendation: true,
+      magnaId: true,
+      researchDocuments: true,
+      location: true,
+      proxyVotingDate: true,
+      state: true,
+      comments: true,
+      electronicVotingEnabled: true,
+      resultsConfirmationStatus: true,
+      committeeInitiated: true,
+      fundsWithHolding: true,
+      stockValue: true,
+      invitationLink: true,
+      votes: true,
+    },
     collection: 'meetings',
     where: { id: { in: uniqueMeetingIds } },
     depth: 1,
@@ -299,7 +331,6 @@ async function fetchAndProcessVotesData(
     }),
   ])
 
-  // Create maps for efficient lookup
   const fullMeetingsMap = Object.fromEntries(
     fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
   )
@@ -308,8 +339,14 @@ async function fetchAndProcessVotesData(
   )
   const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
-  // Process and return data
-  return processVotesData(fundsIds, votes, fullMeetingsMap, companiesMap, stockMap)
+  const processedData = await processVotesData(
+    fundsIds,
+    votes,
+    fullMeetingsMap,
+    companiesMap,
+    stockMap,
+  )
+  return processedData
 }
 
 export const getVotesByCompanies = async (req: PayloadRequest) => {
@@ -349,7 +386,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const exportFormat = (exportFormatParam as string) || 'pdf'
     const reportName = (reportNameParam as string) || 'participation-report'
 
-    // Build query parameters
     const queryParams: VotesQueryParams = {
       companiesIds: companiesIds as string,
       status: status as string,
@@ -364,16 +400,17 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       dualMeetingsOnly: dualMeetingsOnlyParam as string,
     }
 
-    // Fetch and process data using shared function
-    let processedData = await fetchAndProcessVotesData(fundsIds, req, queryParams)
+    let processedData = await fetchAndProcessVotesData(fundsIds, req, queryParams, isExport)
 
-    const totalItems = processedData.length
-    const totalPages = Math.ceil(totalItems / pageSize)
+    if (isExport && processedData.length > 10000) {
+      return Response.json(
+        { error: 'Export too large; apply filters or contact support' },
+        { status: 400 },
+      )
+    }
 
-    // Apply sorting
     processedData = applySorting(processedData, sortField, sortDirection)
 
-    // If export mode, generate file based on format
     if (isExport) {
       const exportOptions = {
         reportName,
@@ -382,22 +419,17 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
           endDate: endDate ? new Date(endDate as string) : new Date(),
         },
         selectedCompaniesCount: (companiesIds as string).split(',').length,
-        totalRecords: totalItems,
-        selectedRecords: totalItems,
+        totalRecords: processedData.length,
+        selectedRecords: processedData.length,
       }
 
-      // Encode filename for Hebrew characters in HTTP headers
       const encodedFilename = encodeURIComponent(reportName)
 
       if (exportFormat === 'excel') {
-        // Generate Excel file
         const excelBuffer = await generateParticipationsExcel(processedData, exportOptions)
-
-        // Use RFC 5987 format for non-ASCII filenames with fallback
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
           : `attachment; filename="${reportName}.xlsx"`
-
         return new Response(excelBuffer, {
           status: 200,
           headers: {
@@ -407,14 +439,10 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
           },
         })
       } else {
-        // Generate PDF file (default)
         const pdfBytes = await generateParticipationsPDF(processedData, exportOptions)
-
-        // Use RFC 5987 format for non-ASCII filenames with fallback
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
           : `attachment; filename="${reportName}.pdf"`
-
         return new Response(pdfBytes, {
           status: 200,
           headers: {
@@ -426,7 +454,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       }
     }
 
-    // Regular pagination for non-export requests
+    const totalItems = processedData.length
+    const totalPages = Math.ceil(totalItems / pageSize)
     const paginated = processedData.slice((page - 1) * pageSize, page * pageSize)
     return createSuccessResponse(paginated, totalItems, totalPages)
   } catch (error: any) {

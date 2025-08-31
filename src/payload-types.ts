@@ -801,6 +801,7 @@ export interface MeetingsFeed {
     | null;
   duration?: string | null;
   summary?: string | null;
+  meetings?: (string | Meeting)[] | null;
   hash?: string | null;
   creator?: string | null;
   updator?: string | null;
@@ -1596,6 +1597,7 @@ export interface MeetingsFeedSelect<T extends boolean = true> {
   comments?: T;
   duration?: T;
   summary?: T;
+  meetings?: T;
   hash?: T;
   creator?: T;
   updator?: T;
