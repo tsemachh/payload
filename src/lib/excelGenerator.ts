@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger'
 import { ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from './utils'
-import { booleanToText, formatNormalDate, groupDataByMeeting } from './exportUtils'
+import { booleanToIcon, formatNormalDate, groupDataByMeeting } from './exportUtils'
 
 export async function generateParticipationsExcel(
   data: any[],
@@ -151,12 +151,12 @@ export async function generateParticipationsExcel(
             agenda.result
               ? resultMapping[agenda.result] || agenda.result
               : agenda.meetingResults || '',
-            booleanToText(!agenda.privilegedMajority),
+            booleanToIcon(!agenda.privilegedMajority),
             agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '',
-            booleanToText(agenda.policyCompliance),
-            booleanToText(agenda.conflictOfInterest),
-            booleanToText(agenda.relatedParty),
-            booleanToText(agenda.personalInterest),
+            booleanToIcon(agenda.policyCompliance),
+            booleanToIcon(agenda.conflictOfInterest),
+            booleanToIcon(agenda.relatedParty),
+            booleanToIcon(agenda.personalInterest),
           ]
           const excelRow = worksheet.addRow([...meetingData, ...agendaData])
 
