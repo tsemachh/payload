@@ -15,7 +15,7 @@ import {
   recalculateVoteCountsOnReportedChange,
   setVoteFlags,
 } from './hooks/voteHooks'
-import { getVotesByCompanies } from './votingPercentagesEndPoint'
+import { getVotesByCompanies } from './participationEndPoint'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
