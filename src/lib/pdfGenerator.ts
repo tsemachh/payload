@@ -134,9 +134,8 @@ function addHeader(
   doc.text(reportNameText, (PAGE_WIDTH - reportNameWidth) / 2, MARGIN + 17)
 
   doc.setFontSize(10)
-  const dateRangeText = prepareText(
-    `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`,
-  )
+  const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
+
   const dateRangeWidth = doc.getTextWidth(dateRangeText)
   doc.text(dateRangeText, (PAGE_WIDTH - dateRangeWidth) / 2, MARGIN + 29)
 }
