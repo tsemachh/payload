@@ -77,6 +77,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         },
         duration: `${durationSeconds}s`,
         summary: `success: ${successCount} / ${fileLength} `,
+        meetings: agendaUpdatedMeetingIds,
       },
       req,
     })
