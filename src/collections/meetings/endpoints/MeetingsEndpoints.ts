@@ -10,7 +10,9 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
-import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
+import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
+import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
+import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -396,6 +398,36 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 /**
  * Endpoint to fetch future meetings
  */
+// meetingColumnsForServer.ts
+export const meetingColumnsForServer = [
+  { key: 'agendas', header: 'סדר היום' },
+  { key: 'companies', header: 'חברות' },
+  { key: 'agenda', header: 'סדר יום' },
+  { key: 'stockNumber', header: 'מס׳ נייר' },
+  { key: 'stockType', header: 'סוג נייר' },
+  { key: 'stockName', header: 'שם נייר' },
+  { key: 'companyName', header: 'שם תאגיד' },
+  { key: 'stockSymbol', header: 'סימול' },
+  { key: 'stockTradable', header: 'נייר ערך נסחר' },
+  { key: 'stockOrigin', header: 'מקור נייר' },
+  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)' },
+  { key: 'meetingType', header: 'סוג אסיפה' },
+  { key: 'meetingDate', header: 'מועד אסיפה' },
+  { key: 'holdingsLimit', header: 'מועד קובע' },
+  { key: 'proxyVotingDate', header: 'מועד מסירת הצבעות' },
+  { key: 'nominalValue', header: 'ערך נקוב ליום קובע' },
+  { key: 'percentageHolding', header: 'החזקה (%)' },
+  { key: 'holdingValueInMillions', header: 'שווי החזקה (מיליוני ₪)' },
+  { key: 'reference', header: 'אסמכתא' },
+  { key: 'meetingState', header: 'מצב' },
+  { key: 'researchDocuments', header: 'מחקר' },
+  { key: 'location', header: 'מיקום' },
+  { key: 'comments', header: 'הערות' },
+  { key: 'resultsConfirmationStatus', header: 'אימות תוצאות' },
+  { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
+  { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
+]
+
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
@@ -427,7 +459,29 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
     const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
+    if (req.query.export === 'true') {
+      const columns = req.query.columns ? JSON.parse(req.query.columns as string) : []
+      const headerMap: Record<string, string> = {}
+      meetingColumnsForServer.forEach((col) => {
+        headerMap[col.key] = col.header
+      })
 
+      const mappedColumns = columns.map((colKey: string) => headerMap[colKey] || colKey)
+      const viewMode = req.query.viewMode || ''
+      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
+
+      const encodedFilename = encodeURIComponent('דו"ח השתתפות באסיפות')
+      const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
+
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': contentDisposition,
+          'Content-Length': buffer.length.toString(), // שינוי פה!
+        },
+      })
+    }
     return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)
   } catch (error) {
     req.payload.logger.error(`Error in futureMeetingsEndpoint: ${JSON.stringify(error)}`)

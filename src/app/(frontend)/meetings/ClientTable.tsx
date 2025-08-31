@@ -6,7 +6,7 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
-import { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -14,12 +14,14 @@ import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
+import { Button } from '@/components/ui/button'
+import { FileSpreadsheet } from 'lucide-react'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
-
+  const [isExporting, setIsExporting] = useState(false)
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0 || funds.length > 0) {
@@ -105,49 +107,87 @@ export function MeetingsTableClient() {
     return `נבחרו ${selectedCompanyIds.length} חברות`
   }
 
+  const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
+
+  const getButtonClasses = (isSelected: boolean) => {
+    const selectedStyle = 'bg-primary text-primary-foreground shadow-sm'
+    const unselectedStyle = 'text-muted-foreground hover:bg-muted-foreground/10'
+    return `${commonButtonClasses} ${isSelected ? selectedStyle : unselectedStyle}`
+  }
+
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+
+    try {
+      let exportUrl = `/api/meetings/future-meetings`
+      const params = new URLSearchParams()
+
+      if (selectedCompanyIds.length > 0) {
+        params.append('companyIds', selectedCompanyIds.join(','))
+      }
+
+      // Add export parameter
+      params.append('export', 'true')
+      const storedColumns = localStorage.getItem(`columnVisibility-${'meetings-table'}`)
+      console.log('storedColumns', storedColumns)
+      if (storedColumns) {
+        params.append('columns', storedColumns)
+      }
+      if (viewMode) {
+        params.append('viewMode', viewMode)
+      }
+      if (params.toString()) {
+        exportUrl += `?${params.toString()}`
+      }
+      // Make API call to get export data
+      const response = await fetch(exportUrl)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'דו"ח השתתפות באסיפות.xlsx'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      console.log('הקובץ הורד בהצלחה!')
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('הייתה שגיאה בהורדת הקובץ')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div
         className="flex flex-row justify-start gap-4 mr-10 mb-4"
         style={{ position: 'absolute', left: '400px', top: '128px' }}
       >
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center cursor-pointer gap-3">
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'companies' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
-              }`}
+        <div className="flex items-center justify-between">
+          <div className="flex bg-muted rounded-full p-0.5 mr-2">
+            <button
+              type="button"
+              onClick={() => setViewMode('companies')}
+              className={getButtonClasses(viewMode === 'companies')}
             >
               חברות
-            </span>
-
-            <input
-              type="checkbox"
-              checked={viewMode === 'agenda'}
-              onChange={(e) => setViewMode(e.target.checked ? 'agenda' : 'companies')}
-              className="sr-only peer"
-            />
-            <div
-              className="relative w-11 h-6 rounded-full transition-all"
-              style={{
-                backgroundColor: 'rgb(71,122,133)',
-              }}
-            >
-              <div
-                className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full bg-white border border-gray-300 transition-transform ${
-                  viewMode === 'companies' ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              ></div>
-            </div>
-
-            <span
-              className={`text-sm font-medium transition-colors ${
-                viewMode === 'agenda' ? 'font-semibold text-[rgb(71,122,133)]' : 'text-gray-500'
-              }`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('agenda')}
+              className={getButtonClasses(viewMode === 'agenda')}
             >
               סדר יום
-            </span>
-          </label>
+            </button>
+          </div>
         </div>
 
         {/* COMPANY SELECTOR */}
@@ -186,10 +226,22 @@ export function MeetingsTableClient() {
         onlyFuture={true}
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
-        tableHeightOffset={200}
+        tableHeightOffset={260}
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
       />
+
+      <div className="flex justify-end pl-4">
+        <Button
+          onClick={handleExportExcel}
+          variant="default"
+          className="rounded-md whitespace-nowrap ml-4"
+          disabled={isExporting}
+        >
+          {isExporting ? 'מייצא...' : 'ייצוא כקובץ Excel'}
+          <FileSpreadsheet className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 }
