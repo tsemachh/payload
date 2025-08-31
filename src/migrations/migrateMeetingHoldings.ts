@@ -140,6 +140,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   fund: fundId,
                   quantity: holding.qty,
                   ownedQuantity: holding.ownedQty,
+                  verifiedHoldings:
+                    holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null,
                   feedStockNum: (meeting.stock as Stock).stockId || '', // Take stockNum from the meeting
                 })
               }

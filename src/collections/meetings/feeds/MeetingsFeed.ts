@@ -51,6 +51,7 @@ export const MeetingsFeed: CollectionConfig = {
       },
     },
     {
+      label: 'אסיפות',
       name: 'meetings',
       type: 'relationship',
       hasMany: true,
