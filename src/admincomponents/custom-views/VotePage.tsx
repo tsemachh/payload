@@ -37,6 +37,8 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
         fundsWithHolding: true,
         fullName: true,
         agenda: true,
+        meetingDate: true,
+        holdingsLimit: true,
       },
       depth: 0,
       limit: 0,
@@ -62,6 +64,7 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
       select: {
         name: true,
         subCompanies: true,
+        researchDocuments: { displayVotingRecommendation: true },
       },
       depth: 1,
       limit: 0,
@@ -86,7 +89,6 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
       })
     })
     const fundsWithHolding = meetingData.fundsWithHolding.filter((fundHold: any) => {
-      //   return companiesMames.includes(fundHold.company) ? fundHold : null
       return companiesIdsArray.includes(fundHold.company)
     })
 
@@ -100,12 +102,15 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
       }
     })
 
-    console.log('!fundsWithHoldings', fundsWithHoldings)
-
     return {
       ...voteData.docs[0],
       companies: companyData.docs.map((c: any) => c.name),
+      displayVotingRecommendation: companyData.docs.some(
+        (c: any) => c.researchDocuments?.displayVotingRecommendation === true,
+      ),
       meeting: meetingData.fullName,
+      meetingDate: meetingData.meetingDate,
+      holdingsLimit: meetingData.holdingsLimit,
       fundsData: fundsWithHoldings,
       agenda: meetingData.agenda,
     }

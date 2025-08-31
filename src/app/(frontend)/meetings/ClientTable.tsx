@@ -15,7 +15,7 @@ import { useCompaniesContext } from '../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { Button } from '@/components/ui/button'
-import { FileSpreadsheet } from 'lucide-react'
+import { FaFileExcel } from 'react-icons/fa'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -168,11 +168,24 @@ export function MeetingsTableClient() {
   return (
     <div className="space-y-4">
       <div
-        className="flex flex-row justify-start gap-4 mr-10 mb-4"
+        className="flex flex-row items-center gap-4 mr-10 mb-4"
         style={{ position: 'absolute', left: '400px', top: '128px' }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex bg-muted rounded-full p-0.5 mr-2">
+        <Button
+          onClick={handleExportExcel}
+          variant="outline"
+          size="sm"
+          disabled={isExporting}
+          title="ייצוא"
+          className="h-8 px-3 border-[rgb(31, 65, 71)] text-[rgb(31, 65, 71)] hover:bg-[rgb(31, 65, 71)] transition-colors flex items-center"
+        >
+          <FaFileExcel className="h-4 w-4 ml-1" />
+          <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
+        </Button>
+
+        {/* toggle */}
+        <div className="flex items-center">
+          <div className="flex bg-muted rounded-full p-0.5">
             <button
               type="button"
               onClick={() => setViewMode('companies')}
@@ -226,22 +239,10 @@ export function MeetingsTableClient() {
         onlyFuture={true}
         searchPlaceholder="חיפוש בכל השדות..."
         defaultVisibleColumns={defaultVisibleColumns}
-        tableHeightOffset={260}
+        tableHeightOffset={200}
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
       />
-
-      <div className="flex justify-end pl-4">
-        <Button
-          onClick={handleExportExcel}
-          variant="default"
-          className="rounded-md whitespace-nowrap ml-4"
-          disabled={isExporting}
-        >
-          {isExporting ? 'מייצא...' : 'ייצוא כקובץ Excel'}
-          <FileSpreadsheet className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
     </div>
   )
 }
