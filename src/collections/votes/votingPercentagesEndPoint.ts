@@ -237,117 +237,222 @@ async function fetchAndProcessVotesData(
 ) {
   const whereConditions = buildWhereConditions(params)
 
-  const votes = isExport
-    ? await fetchVotesInBatches(req, whereConditions)
-    : await (async () => {
-        const result = await req.payload.find({
-          collection: 'votes',
-          where: { and: whereConditions },
-          depth: 0,
-          select: {
-            id: true,
-            meeting: true,
-            company: true,
-            votes: true,
-          },
-          limit: 0,
-          overrideAccess: true,
-        })
-        return result.docs
-      })()
+  if (isExport) {
+    const votes = await fetchVotesInBatches(req, whereConditions)
+    const uniqueMeetingIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id))
+          .filter(Boolean),
+      ),
+    )
+    const uniqueCompanyIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.company === 'string' ? vote.company : vote.company?.id))
+          .filter(Boolean),
+      ),
+    )
 
-  const uniqueMeetingIds = Array.from(
-    new Set(
-      votes
-        .map((vote: any) => (typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id))
-        .filter(Boolean),
-    ),
-  )
-  const uniqueCompanyIds = Array.from(
-    new Set(
-      votes
-        .map((vote: any) => (typeof vote.company === 'string' ? vote.company : vote.company?.id))
-        .filter(Boolean),
-    ),
-  )
-
-  const fullMeetings = await req.payload.find({
-    select: {
-      id: true,
-      meetingId: true,
-      agenda: true,
-      companies: true,
-      funds: true,
-      stock: true,
-      stockMarketValue: true,
-      holdingsLimit: true,
-      type: true,
-      meetingDate: true,
-      recommendation: true,
-      magnaId: true,
-      researchDocuments: true,
-      location: true,
-      proxyVotingDate: true,
-      state: true,
-      comments: true,
-      electronicVotingEnabled: true,
-      resultsConfirmationStatus: true,
-      committeeInitiated: true,
-      fundsWithHolding: true,
-      stockValue: true,
-      invitationLink: true,
-      votes: true,
-    },
-    collection: 'meetings',
-    where: { id: { in: uniqueMeetingIds } },
-    depth: 1,
-    limit: 0,
-    overrideAccess: true,
-  })
-
-  const uniqueStockIds = Array.from(
-    new Set(
-      fullMeetings.docs
-        .map((meeting: any) =>
-          typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id,
-        )
-        .filter(Boolean),
-    ),
-  )
-
-  const [stocksResult, companiesResult] = await Promise.all([
-    req.payload.find({
-      collection: 'stocks',
-      where: { id: { in: uniqueStockIds } },
-      depth: 0,
+    const fullMeetings = await req.payload.find({
+      select: {
+        id: true,
+        meetingId: true,
+        agenda: true,
+        companies: true,
+        funds: true,
+        stock: true,
+        stockMarketValue: true,
+        holdingsLimit: true,
+        type: true,
+        meetingDate: true,
+        recommendation: true,
+        magnaId: true,
+        researchDocuments: true,
+        location: true,
+        proxyVotingDate: true,
+        state: true,
+        comments: true,
+        electronicVotingEnabled: true,
+        resultsConfirmationStatus: true,
+        committeeInitiated: true,
+        fundsWithHolding: true,
+        stockValue: true,
+        invitationLink: true,
+        votes: true,
+      },
+      collection: 'meetings',
+      where: { id: { in: uniqueMeetingIds } },
+      depth: 1,
       limit: 0,
       overrideAccess: true,
-    }),
-    req.payload.find({
-      collection: 'companies',
-      where: { id: { in: uniqueCompanyIds } },
-      depth: 0,
+    })
+
+    const uniqueStockIds = Array.from(
+      new Set(
+        fullMeetings.docs
+          .map((meeting: any) =>
+            typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id,
+          )
+          .filter(Boolean),
+      ),
+    )
+
+    const [stocksResult, companiesResult] = await Promise.all([
+      req.payload.find({
+        collection: 'stocks',
+        where: { id: { in: uniqueStockIds } },
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      }),
+      req.payload.find({
+        collection: 'companies',
+        where: { id: { in: uniqueCompanyIds } },
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      }),
+    ])
+
+    const fullMeetingsMap = Object.fromEntries(
+      fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
+    )
+    const companiesMap = Object.fromEntries(
+      companiesResult.docs.map((company: any) => [company.id, company]),
+    )
+    const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
+
+    return await processVotesData(fundsIds, votes, fullMeetingsMap, companiesMap, stockMap)
+  } else {
+    const page = parseInt((req.query.page as string) || '1')
+    const pageSize = parseInt((req.query.pageSize as string) || '50')
+
+    const totalResult = await req.payload.find({
+      collection: 'votes',
+      where: { and: whereConditions },
       limit: 0,
       overrideAccess: true,
-    }),
-  ])
+    })
+    const totalItems = totalResult.totalDocs 
 
-  const fullMeetingsMap = Object.fromEntries(
-    fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
-  )
-  const companiesMap = Object.fromEntries(
-    companiesResult.docs.map((company: any) => [company.id, company]),
-  )
-  const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
+    const votesResult = await req.payload.find({
+      collection: 'votes',
+      where: { and: whereConditions },
+      depth: 0,
+      select: {
+        id: true,
+        meeting: true,
+        company: true,
+        votes: true,
+      },
+      limit: pageSize,
+      page: page,
+      overrideAccess: true,
+    })
+    const votes = votesResult.docs
 
-  const processedData = await processVotesData(
-    fundsIds,
-    votes,
-    fullMeetingsMap,
-    companiesMap,
-    stockMap,
-  )
-  return processedData
+    const uniqueMeetingIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.meeting === 'string' ? vote.meeting : vote.meeting?.id))
+          .filter(Boolean),
+      ),
+    )
+    const uniqueCompanyIds = Array.from(
+      new Set(
+        votes
+          .map((vote: any) => (typeof vote.company === 'string' ? vote.company : vote.company?.id))
+          .filter(Boolean),
+      ),
+    )
+
+    const fullMeetings = await req.payload.find({
+      select: {
+        id: true,
+        meetingId: true,
+        agenda: true,
+        companies: true,
+        funds: true,
+        stock: true,
+        stockMarketValue: true,
+        holdingsLimit: true,
+        type: true,
+        meetingDate: true,
+        recommendation: true,
+        magnaId: true,
+        researchDocuments: true,
+        location: true,
+        proxyVotingDate: true,
+        state: true,
+        comments: true,
+        electronicVotingEnabled: true,
+        resultsConfirmationStatus: true,
+        committeeInitiated: true,
+        fundsWithHolding: true,
+        stockValue: true,
+        invitationLink: true,
+        votes: true,
+      },
+      collection: 'meetings',
+      where: { id: { in: uniqueMeetingIds } },
+      depth: 1,
+      limit: 0,
+      overrideAccess: true,
+    })
+
+    const uniqueStockIds = Array.from(
+      new Set(
+        fullMeetings.docs
+          .map((meeting: any) =>
+            typeof meeting.stock === 'string' ? meeting.stock : meeting.stock?.id,
+          )
+          .filter(Boolean),
+      ),
+    )
+
+    const [stocksResult, companiesResult] = await Promise.all([
+      req.payload.find({
+        collection: 'stocks',
+        where: { id: { in: uniqueStockIds } },
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      }),
+      req.payload.find({
+        collection: 'companies',
+        where: { id: { in: uniqueCompanyIds } },
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+      }),
+    ])
+
+    const fullMeetingsMap = Object.fromEntries(
+      fullMeetings.docs.map((meeting: any) => [meeting.id, meeting]),
+    )
+    const companiesMap = Object.fromEntries(
+      companiesResult.docs.map((company: any) => [company.id, company]),
+    )
+    const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
+
+    let processedData = await processVotesData(
+      fundsIds,
+      votes,
+      fullMeetingsMap,
+      companiesMap,
+      stockMap,
+    )
+
+    // sorting על ה-page הקטן
+    processedData = applySorting(
+      processedData,
+      params.sortField || 'meetingDate',
+      params.sortDirection || 'desc',
+    )
+
+    return { processedData, totalItems }
+  }
 }
 
 export const getVotesByCompanies = async (req: PayloadRequest) => {
@@ -401,18 +506,28 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       dualMeetingsOnly: dualMeetingsOnlyParam as string,
     }
 
-    let processedData = await fetchAndProcessVotesData(fundsIds, req, queryParams, isExport)
+    const result = await fetchAndProcessVotesData(fundsIds, req, queryParams, isExport)
 
-    if (isExport && processedData.length > 10000) {
+    let processedData: any[]
+    let totalItems: number
+
+    if (isExport) {
+      processedData = result as any[]
+      totalItems = processedData.length
+    } else {
+      ;({ processedData, totalItems } = result as { processedData: any[]; totalItems: number })
+    }
+
+    if (isExport && totalItems > 10000) {
       return Response.json(
         { error: 'Export too large; apply filters or contact support' },
         { status: 400 },
       )
     }
 
-    processedData = applySorting(processedData, sortField, sortDirection)
-
     if (isExport) {
+      processedData = applySorting(processedData, sortField, sortDirection)
+
       const exportOptions = {
         reportName,
         dateRange: {
@@ -455,10 +570,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       }
     }
 
-    const totalItems = processedData.length
     const totalPages = Math.ceil(totalItems / pageSize)
-    const paginated = processedData.slice((page - 1) * pageSize, page * pageSize)
-    return createSuccessResponse(paginated, totalItems, totalPages)
+    return createSuccessResponse(processedData, totalItems, totalPages)
   } catch (error: any) {
     return createErrorResponse(error, 'Failed to fetch votes')
   }
