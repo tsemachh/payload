@@ -177,9 +177,9 @@ export function MeetingsTableClient() {
           size="sm"
           disabled={isExporting}
           title="ייצוא"
-          className="h-8 px-3 border-teal-600 text-teal-600 hover:bg-teal-50 transition-colors"
+          className="h-8 px-3 border-[rgb(31, 65, 71)] text-[rgb(31, 65, 71)] hover:bg-[rgb(31, 65, 71)] transition-colors flex items-center"
         >
-          <FaFileExcel className="h-4 w-4 text-teal-600 ml-1" />
+          <FaFileExcel className="h-4 w-4 ml-1" />
           <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
         </Button>
 
