@@ -974,13 +974,13 @@ export const Meetings: CollectionConfig = {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
-            depth: 0,,
+            depth: 0,
           })
 
           if (stock?.hasDual && stock?.dualStock) {
             const updatedDualStock = await req.payload.findByID({
               collection: 'stocks',
-              id: getIdOfRelationField(stock.dualStock) as string
+              id: getIdOfRelationField(stock.dualStock) as string,
             })
 
             // Create dual meeting by cloning the current meeting
