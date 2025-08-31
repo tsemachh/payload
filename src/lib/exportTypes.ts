@@ -132,8 +132,29 @@ export function booleanToText(value: any): string {
   return ''
 }
 
+// export function booleanToIcon(value: any): string {
+//   if (value === true) return 'V'
+//   if (value === false) return '-'
+//   return ''
+// }
+// export function booleanToIcon(value: any): string {
+//   if (value === true) return '✓' // סימן V יפה
+//   if (value === false) return '✗' // סימן X יפה
+//   return ''
+// }
+
+// אלטרנטיבות נוספות לסמלים:
+
+// אפשרות 1 - סמלים עם יותר ניגודיות
 export function booleanToIcon(value: any): string {
-  if (value === true) return 'V'
-  if (value === false) return '-'
+  if (value === true) return '✔️' // סימן V מודגש
+  if (value === false) return '❌' // סימן X מודגש
+  return ''
+}
+
+// אפשרות 2 - סמלים גיאומטריים
+export function booleanToIconGeometric(value: any): string {
+  if (value === true) return '●' // עיגול מלא (ירוק)
+  if (value === false) return '○' // עיגול ריק (אדום)
   return ''
 }
