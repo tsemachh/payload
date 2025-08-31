@@ -1,5 +1,5 @@
-import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
-import fontkit from '@pdf-lib/fontkit'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import fs from 'fs'
 import path from 'path'
 import { logger } from '@/lib/logger'
@@ -9,7 +9,6 @@ import {
   ExportOptions,
   formatNormalDate,
   groupDataByMeeting,
-  GroupedMeetingData,
   resultMapping,
   SHARED_COLUMNS,
 } from './exportTypes'
@@ -21,28 +20,23 @@ const A4 = [595.28, 841.89]
 const PAGE_WIDTH = A4[1]
 const PAGE_HEIGHT = A4[0]
 const MARGIN = 15
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
 
 const MIN_ROW_HEIGHT = 15
-const DATA_LINE_HEIGHT = 10
-const LINE_HEIGHT_HEADER = 9
+
 const FONT_SIZE_HEADER = 7
+const FONT_SIZE_SUBHEADER = 6
 const FONT_SIZE_DATA = 7
-const COMPANY_INFO_HEIGHT = 35
 const PADDING = 5
+const HEADER_HEIGHT = 60
 
 async function initializePDFDocument(): Promise<{
-  pdfDoc: PDFDocument
-  alefRegular: any
-  alefBold: any
-  logoImage: any
+  alefRegularBytes: Buffer
+  alefBoldBytes: Buffer
+  logoBytes: Buffer
 }> {
-  const pdfDoc = await PDFDocument.create()
-  pdfDoc.registerFontkit(fontkit)
   const cwd = process.cwd() as unknown as string
   logger.warn(`Current working directory: ${cwd}`)
 
-  // Use public directory for fonts and logo (no fallbacks)
   const regularFontPath = path.join('public', 'fonts', 'ariel.ttf')
   const boldFontPath = path.join('public', 'fonts', 'ariel-bold.ttf')
   const logoPath = path.join('public', 'emda_logo.png')
@@ -69,11 +63,7 @@ async function initializePDFDocument(): Promise<{
     throw new Error('Failed to read font files or logo from public directory')
   }
 
-  const alefRegular = await pdfDoc.embedFont(alefRegularBytes)
-  const alefBold = await pdfDoc.embedFont(alefBoldBytes)
-  const logoImage = await pdfDoc.embedPng(logoBytes)
-
-  return { pdfDoc, alefRegular, alefBold, logoImage }
+  return { alefRegularBytes, alefBoldBytes, logoBytes }
 }
 
 function fixBiDiText(text: any): string {
@@ -89,412 +79,65 @@ function fixBiDiText(text: any): string {
     .replace(/__OPEN_PAREN__/g, ')')
 }
 
-function addPage(pdfDoc: PDFDocument): PDFPage {
-  return pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-}
-
-function wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
-  if (!text) return ['']
-  const lines: string[] = []
-
-  const hardLines = text.split('\n')
-
-  for (const hardLine of hardLines) {
-    if (font.widthOfTextAtSize(hardLine, fontSize) <= maxWidth) {
-      lines.push(hardLine)
-      continue
-    }
-
-    const words = hardLine.split(' ')
-    let currentLine = ''
-
-    for (const word of words) {
-      const testLine = currentLine === '' ? word : `${currentLine} ${word}`
-      const width = font.widthOfTextAtSize(testLine, fontSize)
-
-      if (width <= maxWidth) {
-        currentLine = testLine
-      } else {
-        lines.push(currentLine)
-        currentLine = word
-      }
-    }
-    lines.push(currentLine)
+function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): string {
+  if (!text) {
+    return ''
   }
 
-  return lines.filter((line) => line.trim() !== '')
+  if (typeof text !== 'string') {
+    text = String(text)
+  }
+
+  text = fixBiDiText(text)
+
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
+    return text
+  }
+
+  const lines = doc.splitTextToSize(text, maxWidth)
+  const reversedLines = lines.map((line: string) => {
+    return line.split('').reverse().join('')
+  })
+
+  return reversedLines.join('\n')
 }
 
-async function addDocumentHeader(
-  page: PDFPage,
+function prepareText(text: string): string {
+  text = fixBiDiText(text)
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
+    return text
+  }
+  return text.split('').reverse().join('')
+}
+
+function addHeader(
+  doc: jsPDF,
   options: ExportOptions,
-  fonts: { regular: any; bold: any },
-  logoImage: any,
-  reportName: string,
-  columns: string[],
-  columnWidths: number[],
-): Promise<number> {
+  logoImage: string,
+  logoWidth: number,
+  logoHeight: number,
+) {
   const { dateRange } = options
-  const logoWidth = 80
-  const logoHeight = (logoImage.height / logoImage.width) * logoWidth
 
-  page.drawImage(logoImage, {
-    x: PAGE_WIDTH - MARGIN - logoWidth,
-    y: PAGE_HEIGHT - MARGIN - logoHeight,
-    width: logoWidth,
-    height: logoHeight,
-  })
+  doc.addImage(logoImage, 'PNG', PAGE_WIDTH - MARGIN - logoWidth, MARGIN, logoWidth, logoHeight)
 
-  const titleText = `דו"ח השתתפות באסיפות`
-  const fontSize = 11
-  const textWidth = fonts.bold.widthOfTextAtSize(titleText, fontSize)
-  const titleX = (PAGE_WIDTH - textWidth) / 2
-  const titleY = PAGE_HEIGHT - MARGIN - 5
+  doc.setFont('Ariel', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(0, 0, 0)
 
-  page.drawText(fixBiDiText(titleText), {
-    x: titleX,
-    y: titleY,
-    size: fontSize,
-    font: fonts.bold,
-    color: rgb(0, 0, 0),
-  })
+  const titleText = prepareText(`דו"ח השתתפות באסיפות`)
+  const titleWidth = doc.getTextWidth(titleText)
+  doc.text(titleText, (PAGE_WIDTH - titleWidth) / 2, MARGIN + 5)
 
-  const reportNameText = reportName
+  const reportNameText = prepareText(options.reportName)
+  const reportNameWidth = doc.getTextWidth(reportNameText)
+  doc.text(reportNameText, (PAGE_WIDTH - reportNameWidth) / 2, MARGIN + 17)
 
-  const reportNameTextWidth = fonts.bold.widthOfTextAtSize(reportNameText, fontSize)
-  const reportNameX = (PAGE_WIDTH - reportNameTextWidth) / 2
-  const reportNameY = titleY - 12
-
-  page.drawText(fixBiDiText(reportNameText), {
-    x: reportNameX,
-    y: reportNameY,
-    size: fontSize,
-    font: fonts.bold,
-    color: rgb(0, 0, 0),
-  })
-
+  doc.setFontSize(10)
   const dateRangeText = `${formatNormalDate(dateRange.startDate)} - ${formatNormalDate(dateRange.endDate)}`
-  const dateRangeTextWidth = fonts.bold.widthOfTextAtSize(dateRangeText, fontSize - 1)
-  const dateRangeX = (PAGE_WIDTH - dateRangeTextWidth) / 2
-  const dateRangeY = titleY - 24
-  page.drawText(fixBiDiText(dateRangeText), {
-    x: dateRangeX,
-    y: dateRangeY,
-    size: fontSize - 1,
-    font: fonts.bold,
-    color: rgb(0, 0, 0),
-  })
 
-  // Add table header
-  const tableHeaderY = dateRangeY - 30
-  const tableHeaderHeight = calculateTableHeights(columns, fonts, columnWidths).agendaHeaderHeight
-
-  drawAgendaTableHeader(
-    page,
-    tableHeaderY,
-    fonts,
-    { agendaHeaderHeight: tableHeaderHeight },
-    columns,
-    columnWidths,
-  )
-
-  return tableHeaderY - tableHeaderHeight - 2
-}
-
-async function addPageFooter(
-  page: PDFPage,
-  pageNumber: number,
-  totalPages: number,
-  fonts: { regular: any },
-): Promise<void> {
-  const footerText = `${pageNumber} / ${totalPages}`
-  const textWidth = fonts.regular.widthOfTextAtSize(footerText, 10)
-
-  page.drawText(footerText, {
-    x: (PAGE_WIDTH - textWidth) / 2,
-    y: MARGIN,
-    size: 7,
-    font: fonts.regular,
-    color: rgb(0.5, 0.5, 0.5),
-  })
-}
-
-function calculateTableHeights(
-  headers: string[],
-  fonts: { bold: any },
-  columnWidths: number[],
-): { companyHeaderHeight: number; agendaHeaderHeight: number } {
-  const wrappedHeaders = headers.map((header, i) =>
-    wrapText(fixBiDiText(header), fonts.bold, FONT_SIZE_HEADER, columnWidths[i] - PADDING * 2),
-  )
-
-  const maxLinesInHeader = Math.max(...wrappedHeaders.map((lines) => lines.length))
-  // Add extra height for sub-headers in the subject column
-  const agendaHeaderHeight = maxLinesInHeader * LINE_HEIGHT_HEADER + 15
-
-  return {
-    companyHeaderHeight: COMPANY_INFO_HEIGHT,
-    agendaHeaderHeight: agendaHeaderHeight,
-  }
-}
-
-function drawCompanyInfo(
-  page: PDFPage,
-  meetingData: GroupedMeetingData,
-  startY: number,
-  fonts: { regular: any; bold: any },
-  columnWidths: number[],
-): number {
-  const companyRowHeight = MIN_ROW_HEIGHT
-  const companyHeaderBgColor = rgb(210 / 255, 228 / 255, 1)
-
-  const subjectColumnWidth = columnWidths[1]
-
-  page.drawRectangle({
-    x: MARGIN,
-    y: startY - companyRowHeight,
-    width: CONTENT_WIDTH,
-    height: companyRowHeight,
-    color: companyHeaderBgColor,
-  })
-
-  const formattedDate = meetingData.meetingDate
-    ? formatNormalDate(new Date(meetingData.meetingDate))
-    : ''
-  const formattedMarketValue = formatNumberWithLocale(parseNumber(meetingData.marketValue) / 1_000_000, 0)
-  const formattedPercentageHolding = formatNumberWithLocale(meetingData.percentageHolding, 4)
-  const formattedHoldingValueInMillions = formatNumberWithLocale(
-    meetingData.holdingValueInMillions,
-    2,
-  )
-
-  const companyValues = [
-    meetingData.stockNumber || '',
-    meetingData.stockName || '',
-    formattedMarketValue,
-    formattedPercentageHolding,
-    formattedHoldingValueInMillions,
-    formattedDate,
-    meetingData.meetingType || '',
-  ]
-
-  const availableWidth = subjectColumnWidth - PADDING * 2 // 375 - 10 = 365
-  const valueWidth = availableWidth / companyValues.length // 365 / 7 ≈ 52.14
-
-  let currentX = PAGE_WIDTH - MARGIN - columnWidths[0]
-  const textY = startY - companyRowHeight / 2 - FONT_SIZE_DATA / 2
-
-  companyValues.forEach((value) => {
-    const fixedValue = fixBiDiText(value)
-    const textWidth = fonts.regular.widthOfTextAtSize(fixedValue, FONT_SIZE_DATA)
-    const textX = currentX - valueWidth + (valueWidth - textWidth) / 2
-
-    page.drawText(fixedValue, {
-      x: textX,
-      y: textY,
-      size: FONT_SIZE_DATA,
-      font: fonts.regular,
-      color: rgb(0.2, 0.2, 0.2),
-    })
-
-    currentX -= valueWidth
-  })
-
-  return startY - companyRowHeight
-}
-
-function drawAgendaTableHeader(
-  page: PDFPage,
-  startY: number,
-  fonts: { bold: any; regular: any },
-  heights: { agendaHeaderHeight: number },
-  headers: string[],
-  columnWidths: number[],
-): number {
-  const agendaHeaderBgColor = rgb(249 / 255, 250 / 255, 250 / 255)
-  const headerTextColor = rgb(0.1, 0.1, 0.1)
-
-  const wrappedHeaders = headers.map((header, i) =>
-    wrapText(fixBiDiText(header), fonts.bold, FONT_SIZE_HEADER, columnWidths[i] - PADDING * 2),
-  )
-
-  page.drawRectangle({
-    x: MARGIN,
-    y: startY - heights.agendaHeaderHeight + 15,
-    width: CONTENT_WIDTH,
-    height: heights.agendaHeaderHeight,
-    color: agendaHeaderBgColor,
-  })
-
-  let currentX = PAGE_WIDTH - MARGIN
-  wrappedHeaders.forEach((lines, i) => {
-    const colWidth = columnWidths[i]
-
-    if (i === 1) {
-      const totalHeaderHeight = heights.agendaHeaderHeight
-      const headerBlockHeight = FONT_SIZE_HEADER + LINE_HEIGHT_HEADER + (FONT_SIZE_HEADER - 1) + 4
-      const centerOffset = (totalHeaderHeight - headerBlockHeight) / 2
-
-      const mainHeaderY = startY - centerOffset - FONT_SIZE_HEADER + 10
-      const mainHeaderText = fixBiDiText('נושא')
-      const mainHeaderWidth = fonts.bold.widthOfTextAtSize(mainHeaderText, FONT_SIZE_HEADER)
-      const mainHeaderX = currentX - colWidth + (colWidth - mainHeaderWidth) / 2
-
-      page.drawText(mainHeaderText, {
-        x: mainHeaderX,
-        y: mainHeaderY,
-        size: FONT_SIZE_HEADER,
-        font: fonts.bold,
-        color: headerTextColor,
-      })
-
-      const companySubHeaders = COMPANY_SUB_HEADERS
-      const availableWidth = colWidth - PADDING * 2 // 375 - 10 = 365
-      const subHeaderWidth = availableWidth / companySubHeaders.length // 365 / 7 ≈ 52.14
-      let subCurrentX = currentX
-      const subHeaderY = mainHeaderY - LINE_HEIGHT_HEADER - 4
-
-      companySubHeaders.forEach((subHeader) => {
-        const fixedSubHeader = fixBiDiText(subHeader)
-        const subTextWidth = fonts.bold.widthOfTextAtSize(fixedSubHeader, FONT_SIZE_HEADER - 1)
-        const subTextX = subCurrentX - subHeaderWidth + (subHeaderWidth - subTextWidth) / 2
-
-        page.drawText(fixedSubHeader, {
-          x: subTextX,
-          y: subHeaderY,
-          size: FONT_SIZE_HEADER - 1,
-          font: fonts.bold,
-          color: headerTextColor,
-        })
-
-        subCurrentX -= subHeaderWidth
-      })
-    } else {
-      const blockHeight = lines.length * LINE_HEIGHT_HEADER
-      let lineY = startY - (heights.agendaHeaderHeight - blockHeight) / 2 - FONT_SIZE_HEADER + 15
-
-      lines.forEach((line) => {
-        const textWidth = fonts.bold.widthOfTextAtSize(line, FONT_SIZE_HEADER)
-        const textX = currentX - colWidth + (colWidth - textWidth) / 2
-        page.drawText(line, {
-          x: textX,
-          y: lineY,
-          size: FONT_SIZE_HEADER,
-          font: fonts.bold,
-          color: headerTextColor,
-        })
-        lineY -= LINE_HEIGHT_HEADER
-      })
-    }
-
-    currentX -= colWidth
-  })
-
-  return startY - heights.agendaHeaderHeight
-}
-
-function drawAgendaRow(
-  page: PDFPage,
-  startY: number,
-  agenda: any,
-  rowIndex: number,
-  fonts: { regular: any },
-  columnWidths: number[],
-  rowHeight: number,
-): number {
-  const rowEvenBgColor = rgb(231 / 255, 240 / 255, 1)
-
-  const rowOddBgColor = rgb(245 / 255, 250 / 255, 1)
-  const rowTextColor = rgb(0.2, 0.2, 0.2)
-
-  page.drawRectangle({
-    x: MARGIN,
-    y: startY - rowHeight,
-    width: CONTENT_WIDTH,
-    height: rowHeight,
-    color: (rowIndex + 1) % 2 === 0 ? rowEvenBgColor : rowOddBgColor,
-  })
-
-  const rowData = [
-    (rowIndex + 1).toString(), // Row number
-    agenda.text || '', // נושא
-    agenda.recommendation?.votingRecommendation || '', // המלצה
-    agenda.vote || '', // הצבעה
-    agenda.result ? resultMapping[agenda.result] || agenda.result : agenda.meetingResults || '', // תוצאות האסיפה
-    booleanToIcon(!agenda.privilegedMajority), // רוב רגיל
-    agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // רוב מיוחד
-    booleanToIcon(agenda.policyCompliance), // בהתאם למדיניות דירקטוריון ו/או וועדת השקעות
-    booleanToIcon(agenda.conflictOfInterest), // ניגוד עניינים
-    booleanToIcon(agenda.relatedParty), // צד קשר
-    booleanToIcon(agenda.personalInterest), // עניין אישי
-  ]
-
-  let x = PAGE_WIDTH - MARGIN
-  const verticalCenterY = startY - rowHeight / 2 - FONT_SIZE_DATA / 2
-
-  const numberColWidth = columnWidths[0]
-  const numberText = rowData[0]
-  const numberWidth = fonts.regular.widthOfTextAtSize(numberText, FONT_SIZE_DATA)
-  const numberX = x - numberColWidth + (numberColWidth - numberWidth) / 2
-  page.drawText(numberText, {
-    x: numberX,
-    y: verticalCenterY,
-    font: fonts.regular,
-    size: FONT_SIZE_DATA,
-    color: rowTextColor,
-  })
-  x -= numberColWidth
-
-  const agendaColWidth = columnWidths[1]
-  const wrappedAgendaLines = wrapText(
-    fixBiDiText(rowData[1]),
-    fonts.regular,
-    FONT_SIZE_DATA,
-    agendaColWidth - PADDING * 2,
-  )
-  let lineY = startY - PADDING - FONT_SIZE_DATA
-
-  wrappedAgendaLines.forEach((line) => {
-    const textWidth = fonts.regular.widthOfTextAtSize(line, FONT_SIZE_DATA)
-    const textX = x - textWidth - PADDING
-    page.drawText(line, {
-      x: textX,
-      y: lineY,
-      font: fonts.regular,
-      size: FONT_SIZE_DATA,
-      color: rowTextColor,
-      lineHeight: DATA_LINE_HEIGHT,
-    })
-    lineY -= DATA_LINE_HEIGHT
-  })
-  x -= agendaColWidth
-
-  for (let i = 2; i < rowData.length; i++) {
-    const cell = rowData[i]
-    const colWidth = columnWidths[i]
-    const textToDraw = fixBiDiText(String(cell))
-    const textWidth = fonts.regular.widthOfTextAtSize(textToDraw, FONT_SIZE_DATA)
-    const textX = x - colWidth + (colWidth - textWidth) / 2
-
-    // Use different colors for boolean icons
-    let textColor = rowTextColor
-    if (textToDraw === 'V') {
-      textColor = rgb(0, 0.6, 0) // Green for V (true)
-    } else if (textToDraw === 'X') {
-      textColor = rgb(0.8, 0, 0) // Red for X (false)
-    }
-
-    page.drawText(textToDraw, {
-      x: textX,
-      y: verticalCenterY,
-      size: FONT_SIZE_DATA,
-      font: fonts.regular,
-      color: textColor,
-    })
-    x -= colWidth
-  }
-
-  return startY - rowHeight
+  const dateRangeWidth = doc.getTextWidth(dateRangeText)
+  doc.text(dateRangeText, (PAGE_WIDTH - dateRangeWidth) / 2, MARGIN + 29)
 }
 
 export async function generateParticipationsPDF(
@@ -502,129 +145,356 @@ export async function generateParticipationsPDF(
   options: ExportOptions,
 ): Promise<Uint8Array> {
   try {
-    const { pdfDoc, alefRegular, alefBold, logoImage } = await initializePDFDocument()
-    const fonts = { regular: alefRegular, bold: alefBold }
+    const { alefRegularBytes, alefBoldBytes, logoBytes } = await initializePDFDocument()
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4',
+    })
+
+    const alefRegularBase64 = alefRegularBytes.toString('base64')
+    const alefBoldBase64 = alefBoldBytes.toString('base64')
+    const logoBase64 = logoBytes.toString('base64')
+
+    doc.addFileToVFS('Ariel.ttf', alefRegularBase64)
+    doc.addFont('Ariel.ttf', 'Ariel', 'normal')
+    doc.addFileToVFS('Ariel-bold.ttf', alefBoldBase64)
+    doc.addFont('Ariel-bold.ttf', 'Ariel', 'bold')
+    doc.setFont('Ariel', 'normal')
+
+    const imageProps = doc.getImageProperties(logoBase64)
+    const logoWidth = 80
+    const logoHeight = (imageProps.height / imageProps.width) * logoWidth
+
     const groupedData = groupDataByMeeting(data)
 
     if (groupedData.length === 0) {
-      const page = addPage(pdfDoc)
-      const columns = ['']
-      const columnWidths = [CONTENT_WIDTH]
-      await addDocumentHeader(
-        page,
-        options,
-        fonts,
-        logoImage,
-        options.reportName,
-        columns,
-        columnWidths,
-      )
-      page.drawText(fixBiDiText('אין נתונים להצגה'), {
-        x: (PAGE_WIDTH - 100) / 2,
-        y: PAGE_HEIGHT / 2,
-        font: fonts.regular,
-        size: 16,
-      })
-      await addPageFooter(page, 1, 1, fonts)
-      return await pdfDoc.save()
+      addHeader(doc, options, logoBase64, logoWidth, logoHeight)
+      doc.setFont('Ariel', 'normal')
+      doc.setFontSize(16)
+      doc.setTextColor(0, 0, 0)
+      const noDataText = prepareText('אין נתונים להצגה')
+      const noDataWidth = doc.getTextWidth(noDataText)
+      doc.text(noDataText, (PAGE_WIDTH - noDataWidth) / 2, PAGE_HEIGHT / 2)
+
+      const totalPages = doc.getNumberOfPages()
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i)
+        doc.setFont('Ariel', 'normal')
+        doc.setFontSize(7)
+        doc.setTextColor(128, 128, 128)
+        const footerText = `${i} / ${totalPages}`
+        const footerWidth = doc.getTextWidth(footerText)
+        doc.text(footerText, (PAGE_WIDTH - footerWidth) / 2, PAGE_HEIGHT - MARGIN)
+      }
+
+      return new Uint8Array(doc.output('arraybuffer'))
     }
 
-    const columns = [
-      '',
-      SHARED_COLUMNS.SUBJECT,
-      SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
-      SHARED_COLUMNS.VOTE,
-      SHARED_COLUMNS.MEETING_RESULTS,
-      SHARED_COLUMNS.REGULAR_MAJORITY,
-      SHARED_COLUMNS.SPECIAL_MAJORITY,
-      SHARED_COLUMNS.POLICY_COMPLIANCE,
-      SHARED_COLUMNS.CONFLICT_OF_INTEREST,
-      SHARED_COLUMNS.RELATED_PARTY,
-      SHARED_COLUMNS.PERSONAL_INTEREST,
+    const subWidth = 330 / 5
+    const widths = [
+      40, // עמודה 0 - אינטרס אישי
+      40, // עמודה 1 - צד קשור
+      40, // עמודה 2 - ניגוד עניינים
+      60, // עמודה 3 - ציות למדיניות
+      40, // עמודה 4 - רוב מיוחד
+      45, // עמודה 5 - רוב רגיל
+      45, // עמודה 6 - תוצאות ישיבה
+      45, // עמודה 7 - הצבעה
+      45, // עמודה 8 - המלצת יועץ
+      subWidth, // עמודה 9 - מספר מניה
+      subWidth, // עמודה 10 - שם מניה
+      subWidth, // עמודה 11 - שווי שוק
+      subWidth, // עמודה 12 - אחוז החזקה
+      subWidth, // עמודה 13 - שווי החזקה
+      subWidth, // עמודה 14 - תאריך ישיבה
+      subWidth, // עמודה 15 - סוג ישיבה
+      15, // עמודה 16 - מספר סעיף
     ]
-    const columnWidths = [15, 375, 45, 45, 45, 45, 40, 60, 40, 40, 40]
 
-    let currentPage = addPage(pdfDoc)
-    let currentY = await addDocumentHeader(
-      currentPage,
-      options,
-      fonts,
-      logoImage,
-      options.reportName,
-      columns,
-      columnWidths,
-    )
+    const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } = {
+      '0': { halign: 'center' as const },
+      '1': { halign: 'center' as const },
+      '2': { halign: 'center' as const },
+      '3': { halign: 'center' as const },
+      '4': { halign: 'center' as const },
+      '5': { halign: 'center' as const },
+      '6': { halign: 'center' as const },
+      '7': { halign: 'center' as const },
+      '8': { halign: 'center' as const },
+      '9': { halign: 'center' as const },
+      '10': { halign: 'center' as const },
+      '11': { halign: 'center' as const },
+      '12': { halign: 'center' as const },
+      '13': { halign: 'center' as const },
+      '14': { halign: 'center' as const },
+      '15': { halign: 'center' as const },
+      '16': { halign: 'center' as const },
+    }
+
+    // יצירת הכותרות - שורה ראשונה עם המיזוג
+    const headerRow1 = [
+      { content: prepareText(SHARED_COLUMNS.PERSONAL_INTEREST), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.RELATED_PARTY), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.CONFLICT_OF_INTEREST), rowSpan: 2 },
+      {
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.POLICY_COMPLIANCE, doc, 70),
+        rowSpan: 2,
+      },
+      { content: prepareText(SHARED_COLUMNS.SPECIAL_MAJORITY), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.REGULAR_MAJORITY), rowSpan: 2 },
+      { content: prepareTextWithLineBreaks(SHARED_COLUMNS.MEETING_RESULTS, doc, 55), rowSpan: 2 },
+      { content: prepareText(SHARED_COLUMNS.VOTE), rowSpan: 2 },
+      {
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.ADVISOR_RECOMMENDATION, doc, 55),
+        rowSpan: 2,
+      },
+      {
+        content: prepareText('נושא'),
+        colSpan: 7, // מיזוג 7 עמודות - עמודות 9-15
+        halign: 'center',
+        styles: {
+          fontSize: FONT_SIZE_HEADER,
+          cellPadding: { top: PADDING + 13 },
+        },
+      },
+      { content: '', rowSpan: 2 }, // עמודה 16 - מספר סעיף
+    ]
+
+    const headerRow2 = [
+      // תתי כותרות מסודרות בסדר הנכון (לא הפוך)
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[0]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // מספר מניה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[1]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שם מניה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[2]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שווי שוק
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[3]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // אחוז החזקה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[4]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שווי החזקה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[5]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // תאריך ישיבה
+      {
+        content: prepareText(COMPANY_SUB_HEADERS[6]),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // סוג ישיבה
+    ]
+
+    const head = [headerRow1, headerRow2.reverse()]
+
+    const body: any[] = []
 
     for (const meeting of groupedData) {
-      const tableHeights = calculateTableHeights(columns, fonts, columnWidths)
-      const requiredHeightForStart =
-        tableHeights.companyHeaderHeight + tableHeights.agendaHeaderHeight + MIN_ROW_HEIGHT
+      const companyHeaderBgColor = [210, 228, 255]
+      const textColor = [51, 51, 51]
 
-      if (currentY < MARGIN + 60 + requiredHeightForStart) {
-        currentPage = addPage(pdfDoc)
-        currentY = await addDocumentHeader(
-          currentPage,
-          options,
-          fonts,
-          logoImage,
-          options.reportName,
-          columns,
-          columnWidths,
-        )
-      }
+      const formattedDate = meeting.meetingDate
+        ? formatNormalDate(new Date(meeting.meetingDate))
+        : ''
+      const formattedMarketValue = formatNumberWithLocale(
+        parseNumber(meeting.marketValue) / 1_000_000,
+        0,
+      )
+      const formattedPercentageHolding = formatNumberWithLocale(meeting.percentageHolding, 4)
+      const formattedHoldingValueInMillions = formatNumberWithLocale(
+        meeting.holdingValueInMillions,
+        2,
+      )
 
-      const isFirstTableOnPage = currentY >= PAGE_HEIGHT - MARGIN - 75
-      if (!isFirstTableOnPage) {
-        currentY -= 10 // Full spacing between tables on same page
-      }
-      currentY = drawCompanyInfo(currentPage, meeting, currentY, fonts, columnWidths)
+      // ארגון נתוני החברה בסדר הנכון (עמודות 9-15)
+      const companyValues = [
+        meeting.meetingType || '', // עמודה 15
+        formattedDate, // עמודה 14
+        formattedHoldingValueInMillions, // עמודה 13
+        formattedPercentageHolding, // עמודה 12
+        formattedMarketValue, // עמודה 11
+        meeting.stockName || '', // עמודה 10
+        meeting.stockNumber || '', // עמודה 9
+      ]
 
-      for (let i = 0; i < meeting.agendas.length; i++) {
-        const agenda = meeting.agendas[i]
+      // יצירת שורת כותרת חברה עם רקע צבעוני
+      const companyRow = [
+        // עמודות 0-8 ריקות עם רקע צבעוני
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+        // עמודות 9-15 עם נתוני החברה
+        {
+          content:
+            companyValues[0].length > 15
+              ? prepareTextWithLineBreaks(companyValues[0], doc, 15)
+              : prepareText(companyValues[0]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content:
+            companyValues[1].length > 15
+              ? prepareTextWithLineBreaks(companyValues[1], doc, 15)
+              : prepareText(companyValues[1]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content: prepareText(companyValues[2]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content: prepareText(companyValues[3]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content: prepareText(companyValues[4]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content: prepareText(companyValues[5]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content:
+            companyValues[6].length > 15
+              ? prepareTextWithLineBreaks(companyValues[6], doc, 15)
+              : prepareText(companyValues[6]),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        // עמודה 16 ריקה
+        { content: '', styles: { fillColor: companyHeaderBgColor } },
+      ]
+      body.push(companyRow)
 
-        const wrappedLines = wrapText(
-          fixBiDiText(agenda.text || ''),
-          fonts.regular,
-          FONT_SIZE_DATA,
-          columnWidths[1] - PADDING * 2,
-        )
-        const dynamicRowHeight = Math.max(
-          MIN_ROW_HEIGHT,
-          wrappedLines.length * DATA_LINE_HEIGHT + PADDING * 2,
-        )
+      // הוספת שורות הסעיפים
+      meeting.agendas.forEach((agenda: any, i: number) => {
+        const rowBg = i % 2 === 0 ? [245, 250, 255] : [231, 240, 255]
+        const defaultTextColor = [51, 51, 51]
 
-        if (currentY < MARGIN + 20 + dynamicRowHeight) {
-          currentPage = addPage(pdfDoc)
-          currentY = await addDocumentHeader(
-            currentPage,
-            options,
-            fonts,
-            logoImage,
-            options.reportName,
-            columns,
-            columnWidths,
-          )
-        }
+        // ארגון נתוני הסעיף בסדר הנכון (עמודות 0-8, 16)
+        const agendaData = [
+          booleanToIcon(agenda.personalInterest), // עמודה 0
+          booleanToIcon(agenda.relatedParty), // עמודה 1
+          booleanToIcon(agenda.conflictOfInterest), // עמודה 2
+          booleanToIcon(agenda.policyCompliance), // עמודה 3
+          agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // עמודה 4
+          booleanToIcon(!agenda.privilegedMajority), // עמודה 5
+          agenda.result
+            ? resultMapping[agenda.result] || agenda.result
+            : agenda.meetingResults || '', // עמודה 6
+          agenda.vote || '', // עמודה 7
+          agenda.recommendation?.votingRecommendation || '', // עמודה 8
+        ]
 
-        currentY = drawAgendaRow(
-          currentPage,
-          currentY,
-          agenda,
-          i,
-          fonts,
-          columnWidths,
-          dynamicRowHeight,
-        )
-      }
+        const row = [
+          ...agendaData.map((content) => {
+            let thisTextColor = defaultTextColor
+            if (content === 'V') {
+              thisTextColor = [0, 153, 0]
+            }
+
+            return {
+              content: prepareText(content),
+              styles: { fillColor: rowBg, textColor: thisTextColor },
+            }
+          }),
+          // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
+          {
+            content: prepareTextWithLineBreaks(agenda.text || '', doc, subWidth * 11),
+            colSpan: 7, // מיזוג עמודות 9-15
+            styles: {
+              fillColor: rowBg,
+              textColor: defaultTextColor,
+              halign: 'right',
+              valign: 'top',
+            },
+          },
+          // עמודה 16 - מספר הסעיף
+          {
+            content: prepareText('.' + (i + 1).toString()),
+            styles: { fillColor: rowBg, textColor: defaultTextColor, halign: 'center' },
+          },
+        ]
+
+        body.push(row)
+      })
+
+      // הוספת שורה ריקה להפרדה בין חברות
+      body.push([
+        {
+          content: '',
+          colSpan: 17, // מיזוג כל העמודות
+          styles: { minCellHeight: 10, fillColor: [255, 255, 255] },
+        },
+      ])
     }
 
-    const totalPages = pdfDoc.getPageCount()
-    const pages = pdfDoc.getPages()
-    for (let i = 0; i < totalPages; i++) {
-      await addPageFooter(pages[i], i + 1, totalPages, fonts)
+    autoTable(doc, {
+      head,
+      body,
+      startY: HEADER_HEIGHT,
+      margin: { top: HEADER_HEIGHT, left: MARGIN, right: MARGIN, bottom: MARGIN + 20 },
+      theme: 'plain',
+      columnStyles,
+      headStyles: {
+        font: 'Ariel',
+        fontStyle: 'bold',
+        fontSize: FONT_SIZE_HEADER,
+        fillColor: [249, 250, 250],
+        textColor: [26, 26, 26],
+        cellPadding: PADDING,
+        valign: 'middle',
+        halign: 'center',
+        minCellHeight: MIN_ROW_HEIGHT,
+      },
+      bodyStyles: {
+        font: 'Ariel',
+        fontStyle: 'normal',
+        fontSize: FONT_SIZE_DATA,
+        cellPadding: PADDING,
+        valign: 'middle',
+        overflow: 'linebreak',
+        minCellHeight: MIN_ROW_HEIGHT,
+      },
+      didDrawPage: () => {
+        addHeader(doc, options, logoBase64, logoWidth, logoHeight)
+      },
+    })
+
+    const totalPages = doc.getNumberOfPages()
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i)
+      doc.setFont('Ariel', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(128, 128, 128)
+      const footerText = `${i} / ${totalPages}`
+      const footerWidth = doc.getTextWidth(footerText)
+      doc.text(footerText, (PAGE_WIDTH - footerWidth) / 2, PAGE_HEIGHT - MARGIN)
     }
 
-    return await pdfDoc.save()
+    return new Uint8Array(doc.output('arraybuffer'))
   } catch (error) {
     console.trace(error)
     logger.error({ err: error, msg: 'Error generating PDF:' })

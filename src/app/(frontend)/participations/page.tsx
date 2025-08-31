@@ -879,7 +879,7 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
         ) : (
-          <div style={{ marginTop: '40px' }}>
+          <div style={{ marginTop: '5px' }}>
             <div className="flex justify-end pr-10 mb-[-25px]">
               <div className="flex gap-6 items-center pl-10">
                 <div className="flex items-center gap-2">
@@ -952,7 +952,7 @@ export default function Participations() {
               searchOption={true}
               filterOption={false}
               columnsOption={false}
-              tableHeightOffset={280}
+              tableHeightOffset={300}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRows}
               expanderColumnKey="stockNumber"

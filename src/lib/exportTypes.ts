@@ -53,7 +53,7 @@ export const SHARED_COLUMNS = {
   STOCK_NAME: 'שם נייר',
   MARKET_VALUE: `שווי שוק (מ' ₪)`,
   PERCENTAGE_HOLDING: 'החזקה (%)',
-  HOLDING_VALUE: ` שווי החזקה (מ' ₪)`,
+  HOLDING_VALUE: `שווי החזקה (מ' ₪)`,
   MEETING_DATE: 'מועד האסיפה',
   MEETING_TYPE: 'סוג האסיפה',
   COMPANY_NAME: 'שם החברה',
@@ -62,7 +62,7 @@ export const SHARED_COLUMNS = {
   VOTE: 'הצבעה',
   MEETING_RESULTS: 'תוצאות האסיפה',
   REGULAR_MAJORITY: 'רוב רגיל',
-  SPECIAL_MAJORITY: 'רוב מיוחד )%(',
+  SPECIAL_MAJORITY: 'רוב מיוחד (%)',
   POLICY_COMPLIANCE: 'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
   CONFLICT_OF_INTEREST: 'ניגוד עניינים',
   RELATED_PARTY: 'צד קשר',
@@ -132,8 +132,29 @@ export function booleanToText(value: any): string {
   return ''
 }
 
+// export function booleanToIcon(value: any): string {
+//   if (value === true) return 'V'
+//   if (value === false) return '-'
+//   return ''
+// }
+// export function booleanToIcon(value: any): string {
+//   if (value === true) return '✓' // סימן V יפה
+//   if (value === false) return '✗' // סימן X יפה
+//   return ''
+// }
+
+// אלטרנטיבות נוספות לסמלים:
+
+// אפשרות 1 - סמלים עם יותר ניגודיות
 export function booleanToIcon(value: any): string {
-  if (value === true) return 'V'
-  if (value === false) return 'X'
+  if (value === true) return '✔️' // סימן V מודגש
+  if (value === false) return '❌' // סימן X מודגש
+  return ''
+}
+
+// אפשרות 2 - סמלים גיאומטריים
+export function booleanToIconGeometric(value: any): string {
+  if (value === true) return '●' // עיגול מלא (ירוק)
+  if (value === false) return '○' // עיגול ריק (אדום)
   return ''
 }
