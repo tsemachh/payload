@@ -1,3 +1,4 @@
+import { meetingStateOptions } from '@/consts/otipns-const'
 import ExcelJS from 'exceljs'
 
 export async function downloadMeetingsExcel(
@@ -25,7 +26,9 @@ export async function downloadMeetingsExcel(
       right: { style: 'thin', color: { argb: 'FFF9FAFA' } },
     }
   })
-
+  const meetingStateMap: Record<string, string> = Object.fromEntries(
+    meetingStateOptions.map((opt) => [opt.value, opt.label]),
+  )
   const columnMapping: Record<string, (meeting: any) => any> = {
     חברות: (m) => {
       if (viewMode === 'companies') {
@@ -46,6 +49,7 @@ export async function downloadMeetingsExcel(
     'מועד מסירת הצבעות': (m) =>
       m.proxyVotingDate ? new Date(m.proxyVotingDate).toLocaleString('he-IL') : '',
     'שווי שוק \n (מיליוני ₪)': (m) => m.marketValue,
+    'שווי החזקה  (מיליוני ₪)': (m) => m.holdingValueInMillions,
     'תאגיד פיננסי דורש ועדה': (m) => (m.committeeInitiated ? '✅' : '❌'),
     'מופיעה במערכת האלק׳': (m) => (m.electronicVotingEnabled ? '✅' : '❌'),
     'אימות תוצאות': (m) => (m.resultsConfirmationStatus ? '✅' : '❌'),
@@ -59,6 +63,9 @@ export async function downloadMeetingsExcel(
       return m.location.length > maxLength ? m.location.substring(0, maxLength) + '...' : m.location
     },
     הערות: (m) => m.comments,
+    מצב: (m) => meetingStateMap[m.meetingState] || m.meetingState,
+    אסמכתא: (m) => m.reference,
+    'סוג אסיפה': (m) => m.meetingType,
   }
 
   const formatValue = (header: string, meeting: any) => {
@@ -202,8 +209,14 @@ export async function downloadMeetingsExcel(
     const columnHeader = columns[index]
     if (columnHeader === 'מיקום') {
       col.width = 25
+    } else if (columnHeader === 'מועד אסיפה' || columnHeader === 'מועד מסירת הצבעות') {
+      col.width = 18
     } else {
-      col.width = 10
+      if (columnHeader === 'אסמכתא') {
+        col.width = 16
+      } else {
+        col.width = 10
+      }
     }
 
     const companiesIndex = columns.indexOf('חברות')

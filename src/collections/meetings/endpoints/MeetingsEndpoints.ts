@@ -417,7 +417,7 @@ export const meetingColumnsForServer = [
   { key: 'proxyVotingDate', header: 'מועד מסירת הצבעות' },
   { key: 'nominalValue', header: 'ערך נקוב ליום קובע' },
   { key: 'percentageHolding', header: 'החזקה (%)' },
-  { key: 'holdingValueInMillions', header: 'שווי החזקה (מיליוני ₪)' },
+  { key: 'holdingValueInMillions', header: 'שווי החזקה  (מיליוני ₪)' },
   { key: 'reference', header: 'אסמכתא' },
   { key: 'meetingState', header: 'מצב' },
   { key: 'researchDocuments', header: 'מחקר' },
