@@ -130,8 +130,8 @@ export const Meetings: CollectionConfig = {
       'invitationLink',
     ],
     pagination: {
-      defaultLimit: 100,
-      limits: [10, 20, 50, 100, 200, 500],
+      defaultLimit: 300,
+      limits: [100, 200, 300, 500],
     },
     components: {
       edit: {
@@ -142,7 +142,7 @@ export const Meetings: CollectionConfig = {
   },
   versions: {
     drafts: true,
-    maxPerDoc: 10,
+    maxPerDoc: 20,
   },
   fields: [
     {
@@ -871,6 +871,7 @@ export const Meetings: CollectionConfig = {
               },
               labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
+              interfaceName: 'FundWithHolding',
               fields: [
                 {
                   type: 'row',
@@ -917,6 +918,11 @@ export const Meetings: CollectionConfig = {
                         { name: 'quantity', label: 'כמות', type: 'number' },
                       ],
                     },
+                    {
+                      name: 'verifiedHoldings',
+                      type: 'checkbox',
+                      label: 'אימות החזקות',
+                    },
                   ],
                 },
               ],
@@ -935,6 +941,9 @@ export const Meetings: CollectionConfig = {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
               type: 'number',
+              admin: {
+                readOnly: true,
+              },
             },
           ],
         },
@@ -945,8 +954,15 @@ export const Meetings: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ req, doc, previousDoc, operation }) => {
+        // Track changes for changeDetails field
+        const changeDate = new Date().toISOString()
+        const changeSource = req.context?.from || 'user'
+
         // Handle dual stock creation
-        if (operation === 'create' && req.context?.from !== 'process') {
+        if (
+          operation === 'create' &&
+          !['process', 'migration'].includes(req.context?.from as string)
+        ) {
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
@@ -976,6 +992,7 @@ export const Meetings: CollectionConfig = {
                 id: doc.id,
                 data: {
                   dualMeeting: createdDualMeeting.id,
+                  changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
               })

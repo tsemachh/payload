@@ -29,7 +29,7 @@ interface ImpersonationProviderProps {
 
 export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   children,
-  checkInterval = 60000,
+  checkInterval = 30000,
   authCollection = 'users',
 }) => {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData>({
@@ -38,12 +38,10 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
 
   const checkImpersonation = async () => {
     try {
-      if (impersonationData.isImpersonating) {
-        const response = await fetch(`/api/${authCollection}/impersonate/status`)
-        if (response.ok) {
-          const data = await response.json()
-          setImpersonationData(data)
-        }
+      const response = await fetch(`/api/${authCollection}/impersonate/status`)
+      if (response.ok) {
+        const data = await response.json()
+        setImpersonationData(data)
       }
     } catch (error) {
       console.warn('Failed to check impersonation status:', error)

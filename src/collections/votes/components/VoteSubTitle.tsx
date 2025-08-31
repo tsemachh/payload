@@ -10,16 +10,16 @@ const VoteSubTitle: BeforeDocumentControlsClientProps = () => {
   const fields = useFormFields(([f]) => f)
 
   const reported = fields.reported?.value
-  const reportedBy = fields.reportedBy?.value
-  const reportedTime = fields.reportedTime?.value
+  const publisher = fields.publisher?.value
+  const publishDate = fields.publishDate?.value
   const isValidTime =
-    typeof reportedTime === 'string' ||
-    typeof reportedTime === 'number' ||
-    reportedTime instanceof Date
+    typeof publishDate === 'string' ||
+    typeof publishDate === 'number' ||
+    publishDate instanceof Date
 
   const subTitle =
-    reported && reportedBy && isValidTime
-      ? `${reportedBy} דווח לרשות לפני ${formatDistanceToNow(new Date(reportedTime!), { locale: he })}`
+    reported && publisher && isValidTime
+      ? `${publisher} דווח לרשות לפני ${formatDistanceToNow(new Date(publishDate!), { locale: he })}`
       : 'לא דווח'
   return (
     <div

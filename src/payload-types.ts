@@ -129,6 +129,28 @@ export type MeetingAgenda =
   | null;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FundWithHolding".
+ */
+export type FundWithHolding =
+  | {
+      fund?: string | null;
+      company?: string | null;
+      quantity?: number | null;
+      ownedQuantity?: number | null;
+      original?:
+        | {
+            stockId?: string | null;
+            accountNum?: number | null;
+            quantity?: number | null;
+            id?: string | null;
+          }[]
+        | null;
+      verifiedHoldings?: boolean | null;
+      id?: string | null;
+    }[]
+  | null;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
  */
 export type HoldingsPerDay = {
@@ -603,6 +625,7 @@ export interface Stock {
 export interface StockValue {
   id: string;
   stockId: string | Stock;
+  stockName?: string | null;
   valueDate: string;
   closingRate?: number | null;
   marketValue?: number | null;
@@ -655,23 +678,7 @@ export interface Meeting {
    */
   researchDocuments?: (string | ResearchDocument)[] | null;
   funds?: (string | Company)[] | null;
-  fundsWithHolding?:
-    | {
-        fund?: string | null;
-        company?: string | null;
-        quantity?: number | null;
-        ownedQuantity?: number | null;
-        original?:
-          | {
-              stockId?: string | null;
-              accountNum?: number | null;
-              quantity?: number | null;
-              id?: string | null;
-            }[]
-          | null;
-        id?: string | null;
-      }[]
-    | null;
+  fundsWithHolding?: FundWithHolding;
   stockValue?: (string | null) | StockValue;
   stockMarketValue?: number | null;
   creator?: string | null;
@@ -721,17 +728,6 @@ export interface Vote {
   voteAgainstRecommendation?: boolean | null;
   voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
-  reportedBy?: string | null;
-  reportedTime?: string | null;
-  fundsWithHoldingsUpdates?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
@@ -1334,23 +1330,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
-  fundsWithHolding?:
-    | T
-    | {
-        fund?: T;
-        company?: T;
-        quantity?: T;
-        ownedQuantity?: T;
-        original?:
-          | T
-          | {
-              stockId?: T;
-              accountNum?: T;
-              quantity?: T;
-              id?: T;
-            };
-        id?: T;
-      };
+  fundsWithHolding?: T | FundWithHoldingSelect<T>;
   stockValue?: T;
   stockMarketValue?: T;
   creator?: T;
@@ -1388,6 +1368,26 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
       };
   result?: T;
   vPercentSpecial?: T;
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FundWithHolding_select".
+ */
+export interface FundWithHoldingSelect<T extends boolean = true> {
+  fund?: T;
+  company?: T;
+  quantity?: T;
+  ownedQuantity?: T;
+  original?:
+    | T
+    | {
+        stockId?: T;
+        accountNum?: T;
+        quantity?: T;
+        id?: T;
+      };
+  verifiedHoldings?: T;
   id?: T;
 }
 /**
@@ -1654,9 +1654,6 @@ export interface VotesSelect<T extends boolean = true> {
   voteAgainstRecommendation?: T;
   voteDifferentFromResult?: T;
   reported?: T;
-  reportedBy?: T;
-  reportedTime?: T;
-  fundsWithHoldingsUpdates?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;
@@ -1812,6 +1809,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
  */
 export interface StockValuesSelect<T extends boolean = true> {
   stockId?: T;
+  stockName?: T;
   valueDate?: T;
   closingRate?: T;
   marketValue?: T;

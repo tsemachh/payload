@@ -10,7 +10,9 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
-import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
+import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
+import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
+import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -45,7 +47,39 @@ const MEETING_SELECT_FIELDS: SelectType = {
 /**
  * Creates a companies filter condition based on user's leaf companies and selected companies
  */
+function createAllMeetingsCompaniesFilter(companiesIds: string[] | null | undefined) {
+  if (!companiesIds || companiesIds.length === 0) {
+    return { companies: { in: [] } }
+  }
+  return { companies: { in: companiesIds } }
+}
 function createCompaniesFilter(
+  userCompany: (string | Company)[] | undefined | null | any,
+  companiesIds: string[] | null | any,
+) {
+  let companies = userCompany?.map((c: any) => c?.companyId)
+  if (!companiesIds || companiesIds.length === 0) {
+    console.log('No companies selected → returning empty filter')
+    return {
+      companies: { in: [] },
+    }
+  }
+  if (companiesIds) {
+    companies = companies?.filter((com: any) => companiesIds.includes(com as string))
+  }
+  return userCompany
+    ? {
+        companies: {
+          in: companies,
+        },
+      }
+    : {
+        companies: {
+          in: [], // no matches if user.funds is missing or empty
+        },
+      }
+}
+function createFundsFilter(
   userFunds: (string | Company)[] | undefined | null,
   fundIds: string[] | null = null,
 ) {
@@ -65,7 +99,6 @@ function createCompaniesFilter(
         },
       }
 }
-
 /**
  * Creates a published status filter condition
  */
@@ -254,7 +287,17 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // NEW: Get vote filter parameters
     const voteAgainstRecommendation = req.query.voteAgainstRecommendation === 'true'
     const voteDifferentFromResult = req.query.voteDifferentFromResult === 'true'
-
+    const companyIdsParam = req.query.companyIds as string
+    let companyIds: string[] | undefined
+    if (companyIdsParam && companyIdsParam.trim() !== '') {
+      try {
+        companyIds = JSON.parse(companyIdsParam)
+      } catch (e) {
+        companyIds = companyIdsParam.split(',').map((id: string) => id.trim())
+      }
+    } else {
+      companyIds = []
+    }
     let frontendSelectedFundIds: string[] | undefined
     if (selectedFundsParam) {
       frontendSelectedFundIds = selectedFundsParam.split(',')
@@ -286,13 +329,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const sort = sortDirection === 'desc' ? `-${dbSortField}` : dbSortField
 
     // Build filter conditions
-    const whereConditions: any[] = [
-      createCompaniesFilter(user?.funds),
-      createPublishedStatusFilter(),
-    ]
+    const whereConditions: any[] = [createFundsFilter(user?.funds), createPublishedStatusFilter()]
     const userFunds = getSafeFunds(user?.funds)
     if (userFunds && userFunds.length > 0) {
-      whereConditions.push(createCompaniesFilter(userFunds))
+      whereConditions.push(createFundsFilter(userFunds))
     } else {
       // If user has no funds, they shouldn't see any meetings
       whereConditions.push({ funds: { in: [] } })
@@ -300,7 +340,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 
     // Apply frontend selected funds filter (further restriction)
     if (frontendSelectedFundIds && frontendSelectedFundIds.length > 0) {
-      whereConditions.push(createCompaniesFilter(frontendSelectedFundIds))
+      whereConditions.push(createFundsFilter(frontendSelectedFundIds))
+    }
+    if (companyIds) {
+      whereConditions.push(createAllMeetingsCompaniesFilter(companyIds))
     }
     // Add search condition
     if (searchTerm) {
@@ -355,6 +398,36 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
 /**
  * Endpoint to fetch future meetings
  */
+// meetingColumnsForServer.ts
+export const meetingColumnsForServer = [
+  { key: 'agendas', header: 'סדר היום' },
+  { key: 'companies', header: 'חברות' },
+  { key: 'agenda', header: 'סדר יום' },
+  { key: 'stockNumber', header: 'מס׳ נייר' },
+  { key: 'stockType', header: 'סוג נייר' },
+  { key: 'stockName', header: 'שם נייר' },
+  { key: 'companyName', header: 'שם תאגיד' },
+  { key: 'stockSymbol', header: 'סימול' },
+  { key: 'stockTradable', header: 'נייר ערך נסחר' },
+  { key: 'stockOrigin', header: 'מקור נייר' },
+  { key: 'marketValue', header: 'שווי שוק (מיליוני ₪)' },
+  { key: 'meetingType', header: 'סוג אסיפה' },
+  { key: 'meetingDate', header: 'מועד אסיפה' },
+  { key: 'holdingsLimit', header: 'מועד קובע' },
+  { key: 'proxyVotingDate', header: 'מועד מסירת הצבעות' },
+  { key: 'nominalValue', header: 'ערך נקוב ליום קובע' },
+  { key: 'percentageHolding', header: 'החזקה (%)' },
+  { key: 'holdingValueInMillions', header: 'שווי החזקה (מיליוני ₪)' },
+  { key: 'reference', header: 'אסמכתא' },
+  { key: 'meetingState', header: 'מצב' },
+  { key: 'researchDocuments', header: 'מחקר' },
+  { key: 'location', header: 'מיקום' },
+  { key: 'comments', header: 'הערות' },
+  { key: 'resultsConfirmationStatus', header: 'אימות תוצאות' },
+  { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
+  { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
+]
+
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
@@ -365,9 +438,8 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const todayISO = today.toISOString()
 
     // Extract companyIds from query parameters
-    const fundIdsParam = req.query.fundIds as string
-    const selectedFundIds = fundIdsParam ? fundIdsParam.split(',') : null
-
+    const companyIdsParam = req.query.companyIds as string
+    const selectedCompaniesIds = companyIdsParam ? companyIdsParam.split(',') : null
     const meetings = await payload.find({
       collection: 'meetings',
       select: MEETING_SELECT_FIELDS,
@@ -377,7 +449,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
         and: [
           { state: { in: ['scheduled', 'ongoing', 'postponed', 'on-hold'] } },
           { meetingDate: { greater_than_equal: todayISO } },
-          createCompaniesFilter(user?.funds, selectedFundIds),
+          createCompaniesFilter(user?.companies, selectedCompaniesIds),
           createPublishedStatusFilter(),
         ],
       },
@@ -387,7 +459,29 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
     const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
+    if (req.query.export === 'true') {
+      const columns = req.query.columns ? JSON.parse(req.query.columns as string) : []
+      const headerMap: Record<string, string> = {}
+      meetingColumnsForServer.forEach((col) => {
+        headerMap[col.key] = col.header
+      })
 
+      const mappedColumns = columns.map((colKey: string) => headerMap[colKey] || colKey)
+      const viewMode = req.query.viewMode || ''
+      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
+
+      const encodedFilename = encodeURIComponent('דו"ח השתתפות באסיפות')
+      const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
+
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': contentDisposition,
+          'Content-Length': buffer.length.toString(), // שינוי פה!
+        },
+      })
+    }
     return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)
   } catch (error) {
     req.payload.logger.error(`Error in futureMeetingsEndpoint: ${JSON.stringify(error)}`)
@@ -727,7 +821,7 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
           {
             id: { equals: meetingId },
           },
-          createCompaniesFilter(user?.funds),
+          createFundsFilter(user?.funds),
           createPublishedStatusFilter(),
         ],
       },
