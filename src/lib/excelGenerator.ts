@@ -22,6 +22,7 @@ export async function generateParticipationsExcel(
     // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
+      SHARED_COLUMNS.CORPORATE_NAME,
       SHARED_COLUMNS.STOCK_NAME,
       SHARED_COLUMNS.MARKET_VALUE,
       SHARED_COLUMNS.PERCENTAGE_HOLDING,
