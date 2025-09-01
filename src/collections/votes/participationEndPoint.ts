@@ -10,8 +10,6 @@ interface VotesQueryParams {
   status?: string
   startDate?: string
   endDate?: string
-  sortField?: string
-  sortDirection?: string
   search?: string
   voteAgainstRecommendation?: string
   voteDifferentFromResult?: string
@@ -117,24 +115,6 @@ async function processVotesData(
   }
 
   return processedData
-}
-
-function applySorting(data: any[], sortField: string, sortDirection: string) {
-  //TODO:() implement sort by query - for all data
-  const sortedData = data.sort((a, b) => {
-    let aVal = a[sortField]
-    let bVal = b[sortField]
-    if (sortField === 'meetingDate') {
-      aVal = new Date(aVal).getTime()
-      bVal = new Date(bVal).getTime()
-    }
-    if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase()
-      bVal = bVal.toLowerCase()
-    }
-    return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1
-  })
-  return sortedData
 }
 
 function buildWhereConditions(params: VotesQueryParams) {
@@ -284,6 +264,7 @@ async function fetchAndProcessVotesData(
         votes: true,
       },
       collection: 'meetings',
+      sort: '-meetingDate',
       where: { id: { in: uniqueMeetingIds } },
       depth: 1,
       limit: 0,
@@ -442,18 +423,12 @@ async function fetchAndProcessVotesData(
     )
     const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
-    let processedData = await processVotesData(
+    const processedData = await processVotesData(
       fundsIds,
       votes,
       fullMeetingsMap,
       companiesMap,
       stockMap,
-    )
-
-    processedData = applySorting(
-      processedData,
-      params.sortField || 'meetingDate',
-      params.sortDirection || 'desc',
     )
 
     return { processedData, totalItems }
@@ -472,8 +447,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       endDate,
       page: pageParam,
       pageSize: pageSizeParam,
-      sortField: sortFieldParam,
-      sortDirection: sortDirectionParam,
       search: searchParam,
       voteAgainstRecommendation: voteAgainstParam,
       voteDifferentFromResult: voteDifferentParam,
@@ -491,8 +464,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     const fundsIds = fundIdsParams ? (fundIdsParams as string).split(',') : []
     const page = parseInt((pageParam as string) || '1')
     const pageSize = parseInt((pageSizeParam as string) || '50')
-    const sortField = (sortFieldParam as string) || 'meetingDate'
-    const sortDirection = (sortDirectionParam as string) || 'desc'
     const isExport = exportParam === 'true'
     const exportFormat = (exportFormatParam as string) || 'pdf'
     const reportName = (reportNameParam as string) || 'participation-report'
@@ -502,8 +473,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       status: status as string,
       startDate: startDate as string,
       endDate: endDate as string,
-      sortField,
-      sortDirection,
       search: searchParam as string,
       voteAgainstRecommendation: voteAgainstParam as string,
       voteDifferentFromResult: voteDifferentParam as string,
@@ -531,8 +500,6 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
     }
 
     if (isExport) {
-      processedData = applySorting(processedData, sortField, sortDirection)
-
       const exportOptions = {
         reportName,
         dateRange: {
