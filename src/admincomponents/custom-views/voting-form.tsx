@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 import { formatDateTime } from '../../app/(frontend)/helpers/utils-data-table'
 
-interface VoteData {
+export interface VoteData {
   fundsData: Array<{
     company: { id: string; name: string }
     fund: { id: string; name: string }
