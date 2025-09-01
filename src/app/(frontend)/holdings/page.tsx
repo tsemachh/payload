@@ -49,25 +49,13 @@ export default function HoldingsFeedView() {
   const [saveError, setSaveError] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      // Get companies with write permission
-      const companiesWithWritePermission = getCompaniesWithPermission(user, 'write')
-      // Set read-only mode if user has no write permissions
-      const hasWritePermissions = companiesWithWritePermission.length > 0
-      setIsReadOnly(!hasWritePermissions)
-
-      if (hasWritePermissions) {
-        // If user has write permissions, initialize with those companies
-        setSelectedCompanies(companiesWithWritePermission)
-      } else if (user.funds) {
-        // If no write permissions, initialize with read-only companies
-        const readOnlyCompanies = user.funds.map((company) =>
-          typeof company === 'string' ? company : company.id,
-        )
-        setSelectedCompanies(readOnlyCompanies)
-      }
+    if (user?.funds) {
+      const tmpSelectedCompanies = user?.funds.map((company) =>
+        typeof company === 'string' ? company : company.id,
+      )
+      setSelectedCompanies(tmpSelectedCompanies)
     }
-  }, [user])
+  }, [user?.funds])
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
