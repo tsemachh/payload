@@ -117,7 +117,7 @@ async function processVotesData(
   return processedData
 }
 
-function buildWhereConditions(params: VotesQueryParams) {
+function buildWhereConditions(params: VotesQueryParams, userCompanies: string[]) {
   const {
     companiesIds,
     status,
@@ -130,8 +130,10 @@ function buildWhereConditions(params: VotesQueryParams) {
     dualMeetingsOnly,
   } = params
 
-  const companiesIdsArray = companiesIds.split(',') //TODO:() validate IDs if it in user
-  const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
+  const companiesIdsArray = companiesIds.split(',')
+  const allowedCompanies = companiesIdsArray.filter((id) => userCompanies.includes(id))
+
+  const whereConditions: any[] = [{ company: { in: allowedCompanies } }]
 
   if (status === 'published') {
     whereConditions.push({ _status: { equals: 'published' } })
@@ -217,7 +219,12 @@ async function fetchAndProcessVotesData(
   params: VotesQueryParams,
   isExport: boolean,
 ) {
-  const whereConditions = buildWhereConditions(params)
+  const { user } = req
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userCompanyIds = user.companies?.map((c) => c.companyId as string) || []
+  const whereConditions = buildWhereConditions(params, userCompanyIds)
 
   if (isExport) {
     const votes = await fetchVotesInBatches(req, whereConditions)

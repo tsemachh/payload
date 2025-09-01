@@ -186,24 +186,25 @@ export async function generateParticipationsPDF(
     }
 
     const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } = {
-      '0': { halign: 'center', cellWidth: 35 },
-      '1': { halign: 'center', cellWidth: 35 },
-      '2': { halign: 'center', cellWidth: 35 },
-      '3': { halign: 'center', cellWidth: 70 },
-      '4': { halign: 'center', cellWidth: 40 },
-      '5': { halign: 'center', cellWidth: 40 },
+      '0': { halign: 'center', cellWidth: 30 },
+      '1': { halign: 'center', cellWidth: 30 },
+      '2': { halign: 'center', cellWidth: 30 },
+      '3': { halign: 'center', cellWidth: 40 },
+      '4': { halign: 'center', cellWidth: 35 },
+      '5': { halign: 'center', cellWidth: 35 },
       '6': { halign: 'center', cellWidth: 50 },
       '7': { halign: 'center', cellWidth: 50 },
       '8': { halign: 'center', cellWidth: 50 },
-      '9': { halign: 'center', cellWidth: 40 }, // מספר נייר
-      '10': { halign: 'center', cellWidth: 50 }, // שם תאגיד
-      '11': { halign: 'center', cellWidth: 40 }, // שם נייר
-      '12': { halign: 'center', cellWidth: 40 }, // שווי שוק
-      '13': { halign: 'center', cellWidth: 40 }, // החזקה (%)
-      '14': { halign: 'center', cellWidth: 50 }, // שווי החזקה
-      '15': { halign: 'center', cellWidth: 90 }, // מועד האסיפה
-      '16': { halign: 'center', cellWidth: 40 }, // סוג האסיפה
-      '17': { halign: 'center', cellWidth: 20 }, // מספר סעיף
+      '9': { halign: 'center', cellWidth: 40 }, // סוג אסיפה
+      '10': { halign: 'center', cellWidth: 45 }, // מועד אסיפה
+      '11': { halign: 'center', cellWidth: 40 }, // שווי החזקה
+      '12': { halign: 'center', cellWidth: 35 }, // החזקה באחוזים
+      '13': { halign: 'center', cellWidth: 35 }, // שווי שוק
+      '14': { halign: 'center', cellWidth: 45 }, // שם נייר
+      '15': { halign: 'center', cellWidth: 75 }, // שם חברה
+      '16': { halign: 'center', cellWidth: 70 }, // תשם תאגיד
+      '17': { halign: 'center', cellWidth: 45 }, // מספר נייר
+      '18': { halign: 'center', cellWidth: 20 }, // מספר סעיף
     }
 
     // יצירת הכותרות - שורה ראשונה עם המיזוג
@@ -228,7 +229,7 @@ export async function generateParticipationsPDF(
       },
       {
         content: prepareText('נושא'),
-        colSpan: 8, // מיזוג8 עמודות - עמודות 9-16
+        colSpan: 9, // מיזוג8 עמודות - עמודות 9-16
         halign: 'center',
         styles: {
           fontSize: FONT_SIZE_HEADER,
@@ -240,42 +241,47 @@ export async function generateParticipationsPDF(
 
     const headerRow2 = [
       {
-        content: prepareText(COMPANY_SUB_HEADERS[0]),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[0], doc, 70),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // מספר מניה
       {
-        content: prepareText(COMPANY_SUB_HEADERS[1]),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[1], doc, 70),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, //  שם תאגיד
       {
-        content: prepareText(COMPANY_SUB_HEADERS[2]),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[2], doc, 70),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // שם מניה
+      }, //  שם חברה
       {
         content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[3], doc, 60),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
+      }, // שם מניה
+      {
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[4], doc, 60),
+        halign: 'center',
+        styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // שווי שוק
       {
-        content: prepareText(COMPANY_SUB_HEADERS[4]),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[5], doc, 50),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // אחוז החזקה
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[5], doc, 80),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[6], doc, 80),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // שווי החזקה
       {
-        content: prepareText(COMPANY_SUB_HEADERS[6]),
+        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[7], doc, 90),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // תאריך ישיבה
       {
-        content: prepareText(COMPANY_SUB_HEADERS[7]),
+        content: prepareText(COMPANY_SUB_HEADERS[8]),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
       }, // סוג ישיבה
@@ -310,6 +316,7 @@ export async function generateParticipationsPDF(
         formattedPercentageHolding, // עמודה 12
         formattedMarketValue, // עמודה 11
         meeting.stockName || '', // עמודה 10
+        meeting.companyName || 'מוק שם החברה',
         meeting.corporateName || '',
         meeting.stockNumber || '', // עמודה 9
       ]
@@ -358,14 +365,18 @@ export async function generateParticipationsPDF(
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: prepareTextWithLineBreaks(companyValues[6], doc, 200),
+          content: prepareTextWithLineBreaks(companyValues[6], doc, 150),
+          styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
+        },
+        {
+          content: prepareTextWithLineBreaks(companyValues[7], doc, 150),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
           content:
             companyValues[7].length > 10
-              ? prepareTextWithLineBreaks(companyValues[7], doc, 30)
-              : prepareText(companyValues[7]),
+              ? prepareTextWithLineBreaks(companyValues[8], doc, 30)
+              : prepareText(companyValues[8]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         // עמודה 16 ריקה
@@ -407,8 +418,8 @@ export async function generateParticipationsPDF(
           }),
           // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
           {
-            content: prepareTextWithLineBreaks(agenda.text || '', doc, 800),
-            colSpan: 8, // מיזוג עמודות 9-16
+            content: prepareTextWithLineBreaks(agenda.text || '', doc, 1000),
+            colSpan: 9, // מיזוג עמודות 9-16
             styles: {
               fillColor: rowBg,
               textColor: defaultTextColor,
@@ -430,7 +441,7 @@ export async function generateParticipationsPDF(
       body.push([
         {
           content: '',
-          colSpan: 18, // מיזוג כל העמודות
+          colSpan: 19, // מיזוג כל העמודות
           styles: { minCellHeight: 10, fillColor: [255, 255, 255] },
         },
       ])

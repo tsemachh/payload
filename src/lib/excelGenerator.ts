@@ -23,6 +23,7 @@ export async function generateParticipationsExcel(
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.CORPORATE_NAME,
+      SHARED_COLUMNS.COMPANY_NAME,
       SHARED_COLUMNS.STOCK_NAME,
       SHARED_COLUMNS.MARKET_VALUE,
       SHARED_COLUMNS.PERCENTAGE_HOLDING,
@@ -30,9 +31,9 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
-    if (options.selectedCompaniesCount > 1) {
-      baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
-    }
+    // if (options.selectedCompaniesCount > 1) {
+    // baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
+    // }
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
       SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
@@ -124,6 +125,7 @@ export async function generateParticipationsExcel(
       const meetingData = [
         meeting.stockNumber,
         meeting.corporateName,
+        meeting.companyName,
         meeting.stockName,
         formattedMarketValue,
         formattedPercentageHolding,
