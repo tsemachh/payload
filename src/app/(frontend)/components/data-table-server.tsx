@@ -57,6 +57,7 @@ import { format } from 'date-fns'
 import { Checkbox } from './ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Calendar } from './ui/calendar'
+import { BooleanIcon } from './ui/icons'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
@@ -929,6 +930,20 @@ export function DataTableServer<T extends Record<string, any>>({
                                   <TableCell className="py-2 px-3"></TableCell>
 
                                   {visibleColumns.slice(1).map((column, columnIndex) => {
+                                    if (column.key === 'reported') {
+                                      const companyVote = row.votes?.docs?.find(
+                                        (v: any) => v.company === company.id,
+                                      )
+                                      return (
+                                        <TableCell
+                                          key={`company-${company.id}-reported`}
+                                          className="py-2 px-3 whitespace-nowrap text-center"
+                                        >
+                                          <BooleanIcon iconType={companyVote?.reported} />
+                                        </TableCell>
+                                      )
+                                    }
+
                                     if (column.key in company) {
                                       return (
                                         <TableCell

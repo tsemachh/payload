@@ -1286,6 +1286,19 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                                   {/* Map through visible columns and show relevant company data */}
                                   {visibleColumns.slice(1).map((column, columnIndex) => {
+                                    if (column.key === 'reported') {
+                                      const companyVote = row.votes?.docs?.find(
+                                        (v: any) => v.company === company.id,
+                                      )
+                                      return (
+                                        <TableCell
+                                          key={`company-${company.id}-reported`}
+                                          className="py-2 px-3 whitespace-nowrap text-center"
+                                        >
+                                          <BooleanIcon iconType={companyVote?.reported} />
+                                        </TableCell>
+                                      )
+                                    }
                                     if (column.key in company) {
                                       return (
                                         <TableCell

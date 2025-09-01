@@ -1,9 +1,13 @@
 'use client'
 
-import { BooleanIcon, MultipleDocumentsIcon, SingleDocumentIcon } from '@/components/ui/icons'
+import {
+  BooleanIcon,
+  MultipleDocumentsIcon,
+  SingleDocumentIcon,
+} from '@/components/ui/icons'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
-import { MeetingState, StockOrigin } from '@/payload-types'
+import { MeetingState, StockOrigin, Vote } from '@/payload-types'
 import { meetingStateMap, stockOriginMap } from '../helpers/maps'
 import { AgendaTooltipWithNavigation } from './AgendaTooltipWithNavigation'
 import {
@@ -12,6 +16,8 @@ import {
   stockOriginOptions,
   stockTypeOptions,
 } from './filtersConst'
+import { useCompaniesContext } from '../context/companiesContext'
+import { VotingStatusCell } from '../components/VotingStatusCell'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
@@ -169,6 +175,15 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
       meetingStateMap[row.meetingState as Exclude<MeetingState, null>] || row.meetingState,
     minWidth: 100,
   },
+  {
+    key: 'reported',
+    header: 'הצבעה בפועל',
+    type: 'boolean',
+    positionCenter: true,
+    render: (row) => <VotingStatusCell row={row} />,
+    minWidth: 50,
+  },
+
   {
     key: 'researchDocuments',
     header: 'מחקר',
