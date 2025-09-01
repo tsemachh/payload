@@ -47,7 +47,15 @@ export default function HoldingsFeedView() {
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
-
+  useEffect(() => {
+    if (user) {
+      // Get companies with write permission
+      const companiesWithWritePermission = getCompaniesWithPermission(user, 'write')
+      // Set read-only mode if user has no write permissions
+      const hasWritePermissions = companiesWithWritePermission.length > 0
+      setIsReadOnly(!hasWritePermissions)
+    }
+  }, [user])
   useEffect(() => {
     if (user?.funds) {
       const tmpSelectedCompanies = user?.funds.map((company) =>
