@@ -13,6 +13,7 @@ export interface ExportOptions {
 
 export interface GroupedMeetingData {
   stockNumber: string
+  corporateName: string
   stockName: string
   marketValue: string
   percentageHolding: number

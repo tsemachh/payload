@@ -118,6 +118,7 @@ export async function generateParticipationsExcel(
       )
       const meetingData = [
         meeting.stockNumber,
+        meeting.corporateName,
         meeting.stockName,
         formattedMarketValue,
         formattedPercentageHolding,

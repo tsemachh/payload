@@ -3,7 +3,6 @@ import {
   SelectFieldSingleValidation,
   TextFieldSingleValidation,
 } from 'payload'
-import { v1 as uuid1 } from 'uuid'
 
 export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   data,
@@ -12,11 +11,12 @@ export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
 }) => {
   if (operation == 'create') {
     if (!data.meetingId) {
-      data.meetingId = uuid1()
+      data.meetingId = `${Math.floor(Math.random() * 1000000)}`
     }
   }
   return data
 }
+
 export const validateMeetingInvitationLink: TextFieldSingleValidation = (
   value: string | null | undefined,
   options: any,

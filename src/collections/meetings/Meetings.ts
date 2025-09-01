@@ -415,7 +415,6 @@ export const Meetings: CollectionConfig = {
                   name: 'meetingId',
                   label: 'מספר אסיפה',
                   type: 'text',
-                  unique: true,
                   index: true,
                   admin: { width: '100px', hidden: true },
                 },
@@ -976,6 +975,7 @@ export const Meetings: CollectionConfig = {
             delete dualMeeting.meetingId
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
+            dualMeeting._status = 'published'
 
             try {
               const createdDualMeeting = await req.payload.create({

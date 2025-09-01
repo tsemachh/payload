@@ -248,6 +248,7 @@ async function processMeetingsInBatches(
     const result = await payload.find({
       collection: 'meetings',
       limit: batchSize,
+      while: { _status: { equals: 'published' } },
       page: page,
       depth: 0,
     })

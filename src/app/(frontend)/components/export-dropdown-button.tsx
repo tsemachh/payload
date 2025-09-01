@@ -21,7 +21,6 @@ interface ExportFormatOption {
 interface ExportDropdownButtonProps {
   onExportAction: (format: ExportFormat) => void
   isExporting: boolean
-  disabled: boolean
   className?: string
 }
 
@@ -33,7 +32,6 @@ const exportFormats: ExportFormatOption[] = [
 export function ExportDropdownButton({
   onExportAction,
   isExporting,
-  disabled,
   className = '',
 }: ExportDropdownButtonProps) {
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf')
@@ -54,7 +52,7 @@ export function ExportDropdownButton({
       {/* Main export button */}
       <Button
         onClick={handleExport}
-        disabled={disabled || isExporting}
+        disabled={isExporting}
         variant="default"
         className="rounded-r-md rounded-l-none border-l-0 whitespace-nowrap h-10"
       >
@@ -65,7 +63,7 @@ export function ExportDropdownButton({
       <DropdownMenu dir="rtl">
         <DropdownMenuTrigger asChild className="h-auto">
           <Button
-            disabled={disabled || isExporting}
+            disabled={isExporting}
             variant="default"
             size="sm"
             className="rounded-r-none rounded-l-md px-2 border-r border-r-white/20"
