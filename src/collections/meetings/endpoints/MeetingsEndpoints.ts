@@ -40,6 +40,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   committeeInitiated: true,
   fundsWithHolding: true,
   stockValue: true,
+  stockMarketValue: true,
   invitationLink: true,
   votes: true,
 }
