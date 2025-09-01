@@ -19,6 +19,7 @@ export interface ParticipationAgendaType {
 export interface ParticipationTableDataType {
   id: string // This will be mapped from meetingIdPayload for table's internal use
   stockNumber: string
+  corporateName: string
   stockName: string
   marketValue: string // Changed from number to string
   percentageHolding: number

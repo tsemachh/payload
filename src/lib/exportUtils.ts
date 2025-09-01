@@ -49,6 +49,7 @@ export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
     if (!groupedData.has(key)) {
       groupedData.set(key, {
         stockNumber: item.stockNumber,
+        corporateName: item.corporateName,
         stockName: item.stockName,
         marketValue: item.marketValue,
         percentageHolding: item.percentageHolding,
