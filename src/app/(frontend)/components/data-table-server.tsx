@@ -389,6 +389,7 @@ export function DataTableServer<T extends Record<string, any>>({
   }, [])
 
   const getSortIcon = (columnKey: keyof T) => {
+    if (onServerSort === undefined) return null
     if (sortConfig.key === columnKey) {
       if (sortConfig.direction === 'asc') {
         return <ArrowUp className="h-4 w-4" />

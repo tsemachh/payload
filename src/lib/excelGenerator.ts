@@ -22,6 +22,7 @@ export async function generateParticipationsExcel(
     // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
+      SHARED_COLUMNS.CORPORATE_NAME,
       SHARED_COLUMNS.STOCK_NAME,
       SHARED_COLUMNS.MARKET_VALUE,
       SHARED_COLUMNS.PERCENTAGE_HOLDING,
@@ -101,7 +102,11 @@ export async function generateParticipationsExcel(
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
     if (groupedData.length === 0) {
-      worksheet.addRow(['אין נתונים להצגה'])
+      const noDataRow = worksheet.addRow(['אין נתונים להצגה'])
+      noDataRow.eachCell((cell) => {
+        cell.font = { name: 'Arial', size: 10 }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      })
       return Buffer.from(await workbook.xlsx.writeBuffer())
     }
 
@@ -145,8 +150,9 @@ export async function generateParticipationsExcel(
       } else {
         meeting.agendas.forEach((agenda, index) => {
           const isFirstAgenda = index === 0
+          const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
           const agendaData = [
-            agenda.text || '',
+            numberedAgendaText,
             agenda.recommendation?.votingRecommendation || '',
             agenda.vote || '',
             agenda.result
@@ -160,8 +166,10 @@ export async function generateParticipationsExcel(
             booleanToIcon(agenda.personalInterest),
           ]
           const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-
-          excelRow.alignment = { horizontal: 'right', vertical: 'middle' }
+          excelRow.eachCell((cell) => {
+            cell.font = { name: 'Arial', size: 10 }
+            cell.alignment = { horizontal: 'right', vertical: 'middle' }
+          })
           excelRow.getCell(agendaTextIndex).alignment = {
             horizontal: 'right',
             vertical: 'middle',
@@ -222,6 +230,7 @@ export async function generateParticipationsExcel(
             bottom: whiteBorder,
             right: whiteBorder,
           }
+          cell.font = { name: 'Arial', size: 10 } // Ensure  font for all data cells
         }
       }
     }

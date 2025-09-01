@@ -51,6 +51,7 @@ export const resultMapping: { [key: string]: string } = {
 // Shared column headers
 export const SHARED_COLUMNS = {
   STOCK_NUMBER: 'מספר נייר',
+  CORPORATE_NAME: 'שם תאגיד',
   STOCK_NAME: 'שם נייר',
   MARKET_VALUE: `שווי שוק (מ' ₪)`,
   PERCENTAGE_HOLDING: 'החזקה (%)',
@@ -73,6 +74,7 @@ export const SHARED_COLUMNS = {
 // Company sub-headers for detailed view
 export const COMPANY_SUB_HEADERS = [
   SHARED_COLUMNS.STOCK_NUMBER,
+  SHARED_COLUMNS.CORPORATE_NAME,
   SHARED_COLUMNS.STOCK_NAME,
   SHARED_COLUMNS.MARKET_VALUE,
   SHARED_COLUMNS.PERCENTAGE_HOLDING,
