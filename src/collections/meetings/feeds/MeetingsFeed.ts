@@ -13,6 +13,7 @@ export const MeetingsFeed: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
+    defaultColumns: ['filename', 'createdAt', 'summary', 'duration', 'comments', 'meetings'],
   },
   custom: {
     filterList: [[{ name: 'createdAt' }]],
@@ -51,6 +52,7 @@ export const MeetingsFeed: CollectionConfig = {
       },
     },
     {
+      label: 'אסיפות',
       name: 'meetings',
       type: 'relationship',
       hasMany: true,

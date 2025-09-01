@@ -72,6 +72,7 @@ export function convertMagnaToPayloadMeeting(data: any) {
     proofIdPrev: data.ProofIdPrev || '',
     electronicVotingEnabled: true,
     _status: 'draft',
+    createdAt: data.ReportDate != '' ? parseDateString(data.ReportDate) : null,
   }
 }
 
@@ -143,6 +144,7 @@ export async function processJsonMeetingRows(
               dataToUpdate.magnaId = row.proofIdPrev
               delete dataToUpdate.proofIdPrev
               const prevMeetingId = prevMeeting.docs[0].id
+              dataToUpdate._status = 'published'
               try {
                 await req.payload.update({
                   collection: 'meetings',
@@ -170,18 +172,31 @@ export async function processJsonMeetingRows(
           const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
           if (existingMeeting?.docs.length > 0) {
             const meetingId = existingMeeting?.docs[0].id
-            try {
-              await req.payload.update({
-                collection: 'meetings',
-                id: meetingId,
-                data: row,
-                context: { ...req.context, from: 'migration' },
-                req,
-              })
-              context.successCount++
+            const existingMeetingData = existingMeeting.docs[0]
+
+            // Check if the existing meeting was already published with a newer creation date
+            if (existingMeetingData.createdAt && row.createdAt && 
+                new Date(existingMeetingData.createdAt) > new Date(row.createdAt)) {
+              // Do not update the meeting, just log a message
+              context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
+              req.payload.logger.info(`Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`)
+              context.successCount++ // Still count as processed
               context.processedMeetingIds.push(meetingId)
-            } catch (e: any) {
-              context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+            } else {
+              try {
+                row._status = 'published'
+                await req.payload.update({
+                  collection: 'meetings',
+                  id: meetingId,
+                  data: row,
+                  context: { ...req.context, from: 'migration' },
+                  req,
+                })
+                context.successCount++
+                context.processedMeetingIds.push(meetingId)
+              } catch (e: any) {
+                context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+              }
             }
           } else {
             try {
