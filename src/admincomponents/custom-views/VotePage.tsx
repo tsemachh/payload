@@ -52,7 +52,7 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
           { _status: { equals: 'published' } },
         ],
       },
-      depth: 0,
+      depth: 1,
       limit: 1,
     })
 

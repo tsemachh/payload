@@ -42,6 +42,11 @@ interface VoteData {
   voteDifferentFromResult: boolean
   reported: boolean
   clientComment?: string
+  voteDocuments?: Array<{
+    id: string
+    filename: string
+    url: string
+  }>
   votes: Array<{
     topicIndex: number
     voteDecision: string
@@ -398,9 +403,31 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col border border-gray-100 rounded p-2">
-            <div className="text-gray-900 font-medium">הערות ללקוח:</div>
+            <div className="text-gray-900 font-medium">הערות לקוח:</div>
             <div>{formData.clientComment ? formData.clientComment : 'אין הערות'}</div>
           </div>
+          {formData.voteDocuments && formData.voteDocuments.length > 0 ? (
+            <div className="flex flex-col border border-gray-100 rounded p-2">
+              <div className="text-gray-900 font-medium">מסמכים:</div>
+              <div className="space-y-1 mt-2">
+                {formData.voteDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5 text-sm"
+                  >
+                    <a
+                      href={doc.url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate max-w-[150px] hover:underline"
+                    >
+                      {doc.filename}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
