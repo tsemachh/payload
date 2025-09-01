@@ -35,7 +35,7 @@ const getMissingFieldsInRow = (row: any, fields: string[]): string[] => {
   return fields.filter((field) => !row[field])
 }
 export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
-  const result = await payload.find({
+  return await payload.find({
     collection: 'meetings',
     where: {
       magnaId: {
@@ -43,9 +43,8 @@ export const findMeetingByMagnaId = async (payload: any, magnaId: string) => {
       },
     },
     limit: 1,
+    draft: true,
   })
-
-  return result
 }
 
 const requiredFields = ['type', 'magnaId', 'meetingDate', 'holdingsLimit', 'location', 'stock']
@@ -155,6 +154,7 @@ export async function processJsonMeetingRows(
                 })
                 context.successPrevCount++
                 context.processedMeetingIds.push(prevMeetingId)
+                return // Add return to prevent processing the same row again
               } catch (e: any) {
                 context.errors.push(
                   `שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`,
@@ -175,11 +175,16 @@ export async function processJsonMeetingRows(
             const existingMeetingData = existingMeeting.docs[0]
 
             // Check if the existing meeting was already published with a newer creation date
-            if (existingMeetingData.createdAt && row.createdAt && 
-                new Date(existingMeetingData.createdAt) > new Date(row.createdAt)) {
+            if (
+              existingMeetingData.createdAt &&
+              row.createdAt &&
+              new Date(existingMeetingData.createdAt) > new Date(row.createdAt)
+            ) {
               // Do not update the meeting, just log a message
               context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
-              req.payload.logger.info(`Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`)
+              req.payload.logger.info(
+                `Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`,
+              )
               context.successCount++ // Still count as processed
               context.processedMeetingIds.push(meetingId)
             } else {
