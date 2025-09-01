@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { VotingForm } from './voting-form'
 import { Company } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 
 const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminViewServerProps) => {
   const {
@@ -120,6 +122,27 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
   const companyIds = (searchParams?.companyIds || '') as string
   const voteData = await getVoteData(req, meetingId, companyIds)
 
+  // Create navigation back to meeting
+  const BackToMeetingAction = () => (
+    <Link
+      href={`${adminRoute}/collections/meetings/${meetingId}`}
+      className="btn btn--style-secondary btn--size-small"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textDecoration: 'none',
+        marginLeft: '1rem',
+        width: '24px',
+        height: '22px',
+        padding: '0',
+      }}
+      title="Back to Meeting"
+    >
+      <ArrowLeft size={16} />
+    </Link>
+  )
+
   return (
     <DefaultTemplate
       i18n={initPageResult.req.i18n}
@@ -130,6 +153,7 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
       searchParams={searchParams}
       user={user}
       visibleEntities={visibleEntities}
+      viewActions={[BackToMeetingAction as any]}
     >
       <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
     </DefaultTemplate>
