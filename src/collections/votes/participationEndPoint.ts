@@ -2,7 +2,12 @@ import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
-import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
+import {
+  buildFundToParentMap,
+  calculateHoldingValues,
+  findRelevantCompanyIds,
+} from '@/utils/dataUtils'
+import { TreeCompanyType } from '@/types/companies'
 
 // Shared interfaces for both endpoints
 interface VotesQueryParams {
@@ -31,6 +36,7 @@ async function processVotesData(
   fullMeetingsMap: Record<string, any>,
   companiesMap: Record<string, any>,
   stockMap: Record<string, any>,
+  fundToParentMap: Map<string, TreeCompanyType>,
 ) {
   const processedData: any[] = []
 
@@ -53,6 +59,8 @@ async function processVotesData(
           (item: { fund: string }) => item.fund === fundId,
         )
         if (!match || !match.quantity) return null
+        const parent = fundToParentMap.get(fundId)
+        if (parent?.id != companyId) return null
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
           match.quantity,
           meeting.stockValue,
@@ -223,6 +231,11 @@ async function fetchAndProcessVotesData(
   if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const companyTree = JSON.parse(user?.treeCompanies || '[]')
+
+  const fundToParentMap = new Map<string, TreeCompanyType>()
+  buildFundToParentMap(companyTree, fundToParentMap)
+
   const userCompanyIds = user.companies?.map((c) => c.companyId as string) || []
   const whereConditions = buildWhereConditions(params, userCompanyIds)
 
@@ -313,7 +326,14 @@ async function fetchAndProcessVotesData(
     )
     const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
-    return await processVotesData(fundsIds, votes, fullMeetingsMap, companiesMap, stockMap)
+    return await processVotesData(
+      fundsIds,
+      votes,
+      fullMeetingsMap,
+      companiesMap,
+      stockMap,
+      fundToParentMap,
+    )
   } else {
     const page = parseInt((req.query.page as string) || '1')
     const pageSize = parseInt((req.query.pageSize as string) || '50')
@@ -436,6 +456,7 @@ async function fetchAndProcessVotesData(
       fullMeetingsMap,
       companiesMap,
       stockMap,
+      fundToParentMap,
     )
 
     return { processedData, totalItems }

@@ -1,5 +1,6 @@
 import { StockValue } from '@/payload-types'
 import { parseNumber } from '../app/(frontend)/helpers/utils-data-table'
+import { TreeCompanyType } from '@/types/companies'
 
 export async function getBufferFromStream(stream: ReadableStream<Uint8Array>) {
   // Convert the ReadableStream to a Buffer using the ReadableStream API
@@ -55,4 +56,20 @@ export function findRelevantCompanyIds(
   return (meetingCompanies || [])
     .filter((companyID) => funds?.some((fund) => fund === companyID))
     .filter((id) => id !== null) as string[]
+}
+// Function to traverse the tree and build the map
+export const buildFundToParentMap = (
+  companies: TreeCompanyType[],
+  fundToParentMap: Map<string, TreeCompanyType>,
+) => {
+  for (const company of companies) {
+    if (company.subCompanies && company.subCompanies.length > 0) {
+      // For each subCompany, set the current company as parent
+      for (const subCompany of company.subCompanies) {
+        fundToParentMap.set(subCompany.id, company)
+      }
+      // Recursively process subCompanies
+      buildFundToParentMap(company.subCompanies, fundToParentMap)
+    }
+  }
 }
