@@ -15,9 +15,10 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
-import { formatDateTime } from '../../app/(frontend)/helpers/utils-data-table'
+import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
-interface VoteData {
+export interface VoteData {
   fundsData: Array<{
     company: { id: string; name: string }
     fund: { id: string; name: string }
@@ -41,6 +42,12 @@ interface VoteData {
   voteAgainstRecommendation: boolean
   voteDifferentFromResult: boolean
   reported: boolean
+  clientComment?: string
+  voteDocuments?: Array<{
+    id: string
+    filename: string
+    url: string
+  }>
   votes: Array<{
     topicIndex: number
     voteDecision: string
@@ -74,6 +81,7 @@ interface VotingFormProps {
 export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps) {
   const [formData, setFormData] = useState<VoteData>()
   const [isLoading, setIsLoading] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -81,6 +89,17 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     console.log('!!voteData', voteData)
     setFormData(voteData)
   }, [voteData])
+
+  useEffect(() => {
+    // Function to check theme
+    const checkTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme')
+      setIsDarkMode(theme === 'dark')
+    }
+
+    // Check initial theme
+    checkTheme()
+  }, [])
 
   const handleSave = async () => {
     const fundsWithHolding = formData?.fundsData.map((fund) => {
@@ -130,34 +149,37 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
   const getVoteResultColor = (result: string) => {
     switch (result) {
       case 'בעד':
-        return 'text-green-700 bg-green-100 border-green-200'
+        return 'text-green-700 bg-green-100 border-green-200 dark:text-green-800 dark:bg-green-100 dark:border-green-200'
       case 'נגד':
-        return 'text-red-700 bg-red-100 border-red-200'
+        return 'text-red-700 bg-red-100 border-red-200 dark:text-red-800 dark:bg-red-100 dark:border-red-200'
       case 'נמנע':
-        return 'text-blue-700 bg-blue-100 border-blue-200'
+        return 'text-blue-700 bg-blue-100 border-blue-200 dark:text-blue-800 dark:bg-blue-100 dark:border-blue-200'
       default:
-        return 'text-gray-700 bg-gray-100 border-gray-200'
+        return 'text-gray-700 bg-gray-100 border-gray-200 dark:text-gray-800 dark:bg-gray-100 dark:border-gray-200'
     }
   }
 
   const getAgendaItemColor = (result: boolean) => {
     if (result === true) {
-      return 'text-green-700 bg-green-100 border-green-200'
+      return 'text-green-700 bg-green-100 border-green-200 dark:text-green-800 dark:bg-green-100 dark:border-green-200'
     } else if (result === false) {
-      return 'text-red-700 bg-red-100 border-red-200'
+      return 'text-red-700 bg-red-100 border-red-200 dark:text-red-800 dark:bg-red-100 dark:border-red-200'
     } else {
-      return 'text-gray-700 bg-gray-100 border-gray-200'
+      return 'text-gray-700 bg-gray-100 border-gray-200 dark:text-gray-800 dark:bg-gray-100 dark:border-gray-200'
     }
   }
 
   return formData ? (
-    <div className="useTw space-y-3 p-4 max-w-[80%]" dir="rtl">
-      <Card className="border border-gray-200">
+    <div
+      className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] text-gray-900 dark:text-white`}
+      dir="rtl"
+    >
+      <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardHeader className="pb-6">
-          <CardTitle className="text-center text-xl font-bold text-gray-900">
+          <CardTitle className="text-center text-xl font-bold text-gray-900 dark:text-white">
             {voteData.meeting}
           </CardTitle>
-          <div className="flex items-center text-base text-gray-700 gap-12 justify-center pt-2">
+          <div className="flex items-center text-base text-gray-700 dark:text-gray-200 gap-12 justify-center pt-2">
             <div className="flex items-center gap-2">
               <span className="font-medium">תאריך האסיפה:</span>
               <span>{formatDateTime(formData.meetingDate)}</span>
@@ -167,51 +189,70 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
               <span>{formatDateTime(formData.holdingsLimit)}</span>
             </div>
           </div>
-          <CardTitle className="text-right text-base text-gray-900">חברות </CardTitle>
+          <CardTitle className="text-right text-base text-gray-900 dark:text-white">
+            חברות
+          </CardTitle>
           <div className="flex flex-wrap gap-2 text-right">
             {formData.companies?.map((company, index) => (
-              <div key={index} className="bg-muted rounded-full px-4 py-1 flex items-center">
-                <span className="text-base font-medium text-gray-900">{company}</span>
+              <div
+                key={index}
+                className="bg-muted dark:bg-gray-800 rounded-full px-4 py-1 flex items-center"
+              >
+                <span className="text-base font-medium text-gray-900 dark:text-white">
+                  {company}
+                </span>
               </div>
             ))}
           </div>
         </CardHeader>
       </Card>
 
-      <Card className="border border-gray-200">
+      <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardContent>
           <div className="flex items-center justify-start space-x-reverse space-x-2 pt-6 pb-4">
             <Checkbox
               checked={formData.reported}
               onCheckedChange={(checked) => setFormData({ ...formData, reported: !!checked })}
             />
-            <label className="text-base font-medium text-gray-900 mr-3">הצבעה בפועל</label>
+            <label className="text-base font-medium text-gray-900 dark:text-white mr-3">
+              הצבעה בפועל
+            </label>
           </div>
           <Table>
             <TableHeader>
               <TableRow className="text-base">
-                <TableHead className="text-right w-64 text-gray-900">חברה</TableHead>
-                <TableHead className="text-right w-64 text-gray-900">שם תיק</TableHead>
-                <TableHead className="text-right w-32 text-gray-900">ערך נקוב במערכת</TableHead>
-                <TableHead className="text-right w-24 text-gray-900">אימות אחזקות</TableHead>
-                <TableHead className="text-right w-32 text-gray-900">ערך נקוב ברשות</TableHead>
+                <TableHead className="text-right w-64 text-gray-900 dark:text-white">
+                  חברה
+                </TableHead>
+                <TableHead className="text-right w-64 text-gray-900 dark:text-white">
+                  שם תיק
+                </TableHead>
+                <TableHead className="text-right w-32 text-gray-900 dark:text-white">
+                  ערך נקוב במערכת
+                </TableHead>
+                <TableHead className="text-right w-24 text-gray-900 dark:text-white">
+                  אימות אחזקות
+                </TableHead>
+                <TableHead className="text-right w-32 text-gray-900 dark:text-white">
+                  ערך נקוב ברשות
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {formData.fundsData.map((fund, index) => (
-                <TableRow key={index} className="text-base border-b border-gray-100">
-                  <TableCell className="text-right font-medium text-base text-gray-900">
+                <TableRow
+                  key={index}
+                  className="text-base border-b border-gray-100 dark:border-gray-800"
+                >
+                  <TableCell className="text-right font-medium text-base text-gray-900 dark:text-white">
                     {fund.company.name}
                   </TableCell>
-                  <TableCell className="text-right text-base text-gray-900">
+                  <TableCell className="text-right text-base text-gray-900 dark:text-white">
                     {fund.fund.name}
                   </TableCell>
                   <TableCell>
-                    <span className="text-right text-gray-600 text-base">
-                      {new Intl.NumberFormat('he-IL', {
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2,
-                      }).format(fund.quantity)}
+                    <span className="text-right text-gray-600 dark:text-gray-300 text-base">
+                      {formatNumberWithLocale(fund.quantity)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -230,12 +271,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <Input
-                      value={new Intl.NumberFormat('he-IL', {
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2,
-                      }).format(fund.ownedQuantity)}
+                      value={formatNumberWithLocale(fund.ownedQuantity)}
                       onChange={(e) => updateFundData(index, 'ownedQuantity', e.target.value)}
-                      className="text-right h-8 text-base border-gray-300 max-w-[100px]"
+                      className="text-right h-8 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white max-w-[100px]"
                       style={{
                         visibility:
                           fund.verifiedHoldings || fund.verifiedHoldings === undefined
@@ -250,53 +288,64 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
           </Table>
         </CardContent>
       </Card>
-      <Card className="border border-gray-200">
+      <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardContent className="space-y-3">
           <div className="grid grid-cols-3 gap-4 pt-6 text-base">
             <div className="flex flex-col">
               <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 font-medium ml-3">בעל עניין</label>
+                <label className="text-gray-900 dark:text-white font-medium ml-3">בעל עניין</label>
                 <Checkbox checked={formData.isInterested} disabled={true} />
               </div>
               {formData.isInterested && formData.interestedExplanation && (
-                <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
                   {formData.interestedExplanation}
                 </span>
               )}
             </div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 font-medium ml-3">נושא משרה בכירה</label>
+                <label className="text-gray-900 dark:text-white font-medium ml-3">
+                  נושא משרה בכירה
+                </label>
                 <Checkbox checked={formData.isSeniorOfficial} disabled={true} />
               </div>
               {formData.isSeniorOfficial && formData.seniorOfficialExplanation && (
-                <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
                   {formData.seniorOfficialExplanation}
                 </span>
               )}
             </div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 font-medium ml-3">משקיע מוסדי</label>
+                <label className="text-gray-900 dark:text-white font-medium ml-3">
+                  משקיע מוסדי
+                </label>
                 <Checkbox checked={formData.isInstitutionalInvestor} disabled={true} />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-      <Card className="border border-gray-200">
+      <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardHeader className="pb-2">
-          <CardTitle className="text-right text-base text-gray-900">סדר יום להצבעה</CardTitle>
+          <CardTitle className="text-right text-base text-gray-900 dark:text-white">
+            סדר יום להצבעה
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {(formData.agenda || []).map((item, index) => {
             const voteItem = voteData.votes[index]
             return (
-              <div key={item.id} className="border border-gray-100 rounded p-2">
+              <div
+                key={item.id}
+                className="border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 rounded p-2"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-blue-600">{index + 1}.</span>
+                  <span className="text-base font-bold text-blue-600 dark:text-blue-400">
+                    {index + 1}.
+                  </span>
                   <div
-                    className="flex-1 text-right text-base text-gray-900 mx-3 truncate min-w-0"
+                    className="flex-1 text-right text-base text-gray-900 dark:text-white mx-3 truncate min-w-0"
                     title={item.text}
                     dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                   >
@@ -306,9 +355,11 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     {formData.displayVotingRecommendation &&
                       item.recommendation?.votingRecommendation && (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-700">המלצה:</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            המלצה:
+                          </span>
                           <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                            {item.recommendation.votingRecommendation}{' '}
+                            {item.recommendation.votingRecommendation}
                           </span>
                         </div>
                       )}
@@ -330,7 +381,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   <div className="flex gap-4" dir="rtl">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-900 text-sm font-medium">ניגוד עניינים:</span>
+                        <span className="text-gray-900 dark:text-white text-sm font-medium">
+                          ניגוד עניינים:
+                        </span>
                         <div
                           className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
                         >
@@ -339,14 +392,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                       </div>
                       {voteItem?.hasConflictOfInterest &&
                         voteItem?.conflictOfInterestExplanation && (
-                          <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                          <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
                             {voteItem?.conflictOfInterestExplanation}
                           </span>
                         )}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-900 text-sm font-medium">צד קשור:</span>
+                        <span className="text-gray-900 dark:text-white text-sm font-medium">
+                          צד קשור:
+                        </span>
                         <div
                           className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
                         >
@@ -354,14 +409,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                         </div>
                       </div>
                       {voteItem?.isRelatedParty && voteItem?.relatedPartyExplanation && (
-                        <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                        <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
                           {voteItem?.relatedPartyExplanation}
                         </span>
                       )}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-900 text-sm font-medium">ועדת השקעות:</span>
+                        <span className="text-gray-900 dark:text-white text-sm font-medium">
+                          ועדת השקעות:
+                        </span>
                         <div
                           className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
                         >
@@ -371,7 +428,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-900 text-sm font-medium">עניין אישי:</span>
+                        <span className="text-gray-900 dark:text-white text-sm font-medium">
+                          עניין אישי:
+                        </span>
                         <div
                           className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
                         >
@@ -379,7 +438,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                         </div>
                       </div>
                       {voteItem?.hasPersonalInterest && voteItem?.personalInterestExplanation && (
-                        <span className="text-gray-700 text-sm mt-1" dir="rtl">
+                        <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
                           {voteItem?.personalInterestExplanation}
                         </span>
                       )}
@@ -391,6 +450,44 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
           })}
         </CardContent>
       </Card>
+      <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-right text-base text-gray-900 dark:text-white">
+            נספחים להצבעה
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 rounded p-2">
+            <div className="text-gray-900 dark:text-white font-medium">הערות לקוח:</div>
+            <div className="text-gray-900 dark:text-white">
+              {formData.clientComment ? formData.clientComment : 'אין הערות'}
+            </div>
+          </div>
+          {formData.voteDocuments && formData.voteDocuments.length > 0 ? (
+            <div className="flex flex-col border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 rounded p-2">
+              <div className="text-gray-900 dark:text-white font-medium">מסמכים:</div>
+              <div className="space-y-1 mt-2">
+                {formData.voteDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between bg-muted/30 dark:bg-gray-700/30 rounded-md px-3 py-1.5 text-sm"
+                  >
+                    <a
+                      href={doc.url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate max-w-[150px] hover:underline text-gray-900 dark:text-white"
+                    >
+                      {doc.filename}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
       <div className="flex justify-start pt-2">
         <Button onClick={handleSave} disabled={isLoading} className="px-6">
           {isLoading ? 'שומר...' : 'שמור'}

@@ -421,6 +421,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
           })
         }
 
+        userData.funds = []
         if (existingUser.docs.length > 0) {
           // Update existing user
           await payload.update({

@@ -131,18 +131,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       // Store the original result value before mapping
       const originalResult = row.result
 
+      const topicType = row.vtype === 0 ? 'reporting' : 'decision' // Set to reporting if result is 3 (דיון), otherwise decision
+      const isDecision = topicType === 'decision'
       const agendaItem = {
         id: row.id,
         text: row.topic,
-        topicType: row.result === 3 ? 'reporting' : 'decision', // Set to reporting if result is 3 (דיון), otherwise decision
-        majorityType: row.vtype === 1 ? 'privileged' : 'regular', // Assuming vtype=1 means privileged majority
+        topicType: topicType,
+        majorityType: isDecision ? (row.vtype === 2 ? 'privileged' : 'regular') : null, // Assuming vtype=2 means privileged majority
         result: row.result
           ? row.result === -2 || row.result === 4
             ? '0'
             : row.result.toString()
           : '0', // Map -2 and 4 to 0, otherwise use string representation
-        vpercent: row.vpercent,
-        vPercentSpecial: row.vPercentSpecial === -1 ? null : row.vPercentSpecial,
+        vpercent: isDecision ? row.vpercent : null,
+        vPercentSpecial: isDecision
+          ? row.vPercentSpecial === -1
+            ? null
+            : row.vPercentSpecial
+          : null,
         dealChanged: row.dealChanged === 1, // Convert to boolean
         recommendation: {
           votingRecommendation: getVotingRecommendation(row.rec),

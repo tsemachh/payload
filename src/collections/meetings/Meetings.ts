@@ -415,7 +415,6 @@ export const Meetings: CollectionConfig = {
                   name: 'meetingId',
                   label: 'מספר אסיפה',
                   type: 'text',
-                  unique: true,
                   index: true,
                   admin: { width: '100px', hidden: true },
                 },
@@ -934,15 +933,23 @@ export const Meetings: CollectionConfig = {
               hasMany: false,
               admin: {
                 hidden: false,
+                disableListColumn: true,
               },
               maxDepth: 1,
             },
             {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
+              label: 'שווי שוק',
               type: 'number',
               admin: {
                 readOnly: true,
+                components: {
+                  Cell: {
+                    path: '/admincomponents/cell/FormattedNumber',
+                    clientProps: { decimals: 0 },
+                  },
+                },
               },
             },
           ],
@@ -976,6 +983,7 @@ export const Meetings: CollectionConfig = {
             delete dualMeeting.meetingId
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
+            dualMeeting._status = 'published'
 
             try {
               const createdDualMeeting = await req.payload.create({

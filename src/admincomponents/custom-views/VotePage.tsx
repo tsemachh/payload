@@ -1,10 +1,25 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { DefaultTemplate } from '@payloadcms/next/templates'
 import type { AdminViewServerProps } from 'payload'
 import { redirect } from 'next/navigation'
 import { VotingForm } from './voting-form'
-import { Company } from '@/payload-types'
-import { getIdOfRelationField } from '@/utils/utils'
+import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
+import { SetStepNav } from '@payloadcms/ui'
+import { getVoteData } from './api'
+
+async function VoteDataLoader({
+  req,
+  meetingId,
+  companyIds,
+}: {
+  req: any
+  meetingId: string
+  companyIds: string
+}) {
+  const voteData = await getVoteData(req, meetingId, companyIds)
+  return <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
+}
 
 const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminViewServerProps) => {
   const {
@@ -27,98 +42,28 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
     return redirect(`${adminRoute}/unauthorized`)
   }
 
-  async function getVoteData(req: any, meetingId: string, companyIds: string) {
-    const companiesIdsArray = (companyIds as string).split(',')
-
-    const meetingData = await req.payload.findByID({
-      collection: 'meetings',
-      id: meetingId,
-      select: {
-        fundsWithHolding: true,
-        fullName: true,
-        agenda: true,
-        meetingDate: true,
-        holdingsLimit: true,
-      },
-      depth: 0,
-      limit: 0,
-    })
-    const voteData = await req.payload.find({
-      collection: 'votes',
-      where: {
-        and: [
-          { meeting: { equals: meetingId } },
-          { company: { in: companiesIdsArray } },
-          { _status: { equals: 'published' } },
-        ],
-      },
-      depth: 0,
-      limit: 1,
-    })
-
-    const companyData = await req.payload.find({
-      collection: 'companies',
-      where: {
-        id: { in: companiesIdsArray },
-      },
-      select: {
-        name: true,
-        subCompanies: true,
-        researchDocuments: { displayVotingRecommendation: true },
-      },
-      depth: 1,
-      limit: 0,
-    })
-
-    const companyIdToNameMap: Map<string, string> = new Map()
-    const fundIdToNameMap: Map<string, string> = new Map()
-    companyData.docs.forEach((doc: Company) => {
-      // Add company to companyIdToNameMap
-      if (doc.id && doc.name) {
-        companyIdToNameMap.set(doc.id as string, doc.name as string)
-      }
-
-      doc?.subCompanies?.forEach((subCompany) => {
-        if (subCompany) {
-          const id: string = getIdOfRelationField(subCompany) as string
-          // Add fund to fundIdToNameMap
-          if (id && typeof subCompany === 'object' && subCompany.name) {
-            fundIdToNameMap.set(id, subCompany.name as string)
-          }
-        }
-      })
-    })
-    const fundsWithHolding = meetingData.fundsWithHolding.filter((fundHold: any) => {
-      return companiesIdsArray.includes(fundHold.company)
-    })
-
-    const fundsWithHoldings = fundsWithHolding.map((fundHold: any) => {
-      return {
-        company: { id: fundHold.company, name: companyIdToNameMap.get(fundHold?.company) },
-        fund: { id: fundHold.fund, name: fundIdToNameMap.get(fundHold?.fund) },
-        quantity: fundHold.quantity || 0,
-        ownedQuantity: fundHold.ownedQuantity || 0,
-        verifiedHoldings: fundHold.verifiedHoldings,
-      }
-    })
-
-    return {
-      ...voteData.docs[0],
-      companies: companyData.docs.map((c: any) => c.name),
-      displayVotingRecommendation: companyData.docs.some(
-        (c: any) => c.researchDocuments?.displayVotingRecommendation === true,
-      ),
-      meeting: meetingData.fullName,
-      meetingDate: meetingData.meetingDate,
-      holdingsLimit: meetingData.holdingsLimit,
-      fundsData: fundsWithHoldings,
-      agenda: meetingData.agenda,
-    }
-  }
-
   const meetingId = (searchParams?.meetingId || '') as string
   const companyIds = (searchParams?.companyIds || '') as string
-  const voteData = await getVoteData(req, meetingId, companyIds)
+
+  // Get meeting name for header
+  const meetingData = await payload.findByID({
+    collection: 'meetings',
+    id: meetingId,
+    select: {
+      fullName: true,
+    },
+    depth: 0,
+  })
+
+  // Loading component for Suspense fallback
+  const LoadingFallback = () => (
+    <div className="flex items-center justify-center min-h-[400px] space-y-4">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <p className="text-gray-600 dark:text-gray-400">טוען נתוני הצבעה...</p>
+      </div>
+    </div>
+  )
 
   return (
     <DefaultTemplate
@@ -131,7 +76,25 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
       user={user}
       visibleEntities={visibleEntities}
     >
-      <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
+      <SetStepNav
+        nav={[
+          { label: 'אסיפות', url: `${adminRoute}/collections/meetings` },
+          {
+            label: (
+              <Link
+                href={`${adminRoute}/collections/meetings/${meetingId}`}
+                title="Navigate to Meeting"
+              >
+                {meetingData.fullName || 'Meeting'}
+              </Link>
+            ),
+            url: `${adminRoute}/collections/meetings/${meetingId}`,
+          },
+        ]}
+      />
+      <Suspense fallback={<LoadingFallback />}>
+        <VoteDataLoader req={req} meetingId={meetingId} companyIds={companyIds} />
+      </Suspense>
     </DefaultTemplate>
   )
 }
