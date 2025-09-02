@@ -6,15 +6,15 @@ import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { BooleanIcon } from '@/components/ui/icons'
 import type { ParticipationTableDataType } from './types'
-import { Checkbox } from '@/components/ui/checkbox'
 import { resultMapping } from '@/lib/exportTypes'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export const createParticipationColumns = (
   selectedCompaniesCount: number,
-  allSelected: boolean,
-  participationData: ParticipationTableDataType[],
-  deselectedIds: Set<string>,
-  setDeselectedIds: React.Dispatch<React.SetStateAction<Set<string>>>,
+  // allSelected: boolean,
+  // participationData: ParticipationTableDataType[],
+  // deselectedIds: Set<string>,
+  // setDeselectedIds: React.Dispatch<React.SetStateAction<Set<string>>>,
 ): Column<ParticipationTableDataType>[] => {
   const baseColumns: Column<ParticipationTableDataType>[] = [
     // Uncomment if you want to enable selection
@@ -97,9 +97,7 @@ export const createParticipationColumns = (
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
-        return new Intl.NumberFormat('he-IL', {
-          maximumFractionDigits: 0,
-        }).format(marketValue / 1_000_000)
+        return formatNumberWithLocale(marketValue / 1_000_000, 0, 'he-IL')
       },
       minWidth: 80,
     },
@@ -107,22 +105,14 @@ export const createParticipationColumns = (
       key: 'percentageHolding',
       header: 'החזקה (%)',
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 4,
-          maximumFractionDigits: 4,
-        }).format(row.percentageHolding),
+      render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
       minWidth: 80,
     },
     {
       key: 'holdingValueInMillions',
       header: `שווי החזקה (מ' ₪)`,
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(row.holdingValueInMillions),
+      render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 2, 'he-IL'),
       minWidth: 80,
     },
     {

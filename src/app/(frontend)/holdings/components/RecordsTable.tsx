@@ -7,6 +7,7 @@ import { HoldingFeedLine } from '@/payload-types'
 import { SilenceDialog } from './SilenceDialog'
 import { AddSubAccountDialog } from './AddSubAccountDialog'
 import { HoldingFeedLineWithName } from '@/collections/holdings/feeds/FeedValidations'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 interface RecordType {
   lineNumber: string | number
@@ -57,10 +58,7 @@ const holdingColumns: Column<RecordType>[] = [
     type: 'number',
     width: 60,
     minWidth: 60,
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        Number(row.quantity) || 0,
-      ),
+    render: (row) => formatNumberWithLocale(Number(row.quantity) || 0, 0, 'he-IL'),
   },
 ]
 
@@ -163,7 +161,7 @@ export const RecordsTable: React.FC<{
           totalItems: dataWithIds.length,
           totalPages: Math.ceil(dataWithIds.length / 50),
           currentPage: currentPage,
-          onPageChange: handlePageChange
+          onPageChange: handlePageChange,
         }}
       />
     </div>
