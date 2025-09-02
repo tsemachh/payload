@@ -11,10 +11,10 @@ import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export const createParticipationColumns = (
   selectedCompaniesCount: number,
-  // allSelected: boolean,
-  // participationData: ParticipationTableDataType[],
-  // deselectedIds: Set<string>,
-  // setDeselectedIds: React.Dispatch<React.SetStateAction<Set<string>>>,
+  allSelected: boolean,
+  participationData: ParticipationTableDataType[],
+  deselectedIds: Set<string>,
+  setDeselectedIds: React.Dispatch<React.SetStateAction<Set<string>>>,
 ): Column<ParticipationTableDataType>[] => {
   const baseColumns: Column<ParticipationTableDataType>[] = [
     // Uncomment if you want to enable selection
