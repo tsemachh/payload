@@ -1057,7 +1057,7 @@ export function DataTableServer<T extends Record<string, any>>({
         <div className="flex items-center justify-between space-x-2 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
-              סה&quot;כ {pagination.totalItems?.toLocaleString()} פריטים.
+              סה&quot;כ {pagination.totalItems?.toLocaleString()} שורות.
             </div>
             {pagination.pageSizeOptions &&
               pagination.onPageSizeChange &&
