@@ -12,7 +12,7 @@ import {
 } from '@payloadcms/ui' // Import the original PublishButton // Use Payload's useModal wrapper
 
 export const CustomPublishButton: React.FC = () => {
-  const { hasPublishPermission, setHasPublishedDoc, uploadStatus, collectionSlug, data } =
+  const { hasPublishPermission, setHasPublishedDoc, uploadStatus, collectionSlug, data, hasPublishedDoc, id } =
     useDocumentInfo()
   // Use data from useDocumentInfo instead of useField to avoid marking form as modified
   const meetingDate = data?.meetingDate ? new Date(data.meetingDate) : null
@@ -49,17 +49,29 @@ export const CustomPublishButton: React.FC = () => {
 
   // Open confirmation modal
   const openConfirmModal = useCallback(() => {
-    // If this is a meeting collection, check if it's a future meeting
-    if (collectionSlug === 'meetings' && data) {
+    // If this is not a meeting collection or it's a new document, publish directly
+    if (collectionSlug !== 'meetings' || !id) {
+      handlePublish()
+      return
+    }
+
+    // If this is a meeting collection with existing data
+    if (data) {
       const now = new Date()
 
       // If it's a future meeting, ask if it's a significant change
       if (meetingDate && meetingDate > now) {
         toggleModal(significantChangeModalSlug)
         return
-      } else handlePublish()
+      } else {
+        // For past meetings or meetings without a date
+        handlePublish()
+      }
+    } else {
+      // Fallback for any other case
+      handlePublish()
     }
-  }, [toggleModal, collectionSlug, data, handlePublish])
+  }, [toggleModal, collectionSlug, data, handlePublish, id, meetingDate])
 
   // Handle significant change confirmation
   const handleSignificantChangeConfirm = useCallback(
@@ -79,7 +91,7 @@ export const CustomPublishButton: React.FC = () => {
     <React.Fragment>
       <FormSubmit
         buttonId="action-save"
-        disabled={!modified || uploadStatus === 'uploading'}
+        disabled={(modified === false && hasPublishedDoc === true) || uploadStatus === 'uploading'}
         onClick={openConfirmModal}
         size="medium"
         type="button"
