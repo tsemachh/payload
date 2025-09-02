@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger'
 import { COMPANY_SUB_HEADERS, ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from './utils'
-import { booleanToIcon, formatNormalDate, groupDataByMeeting } from './exportUtils'
+import { booleanToIcon, formatNormalDate } from './exportUtils'
 
 // PDF configuration constants
 const A4 = [595.28, 841.89]
@@ -145,6 +145,7 @@ export async function generateParticipationsPDF(
       unit: 'pt',
       format: 'a4',
     })
+    console.log('-------data', data)
 
     const alefRegularBase64 = alefRegularBytes.toString('base64')
     const alefBoldBase64 = alefBoldBytes.toString('base64')
@@ -160,9 +161,7 @@ export async function generateParticipationsPDF(
     const logoWidth = 80
     const logoHeight = (imageProps.height / imageProps.width) * logoWidth
 
-    const groupedData = groupDataByMeeting(data)
-
-    if (groupedData.length === 0) {
+    if (data.length === 0) {
       addHeader(doc, options, logoBase64, logoWidth, logoHeight)
       doc.setFont('Ariel', 'normal')
       doc.setFontSize(16)
@@ -291,7 +290,7 @@ export async function generateParticipationsPDF(
 
     const body: any[] = []
 
-    for (const meeting of groupedData) {
+    for (const meeting of data) {
       const companyHeaderBgColor = [210, 228, 255]
       const textColor = [51, 51, 51]
 
@@ -316,7 +315,7 @@ export async function generateParticipationsPDF(
         formattedPercentageHolding, // עמודה 12
         formattedMarketValue, // עמודה 11
         meeting.stockName || '', // עמודה 10
-        meeting.companyName || 'מוק שם החברה',
+        meeting.currentCompany.name || 'מוק שם החברה',
         meeting.corporateName || '',
         meeting.stockNumber || '', // עמודה 9
       ]

@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger'
 import { ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from './utils'
-import { booleanToIcon, formatNormalDate, groupDataByMeeting } from './exportUtils'
+import { booleanToIcon, formatNormalDate } from './exportUtils'
 
 export async function generateParticipationsExcel(
   data: any[],
@@ -15,9 +15,6 @@ export async function generateParticipationsExcel(
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('דוח השתתפות באסיפות')
     worksheet.views = [{ rightToLeft: true }]
-
-    // Group data
-    const groupedData = groupDataByMeeting(data)
 
     // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
@@ -102,7 +99,7 @@ export async function generateParticipationsExcel(
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
-    if (groupedData.length === 0) {
+    if (data.length === 0) {
       const noDataRow = worksheet.addRow(['אין נתונים להצגה'])
       noDataRow.eachCell((cell) => {
         cell.font = { name: 'Arial', size: 10 }
@@ -112,7 +109,7 @@ export async function generateParticipationsExcel(
     }
 
     // Add data rows
-    groupedData.forEach((meeting) => {
+    data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
         parseNumber(meeting.marketValue) / 1_000_000,
         0,
@@ -125,7 +122,7 @@ export async function generateParticipationsExcel(
       const meetingData = [
         meeting.stockNumber,
         meeting.corporateName,
-        meeting.companyName,
+        meeting.currentCompany.name,
         meeting.stockName,
         formattedMarketValue,
         formattedPercentageHolding,
@@ -150,40 +147,59 @@ export async function generateParticipationsExcel(
           fgColor: { argb: 'FFD2E4FF' },
         }
       } else {
-        meeting.agendas.forEach((agenda, index) => {
-          const isFirstAgenda = index === 0
-          const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
-          const agendaData = [
-            numberedAgendaText,
-            agenda.recommendation?.votingRecommendation || '',
-            agenda.vote || '',
-            agenda.result
-              ? resultMapping[agenda.result] || agenda.result
-              : agenda.meetingResults || '',
-            booleanToIcon(!agenda.privilegedMajority),
-            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '',
-            booleanToIcon(agenda.policyCompliance),
-            booleanToIcon(agenda.conflictOfInterest),
-            booleanToIcon(agenda.relatedParty),
-            booleanToIcon(agenda.personalInterest),
-          ]
-          const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-          excelRow.eachCell((cell) => {
-            cell.font = { name: 'Arial', size: 10 }
-            cell.alignment = { horizontal: 'right', vertical: 'middle' }
-          })
-          excelRow.getCell(agendaTextIndex).alignment = {
-            horizontal: 'right',
-            vertical: 'middle',
-            wrapText: true,
-          }
+        meeting.agendas.forEach(
+          (
+            agenda: {
+              text: any
+              recommendation: { votingRecommendation: any }
+              vote: any
+              result: string | number
+              meetingResults: any
+              privilegedMajority: any
+              vPercentSpecial: any
+              policyCompliance: any
+              conflictOfInterest: any
+              relatedParty: any
+              personalInterest: any
+            },
+            index: number,
+          ) => {
+            const isFirstAgenda = index === 0
+            const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
+            const agendaData = [
+              numberedAgendaText,
+              agenda.recommendation?.votingRecommendation || '',
+              agenda.vote || '',
+              agenda.result
+                ? resultMapping[agenda.result] || agenda.result
+                : agenda.meetingResults || '',
+              booleanToIcon(!agenda.privilegedMajority),
+              agenda.privilegedMajority && agenda.vPercentSpecial
+                ? `${agenda.vPercentSpecial}`
+                : '',
+              booleanToIcon(agenda.policyCompliance),
+              booleanToIcon(agenda.conflictOfInterest),
+              booleanToIcon(agenda.relatedParty),
+              booleanToIcon(agenda.personalInterest),
+            ]
+            const excelRow = worksheet.addRow([...meetingData, ...agendaData])
+            excelRow.eachCell((cell) => {
+              cell.font = { name: 'Arial', size: 10 }
+              cell.alignment = { horizontal: 'right', vertical: 'middle' }
+            })
+            excelRow.getCell(agendaTextIndex).alignment = {
+              horizontal: 'right',
+              vertical: 'middle',
+              wrapText: true,
+            }
 
-          excelRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'FFE7F0FF' },
-          }
-        })
+            excelRow.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'FFE7F0FF' },
+            }
+          },
+        )
       }
     })
 
