@@ -494,10 +494,6 @@ export default function Participations() {
           <div className="text-center text-red-500 mt-4">
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
-        ) : participationData.length === 0 ? (
-          <div className="text-center text-muted-foreground mt-4">
-            אין נתונים זמינים עבור הבחירות הנוכחיות.
-          </div>
         ) : (
           <div style={{ marginTop: '5px' }}>
             <div className="flex justify-end pr-10 mb-[-25px]">

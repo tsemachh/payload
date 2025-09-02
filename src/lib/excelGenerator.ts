@@ -4,8 +4,8 @@ import fs from 'fs'
 import { logger } from '@/lib/logger'
 import { ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
-import { formatNumberWithLocale } from './utils'
 import { booleanToIcon, formatNormalDate } from './exportUtils'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export async function generateParticipationsExcel(
   data: any[],
