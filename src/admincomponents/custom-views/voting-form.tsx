@@ -15,7 +15,8 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
-import { formatDateTime } from '../../app/(frontend)/helpers/utils-data-table'
+import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export interface VoteData {
   fundsData: Array<{
@@ -251,10 +252,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <span className="text-right text-gray-600 dark:text-gray-300 text-base">
-                      {new Intl.NumberFormat('he-IL', {
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2,
-                      }).format(fund.quantity)}
+                      {formatNumberWithLocale(fund.quantity)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -273,10 +271,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   </TableCell>
                   <TableCell>
                     <Input
-                      value={new Intl.NumberFormat('he-IL', {
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2,
-                      }).format(fund.ownedQuantity)}
+                      value={formatNumberWithLocale(fund.ownedQuantity)}
                       onChange={(e) => updateFundData(index, 'ownedQuantity', e.target.value)}
                       className="text-right h-8 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white max-w-[100px]"
                       style={{

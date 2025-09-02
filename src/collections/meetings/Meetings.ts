@@ -933,15 +933,23 @@ export const Meetings: CollectionConfig = {
               hasMany: false,
               admin: {
                 hidden: false,
+                disableListColumn: true,
               },
               maxDepth: 1,
             },
             {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
+              label: 'שווי שוק',
               type: 'number',
               admin: {
                 readOnly: true,
+                components: {
+                  Cell: {
+                    path: '/admincomponents/cell/FormattedNumber',
+                    clientProps: { decimals: 0 },
+                  },
+                },
               },
             },
           ],

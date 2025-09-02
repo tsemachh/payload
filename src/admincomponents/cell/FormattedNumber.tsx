@@ -1,13 +1,14 @@
 'use client'
 import React from 'react'
 import type { DefaultCellComponentProps } from 'payload'
-// Utility to format numbers with thousands separators
-const formatNumber = (value: any) =>
-  typeof value === 'number' ? value.toLocaleString('en-US') : value
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
-const FormattedNumber: React.FC<DefaultCellComponentProps> = ({ cellData }) => {
+interface FormattedNumberProps extends DefaultCellComponentProps {
+  decimals?: number
+}
 
-  return <span>{formatNumber(cellData)}</span>
+const FormattedNumber: React.FC<FormattedNumberProps> = ({ cellData, decimals = 2 }) => {
+  return <span>{formatNumberWithLocale(cellData, decimals)}</span>
 }
 
 export default FormattedNumber

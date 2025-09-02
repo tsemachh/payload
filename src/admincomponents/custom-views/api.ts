@@ -71,7 +71,7 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
       company: { id: fundHold.company, name: companyIdToNameMap.get(fundHold?.company) },
       fund: { id: fundHold.fund, name: fundIdToNameMap.get(fundHold?.fund) },
       quantity: fundHold.quantity || 0,
-      ownedQuantity: fundHold.ownedQuantity || 0,
+      ownedQuantity: fundHold.ownedQuantity,
       verifiedHoldings: fundHold.verifiedHoldings,
     }
   })
