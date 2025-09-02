@@ -42,31 +42,6 @@ export function formatNormalDate(date: Date): string {
   return `${day}/${month}/${year}`
 }
 
-export function groupDataByMeeting(data: any[]): GroupedMeetingData[] {
-  const groupedData = new Map<string, GroupedMeetingData>()
-  data.forEach((item) => {
-    const key = item.stockNumber
-    if (!groupedData.has(key)) {
-      groupedData.set(key, {
-        stockNumber: item.stockNumber,
-        corporateName: item.corporateName,
-        stockName: item.stockName,
-        marketValue: item.marketValue,
-        percentageHolding: item.percentageHolding,
-        holdingValueInMillions: item.holdingValueInMillions,
-        meetingDate: item.meetingDate,
-        meetingType: item.meetingType,
-        companyName: item.currentCompany?.name || item.companyName,
-        agendas: item.agendas || [],
-      })
-    } else {
-      const existing = groupedData.get(key)!
-      existing.agendas = [...existing.agendas, ...(item.agendas || [])]
-    }
-  })
-  return Array.from(groupedData.values())
-}
-
 export function booleanToIcon(value: any): string {
   if (value === true) return 'V'
   if (value === false) return '-'
