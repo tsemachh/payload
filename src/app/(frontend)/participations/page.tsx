@@ -40,6 +40,7 @@ export default function Participations() {
 
   // Form state
   const [selectedFundIds, setSelectedFundIds] = useState<string[]>([])
+  const [selectedComIds, setSelectedComdIds] = useState<string[]>([])
   const [startDate, setStartDate] = useState<Date | undefined>()
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
@@ -107,15 +108,6 @@ export default function Participations() {
     })
     return selectedCompanyIds.size
   }, [appliedFilters.selectedFundIds, funds])
-
-  useEffect(() => {
-    if (companiesWithFunds.length > 0) {
-      const allFundIds = companiesWithFunds.flatMap((company) =>
-        company.funds.map((fund) => fund.id),
-      )
-      setSelectedFundIds(allFundIds)
-    }
-  }, [companiesWithFunds])
 
   useEffect(() => {
     if (rangeType && selectedFundIds.length > 0) {
@@ -225,7 +217,11 @@ export default function Participations() {
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
-    setSelectedFundIds(selected)
+    const matchedCompanies = companiesWithFunds.filter((company) => selected.includes(company.id))
+    const fundsIds = matchedCompanies.flatMap((company) => company.funds).map((fund) => fund.id)
+
+    setSelectedFundIds(fundsIds)
+    setSelectedComdIds(selected)
     setValidationErrors((prev) => prev.filter((err) => err !== 'companies'))
   }
 
@@ -367,23 +363,22 @@ export default function Participations() {
     }
   }
   const getCompanySelectSummary = () => {
-    if (selectedFundIds.length === 0) {
-      return 'בחר חברות/חשבונות'
+    if (selectedComIds.length === 0) {
+      return 'בחר חברה'
     }
-
     const totalFundIds = companiesWithFunds.flatMap((company) =>
       company.funds.map((fund) => fund.id),
     )
-
+    const totalCompaniesIds = companiesWithFunds.map((company) => company?.id)
     const allSelected =
-      selectedFundIds.length === totalFundIds.length &&
-      selectedFundIds.every((id) => totalFundIds.includes(id))
+      selectedComIds.length === totalCompaniesIds.length &&
+      selectedComIds.every((id) => totalCompaniesIds.includes(id))
 
     if (allSelected) {
-      return 'נבחרו הכל'
+      return 'נבחרו כל החברות'
     }
 
-    return `נבחרו ${selectedFundIds.length} חשבונות`
+    return `נבחרו ${selectedComIds.length} חברות`
   }
 
   const renderAgendaRowsCallback = useCallback(
@@ -430,13 +425,12 @@ export default function Participations() {
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
-                  selectedCompanies={selectedFundIds}
+                  selectedCompanies={selectedComIds}
                   onSelectionChangeAction={handleFundsSelectionChange}
                   className="w-full"
                   showSearch={false}
-                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
-                    company.funds.map((fund) => fund.id),
-                  )}
+                  allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
+                  showFunds={false}
                 />
               </SelectContent>
             </Select>
