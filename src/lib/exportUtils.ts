@@ -44,6 +44,5 @@ export function formatNormalDate(date: Date): string {
 
 export function booleanToIcon(value: any): string {
   if (value === true) return 'V'
-  if (value === false) return '-'
   return ''
 }
