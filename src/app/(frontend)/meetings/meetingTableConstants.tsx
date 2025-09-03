@@ -68,7 +68,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+    render: (row) => <BooleanIcon iconType={row.stockTradable} showX={false}/>,
     minWidth: 40,
   },
   {
@@ -216,7 +216,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
+    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} showX={false} />,
     minWidth: 70,
   },
   {
@@ -225,7 +225,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} showX={false} />,
     minWidth: 70,
   },
   {
@@ -234,7 +234,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
+    render: (row) => <BooleanIcon iconType={row.committeeInitiated} showX={false}/>,
     minWidth: 70,
   },
 ]
