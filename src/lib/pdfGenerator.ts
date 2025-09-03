@@ -83,7 +83,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
   text = fixBiDiText(text)
 
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
     return text
   }
 
@@ -97,7 +97,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
 function prepareText(text: string): string {
   text = fixBiDiText(text)
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '-' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
     return text
   }
   return text.split('').reverse().join('')
@@ -417,7 +417,6 @@ export async function generateParticipationsPDF(
             if (content === 'V') {
               thisTextColor = [0, 153, 0]
             }
-
             return {
               content: prepareText(content),
               styles: { fillColor: rowBg, textColor: thisTextColor },

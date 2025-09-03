@@ -940,7 +940,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                           key={`company-${company.id}-reported`}
                                           className="py-2 px-3 whitespace-nowrap text-center"
                                         >
-                                          <BooleanIcon iconType={companyVote?.reported} />
+                                          <BooleanIcon iconType={companyVote?.reported} showX={false}/>
                                         </TableCell>
                                       )
                                     }

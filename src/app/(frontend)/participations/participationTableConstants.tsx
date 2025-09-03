@@ -280,39 +280,42 @@ export const renderAgendaRows = (
                         : agenda.meetingResults || null
                       break
                     case 'simpleMajority':
-                      content = <BooleanIcon iconType={!agenda.privilegedMajority} />
+                    content =
+                      agenda.privilegedMajority === false && agenda.vPercentSpecial
+                        ? `${agenda.vPercentSpecial}%`
+                        : <BooleanIcon iconType={!agenda.privilegedMajority} showX={false}/>       
                       break
                     case 'specialMajority':
                       content =
                         agenda.privilegedMajority === true && agenda.vPercentSpecial
                           ? `${agenda.vPercentSpecial}%`
-                          : null
+                          : <BooleanIcon iconType={agenda.privilegedMajority} showX={false}/>
                       break
                     case 'policyCompliance':
                       content =
                         agenda.policyCompliance !== undefined &&
                         agenda.policyCompliance !== null ? (
-                          <BooleanIcon iconType={agenda.policyCompliance} />
+                          <BooleanIcon iconType={agenda.policyCompliance} showX={false}/>
                         ) : null
                       break
                     case 'conflictOfInterest':
                       content =
                         agenda.conflictOfInterest !== undefined &&
                         agenda.conflictOfInterest !== null ? (
-                          <BooleanIcon iconType={agenda.conflictOfInterest} />
+                          <BooleanIcon iconType={agenda.conflictOfInterest} showX={false}/>
                         ) : null
                       break
                     case 'relatedParty':
                       content =
                         agenda.relatedParty !== undefined && agenda.relatedParty !== null ? (
-                          <BooleanIcon iconType={agenda.relatedParty} />
+                          <BooleanIcon iconType={agenda.relatedParty} showX={false}/>
                         ) : null
                       break
                     case 'personalInterest':
                       content =
                         agenda.personalInterest !== undefined &&
                         agenda.personalInterest !== null ? (
-                          <BooleanIcon iconType={agenda.personalInterest} />
+                          <BooleanIcon iconType={agenda.personalInterest} showX={false}/>
                         ) : null
                       break
                     default:
