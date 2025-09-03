@@ -17,7 +17,7 @@ const MARGIN = 15
 const MIN_ROW_HEIGHT = 15
 
 const FONT_SIZE_HEADER = 7
-const FONT_SIZE_SUBHEADER = 6
+const FONT_SIZE_SUBHEADER = 7
 const FONT_SIZE_DATA = 7
 const PADDING = 5
 const HEADER_HEIGHT = 60
@@ -26,29 +26,29 @@ async function initializePDFDocument(): Promise<{
   alefRegularBytes: Buffer
   alefBoldBytes: Buffer
   logoBytes: Buffer
+  dejavuSansBytes: Buffer
 }> {
   const cwd = process.cwd() as unknown as string
   logger.warn(`Current working directory: ${cwd}`)
 
   const regularFontPath = path.join('public', 'fonts', 'ariel.ttf')
   const boldFontPath = path.join('public', 'fonts', 'ariel-bold.ttf')
+  const dejavuSansPath = path.join('public', 'fonts', 'dejavu-sans.book.ttf')
   const logoPath = path.join('public', 'emda_logo.png')
 
-  logger.warn(`Regular font path: ${regularFontPath}, exists: ${fs.existsSync(regularFontPath)}`)
-  logger.warn(`Bold font path: ${boldFontPath}, exists: ${fs.existsSync(boldFontPath)}`)
-  logger.warn(`Logo path: ${logoPath}, exists: ${fs.existsSync(logoPath)}`)
 
-  if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath) || !fs.existsSync(logoPath)) {
+  if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath) || !fs.existsSync(logoPath) || !fs.existsSync(dejavuSansPath)) {
     throw new Error(
       'Could not find font files or logo in public directory. Please check the paths and file permissions.',
     )
   }
 
-  let alefRegularBytes, alefBoldBytes, logoBytes
+  let alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes
 
   try {
     alefRegularBytes = fs.readFileSync(regularFontPath)
     alefBoldBytes = fs.readFileSync(boldFontPath)
+    dejavuSansBytes = fs.readFileSync(dejavuSansPath)
     logoBytes = fs.readFileSync(logoPath)
     logger.warn('Successfully loaded assets from public directory')
   } catch (error: any) {
@@ -56,7 +56,7 @@ async function initializePDFDocument(): Promise<{
     throw new Error('Failed to read font files or logo from public directory')
   }
 
-  return { alefRegularBytes, alefBoldBytes, logoBytes }
+  return { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes }
 }
 
 function fixBiDiText(text: any): string {
@@ -83,7 +83,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
   text = fixBiDiText(text)
 
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === '✓' || text === '') {
     return text
   }
 
@@ -97,7 +97,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
 function prepareText(text: string): string {
   text = fixBiDiText(text)
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === '✓' || text === '') {
     return text
   }
   return text.split('').reverse().join('')
@@ -138,7 +138,7 @@ export async function generateParticipationsPDF(
   options: ExportOptions,
 ): Promise<Uint8Array> {
   try {
-    const { alefRegularBytes, alefBoldBytes, logoBytes } = await initializePDFDocument()
+    const { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes } = await initializePDFDocument()
 
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -148,12 +148,16 @@ export async function generateParticipationsPDF(
 
     const alefRegularBase64 = alefRegularBytes.toString('base64')
     const alefBoldBase64 = alefBoldBytes.toString('base64')
+    const dejavuSansBase64 = dejavuSansBytes.toString('base64')
     const logoBase64 = logoBytes.toString('base64')
 
+    // הוספת הפונטים ל-PDF
     doc.addFileToVFS('Ariel.ttf', alefRegularBase64)
     doc.addFont('Ariel.ttf', 'Ariel', 'normal')
     doc.addFileToVFS('Ariel-bold.ttf', alefBoldBase64)
     doc.addFont('Ariel-bold.ttf', 'Ariel', 'bold')
+    doc.addFileToVFS('DejaVuSans.ttf', dejavuSansBase64)
+    doc.addFont('DejaVuSans.ttf', 'DejaVuSans', 'normal')
     doc.setFont('Ariel', 'normal')
 
     const imageProps = doc.getImageProperties(logoBase64)
@@ -414,12 +418,22 @@ export async function generateParticipationsPDF(
         const row = [
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
-            if (content === 'V') {
+            let fontToUse = 'Ariel'
+            let fontStyle = 'normal'
+            
+            if (content === '✓') {
               thisTextColor = [0, 153, 0]
+              fontToUse = 'DejaVuSans'
             }
+            
             return {
               content: prepareText(content),
-              styles: { fillColor: rowBg, textColor: thisTextColor },
+              styles: { 
+                fillColor: rowBg, 
+                textColor: thisTextColor,
+                font: fontToUse,
+                fontStyle: fontStyle
+              },
             }
           }),
           // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות

@@ -28,9 +28,6 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
-    // if (options.selectedCompaniesCount > 1) {
-    // baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
-    // }
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
       SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
@@ -95,7 +92,7 @@ export async function generateParticipationsExcel(
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'EDEDED' }, 
+      fgColor: { argb: 'EDEDED' },
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
@@ -182,17 +179,23 @@ export async function generateParticipationsExcel(
               booleanToIcon(agenda.personalInterest),
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-              excelRow.eachCell((cell, colNumber) => {
-                cell.font = { name: 'Arial', size: 10 }
-                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
-                if (colNumber === agendaTextIndex) {
-                  cell.alignment = {
-                    horizontal: alignment,
-                    vertical: 'middle',
-                    wrapText: true,
-                  }
+            excelRow.eachCell((cell, colNumber) => {
+              let fontToUse = 'Arial'
+              let fontColor = { argb: 'FF333333' } // Default text color
+              if (agendaData[colNumber - 10] === '✓') {
+                fontToUse = 'DejaVu Sans'
+                fontColor = { argb: 'FF009900' } // Green color for ✓
+              }
+              cell.font = { name: fontToUse, size: 10, color: fontColor }
+              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              if (colNumber === agendaTextIndex) {
+                cell.alignment = {
+                  horizontal: alignment,
+                  vertical: 'middle',
+                  wrapText: true,
                 }
-              })
+              }
+            })
             excelRow.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -248,7 +251,7 @@ export async function generateParticipationsExcel(
             bottom: whiteBorder,
             right: whiteBorder,
           }
-          cell.font = { name: 'Arial', size: 10 } // Ensure  font for all data cells
+          cell.font = { name: cell.font?.name || 'Arial', size: 10, color: cell.font?.color }
         }
       }
     }
