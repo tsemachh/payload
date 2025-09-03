@@ -5,9 +5,12 @@ import { PromisePool } from '@/utils/promisePool'
 import { Stock } from '@/payload-types'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import { getCompanyIdFromFundId, initFundIdToCompanyIdMap } from '@/utils/utils'
+import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
+  // Array to collect meeting IDs with no holdings
+  const meetingsWithNoHoldings: string[] = []
 
   try {
     console.log('Starting meeting holdings migration process...')
@@ -67,6 +70,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             if (!result.recordset || result.recordset.length === 0) {
               console.log(`No holdings found for meeting ${meetingSeq}, skipping...`)
+              meetingsWithNoHoldings.push(meetingId)
               skippedCount++
               return
             }
@@ -186,6 +190,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Wait for all promises to complete
     await promisePool.waitForAll()
+
+    // Process meetings with no holdings
+    if (meetingsWithNoHoldings.length > 0) {
+      console.log(`\nProcessing ${meetingsWithNoHoldings.length} meetings with no holdings...`)
+      await processCompaniesMeetings(req, meetingsWithNoHoldings)
+      console.log(`Completed processing meetings with no holdings.`)
+    }
 
     console.log('\nMigration Summary:')
     console.log(`Total meetings processed: ${meetings.docs.length}`)

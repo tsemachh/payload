@@ -51,6 +51,7 @@ export interface VoteData {
   votes: Array<{
     topicIndex: number
     voteDecision: string
+    voteReason?: string
     hasConflictOfInterest: boolean
     isRelatedParty: boolean
     isInvestmentCommittee: boolean
@@ -351,23 +352,30 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                   >
                     {item.text}
                   </div>
-                  <div className="flex items-center gap-6 flex-shrink-0">
-                    {formData.displayVotingRecommendation &&
-                      item.recommendation?.votingRecommendation && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            המלצה:
-                          </span>
-                          <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                            {item.recommendation.votingRecommendation}
-                          </span>
-                        </div>
-                      )}
-                    <div
-                      className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision)}`}
-                    >
-                      {voteData.votes[index].voteDecision || '----'}
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-6 flex-shrink-0">
+                      {formData.displayVotingRecommendation &&
+                        item.recommendation?.votingRecommendation && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              המלצה:
+                            </span>
+                            <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                              {item.recommendation.votingRecommendation}
+                            </span>
+                          </div>
+                        )}
+                      <div
+                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision)}`}
+                      >
+                        {voteItem.voteDecision || '----'}
+                      </div>
                     </div>
+                    {voteItem.voteReason && (
+                      <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
+                        {voteItem.voteReason}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div

@@ -510,16 +510,6 @@ export const Meetings: CollectionConfig = {
                   label: 'מצב',
                   type: 'select',
                   required: true,
-                  hooks: {
-                    beforeChange: [
-                      ({ siblingData, value }) => {
-                        if (value === 'on-hold') {
-                          siblingData.meetingDate = null
-                        }
-                        return value
-                      },
-                    ],
-                  },
                   interfaceName: 'MeetingState',
                   validate: validateMeetingState,
                   options: meetingStateOptions,
