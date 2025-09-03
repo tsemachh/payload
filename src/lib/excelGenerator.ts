@@ -95,7 +95,7 @@ export async function generateParticipationsExcel(
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFF9FAFA' }, // Light gray
+      fgColor: { argb: 'EDEDED' }, 
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
@@ -196,7 +196,7 @@ export async function generateParticipationsExcel(
             excelRow.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'FFE7F0FF' },
+              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF' },
             }
           },
         )
@@ -234,7 +234,7 @@ export async function generateParticipationsExcel(
     const lastRow = worksheet.rowCount
     const lastCol = headers.length
     const whiteBorder = { style: 'thin' as const, color: { argb: 'FFFFFFFF' } }
-    const grayBorder = { style: 'thin' as const, color: { argb: 'FFD3D3D3' } } // Light gray for header
+    const grayBorder = { style: 'thin' as const, color: { argb: 'EDEDED' } } // Light gray for header
 
     for (let row = headerRowOffset; row <= lastRow; row++) {
       for (let col = 1; col <= lastCol; col++) {

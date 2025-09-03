@@ -145,7 +145,6 @@ export async function generateParticipationsPDF(
       unit: 'pt',
       format: 'a4',
     })
-    console.log('-------data', data)
 
     const alefRegularBase64 = alefRegularBytes.toString('base64')
     const alefBoldBase64 = alefBoldBytes.toString('base64')
@@ -385,7 +384,7 @@ export async function generateParticipationsPDF(
 
       // הוספת שורות הסעיפים
       meeting.agendas.forEach((agenda: any, i: number) => {
-        const rowBg = i % 2 === 0 ? [245, 250, 255] : [231, 240, 255]
+        const rowBg = i % 2 === 0 ? [245, 250, 255] : [230, 237, 255]
         const defaultTextColor = [51, 51, 51]
 
         // Language detection for agenda text
@@ -466,7 +465,7 @@ export async function generateParticipationsPDF(
         font: 'Ariel',
         fontStyle: 'bold',
         fontSize: FONT_SIZE_HEADER,
-        fillColor: [249, 250, 250],
+        fillColor: [245, 245, 245],
         textColor: [26, 26, 26],
         cellPadding: PADDING,
         valign: 'middle',
