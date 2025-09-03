@@ -903,16 +903,9 @@ export function DataTableServer<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
-                    {renderExpandedRowContent && expandedRowIds.has(row[idField] as string) && (
-                      <TableRow className="">
-                        <TableCell
-                          colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
-                          className="p-0"
-                        >
-                          {renderExpandedRowContent(row)}
-                        </TableCell>
-                      </TableRow>
-                    )}
+                    {renderExpandedRowContent &&
+                      expandedRowIds.has(row[idField] as string) &&
+                      renderExpandedRowContent(row)}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (

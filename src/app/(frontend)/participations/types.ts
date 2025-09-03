@@ -5,7 +5,6 @@ export interface ParticipationAgendaType {
   text: string
   advisoryRecommendation: string // "המלצת גורם מייעץ"
   vote: string // "הצבעה"
-  // New fields from agenda data
   simpleMajority: boolean
   privilegedMajority: boolean // Assuming this is "רוב מיוחד"
   policyCompliance: boolean
@@ -13,6 +12,8 @@ export interface ParticipationAgendaType {
   relatedParty: boolean
   personalInterest: boolean
   meetingResults: string // "תוצאות האסיפה" for agenda item
+  recommendation: any
+  result: string
 }
 
 // Update ParticipationTableDataType - remove fields that are now in ParticipationAgendaType
