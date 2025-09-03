@@ -212,7 +212,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
           break
         case 'on-hold':
-          row.mdate = null
+          // Preserving original meeting date for on-hold meetings
           break
       }
 
