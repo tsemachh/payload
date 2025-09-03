@@ -130,9 +130,6 @@ export async function generateParticipationsExcel(
         meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
         meeting.meetingType,
       ]
-      if (options.selectedCompaniesCount > 1) {
-        meetingData.push(meeting.companyName || '')
-      }
 
       if (meeting.agendas.length === 0) {
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
@@ -150,7 +147,7 @@ export async function generateParticipationsExcel(
         meeting.agendas.forEach(
           (
             agenda: {
-              text: any
+              text: string
               recommendation: { votingRecommendation: any }
               vote: any
               result: string | number
@@ -166,6 +163,8 @@ export async function generateParticipationsExcel(
           ) => {
             const isFirstAgenda = index === 0
             const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
+            const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+            const alignment = isEnglish ? 'left' : 'right'
             const agendaData = [
               numberedAgendaText,
               agenda.recommendation?.votingRecommendation || '',
@@ -183,16 +182,17 @@ export async function generateParticipationsExcel(
               booleanToIcon(agenda.personalInterest),
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-            excelRow.eachCell((cell) => {
-              cell.font = { name: 'Arial', size: 10 }
-              cell.alignment = { horizontal: 'right', vertical: 'middle' }
-            })
-            excelRow.getCell(agendaTextIndex).alignment = {
-              horizontal: 'right',
-              vertical: 'middle',
-              wrapText: true,
-            }
-
+              excelRow.eachCell((cell, colNumber) => {
+                cell.font = { name: 'Arial', size: 10 }
+                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+                if (colNumber === agendaTextIndex) {
+                  cell.alignment = {
+                    horizontal: alignment,
+                    vertical: 'middle',
+                    wrapText: true,
+                  }
+                }
+              })
             excelRow.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -222,7 +222,7 @@ export async function generateParticipationsExcel(
       let newWidth = Math.max(maxLength + 2, 10)
 
       if (i + 1 === agendaTextIndex) {
-        newWidth *= 1.2
+        newWidth *= 1.5
         column.width = Math.min(newWidth, 70)
       } else {
         newWidth *= 0.75

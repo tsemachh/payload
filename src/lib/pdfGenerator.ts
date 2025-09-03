@@ -235,7 +235,7 @@ export async function generateParticipationsPDF(
           cellPadding: { top: PADDING + 13 },
         },
       },
-      { content: '', rowSpan: 1 }, // עמודה 16 - מספר סעיף
+      { content: '', rowSpan: 2 }, // עמודה 16 - מספר סעיף
     ]
 
     const headerRow2 = [
@@ -388,7 +388,16 @@ export async function generateParticipationsPDF(
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [231, 240, 255]
         const defaultTextColor = [51, 51, 51]
 
-        // ארגון נתוני הסעיף בסדר הנכון (עמודות 0-8, 16)
+        // Language detection for agenda text
+        const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+        const alignment = isEnglish ? 'left' : 'right'
+
+        // Prepare agenda text with line breaks and reverse only if not English
+        const preparedAgendaText = isEnglish
+          ? (agenda.text || '').replace(/[\r\n]+/g, ' ').trim()
+          : prepareTextWithLineBreaks(agenda.text || '', doc, 950) // Reverse for non-English
+
+        // Organize agenda data for columns 0-8
         const agendaData = [
           booleanToIcon(agenda.personalInterest), // עמודה 0
           booleanToIcon(agenda.relatedParty), // עמודה 1
@@ -417,12 +426,12 @@ export async function generateParticipationsPDF(
           }),
           // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
           {
-            content: prepareTextWithLineBreaks(agenda.text || '', doc, 1000),
+            content: preparedAgendaText,
             colSpan: 9, // מיזוג עמודות 9-16
             styles: {
               fillColor: rowBg,
               textColor: defaultTextColor,
-              halign: 'right',
+              halign: alignment,
               valign: 'top',
             },
           },
