@@ -40,6 +40,7 @@ export default function Participations() {
 
   // Form state
   const [selectedFundIds, setSelectedFundIds] = useState<string[]>([])
+  const [selectedComIds, setSelectedComdIds] = useState<string[]>([])
   const [startDate, setStartDate] = useState<Date | undefined>()
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [rangeType, setRangeType] = useState<DateRangeType | undefined>(undefined)
@@ -60,8 +61,6 @@ export default function Participations() {
   // Server-side state (managed by endpoint)
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortField, setSortField] = useState<string>('meetingDate')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
@@ -111,15 +110,6 @@ export default function Participations() {
   }, [appliedFilters.selectedFundIds, funds])
 
   useEffect(() => {
-    if (companiesWithFunds.length > 0) {
-      const allFundIds = companiesWithFunds.flatMap((company) =>
-        company.funds.map((fund) => fund.id),
-      )
-      setSelectedFundIds(allFundIds)
-    }
-  }, [companiesWithFunds])
-
-  useEffect(() => {
     if (rangeType && selectedFundIds.length > 0) {
       setAppliedFilters((prev) => ({
         ...prev,
@@ -143,8 +133,6 @@ export default function Participations() {
       status: 'published',
       page: currentPage.toString(),
       pageSize: pageSize.toString(),
-      sortField: sortField,
-      sortDirection: sortDirection,
     })
 
     if (appliedFilters.selectedFundIds.length > 0) {
@@ -175,15 +163,7 @@ export default function Participations() {
       params.append('dualMeetingsOnly', 'true')
     }
     return `/api/votes/by-companies?${params.toString()}`
-  }, [
-    selectedCompanyIds,
-    appliedFilters,
-    currentPage,
-    pageSize,
-    sortField,
-    sortDirection,
-    searchTerm,
-  ])
+  }, [selectedCompanyIds, appliedFilters, currentPage, pageSize, searchTerm])
 
   const {
     data: votesResponse,
@@ -197,13 +177,6 @@ export default function Participations() {
   // Server-side handlers
   const handleSearch = (term: string) => {
     setSearchTerm(term)
-    setCurrentPage(1)
-  }
-
-  const handleSort = (field: string) => {
-    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
-    setSortField(field)
-    setSortDirection(newDirection)
     setCurrentPage(1)
   }
 
@@ -244,7 +217,11 @@ export default function Participations() {
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
-    setSelectedFundIds(selected)
+    const matchedCompanies = companiesWithFunds.filter((company) => selected.includes(company.id))
+    const fundsIds = matchedCompanies.flatMap((company) => company.funds).map((fund) => fund.id)
+
+    setSelectedFundIds(fundsIds)
+    setSelectedComdIds(selected)
     setValidationErrors((prev) => prev.filter((err) => err !== 'companies'))
   }
 
@@ -386,23 +363,22 @@ export default function Participations() {
     }
   }
   const getCompanySelectSummary = () => {
-    if (selectedFundIds.length === 0) {
-      return 'בחר חברות/חשבונות'
+    if (selectedComIds.length === 0) {
+      return 'בחר חברה'
     }
-
     const totalFundIds = companiesWithFunds.flatMap((company) =>
       company.funds.map((fund) => fund.id),
     )
-
+    const totalCompaniesIds = companiesWithFunds.map((company) => company?.id)
     const allSelected =
-      selectedFundIds.length === totalFundIds.length &&
-      selectedFundIds.every((id) => totalFundIds.includes(id))
+      selectedComIds.length === totalCompaniesIds.length &&
+      selectedComIds.every((id) => totalCompaniesIds.includes(id))
 
     if (allSelected) {
-      return 'נבחרו הכל'
+      return 'נבחרו כל החברות'
     }
 
-    return `נבחרו ${selectedFundIds.length} חשבונות`
+    return `נבחרו ${selectedComIds.length} חברות`
   }
 
   const renderAgendaRowsCallback = useCallback(
@@ -449,13 +425,12 @@ export default function Participations() {
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
-                  selectedCompanies={selectedFundIds}
+                  selectedCompanies={selectedComIds}
                   onSelectionChangeAction={handleFundsSelectionChange}
                   className="w-full"
                   showSearch={false}
-                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
-                    company.funds.map((fund) => fund.id),
-                  )}
+                  allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
+                  showFunds={false}
                 />
               </SelectContent>
             </Select>
@@ -512,10 +487,6 @@ export default function Participations() {
         ) : votesError ? (
           <div className="text-center text-red-500 mt-4">
             שגיאה בטעינת נתונים: {votesError.message}
-          </div>
-        ) : participationData.length === 0 ? (
-          <div className="text-center text-muted-foreground mt-4">
-            אין נתונים זמינים עבור הבחירות הנוכחיות.
           </div>
         ) : (
           <div style={{ marginTop: '5px' }}>
@@ -587,7 +558,6 @@ export default function Participations() {
               idField="id"
               defaultSortField={'meetingDate'}
               defaultVisibleColumns={participationColumns.map((col) => col.key)}
-              defaultSortDirection={'desc'}
               tableId="participations-table"
               searchOption={true}
               filterOption={false}
@@ -605,7 +575,6 @@ export default function Participations() {
                 onPageSizeChange: handlePageSizeChange,
                 pageSizeOptions: [10, 25, 50, 100, 500, 1000],
               }}
-              onServerSort={handleSort}
               onServerSearch={handleSearch}
               initialSearchTerm={searchTerm}
               searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
