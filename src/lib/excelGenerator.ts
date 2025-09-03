@@ -171,7 +171,7 @@ export async function generateParticipationsExcel(
                 : agenda.meetingResults || '',
               booleanToIcon(!agenda.privilegedMajority),
               agenda.privilegedMajority && agenda.vPercentSpecial
-                ? `${agenda.vPercentSpecial}`
+                ? `${formatNumberWithLocale(agenda.vPercentSpecial)}%`
                 : '',
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),

@@ -197,9 +197,9 @@ export async function generateParticipationsPDF(
       '6': { halign: 'center', cellWidth: 50 },
       '7': { halign: 'center', cellWidth: 50 },
       '8': { halign: 'center', cellWidth: 50 },
-      '9': { halign: 'center', cellWidth: 40 }, // סוג אסיפה
-      '10': { halign: 'center', cellWidth: 45 }, // מועד אסיפה
-      '11': { halign: 'center', cellWidth: 40 }, // שווי החזקה
+      '9': { halign: 'center', cellWidth: 45 }, // סוג אסיפה
+      '10': { halign: 'center', cellWidth: 48 }, // מועד אסיפה
+      '11': { halign: 'center', cellWidth: 43 }, // שווי החזקה
       '12': { halign: 'center', cellWidth: 35 }, // החזקה באחוזים
       '13': { halign: 'center', cellWidth: 35 }, // שווי שוק
       '14': { halign: 'center', cellWidth: 45 }, // שם נייר
@@ -406,7 +406,7 @@ export async function generateParticipationsPDF(
           booleanToIcon(agenda.relatedParty), // עמודה 1
           booleanToIcon(agenda.conflictOfInterest), // עמודה 2
           booleanToIcon(agenda.policyCompliance), // עמודה 3
-          agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // עמודה 4
+          agenda.privilegedMajority && agenda.vPercentSpecial ? `${formatNumberWithLocale(agenda.vPercentSpecial)}%` : '', // עמודה 4
           booleanToIcon(!agenda.privilegedMajority), // עמודה 5
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
