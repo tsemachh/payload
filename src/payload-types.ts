@@ -75,6 +75,7 @@ export type TopicVote =
   | {
       topicIndex: number;
       voteDecision?: VoteDecision;
+      voteReason?: string | null;
       hasConflictOfInterest?: boolean | null;
       isRelatedParty?: boolean | null;
       isInvestmentCommittee?: boolean | null;
@@ -1674,6 +1675,7 @@ export interface VotesSelect<T extends boolean = true> {
 export interface TopicVoteSelect<T extends boolean = true> {
   topicIndex?: T;
   voteDecision?: T;
+  voteReason?: T;
   hasConflictOfInterest?: T;
   isRelatedParty?: T;
   isInvestmentCommittee?: T;
