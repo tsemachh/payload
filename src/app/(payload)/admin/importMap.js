@@ -28,6 +28,7 @@ import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../co
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
+import { default as default_ce88691c04773935ab8c3f34f9cbaf09 } from '../../../admincomponents/BulkResetPasswordMenuItem'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
@@ -85,6 +86,7 @@ export const importMap = {
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,
+  "/admincomponents/BulkResetPasswordMenuItem#default": default_ce88691c04773935ab8c3f34f9cbaf09,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
