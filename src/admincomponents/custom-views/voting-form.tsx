@@ -87,7 +87,6 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
 
   useEffect(() => {
     if (!voteData) return
-    console.log('!!voteData', voteData)
     setFormData(voteData)
   }, [voteData])
 
