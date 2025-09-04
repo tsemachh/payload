@@ -284,6 +284,7 @@ export default function HoldingsFeedView() {
                 allCompaniesIds={user?.funds?.map((company) =>
                   typeof company === 'string' ? company : company.id,
                 )}
+                showFunds={true}
               />
             </div>
 
