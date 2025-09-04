@@ -19,6 +19,7 @@ export type UserVote = {
   topicIndex: number
   choice: VoteDecision
   questions: AgendaQuestionsType
+  voteReason?: string
 }
 
 export type AgendaQuestionsType = {

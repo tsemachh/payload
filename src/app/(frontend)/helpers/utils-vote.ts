@@ -50,6 +50,7 @@ export const createDefaultAgendaQuestions = (
       relatedPartyExplanation: '',
       personalInterestExplanation: '',
     },
+    voteReason: '',
     privilegedMajority: agenda.privilegedMajority,
     isRemovedFromAgenda: agenda.isRemovedFromAgenda,
   }))

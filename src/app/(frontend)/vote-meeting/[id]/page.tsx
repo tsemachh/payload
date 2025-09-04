@@ -19,6 +19,7 @@ import VoteDetails from '../components/VoteDetails'
 import VoteCompanySelector from '../components/VoteCompanySelector'
 import GeneralQuestions from '../components/GeneralQuestions'
 import AgendaQuestions from '../components/AgendaQuestions'
+import VoteReason from '../components/VoteReason'
 import {
   Dialog,
   DialogContent,
@@ -334,6 +335,7 @@ export default function VotingForm() {
             relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
             personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
+          voteReason: voteItem?.voteReason || '',
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
         }
@@ -372,6 +374,7 @@ export default function VotingForm() {
             relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
             personalInterestExplanation: voteItem?.personalInterestExplanation || '',
           },
+          voteReason: voteItem?.voteReason || '',
           privilegedMajority: agenda.privilegedMajority,
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
         }
@@ -732,6 +735,19 @@ export default function VotingForm() {
     saveDraftData('הצבעה', updatedVotingData)
   }
 
+  const handleVoteReasonChange = (topicIndex: number, voteReason: string) => {
+    const newUserVotes = votingData.userVotes.map((vote) =>
+      vote.topicIndex === topicIndex ? { ...vote, voteReason } : vote,
+    )
+    const updatedVotingData = {
+      ...votingData,
+      userVotes: newUserVotes,
+    }
+
+    setVotingData(updatedVotingData)
+    saveDraftData('נימוק הצבעה', updatedVotingData)
+  }
+
   const handleNotesChange = () => {
     if (votingData.voterNotes !== localVoterNotes) {
       const updatedVotingData = { ...votingData, voterNotes: localVoterNotes }
@@ -988,6 +1004,12 @@ export default function VotingForm() {
                                   <SelectItem value="----">----</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <VoteReason
+                                voteReason={userVote?.voteReason}
+                                topicIndex={item.topicIndex}
+                                onVoteReasonChange={handleVoteReasonChange}
+                                isReadOnly={isReadOnly}
+                              />
                             </div>
                           )}
 

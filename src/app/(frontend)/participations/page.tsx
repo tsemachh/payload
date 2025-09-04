@@ -61,8 +61,6 @@ export default function Participations() {
   // Server-side state (managed by endpoint)
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortField, setSortField] = useState<string>('meetingDate')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [voteAgainstRecommendation, setVoteAgainstRecommendation] = useState(false)
   const [voteDifferentFromResult, setVoteDifferentFromResult] = useState(false)
@@ -135,8 +133,6 @@ export default function Participations() {
       status: 'published',
       page: currentPage.toString(),
       pageSize: pageSize.toString(),
-      sortField: sortField,
-      sortDirection: sortDirection,
     })
 
     if (appliedFilters.selectedFundIds.length > 0) {
@@ -167,15 +163,7 @@ export default function Participations() {
       params.append('dualMeetingsOnly', 'true')
     }
     return `/api/votes/by-companies?${params.toString()}`
-  }, [
-    selectedCompanyIds,
-    appliedFilters,
-    currentPage,
-    pageSize,
-    sortField,
-    sortDirection,
-    searchTerm,
-  ])
+  }, [selectedCompanyIds, appliedFilters, currentPage, pageSize, searchTerm])
 
   const {
     data: votesResponse,
@@ -189,13 +177,6 @@ export default function Participations() {
   // Server-side handlers
   const handleSearch = (term: string) => {
     setSearchTerm(term)
-    setCurrentPage(1)
-  }
-
-  const handleSort = (field: string) => {
-    const newDirection = field === sortField ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'asc'
-    setSortField(field)
-    setSortDirection(newDirection)
     setCurrentPage(1)
   }
 
@@ -507,10 +488,6 @@ export default function Participations() {
           <div className="text-center text-red-500 mt-4">
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
-        ) : participationData.length === 0 ? (
-          <div className="text-center text-muted-foreground mt-4">
-            אין נתונים זמינים עבור הבחירות הנוכחיות.
-          </div>
         ) : (
           <div style={{ marginTop: '5px' }}>
             <div className="flex justify-end pr-10 mb-[-25px]">
@@ -581,7 +558,6 @@ export default function Participations() {
               idField="id"
               defaultSortField={'meetingDate'}
               defaultVisibleColumns={participationColumns.map((col) => col.key)}
-              defaultSortDirection={'desc'}
               tableId="participations-table"
               searchOption={true}
               filterOption={false}
@@ -599,7 +575,6 @@ export default function Participations() {
                 onPageSizeChange: handlePageSizeChange,
                 pageSizeOptions: [10, 25, 50, 100, 500, 1000],
               }}
-              onServerSort={handleSort}
               onServerSearch={handleSearch}
               initialSearchTerm={searchTerm}
               searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."

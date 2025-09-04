@@ -1,13 +1,9 @@
 'use client'
 
-import {
-  BooleanIcon,
-  MultipleDocumentsIcon,
-  SingleDocumentIcon,
-} from '@/components/ui/icons'
+import { BooleanIcon, MultipleDocumentsIcon, SingleDocumentIcon } from '@/components/ui/icons'
 import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import { Column, MeetingTableDataType } from '../types/meetings'
-import { MeetingState, StockOrigin, Vote } from '@/payload-types'
+import { MeetingState, StockOrigin } from '@/payload-types'
 import { meetingStateMap, stockOriginMap } from '../helpers/maps'
 import { AgendaTooltipWithNavigation } from './AgendaTooltipWithNavigation'
 import {
@@ -16,8 +12,8 @@ import {
   stockOriginOptions,
   stockTypeOptions,
 } from './filtersConst'
-import { useCompaniesContext } from '../context/companiesContext'
 import { VotingStatusCell } from '../components/VotingStatusCell'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export const meetingColumns: Column<MeetingTableDataType>[] = [
   {
@@ -72,7 +68,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.stockTradable} />,
+    render: (row) => <BooleanIcon iconType={row.stockTradable} showX={false}/>,
     minWidth: 40,
   },
   {
@@ -91,9 +87,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'number',
     render: (row) => {
       const marketValue = parseNumber(row.marketValue)
-      return new Intl.NumberFormat('he-IL', {
-        maximumFractionDigits: 0,
-      }).format(marketValue / 1_000_000)
+      return formatNumberWithLocale(marketValue / 1_000_000, 0, 'he-IL')
     },
     minWidth: 140,
   },
@@ -140,18 +134,14 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'ערך נקוב ליום קובע',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(row.nominalValue),
+      formatNumberWithLocale(row.nominalValue, 0, 'he-IL'),
     minWidth: 90,
   },
   {
     key: 'percentageHolding',
     header: 'החזקה (%)',
     type: 'number',
-    render: (row) =>
-      new Intl.NumberFormat('he-IL', {
-        minimumFractionDigits: 4,
-        maximumFractionDigits: 4,
-      }).format(row.percentageHolding),
+    render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
     minWidth: 100,
   },
   {
@@ -159,9 +149,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     header: 'שווי החזקה  (מיליוני ₪)',
     type: 'number',
     render: (row) =>
-      new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(
-        row.holdingValueInMillions,
-      ),
+      formatNumberWithLocale(row.holdingValueInMillions, 0, 'he-IL'),
     minWidth: 90,
   },
   { key: 'reference', header: 'אסמכתא', type: 'string', minWidth: 120 },
@@ -228,7 +216,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} />,
+    render: (row) => <BooleanIcon iconType={row.resultsConfirmationStatus} showX={false} />,
     minWidth: 70,
   },
   {
@@ -237,7 +225,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} showX={false} />,
     minWidth: 70,
   },
   {
@@ -246,7 +234,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.committeeInitiated} />,
+    render: (row) => <BooleanIcon iconType={row.committeeInitiated} showX={false}/>,
     minWidth: 70,
   },
 ]

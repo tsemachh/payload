@@ -10,7 +10,7 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
-import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
+import { buildFundToParentMap, calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
 import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
@@ -40,6 +40,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   committeeInitiated: true,
   fundsWithHolding: true,
   stockValue: true,
+  stockMarketValue: true,
   invitationLink: true,
   votes: true,
 }
@@ -585,22 +586,8 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
   // Create a map between fundId and parent company structure from the companyTree
   const fundToParentMap = new Map<string, TreeCompanyType>()
 
-  // Function to traverse the tree and build the map
-  const buildFundToParentMap = (companies: TreeCompanyType[]) => {
-    for (const company of companies) {
-      if (company.subCompanies && company.subCompanies.length > 0) {
-        // For each subCompany, set the current company as parent
-        for (const subCompany of company.subCompanies) {
-          fundToParentMap.set(subCompany.id, company)
-        }
-        // Recursively process subCompanies
-        buildFundToParentMap(company.subCompanies)
-      }
-    }
-  }
-
   // Build the map
-  buildFundToParentMap(companyTree)
+  buildFundToParentMap(companyTree, fundToParentMap)
 
   // Process results
   const meetingData = await Promise.all(

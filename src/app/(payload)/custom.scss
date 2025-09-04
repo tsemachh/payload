@@ -211,6 +211,11 @@ form[action*="/api/research-documents"] .file-field__filename {
       width: 270px;
     }
   }
+  .collection-list.collection-list--users {
+    .popup-button-list__button {
+      display: block;
+    }
+  }
 
   .collection-list{
     .query-preset-bar {

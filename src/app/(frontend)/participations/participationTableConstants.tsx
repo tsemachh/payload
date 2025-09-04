@@ -1,6 +1,6 @@
 'use client'
 
-import type React from 'react'
+import React from 'react'
 import { cn } from '@/lib/utils'
 import {
   calculatePrecedingColumnsWidth,
@@ -10,11 +10,10 @@ import {
 import type { Column } from '../types/meetings'
 import { BooleanIcon } from '@/components/ui/icons'
 import type { ParticipationAgendaType, ParticipationTableDataType } from './types'
-import { Checkbox } from '@/components/ui/checkbox'
 import { resultMapping } from '@/lib/exportTypes'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { TableCell, TableRow } from '../components/ui/table'
 import { v4 as uuidv4 } from 'uuid'
-
 export const createParticipationColumns = (
   selectedCompaniesCount: number,
   allSelected: boolean,
@@ -103,9 +102,7 @@ export const createParticipationColumns = (
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
-        return new Intl.NumberFormat('he-IL', {
-          maximumFractionDigits: 0,
-        }).format(marketValue / 1_000_000)
+        return formatNumberWithLocale(marketValue / 1_000_000, 0, 'he-IL')
       },
       minWidth: 80,
     },
@@ -113,22 +110,14 @@ export const createParticipationColumns = (
       key: 'percentageHolding',
       header: 'החזקה (%)',
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 4,
-          maximumFractionDigits: 4,
-        }).format(row.percentageHolding),
+      render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
       minWidth: 80,
     },
     {
       key: 'holdingValueInMillions',
       header: `שווי החזקה (מ' ₪)`,
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(row.holdingValueInMillions),
+      render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 2, 'he-IL'),
       minWidth: 80,
     },
     {
@@ -169,7 +158,7 @@ export const createParticipationColumns = (
       minWidth: 60,
     },
     {
-      key: 'specialMajority',
+      key: 'privilegedMajority',
       header: 'רוב מיוחד (%)',
       type: 'string',
       render: (row) => null,
@@ -242,6 +231,10 @@ export const renderAgendaRows = (
                     if (column.key === 'recommendation') {
                       value = agenda.recommendation.votingRecommendation
                     }
+                    if (column.key === 'privilegedMajority') {
+                      const original = agenda.privilegedMajority
+                      agenda.simpleMajority = typeof original === 'boolean' ? !original : original
+                    }
                     if (column.key === 'meetingResults') {
                       value = agenda.result
                         ? resultMapping[agenda.result] || agenda.result
@@ -269,12 +262,40 @@ export const renderAgendaRows = (
                     <div className="relative h-40px flex items-center gap-2 -mr-[100px]">
                       <span className="text-muted-foreground font-medium">{agendaIndex + 1}.</span>
 
-                      <span
-                        className="truncate inline-block flex-shrink-0"
-                        style={{ maxWidth: '800px' }}
-                      >
-                        {agenda.text}
-                      </span>
+                      {(() => {
+                        const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+                        return (
+                          <div
+                            className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
+                            dir={isEnglish ? 'ltr' : 'rtl'}
+                          >
+                            <div
+                              className="truncate cursor-pointer hover:text-blue-600 inline-block flex-shrink-0"
+                              style={{ maxWidth: '800px' }}
+                            >
+                              {agenda.text}
+                            </div>
+
+                            {/* tooltip */}
+                            <div
+                              className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              style={{
+                                [isEnglish ? 'left' : 'right']: 0,
+                              }}
+                            >
+                              {agenda.text}
+                              <div
+                                className={cn(
+                                  'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
+                                  isEnglish
+                                    ? 'left-4 border-b-gray-900'
+                                    : 'right-4 border-b-gray-900',
+                                )}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
                 </TableCell>

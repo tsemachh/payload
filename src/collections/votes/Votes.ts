@@ -291,6 +291,7 @@ export const Votes: CollectionConfig = {
                       defaultValue: '----',
                       admin: { width: '15%', className: 'voteDecision' },
                     },
+                    { name: 'voteReason', label: 'נימוק הצבעה', type: 'text' },
                     {
                       name: 'hasConflictOfInterest',
                       label: 'ניגוד עניינים',
