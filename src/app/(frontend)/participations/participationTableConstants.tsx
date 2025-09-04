@@ -192,7 +192,7 @@ export const createParticipationColumns = (
       key: 'personalInterest',
       header: 'עניין אישי',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 50,
     },
@@ -217,9 +217,7 @@ export const renderAgendaRows = (
 
           {/* Map through visible columns and show relevant fund data */}
           {participationColumns.slice(1).map((column, columnIndex) => {
-            console.log('column', column)
             if (column.key in agenda) {
-              console.log('yes', agenda)
               return (
                 <TableCell
                   key={`fund-${uuidv4()}-${String(column.key)}`}
@@ -232,8 +230,18 @@ export const renderAgendaRows = (
                       value = agenda.recommendation.votingRecommendation
                     }
                     if (column.key === 'privilegedMajority') {
-                      const original = agenda.privilegedMajority
-                      agenda.simpleMajority = typeof original === 'boolean' ? !original : original
+                      return agenda.privilegedMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
+                      )
+                    }
+                    if (column.key === 'simpleMajority') {
+                      return agenda.simpleMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
+                      )
                     }
                     if (column.key === 'meetingResults') {
                       value = agenda.result
@@ -247,7 +255,7 @@ export const renderAgendaRows = (
                       return value
                     }
                     if (typeof value === 'boolean') {
-                      return <BooleanIcon iconType={value} />
+                      return <BooleanIcon iconType={value} showX={false} />
                     }
                   })()}
                 </TableCell>

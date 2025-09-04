@@ -10,7 +10,11 @@ import {
 } from '@/app/(frontend)/types/meetings'
 import { TreeCompanyType } from '@/types/companies'
 import { findSubCompanyNameById, getIdOfRelationField } from '@/utils/utils'
-import { buildFundToParentMap, calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
+import {
+  buildFundToParentMap,
+  calculateHoldingValues,
+  findRelevantCompanyIds,
+} from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
 import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
@@ -555,7 +559,7 @@ function processAgendaItems(agenda: MeetingAgenda | undefined) {
         recommendationExplanation: item.recommendation?.reasonText || '',
       },
       result: item.result || '',
-      vPercentSpecial: typeof item.vPercentSpecial === 'number' ? item.vPercentSpecial : null,
+      percentResult: typeof item.percentResult === 'number' ? item.percentResult : null,
     }
   })
 }

@@ -402,7 +402,7 @@ export async function generateParticipationsPDF(
           booleanToIcon(agenda.relatedParty), // עמודה 1
           booleanToIcon(agenda.conflictOfInterest), // עמודה 2
           booleanToIcon(agenda.policyCompliance), // עמודה 3
-          agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '', // עמודה 4
+          agenda.privilegedMajority && agenda.percentResult ? `${agenda.percentResult}` : '', // עמודה 4
           booleanToIcon(!agenda.privilegedMajority), // עמודה 5
           agenda.result
             ? resultMapping[agenda.result] || agenda.result

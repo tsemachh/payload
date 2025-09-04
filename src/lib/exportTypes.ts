@@ -36,7 +36,7 @@ export interface GroupedMeetingData {
     relatedParty?: string
     personalInterest?: string
     privilegedMajority?: boolean
-    vPercentSpecial?: number
+    percentResult?: number
   }[]
 }
 

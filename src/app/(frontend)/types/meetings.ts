@@ -70,7 +70,7 @@ export type AgendasType = {
   vote?: string
   result?: string
   simpleMajority?: boolean
-  vPercentSpecial: number | null
+  percentResult: number | null
 }
 export type recommendationType = {
   votingRecommendation: string

@@ -14,7 +14,7 @@ export interface ParticipationAgendaType {
   meetingResults: string // "תוצאות האסיפה" for agenda item
   recommendation: any
   result: string
-  vPercentSpecial: number
+  percentResult: number
 }
 
 // Update ParticipationTableDataType - remove fields that are now in ParticipationAgendaType

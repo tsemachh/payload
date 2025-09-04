@@ -44,7 +44,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
           topicType: currentItem.topicType,
           majorityType: currentItem.majorityType,
           recommendation: currentItem.recommendation,
-          vPercentSpecial: currentItem.vPercentSpecial,
+          percentResult: currentItem.percentResult,
           result: currentItem.result,
           // Keep existing exceptional recommendations
           exceptionalRecommendation: existingItem.exceptionalRecommendation,

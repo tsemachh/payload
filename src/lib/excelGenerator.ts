@@ -95,7 +95,7 @@ export async function generateParticipationsExcel(
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'EDEDED' }, 
+      fgColor: { argb: 'EDEDED' },
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
@@ -153,7 +153,7 @@ export async function generateParticipationsExcel(
               result: string | number
               meetingResults: any
               privilegedMajority: any
-              vPercentSpecial: any
+              percentResult: any
               policyCompliance: any
               conflictOfInterest: any
               relatedParty: any
@@ -173,26 +173,24 @@ export async function generateParticipationsExcel(
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
               booleanToIcon(!agenda.privilegedMajority),
-              agenda.privilegedMajority && agenda.vPercentSpecial
-                ? `${agenda.vPercentSpecial}`
-                : '',
+              agenda.privilegedMajority && agenda.percentResult ? `${agenda.percentResult}` : '',
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),
               booleanToIcon(agenda.relatedParty),
               booleanToIcon(agenda.personalInterest),
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-              excelRow.eachCell((cell, colNumber) => {
-                cell.font = { name: 'Arial', size: 10 }
-                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
-                if (colNumber === agendaTextIndex) {
-                  cell.alignment = {
-                    horizontal: alignment,
-                    vertical: 'middle',
-                    wrapText: true,
-                  }
+            excelRow.eachCell((cell, colNumber) => {
+              cell.font = { name: 'Arial', size: 10 }
+              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              if (colNumber === agendaTextIndex) {
+                cell.alignment = {
+                  horizontal: alignment,
+                  vertical: 'middle',
+                  wrapText: true,
                 }
-              })
+              }
+            })
             excelRow.fill = {
               type: 'pattern',
               pattern: 'solid',
