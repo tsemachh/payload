@@ -100,7 +100,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       row.stockID = `${row.stockID}`
       // Since each stockID should only appear once in the stocks table,
       // we're just storing the row directly rather than creating an array
-      stockIdToStockRecord.set(row.stockID, row)
+      if (!stockIdToStockRecord.get(row.stockID)) stockIdToStockRecord.set(row.stockID, row)
     })
 
     console.log(`Grouped stocks into ${stockIdToStockRecord.size} unique stockIDs`)

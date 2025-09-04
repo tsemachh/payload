@@ -490,12 +490,15 @@ export const Meetings: CollectionConfig = {
                   hooks: {
                     beforeChange: [
                       async ({ data, req }) => {
-                        let stockName = ''
-                        if (typeof data?.stock == 'string') {
-                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
-                          stockName = stock.fullName
+                        if (data?.state == 'scheduled' || !data?.fullName) {
+                          let stockName = ''
+                          if (typeof data?.stock == 'string') {
+                            const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
+                            stockName = stock.fullName
+                          }
+                          return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
                         }
-                        return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
+                        return data.fullName
                       },
                     ],
                   },
