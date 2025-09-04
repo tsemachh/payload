@@ -56,14 +56,6 @@ export default function HoldingsFeedView() {
       setIsReadOnly(!hasWritePermissions)
     }
   }, [user])
-  useEffect(() => {
-    if (user?.funds) {
-      const tmpSelectedCompanies = user?.funds.map((company) =>
-        typeof company === 'string' ? company : company.id,
-      )
-      setSelectedCompanies(tmpSelectedCompanies)
-    }
-  }, [user?.funds])
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
