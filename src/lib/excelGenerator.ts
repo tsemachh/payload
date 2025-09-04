@@ -150,7 +150,8 @@ export async function generateParticipationsExcel(
               vote: any
               result: string | number
               meetingResults: any
-              privilegedMajority: any
+              privilegedMajority: boolean
+              simpleMajority:boolean
               percentResult: any
               policyCompliance: any
               conflictOfInterest: any
@@ -170,10 +171,12 @@ export async function generateParticipationsExcel(
               agenda.result
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
-              booleanToIcon(!agenda.privilegedMajority),
+              agenda.simpleMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                :  booleanToIcon(agenda.simpleMajority),                    
               agenda.privilegedMajority && agenda.percentResult
                 ? `${formatNumberWithLocale(agenda.percentResult)}%`
-                : '',
+                :  booleanToIcon(agenda.privilegedMajority), 
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),
               booleanToIcon(agenda.relatedParty),

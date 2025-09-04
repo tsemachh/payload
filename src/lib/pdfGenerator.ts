@@ -409,8 +409,10 @@ export async function generateParticipationsPDF(
           booleanToIcon(agenda.policyCompliance), // עמודה 3
           agenda.privilegedMajority && agenda.percentResult
             ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            : '', // עמודה 4
-          booleanToIcon(!agenda.privilegedMajority), // עמודה 5
+            :  booleanToIcon(agenda.privilegedMajority), 
+            agenda.simpleMajority && agenda.percentResult
+            ? `${formatNumberWithLocale(agenda.percentResult)}%`
+            :  booleanToIcon(agenda.simpleMajority),// עמודה 4
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
             : agenda.meetingResults || '', // עמודה 6
