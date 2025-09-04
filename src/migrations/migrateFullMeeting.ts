@@ -133,21 +133,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
       const topicType = row.vtype === 0 ? 'reporting' : 'decision' // Set to reporting if result is 3 (דיון), otherwise decision
       const isDecision = topicType === 'decision'
+      const majorityType = isDecision ? (row.vtype === 2 ? 'privileged' : 'regular') : null // Assuming vtype=2 means privileged majority
       const agendaItem = {
         id: row.id,
         text: row.topic,
         topicType: topicType,
-        majorityType: isDecision ? (row.vtype === 2 ? 'privileged' : 'regular') : null, // Assuming vtype=2 means privileged majority
+        majorityType: majorityType,
         result: row.result
           ? row.result === -2 || row.result === 4
             ? '0'
             : row.result.toString()
           : '0', // Map -2 and 4 to 0, otherwise use string representation
-        vpercent: isDecision ? row.vpercent : null,
-        vPercentSpecial: isDecision
-          ? row.vPercentSpecial === -1
-            ? null
-            : row.vPercentSpecial
+        percentResult: isDecision
+          ? majorityType == 'regular'
+            ? row.vpercent
+            : row.vPercentSpecial === -1
+              ? null
+              : row.vPercentSpecial
           : null,
         dealChanged: row.dealChanged === 1, // Convert to boolean
         recommendation: {
@@ -266,8 +268,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 topicType: item.topicType,
                 majorityType: item.majorityType,
                 result: item.result,
-                vpercent: item.vpercent,
-                vPercentSpecial: item.vPercentSpecial === -1 ? null : item.vPercentSpecial,
+                percentResult: item.percentResult,
                 dealChanged: item.dealChanged,
                 recommendation: item.recommendation,
                 isRemovedFromAgenda: item.isRemovedFromAgenda,

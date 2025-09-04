@@ -149,8 +149,9 @@ export async function generateParticipationsExcel(
               vote: any
               result: string | number
               meetingResults: any
-              privilegedMajority: any
-              vPercentSpecial: any
+              privilegedMajority: boolean
+              simpleMajority:boolean
+              percentResult: any
               policyCompliance: any
               conflictOfInterest: any
               relatedParty: any
@@ -169,10 +170,12 @@ export async function generateParticipationsExcel(
               agenda.result
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
-              booleanToIcon(!agenda.privilegedMajority),
-              agenda.privilegedMajority && agenda.vPercentSpecial
-                ? `${formatNumberWithLocale(agenda.vPercentSpecial)}%`
-                : '',
+              agenda.simpleMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                :  booleanToIcon(agenda.simpleMajority),                    
+              agenda.privilegedMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                :  booleanToIcon(agenda.privilegedMajority), 
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),
               booleanToIcon(agenda.relatedParty),
@@ -180,13 +183,7 @@ export async function generateParticipationsExcel(
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
             excelRow.eachCell((cell, colNumber) => {
-              let fontToUse = 'Arial'
-              let fontColor = { argb: 'FF333333' } // Default text color
-              if (agendaData[colNumber - 10] === '✓') {
-                fontToUse = 'DejaVu Sans'
-                fontColor = { argb: 'FF009900' } // Green color for ✓
-              }
-              cell.font = { name: fontToUse, size: 10, color: fontColor }
+              cell.font = { name: 'Arial', size: 10 }
               cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
               if (colNumber === agendaTextIndex) {
                 cell.alignment = {

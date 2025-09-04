@@ -114,7 +114,10 @@ async function processVotesData(
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
           privilegedMajority:
             agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged',
-          vPercentSpecial: agendaItem.vPercentSpecial || null,
+          simpleMajority: !(
+            agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged'
+          ),
+          percentResult: agendaItem.percentResult || null,
         }
       }),
     }

@@ -790,7 +790,7 @@ export const Meetings: CollectionConfig = {
                       ],
                     },
                     {
-                      name: 'vPercentSpecial',
+                      name: 'percentResult',
                       label: 'תוצאה באחוזים',
                       type: 'number',
                       admin: {
@@ -798,9 +798,7 @@ export const Meetings: CollectionConfig = {
 
                         step: 0.01,
                         condition: (_, siblingData) =>
-                          siblingData.topicType === 'decision' &&
-                          siblingData.majorityType === 'privileged' &&
-                          siblingData.result,
+                          siblingData.topicType === 'decision' && siblingData.result,
                       },
                     },
                   ],

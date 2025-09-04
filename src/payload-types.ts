@@ -124,7 +124,7 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       result?: ('0' | '1' | '2' | '3') | null;
-      vPercentSpecial?: number | null;
+      percentResult?: number | null;
       id?: string | null;
     }[]
   | null;
@@ -1369,7 +1369,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
         reasonText?: T;
       };
   result?: T;
-  vPercentSpecial?: T;
+  percentResult?: T;
   id?: T;
 }
 /**

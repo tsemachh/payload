@@ -36,8 +36,12 @@ async function initializePDFDocument(): Promise<{
   const dejavuSansPath = path.join('public', 'fonts', 'dejavu-sans.book.ttf')
   const logoPath = path.join('public', 'emda_logo.png')
 
-
-  if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath) || !fs.existsSync(logoPath) || !fs.existsSync(dejavuSansPath)) {
+  if (
+    !fs.existsSync(regularFontPath) ||
+    !fs.existsSync(boldFontPath) ||
+    !fs.existsSync(logoPath) ||
+    !fs.existsSync(dejavuSansPath)
+  ) {
     throw new Error(
       'Could not find font files or logo in public directory. Please check the paths and file permissions.',
     )
@@ -138,7 +142,8 @@ export async function generateParticipationsPDF(
   options: ExportOptions,
 ): Promise<Uint8Array> {
   try {
-    const { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes } = await initializePDFDocument()
+    const { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes } =
+      await initializePDFDocument()
 
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -385,54 +390,51 @@ export async function generateParticipationsPDF(
         { content: '', styles: { fillColor: companyHeaderBgColor } },
       ]
       body.push(companyRow)
-
       // הוספת שורות הסעיפים
       meeting.agendas.forEach((agenda: any, i: number) => {
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [230, 237, 255]
         const defaultTextColor = [51, 51, 51]
-
         // Language detection for agenda text
         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
         const alignment = isEnglish ? 'left' : 'right'
-
         // Prepare agenda text with line breaks and reverse only if not English
         const preparedAgendaText = isEnglish
           ? (agenda.text || '').replace(/[\r\n]+/g, ' ').trim()
           : prepareTextWithLineBreaks(agenda.text || '', doc, 950) // Reverse for non-English
-
         // Organize agenda data for columns 0-8
         const agendaData = [
           booleanToIcon(agenda.personalInterest), // עמודה 0
           booleanToIcon(agenda.relatedParty), // עמודה 1
           booleanToIcon(agenda.conflictOfInterest), // עמודה 2
           booleanToIcon(agenda.policyCompliance), // עמודה 3
-          agenda.privilegedMajority && agenda.vPercentSpecial ? `${formatNumberWithLocale(agenda.vPercentSpecial)}%` : '', // עמודה 4
-          booleanToIcon(!agenda.privilegedMajority), // עמודה 5
+          agenda.privilegedMajority && agenda.percentResult
+            ? `${formatNumberWithLocale(agenda.percentResult)}%`
+            :  booleanToIcon(agenda.privilegedMajority), 
+            agenda.simpleMajority && agenda.percentResult
+            ? `${formatNumberWithLocale(agenda.percentResult)}%`
+            :  booleanToIcon(agenda.simpleMajority),// עמודה 4
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
             : agenda.meetingResults || '', // עמודה 6
           agenda.vote || '', // עמודה 7
           agenda.recommendation?.votingRecommendation || '', // עמודה 8
         ]
-
         const row = [
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
             let fontToUse = 'Ariel'
             let fontStyle = 'normal'
-            
             if (content === '✓') {
               thisTextColor = [0, 153, 0]
               fontToUse = 'DejaVuSans'
             }
-            
             return {
               content: prepareText(content),
-              styles: { 
-                fillColor: rowBg, 
+              styles: {
+                fillColor: rowBg,
                 textColor: thisTextColor,
                 font: fontToUse,
-                fontStyle: fontStyle
+                fontStyle: fontStyle,
               },
             }
           }),
@@ -453,10 +455,8 @@ export async function generateParticipationsPDF(
             styles: { fillColor: rowBg, textColor: defaultTextColor, halign: 'center' },
           },
         ]
-
         body.push(row)
       })
-
       // הוספת שורה ריקה להפרדה בין חברות
       body.push([
         {
@@ -466,7 +466,6 @@ export async function generateParticipationsPDF(
         },
       ])
     }
-
     autoTable(doc, {
       head,
       body,
@@ -498,7 +497,6 @@ export async function generateParticipationsPDF(
         addHeader(doc, options, logoBase64, logoWidth, logoHeight)
       },
     })
-
     const totalPages = doc.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
@@ -509,7 +507,6 @@ export async function generateParticipationsPDF(
       const footerWidth = doc.getTextWidth(footerText)
       doc.text(footerText, (PAGE_WIDTH - footerWidth) / 2, PAGE_HEIGHT - MARGIN)
     }
-
     return new Uint8Array(doc.output('arraybuffer'))
   } catch (error) {
     console.trace(error)
