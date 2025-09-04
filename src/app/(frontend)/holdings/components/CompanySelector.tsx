@@ -17,6 +17,7 @@ interface CompanyTreeSelectorProps {
   showSearch?: boolean
   allCompaniesIds?: string[]
   showFunds?: boolean
+  showBorder?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -27,6 +28,7 @@ export function CompanyTreeSelector({
   showSearch = true,
   allCompaniesIds = [],
   showFunds = true,
+  showBorder = false,
 }: CompanyTreeSelectorProps) {
   const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
@@ -354,7 +356,7 @@ export function CompanyTreeSelector({
       return (
         <div key={`${node.id}-${index}-${level}`} className="w-full">
           <div
-            className="flex items-center justify-between w-full px-2 py-1.5 hover:bg-gray-100 rounded-sm cursor-pointer"
+            className="flex items-center justify-between w-full px-2 py-1.5 hover:bg-muted rounded-sm cursor-pointer"
             onClick={() =>
               isNodeLeaf
                 ? handleChildSelect(node.id, selectionState !== 'checked')
@@ -420,7 +422,7 @@ export function CompanyTreeSelector({
 
   return (
     <div className={className} dir="rtl">
-      <div className="relative border rounded-md p-2">
+      <div className={`relative ${showBorder && 'border-muted'} rounded-md p-2`}>
         {showSearch && (
           <div className="mb-2">
             <input
@@ -445,7 +447,7 @@ export function CompanyTreeSelector({
             <>
               {!searchQuery && allCompaniesIds.length > 0 && (
                 <div
-                  className="flex items-center w-full px-2 py-1.5 hover:bg-gray-100 rounded-sm cursor-pointer font-medium mb-1"
+                  className="flex items-center w-full px-2 py-1.5 hover:bg-muted rounded-sm cursor-pointer font-medium mb-1"
                   onClick={handleSelectAllToggle}
                 >
                   <div className="flex items-center min-w-0">
