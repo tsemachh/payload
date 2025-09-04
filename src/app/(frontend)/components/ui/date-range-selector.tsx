@@ -132,7 +132,7 @@ export function DateRangeSelector({ onRangeChangeAction, className }: DateRangeS
 
   const OptionItem = ({ option, label }: { option: DateRangeOption; label: string }) => (
     <div
-      className="flex items-center justify-between cursor-pointer hover:bg-gray-100 p-1 rounded text-right"
+      className="flex items-center justify-between cursor-pointer hover:bg-muted p-1 rounded text-right"
       onClick={() => handleOptionSelect(option)}
     >
       <span>{label}</span>
@@ -168,53 +168,74 @@ export function DateRangeSelector({ onRangeChangeAction, className }: DateRangeS
             <OptionItem option="custom" label="טווח מותאם אישית" />
           </div>
 
-          {selectedRangeOption === 'custom' && (
-            <div className="mt-6 pt-4 border-t">
-              <h3 className="font-bold mb-2 text-center">טווח מותאם אישית</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-end gap-2">
-                  <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
-                    מתאריך
-                  </label>
+      {selectedRangeOption === "custom" && (
+        <div className="mt-6 pt-6 border-t border-border/50 w-[320px]">
+          <div className="space-y-4">
+            <div className="space-y-4 p-4 rounded-lg">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-muted-foreground text-right">
+                  מתאריך
+                </label>
+                <div className="w-full max-w-[180px]">
                   <DateSelector
                     date={tempStartDate}
                     onDateChangeAction={setTempStartDate}
-                    className="flex-1"
+                    className="w-full"
                     filterDate={(date) => {
-                      const now = new Date()
-                      now.setHours(0, 0, 0, 0)
-                      const day = date.getDay()
-                      return day === 5 || day === 6 || date > now
+                      const now = new Date();
+                      now.setHours(0, 0, 0, 0);
+                      const day = date.getDay();
+                      return day === 5 || day === 6 || date > now;
                     }}
                   />
                 </div>
-                <div className="flex items-center justify-end gap-2">
-                  <label className="text-sm font-medium whitespace-nowrap min-w-[60px] text-end">
-                    עד
-                  </label>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-muted-foreground text-right">
+                  עד תאריך
+                </label>
+                <div className="w-full max-w-[180px]">
                   <DateSelector
                     date={tempEndDate}
                     onDateChangeAction={setTempEndDate}
-                    className="flex-1"
+                    className="w-full"
                     filterDate={(date) => {
-                      const now = new Date()
-                      now.setHours(0, 0, 0, 0)
-                      const day = date.getDay()
-                      return day === 5 || day === 6 || date > now
+                      const now = new Date();
+                      now.setHours(0, 0, 0, 0);
+                      const day = date.getDay();
+                      return day === 5 || day === 6 || date > now;
                     }}
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button onClick={handleApplyCustomRange} disabled={!tempStartDate || !tempEndDate}>
-                  החל
-                </Button>
-                <Button variant="outline" onClick={handleCancelCustomRange}>
-                  ביטול
-                </Button>
-              </div>
             </div>
-          )}
+
+            <div className="flex justify-end gap-3 ml-[40px] mt-[-10px]">
+              <Button
+                variant="outline"
+                onClick={handleCancelCustomRange}
+                className="px-6 text-sm bg-transparent"
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={handleApplyCustomRange}
+                disabled={!tempStartDate || !tempEndDate}
+                className="px-6 text-sm bg-primary hover:bg-primary/90 disabled:opacity-50"
+              >
+                החל טווח
+              </Button>
+            </div>
+
+            {(!tempStartDate || !tempEndDate) && (
+              <p className="text-xs text-muted-foreground text-right mt-2">
+                יש לבחור תאריך התחלה וסיום
+              </p>
+            )}
+          </div>
+        </div>
+      )}
         </div>
       </PopoverContent>
     </Popover>
