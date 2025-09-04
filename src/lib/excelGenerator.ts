@@ -28,9 +28,6 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
-    // if (options.selectedCompaniesCount > 1) {
-    // baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
-    // }
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
       SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
@@ -95,6 +92,7 @@ export async function generateParticipationsExcel(
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
+      fgColor: { argb: 'EDEDED' },
       fgColor: { argb: 'EDEDED' },
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
@@ -173,7 +171,9 @@ export async function generateParticipationsExcel(
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
               booleanToIcon(!agenda.privilegedMajority),
-              agenda.privilegedMajority && agenda.percentResult ? `${agenda.percentResult}` : '',
+              agenda.privilegedMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                : '',
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),
               booleanToIcon(agenda.relatedParty),
@@ -246,7 +246,7 @@ export async function generateParticipationsExcel(
             bottom: whiteBorder,
             right: whiteBorder,
           }
-          cell.font = { name: 'Arial', size: 10 } // Ensure  font for all data cells
+          cell.font = { name: cell.font?.name || 'Arial', size: 10, color: cell.font?.color }
         }
       }
     }

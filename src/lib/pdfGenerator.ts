@@ -17,7 +17,7 @@ const MARGIN = 15
 const MIN_ROW_HEIGHT = 15
 
 const FONT_SIZE_HEADER = 7
-const FONT_SIZE_SUBHEADER = 6
+const FONT_SIZE_SUBHEADER = 7
 const FONT_SIZE_DATA = 7
 const PADDING = 5
 const HEADER_HEIGHT = 60
@@ -26,29 +26,33 @@ async function initializePDFDocument(): Promise<{
   alefRegularBytes: Buffer
   alefBoldBytes: Buffer
   logoBytes: Buffer
+  dejavuSansBytes: Buffer
 }> {
   const cwd = process.cwd() as unknown as string
   logger.warn(`Current working directory: ${cwd}`)
 
   const regularFontPath = path.join('public', 'fonts', 'ariel.ttf')
   const boldFontPath = path.join('public', 'fonts', 'ariel-bold.ttf')
+  const dejavuSansPath = path.join('public', 'fonts', 'dejavu-sans.book.ttf')
   const logoPath = path.join('public', 'emda_logo.png')
 
-  logger.warn(`Regular font path: ${regularFontPath}, exists: ${fs.existsSync(regularFontPath)}`)
-  logger.warn(`Bold font path: ${boldFontPath}, exists: ${fs.existsSync(boldFontPath)}`)
-  logger.warn(`Logo path: ${logoPath}, exists: ${fs.existsSync(logoPath)}`)
-
-  if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath) || !fs.existsSync(logoPath)) {
+  if (
+    !fs.existsSync(regularFontPath) ||
+    !fs.existsSync(boldFontPath) ||
+    !fs.existsSync(logoPath) ||
+    !fs.existsSync(dejavuSansPath)
+  ) {
     throw new Error(
       'Could not find font files or logo in public directory. Please check the paths and file permissions.',
     )
   }
 
-  let alefRegularBytes, alefBoldBytes, logoBytes
+  let alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes
 
   try {
     alefRegularBytes = fs.readFileSync(regularFontPath)
     alefBoldBytes = fs.readFileSync(boldFontPath)
+    dejavuSansBytes = fs.readFileSync(dejavuSansPath)
     logoBytes = fs.readFileSync(logoPath)
     logger.warn('Successfully loaded assets from public directory')
   } catch (error: any) {
@@ -56,7 +60,7 @@ async function initializePDFDocument(): Promise<{
     throw new Error('Failed to read font files or logo from public directory')
   }
 
-  return { alefRegularBytes, alefBoldBytes, logoBytes }
+  return { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes }
 }
 
 function fixBiDiText(text: any): string {
@@ -83,7 +87,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
   text = fixBiDiText(text)
 
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === '✓' || text === '') {
     return text
   }
 
@@ -97,7 +101,7 @@ function prepareTextWithLineBreaks(text: string, doc: jsPDF, maxWidth: number): 
 
 function prepareText(text: string): string {
   text = fixBiDiText(text)
-  if (/^[0-9.,/%-]+$/.test(text) || text === 'V' || text === '') {
+  if (/^[0-9.,/%-]+$/.test(text) || text === '✓' || text === '') {
     return text
   }
   return text.split('').reverse().join('')
@@ -138,7 +142,8 @@ export async function generateParticipationsPDF(
   options: ExportOptions,
 ): Promise<Uint8Array> {
   try {
-    const { alefRegularBytes, alefBoldBytes, logoBytes } = await initializePDFDocument()
+    const { alefRegularBytes, alefBoldBytes, logoBytes, dejavuSansBytes } =
+      await initializePDFDocument()
 
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -148,12 +153,16 @@ export async function generateParticipationsPDF(
 
     const alefRegularBase64 = alefRegularBytes.toString('base64')
     const alefBoldBase64 = alefBoldBytes.toString('base64')
+    const dejavuSansBase64 = dejavuSansBytes.toString('base64')
     const logoBase64 = logoBytes.toString('base64')
 
+    // הוספת הפונטים ל-PDF
     doc.addFileToVFS('Ariel.ttf', alefRegularBase64)
     doc.addFont('Ariel.ttf', 'Ariel', 'normal')
     doc.addFileToVFS('Ariel-bold.ttf', alefBoldBase64)
     doc.addFont('Ariel-bold.ttf', 'Ariel', 'bold')
+    doc.addFileToVFS('DejaVuSans.ttf', dejavuSansBase64)
+    doc.addFont('DejaVuSans.ttf', 'DejaVuSans', 'normal')
     doc.setFont('Ariel', 'normal')
 
     const imageProps = doc.getImageProperties(logoBase64)
@@ -193,9 +202,9 @@ export async function generateParticipationsPDF(
       '6': { halign: 'center', cellWidth: 50 },
       '7': { halign: 'center', cellWidth: 50 },
       '8': { halign: 'center', cellWidth: 50 },
-      '9': { halign: 'center', cellWidth: 40 }, // סוג אסיפה
-      '10': { halign: 'center', cellWidth: 45 }, // מועד אסיפה
-      '11': { halign: 'center', cellWidth: 40 }, // שווי החזקה
+      '9': { halign: 'center', cellWidth: 45 }, // סוג אסיפה
+      '10': { halign: 'center', cellWidth: 48 }, // מועד אסיפה
+      '11': { halign: 'center', cellWidth: 43 }, // שווי החזקה
       '12': { halign: 'center', cellWidth: 35 }, // החזקה באחוזים
       '13': { halign: 'center', cellWidth: 35 }, // שווי שוק
       '14': { halign: 'center', cellWidth: 45 }, // שם נייר
@@ -381,28 +390,26 @@ export async function generateParticipationsPDF(
         { content: '', styles: { fillColor: companyHeaderBgColor } },
       ]
       body.push(companyRow)
-
       // הוספת שורות הסעיפים
       meeting.agendas.forEach((agenda: any, i: number) => {
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [230, 237, 255]
         const defaultTextColor = [51, 51, 51]
-
         // Language detection for agenda text
         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
         const alignment = isEnglish ? 'left' : 'right'
-
         // Prepare agenda text with line breaks and reverse only if not English
         const preparedAgendaText = isEnglish
           ? (agenda.text || '').replace(/[\r\n]+/g, ' ').trim()
           : prepareTextWithLineBreaks(agenda.text || '', doc, 950) // Reverse for non-English
-
         // Organize agenda data for columns 0-8
         const agendaData = [
           booleanToIcon(agenda.personalInterest), // עמודה 0
           booleanToIcon(agenda.relatedParty), // עמודה 1
           booleanToIcon(agenda.conflictOfInterest), // עמודה 2
           booleanToIcon(agenda.policyCompliance), // עמודה 3
-          agenda.privilegedMajority && agenda.percentResult ? `${agenda.percentResult}` : '', // עמודה 4
+          agenda.privilegedMajority && agenda.percentResult
+            ? `${formatNumberWithLocale(agenda.percentResult)}%`
+            : '', // עמודה 4
           booleanToIcon(!agenda.privilegedMajority), // עמודה 5
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
@@ -410,16 +417,23 @@ export async function generateParticipationsPDF(
           agenda.vote || '', // עמודה 7
           agenda.recommendation?.votingRecommendation || '', // עמודה 8
         ]
-
         const row = [
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
-            if (content === 'V') {
+            let fontToUse = 'Ariel'
+            let fontStyle = 'normal'
+            if (content === '✓') {
               thisTextColor = [0, 153, 0]
+              fontToUse = 'DejaVuSans'
             }
             return {
               content: prepareText(content),
-              styles: { fillColor: rowBg, textColor: thisTextColor },
+              styles: {
+                fillColor: rowBg,
+                textColor: thisTextColor,
+                font: fontToUse,
+                fontStyle: fontStyle,
+              },
             }
           }),
           // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
@@ -439,10 +453,8 @@ export async function generateParticipationsPDF(
             styles: { fillColor: rowBg, textColor: defaultTextColor, halign: 'center' },
           },
         ]
-
         body.push(row)
       })
-
       // הוספת שורה ריקה להפרדה בין חברות
       body.push([
         {
@@ -452,7 +464,6 @@ export async function generateParticipationsPDF(
         },
       ])
     }
-
     autoTable(doc, {
       head,
       body,
@@ -484,7 +495,6 @@ export async function generateParticipationsPDF(
         addHeader(doc, options, logoBase64, logoWidth, logoHeight)
       },
     })
-
     const totalPages = doc.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
@@ -495,7 +505,6 @@ export async function generateParticipationsPDF(
       const footerWidth = doc.getTextWidth(footerText)
       doc.text(footerText, (PAGE_WIDTH - footerWidth) / 2, PAGE_HEIGHT - MARGIN)
     }
-
     return new Uint8Array(doc.output('arraybuffer'))
   } catch (error) {
     console.trace(error)

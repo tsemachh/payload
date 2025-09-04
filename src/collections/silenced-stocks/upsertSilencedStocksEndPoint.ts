@@ -6,9 +6,9 @@ const checkUserAuthorization = (req: PayloadRequest) => {
   }
 }
 
-const validateQueryParams = (stockId: string, companiesArray: string[]) => {
-  if (typeof stockId !== 'string' || !stockId) {
-    return Response.json({ error: 'Missing or invalid stockId' }, { status: 400 })
+const validateQueryParams = (stockIds: string[], companiesArray: string[]) => {
+  if (!Array.isArray(stockIds) || stockIds.length === 0) {
+    return Response.json({ error: 'Missing or invalid stockIds' }, { status: 400 })
   }
   if (!Array.isArray(companiesArray)) {
     return Response.json({ error: 'Missing or invalid companies' }, { status: 400 })
@@ -17,7 +17,7 @@ const validateQueryParams = (stockId: string, companiesArray: string[]) => {
 
 const updateCompanySilencedStocks = async (
   req: PayloadRequest,
-  stockId: string,
+  stockIds: string[],
   companyId: string,
 ) => {
   try {
@@ -27,29 +27,35 @@ const updateCompanySilencedStocks = async (
       id: companyId,
     })
 
-    // Check if the stock is already silenced for this company
+    // Check which stocks are not already silenced for this company
     const silencedStocks = company.silencedStocks || []
-    const stockExists = silencedStocks.includes(stockId)
+    const newStockIds = stockIds.filter((stockId) => !silencedStocks.includes(stockId))
 
-    // If the stock is already silenced, no need to update
-    if (stockExists) {
+    // If all stocks are already silenced, no need to update
+    if (newStockIds.length === 0) {
       return {
         success: true,
-        message: 'Stock already silenced for this company',
+        message: 'All stocks already silenced for this company',
+        addedCount: 0,
       }
     }
 
-    // Add the stock to the silenced stocks
-    const updatedSilencedStocks = [...silencedStocks, stockId]
+    // Add the new stocks to the silenced stocks
+    const updatedSilencedStocks = [...silencedStocks, ...newStockIds]
 
     // Update the company
-    return await req.payload.update({
+    const result = await req.payload.update({
       collection: 'companies',
       id: companyId,
       data: {
         silencedStocks: updatedSilencedStocks,
       },
     })
+
+    return {
+      ...result,
+      addedCount: newStockIds.length,
+    }
   } catch (error) {
     console.error(`Error updating silenced stocks for company ${companyId}:`, error)
     throw error
@@ -63,18 +69,18 @@ const upsertSilencedStocksEndPoint = async (req: PayloadRequest) => {
 
     const { companies } = req.query as { companies: string }
     // @ts-expect-error req not null
-    const stock = await req.json()
-    const stockId = stock.stockId
+    const body = await req.json()
+    const stockIds = Array.isArray(body.stockIds) ? body.stockIds : [body.stockId].filter(Boolean)
 
     const companiesArray = companies.split(',')
-    const queryParamError = validateQueryParams(stockId, companiesArray)
+    const queryParamError = validateQueryParams(stockIds, companiesArray)
     if (queryParamError) return queryParamError
 
-    // Update each company with the silenced stock
+    // Update each company with the silenced stocks
     const results = []
     for (const companyId of companiesArray) {
       try {
-        const result = await updateCompanySilencedStocks(req, stockId, companyId)
+        const result = await updateCompanySilencedStocks(req, stockIds, companyId)
         results.push({ companyId, success: true, result })
       } catch (error) {
         results.push({ companyId, success: false, error: String(error) })
