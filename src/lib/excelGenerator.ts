@@ -93,7 +93,6 @@ export async function generateParticipationsExcel(
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'EDEDED' },
-      fgColor: { argb: 'EDEDED' },
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
