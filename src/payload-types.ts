@@ -656,6 +656,7 @@ export interface Meeting {
     totalDocs?: number;
   };
   stock: string | Stock;
+  isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
   type: MeetingType;
   meetingId?: string | null;
@@ -1312,6 +1313,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   participationReport?: T;
   votes?: T;
   stock?: T;
+  isFinancialStock?: T;
   isDualStock?: T;
   type?: T;
   meetingId?: T;
