@@ -36,7 +36,7 @@ export interface GroupedMeetingData {
     relatedParty?: string
     personalInterest?: string
     privilegedMajority?: boolean
-    vPercentSpecial?: number
+    percentResult?: number
   }[]
 }
 
@@ -58,7 +58,7 @@ export const SHARED_COLUMNS = {
   HOLDING_VALUE: `שווי החזקה (מ' ₪)`,
   MEETING_DATE: 'מועד האסיפה',
   MEETING_TYPE: 'סוג האסיפה',
-  COMPANY_NAME: 'שם החברה',
+  COMPANY_NAME: 'שם חברה',
   SUBJECT: 'נושא',
   ADVISOR_RECOMMENDATION: 'המלצת גורם מייעץ',
   VOTE: 'הצבעה',
@@ -75,6 +75,7 @@ export const SHARED_COLUMNS = {
 export const COMPANY_SUB_HEADERS = [
   SHARED_COLUMNS.STOCK_NUMBER,
   SHARED_COLUMNS.CORPORATE_NAME,
+  SHARED_COLUMNS.COMPANY_NAME,
   SHARED_COLUMNS.STOCK_NAME,
   SHARED_COLUMNS.MARKET_VALUE,
   SHARED_COLUMNS.PERCENTAGE_HOLDING,

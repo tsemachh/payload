@@ -2,7 +2,12 @@ import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
-import { calculateHoldingValues, findRelevantCompanyIds } from '@/utils/dataUtils'
+import {
+  buildFundToParentMap,
+  calculateHoldingValues,
+  findRelevantCompanyIds,
+} from '@/utils/dataUtils'
+import { TreeCompanyType } from '@/types/companies'
 
 // Shared interfaces for both endpoints
 interface VotesQueryParams {
@@ -31,6 +36,7 @@ async function processVotesData(
   fullMeetingsMap: Record<string, any>,
   companiesMap: Record<string, any>,
   stockMap: Record<string, any>,
+  fundToParentMap: Map<string, TreeCompanyType>,
 ) {
   const processedData: any[] = []
 
@@ -53,6 +59,8 @@ async function processVotesData(
           (item: { fund: string }) => item.fund === fundId,
         )
         if (!match || !match.quantity) return null
+        const parent = fundToParentMap.get(fundId)
+        if (parent?.id != companyId) return null
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
           match.quantity,
           meeting.stockValue,
@@ -106,7 +114,10 @@ async function processVotesData(
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
           privilegedMajority:
             agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged',
-          vPercentSpecial: agendaItem.vPercentSpecial || null,
+          simpleMajority: !(
+            agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged'
+          ),
+          percentResult: agendaItem.percentResult || null,
         }
       }),
     }
@@ -117,7 +128,7 @@ async function processVotesData(
   return processedData
 }
 
-function buildWhereConditions(params: VotesQueryParams) {
+function buildWhereConditions(params: VotesQueryParams, userCompanies: string[]) {
   const {
     companiesIds,
     status,
@@ -130,8 +141,10 @@ function buildWhereConditions(params: VotesQueryParams) {
     dualMeetingsOnly,
   } = params
 
-  const companiesIdsArray = companiesIds.split(',') //TODO:() validate IDs if it in user
-  const whereConditions: any[] = [{ company: { in: companiesIdsArray } }]
+  const companiesIdsArray = companiesIds.split(',')
+  const allowedCompanies = companiesIdsArray.filter((id) => userCompanies.includes(id))
+
+  const whereConditions: any[] = [{ company: { in: allowedCompanies } }]
 
   if (status === 'published') {
     whereConditions.push({ _status: { equals: 'published' } })
@@ -217,7 +230,17 @@ async function fetchAndProcessVotesData(
   params: VotesQueryParams,
   isExport: boolean,
 ) {
-  const whereConditions = buildWhereConditions(params)
+  const { user } = req
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const companyTree = JSON.parse(user?.treeCompanies || '[]')
+
+  const fundToParentMap = new Map<string, TreeCompanyType>()
+  buildFundToParentMap(companyTree, fundToParentMap)
+
+  const userCompanyIds = user.companies?.map((c) => c.companyId as string) || []
+  const whereConditions = buildWhereConditions(params, userCompanyIds)
 
   if (isExport) {
     const votes = await fetchVotesInBatches(req, whereConditions)
@@ -306,7 +329,14 @@ async function fetchAndProcessVotesData(
     )
     const stockMap = Object.fromEntries(stocksResult.docs.map((stock: any) => [stock.id, stock]))
 
-    return await processVotesData(fundsIds, votes, fullMeetingsMap, companiesMap, stockMap)
+    return await processVotesData(
+      fundsIds,
+      votes,
+      fullMeetingsMap,
+      companiesMap,
+      stockMap,
+      fundToParentMap,
+    )
   } else {
     const page = parseInt((req.query.page as string) || '1')
     const pageSize = parseInt((req.query.pageSize as string) || '50')
@@ -429,6 +459,7 @@ async function fetchAndProcessVotesData(
       fullMeetingsMap,
       companiesMap,
       stockMap,
+      fundToParentMap,
     )
 
     return { processedData, totalItems }

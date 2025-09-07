@@ -21,17 +21,18 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
+import { default as default_2b43ae3eacf6cbe55200e00ae48e682f } from '../../../admincomponents/cell/FormattedNumber'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
 import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
+import { default as default_ce88691c04773935ab8c3f34f9cbaf09 } from '../../../admincomponents/BulkResetPasswordMenuItem'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
-import { default as default_2b43ae3eacf6cbe55200e00ae48e682f } from '../../../admincomponents/cell/FormattedNumber'
 import { Page as Page_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { SortBy as SortBy_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { SortOrder as SortOrder_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -78,17 +79,18 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
+  "/admincomponents/cell/FormattedNumber#default": default_2b43ae3eacf6cbe55200e00ae48e682f,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
   "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,
+  "/admincomponents/BulkResetPasswordMenuItem#default": default_ce88691c04773935ab8c3f34f9cbaf09,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
-  "/admincomponents/cell/FormattedNumber#default": default_2b43ae3eacf6cbe55200e00ae48e682f,
   "@payloadcms/plugin-import-export/rsc#Page": Page_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#SortOrder": SortOrder_cdf7e044479f899a31f804427d568b36,

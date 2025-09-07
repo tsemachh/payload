@@ -61,11 +61,11 @@ export const booleanOptions = [
   {
     value: 'true',
     label: 'כן',
-    icon: <BooleanIcon iconType={true} />,
+    icon: <BooleanIcon iconType={true}/>,
   },
   {
     value: 'false',
     label: 'לא',
-    icon: <BooleanIcon iconType={false} />,
+    icon: <BooleanIcon iconType={false}/>,
   },
 ]

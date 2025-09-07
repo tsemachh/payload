@@ -4,8 +4,8 @@ import fs from 'fs'
 import { logger } from '@/lib/logger'
 import { ExportOptions, resultMapping, SHARED_COLUMNS } from './exportTypes'
 import { parseNumber } from '@/app/(frontend)/helpers/utils-data-table'
-import { formatNumberWithLocale } from './utils'
-import { booleanToIcon, formatNormalDate, groupDataByMeeting } from './exportUtils'
+import { booleanToIcon, formatNormalDate } from './exportUtils'
+import { formatNumberWithLocale } from '@/utils/numberUtils'
 
 export async function generateParticipationsExcel(
   data: any[],
@@ -16,13 +16,11 @@ export async function generateParticipationsExcel(
     const worksheet = workbook.addWorksheet('דוח השתתפות באסיפות')
     worksheet.views = [{ rightToLeft: true }]
 
-    // Group data
-    const groupedData = groupDataByMeeting(data)
-
     // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.CORPORATE_NAME,
+      SHARED_COLUMNS.COMPANY_NAME,
       SHARED_COLUMNS.STOCK_NAME,
       SHARED_COLUMNS.MARKET_VALUE,
       SHARED_COLUMNS.PERCENTAGE_HOLDING,
@@ -30,9 +28,6 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
-    if (options.selectedCompaniesCount > 1) {
-      baseHeaders.push(SHARED_COLUMNS.COMPANY_NAME)
-    }
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
       SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
@@ -97,11 +92,11 @@ export async function generateParticipationsExcel(
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFF9FAFA' }, // Light gray
+      fgColor: { argb: 'EDEDED' },
     }
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
 
-    if (groupedData.length === 0) {
+    if (data.length === 0) {
       const noDataRow = worksheet.addRow(['אין נתונים להצגה'])
       noDataRow.eachCell((cell) => {
         cell.font = { name: 'Arial', size: 10 }
@@ -111,7 +106,7 @@ export async function generateParticipationsExcel(
     }
 
     // Add data rows
-    groupedData.forEach((meeting) => {
+    data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
         parseNumber(meeting.marketValue) / 1_000_000,
         0,
@@ -124,6 +119,7 @@ export async function generateParticipationsExcel(
       const meetingData = [
         meeting.stockNumber,
         meeting.corporateName,
+        meeting.currentCompany.name,
         meeting.stockName,
         formattedMarketValue,
         formattedPercentageHolding,
@@ -131,9 +127,6 @@ export async function generateParticipationsExcel(
         meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
         meeting.meetingType,
       ]
-      if (options.selectedCompaniesCount > 1) {
-        meetingData.push(meeting.companyName || '')
-      }
 
       if (meeting.agendas.length === 0) {
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
@@ -148,40 +141,65 @@ export async function generateParticipationsExcel(
           fgColor: { argb: 'FFD2E4FF' },
         }
       } else {
-        meeting.agendas.forEach((agenda, index) => {
-          const isFirstAgenda = index === 0
-          const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
-          const agendaData = [
-            numberedAgendaText,
-            agenda.recommendation?.votingRecommendation || '',
-            agenda.vote || '',
-            agenda.result
-              ? resultMapping[agenda.result] || agenda.result
-              : agenda.meetingResults || '',
-            booleanToIcon(!agenda.privilegedMajority),
-            agenda.privilegedMajority && agenda.vPercentSpecial ? `${agenda.vPercentSpecial}` : '',
-            booleanToIcon(agenda.policyCompliance),
-            booleanToIcon(agenda.conflictOfInterest),
-            booleanToIcon(agenda.relatedParty),
-            booleanToIcon(agenda.personalInterest),
-          ]
-          const excelRow = worksheet.addRow([...meetingData, ...agendaData])
-          excelRow.eachCell((cell) => {
-            cell.font = { name: 'Arial', size: 10 }
-            cell.alignment = { horizontal: 'right', vertical: 'middle' }
-          })
-          excelRow.getCell(agendaTextIndex).alignment = {
-            horizontal: 'right',
-            vertical: 'middle',
-            wrapText: true,
-          }
-
-          excelRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'FFE7F0FF' },
-          }
-        })
+        meeting.agendas.forEach(
+          (
+            agenda: {
+              text: string
+              recommendation: { votingRecommendation: any }
+              vote: any
+              result: string | number
+              meetingResults: any
+              privilegedMajority: boolean
+              simpleMajority:boolean
+              percentResult: any
+              policyCompliance: any
+              conflictOfInterest: any
+              relatedParty: any
+              personalInterest: any
+            },
+            index: number,
+          ) => {
+            const isFirstAgenda = index === 0
+            const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
+            const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+            const alignment = isEnglish ? 'left' : 'right'
+            const agendaData = [
+              numberedAgendaText,
+              agenda.recommendation?.votingRecommendation || '',
+              agenda.vote || '',
+              agenda.result
+                ? resultMapping[agenda.result] || agenda.result
+                : agenda.meetingResults || '',
+              agenda.simpleMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                :  booleanToIcon(agenda.simpleMajority),                    
+              agenda.privilegedMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                :  booleanToIcon(agenda.privilegedMajority), 
+              booleanToIcon(agenda.policyCompliance),
+              booleanToIcon(agenda.conflictOfInterest),
+              booleanToIcon(agenda.relatedParty),
+              booleanToIcon(agenda.personalInterest),
+            ]
+            const excelRow = worksheet.addRow([...meetingData, ...agendaData])
+            excelRow.eachCell((cell, colNumber) => {
+              cell.font = { name: 'Arial', size: 10 }
+              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              if (colNumber === agendaTextIndex) {
+                cell.alignment = {
+                  horizontal: alignment,
+                  vertical: 'middle',
+                  wrapText: true,
+                }
+              }
+            })
+            excelRow.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF' },
+            }
+          },
+        )
       }
     })
 
@@ -204,7 +222,7 @@ export async function generateParticipationsExcel(
       let newWidth = Math.max(maxLength + 2, 10)
 
       if (i + 1 === agendaTextIndex) {
-        newWidth *= 1.2
+        newWidth *= 1.5
         column.width = Math.min(newWidth, 70)
       } else {
         newWidth *= 0.75
@@ -216,7 +234,7 @@ export async function generateParticipationsExcel(
     const lastRow = worksheet.rowCount
     const lastCol = headers.length
     const whiteBorder = { style: 'thin' as const, color: { argb: 'FFFFFFFF' } }
-    const grayBorder = { style: 'thin' as const, color: { argb: 'FFD3D3D3' } } // Light gray for header
+    const grayBorder = { style: 'thin' as const, color: { argb: 'EDEDED' } } // Light gray for header
 
     for (let row = headerRowOffset; row <= lastRow; row++) {
       for (let col = 1; col <= lastCol; col++) {
@@ -230,7 +248,7 @@ export async function generateParticipationsExcel(
             bottom: whiteBorder,
             right: whiteBorder,
           }
-          cell.font = { name: 'Arial', size: 10 } // Ensure  font for all data cells
+          cell.font = { name: cell.font?.name || 'Arial', size: 10, color: cell.font?.color }
         }
       }
     }

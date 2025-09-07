@@ -75,6 +75,7 @@ export type TopicVote =
   | {
       topicIndex: number;
       voteDecision?: VoteDecision;
+      voteReason?: string | null;
       hasConflictOfInterest?: boolean | null;
       isRelatedParty?: boolean | null;
       isInvestmentCommittee?: boolean | null;
@@ -123,7 +124,7 @@ export type MeetingAgenda =
         reasonText?: string | null;
       };
       result?: ('0' | '1' | '2' | '3') | null;
-      vPercentSpecial?: number | null;
+      percentResult?: number | null;
       id?: string | null;
     }[]
   | null;
@@ -1368,7 +1369,7 @@ export interface MeetingAgendaSelect<T extends boolean = true> {
         reasonText?: T;
       };
   result?: T;
-  vPercentSpecial?: T;
+  percentResult?: T;
   id?: T;
 }
 /**
@@ -1674,6 +1675,7 @@ export interface VotesSelect<T extends boolean = true> {
 export interface TopicVoteSelect<T extends boolean = true> {
   topicIndex?: T;
   voteDecision?: T;
+  voteReason?: T;
   hasConflictOfInterest?: T;
   isRelatedParty?: T;
   isInvestmentCommittee?: T;

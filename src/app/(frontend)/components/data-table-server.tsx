@@ -904,16 +904,9 @@ export function DataTableServer<T extends Record<string, any>>({
                         </TableCell>
                       )}
                     </TableRow>
-                    {renderExpandedRowContent && expandedRowIds.has(row[idField] as string) && (
-                      <TableRow className="">
-                        <TableCell
-                          colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
-                          className="p-0"
-                        >
-                          {renderExpandedRowContent(row)}
-                        </TableCell>
-                      </TableRow>
-                    )}
+                    {renderExpandedRowContent &&
+                      expandedRowIds.has(row[idField] as string) &&
+                      renderExpandedRowContent(row)}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (
@@ -940,7 +933,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                           key={`company-${company.id}-reported`}
                                           className="py-2 px-3 whitespace-nowrap text-center"
                                         >
-                                          <BooleanIcon iconType={companyVote?.reported} />
+                                          <BooleanIcon iconType={companyVote?.reported} showX={false}/>
                                         </TableCell>
                                       )
                                     }
@@ -1072,7 +1065,7 @@ export function DataTableServer<T extends Record<string, any>>({
         <div className="flex items-center justify-between space-x-2 mt-0 mb-0">
           <div className="flex items-center space-x-2 space-x-reverse">
             <div className="text-sm text-muted-foreground">
-              סה&quot;כ {pagination.totalItems?.toLocaleString()} פריטים.
+              סה&quot;כ {pagination.totalItems?.toLocaleString()} שורות.
             </div>
             {pagination.pageSizeOptions &&
               pagination.onPageSizeChange &&

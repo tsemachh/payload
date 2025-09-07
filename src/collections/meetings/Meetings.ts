@@ -490,12 +490,15 @@ export const Meetings: CollectionConfig = {
                   hooks: {
                     beforeChange: [
                       async ({ data, req }) => {
-                        let stockName = ''
-                        if (typeof data?.stock == 'string') {
-                          const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
-                          stockName = stock.fullName
+                        if (data?.state == 'scheduled' || !data?.fullName) {
+                          let stockName = ''
+                          if (typeof data?.stock == 'string') {
+                            const stock = await getCollectionDoc(req, 'stocks', data.stock, 0)
+                            stockName = stock.fullName
+                          }
+                          return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
                         }
-                        return `${stockName}-${data?.type ? data.type : 'נדחתה/בוטלה'}`
+                        return data.fullName
                       },
                     ],
                   },
@@ -510,16 +513,6 @@ export const Meetings: CollectionConfig = {
                   label: 'מצב',
                   type: 'select',
                   required: true,
-                  hooks: {
-                    beforeChange: [
-                      ({ siblingData, value }) => {
-                        if (value === 'on-hold') {
-                          siblingData.meetingDate = null
-                        }
-                        return value
-                      },
-                    ],
-                  },
                   interfaceName: 'MeetingState',
                   validate: validateMeetingState,
                   options: meetingStateOptions,
@@ -797,7 +790,7 @@ export const Meetings: CollectionConfig = {
                       ],
                     },
                     {
-                      name: 'vPercentSpecial',
+                      name: 'percentResult',
                       label: 'תוצאה באחוזים',
                       type: 'number',
                       admin: {
@@ -805,9 +798,7 @@ export const Meetings: CollectionConfig = {
 
                         step: 0.01,
                         condition: (_, siblingData) =>
-                          siblingData.topicType === 'decision' &&
-                          siblingData.majorityType === 'privileged' &&
-                          siblingData.result,
+                          siblingData.topicType === 'decision' && siblingData.result,
                       },
                     },
                   ],
@@ -933,15 +924,23 @@ export const Meetings: CollectionConfig = {
               hasMany: false,
               admin: {
                 hidden: false,
+                disableListColumn: true,
               },
               maxDepth: 1,
             },
             {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
+              label: 'שווי שוק',
               type: 'number',
               admin: {
                 readOnly: true,
+                components: {
+                  Cell: {
+                    path: '/admincomponents/cell/FormattedNumber',
+                    clientProps: { decimals: 0 },
+                  },
+                },
               },
             },
           ],

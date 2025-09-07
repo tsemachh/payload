@@ -239,6 +239,7 @@ const upsertVotesInternal = async ({
   const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({
     topicIndex: userVote.topicIndex,
     voteDecision: userVote.choice,
+    voteReason: userVote.voteReason,
     hasConflictOfInterest: userVote.questions.hasConflictOfInterest,
     conflictOfInterestExplanation: userVote.questions.conflictOfInterestExplanation,
     isRelatedParty: userVote.questions.isRelatedParty,

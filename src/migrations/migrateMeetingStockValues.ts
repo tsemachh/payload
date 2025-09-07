@@ -25,7 +25,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       select: {
         stock: true,
         holdingsLimit: true,
-        meetingDate: true,
+        type: true,
       },
       limit: 0,
       depth: 1,
@@ -43,6 +43,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       promisePool.add(async () => {
         try {
           const holdingsLimit = meeting.holdingsLimit
+
           const stockId = getIdOfRelationField(meeting.stock)
           // Get stock details
           const stock = meeting.stock as Stock
@@ -133,6 +134,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             req,
             true,
           )
+          const stockName = `${stockData?.name} - ${stockData?.stockID}`
+          const fullName = `${stockName}-${meeting?.type ? meeting.type : 'נדחתה/בוטלה'}`
 
           // Update meeting with stock value relation
           await payload.update({
@@ -140,6 +143,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             id: meeting.id,
             data: {
               stockValue: stockValueId,
+              fullName: fullName,
             },
             req: {
               ...req,

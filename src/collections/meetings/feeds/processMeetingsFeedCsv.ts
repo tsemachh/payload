@@ -75,6 +75,137 @@ export function convertMagnaToPayloadMeeting(data: any) {
   }
 }
 
+// Inner function to process a single row without promise pool
+async function processRowInner(
+  row: any,
+  rowIndex: number,
+  req: PayloadRequest,
+  context: MeetingFeedContext,
+  stockIdMap: Map<string, any>,
+): Promise<void> {
+  try {
+    const missingFields = getMissingFieldsInRow(row, requiredFields)
+
+    if (missingFields.length > 0) {
+      context.errors.push(
+        `לאסיפה עם האסמכתא ${row.magnaId} חסרים שדות נדרשים: ${missingFields.join(', ')}`,
+      )
+      return
+    }
+    const stockData = stockIdMap.get(String(row.stock))
+    if (stockData === null || stockData === undefined) {
+      context.errors.push(
+        `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שלא נמצא ולא ייובא — האסיפה הזו לא תיווצר`,
+      )
+      return
+    }
+    if (!stockData?.active) {
+      context.errors.push(
+        `לאסיפה עם האסמכתא ${row.magnaId} יש נייר ערך  ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
+      )
+      return
+    }
+
+    row.stock = stockData
+
+    if (row.proofIdPrev) {
+      context.countTotalPrev++
+      const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
+      if (prevMeeting && prevMeeting.docs.length > 0) {
+        const { ...dataToUpdate } = row
+        delete dataToUpdate.proofIdPrev
+        const prevMeetingId = prevMeeting.docs[0].id
+        dataToUpdate._status = 'draft'
+        try {
+          await req.payload.update({
+            collection: 'meetings',
+            id: prevMeetingId,
+            data: dataToUpdate,
+            context: { ...req.context, from: 'migration' },
+            req,
+          })
+          context.successPrevCount++
+          context.processedMeetingIds.push(prevMeetingId)
+          return // Add return to prevent processing the same row again
+        } catch (e: any) {
+          context.errors.push(`שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`)
+          req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.proofIdPrev}`)
+        }
+      } else {
+        context.errors.push(`לא נמצאה אסיפה עם האסמכתא  ${row.proofIdPrev}, האסיפה לא תתעדכן`)
+        req.payload.logger.warn(
+          `No meeting found for ProofIdPrev ${row.proofIdPrev} for ${row.magnaId}`,
+        )
+      }
+    }
+
+    const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
+    if (existingMeeting?.docs.length > 0) {
+      const meetingId = existingMeeting?.docs[0].id
+      const existingMeetingData = existingMeeting.docs[0]
+
+      // Check if the existing meeting was already published with a newer creation date
+      if (
+        existingMeetingData.createdAt &&
+        row.createdAt &&
+        new Date(existingMeetingData.createdAt) > new Date(row.createdAt)
+      ) {
+        // Do not update the meeting, just log a message
+        context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
+        req.payload.logger.info(
+          `Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`,
+        )
+        context.successCount++ // Still count as processed
+        context.processedMeetingIds.push(meetingId)
+      } else {
+        try {
+          row._status = 'draft'
+          await req.payload.update({
+            collection: 'meetings',
+            id: meetingId,
+            data: row,
+            context: { ...req.context, from: 'migration' },
+            req,
+          })
+          context.successCount++
+          context.processedMeetingIds.push(meetingId)
+        } catch (e: any) {
+          context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+        }
+      }
+    } else {
+      try {
+        const newMeeting = await req.payload.create({
+          collection: 'meetings',
+          data: row,
+          context: { ...req.context, from: 'migration' },
+          req,
+        })
+        context.successCount++
+        context.processedMeetingIds.push(newMeeting.id)
+      } catch (e: any) {
+        context.errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
+      }
+    }
+  } catch (error) {
+    context.errors.push(`שגיאה בעיבוד הרשומה  ${rowIndex}: ${JSON.stringify(row)} - ${error}`)
+  }
+}
+
+// Helper function to process a single row with promise pool
+async function processRow(
+  row: any,
+  rowIndex: number,
+  req: PayloadRequest,
+  context: MeetingFeedContext,
+  stockIdMap: Map<string, any>,
+  promisePool: PromisePool,
+): Promise<void> {
+  return promisePool.add(async () => {
+    await processRowInner(row, rowIndex, req, context, stockIdMap)
+  })
+}
+
 export async function processJsonMeetingRows(
   rows: any[],
   req: PayloadRequest,
@@ -103,127 +234,61 @@ export async function processJsonMeetingRows(
   for (const stock of stocks.docs) {
     stockIdMap.set(String(stock.stockId), { id: stock.id, active: stock.active })
   }
+
+  // Divide rows into two sets:
+  // Set A: rows without proofIdPrev
+  // Set B: rows with proofIdPrev
+  const rowsWithoutProofIdPrev = rows.filter((row) => !row.proofIdPrev)
+  const rowsWithProofIdPrev = rows.filter((row) => row.proofIdPrev)
+
+  req.payload.logger.info(
+    `Divided rows into two sets: ${rowsWithoutProofIdPrev.length} rows without proofIdPrev and ${rowsWithProofIdPrev.length} rows with proofIdPrev`,
+  )
+
+  // Process rows without proofIdPrev first
+  req.payload.logger.info(`Processing ${rowsWithoutProofIdPrev.length} rows without proofIdPrev`)
+
   // Process each row in parallel using the promise pool
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i]
+  for (let i = 0; i < rowsWithoutProofIdPrev.length; i++) {
+    const row = rowsWithoutProofIdPrev[i]
     const rowIndex = i
 
-    promises.push(
-      promisePool.add(async () => {
-        try {
-          const missingFields = getMissingFieldsInRow(row, requiredFields)
-
-          if (missingFields.length > 0) {
-            context.errors.push(
-              `לאסיפה עם האסמכתא ${row.magnaId} חסרים שדות נדרשים: ${missingFields.join(', ')}`,
-            )
-            return
-          }
-          const stockData = stockIdMap.get(String(row.stock))
-          if (stockData === null || stockData === undefined) {
-            context.errors.push(
-              `לאסיפה עם האסמכתא ${row.magnaId} יש stockId ${row.stock} שלא נמצא ולא ייובא — האסיפה הזו לא תיווצר`,
-            )
-            return
-          }
-          if (!stockData?.active) {
-            context.errors.push(
-              `לאסיפה עם האסמכתא ${row.magnaId} יש נייר ערך  ${row.stock} שאינו פעיל ולא ייובא — האסיפה הזו לא תיווצר`,
-            )
-            return
-          }
-
-          row.stock = stockData
-
-          if (row.proofIdPrev) {
-            context.countTotalPrev++
-            const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
-            if (prevMeeting && prevMeeting.docs.length > 0) {
-              const { ...dataToUpdate } = row
-              dataToUpdate.magnaId = row.proofIdPrev
-              delete dataToUpdate.proofIdPrev
-              const prevMeetingId = prevMeeting.docs[0].id
-              dataToUpdate._status = 'published'
-              try {
-                await req.payload.update({
-                  collection: 'meetings',
-                  id: prevMeetingId,
-                  data: dataToUpdate,
-                  context: { ...req.context, from: 'migration' },
-                  req,
-                })
-                context.successPrevCount++
-                context.processedMeetingIds.push(prevMeetingId)
-                return // Add return to prevent processing the same row again
-              } catch (e: any) {
-                context.errors.push(
-                  `שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`,
-                )
-                req.payload.logger.error(
-                  `Error updating meeting with ProofIdPrev ${row.proofIdPrev}`,
-                )
-              }
-            } else {
-              context.errors.push(`לא נמצאה אסיפה עם האסמכתא  ${row.proofIdPrev}, האסיפה לא תתעדכן`)
-              req.payload.logger.warn(`No meeting found for ProofIdPrev ${row.proofIdPrev}`)
-            }
-          }
-
-          const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
-          if (existingMeeting?.docs.length > 0) {
-            const meetingId = existingMeeting?.docs[0].id
-            const existingMeetingData = existingMeeting.docs[0]
-
-            // Check if the existing meeting was already published with a newer creation date
-            if (
-              existingMeetingData.createdAt &&
-              row.createdAt &&
-              new Date(existingMeetingData.createdAt) > new Date(row.createdAt)
-            ) {
-              // Do not update the meeting, just log a message
-              context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
-              req.payload.logger.info(
-                `Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`,
-              )
-              context.successCount++ // Still count as processed
-              context.processedMeetingIds.push(meetingId)
-            } else {
-              try {
-                row._status = 'published'
-                await req.payload.update({
-                  collection: 'meetings',
-                  id: meetingId,
-                  data: row,
-                  context: { ...req.context, from: 'migration' },
-                  req,
-                })
-                context.successCount++
-                context.processedMeetingIds.push(meetingId)
-              } catch (e: any) {
-                context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
-              }
-            }
-          } else {
-            try {
-              const newMeeting = await req.payload.create({
-                collection: 'meetings',
-                data: row,
-                context: { ...req.context, from: 'migration' },
-                req,
-              })
-              context.successCount++
-              context.processedMeetingIds.push(newMeeting.id)
-            } catch (e: any) {
-              context.errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
-            }
-          }
-        } catch (error) {
-          context.errors.push(`שגיאה בעיבוד הרשומה  ${rowIndex}: ${JSON.stringify(row)} - ${error}`)
-        }
-      }),
-    )
+    promises.push(processRow(row, rowIndex, req, context, stockIdMap, promisePool))
   }
+
+  // Wait for all promises from the first set to complete
   await promisePool.waitForAll()
+
+  // Process rows with proofIdPrev after the first set is done
+  req.payload.logger.info(`Processing ${rowsWithProofIdPrev.length} rows with proofIdPrev`)
+
+  // Clear promises array for the second set
+  promises.length = 0
+
+  // Sort rowsWithProofIdPrev by proofIdPrev in ascending order
+  rowsWithProofIdPrev.sort((a, b) => {
+    return a.proofIdPrev.localeCompare(b.proofIdPrev)
+  })
+
+  req.payload.logger.info(
+    `Sorted ${rowsWithProofIdPrev.length} rows with proofIdPrev by proofIdPrev in ascending order`,
+  )
+
+  // Process each row synchronously (one at a time)
+  req.payload.logger.info(
+    `Processing ${rowsWithProofIdPrev.length} rows with proofIdPrev synchronously (without promise pool)`,
+  )
+  for (let i = 0; i < rowsWithProofIdPrev.length; i++) {
+    const row = rowsWithProofIdPrev[i]
+    const rowIndex = i + rowsWithoutProofIdPrev.length // Adjust index for error reporting
+
+    // Process the row synchronously without using the promise pool
+    await processRowInner(row, rowIndex, req, context, stockIdMap)
+  }
+
+  req.payload.logger.info(
+    `Finished processing all rows: ${rowsWithoutProofIdPrev.length} without proofIdPrev and ${rowsWithProofIdPrev.length} with proofIdPrev`,
+  )
   return context
 }
 export type MeetingFeedContext = {

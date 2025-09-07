@@ -1,14 +1,19 @@
 'use client'
 
-import type React from 'react'
+import React from 'react'
 import { cn } from '@/lib/utils'
-import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
+import {
+  calculatePrecedingColumnsWidth,
+  formatDateTime,
+  parseNumber,
+} from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { BooleanIcon } from '@/components/ui/icons'
-import type { ParticipationTableDataType } from './types'
-import { Checkbox } from '@/components/ui/checkbox'
+import type { ParticipationAgendaType, ParticipationTableDataType } from './types'
 import { resultMapping } from '@/lib/exportTypes'
-
+import { formatNumberWithLocale } from '@/utils/numberUtils'
+import { TableCell, TableRow } from '../components/ui/table'
+import { v4 as uuidv4 } from 'uuid'
 export const createParticipationColumns = (
   selectedCompaniesCount: number,
   allSelected: boolean,
@@ -97,9 +102,7 @@ export const createParticipationColumns = (
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
-        return new Intl.NumberFormat('he-IL', {
-          maximumFractionDigits: 0,
-        }).format(marketValue / 1_000_000)
+        return formatNumberWithLocale(marketValue / 1_000_000, 0, 'he-IL')
       },
       minWidth: 80,
     },
@@ -107,22 +110,14 @@ export const createParticipationColumns = (
       key: 'percentageHolding',
       header: 'החזקה (%)',
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 4,
-          maximumFractionDigits: 4,
-        }).format(row.percentageHolding),
+      render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
       minWidth: 80,
     },
     {
       key: 'holdingValueInMillions',
       header: `שווי החזקה (מ' ₪)`,
       type: 'number',
-      render: (row) =>
-        new Intl.NumberFormat('he-IL', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(row.holdingValueInMillions),
+      render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 2, 'he-IL'),
       minWidth: 80,
     },
     {
@@ -134,7 +129,7 @@ export const createParticipationColumns = (
     },
     { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
     {
-      key: 'advisoryRecommendation',
+      key: 'recommendation',
       header: 'המלצת גורם מייעץ',
       type: 'string',
       render: (row) => null,
@@ -163,7 +158,7 @@ export const createParticipationColumns = (
       minWidth: 60,
     },
     {
-      key: 'specialMajority',
+      key: 'privilegedMajority',
       header: 'רוב מיוחד (%)',
       type: 'string',
       render: (row) => null,
@@ -197,7 +192,7 @@ export const createParticipationColumns = (
       key: 'personalInterest',
       header: 'עניין אישי',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 50,
     },
@@ -205,177 +200,118 @@ export const createParticipationColumns = (
 
   return baseColumns
 }
-
 export const renderAgendaRows = (
   row: ParticipationTableDataType,
   participationColumns: Column<ParticipationTableDataType>[],
   selectedCompaniesCount: number,
 ) => {
-  if (!row.agendas || row.agendas.length === 0) {
-    return (
-      <div className="p-4 text-center text-muted-foreground">אין פריטי סדר יום עבור אסיפה זו.</div>
-    )
-  }
-
   return (
-    <div className="w-full">
-      <table className="w-full table-fixed border-collapse" style={{ tableLayout: 'fixed' }}>
-        <tbody>
-          {row.agendas.map((agenda: any, agendaIndex: number) => {
-            return (
-              <tr key={agenda.id} className={cn(agendaIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50')}>
-                {participationColumns.map((column) => {
-                  let content: React.ReactNode = null
+    <>
+      {row.agendas.map((agenda: ParticipationAgendaType, agendaIndex: number) => (
+        <TableRow
+          key={`participation-${uuidv4()}`}
+          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+        >
+          {/* Empty cell for companies column */}
+          <TableCell className="py-2 px-6"></TableCell>
 
-                  switch (column.key) {
-                    case 'select':
-                      content = null
-                      break
-                    case 'companyName':
-                      content = null
-                      break
-                    case 'stockNumber':
-                      content = (
-                        <div className="flex items-center justify-end gap-2 pr-16 pl-4">
-                          <span style={{ marginLeft: 'auto', transform: 'translateX(20px)' }}>
-                            {agenda.topicIndex}.
-                          </span>
-                        </div>
+          {/* Map through visible columns and show relevant fund data */}
+          {participationColumns.slice(1).map((column, columnIndex) => {
+            if (column.key in agenda) {
+              return (
+                <TableCell
+                  key={`fund-${uuidv4()}-${String(column.key)}`}
+                  className="py-2 px-3 whitespace-nowrap"
+                  style={{ textAlign: 'right' }}
+                >
+                  {(() => {
+                    let value = agenda[column.key as keyof ParticipationAgendaType]
+                    if (column.key === 'recommendation') {
+                      value = agenda.recommendation.votingRecommendation
+                    }
+                    if (column.key === 'privilegedMajority') {
+                      return agenda.privilegedMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
                       )
-                      break
-                    case 'stockName':
-                      const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
-                      content = (
-                        <div
-                          className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
-                          dir={isEnglish ? 'ltr' : 'rtl'}
-                        >
-                          <div className="truncate cursor-pointer hover:text-blue-600 pr-[25px] w-[50rem]">
-                            {agenda.text}
-                          </div>
-                          <div
-                            className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            style={{
-                              [isEnglish ? 'left' : 'right']: 0,
-                            }}
-                          >
-                            {agenda.text}
-                            <div
-                              className={cn(
-                                'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
-                                isEnglish
-                                  ? 'left-4 border-b-gray-900'
-                                  : 'right-4 border-b-gray-900',
-                              )}
-                            />
-                          </div>
-                        </div>
+                    }
+                    if (column.key === 'simpleMajority') {
+                      return agenda.simpleMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
                       )
-                      break
-                    case 'advisoryRecommendation':
-                      content = (
-                        <div>
-                          {agenda.recommendation?.votingRecommendation ||
-                            agenda.recommendation?.recommendationExplanation ||
-                            null}
-                        </div>
-                      )
-                      break
-                    case 'vote':
-                      content = agenda.vote || null
-                      break
-                    case 'meetingResults':
-                      content = agenda.result
+                    }
+                    if (column.key === 'meetingResults') {
+                      value = agenda.result
                         ? resultMapping[agenda.result] || agenda.result
                         : agenda.meetingResults || null
-                      break
-                    case 'simpleMajority':
-                      content = <BooleanIcon iconType={!agenda.privilegedMajority} />
-                      break
-                    case 'specialMajority':
-                      content =
-                        agenda.privilegedMajority === true && agenda.vPercentSpecial
-                          ? `${agenda.vPercentSpecial}%`
-                          : null
-                      break
-                    case 'policyCompliance':
-                      content =
-                        agenda.policyCompliance !== undefined &&
-                        agenda.policyCompliance !== null ? (
-                          <BooleanIcon iconType={agenda.policyCompliance} />
-                        ) : null
-                      break
-                    case 'conflictOfInterest':
-                      content =
-                        agenda.conflictOfInterest !== undefined &&
-                        agenda.conflictOfInterest !== null ? (
-                          <BooleanIcon iconType={agenda.conflictOfInterest} />
-                        ) : null
-                      break
-                    case 'relatedParty':
-                      content =
-                        agenda.relatedParty !== undefined && agenda.relatedParty !== null ? (
-                          <BooleanIcon iconType={agenda.relatedParty} />
-                        ) : null
-                      break
-                    case 'personalInterest':
-                      content =
-                        agenda.personalInterest !== undefined &&
-                        agenda.personalInterest !== null ? (
-                          <BooleanIcon iconType={agenda.personalInterest} />
-                        ) : null
-                      break
-                    default:
-                      content = null
-                      break
-                  }
+                    }
+                    if (typeof value === 'number') {
+                      return new Intl.NumberFormat('he-IL').format(value)
+                    }
+                    if (typeof value === 'string') {
+                      return value
+                    }
+                    if (typeof value === 'boolean') {
+                      return <BooleanIcon iconType={value} showX={false} />
+                    }
+                  })()}
+                </TableCell>
+              )
+            } else {
+              return (
+                <TableCell
+                  key={`fund-${uuidv4()}-${String(column.key)}`}
+                  className="py-2 px-3  whitespace-nowrap"
+                >
+                  {columnIndex === 0 && (
+                    <div className="relative h-40px flex items-center gap-2 -mr-[100px]">
+                      <span className="text-muted-foreground font-medium">{agendaIndex + 1}.</span>
 
-                  if (
-                    column.key === 'marketValue' ||
-                    column.key === 'percentageHolding' ||
-                    column.key === 'holdingValueInMillions' ||
-                    column.key === 'meetingDate' ||
-                    column.key === 'meetingType' ||
-                    column.key === 'companyName'
-                  ) {
-                    return null
-                  }
+                      {(() => {
+                        const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+                        return (
+                          <div
+                            className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
+                            dir={isEnglish ? 'ltr' : 'rtl'}
+                          >
+                            <div
+                              className="truncate cursor-pointer hover:text-blue-600 inline-block flex-shrink-0"
+                              style={{ maxWidth: '800px' }}
+                            >
+                              {agenda.text}
+                            </div>
 
-                  const baseColspan = 5
-                  const companyColumnExists = selectedCompaniesCount > 1
-                  const totalColspan =
-                    column.key === 'stockName' ? baseColspan + (companyColumnExists ? 1 : 0) : 1
-
-                  return (
-                    <td
-                      key={`${agenda.id}-${column.key}`}
-                      className={cn(
-                        'py-1 px-2 border-t',
-                        column.positionCenter ? 'text-center' : 'text-right',
-                      )}
-                      style={{
-                        width:
-                          column.key === 'stockName'
-                            ? selectedCompaniesCount > 1
-                              ? '450px'
-                              : '450px'
-                            : `${column.minWidth}px`,
-                        minWidth: column.key === 'stockName' ? '200px' : `${column.minWidth}px`,
-                        maxWidth: column.key === 'stockName' ? '100%' : `${column.minWidth}px`,
-                        textAlign: column.positionCenter ? 'center' : 'right',
-                        verticalAlign: 'middle',
-                      }}
-                      colSpan={totalColspan}
-                    >
-                      {content}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
+                            {/* tooltip */}
+                            <div
+                              className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              style={{
+                                [isEnglish ? 'left' : 'right']: 0,
+                              }}
+                            >
+                              {agenda.text}
+                              <div
+                                className={cn(
+                                  'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
+                                  isEnglish
+                                    ? 'left-4 border-b-gray-900'
+                                    : 'right-4 border-b-gray-900',
+                                )}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )}
+                </TableCell>
+              )
+            }
           })}
-        </tbody>
-      </table>
-    </div>
+        </TableRow>
+      ))}
+    </>
   )
 }
