@@ -1,5 +1,5 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import sql from 'mssql'
+import * as sql from 'mssql'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import { PromisePool } from '@/utils/promisePool'
 import { upsertStockValueFromImport } from '@/migrations/utils/migrateUtils'
@@ -55,7 +55,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
           // Determine if this is a future meeting
           const now = new Date()
-          const isFutureMeeting = holdingsLimit ? new Date(holdingsLimit) > now : false
+          const isFutureMeeting = holdingsLimit ? new Date(holdingsLimit as string) > now : false
 
           // For future meetings, get the latest stock value
           // For past meetings, get the stock value at the holdings limit date
@@ -84,11 +84,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     logUpdateID,
                     longName
                 FROM [dbEmda].[dbo].[stocks]
-                WHERE stockID = '${stock.stockId}'
-                  AND valueDate <= '${new Date(dateToUse).toISOString()}'
+                WHERE stockID = @stockId
+                  AND valueDate <= @valueDate
                 ORDER BY valueDate DESC
             `
             const request = pool?.request()
+            if (request) {
+              request.input('stockId', sql.VarChar, stock.stockId)
+              request.input('valueDate', sql.DateTime, new Date(dateToUse as string).toISOString())
+            }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result?.recordset[0] : null
           } else {
@@ -105,10 +109,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                      logUpdateID,
                      longName
               FROM [dbEmda].[dbo].[stocks]
-              WHERE stockID = '${stock.stockId}'
+              WHERE stockID = @stockId
               ORDER BY valueDate DESC
             `
             const request = pool?.request()
+            if (request) {
+              request.input('stockId', sql.VarChar, stock.stockId)
+            }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null
           }
