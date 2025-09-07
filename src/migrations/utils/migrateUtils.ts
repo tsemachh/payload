@@ -1,4 +1,4 @@
-import sql from 'mssql'
+import * as sql from 'mssql'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
