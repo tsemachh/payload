@@ -62,7 +62,7 @@ async function processVotesData(
         const parent = fundToParentMap.get(fundId)
         if (parent?.id != companyId) return null
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
-          match.quantity,
+          match.ownedQuantity || match.quantity,
           meeting.stockValue,
           false,
         )
