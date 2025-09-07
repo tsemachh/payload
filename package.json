@@ -113,7 +113,7 @@
     "recharts": "^2.15.1",
     "sonner": "^1.7.4",
     "stream-browserify": "^3.0.0",
-    "swagger-ui-react": "^5.19.0",
+    "swagger-ui-react": "^5.28.1",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",

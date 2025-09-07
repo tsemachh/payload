@@ -282,8 +282,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       swagger-ui-react:
-        specifier: ^5.19.0
-        version: 5.27.1(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^5.28.1
+        version: 5.28.1(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       swr:
         specifier: ^2.3.3
         version: 2.3.6(react@19.0.0)
@@ -6144,11 +6144,11 @@ packages:
   swagger-client@3.35.6:
     resolution: {integrity: sha512-OgwNneIdC45KXwOfwrlkwgWPeAKiV4K75mOnZioTddo1mpp9dTboCDVJas7185Ww1ziBwzShBqXpNGmyha9ZQg==}
 
-  swagger-ui-react@5.27.1:
-    resolution: {integrity: sha512-wwDoavIeJI/Pwiavn32FMJ5dfptz0BAOKjSrj7EdU22QdP3gdk9+MZHdzzjxWURmVj0kc0XoQfsFgjln0toJaw==}
+  swagger-ui-react@5.28.1:
+    resolution: {integrity: sha512-JfLZvbCpsjwUnYKx+Q1YfkrgM7gD6Zb7HnO8/DwFNo5xppwC3MbL27/5MhPkmDyMZ669r6CNiJ0SALiivs7iQg==}
     peerDependencies:
-      react: '>=16.8.0 <19'
-      react-dom: '>=16.8.0 <19'
+      react: '>=16.8.0 <20'
+      react-dom: '>=16.8.0 <20'
 
   swr@2.3.6:
     resolution: {integrity: sha512-wfHRmHWk/isGNMwlLGlZX5Gzz/uTgo0o2IRuTMcf4CPuPFJZlq0rDaKUx+ozB5nBOReNV1kiOyzMfj+MBMikLw==}
@@ -13940,11 +13940,12 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  swagger-ui-react@5.27.1(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  swagger-ui-react@5.28.1(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@babel/runtime-corejs3': 7.28.3
       '@scarf/scarf': 1.4.0
       base64-js: 1.5.1
+      buffer: 6.0.3
       classnames: 2.5.1
       css.escape: 1.5.1
       deep-extend: 0.6.0
