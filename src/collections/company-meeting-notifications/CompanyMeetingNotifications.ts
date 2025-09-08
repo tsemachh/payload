@@ -4,6 +4,7 @@ import MarkAllReadEndpoint from './endpoints/MarkAllReadEndpoint'
 import UserNotificationsEndpoint from './endpoints/UserNotificationsEndpoint'
 import SendCompanyMeetingNotificationsEndpoint from './endpoints/SendCompanyMeetingNotificationsEndpoint'
 import { CheckCompanyNotificationsEndpoint } from './endpoints/CheckCompanyNotificationsEndpoint'
+import { isAdmin, isUserCompanyNotification } from '@/utils/authUtils'
 
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
@@ -20,9 +21,19 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       limits: [10, 20, 50, 100, 200, 500],
     },
   },
+  access: {
+    // Only admins can create users
+    create: isAdmin,
+    // Admins can read all, but any other logged in user can only read themselves
+    read: isUserCompanyNotification,
+    // Admins can update all, but any other logged in user can only update themselves
+    update: isUserCompanyNotification,
+    // Only admins can delete
+    delete: isUserCompanyNotification,
+  },
   custom: {
     filterList: [[{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]],
-    defaultFilter: {'readStatus': {equals: false},createdAt:"last30Days"}
+    defaultFilter: { readStatus: { equals: false }, createdAt: 'last30Days' },
   },
   fields: [
     {

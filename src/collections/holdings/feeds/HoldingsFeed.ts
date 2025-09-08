@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isUserCompanyHoldingFeed } from '@/utils/authUtils'
 
 export const HoldingsFeed: CollectionConfig = {
   slug: 'holdings-feed',
@@ -14,11 +15,18 @@ export const HoldingsFeed: CollectionConfig = {
       limits: [10, 20, 50, 100, 200, 500],
     },
   },
+  access: {
+    // Only admins can create users
+    create: isUserCompanyHoldingFeed,
+    // Admins can read all, but any other logged in user can only read themselves
+    read: isUserCompanyHoldingFeed,
+    // Admins can update all, but any other logged in user can only update themselves
+    update: isUserCompanyHoldingFeed,
+    // Only admins can delete
+    delete: isUserCompanyHoldingFeed,
+  },
   custom: {
     filterList: [[{ name: 'valueDate' }, { name: 'processingStatus' }]],
-  },
-  access: {
-    read: () => true,
   },
   hooks: {
     afterChange: [

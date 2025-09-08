@@ -3,6 +3,7 @@ import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
 import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
 import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
 import { scheduleProcessHoldingsChangeTask } from '@/tasks/processHoldingsChange'
+import { isUserCompanyHolding, isUserCompanyHoldingWrite } from '@/utils/authUtils'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
@@ -19,6 +20,16 @@ export const Holdings: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
+  },
+  access: {
+    // Only admins can create users
+    create: isUserCompanyHoldingWrite,
+    // Admins can read all, but any other logged in user can only read themselves
+    read: isUserCompanyHolding,
+    // Admins can update all, but any other logged in user can only update themselves
+    update: isUserCompanyHoldingWrite,
+    // Only admins can delete
+    delete: isUserCompanyHoldingWrite,
   },
   custom: {
     filterList: [[{ name: 'valueDate' }]],

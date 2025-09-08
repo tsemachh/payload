@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { beforeValidaCompaniesFromFilename } from './hooks'
+import { isUserCompanyResearchDoc, isUserCompanyResearchDocWrite } from '@/utils/authUtils'
 
 export const ResearchDocument: CollectionConfig = {
   slug: 'research-documents',
@@ -23,9 +24,14 @@ export const ResearchDocument: CollectionConfig = {
     defaultFilter: { uploadedAt: 'last30Days' },
   },
   access: {
-    admin: ({ req: { user } }) => {
-      return Boolean(user)
-    },
+    // Only admins can create users
+    create: isUserCompanyResearchDocWrite,
+    // Admins can read all, but any other logged in user can only read themselves
+    read: isUserCompanyResearchDoc,
+    // Admins can update all, but any other logged in user can only update themselves
+    update: isUserCompanyResearchDocWrite,
+    // Only admins can delete
+    delete: isUserCompanyResearchDocWrite,
   },
   upload: {
     mimeTypes: [
