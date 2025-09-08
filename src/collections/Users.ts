@@ -1,6 +1,6 @@
 import type { CollectionConfig, PayloadRequest, Where } from 'payload'
 import { APIError } from 'payload'
-import { isAdmin, isAdminOrSelf, userFields } from '@shefing/authorization'
+import { isAdmin, isAdminFieldLevel, isAdminOrSelf } from '@/utils/authUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
@@ -131,11 +131,7 @@ export const Users: CollectionConfig = {
     useAPIKey: true,
     tokenExpiration: process.env.NODE_ENV == 'production' ? 43200 : 432000, // 12 hours in prod, 5 days in dev timeout
     forgotPassword: {
-      generateEmailHTML: async (args?: {
-        req?: PayloadRequest
-        token?: string
-        user?: any
-      }) => {
+      generateEmailHTML: async (args?: { req?: PayloadRequest; token?: string; user?: any }) => {
         if (!args?.req?.url) {
           throw new Error('Request or URL is missing')
         }
@@ -285,6 +281,16 @@ export const Users: CollectionConfig = {
       },
     },
     {
+      name: 'isAdmin',
+      type: 'checkbox',
+      defaultValue: false,
+      saveToJWT: true,
+      access: {
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel,
+      },
+    },
+    {
       type: 'row',
       fields: [
         {
@@ -350,7 +356,6 @@ export const Users: CollectionConfig = {
         },
       ],
     },
-    ...userFields,
   ],
   hooks: {
     beforeChange: [

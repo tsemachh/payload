@@ -2,7 +2,6 @@ import { Args, mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
-import { addAccess, Roles } from '@shefing/authorization'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -260,7 +259,6 @@ export default buildConfig({
     // ניהול
     Companies,
     Users,
-    Roles,
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
@@ -348,11 +346,6 @@ export default buildConfig({
 
     openapi({ openapiVersion: '3.0', metadata: { title: 'Dev API', version: '0.0.1' } }),
     swaggerUI({}),
-    addAccess({
-      rolesCollection: 'roles',
-      permissionsField: 'permissions',
-      excludedCollections: ['users'],
-    }),
     addAuthorsFields({
       excludedCollections: [],
       excludedGlobals: [],

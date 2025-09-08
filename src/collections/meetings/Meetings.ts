@@ -27,6 +27,7 @@ import {
 } from '@/collections/meetings/hooks/adminHooks'
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
+import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -112,6 +113,12 @@ export const Meetings: CollectionConfig = {
         { name: '_status' },
       ],
     ],
+  },
+  access: {
+    create: isAdmin,
+    read: isUserCompanyMeeting,
+    update: isUserCompanyMeetingWrite,
+    delete: isAdmin,
   },
   enableQueryPresets: true,
   defaultSort: 'meetingDate',
