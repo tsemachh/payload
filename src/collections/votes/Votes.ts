@@ -97,13 +97,9 @@ export const Votes: CollectionConfig = {
     group: 'תחזוקה',
   },
   access: {
-    // Only admins can create users
     create: isUserCompanyVoteWrite,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isUserCompanyVote,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isUserCompanyVoteWrite,
-    // Only admins can delete
     delete: isUserCompanyVoteWrite,
   },
   disableBulkEdit: true,

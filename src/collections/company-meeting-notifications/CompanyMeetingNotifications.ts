@@ -22,14 +22,10 @@ export const CompanyMeetingNotifications: CollectionConfig = {
     },
   },
   access: {
-    // Only admins can create users
     create: isAdmin,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isUserCompanyNotification,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isUserCompanyNotification,
-    // Only admins can delete
-    delete: isUserCompanyNotification,
+    delete: isAdmin,
   },
   custom: {
     filterList: [[{ name: 'createdAt' }, { name: 'notificationType' }, { name: 'readStatus' }]],

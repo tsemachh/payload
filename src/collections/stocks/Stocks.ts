@@ -74,13 +74,9 @@ export const Stocks: CollectionConfig = {
     defaultFilter: { active: { equals: true } },
   },
   access: {
-    // Only admins can create users
     create: isAdmin,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isLoggedIn,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isAdmin,
-    // Only admins can delete
     delete: isAdmin,
   },
   enableQueryPresets: true,

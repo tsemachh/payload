@@ -22,13 +22,9 @@ export const Holdings: CollectionConfig = {
     },
   },
   access: {
-    // Only admins can create users
     create: isUserCompanyHoldingWrite,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isUserCompanyHolding,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isUserCompanyHoldingWrite,
-    // Only admins can delete
     delete: isUserCompanyHoldingWrite,
   },
   custom: {

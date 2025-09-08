@@ -38,13 +38,9 @@ export const Companies: CollectionConfig = {
     group: 'ניהול',
   },
   access: {
-    // Only admins can create users
     create: isAdmin,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isUserCompany,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isAdmin,
-    // Only admins can delete
     delete: isAdmin,
   },
   custom: {

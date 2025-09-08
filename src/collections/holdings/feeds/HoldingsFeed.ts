@@ -16,13 +16,9 @@ export const HoldingsFeed: CollectionConfig = {
     },
   },
   access: {
-    // Only admins can create users
     create: isUserCompanyHoldingFeed,
-    // Admins can read all, but any other logged in user can only read themselves
     read: isUserCompanyHoldingFeed,
-    // Admins can update all, but any other logged in user can only update themselves
     update: isUserCompanyHoldingFeed,
-    // Only admins can delete
     delete: isUserCompanyHoldingFeed,
   },
   custom: {

@@ -27,7 +27,7 @@ import {
 } from '@/collections/meetings/hooks/adminHooks'
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
-import { isUserCompanyMeeting } from '@/utils/authUtils'
+import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -115,14 +115,10 @@ export const Meetings: CollectionConfig = {
     ],
   },
   access: {
-    // Only admins can create users
-    create: isUserCompanyMeeting,
-    // Admins can read all, but any other logged in user can only read themselves
+    create: isAdmin,
     read: isUserCompanyMeeting,
-    // Admins can update all, but any other logged in user can only update themselves
-    update: isUserCompanyMeeting,
-    // Only admins can delete
-    delete: isUserCompanyMeeting,
+    update: isUserCompanyMeetingWrite,
+    delete: isAdmin,
   },
   enableQueryPresets: true,
   defaultSort: 'meetingDate',

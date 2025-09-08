@@ -37,8 +37,8 @@ const getUserFundIds = (user: User): string[] => {
  */
 export const isUserCompany: Access<Company> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
-  debugger
+  if (user?.isAdmin || (user && !data)) return true
+
   const company = data as Company
   if (!user || !company) return false
 
@@ -62,7 +62,7 @@ export const isUserCompany: Access<Company> = ({ req: { user, data } }) => {
  */
 export const isUserCompanyHoldingFeed: Access<HoldingsFeed> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const holdingFeed = data as HoldingsFeed
   if (!user || !holdingFeed?.selectedCompanies) return false
@@ -81,7 +81,7 @@ export const isUserCompanyHoldingFeed: Access<HoldingsFeed> = ({ req: { user, da
  */
 export const isUserCompanyHolding: Access<Holding> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const holding = data as Holding
   if (!user || !holding?.fund) return false
@@ -105,7 +105,7 @@ export const isUserCompanyHoldingWrite: Access<Holding> = (params) => {
   } = params
 
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   // First check if user has read access
   if (!isUserCompanyHolding(params)) return false
@@ -119,7 +119,7 @@ export const isUserCompanyHoldingWrite: Access<Holding> = (params) => {
  */
 export const isUserCompanyResearchDoc: Access<ResearchDocument> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const doc = data as ResearchDocument
   if (!user || !doc?.companies) return false
@@ -142,7 +142,7 @@ export const isUserCompanyResearchDocWrite: Access<ResearchDocument> = (params) 
   } = params
 
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   // First check if user has read access
   if (!isUserCompanyResearchDoc(params)) return false
@@ -156,7 +156,7 @@ export const isUserCompanyResearchDocWrite: Access<ResearchDocument> = (params) 
  */
 export const isUserCompanyVote: Access<Vote> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const vote = data as Vote
   if (!user || !vote?.company) return false
@@ -177,7 +177,7 @@ export const isUserCompanyVoteWrite: Access<Vote> = (params) => {
   } = params
 
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   // First check if user has read access
   if (!isUserCompanyVote(params)) return false
@@ -191,7 +191,7 @@ export const isUserCompanyVoteWrite: Access<Vote> = (params) => {
  */
 export const isUserCompanyMeeting: Access<Meeting> = ({ req: { user, data } }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const meeting = data as Meeting
   if (!user || !meeting?.funds) return false
@@ -206,13 +206,31 @@ export const isUserCompanyMeeting: Access<Meeting> = ({ req: { user, data } }) =
 }
 
 /**
+ * Check if a user has write access to a meeting
+ */
+export const isUserCompanyMeetingWrite: Access<Meeting> = (params) => {
+  const {
+    req: { user, data },
+  } = params
+
+  // If Admin or data is null (list request), allow access
+  if (user?.isAdmin || (user && !data)) return true
+
+  // First check if user has read access
+  if (!isUserCompanyMeeting(params)) return false
+
+  // Check if user has write permission for this fund
+  return isUserHasWritePermission(user as TypedUser)
+}
+
+/**
  * Check if a user has access to a notification
  */
 export const isUserCompanyNotification: Access<CompanyMeetingNotification> = ({
   req: { user, data },
 }) => {
   // If Admin or data is null (list request), allow access
-  if (user?.isAdmin || !data) return true
+  if (user?.isAdmin || (user && !data)) return true
 
   const notification = data as CompanyMeetingNotification
   if (!user || !notification?.company) return false
