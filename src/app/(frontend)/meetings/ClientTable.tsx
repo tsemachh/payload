@@ -22,14 +22,18 @@ export function MeetingsTableClient() {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
   const [isExporting, setIsExporting] = useState(false)
+  const [fundPassiveMap, setFundPassiveMap] = useState(new Map())
   // Initialize with all companies and funds selected
   useEffect(() => {
-    if (companies.length > 0 || funds.length > 0) {
+    if (companies.length > 0) {
       const companyIds = companies.map((company) => company.id)
-      const fundIds = funds.map((fund) => fund.id)
       setSelectedCompanyIds([...companyIds])
     }
-  }, [companies, funds])
+  }, [companies])
+
+  useEffect(() => {
+    setFundPassiveMap(new Map(funds?.map((fund) => [fund.id, fund.passiveFund]) || []))
+  }, [funds])
 
   // Build API URL with company filter if companies are selected
   const apiUrl = useMemo(() => {
@@ -46,6 +50,7 @@ export function MeetingsTableClient() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
+
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
       return null
@@ -72,17 +77,24 @@ export function MeetingsTableClient() {
 
   const dataWithPercentages = useMemo(() => {
     if (!meetingsResponse?.data) return []
-
     if (!votingPercentagesMap) return meetingsResponse?.data
 
-    return meetingsResponse?.data.map((meeting: MeetingTableDataType) => {
-      const percentageData = votingPercentagesMap[meeting.meetingIdPayload]
-      return {
-        ...meeting,
-        votingPercentage: percentageData ? percentageData.votingPercentage : null,
-      }
-    })
-  }, [meetingsResponse?.data, votingPercentagesMap])
+    return meetingsResponse?.data.map((meeting: MeetingTableDataType) => ({
+      ...meeting,
+      votingPercentage: votingPercentagesMap[meeting.meetingIdPayload]
+        ? votingPercentagesMap[meeting.meetingIdPayload].votingPercentage
+        : null,
+      companies:
+        meeting.companies?.map((company) => ({
+          ...company,
+          funds:
+            company.funds?.map((fund) => ({
+              ...fund,
+              passiveFund: fundPassiveMap.has(fund.id) ? fundPassiveMap.get(fund.id) : false,
+            })) || [],
+        })) || [],
+    }))
+  }, [meetingsResponse?.data, votingPercentagesMap, funds])
 
   const handleCompanySelectionChange = useCallback((selected: string[]) => {
     setSelectedCompanyIds(selected)

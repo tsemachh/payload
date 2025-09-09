@@ -938,7 +938,7 @@ export default function VotingForm() {
                             >
                               {item.privilegedMajority && !item.isRemovedFromAgenda && (
                                 <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                                  דורש רוב מיוחד
+                                  דרוש רוב מיוחד
                                 </span>
                               )}
                               {item.isRemovedFromAgenda && (

@@ -1295,7 +1295,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                                           key={`company-${company.id}-reported`}
                                           className="py-2 px-3 whitespace-nowrap text-center"
                                         >
-                                          <BooleanIcon iconType={companyVote?.reported} showX={false} />
+                                          <BooleanIcon
+                                            iconType={companyVote?.reported}
+                                            showX={false}
+                                          />
                                         </TableCell>
                                       )
                                     }
@@ -1395,7 +1398,8 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                           ),
                                                         }}
                                                       >
-                                                        {fund.holdingsCompanyName}
+                                                        {`${fund.holdingsCompanyName} `}
+                                                        {fund.passiveFund && <b>אין חובת הצבעה </b>}
                                                       </span>
                                                     </div>
                                                   )}
