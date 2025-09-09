@@ -215,6 +215,7 @@ export default buildConfig({
     },
 
     components: {
+      afterLogin: ['/admincomponents/auth/LoginCaptcha'],
       providers: ['/providers/CustomContext#CustomContextProvider'],
       graphics: {
         Logo: '/graphics/Logo',
