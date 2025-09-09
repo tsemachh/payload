@@ -3,7 +3,16 @@ import { processMeetingState } from '@/tasks/processMeetingState'
 
 const ProcessMeetingStateEndpoint = async (req: PayloadRequest) => {
   try {
-    // Call the core function
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
+
+    // Call the core function with appropriate access control
     const result = await processMeetingState(req)
 
     // Convert the result to a Response object

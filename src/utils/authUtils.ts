@@ -13,7 +13,7 @@ import { getIdOfRelationField } from '@/utils/utils'
 /**
  * Extract company IDs from a user's companies array
  */
-const getUserCompanyIds = (user: User): string[] => {
+export const getUserCompanyIds = (user: User): string[] => {
   if (!user?.companies) return []
 
   return user.companies
@@ -26,7 +26,7 @@ const getUserCompanyIds = (user: User): string[] => {
 /**
  * Extract fund IDs from a user's funds array
  */
-const getUserFundIds = (user: User): string[] => {
+export const getUserFundIds = (user: User): string[] => {
   if (!user?.funds) return []
 
   return user.funds.map(getIdOfRelationField).filter(Boolean)

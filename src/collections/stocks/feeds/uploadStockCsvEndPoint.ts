@@ -1,4 +1,4 @@
-import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { PayloadRequest } from 'payload'
 import { processStocksFeedCsv } from './processStocksFeedCsv'
 import { format } from 'date-fns'
 import { calculateFileHash, checkDuplicateFileHash } from '@/utils/fileUtils'
@@ -12,6 +12,9 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
     }
     if (!req.user) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
+    }
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
     }
     // Get the ReadableStream from the request body
     const stream = req.body

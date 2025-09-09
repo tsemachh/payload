@@ -50,6 +50,7 @@ const updateCompanySilencedStocks = async (
       data: {
         silencedStocks: updatedSilencedStocks,
       },
+      req,
     })
 
     return {

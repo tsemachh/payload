@@ -1,8 +1,14 @@
 import { MeetingWithCompanies } from '@/app/(frontend)/types/meetings'
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 export const getVotingPercentages = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const body = req.json ? await req.json() : null
     if (!body || !body.meetings) {
       return Response.json({ error: 'Invalid request format' }, { status: 400 })

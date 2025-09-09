@@ -12,6 +12,9 @@ const ImportStocksEndPoint = async (req: PayloadRequest) => {
   if (!req.user) {
     return Response.json({ error: 'forbidden' }, { status: 403 })
   }
+  if (!req.user.isAdmin) {
+    return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+  }
   // @ts-expect-error req not null
   const data = await req.json()
   const rows: ImportStock[] = data as ImportStock[]

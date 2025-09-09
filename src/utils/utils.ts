@@ -1,4 +1,4 @@
-import { BasePayload, CollectionSlug, TypeWithID } from 'payload'
+import { BasePayload, CollectionSlug, PayloadRequest, TypeWithID } from 'payload'
 import type { AdminNotificationType, Stock } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
@@ -204,13 +204,22 @@ export const getIdOfRelationField = (item: TypeWithID | string) => {
 }
 
 /**
+ * Validates if a string is a valid MongoDB ObjectId
+ * @param id - The string to validate
+ * @returns true if the string is a valid MongoDB ObjectId, false otherwise
+ */
+export const isValidObjectId = (id: string): boolean => {
+  return id !== undefined && id !== null && /^[0-9a-fA-F]{24}$/.test(id)
+}
+
+/**
  * Gets the parent company ID for a given fund ID
  * @param fundId - The ID of the fund
  * @returns The ID of the parent company, or the fund ID itself if no parent company is found
  */
 // Map to store the relationship between fund IDs and their parent company IDs
-let fundIdToCompanyIdMap: Map<string, string> = new Map<string, string>();
-let mapInitialized = false;
+let fundIdToCompanyIdMap: Map<string, string> = new Map<string, string>()
+let mapInitialized = false
 
 /**
  * Preloads the map of fundId -> companyId
@@ -220,8 +229,7 @@ let mapInitialized = false;
  */
 export async function initFundIdToCompanyIdMap(payload: BasePayload): Promise<Map<string, string>> {
   try {
-    if (mapInitialized)
-      return fundIdToCompanyIdMap
+    if (mapInitialized) return fundIdToCompanyIdMap
     // Query all companies of type 'regular'
     const { docs } = await payload.find({
       collection: 'companies',
@@ -236,30 +244,30 @@ export async function initFundIdToCompanyIdMap(payload: BasePayload): Promise<Ma
           equals: 'regular',
         },
       },
-    });
+    })
 
     // Create a new map
-    const newMap = new Map<string, string>();
+    const newMap = new Map<string, string>()
 
     // For each company, map its subCompanies (funds) to the company ID
     for (const company of docs) {
-      const companyId = company.id;
-      const subCompanies = company.subCompanies || [];
+      const companyId = company.id
+      const subCompanies = company.subCompanies || []
 
       // Map each subCompany ID (fund ID) to the company ID
       for (const subCompanyId of subCompanies) {
-        newMap.set(subCompanyId as string, companyId as string);
+        newMap.set(subCompanyId as string, companyId as string)
       }
     }
 
     // Update the global map
-    fundIdToCompanyIdMap = newMap;
-    mapInitialized = true;
+    fundIdToCompanyIdMap = newMap
+    mapInitialized = true
 
-    return fundIdToCompanyIdMap;
+    return fundIdToCompanyIdMap
   } catch (error) {
-    console.error('Error initializing fundIdToCompanyIdMap:', error);
-    return new Map<string, string>();
+    console.error('Error initializing fundIdToCompanyIdMap:', error)
+    return new Map<string, string>()
   }
 }
 
@@ -268,17 +276,17 @@ export async function initFundIdToCompanyIdMap(payload: BasePayload): Promise<Ma
  * @param fundId - The ID of the fund
  * @returns The ID of the parent company, or the fund ID itself if no parent company is found
  */
-export const getCompanyIdFromFundId = (fundId: string): string | null=> {
+export const getCompanyIdFromFundId = (fundId: string): string | null => {
   // If no fund ID is provided, return an empty string
-  if (!fundId) return null;
+  if (!fundId) return null
 
   // If the map is initialized, use it to look up the company ID
   if (mapInitialized && fundIdToCompanyIdMap.has(fundId)) {
-    return fundIdToCompanyIdMap.get(fundId) as string;
+    return fundIdToCompanyIdMap.get(fundId) as string
   }
 
   // If the map is not initialized or the fund ID is not in the map, return null
-  return null;
+  return null
 }
 
 export function findSubCompanyNameById(
@@ -303,7 +311,7 @@ export function findSubCompanyNameById(
  * @returns The created notification or null if there was an error
  */
 export async function createAdminNotification(
-  payload: BasePayload,
+  req: PayloadRequest,
   message: string,
   type: AdminNotificationType,
   url?: string,
@@ -311,22 +319,49 @@ export async function createAdminNotification(
   relatedUser?: string,
   meeting?: string,
 ) {
+  // Validate all IDs before proceeding
+  if (relatedUser && !isValidObjectId(relatedUser)) {
+    console.error(`Invalid relatedUser ID: ${relatedUser}`)
+    throw new Error(`Invalid relatedUser ID: ${relatedUser}`)
+  }
+
+  if (meeting && !isValidObjectId(meeting)) {
+    console.error(`Invalid meeting ID: ${meeting}`)
+    throw new Error(`Invalid meeting ID: ${meeting}`)
+  }
+
+  // Validate company IDs if they exist
+  let validatedCompanies: string[] | undefined = undefined
+  if (companies) {
+    const companyArray = Array.isArray(companies) ? companies : [companies]
+    validatedCompanies = companyArray.filter(id => isValidObjectId(id))
+
+    if (validatedCompanies.length === 0) {
+      console.error(`No valid company IDs found in: ${JSON.stringify(companies)}`)
+      throw new Error(`No valid company IDs found in: ${JSON.stringify(companies)}`)
+    }
+  }
+
+  const data = {
+    message,
+    type,
+    url,
+    handled: false,
+    companies: validatedCompanies,
+    relatedUser,
+    meeting,
+  }
+
   try {
-    return await payload.create({
+    return await req.payload.create({
       collection: 'admin-notifications',
-      data: {
-        message,
-        type,
-        url,
-        handled: false,
-        companies: companies ? (Array.isArray(companies) ? companies : [companies]) : undefined,
-        relatedUser,
-        meeting,
-      },
+      data,
+      req,
     })
   } catch (error) {
     console.error('Error creating admin notification:', error)
-    return null
+    console.error('Error creating admin notification: data', data)
+    throw error // Re-throw the error so it can be caught and handled by the caller
   }
 }
 
@@ -339,13 +374,13 @@ export async function createAdminNotification(
  * @returns An object with information about the operation result
  */
 export async function revertToPublished(
-  payload: BasePayload,
+  req: PayloadRequest,
   collectionSlug: string,
   documentId: string,
 ) {
   try {
     // Step 1: Fetch the published version (without draft=true)
-    const publishedDoc = await payload.findByID({
+    const publishedDoc = await req.payload.findByID({
       collection: collectionSlug as CollectionSlug,
       id: documentId,
       depth: 0,
@@ -355,11 +390,12 @@ export async function revertToPublished(
     if (publishedDoc) {
       // Step 2: Update the document with the published data
       // This creates a new version that matches the published version
-      const result = await payload.update({
+      const result = await req.payload.update({
         collection: collectionSlug as CollectionSlug,
         id: documentId,
         data: publishedDoc, // Use the published document data
         draft: true, // Update the draft version
+        req,
       })
 
       return {

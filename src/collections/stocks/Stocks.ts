@@ -239,6 +239,7 @@ export const Stocks: CollectionConfig = {
                             where: {
                               relatedStock: { equals: originalDoc.id },
                             },
+                            req,
                           })
                         }
                         return value

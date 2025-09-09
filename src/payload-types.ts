@@ -402,9 +402,10 @@ export interface User {
   name?: string | null;
   legacyId?: number | null;
   active?: boolean | null;
+  isAdmin?: boolean | null;
+  isSystem?: boolean | null;
   companies?: UserCompany;
   funds?: (string | Company)[] | null;
-  isAdmin?: boolean | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   receiveMailNotification?: boolean | null;
@@ -1453,9 +1454,10 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   legacyId?: T;
   active?: T;
+  isAdmin?: T;
+  isSystem?: T;
   companies?: T | UserCompanySelect<T>;
   funds?: T;
-  isAdmin?: T;
   lastLogin?: T;
   changePassword?: T;
   receiveMailNotification?: T;

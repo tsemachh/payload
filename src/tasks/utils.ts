@@ -1,7 +1,7 @@
 import { PayloadRequest } from 'payload'
 import { User } from '@/payload-types'
 
-export const sanitizeRequest = async (req: PayloadRequest): Promise<void> => {
+export const sanitizeRequest = async (req: PayloadRequest, jobName: string): Promise<void> => {
   if (req?.user == null) {
     const res = await req.payload.find({
       collection: 'users',
@@ -10,5 +10,6 @@ export const sanitizeRequest = async (req: PayloadRequest): Promise<void> => {
       },
     })
     req.user = res.docs[0] as User & { collection: 'users' }
+    req.user.name = jobName
   }
 }

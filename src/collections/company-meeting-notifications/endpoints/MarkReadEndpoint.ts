@@ -27,6 +27,7 @@ const MarkReadEndpoint = async (req: PayloadRequest) => {
       data: {
         readStatus: true,
       },
+      req,
     })
 
     return Response.json({
