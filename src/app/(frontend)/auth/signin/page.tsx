@@ -149,6 +149,13 @@ function SignInContent() {
                 disabled={isLoading}
               />
             </div>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || turnstileStatus !== 'success'}
+            >
+              {isLoading ? 'מתחבר...' : 'התחבר'}
+            </Button>
             <div className="space-y-2 mb-4">
               <Label htmlFor="turnstile">אימות אבטחה</Label>
               <TurnstileCaptcha
@@ -158,13 +165,6 @@ function SignInContent() {
                 className="mt-2"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading || turnstileStatus !== 'success'}
-            >
-              {isLoading ? 'מתחבר...' : 'התחבר'}
-            </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
