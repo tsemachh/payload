@@ -536,6 +536,18 @@ export interface Holding {
   id: string;
   fund: string | Company;
   valueDate: string;
+  stats?: {
+    recordCount?: number | null;
+    accountIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
   holdings: HoldingsPerDay;
   creator?: string | null;
   updator?: string | null;
@@ -815,7 +827,6 @@ export interface HoldingsFeed {
         id?: string | null;
       }[]
     | null;
-  accountsJson?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1378,6 +1389,12 @@ export interface StocksSelect<T extends boolean = true> {
 export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
   valueDate?: T;
+  stats?:
+    | T
+    | {
+        recordCount?: T;
+        accountIds?: T;
+      };
   holdings?: T | HoldingsPerDaySelect<T>;
   creator?: T;
   updator?: T;
@@ -1627,7 +1644,6 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
         line?: T | HoldingFeedLineSelect<T>;
         id?: T;
       };
-  accountsJson?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

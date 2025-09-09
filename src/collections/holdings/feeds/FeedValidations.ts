@@ -8,7 +8,7 @@ import {
 } from '@/collections/holdings/feeds/FeedTypes'
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
-import { getPreviousFeed } from '@/collections/holdings/feeds/FeedDataUtils'
+import { getPreviousHoldings } from '@/collections/holdings/feeds/FeedDataUtils'
 import { containsHebrewText } from '@/collections/holdings/feeds/FeedUtils'
 
 export type HoldingFeedLineWithName = HoldingFeedLine & {
@@ -123,14 +123,150 @@ export const validateWholeFeed = (
   return { fatalErrors, headerWarning }
 }
 /**
+ * Initialize company ID to name mapping from user's treeCompanies
+ * @param req The payload request
+ * @returns Map of company IDs to company names
+ */
+export const initializeCompanyIdToNameMap = (req: PayloadRequest): Map<string, string> => {
+  const companyIdToNameMap = new Map<string, string>()
+
+  if (req.user?.treeCompanies) {
+    try {
+      const companyTree = JSON.parse(req.user.treeCompanies)
+
+      // Recursively extract company names from the tree structure
+      const extractCompanyNames = (companies: any[]) => {
+        companies.forEach((company: any) => {
+          if (company.id && company.name) {
+            companyIdToNameMap.set(company.id, company.name)
+          }
+          if (company.subCompanies && company.subCompanies.length > 0) {
+            extractCompanyNames(company.subCompanies)
+          }
+        })
+      }
+
+      extractCompanyNames(companyTree)
+    } catch (error) {
+      console.error('Error parsing treeCompanies:', error)
+    }
+  }
+
+  return companyIdToNameMap
+}
+
+/**
+ * Group rows by company and create maps for accounts and rows
+ * @param companiesWithData Set of company IDs that have data in the feed
+ * @param accountIds Array of account IDs in the feed
+ * @param standardizedRows Array of standardized rows
+ * @param accountToCompanyMap Map of account numbers to company IDs
+ * @param selectedCompanies Array of selected company IDs
+ * @returns Object containing maps of accounts and rows by company
+ */
+export const groupRowsByCompany = (
+  companiesWithData: Set<string>,
+  accountIds: number[],
+  standardizedRows: StandardizedRow[],
+  accountToCompanyMap: Map<number, string>,
+  selectedCompanies: string[],
+): {
+  currentAccountsByCompany: Map<string, Set<string>>
+  currentRowsByCompany: Map<string, StandardizedRow[]>
+} => {
+  const currentAccountsByCompany = new Map<string, Set<string>>()
+  const currentRowsByCompany = new Map<string, StandardizedRow[]>()
+
+  // Initialize empty sets for all companies first
+  for (const companyId of companiesWithData) {
+    currentRowsByCompany.set(companyId, [])
+    currentAccountsByCompany.set(companyId, new Set<string>())
+  }
+
+  // Add ALL accounts from accountIds to their respective companies
+  accountIds.forEach((accountId) => {
+    const companyForAccount = accountToCompanyMap.get(accountId)
+    if (companyForAccount && selectedCompanies.includes(companyForAccount)) {
+      const accounts = currentAccountsByCompany.get(companyForAccount)
+      if (accounts) {
+        accounts.add(accountId.toString())
+      }
+    }
+  })
+
+  // Count current rows per company from standardizedRows
+  standardizedRows.forEach((row) => {
+    const accountId = Number(row.accountId)
+    if (!isNaN(accountId)) {
+      const companyForAccount = accountToCompanyMap.get(accountId)
+      if (companyForAccount && selectedCompanies.includes(companyForAccount)) {
+        const rows = currentRowsByCompany.get(companyForAccount)
+        if (rows) {
+          rows.push(row)
+        }
+      }
+    }
+  })
+
+  return { currentAccountsByCompany, currentRowsByCompany }
+}
+
+/**
+ * Check for duplicate feed for a specific date by company
+ * @param req The payload request
+ * @param companyId The ID of the company to check
+ * @param startValueDate The start of the value date range
+ * @param endValueDate The end of the value date range
+ * @param valueDate The original value date string
+ * @param companyIdToNameMap Map of company IDs to company names
+ * @param warnings Array of warnings to append to
+ */
+export const checkDuplicateFeedForDate = async (
+  req: PayloadRequest,
+  companyId: string,
+  startValueDate: Date,
+  endValueDate: Date,
+  valueDate: string,
+  companyIdToNameMap: Map<string, string>,
+  warnings: FeedWarning[],
+): Promise<void> => {
+  const existingHoldings = await req.payload.find({
+    collection: 'holdings',
+    select: { fund: true },
+    where: {
+      valueDate: {
+        greater_than_equal: startValueDate.toISOString(),
+        less_than_equal: endValueDate.toISOString(),
+      },
+      fund: {
+        equals: companyId,
+      },
+    },
+    depth: 0,
+    limit: 1,
+  })
+
+  if (existingHoldings.docs.length > 0) {
+    const formattedDate = valueDate.split('-').reverse().join('/')
+    const companyName = companyIdToNameMap.get(companyId) || companyId
+    warnings.push({
+      type: 'duplicateFeedForDate',
+      message: `בוצעה בעבר הזנה לתאריך ${formattedDate} עבור קרן ${companyName}`,
+      count: existingHoldings.docs.length,
+      companyId,
+    })
+  }
+}
+
+/**
  * Check for warnings in the feed
  * @param req The payload request
  * @param valueDate The value date
  * @param accountIds The account IDs in the feed
  * @param standardizedRows The standardized rows
  * @param accountToCompanyMap Map of account numbers to company IDs
- * @param selectedCompanies
- * @returns Array of warnings
+ * @param selectedCompanies Array of selected company IDs
+ * @returns Object containing array of warnings and set of companies with data
  */
 export const checkFeedWarnings = async (
   req: PayloadRequest,
@@ -139,28 +275,40 @@ export const checkFeedWarnings = async (
   standardizedRows: StandardizedRow[],
   accountToCompanyMap: Map<number, string>,
   selectedCompanies: string[],
-): Promise<FeedWarning[]> => {
+): Promise<{ warnings: FeedWarning[]; companiesWithData: Set<string> }> => {
   const warnings: FeedWarning[] = []
 
-  // Check for duplicate feed for date
-  const existingHoldings = await req.payload.find({
-    collection: 'holdings-feed',
-    where: {
-      valueDate: { equals: new Date(valueDate).toISOString() },
-      selectedCompanies: {
-        contains: selectedCompanies,
-      },
-    },
-    depth: 0,
-    limit: 0,
-  })
+  // Create company ID to name mapping from user's treeCompanies
+  const companyIdToNameMap = initializeCompanyIdToNameMap(req)
+  const startValueDate = new Date(valueDate)
+  startValueDate.setHours(0, 0, 0, 0)
+  const endValueDate = new Date(valueDate)
+  endValueDate.setHours(23, 59, 59, 999)
 
-  if (existingHoldings.docs.length > 0) {
-    const formattedDate = valueDate.split('-').reverse().join('/')
+  // Get companies that actually have data in the current feed
+  const companiesWithData = new Set<string>()
+  standardizedRows.forEach((row) => {
+    const accountId = Number(row.accountId)
+    if (!isNaN(accountId)) {
+      const companyForAccount = accountToCompanyMap.get(accountId)
+      if (companyForAccount) {
+        companiesWithData.add(companyForAccount)
+      }
+    }
+  })
+  //Check for companies in selectedCompanies not in the feed
+  const missingCompanies = selectedCompanies.filter(
+    (companyId) => !companiesWithData.has(companyId),
+  )
+  if (missingCompanies.length > 0) {
+    const missingCompanyNames = missingCompanies.map(
+      (companyId) => companyIdToNameMap.get(companyId) || companyId,
+    )
     warnings.push({
-      type: 'duplicateFeedForDate',
-      message: `בוצעה בעבר הזנה לתאריך ${formattedDate}`,
-      count: existingHoldings.docs.length,
+      type: 'missingCompanyData',
+      message: `נבחרו קרנות ללא נתונים בקובץ`,
+      details: missingCompanyNames,
+      count: missingCompanies.length,
     })
   }
 
@@ -183,65 +331,100 @@ export const checkFeedWarnings = async (
     })
   }
 
-  // Check for line count difference compared to previous feed
-  const previousFeed = await getPreviousFeed(req, valueDate, selectedCompanies)
-  if (previousFeed) {
-    const previousCount = previousFeed.processingResults?.length || 0
-    const currentCount = standardizedRows.length
-    const percentDifference =
-      previousCount > 0 ? (Math.abs(currentCount - previousCount) / previousCount) * 100 : 0
+  // Group current rows by company
+  const { currentAccountsByCompany, currentRowsByCompany } = groupRowsByCompany(
+    companiesWithData,
+    accountIds,
+    standardizedRows,
+    accountToCompanyMap,
+    selectedCompanies,
+  )
 
-    if (percentDifference > 5) {
-      warnings.push({
-        type: 'lineCountDifference',
-        message: `חריגה בכמות הרשומות בהשוואה להזנה קודמת`,
-        details: [`הזנה קודמת: ${previousCount} שורות`, `הזנה נוכחית: ${currentCount} שורות`],
-      })
-    }
+  // Compare data for each company
+  for (const companyId of companiesWithData) {
+    // Check for duplicate feed for date by company (only for companies with data in current feed)
+    await checkDuplicateFeedForDate(
+      req,
+      companyId,
+      startValueDate,
+      endValueDate,
+      valueDate,
+      companyIdToNameMap,
+      warnings,
+    )
 
-    const currentAccounts = new Set<string>(accountIds.map((id) => id.toString()))
+    const currentRows = currentRowsByCompany.get(companyId) || []
+    const currentAccounts = currentAccountsByCompany.get(companyId) || new Set<string>()
+    const currentCount = currentRows.length
 
-    // Safely parse accountsJson with null check and try-catch
-    let previousAccountsArray: string[] = []
-    try {
-      if (previousFeed.accountsJson) {
-        const parsed = JSON.parse(previousFeed.accountsJson as string)
-        previousAccountsArray = parsed?.length ? parsed.map(String) : []
+    // Get previous holdings for this company
+    const previousHolding = await getPreviousHoldings(req, valueDate, companyId)
+
+    if (previousHolding) {
+      // Get previous stats
+      const previousStats = previousHolding.stats || {}
+      const previousCount = previousStats.recordCount || 0
+
+      // Parse previous account IDs
+      let previousAccountIds: string[] = []
+      try {
+        if (previousStats.accountIds) {
+          const parsed = JSON.parse(previousStats.accountIds as string)
+          previousAccountIds = parsed?.length ? parsed.map(String) : []
+        }
+      } catch (error) {
+        console.error(`Error parsing accountIds for company ${companyId}:`, error)
+        previousAccountIds = []
       }
-    } catch (error) {
-      console.error('Error parsing accountsJson:', error)
-      previousAccountsArray = []
-    }
 
-    const previousAccounts = new Set<string>(previousAccountsArray)
+      const previousAccounts = new Set<string>(previousAccountIds)
+      // Check for line count difference
+      const percentDifference =
+        previousCount > 0 ? (Math.abs(currentCount - previousCount) / previousCount) * 100 : 0
 
-    // חשבונות שהיו קודם ועכשיו חסרים
-    const missingAccounts = previousAccountsArray.filter((account) => !currentAccounts.has(account))
+      if (previousCount > 0 && percentDifference > 5) {
+        const companyName = companyIdToNameMap.get(companyId) || companyId
+        warnings.push({
+          type: 'lineCountDifference',
+          message: `חריגה בכמות הרשומות בהשוואה להזנה קודמת עבור קרן ${companyName}`,
+          details: [`הזנה קודמת: ${previousCount} שורות`, `הזנה נוכחית: ${currentCount} שורות`],
+          companyId,
+        })
+      }
 
-    // חשבונות שעכשיו קיימים אבל לא היו קודם
-    const extraAccounts = [...currentAccounts].filter((account) => !previousAccounts.has(account))
+      // Check for missing accounts
+      const missingAccounts = previousAccountIds.filter((account) => !currentAccounts.has(account))
 
-    // אזהרות
-    if (missingAccounts.length > 0) {
-      warnings.push({
-        type: 'missingAccounts',
-        message: 'חשבונות חסרים בהשוואה להזנה קודמת',
-        details: missingAccounts,
-        count: missingAccounts.length,
-      })
-    }
+      if (missingAccounts.length > 0) {
+        const companyName = companyIdToNameMap.get(companyId) || companyId
+        warnings.push({
+          type: 'missingAccounts',
+          message: `חשבונות חסרים בהשוואה להזנה קודמת עבור קרן ${companyName}`,
+          details: missingAccounts,
+          count: missingAccounts.length,
+          companyId,
+        })
+      }
 
-    if (extraAccounts.length > 0) {
-      warnings.push({
-        type: 'missingAccounts',
-        message: 'נמצאו חשבונות חדשים שלא הופיעו בהזנה הקודמת',
-        details: extraAccounts,
-        count: extraAccounts.length,
-      })
+      // Check for extra accounts
+      const extraAccounts = Array.from(currentAccounts).filter(
+        (account) => !previousAccounts.has(account),
+      )
+
+      if (extraAccounts.length > 0) {
+        const companyName = companyIdToNameMap.get(companyId) || companyId
+        warnings.push({
+          type: 'extraAccounts',
+          message: `נמצאו חשבונות חדשים שלא הופיעו בהזנה הקודמת עבור קרן ${companyName}`,
+          details: extraAccounts,
+          count: extraAccounts.length,
+          companyId,
+        })
+      }
     }
   }
 
-  return warnings
+  return { warnings, companiesWithData }
 }
 
 /**

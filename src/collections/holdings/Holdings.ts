@@ -76,6 +76,26 @@ export const Holdings: CollectionConfig = {
       ],
     },
     {
+      name: 'stats',
+      label: 'סטטיסטיקות',
+      type: 'group',
+      admin: {
+        readOnly: true,
+      },
+      fields: [
+        {
+          name: 'recordCount',
+          label: 'מספר רשומות',
+          type: 'number',
+        },
+        {
+          name: 'accountIds',
+          label: 'מזהי חשבונות',
+          type: 'json',
+        },
+      ],
+    },
+    {
       name: 'holdings',
       label: 'החזקות',
       type: 'array',
