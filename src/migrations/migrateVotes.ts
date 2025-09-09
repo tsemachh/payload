@@ -42,9 +42,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Executing SQL query for meetings.')
     const dateCutoff = process.env.MIGRATION_VOTES_DATE_CUTOFF || '2018-01-01'
     console.log(`Using date cutoff: ${dateCutoff}`)
-    const meetingsResult = await pool.request().query(`
+    const request = pool.request()
+    request.input('dateCutoff', sql.VarChar, dateCutoff)
+    const meetingsResult = await request.query(`
         SELECT id
-        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '${dateCutoff}';
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate > @dateCutoff;
     `)
 
     const meetings = meetingsResult.recordset
@@ -83,10 +85,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             }
 
             // Get agenda items for this meeting
-            const agendaResult = await pool?.request().query(`
+            const agendaRequest = pool?.request()
+            agendaRequest?.input('meetingId', sql.Int, meeting.id)
+            const agendaResult = await agendaRequest?.query(`
                 SELECT id
                 FROM [dbEmda].[dbo].[meetingagenda]
-                WHERE mid = ${meeting.id}
+                WHERE mid = @meetingId
             `)
 
             const agendaItems = agendaResult?.recordset
@@ -133,11 +137,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   .execute('getMeetingAgendaClients')
 
                 // Get voting orders memo from meetingclients table
-                const meetingClientsResult = await pool?.request().query(`
+                const clientsRequest = pool?.request()
+                clientsRequest?.input('meetingId', sql.Int, meeting.id)
+                clientsRequest?.input('firmId', sql.Int, company.firmid)
+                const meetingClientsResult = await clientsRequest?.query(`
                   SELECT [votingOrdersMemo]
                   FROM [dbEmda].[dbo].[meetingclients]
-                  WHERE mid = ${meeting.id}
-                    AND firmid = ${company.firmid}
+                  WHERE mid = @meetingId
+                    AND firmid = @firmId
                 `)
 
                 // Filter voting data to get only the votes for the current company

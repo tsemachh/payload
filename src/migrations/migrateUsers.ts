@@ -339,7 +339,6 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
       {
         name: 'amosp@praedicta.com',
         isAdmin: true, //TODO Change to userRoles
-        userRoles: [],
         enableAPIKey: true,
         apiKey: '3dbb49cb-ce8f-4032-a3df-4ed088d4234c',
         email: 'amosp@praedicta.com',

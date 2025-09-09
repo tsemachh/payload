@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/utils/authUtils'
 
 export const StocksFeed: CollectionConfig = {
   slug: 'stocks-feed',
@@ -15,12 +16,13 @@ export const StocksFeed: CollectionConfig = {
     },
   },
   custom: {
-    filterList: [
-      [{ name:'createdAt'}]
-    ],
+    filterList: [[{ name: 'createdAt' }]],
   },
   access: {
-    read: () => true,
+    create: isAdmin,
+    read: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   fields: [
     {

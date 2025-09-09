@@ -619,8 +619,17 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           const match = meeting?.fundsWithHolding?.find((item) => {
             return item.fund && (item.fund as string) == fundId
           })
-          if (match && match.fund && match?.quantity) {
-            quantity = match.quantity
+          if (match && match.fund) {
+            if (match?.ownedQuantity) {
+              quantity = match.ownedQuantity
+            } else if (match.quantity) {
+              quantity = match.quantity
+            } else {
+              console.error(
+                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }
           } else {
             console.error(
               `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,

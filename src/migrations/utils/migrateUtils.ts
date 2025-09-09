@@ -1,4 +1,4 @@
-import sql from 'mssql'
+import * as sql from 'mssql'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
@@ -23,7 +23,9 @@ export async function getStockValues(pool: sql.ConnectionPool) {
   // Query the last days of data based on environment variable
   const days = process.env.MIGRATION_STOCK_VALUES_DAYS || '90'
   console.log(`Executing SQL query for last ${days} days of stock data...`)
-  const resultStockValues = await pool.request().query(`
+  const request = pool.request()
+  request.input('days', sql.Int, parseInt(days, 10))
+  const resultStockValues = await request.query(`
       SELECT stockID,
              name,
              symbol,
@@ -35,7 +37,7 @@ export async function getStockValues(pool: sql.ConnectionPool) {
              logUpdateID,
              longName
       FROM [dbEmda].[dbo].[stocks]
-      WHERE [valueDate] >= DATEADD(DAY, -${days}, GETDATE())
+      WHERE [valueDate] >= DATEADD(DAY, -@days, GETDATE())
       ORDER BY valueDate ASC;
   `)
   console.log(`Retrieved ${resultStockValues.recordset.length} records from SQL Server`)
@@ -84,22 +86,32 @@ export async function getStockIdsByUpdateIds(pool: sql.ConnectionPool, logUpdate
     }
   }
 
+  // Create a new request for each query to avoid parameter name conflicts
   const request = pool.request()
 
-  // Create parameterized query with multiple parameters
-  const paramNames = logUpdateIds.map((_, i) => `@logUpdateId${i}`)
-  const inClause = `(${paramNames.join(',')})`
+  // Create a parameterized query with properly escaped parameters
+  // We'll use a table variable to safely handle the IN clause
+  let query = `
+    DECLARE @UpdateIds TABLE (UpdateId VARCHAR(255))
+  `
 
-  // Add parameters to the request
+  // Insert each logUpdateId into the table variable
   logUpdateIds.forEach((id, i) => {
-    request.input(`logUpdateId${i}`, sql.VarChar, id)
+    const paramName = `@logUpdateId${i}`
+    request.input(paramName, sql.VarChar, id)
+    query += `
+    INSERT INTO @UpdateIds (UpdateId) VALUES (${paramName})
+    `
   })
 
-  const resultStockIds = await request.query(`
-      SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[stocks] stocks
-      WHERE stocks.logUpdateID in ${inClause}
-  `)
+  // Complete the query using the table variable
+  query += `
+    SELECT distinct [stockID]
+    FROM [dbEmda].[dbo].[stocks] stocks
+    WHERE stocks.logUpdateID IN (SELECT UpdateId FROM @UpdateIds)
+  `
+
+  const resultStockIds = await request.query(query)
 
   console.log(
     `getStockIdsByUpdateIds- Retrieved ${resultStockIds.recordset.length} resultStockIds from SQL Server`,
@@ -225,9 +237,11 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
   const historyDate = process.env.MIGRATION_MEETINGS_HISTORY_DATE_CUTOFF || '2018-01-01'
-  const res = await pool.request().query(`
+  const request = pool.request()
+  request.input('historyDate', sql.VarChar, historyDate)
+  const res = await request.query(`
       SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[meetings]  WHERE mdate > '${historyDate}' `)
+      FROM [dbEmda].[dbo].[meetings] WHERE mdate > @historyDate`)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
     stocks.add(`${row.stockID}`)
@@ -237,9 +251,11 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 
 export async function getAllStocksInLatestMeetings(pool: sql.ConnectionPool) {
   const cutoffDate = process.env.MIGRATION_MEETINGS_DATE_CUTOFF || '2024-01-01'
-  const res = await pool.request().query(`
+  const request = pool.request()
+  request.input('cutoffDate', sql.VarChar, cutoffDate)
+  const res = await request.query(`
       SELECT distinct [stockID]
-      FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${cutoffDate}'  `)
+      FROM [dbEmda].[dbo].[meetings] WHERE mdate >= @cutoffDate`)
   const stocks: Set<string> = new Set()
   for (const row of res.recordset) {
     stocks.add(`${row.stockID}`)
