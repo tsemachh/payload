@@ -204,15 +204,6 @@ export const getIdOfRelationField = (item: TypeWithID | string) => {
 }
 
 /**
- * Validates if a string is a valid MongoDB ObjectId
- * @param id - The string to validate
- * @returns true if the string is a valid MongoDB ObjectId, false otherwise
- */
-export const isValidObjectId = (id: string): boolean => {
-  return id !== undefined && id !== null && /^[0-9a-fA-F]{24}$/.test(id)
-}
-
-/**
  * Gets the parent company ID for a given fund ID
  * @param fundId - The ID of the fund
  * @returns The ID of the parent company, or the fund ID itself if no parent company is found
@@ -315,39 +306,16 @@ export async function createAdminNotification(
   message: string,
   type: AdminNotificationType,
   url?: string,
-  companies?: string | string[],
+  companies?: string[],
   relatedUser?: string,
   meeting?: string,
 ) {
-  // Validate all IDs before proceeding
-  if (relatedUser && !isValidObjectId(relatedUser)) {
-    console.error(`Invalid relatedUser ID: ${relatedUser}`)
-    throw new Error(`Invalid relatedUser ID: ${relatedUser}`)
-  }
-
-  if (meeting && !isValidObjectId(meeting)) {
-    console.error(`Invalid meeting ID: ${meeting}`)
-    throw new Error(`Invalid meeting ID: ${meeting}`)
-  }
-
-  // Validate company IDs if they exist
-  let validatedCompanies: string[] | undefined = undefined
-  if (companies) {
-    const companyArray = Array.isArray(companies) ? companies : [companies]
-    validatedCompanies = companyArray.filter(id => isValidObjectId(id))
-
-    if (validatedCompanies.length === 0) {
-      console.error(`No valid company IDs found in: ${JSON.stringify(companies)}`)
-      throw new Error(`No valid company IDs found in: ${JSON.stringify(companies)}`)
-    }
-  }
-
   const data = {
     message,
     type,
     url,
     handled: false,
-    companies: validatedCompanies,
+    companies,
     relatedUser,
     meeting,
   }
@@ -367,10 +335,9 @@ export async function createAdminNotification(
 
 /**
  * Reverts a draft document to its published version
- * @param payload - The Payload CMS instance
+ * @param req
  * @param collectionSlug - The collection slug (e.g., 'votes')
  * @param documentId - The ID of the document to revert
- * @param locale - Optional locale for the document
  * @returns An object with information about the operation result
  */
 export async function revertToPublished(
