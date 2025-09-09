@@ -162,7 +162,7 @@ export function MeetingsTableClient() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'דו"ח השתתפות באסיפות.xlsx'
+      a.download = 'דו"ח השתתפות.xlsx'
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -189,7 +189,7 @@ export function MeetingsTableClient() {
           size="sm"
           disabled={isExporting}
           title="ייצוא"
-          className="h-8 px-3 border-[rgb(31, 65, 71)] text-[rgb(31, 65, 71)] hover:bg-[rgb(31, 65, 71)] transition-colors flex items-center"
+          className="h-8 px-3  border text-[rgb(31,65,71)] hover:bg-[rgb(31,65,71)] hover:text-white transition-colors duration-200 flex items-center"
         >
           <FaFileExcel className="h-4 w-4 ml-1" />
           <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
