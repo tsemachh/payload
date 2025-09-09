@@ -422,7 +422,7 @@ export function CompanyTreeSelector({
 
   return (
     <div className={className} dir="rtl">
-      <div className={`relative ${showBorder && 'border-muted'} rounded-md p-2`}>
+      <div className={`relative ${showBorder && 'border'} rounded-md p-2`}>
         {showSearch && (
           <div className="mb-2">
             <input

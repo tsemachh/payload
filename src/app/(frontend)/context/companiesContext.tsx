@@ -107,6 +107,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
             id: fullCompany.id,
             name: fullCompany.name,
             parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
+            passiveFund: fullCompany.passiveFund || false,
           }
         })
         .filter(Boolean)

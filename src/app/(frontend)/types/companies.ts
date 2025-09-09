@@ -9,4 +9,5 @@ export interface FundType {
   id: string
   name: string
   parentCompany?: string | null
+  passiveFund: boolean
 }
