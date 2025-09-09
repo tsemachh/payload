@@ -409,10 +409,10 @@ export async function generateParticipationsPDF(
           booleanToIcon(agenda.policyCompliance), // עמודה 3
           agenda.privilegedMajority && agenda.percentResult
             ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            :  booleanToIcon(agenda.privilegedMajority), 
-            agenda.simpleMajority && agenda.percentResult
+            : booleanToIcon(agenda.privilegedMajority),
+          agenda.simpleMajority && agenda.percentResult
             ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            :  booleanToIcon(agenda.simpleMajority),// עמודה 4
+            : booleanToIcon(agenda.simpleMajority), // עמודה 4
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
             : agenda.meetingResults || '', // עמודה 6
@@ -423,7 +423,6 @@ export async function generateParticipationsPDF(
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
             let fontToUse = 'Ariel'
-            let fontStyle = 'normal'
             if (content === '✓') {
               thisTextColor = [0, 153, 0]
               fontToUse = 'DejaVuSans'
@@ -434,7 +433,7 @@ export async function generateParticipationsPDF(
                 fillColor: rowBg,
                 textColor: thisTextColor,
                 font: fontToUse,
-                fontStyle: fontStyle,
+                fontStyle: 'normal',
               },
             }
           }),
