@@ -10,7 +10,7 @@ export const processHoldingsChangeHandler: TaskHandler<'processHoldingsChange'> 
 }) => {
   try {
     console.log('processHoldingsChangeHandler started')
-    await sanitizeRequest(req)
+    await sanitizeRequest(req, 'processHoldingsChange')
 
     const holdingId = input?.holdingId
     if (!holdingId) {

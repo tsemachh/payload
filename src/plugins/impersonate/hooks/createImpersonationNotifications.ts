@@ -19,7 +19,7 @@ export const createImpersonationNotifications = async ({
 
     // Create admin notification
     await createAdminNotification(
-      req.payload,
+      req,
       message,
       'userImpersonation',
       `/admin/collections/users/${impersonateUserId}`,
@@ -38,6 +38,7 @@ export const createImpersonationNotifications = async ({
               notificationType: 'user-impersonation',
               company: userCompany.companyId,
             },
+            req,
           })
         }
       }

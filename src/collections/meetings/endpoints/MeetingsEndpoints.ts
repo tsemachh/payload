@@ -279,6 +279,12 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
 
     // Get query parameters
@@ -437,6 +443,12 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -808,6 +820,12 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
 
     const meetingId = (req.query.meetingId as string) || '1'

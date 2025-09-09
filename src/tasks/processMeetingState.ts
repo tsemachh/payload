@@ -77,7 +77,7 @@ export const processMeetingState = async (req: PayloadRequest) => {
       for (const vote of meetingVotes) {
         try {
           // Use the revertToPublished utility function
-          const revertResult = await revertToPublished(req.payload, 'votes', vote.id)
+          const revertResult = await revertToPublished(req, 'votes', vote.id)
 
           if (revertResult.success) {
             votesSuccessfullyReverted++
@@ -134,7 +134,7 @@ export const processMeetingStateHandler: TaskHandler<'processMeetingState'> = as
   req,
 }) => {
   try {
-    await sanitizeRequest(req)
+    await sanitizeRequest(req, 'processMeetingState')
 
     // Call the core function
     const result = await processMeetingState(req)

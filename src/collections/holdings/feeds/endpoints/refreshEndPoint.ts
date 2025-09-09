@@ -1,6 +1,7 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { processValidationData } from '../FeedValidationService'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
+import { getIdOfRelationField } from '@/utils/utils'
 
 const refreshEndPoint = async (req: PayloadRequest) => {
   const { companies } = req.query
@@ -37,6 +38,9 @@ const refreshEndPoint = async (req: PayloadRequest) => {
       selectedCompanies = (companies as string).split(',')
     }
   }
+  const userFundIds = req.user?.funds?.map(getIdOfRelationField) || []
+  //Filter only companyIds of the user
+  selectedCompanies = selectedCompanies.filter((companyId) => userFundIds.includes(companyId))
 
   const validationResult: FeedValidationResult = {
     fatalErrors: [],

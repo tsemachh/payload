@@ -1002,6 +1002,7 @@ export const Meetings: CollectionConfig = {
                 collection: 'meetings',
                 data: dualMeeting,
                 context: { from: 'process' },
+                req,
               })
 
               await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
@@ -1015,6 +1016,7 @@ export const Meetings: CollectionConfig = {
                   changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
+                req,
               })
             } catch (error) {
               console.error('Error creating dual meeting:', error)

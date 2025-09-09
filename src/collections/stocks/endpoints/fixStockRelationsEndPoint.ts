@@ -13,7 +13,9 @@ const fixStockRelationsEndPoint = async (req: PayloadRequest) => {
     if (!req.user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
     // Find stocks with fromMagna=true and relatedStock not null
     const problematicStocks = await req.payload.find({
       collection: 'stocks',

@@ -174,6 +174,26 @@ export const Users: CollectionConfig = {
           type: 'checkbox',
           index: true,
         },
+        {
+          name: 'isAdmin',
+          type: 'checkbox',
+          defaultValue: false,
+          saveToJWT: true,
+          access: {
+            create: isAdminFieldLevel,
+            update: isAdminFieldLevel,
+          },
+        },
+        {
+          name: 'isSystem',
+          type: 'checkbox',
+          defaultValue: false,
+          saveToJWT: true,
+          access: {
+            create: isAdminFieldLevel,
+            update: isAdminFieldLevel,
+          },
+        },
       ],
     },
     {
@@ -281,16 +301,6 @@ export const Users: CollectionConfig = {
       },
     },
     {
-      name: 'isAdmin',
-      type: 'checkbox',
-      defaultValue: false,
-      saveToJWT: true,
-      access: {
-        create: isAdminFieldLevel,
-        update: isAdminFieldLevel,
-      },
-    },
-    {
       type: 'row',
       fields: [
         {
@@ -385,6 +395,15 @@ export const Users: CollectionConfig = {
         if (!user.active) {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
+        if (user.isSystem) {
+          throw new APIError('המשתמש מערכת אינו מורשה, אנא פנה למנהל המערכת', 403)
+        }
+        /*
+        if (!user.isAdmin) {
+          throw new APIError('המשתמש אינו מורשה, אנא פנה למנהל המערכת', 403)
+        }
+*/
+
         return user
       },
     ],
@@ -395,7 +414,7 @@ export const Users: CollectionConfig = {
           // Case 1: New user created
           if (operation === 'create') {
             await createAdminNotification(
-              req.payload,
+              req,
               `משתמש חדש נוצר: ${doc.email}`,
               'usersUpdated',
               `/admin/collections/users/${doc.id}`,
@@ -431,7 +450,7 @@ export const Users: CollectionConfig = {
             // If any changes were detected, create a notification
             if (changes.length > 0) {
               await createAdminNotification(
-                req.payload,
+                req,
                 `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
                 'usersUpdated',
                 `/admin/collections/users/${doc.id}`,

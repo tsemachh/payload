@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { checkAdminNotifications } from '@/tasks/checkAdminNotifications'
 
 /**
@@ -9,6 +9,14 @@ import { checkAdminNotifications } from '@/tasks/checkAdminNotifications'
  */
 const CheckAdminNotificationsEndPoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
     // Call the core function
     const result = await checkAdminNotifications(req)
 

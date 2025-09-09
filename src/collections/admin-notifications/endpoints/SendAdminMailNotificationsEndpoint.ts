@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { adminMailNotifications } from '@/tasks/adminMailNotifications'
 
 /**
@@ -10,6 +10,15 @@ import { adminMailNotifications } from '@/tasks/adminMailNotifications'
  */
 const SendAdminMailNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
+    await addDataAndFileToRequest(req)
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
+
     // Call the core function
     const result = await adminMailNotifications(req)
 

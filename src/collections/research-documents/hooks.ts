@@ -167,6 +167,7 @@ export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook =
       data: {
         companies: [],
       },
+      req,
     })
   }
   return data
