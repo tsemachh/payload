@@ -2,11 +2,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-import {
-  calculatePrecedingColumnsWidth,
-  formatDateTime,
-  parseNumber,
-} from '../helpers/utils-data-table'
+import { formatDateTime, parseNumber } from '../helpers/utils-data-table'
 import type { Column } from '../types/meetings'
 import { BooleanIcon } from '@/components/ui/icons'
 import type { ParticipationAgendaType, ParticipationTableDataType } from './types'
@@ -132,28 +128,28 @@ export const createParticipationColumns = (
       key: 'recommendation',
       header: 'המלצת גורם מייעץ',
       type: 'string',
-      render: (row) => null,
+      render: () => null,
       minWidth: 70,
     },
     {
       key: 'vote',
       header: 'הצבעה',
       type: 'string',
-      render: (row) => null,
+      render: () => null,
       minWidth: 70,
     },
     {
       key: 'meetingResults',
       header: 'תוצאות האסיפה',
       type: 'string',
-      render: (row) => null,
+      render: () => null,
       minWidth: 75,
     },
     {
       key: 'simpleMajority',
       header: 'רוב רגיל',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 60,
     },
@@ -161,14 +157,14 @@ export const createParticipationColumns = (
       key: 'privilegedMajority',
       header: 'רוב מיוחד (%)',
       type: 'string',
-      render: (row) => null,
+      render: () => null,
       minWidth: 40,
     },
     {
       key: 'policyCompliance',
       header: 'בהתאם למדיניות דריקטוריון ו/או וועדת השקעות',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 60,
     },
@@ -176,7 +172,7 @@ export const createParticipationColumns = (
       key: 'conflictOfInterest',
       header: 'ניגוד עניינים',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 50,
     },
@@ -184,7 +180,7 @@ export const createParticipationColumns = (
       key: 'relatedParty',
       header: 'צד קשר',
       type: 'boolean',
-      render: (row) => null,
+      render: () => null,
       positionCenter: true,
       minWidth: 50,
     },
