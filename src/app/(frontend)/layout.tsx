@@ -6,6 +6,7 @@ import { Notifications } from '@/components/notifications'
 import { AuthProvider } from '@/providers/auth-provider'
 import { HeaderWithNav } from './components/header-with-nav'
 import { CompaniesProvider } from './context/companiesContext'
+import { ErrorDialogProvider } from './context/error-dialog-context'
 import { ImpersonationProvider } from '@/plugins/impersonate/components'
 import { NavigationGuardProvider } from 'next-navigation-guard'
 
@@ -33,21 +34,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <ImpersonationProvider checkInterval={600000}>
           <CompaniesProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-              themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
-            >
-              <NavigationGuardProvider>
-                <div className="flex flex-col h-screen">
-                  <HeaderWithNav />
-                  <main className="flex-1 py-4">{children}</main>
-                </div>
-                <Notifications />
-              </NavigationGuardProvider>
-            </ThemeProvider>
+            <ErrorDialogProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+                themes={['light', 'dark', 'system', 'blue', 'red', 'purple', 'green', 'pink']}
+              >
+                <NavigationGuardProvider>
+                  <div className="flex flex-col h-screen">
+                    <HeaderWithNav />
+                    <main className="flex-1 py-4">{children}</main>
+                  </div>
+                  <Notifications />
+                </NavigationGuardProvider>
+              </ThemeProvider>
+            </ErrorDialogProvider>
           </CompaniesProvider>
           </ImpersonationProvider>
         </AuthProvider>

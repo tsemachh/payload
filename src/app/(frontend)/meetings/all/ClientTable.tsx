@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import useSWR from 'swr'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
-import { handleApiError, notifyError } from '../../helpers/error-handler'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -73,15 +71,11 @@ export function MeetingsTableServer() {
     selectedCompanyIds,
   ])
 
-  const { data: meetingsResponse, isLoading } = useSWRWithErrorHandling(
-    query, 
-    fetcher, 
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      errorMessage: 'שגיאה בטעינת נתוני הישיבות'
-    }
-  )
+  const { data: meetingsResponse, isLoading } = useSWRWithErrorHandling(query, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    errorMessage: 'שגיאה בטעינת נתוני הישיבות',
+  })
 
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
@@ -98,16 +92,22 @@ export function MeetingsTableServer() {
 
   const swrKeyForPercentages = meetingsForPercentagesQuery
     ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
-    : null
+    : []
 
+  // Using useSWRWithErrorHandling with a wrapper to handle array keys
+  //TODO Rachel
   const { data: percentagesResponse } = useSWRWithErrorHandling(
-    swrKeyForPercentages, 
-    postFetcher, 
+    swrKeyForPercentages.toString().replaceAll(',', '/'),
+    (key) => {
+      // The key is already an array with [url, body]
+      const [url, body] = key as unknown as [string, object]
+      return postFetcher([url, body])
+    },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      errorMessage: 'שגיאה בטעינת נתוני אחוזי הצבעה'
-    }
+      errorMessage: 'שגיאה בטעינת נתוני אחוזי הצבעה',
+    },
   )
 
   const votingPercentagesMap = percentagesResponse?.percentages

@@ -1,5 +1,3 @@
-import { toast } from '@/hooks/use-toast';
-
 export interface ErrorDetails {
   message: string;
   code?: string;
@@ -8,7 +6,7 @@ export interface ErrorDetails {
 
 export const handleApiError = (error: any, fallbackMessage: string, logDetails = true): ErrorDetails => {
   // Extract error message
-  const errorMessage = error?.message || 
+  const errorMessage = error?.message ||
                       error?.error || 
                       (typeof error === 'string' ? error : fallbackMessage);
   
@@ -32,18 +30,45 @@ export const handleApiError = (error: any, fallbackMessage: string, logDetails =
   };
 };
 
-export const notifyError = (errorDetails: ErrorDetails, duration = 3000) => {
-  toast({
-    title: '⚠️ שגיאה',
-    description: errorDetails.message,
-    variant: 'destructive',
-    duration: duration,
+// Global error event system
+const ERROR_DIALOG_EVENT = 'show-error-dialog';
+
+// Function to show error dialog using custom event
+export const notifyError = (errorDetails: ErrorDetails, showDetails = false) => {
+  // Ensure we're in a browser environment
+  if (typeof window === 'undefined') {
+    console.warn('notifyError called on server side');
+    return;
+  }
+  
+  // Dispatch custom event to show error dialog
+  const event = new CustomEvent(ERROR_DIALOG_EVENT, {
+    detail: { errorDetails, showDetails }
   });
+  
+  window.dispatchEvent(event);
+};
+
+// Hook to listen for error events (to be used in ErrorDialogProvider)
+export const useErrorEventListener = (callback: (errorDetails: ErrorDetails, showDetails: boolean) => void) => {
+  if (typeof window === 'undefined') return;
+  
+  const handleErrorEvent = (event: CustomEvent) => {
+    const { errorDetails, showDetails } = event.detail;
+    callback(errorDetails, showDetails);
+  };
+  
+  window.addEventListener(ERROR_DIALOG_EVENT, handleErrorEvent as EventListener);
+  
+  // Return cleanup function
+  return () => {
+    window.removeEventListener(ERROR_DIALOG_EVENT, handleErrorEvent as EventListener);
+  };
 };
 
 // Combined function for common use case
-export const handleAndNotifyError = (error: any, fallbackMessage: string) => {
+export const handleAndNotifyError = (error: any, fallbackMessage: string, showDetails = false) => {
   const errorDetails = handleApiError(error, fallbackMessage);
-  notifyError(errorDetails);
+  notifyError(errorDetails, showDetails);
   return errorDetails;
 };

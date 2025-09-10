@@ -581,27 +581,18 @@ export default function VotingForm() {
 
         await postWithErrorHandling('/api/votes/upsert-draft', requestBody, {
           errorMessage: `לא ניתן לשמור טיוטה עבור ${dataType}`,
-          notifyOnError: false // We'll handle notification ourselves for success case
+          notifyOnError: true // We'll handle notification ourselves for success case
         });
 
         setIsDraftSaved(true)
         toast({
           title: '✅ נתונים נשמרו',
-          description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
+          description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
           duration: 1500,
         })
         mutateDraft()
       } catch (error) {
-        // Log the error with our utility
-        handleApiError(error, `שגיאה בשמירת טיוטה עבור ${dataType}`);
-
-        // Custom notification for draft saving
-        toast({
-          title: '⚠️ שגיאה בשמירה',
-          description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
-          variant: 'destructive',
-          duration: 2000,
-        })
+        //Handle rollback in UI level on Error
       }
     },
     [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
