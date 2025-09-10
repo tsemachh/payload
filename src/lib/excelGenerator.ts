@@ -174,7 +174,12 @@ export async function generateParticipationsExcel(
             const isFirstAgenda = index === 0
             const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
             const alignment = isEnglish ? 'left' : 'right'
-            const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : '' // Moved numbering to after alignment
+            const numberedAgendaText = agenda.text
+              ? isEnglish
+                ? `${index + 1}. ${agenda.text}`
+                : `\u200F${index + 1}. ${agenda.text}` 
+              : ''
+
             const agendaData = [
               numberedAgendaText,
               agenda.recommendation?.votingRecommendation || '',
@@ -197,7 +202,6 @@ export async function generateParticipationsExcel(
             const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
             excelRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
-                // Only format cells within table
                 cell.fill = {
                   type: 'pattern',
                   pattern: 'solid',
