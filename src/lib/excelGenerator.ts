@@ -14,9 +14,9 @@ export async function generateParticipationsExcel(
   try {
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('דוח השתתפות באסיפות')
+
     worksheet.views = [{ rightToLeft: true }]
 
-    // Define column headers in Hebrew (without 'מס״ד')
     const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
       SHARED_COLUMNS.STOCK_NUMBER,
       SHARED_COLUMNS.CORPORATE_NAME,
@@ -28,6 +28,7 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_DATE,
       SHARED_COLUMNS.MEETING_TYPE,
     ]
+
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
       SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
@@ -40,12 +41,10 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.RELATED_PARTY,
       SHARED_COLUMNS.PERSONAL_INTEREST,
     ]
-    const headers = [...baseHeaders, ...agendaHeaders]
 
-    // Find indices for specific columns for later formatting
+    const headers = [...baseHeaders, ...agendaHeaders]
     const agendaTextIndex = headers.indexOf(SHARED_COLUMNS.SUBJECT) + 1
 
-    // Add Logo
     try {
       const logoPath = path.join(process.cwd(), 'public', 'emda_logo.png')
       if (fs.existsSync(logoPath)) {
@@ -55,7 +54,7 @@ export async function generateParticipationsExcel(
           extension: 'png',
         })
         worksheet.addImage(logoImageId, {
-          tl: { col: headers.length - 1, row: 0 },
+          tl: { col: 0, row: 0 },
           ext: { width: 100, height: 40 },
         })
       }
@@ -63,38 +62,34 @@ export async function generateParticipationsExcel(
       logger.error('Could not add logo to Excel:', logoError)
     }
 
-    // Add title rows
+    // Title section (first three rows)
     const titleRow = worksheet.addRow(['דו"ח השתתפות באסיפות'])
     titleRow.font = { bold: true, size: 16, name: 'Arial' }
     titleRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(1, 1, 1, headers.length)
+    titleRow.getCell(1).style.font = { name: 'Arial', size: 20, bold: true }
 
     const reportNameRow = worksheet.addRow([options.reportName])
     reportNameRow.font = { bold: true, size: 14, name: 'Arial' }
     reportNameRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(2, 1, 2, headers.length)
+    reportNameRow.getCell(1).style.font = { name: 'Arial', size: 16 }
 
     const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
     const dateRow = worksheet.addRow([dateRangeText])
     dateRow.font = { bold: true, size: 14, name: 'Arial' }
     dateRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(3, 1, 3, headers.length)
+    dateRow.getCell(1).style.font = { name: 'Arial', size: 14 }
 
-    const emptyText = ''
+    // Add empty row after title section
     worksheet.mergeCells(4, 1, 4, headers.length)
-    worksheet.addRow([emptyText])
+    worksheet.addRow([''])
 
+    // Define header row offset
     const headerRowOffset = 5
 
-    // Add headers
-    const headerRow = worksheet.addRow(headers)
-    headerRow.font = { bold: true, color: { argb: 'FF000000' }, name: 'Arial' }
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'EDEDED' },
-    }
-    headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+    worksheet.views = [{ state: 'frozen', ySplit: headerRowOffset, rightToLeft: true }]
 
     if (data.length === 0) {
       const noDataRow = worksheet.addRow(['אין נתונים להצגה'])
@@ -105,7 +100,13 @@ export async function generateParticipationsExcel(
       return Buffer.from(await workbook.xlsx.writeBuffer())
     }
 
-    // Add data rows
+    // Store row indices and their formatting for reapplication
+    const rowFormats: {
+      rowIndex: number
+      fillColor: string
+      cellStyles: { col: number; font: any }[]
+    }[] = []
+
     data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
         parseNumber(meeting.marketValue) / 1_000_000,
@@ -131,15 +132,26 @@ export async function generateParticipationsExcel(
       if (meeting.agendas.length === 0) {
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
         const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
-        excelRow.eachCell((cell) => {
-          cell.font = { name: 'Arial', size: 10 }
-          cell.alignment = { horizontal: 'right', vertical: 'middle' }
+        const fillColor = 'FFD2E4FF'
+        excelRow.eachCell((cell, colNumber) => {
+          if (colNumber <= headers.length) {
+            // Only format cells within table
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: fillColor },
+            }
+            cell.font = { name: 'Arial', size: 10 }
+            cell.alignment = { horizontal: 'right', vertical: 'middle' }
+          }
         })
-        excelRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFD2E4FF' },
-        }
+        const cellStyles: { col: number; font: any }[] = []
+        excelRow.eachCell((cell, colNumber) => {
+          if (colNumber <= headers.length) {
+            cellStyles.push({ col: colNumber, font: cell.font })
+          }
+        })
+        rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
       } else {
         meeting.agendas.forEach(
           (
@@ -150,7 +162,7 @@ export async function generateParticipationsExcel(
               result: string | number
               meetingResults: any
               privilegedMajority: boolean
-              simpleMajority:boolean
+              simpleMajority: boolean
               percentResult: any
               policyCompliance: any
               conflictOfInterest: any
@@ -160,9 +172,14 @@ export async function generateParticipationsExcel(
             index: number,
           ) => {
             const isFirstAgenda = index === 0
-            const numberedAgendaText = agenda.text ? `${index + 1}. ${agenda.text}` : ''
             const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
             const alignment = isEnglish ? 'left' : 'right'
+            const numberedAgendaText = agenda.text
+              ? isEnglish
+                ? `${index + 1}. ${agenda.text}`
+                : `\u200F${index + 1}. ${agenda.text}` 
+              : ''
+
             const agendaData = [
               numberedAgendaText,
               agenda.recommendation?.votingRecommendation || '',
@@ -172,38 +189,113 @@ export async function generateParticipationsExcel(
                 : agenda.meetingResults || '',
               agenda.simpleMajority && agenda.percentResult
                 ? `${formatNumberWithLocale(agenda.percentResult)}%`
-                :  booleanToIcon(agenda.simpleMajority),                    
+                : booleanToIcon(agenda.simpleMajority),
               agenda.privilegedMajority && agenda.percentResult
                 ? `${formatNumberWithLocale(agenda.percentResult)}%`
-                :  booleanToIcon(agenda.privilegedMajority), 
+                : booleanToIcon(agenda.privilegedMajority),
               booleanToIcon(agenda.policyCompliance),
               booleanToIcon(agenda.conflictOfInterest),
               booleanToIcon(agenda.relatedParty),
               booleanToIcon(agenda.personalInterest),
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
+            const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
             excelRow.eachCell((cell, colNumber) => {
-              cell.font = { name: 'Arial', size: 10 }
-              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
-              if (colNumber === agendaTextIndex) {
-                cell.alignment = {
-                  horizontal: alignment,
-                  vertical: 'middle',
-                  wrapText: true,
+              if (colNumber <= headers.length) {
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: fillColor },
+                }
+                const isVIcon = cell.value === '\u2713'
+                cell.font = {
+                  name: 'Arial',
+                  size: 10,
+                  ...(isVIcon && { color: { argb: 'FF008000' }, bold: true }),
+                }
+                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+                if (colNumber === agendaTextIndex) {
+                  cell.alignment = {
+                    horizontal: alignment,
+                    vertical: 'middle',
+                    wrapText: true,
+                  }
                 }
               }
             })
-            excelRow.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF' },
-            }
+            const cellStyles: { col: number; font: any }[] = []
+            excelRow.eachCell((cell, colNumber) => {
+              if (colNumber <= headers.length) {
+                cellStyles.push({ col: colNumber, font: cell.font })
+              }
+            })
+            rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
           },
         )
       }
     })
 
-    // Auto-fit columns
+    // Add Excel table with explicit header configuration
+    const tableStartRow = headerRowOffset
+    const tableEndRow = worksheet.rowCount
+    worksheet.addTable({
+      name: 'ParticipationTable',
+      ref: `A${tableStartRow}`,
+      headerRow: true, // Explicitly indicate that the table has headers
+      totalsRow: false,
+      style: {
+        theme: 'TableStyleMedium2',
+        showFirstColumn: false,
+        showLastColumn: false,
+        showRowStripes: false,
+        showColumnStripes: false,
+      },
+      columns: headers.map((header) => ({
+        name: header,
+        filterButton: true, // Enable filter buttons for sorting and filtering
+        totalsRowFunction: 'none',
+      })),
+      rows:
+        worksheet.getRows(tableStartRow + 1, tableEndRow - tableStartRow)?.map((row) => {
+          const values = Array.isArray(row.values) ? row.values.slice(1, headers.length + 1) : []
+          return values
+        }) || [],
+    })
+
+    // Apply header styling to table header row
+    const headerRow = worksheet.getRow(headerRowOffset)
+    headerRow.eachCell((cell, colNumber) => {
+      if (colNumber <= headers.length) {
+        // Only format cells within table headers
+        cell.font = { bold: true, size: 10, color: { argb: 'FF000000' }, name: 'Arial' }
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'EDEDED' },
+        }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+    })
+
+    // Reapply data row formatting to preserve background colors and font colors
+    rowFormats.forEach(({ rowIndex, fillColor, cellStyles }) => {
+      const row = worksheet.getRow(rowIndex)
+      row.eachCell((cell, colNumber) => {
+        if (colNumber <= headers.length) {
+          // Only format cells within table
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: fillColor },
+          }
+          const cellStyle = cellStyles.find((style) => style.col === colNumber)
+          if (cellStyle) {
+            cell.font = cellStyle.font
+          }
+        }
+      })
+    })
+
     worksheet.columns.forEach((column, i) => {
       let maxLength = 0
       if (typeof column.eachCell === 'function') {
@@ -220,7 +312,6 @@ export async function generateParticipationsExcel(
         })
       }
       let newWidth = Math.max(maxLength + 2, 10)
-
       if (i + 1 === agendaTextIndex) {
         newWidth *= 1.5
         column.width = Math.min(newWidth, 70)
@@ -230,11 +321,10 @@ export async function generateParticipationsExcel(
       }
     })
 
-    // Add borders to all data cells
     const lastRow = worksheet.rowCount
     const lastCol = headers.length
     const whiteBorder = { style: 'thin' as const, color: { argb: 'FFFFFFFF' } }
-    const grayBorder = { style: 'thin' as const, color: { argb: 'EDEDED' } } // Light gray for header
+    const grayBorder = { style: 'thin' as const, color: { argb: 'EDEDED' } }
 
     for (let row = headerRowOffset; row <= lastRow; row++) {
       for (let col = 1; col <= lastCol; col++) {
@@ -253,7 +343,27 @@ export async function generateParticipationsExcel(
       }
     }
 
-    // Generate buffer
+    const endRowMessage = ' שדה אחרון בשורה זו'
+    const endColMessage = ' רשומה האחרונה בעמודה זו'
+
+    for (let row = headerRowOffset + 1; row <= lastRow; row++) {
+      const cell = worksheet.getCell(row, lastCol + 1)
+      cell.value = endRowMessage
+      cell.font = { name: 'Arial', size: 10 }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfRow_${row}`)
+    }
+
+    for (let col = 1; col <= lastCol; col++) {
+      const cell = worksheet.getCell(lastRow + 1, col)
+      cell.value = endColMessage
+      cell.font = { name: 'Arial', size: 10 }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfCol_${col}`)
+    }
+
+    worksheet.getColumn(lastCol + 1).width = endRowMessage.length + 5
+
     const buffer = await workbook.xlsx.writeBuffer()
     return Buffer.from(buffer)
   } catch (error: any) {
