@@ -135,7 +135,7 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
           message,
           'companyNotReportedHoldings',
           `/admin/collections/companies/${company.id}`,
-          company.id,
+          [company.id],
         )
         notifications.holdingsNotFed++
       }
@@ -238,7 +238,7 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
           `חברה ${company.name || companyId} לא הצביעה באסיפה שתתקיים ביום העבודה הבא: ${meeting.fullName}`,
           'companyNotVotedMeetingNextDay',
           `/admin/collections/meetings/${meeting.id}`,
-          companyId,
+          [companyId],
         )
         notifications.meetingsNotVoted++
       }
