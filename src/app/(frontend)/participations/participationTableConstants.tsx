@@ -166,7 +166,7 @@ export const createParticipationColumns = (
     },
     {
       key: 'policyCompliance',
-      header: 'בהתאם למדיניות דירקטריון ו/או וועדת השקעות',
+      header: 'בהתאם למדיניות דריקטוריון ו/או וועדת השקעות',
       type: 'boolean',
       render: (row) => null,
       positionCenter: true,

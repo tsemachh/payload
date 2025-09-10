@@ -64,23 +64,23 @@ export async function generateParticipationsExcel(
     titleRow.font = { bold: true, size: 16, name: 'Arial' }
     titleRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(1, 1, 1, headers.length)
-    titleRow.getCell(1).style.font = { name: 'Arial', size: 20, bold: true } // החלת סגנון כותרת
+    titleRow.getCell(1).style.font = { name: 'Arial', size: 20, bold: true }
 
     const reportNameRow = worksheet.addRow([options.reportName])
     reportNameRow.font = { bold: true, size: 14, name: 'Arial' }
     reportNameRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(2, 1, 2, headers.length)
-    reportNameRow.getCell(1).style.font = { name: 'Arial', size: 16 } // החלת סגנון כותרת משנה
+    reportNameRow.getCell(1).style.font = { name: 'Arial', size: 16 }
 
     const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
     const dateRow = worksheet.addRow([dateRangeText])
     dateRow.font = { bold: true, size: 14, name: 'Arial' }
     dateRow.alignment = { horizontal: 'center' }
     worksheet.mergeCells(3, 1, 3, headers.length)
-    dateRow.getCell(1).style.font = { name: 'Arial', size: 14 } // החלת סגנון כותרת משנה
+    dateRow.getCell(1).style.font = { name: 'Arial', size: 14 }
 
     worksheet.mergeCells(4, 1, 4, headers.length)
-    worksheet.addRow(['']) 
+    worksheet.addRow([''])
 
     const headerRowOffset = 5
     const headerRow = worksheet.addRow(headers)
@@ -102,6 +102,13 @@ export async function generateParticipationsExcel(
       })
       return Buffer.from(await workbook.xlsx.writeBuffer())
     }
+
+    // Store row indices and their formatting for reapplication
+    const rowFormats: {
+      rowIndex: number
+      fillColor: string
+      cellStyles: { col: number; font: any }[]
+    }[] = []
 
     data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
@@ -128,15 +135,19 @@ export async function generateParticipationsExcel(
       if (meeting.agendas.length === 0) {
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
         const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
+        const fillColor = 'FFD2E4FF'
         excelRow.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFD2E4FF' },
+          fgColor: { argb: fillColor },
         }
-        excelRow.eachCell((cell) => {
+        const cellStyles: { col: number; font: any }[] = []
+        excelRow.eachCell((cell, colNumber) => {
           cell.font = { name: 'Arial', size: 10 }
           cell.alignment = { horizontal: 'right', vertical: 'middle' }
+          cellStyles.push({ col: colNumber, font: cell.font })
         })
+        rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
       } else {
         meeting.agendas.forEach(
           (
@@ -179,19 +190,20 @@ export async function generateParticipationsExcel(
               booleanToIcon(agenda.personalInterest),
             ]
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
+            const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
             excelRow.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF' },
+              fgColor: { argb: fillColor },
             }
+            const cellStyles: { col: number; font: any }[] = []
             excelRow.eachCell((cell, colNumber) => {
-              const isVIcon = cell.value === 'V'
+              const isVIcon = cell.value === '\u2713'
               cell.font = {
                 name: 'Arial',
                 size: 10,
                 ...(isVIcon && { color: { argb: 'FF008000' }, bold: true }),
               }
-
               cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
               if (colNumber === agendaTextIndex) {
                 cell.alignment = {
@@ -200,10 +212,60 @@ export async function generateParticipationsExcel(
                   wrapText: true,
                 }
               }
+              cellStyles.push({ col: colNumber, font: cell.font })
             })
+            rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
           },
         )
       }
+    })
+
+    // Add Excel table
+    const tableStartRow = headerRowOffset + 1
+    const tableEndRow = worksheet.rowCount
+    worksheet.addTable({
+      name: 'ParticipationTable',
+      ref: `A${tableStartRow}`,
+      headerRow: true,
+      totalsRow: false,
+      style: {
+        theme: 'TableStyleMedium2',
+        showFirstColumn: false,
+        showLastColumn: false,
+        showRowStripes: false,
+        showColumnStripes: false,
+      },
+      columns: headers.map((header) => ({ name: header })),
+      rows:
+        worksheet.getRows(tableStartRow + 1, tableEndRow - tableStartRow)?.map((row) => {
+          const values = Array.isArray(row.values) ? row.values.slice(1) : []
+          return values
+        }) || [],
+    })
+
+    // Reapply formatting to preserve background colors and font colors
+    rowFormats.forEach(({ rowIndex, fillColor, cellStyles }) => {
+      const row = worksheet.getRow(rowIndex)
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: fillColor },
+      }
+      cellStyles.forEach(({ col, font }) => {
+        const cell = row.getCell(col)
+        cell.font = font
+      })
+    })
+
+    // Reapply header row formatting
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'EDEDED' },
+    }
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF000000' }, name: 'Arial' }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
     })
 
     worksheet.columns.forEach((column, i) => {
@@ -222,7 +284,6 @@ export async function generateParticipationsExcel(
         })
       }
       let newWidth = Math.max(maxLength + 2, 10)
-
       if (i + 1 === agendaTextIndex) {
         newWidth *= 1.5
         column.width = Math.min(newWidth, 70)
@@ -261,6 +322,7 @@ export async function generateParticipationsExcel(
       const cell = worksheet.getCell(row, lastCol + 1)
       cell.value = endRowMessage
       cell.font = { name: 'ARIAL', size: 10 }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' } // Center both horizontally and vertically
       workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfRow_${row}`)
     }
 
