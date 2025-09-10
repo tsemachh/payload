@@ -40,6 +40,8 @@ import {
 } from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { handleApiError, notifyError } from '../../helpers/error-handler'
+import { postWithErrorHandling } from '../../helpers/fetch-helpers'
 import {
   AGENDA_QUESTIONS_CONFIG,
   GENERAL_QUESTIONS_CONFIG,
@@ -533,35 +535,20 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
-        const response = await fetch('/api/votes/publish-votes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            meetingId: meetingIdPayload,
-            companiesIds: companiesIDs,
-            votingData: currentVotingData,
-          }),
-        })
+         await postWithErrorHandling('/api/votes/publish-votes', {
+          meetingId: meetingIdPayload,
+          companiesIds: companiesIDs,
+          votingData: currentVotingData,
+        }, {
+          errorMessage: 'שגיאה בשליחת ההצבעה'
+        });
 
-        const result = await response.json()
-
-        if (response.ok) {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-          setPublishSuccess(true)
-          mutatePublish()
-        } else {
-          throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        setPublishSuccess(true)
+        mutatePublish()
       } catch (error: any) {
-        console.error('Submit error:', error)
-        toast({
-          title: '⚠️ שגיאה בשליחה',
-          description: error.message || 'לא ניתן לשלוח את ההצבעה. אנא נסה שוב.',
-          variant: 'destructive',
-          duration: 3000,
-        })
+        // Error already logged and notified by postWithErrorHandling
+        // Additional error handling if needed
       } finally {
         setIsSubmitting(false)
       }
@@ -591,31 +578,24 @@ export default function VotingForm() {
           companiesIds: companiesIDs,
           votingData: currentVotingData,
         }
-        const response = await fetch(`/api/votes/upsert-draft`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
+
+        await postWithErrorHandling('/api/votes/upsert-draft', requestBody, {
+          errorMessage: `לא ניתן לשמור טיוטה עבור ${dataType}`,
+          notifyOnError: false // We'll handle notification ourselves for success case
+        });
+
+        setIsDraftSaved(true)
+        toast({
+          title: '✅ נתונים נשמרו',
+          description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
+          duration: 1500,
         })
-        if (response.ok) {
-          setIsDraftSaved(true)
-          toast({
-            title: '✅ נתונים נשמרו',
-            description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
-            duration: 1500,
-          })
-          mutateDraft()
-        } else {
-          const errorData = await response.json()
-          console.error('Save error:', errorData)
-          toast({
-            title: '⚠️ שגיאה בשמירה',
-            description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
-            variant: 'destructive',
-            duration: 2000,
-          })
-        }
+        mutateDraft()
       } catch (error) {
-        console.error('Save error:', error)
+        // Log the error with our utility
+        handleApiError(error, `שגיאה בשמירת טיוטה עבור ${dataType}`);
+
+        // Custom notification for draft saving
         toast({
           title: '⚠️ שגיאה בשמירה',
           description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
@@ -770,8 +750,17 @@ export default function VotingForm() {
             method: 'POST',
             body: formData,
           }).then((res) => {
-            if (!res.ok) throw new Error('File upload failed')
+            if (!res.ok) {
+              // Get error details if possible
+              return res.text().then(errText => {
+                throw new Error(errText || 'File upload failed');
+              });
+            }
             return res.json()
+          }).catch(err => {
+            // Log each individual file upload error
+            handleApiError(err, `שגיאה בהעלאת קובץ: ${file.name}`);
+            throw err;
           })
         })
 
@@ -788,13 +777,8 @@ export default function VotingForm() {
         setVotingData(updatedVotingData)
         saveDraftData('קובץ', updatedVotingData)
       } catch (error) {
-        console.error('Upload error:', error)
-        toast({
-          title: '⚠️ שגיאה בהעלאת קובץ',
-          description: 'לא ניתן היה להעלות את הקובץ. נסה שוב',
-          variant: 'destructive',
-          duration: 2000,
-        })
+        // Log the error with our utility
+        handleApiError(error, 'שגיאה בהעלאת קבצים');
       } finally {
         setIsUploading(false)
         e.target.value = ''

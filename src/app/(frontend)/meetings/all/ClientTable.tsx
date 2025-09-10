@@ -6,6 +6,8 @@ import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
+import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
+import { handleApiError, notifyError } from '../../helpers/error-handler'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -71,10 +73,15 @@ export function MeetingsTableServer() {
     selectedCompanyIds,
   ])
 
-  const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
+  const { data: meetingsResponse, isLoading } = useSWRWithErrorHandling(
+    query, 
+    fetcher, 
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      errorMessage: 'שגיאה בטעינת נתוני הישיבות'
+    }
+  )
 
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
@@ -93,10 +100,15 @@ export function MeetingsTableServer() {
     ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
     : null
 
-  const { data: percentagesResponse } = useSWR(swrKeyForPercentages, postFetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
+  const { data: percentagesResponse } = useSWRWithErrorHandling(
+    swrKeyForPercentages, 
+    postFetcher, 
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      errorMessage: 'שגיאה בטעינת נתוני אחוזי הצבעה'
+    }
+  )
 
   const votingPercentagesMap = percentagesResponse?.percentages
 
