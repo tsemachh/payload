@@ -10,6 +10,7 @@ import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../../holdings/components/CompanySelector'
+import useSWR from 'swr'
 
 export function MeetingsTableServer() {
   const { companies, funds } = useCompaniesContext()
@@ -94,15 +95,9 @@ export function MeetingsTableServer() {
     ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
     : []
 
-  // Using useSWRWithErrorHandling with a wrapper to handle array keys
-  //TODO Rachel
-  const { data: percentagesResponse } = useSWRWithErrorHandling(
-    swrKeyForPercentages.toString().replaceAll(',', '/'),
-    (key) => {
-      // The key is already an array with [url, body]
-      const [url, body] = key as unknown as [string, object]
-      return postFetcher([url, body])
-    },
+  const { data: percentagesResponse } = useSWR(
+    swrKeyForPercentages && meetingsForPercentagesQuery ? [swrKeyForPercentages, meetingsForPercentagesQuery] : null,
+    ([url, body]: [string, object]) => postFetcher([url, body]),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

@@ -21,7 +21,7 @@ export function logtailTransport() {
   const options: IPinoLogtailOptions = {
     sourceToken: process.env.LOGTAIL_SOURCE_TOKEN || 'B5p5aFX1cPDdGdzaKHFu1Vss',
     options: {
-      endpoint: 'https://s1214463.eu-nbg-2.betterstackdata.com',
+      endpoint: process.env.LOGTAIL_ENDPOINT || 'https://s1214463.eu-nbg-2.betterstackdata.com',
     },
   }
   const logtail = new Logtail(options.sourceToken, options.options)

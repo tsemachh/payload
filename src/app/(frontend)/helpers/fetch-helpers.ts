@@ -1,4 +1,5 @@
 import { handleApiError, notifyError, ErrorDetails } from './error-handler';
+import { logApiCall } from '../lib/api-logger';
 
 interface FetchOptions extends RequestInit {
   notifyOnError?: boolean;
@@ -15,8 +16,14 @@ export async function fetchWithErrorHandling<T = any>(
     ...fetchOptions 
   } = options || {};
   
+  const startTime = Date.now();
+  const method = fetchOptions.method || 'GET';
+  
   try {
     const response = await fetch(url, fetchOptions);
+    
+    // Log successful API call
+    logApiCall(method, url, startTime, response, undefined, fetchOptions.headers as any);
     
     if (!response.ok) {
       let errorData;
@@ -26,15 +33,23 @@ export async function fetchWithErrorHandling<T = any>(
         errorData = { status: response.status, statusText: response.statusText };
       }
       
-      throw {
+      const error = {
         ...errorData,
         status: response.status,
         statusText: response.statusText,
       };
+      
+      // Log API error
+      logApiCall(method, url, startTime, response, error, fetchOptions.headers as any);
+      
+      throw error;
     }
     
     return await response.json();
   } catch (error) {
+    // Log API error for network/other errors
+    logApiCall(method, url, startTime, undefined, error, fetchOptions.headers as any);
+    
     const errorDetails = handleApiError(error, errorMessage);
     
     if (notifyOnError) {
