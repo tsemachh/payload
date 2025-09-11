@@ -251,28 +251,24 @@ export default function VotingForm() {
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
-        setIsGeneralVoteOption(false)
-        setCompaniesIDs([defaultIds[0]])
+      let isGeneralVoteOptionTmp
+      if (
+        fetchedVotesAll &&
+        fetchedVotesAll.length > 0 &&
+        fetchedVotesAll.length < defaultIds.length
+      ) {
+        isGeneralVoteOptionTmp = false
       } else {
-        let isGeneralVoteOptionTmp
-        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
-          isGeneralVoteOptionTmp = isGeneralVote([
-            ...(fetchedVotes || []),
-            ...(fetchedVotesAll || []),
-          ])
+        isGeneralVoteOptionTmp = isGeneralVote(fetchedVotesAll)
+      }
+      if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
+        if (isGeneralVoteOptionTmp) {
+          setCompaniesIDs(defaultIds)
         } else {
-          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
-        }
-        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
-        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
-          if (isGeneralVoteOptionTmp) {
-            setCompaniesIDs(defaultIds)
-          } else {
-            setCompaniesIDs([defaultIds[0]])
-          }
+          setCompaniesIDs([defaultIds[0]])
         }
       }
+      setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
