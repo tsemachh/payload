@@ -177,7 +177,7 @@ export async function generateParticipationsExcel(
             const numberedAgendaText = agenda.text
               ? isEnglish
                 ? `${index + 1}. ${agenda.text}`
-                : `\u200F${index + 1}. ${agenda.text}` 
+                : `\u200F${index + 1}. ${agenda.text}`
               : ''
 
             const agendaData = [
@@ -349,7 +349,7 @@ export async function generateParticipationsExcel(
     for (let row = headerRowOffset + 1; row <= lastRow; row++) {
       const cell = worksheet.getCell(row, lastCol + 1)
       cell.value = endRowMessage
-      cell.font = { name: 'Arial', size: 10 }
+      cell.font = { name: 'Arial', size: 10, color: { argb: 'FFFFFFFF' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle' }
       workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfRow_${row}`)
     }
@@ -357,7 +357,7 @@ export async function generateParticipationsExcel(
     for (let col = 1; col <= lastCol; col++) {
       const cell = worksheet.getCell(lastRow + 1, col)
       cell.value = endColMessage
-      cell.font = { name: 'Arial', size: 10 }
+      cell.font = { name: 'Arial', size: 10, color: { argb: 'FFFFFFFF' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle' }
       workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfCol_${col}`)
     }
