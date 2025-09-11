@@ -75,7 +75,7 @@ export function MeetingsTableServer() {
   const { data: meetingsResponse, isLoading } = useSWRWithErrorHandling(query, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
-    errorMessage: 'שגיאה בטעינת נתוני הישיבות',
+    errorMessage: 'שגיאה בטעינת נתוני האסיפות',
   })
 
   const meetingsForPercentagesQuery = useMemo(() => {
@@ -92,11 +92,13 @@ export function MeetingsTableServer() {
   }, [meetingsResponse?.data])
 
   const swrKeyForPercentages = meetingsForPercentagesQuery
-    ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
-    : []
+    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: JSON.stringify(meetingsForPercentagesQuery.meetings) }).toString()}`
+    : null
 
   const { data: percentagesResponse } = useSWR(
-    swrKeyForPercentages && meetingsForPercentagesQuery ? [swrKeyForPercentages, meetingsForPercentagesQuery] : null,
+    swrKeyForPercentages && meetingsForPercentagesQuery
+      ? [swrKeyForPercentages, meetingsForPercentagesQuery]
+      : null,
     ([url, body]: [string, object]) => postFetcher([url, body]),
     {
       revalidateOnFocus: false,

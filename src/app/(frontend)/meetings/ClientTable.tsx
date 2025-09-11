@@ -54,7 +54,7 @@ export function MeetingsTableClient() {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      errorMessage: 'שגיאה בטעינת נתוני הישיבות',
+      errorMessage: 'שגיאה בטעינת נתוני האסיפות',
     },
   )
 
