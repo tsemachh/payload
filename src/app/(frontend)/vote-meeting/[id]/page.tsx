@@ -535,13 +535,17 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
-         await postWithErrorHandling('/api/votes/publish-votes', {
-          meetingId: meetingIdPayload,
-          companiesIds: companiesIDs,
-          votingData: currentVotingData,
-        }, {
-          errorMessage: 'שגיאה בשליחת ההצבעה'
-        });
+        await postWithErrorHandling(
+          '/api/votes/publish-votes',
+          {
+            meetingId: meetingIdPayload,
+            companiesIds: companiesIDs,
+            votingData: currentVotingData,
+          },
+          {
+            errorMessage: 'שגיאה בשליחת ההצבעה',
+          },
+        )
 
         window.scrollTo({ top: 0, behavior: 'smooth' })
         setPublishSuccess(true)
@@ -581,13 +585,13 @@ export default function VotingForm() {
 
         await postWithErrorHandling('/api/votes/upsert-draft', requestBody, {
           errorMessage: `לא ניתן לשמור טיוטה עבור ${dataType}`,
-          notifyOnError: true // We'll handle notification ourselves for success case
-        });
+          notifyOnError: true, // We'll handle notification ourselves for success case
+        })
 
         setIsDraftSaved(true)
         toast({
           title: '✅ נתונים נשמרו',
-          description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
+          description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
           duration: 1500,
         })
         mutateDraft()
@@ -740,19 +744,21 @@ export default function VotingForm() {
           return fetch('/api/documents', {
             method: 'POST',
             body: formData,
-          }).then((res) => {
-            if (!res.ok) {
-              // Get error details if possible
-              return res.text().then(errText => {
-                throw new Error(errText || 'File upload failed');
-              });
-            }
-            return res.json()
-          }).catch(err => {
-            // Log each individual file upload error
-            handleApiError(err, `שגיאה בהעלאת קובץ: ${file.name}`);
-            throw err;
           })
+            .then((res) => {
+              if (!res.ok) {
+                // Get error details if possible
+                return res.text().then((errText) => {
+                  throw new Error(errText || 'File upload failed')
+                })
+              }
+              return res.json()
+            })
+            .catch((err) => {
+              // Log each individual file upload error
+              handleApiError(err, `שגיאה בהעלאת קובץ: ${file.name}`)
+              throw err
+            })
         })
 
         const results = await Promise.all(uploadPromises)
@@ -769,7 +775,7 @@ export default function VotingForm() {
         saveDraftData('קובץ', updatedVotingData)
       } catch (error) {
         // Log the error with our utility
-        handleApiError(error, 'שגיאה בהעלאת קבצים');
+        handleApiError(error, 'שגיאה בהעלאת קבצים')
       } finally {
         setIsUploading(false)
         e.target.value = ''
