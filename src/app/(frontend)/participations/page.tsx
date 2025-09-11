@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 import { createParticipationColumns, renderAgendaRows } from './participationTableConstants'
 import { getWithErrorHandling } from '../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../helpers/error-handler'
 
 export interface Company {
   id: string
@@ -349,15 +350,25 @@ export default function Participations() {
         },
       })
 
-      if (!(response instanceof Blob)) {
+      // Check if response is a Blob (file) response
+      if (!('blob' in response)) {
         throw new Error('Expected a file response, but received JSON')
       }
 
-      // Use reportName as fallback filename
-      const filename = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+      const { blob, headers } = response
+
+      // Extract filename from Content-Disposition header or use reportName as fallback
+      let filename = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+      const contentDisposition = headers.get('Content-Disposition')
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (filenameMatch && filenameMatch[1]) {
+          filename = decodeURIComponent(filenameMatch[1].replace(/['"]/g, '')) // Decode for UTF-8 filenames
+        }
+      }
 
       // Create and trigger download
-      const url = window.URL.createObjectURL(response)
+      const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
@@ -366,6 +377,7 @@ export default function Participations() {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
     } catch (error) {
+      handleAndNotifyError(error, 'שגיאה בייצוא הקובץ')
     } finally {
       setIsExporting(false)
     }
