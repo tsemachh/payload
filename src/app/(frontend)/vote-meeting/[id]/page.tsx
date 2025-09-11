@@ -971,6 +971,8 @@ export default function VotingForm() {
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
                                 disabled={isReadOnly}
+                                dir="rtl"
+                                aria-label="בחר אפשרות הצבעה"
                               >
                                 <SelectTrigger
                                   className={`w-full ${
@@ -988,20 +990,40 @@ export default function VotingForm() {
                                 <SelectContent>
                                   <SelectItem
                                     value="בעד"
-                                    className="text-green-700 dark:text-green-400"
+                                    className="py-2 px-4 text-right text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors duration-150"
                                   >
                                     בעד
                                   </SelectItem>
                                   <SelectItem
                                     value="נגד"
-                                    className="text-red-700 dark:text-red-400"
+                                    className="py-2 px-4 text-right text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 transition-colors duration-150"
                                   >
                                     נגד
                                   </SelectItem>
-                                  <SelectItem value="נמנע">נמנע</SelectItem>
-                                  <SelectItem value="אין חובת השתתפות">אין חובת השתתפות</SelectItem>
-                                  <SelectItem value="לא משתתף">לא משתתף</SelectItem>
-                                  <SelectItem value="----">----</SelectItem>
+                                  <SelectItem
+                                    value="נמנע"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    נמנע
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="אין חובת השתתפות"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    אין חובת השתתפות
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="לא משתתף"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    לא משתתף
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="----"
+                                    className="py-2 px-4 text-right text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    ----
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <VoteReason
