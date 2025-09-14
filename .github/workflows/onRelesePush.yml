@@ -127,7 +127,17 @@ jobs:
           git add  helm/prodValues.yaml argocd/applications/prod-application.yaml
           git commit -m "ci: update image tag and targetRevision to ${{ github.event.release.tag_name }}"
           git push origin main
+          
+          # Create and push tag in emda-argocd
+          git tag ${{ github.event.release.tag_name }}
+          git push origin ${{ github.event.release.tag_name }} || { echo "Failed to push tag"; exit 1; }
 
+          # Create Release in emda-argocd using GitHub API
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.EMDA_ARGOCD_PER }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/shefing/emda-argocd/releases \
+            -d "{\"tag_name\": \"${{ github.event.release.tag_name }}\", \"name\": \"Release ${{ github.event.release.tag_name }}\", \"body\": \"Synced Helm chart and updated ArgoCD Application to ${{ github.event.release.tag_name }}\"}" || { echo "Failed to create Release"; exit 1; }
       # Step 11: Notify Slack - Deployment Completed
       - name: Notify Slack - Deployment Completed
         if: ${{ success() && env.NEW_IMAGE_PUSHED == 'true' }}
