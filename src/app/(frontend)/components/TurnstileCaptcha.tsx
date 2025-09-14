@@ -68,7 +68,7 @@ export default function TurnstileCaptcha({
   };
 
   if (isLoading || !siteKey) {
-    return <div className={className}>Loading security check...</div>;
+    return <div className={className}>טוען בדיקת אבטחה...</div>;
   }
 
   return (

@@ -17,6 +17,7 @@ import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 import { createParticipationColumns, renderAgendaRows } from './participationTableConstants'
+import { getWithErrorHandling } from '../helpers/fetch-helpers'
 
 export interface Company {
   id: string
@@ -337,38 +338,43 @@ export default function Participations() {
         params.append('dualMeetingsOnly', 'true')
       }
 
-      const response = await fetch(`/api/votes/by-companies?${params.toString()}`)
+      const response = await getWithErrorHandling(`/api/votes/by-companies?${params.toString()}`, {
+        errorMessage: 'שגיאה בייצוא הקובץ',
+        notifyOnError: true,
+        headers: {
+          Accept:
+            format === 'excel'
+              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+              : 'application/pdf',
+        },
+      })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      if (!(response instanceof Blob)) {
+        throw new Error('Expected a file response, but received JSON')
       }
 
-      const blob = await response.blob()
+      // Use reportName as fallback filename
+      const filename = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
 
-      const fileExtension = format === 'excel' ? 'xlsx' : 'pdf'
-
-      const url = window.URL.createObjectURL(blob)
+      // Create and trigger download
+      const url = window.URL.createObjectURL(response)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${reportName.trim()}.${fileExtension}`
+      a.download = filename
       document.body.appendChild(a)
       a.click()
-
-      window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
     } catch (error) {
-      alert('שגיאה בייצוא הקובץ. אנא נסה שוב.')
     } finally {
       setIsExporting(false)
     }
   }
+
   const getCompanySelectSummary = () => {
     if (selectedComIds.length === 0) {
       return 'בחר חברה'
     }
-    const totalFundIds = companiesWithFunds.flatMap((company) =>
-      company.funds.map((fund) => fund.id),
-    )
     const totalCompaniesIds = companiesWithFunds.map((company) => company?.id)
     const allSelected =
       selectedComIds.length === totalCompaniesIds.length &&

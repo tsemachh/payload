@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@logtail/browser':
+        specifier: ^0.5.6
+        version: 0.5.6
       '@logtail/node':
         specifier: ^0.5.2
         version: 0.5.6
@@ -1398,6 +1401,9 @@ packages:
     resolution: {integrity: sha512-rKHpUEd3nrvMY7ghmOC0AeGSYT7YIviba+JViaOzrCX4/Wtv5C/3Sl7Io12Z9k+s1BKmy7C28bOdQHvRWaD7vQ==}
     peerDependencies:
       yjs: '>=13.5.22'
+
+  '@logtail/browser@0.5.6':
+    resolution: {integrity: sha512-JFiMCWarPnjMMtUvReTauwQ9Mtt/C5qQw6O3oDDxysP8ZE8JN2C7VAPr/gCIV1x351cbkeLBDcXrhy7B3jOPgg==}
 
   '@logtail/core@0.4.21':
     resolution: {integrity: sha512-QDq194+24bwi4e+a/pxyf4X67NewhTvBmh9iwM2NhbSVSQz4Fo8xQn1Ul8zuUrXETycu/Od2D8wT2tZFNFx/7A==}
@@ -8114,6 +8120,11 @@ snapshots:
       '@lexical/selection': 0.28.0
       lexical: 0.28.0
       yjs: 13.6.27
+
+  '@logtail/browser@0.5.6':
+    dependencies:
+      '@logtail/core': 0.5.6
+      '@logtail/tools': 0.5.6
 
   '@logtail/core@0.4.21':
     dependencies:

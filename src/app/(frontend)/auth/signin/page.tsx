@@ -21,6 +21,7 @@ import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
 import TurnstileCaptcha, { TurnstileStatus } from '@/components/TurnstileCaptcha'
 import { v4 as uuidv4 } from 'uuid'
+import { postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 
 // Client component that uses useSearchParams
 function SignInContent() {
@@ -66,18 +67,13 @@ function SignInContent() {
 
     try {
       // First verify the Turnstile token
-      const verifyResponse = await fetch('/api/verify-turnstile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          token: turnstileToken,
-          idempotencyKey
-        }),
+      const verifyResult = await postWithErrorHandling('/api/verify-turnstile', { 
+        token: turnstileToken,
+        idempotencyKey
+      }, {
+        errorMessage: 'אימות האבטחה נכשל',
+        notifyOnError: true // We'll handle errors manually
       });
-
-      const verifyResult = await verifyResponse.json();
 
       if (!verifyResult.success) {
         setError('אימות האבטחה נכשל. אנא נסה שוב.');
@@ -95,7 +91,7 @@ function SignInContent() {
       router.push(callbackUrl)
       router.refresh()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'פרטי התחברות שגויים')
+      setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
     } finally {
       setIsLoading(false)
     }

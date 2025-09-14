@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false, error: 'Token is required' },
+        { success: false, error: 'נדרש טוקן' },
         { status: 400 }
       );
     }
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Turnstile verification failed',
+          error: 'אימות Turnstile נכשל',
           errorCodes: result.errorCodes 
         },
         { status: 400 }
@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error verifying Turnstile token:', error);
+    console.error('שגיאה באימות טוקן Turnstile:', error);
     return NextResponse.json(
-      { success: false, error: 'Server error' },
+      { success: false, error: 'שגיאת שרת' },
       { status: 500 }
     );
   }

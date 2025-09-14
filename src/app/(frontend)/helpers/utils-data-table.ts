@@ -8,6 +8,8 @@ import {
   CustomDate,
   selectOptionType,
 } from '../types/meetings'
+import { handleApiError } from './error-handler'
+import { postWithErrorHandling } from './fetch-helpers'
 import {
   booleanOptions,
   futureDateFilterOptions,
@@ -113,29 +115,31 @@ export const parseNumber = (value: string | number | undefined | null): number =
 }
 
 export const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const errText = await res.text()
-    throw new Error(`API error: ${res.status} - ${errText}`)
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      const errText = await res.text()
+      throw new Error(`API error: ${res.status} - ${errText}`)
+    }
+    return res.json()
+  } catch (error) {
+    // Log detailed error but don't notify (SWR will handle notification)
+    handleApiError(error, `Error fetching data from ${url}`, true)
+    throw error
   }
-  return res.json()
 }
 
 export const postFetcher = async ([url, bodyData]: [string, object]) => {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bodyData),
-  })
-
-  if (!response.ok) {
-    const error = new Error('An error occurred while posting the data.')
-    ;(error as any).info = await response.json()
-    ;(error as any).status = response.status
-    throw error
+  try {
+    // Use postWithErrorHandling but disable notifications since SWR will handle them
+    return await postWithErrorHandling(url, bodyData, {
+      notifyOnError: false,
+      errorMessage: `Error posting data to ${url}`
+    });
+  } catch (error) {
+    // Just rethrow the error after it's been logged by postWithErrorHandling
+    throw error;
   }
-
-  return response.json()
 }
 
 export const getVotingRecommendationColor = (recommendation: string) => {
