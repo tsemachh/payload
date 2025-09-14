@@ -643,9 +643,9 @@ export interface Meeting {
   invitationDocument?: (string | null) | Document;
   fullName?: string | null;
   state: MeetingState;
-  holdingsLimit?: string | null;
+  holdingsLimit: string;
   proxyVotingDate?: string | null;
-  meetingDate?: string | null;
+  meetingDate: string;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;

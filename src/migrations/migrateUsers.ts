@@ -247,6 +247,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           })
         } else {
           // Create new userAuth
+          if (!userData?.email?.includes('@') && userData?.email) {
+            userData.email = userData?.email + '@noMail.com'
+          }
           newUser = await payload.create({
             collection: 'users',
             req: {

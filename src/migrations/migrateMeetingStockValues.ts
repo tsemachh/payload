@@ -1,5 +1,5 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
-import * as sql from 'mssql'
+import sql from 'mssql'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import { PromisePool } from '@/utils/promisePool'
 import { upsertStockValueFromImport } from '@/migrations/utils/migrateUtils'
