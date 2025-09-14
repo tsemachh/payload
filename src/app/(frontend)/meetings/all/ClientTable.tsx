@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import useSWR from 'swr'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DataTableServer } from '@/components/data-table-server'
 import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
+import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../../holdings/components/CompanySelector'
+import useSWR from 'swr'
 
 export function MeetingsTableServer() {
   const { companies, funds } = useCompaniesContext()
@@ -71,9 +72,10 @@ export function MeetingsTableServer() {
     selectedCompanyIds,
   ])
 
-  const { data: meetingsResponse, isLoading } = useSWR(query, fetcher, {
+  const { data: meetingsResponse, isLoading } = useSWRWithErrorHandling(query, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
+    errorMessage: 'שגיאה בטעינת נתוני האסיפות',
   })
 
   const meetingsForPercentagesQuery = useMemo(() => {
@@ -90,13 +92,20 @@ export function MeetingsTableServer() {
   }, [meetingsResponse?.data])
 
   const swrKeyForPercentages = meetingsForPercentagesQuery
-    ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
+    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: JSON.stringify(meetingsForPercentagesQuery.meetings) }).toString()}`
     : null
 
-  const { data: percentagesResponse } = useSWR(swrKeyForPercentages, postFetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
+  const { data: percentagesResponse } = useSWR(
+    swrKeyForPercentages && meetingsForPercentagesQuery
+      ? [swrKeyForPercentages, meetingsForPercentagesQuery]
+      : null,
+    ([url, body]: [string, object]) => postFetcher([url, body]),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      errorMessage: 'שגיאה בטעינת נתוני אחוזי הצבעה',
+    },
+  )
 
   const votingPercentagesMap = percentagesResponse?.percentages
 

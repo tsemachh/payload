@@ -40,6 +40,8 @@ import {
 } from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { handleApiError, notifyError } from '../../helpers/error-handler'
+import { postWithErrorHandling } from '../../helpers/fetch-helpers'
 import {
   AGENDA_QUESTIONS_CONFIG,
   GENERAL_QUESTIONS_CONFIG,
@@ -190,9 +192,13 @@ export default function VotingForm() {
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'latest'}`
       : null
 
-  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(swrKeyAll, fetcherVote, {
-    revalidateOnFocus: false,
-  })
+  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(
+    swrKeyAll,
+    fetcherVote,
+    {
+      revalidateOnFocus: false,
+    },
+  )
 
   useEffect(() => {
     if (votesError) {
@@ -529,36 +535,25 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
-        const response = await fetch('/api/votes/publish-votes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        await postWithErrorHandling(
+          '/api/votes/publish-votes',
+          {
             meetingId: meetingIdPayload,
             companiesIds: companiesIDs,
             votingData: currentVotingData,
-          }),
-        })
+          },
+          {
+            errorMessage: 'שגיאה בשליחת ההצבעה',
+          },
+        )
 
-        const result = await response.json()
-
-        if (response.ok) {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-          setPublishSuccess(true)
-          mutatePublish()
-          mutateAllLatestVots()
-        } else {
-          throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        setPublishSuccess(true)
+        mutatePublish()
+        mutateAllLatestVots()
       } catch (error: any) {
-        console.error('Submit error:', error)
-        toast({
-          title: '⚠️ שגיאה בשליחה',
-          description: error.message || 'לא ניתן לשלוח את ההצבעה. אנא נסה שוב.',
-          variant: 'destructive',
-          duration: 3000,
-        })
+        // Error already logged and notified by postWithErrorHandling
+        // Additional error handling if needed
       } finally {
         setIsSubmitting(false)
       }
@@ -596,37 +591,21 @@ export default function VotingForm() {
           companiesIds: companiesIDs,
           votingData: currentVotingData,
         }
-        const response = await fetch(`/api/votes/upsert-draft`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
+
+        await postWithErrorHandling('/api/votes/upsert-draft', requestBody, {
+          errorMessage: `לא ניתן לשמור טיוטה עבור ${dataType}`,
+          notifyOnError: true, // We'll handle notification ourselves for success case
         })
-        if (response.ok) {
-          setIsDraftSaved(true)
-          toast({
-            title: '✅ נתונים נשמרו',
-            description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
-            duration: 1500,
-          })
-          mutateDraft()
-        } else {
-          const errorData = await response.json()
-          console.error('Save error:', errorData)
-          toast({
-            title: '⚠️ שגיאה בשמירה',
-            description: `לא ניתן לשמור טיוטה עבור ${dataType}. ${errorData.error || 'אנא נסה שוב מאוחר יותר.'}`,
-            variant: 'destructive',
-            duration: 2000,
-          })
-        }
-      } catch (error) {
-        console.error('Save error:', error)
+
+        setIsDraftSaved(true)
         toast({
-          title: '⚠️ שגיאה בשמירה',
-          description: `לא ניתן לשמור טיוטה עבור ${dataType}. אנא נסה שוב מאוחר יותר.`,
-          variant: 'destructive',
-          duration: 2000,
+          title: '✅ נתונים נשמרו',
+          description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
+          duration: 1500,
         })
+        mutateDraft()
+      } catch (error) {
+        //Handle rollback in UI level on Error
       }
     },
     [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
@@ -774,10 +753,21 @@ export default function VotingForm() {
           return fetch('/api/documents', {
             method: 'POST',
             body: formData,
-          }).then((res) => {
-            if (!res.ok) throw new Error('File upload failed')
-            return res.json()
           })
+            .then((res) => {
+              if (!res.ok) {
+                // Get error details if possible
+                return res.text().then((errText) => {
+                  throw new Error(errText || 'File upload failed')
+                })
+              }
+              return res.json()
+            })
+            .catch((err) => {
+              // Log each individual file upload error
+              handleApiError(err, `שגיאה בהעלאת קובץ: ${file.name}`)
+              throw err
+            })
         })
 
         const results = await Promise.all(uploadPromises)
@@ -793,13 +783,8 @@ export default function VotingForm() {
         setVotingData(updatedVotingData)
         saveDraftData('קובץ', updatedVotingData)
       } catch (error) {
-        console.error('Upload error:', error)
-        toast({
-          title: '⚠️ שגיאה בהעלאת קובץ',
-          description: 'לא ניתן היה להעלות את הקובץ. נסה שוב',
-          variant: 'destructive',
-          duration: 2000,
-        })
+        // Log the error with our utility
+        handleApiError(error, 'שגיאה בהעלאת קבצים')
       } finally {
         setIsUploading(false)
         e.target.value = ''
