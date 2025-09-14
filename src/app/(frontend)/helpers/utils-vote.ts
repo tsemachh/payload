@@ -73,6 +73,7 @@ export function isGeneralVote(votes: Vote[]): boolean {
       'seniorOfficialExplanation',
       'isInstitutionalInvestor',
       'clientComment',
+      '_status',
     ]
 
     for (const field of generalFieldsToCompare) {

@@ -187,10 +187,10 @@ export default function VotingForm() {
 
   const swrKeyAll =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'draft'}`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'latest'}`
       : null
 
-  const { data: fetchedVotesAll } = useSWR(swrKeyAll, fetcherVote, {
+  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(swrKeyAll, fetcherVote, {
     revalidateOnFocus: false,
   })
 
@@ -253,13 +253,13 @@ export default function VotingForm() {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       let isGeneralVoteOptionTmp
       if (
-        fetchedVotesAll &&
-        fetchedVotesAll.length > 0 &&
-        fetchedVotesAll.length < defaultIds.length
+        fetchedAllLatestVots &&
+        fetchedAllLatestVots.length > 0 &&
+        fetchedAllLatestVots.length < defaultIds.length
       ) {
         isGeneralVoteOptionTmp = false
       } else {
-        isGeneralVoteOptionTmp = isGeneralVote(fetchedVotesAll)
+        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVots)
       }
       if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
         if (isGeneralVoteOptionTmp) {
@@ -271,7 +271,7 @@ export default function VotingForm() {
       setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
+  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVots])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -547,6 +547,7 @@ export default function VotingForm() {
           window.scrollTo({ top: 0, behavior: 'smooth' })
           setPublishSuccess(true)
           mutatePublish()
+          mutateAllLatestVots()
         } else {
           throw new Error(result.error || 'שגיאה בשליחת ההצבעה')
         }
@@ -563,7 +564,15 @@ export default function VotingForm() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
+    [
+      validateForm,
+      meetingIdPayload,
+      companiesIDs,
+      toast,
+      router,
+      mutatePublish,
+      mutateAllLatestVots,
+    ],
   )
 
   const saveDraftData = useCallback(
