@@ -1084,11 +1084,13 @@ interface StockFirmRow {
 }
 
 async function getDistinctStockFirms(pool: sql.ConnectionPool): Promise<sql.IResult<StockFirmRow>> {
-  return await pool.request().query(`
+  const request = pool.request()
+  request.input('minDate', sql.VarChar, MIN_HOLDINGS_DATE)
+  return await request.query(`
       SELECT distinct [stockNum]
                     , [firm]
       FROM [dbEmda].[dbo].[holdings]
-      WHERE [date1] >= '${MIN_HOLDINGS_DATE}'
+      WHERE [date1] >= @minDate
   `)
 }
 

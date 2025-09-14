@@ -1,4 +1,4 @@
-import { type PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, type PayloadRequest } from 'payload'
 import { Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
@@ -62,7 +62,7 @@ async function processVotesData(
         const parent = fundToParentMap.get(fundId)
         if (parent?.id != companyId) return null
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
-          match.quantity,
+          match.ownedQuantity || match.quantity,
           meeting.stockValue,
           false,
         )
@@ -468,6 +468,10 @@ async function fetchAndProcessVotesData(
 
 export const getVotesByCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
 
   try {
     const {

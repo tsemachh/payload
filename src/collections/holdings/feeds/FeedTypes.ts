@@ -21,10 +21,13 @@ export interface FeedWarning {
     | 'unknownAccounts'
     | 'lineCountDifference'
     | 'missingAccounts'
+    | 'extraAccounts'
+    | 'missingCompanyData'
     | 'other'
   message: string
   details?: string[]
   count?: number
+  companyId?: string
 }
 
 export const STOCK_ID_COL = 0

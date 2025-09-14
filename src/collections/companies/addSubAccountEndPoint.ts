@@ -1,4 +1,4 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 const validateQueryParams = (accountId: string, companyId: string) => {
   if (!companyId) {
@@ -63,6 +63,11 @@ const createSubAccount = async (req: PayloadRequest, accountNumber: number, comp
 const addSubAccountEndPoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { companyId } = req.query as { companyId: string }
 
     // @ts-expect-error req not null

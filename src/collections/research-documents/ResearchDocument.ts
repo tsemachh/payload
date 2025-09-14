@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { beforeValidaCompaniesFromFilename } from './hooks'
+import { isAdmin, isUserCompanyResearchDoc } from '@/utils/authUtils'
 
 export const ResearchDocument: CollectionConfig = {
   slug: 'research-documents',
@@ -23,9 +24,10 @@ export const ResearchDocument: CollectionConfig = {
     defaultFilter: { uploadedAt: 'last30Days' },
   },
   access: {
-    admin: ({ req: { user } }) => {
-      return Boolean(user)
-    },
+    create: isAdmin,
+    read: isUserCompanyResearchDoc,
+    update: isAdmin,
+    delete: isAdmin,
   },
   upload: {
     mimeTypes: [

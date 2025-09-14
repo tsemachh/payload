@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin, isLoggedIn } from '@/utils/authUtils'
 
 export const StockValues: CollectionConfig = {
   slug: 'stock-values',
@@ -15,6 +16,12 @@ export const StockValues: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
+  },
+  access: {
+    create: isAdmin,
+    read: isLoggedIn,
+    update: isAdmin,
+    delete: isAdmin,
   },
   custom: {
     filterList: [[{ name: 'valueDate' }, 'createdAt']],

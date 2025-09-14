@@ -16,6 +16,7 @@ import {
   setVoteFlags,
 } from './hooks/voteHooks'
 import { getVotesByCompanies } from './participationEndPoint'
+import { isUserCompanyVote, isUserCompanyVoteWrite } from '@/utils/authUtils'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
@@ -94,6 +95,12 @@ export const Votes: CollectionConfig = {
       },
     },
     group: 'תחזוקה',
+  },
+  access: {
+    create: isUserCompanyVoteWrite,
+    read: isUserCompanyVote,
+    update: isUserCompanyVoteWrite,
+    delete: isUserCompanyVoteWrite,
   },
   disableBulkEdit: true,
   fields: [

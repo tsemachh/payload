@@ -27,6 +27,7 @@ import {
 } from '@/collections/meetings/hooks/adminHooks'
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
+import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -112,6 +113,12 @@ export const Meetings: CollectionConfig = {
         { name: '_status' },
       ],
     ],
+  },
+  access: {
+    create: isAdmin,
+    read: isUserCompanyMeeting,
+    update: isUserCompanyMeetingWrite,
+    delete: isAdmin,
   },
   enableQueryPresets: true,
   defaultSort: 'meetingDate',
@@ -385,6 +392,15 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '330px',
+                  },
+                },
+                {
+                  name: 'isFinancialStock',
+                  label: 'תאגיד פיננסי',
+                  type: 'checkbox',
+                  virtual: 'stock.isFinancial',
+                  admin: {
+                    hidden: true,
                   },
                 },
                 {
@@ -968,6 +984,11 @@ export const Meetings: CollectionConfig = {
           })
 
           if (stock?.hasDual && stock?.dualStock) {
+            const updatedDualStock = await req.payload.findByID({
+              collection: 'stocks',
+              id: getIdOfRelationField(stock.dualStock) as string,
+            })
+
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
@@ -981,6 +1002,7 @@ export const Meetings: CollectionConfig = {
                 collection: 'meetings',
                 data: dualMeeting,
                 context: { from: 'process' },
+                req,
               })
 
               await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
@@ -994,6 +1016,7 @@ export const Meetings: CollectionConfig = {
                   changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
+                req,
               })
             } catch (error) {
               console.error('Error creating dual meeting:', error)

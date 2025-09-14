@@ -49,6 +49,7 @@ import { QueryPresetsColumnField as QueryPresetsColumnField_3817bf644402e67bfe65
 import { default as default_a5852a3a735d9299b693b4d2e7b266de } from '@shefing/quickfilter/nav'
 import { UnImpersonate as UnImpersonate_30fd60f7d4c856977e9f58a871290892 } from '@/plugins/impersonate/ui/UnImpersonate'
 import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../graphics/Logo'
+import { default as default_cac31904aad45bab4a11d91326db141f } from '../../../admincomponents/auth/LoginCaptcha'
 import { CustomContextProvider as CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092 } from '../../../providers/CustomContext'
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
@@ -107,6 +108,7 @@ export const importMap = {
   "@shefing/quickfilter/nav#default": default_a5852a3a735d9299b693b4d2e7b266de,
   "@/plugins/impersonate/ui/UnImpersonate#UnImpersonate": UnImpersonate_30fd60f7d4c856977e9f58a871290892,
   "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,
+  "/admincomponents/auth/LoginCaptcha#default": default_cac31904aad45bab4a11d91326db141f,
   "/providers/CustomContext#CustomContextProvider": CustomContextProvider_b52136f3c3ee01c4a4aae48b0b279092,
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,

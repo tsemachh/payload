@@ -1,5 +1,5 @@
 import { PayloadRequest } from 'payload'
-import { Company, HoldingFeedLine, HoldingsFeed, HoldingsPerDay, Stock } from '@/payload-types'
+import { Company, HoldingFeedLine, HoldingsPerDay, Stock } from '@/payload-types'
 import { StandardizedRow } from '@/collections/holdings/feeds/FeedTypes'
 
 export type AggregatedRecord = {
@@ -9,17 +9,17 @@ export type AggregatedRecord = {
   originalForeignData?: NonNullable<HoldingsPerDay[number]['originalForeignData']>
 }
 
-export async function getPreviousFeed(
+export async function getPreviousHoldings(
   req: PayloadRequest,
   currentDate: string,
-  selectedCompanies: string[],
-): Promise<HoldingsFeed | null> {
+  companyId: string,
+): Promise<any | null> {
   const holdings = await req.payload.find({
-    collection: 'holdings-feed',
+    collection: 'holdings',
     where: {
       valueDate: { less_than: new Date(currentDate).toISOString() },
-      selectedCompanies: {
-        contains: selectedCompanies,
+      fund: {
+        equals: companyId,
       },
     },
     sort: '-valueDate',
@@ -36,10 +36,17 @@ export async function deleteExistingHoldings(
   valueDate: string,
   companies: string[],
 ): Promise<void> {
+  const startValueDate = new Date(valueDate)
+  startValueDate.setHours(0, 0, 0, 0)
+  const endValueDate = new Date(valueDate)
+  endValueDate.setHours(23, 59, 59, 999)
   await req.payload.delete({
     collection: 'holdings',
     where: {
-      valueDate: { equals: new Date(valueDate).toISOString() },
+      valueDate: {
+        greater_than_equal: startValueDate.toISOString(),
+        less_than_equal: endValueDate.toISOString(),
+      },
       fund: {
         in: companies,
       },
@@ -193,16 +200,12 @@ export const preloadStocks = async (
 
   stocksResult.docs.forEach((stock: Partial<Stock>) => {
     // Ensure related.docs exists and check if it's not empty
-    const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
+    const hasParentStock = stock?.relatedStock
     const stockKey = stock?.stockId
-    const stockParentMongoId =
-      stock?.relatedStock && hasRelatedDocs
-        ? ((stock.relatedStock as Stock).id as string)
-        : stock?.id
-    const stockName =
-      stock?.relatedStock && hasRelatedDocs
-        ? ((stock.relatedStock as Stock).name as string)
-        : stock?.name
+    const stockParentMongoId = hasParentStock
+      ? ((stock.relatedStock as Stock).id as string)
+      : stock?.id
+    const stockName = hasParentStock ? ((stock.relatedStock as Stock).name as string) : stock?.name
     const isActive = stock?.active !== false // Default to true if undefined or null
     const origin = stock?.origin as string
 
@@ -257,7 +260,7 @@ export const createHoldings = async (
       const company = accountToCompanyMap.get(accountId) as string
       const stockInfo = stocksMap.get(record.stockId as string)
       const stock = stockInfo?.stockParentMongoId as string
-      const key = `${company}-${stock}-${record.stockId}`
+      const key = `${company}-${stock}`
 
       const existingRecord = aggregatedRecords.get(key)
 
@@ -326,6 +329,23 @@ export const createHoldings = async (
   // Create holdings in database
   let successCount = 0
   for (const [company, holdings] of companyRecordsMap.entries()) {
+    // Calculate statistics for this company
+    const companyRecords = processedRecords.filter((record) => {
+      if (record.status === 'success' && record.accountId) {
+        const accountId = parseInt(record.accountId as string)
+        const recordCompany = accountToCompanyMap.get(accountId)
+        return recordCompany === company
+      }
+      return false
+    })
+
+    const companyAccountIds = new Set<string>()
+    companyRecords.forEach((record) => {
+      if (record.accountId) {
+        companyAccountIds.add(record.accountId.toString())
+      }
+    })
+
     await req.payload
       .create({
         collection: 'holdings',
@@ -333,6 +353,10 @@ export const createHoldings = async (
           fund: company,
           holdings,
           valueDate,
+          stats: {
+            recordCount: companyRecords.length,
+            accountIds: JSON.stringify(Array.from(companyAccountIds)),
+          },
         },
         req,
       })

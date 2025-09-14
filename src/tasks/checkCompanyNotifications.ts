@@ -7,6 +7,7 @@ import {
   getWorkingDateBefore,
   isHolidayOrShabbat,
 } from '@/collections/meetings/hooks/calculateHoldingDate'
+import { sanitizeRequest } from '@/tasks/utils'
 
 // Define interface for meeting detail
 interface MeetingDetail {
@@ -88,6 +89,7 @@ export const checkCompanyNotificationsHandler: TaskHandler<'checkCompanyNotifica
   req,
 }) => {
   try {
+    await sanitizeRequest(req, 'checkCompanyNotifications')
     // Call the core function
     const result = await checkCompanyNotifications(req)
 

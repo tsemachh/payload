@@ -2,6 +2,7 @@ import { type TaskHandler } from 'payload'
 import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
+import { sanitizeRequest } from '@/tasks/utils'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -215,6 +216,7 @@ export const sendCompanyMeetingNotificationsHandler: TaskHandler<
   'sendCompanyMeetingNotifications'
 > = async ({ req }) => {
   try {
+    await sanitizeRequest(req, 'sendCompanyMeetingNotifications')
     // Call the core function
     const result = await sendCompanyMeetingNotifications(req)
 

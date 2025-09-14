@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isUserCompanyHoldingFeed } from '@/utils/authUtils'
 
 export const HoldingsFeed: CollectionConfig = {
   slug: 'holdings-feed',
@@ -14,11 +15,14 @@ export const HoldingsFeed: CollectionConfig = {
       limits: [10, 20, 50, 100, 200, 500],
     },
   },
+  access: {
+    create: isUserCompanyHoldingFeed,
+    read: isUserCompanyHoldingFeed,
+    update: isUserCompanyHoldingFeed,
+    delete: isUserCompanyHoldingFeed,
+  },
   custom: {
     filterList: [[{ name: 'valueDate' }, { name: 'processingStatus' }]],
-  },
-  access: {
-    read: () => true,
   },
   hooks: {
     afterChange: [
@@ -115,14 +119,6 @@ export const HoldingsFeed: CollectionConfig = {
           ],
         },
       ],
-    },
-    {
-      name: 'accountsJson',
-      type: 'text',
-      label: 'חשבונות בפיד (JSON)',
-      admin: {
-        readOnly: true,
-      },
     },
   ],
   upload: { skipSafeFetch: true },

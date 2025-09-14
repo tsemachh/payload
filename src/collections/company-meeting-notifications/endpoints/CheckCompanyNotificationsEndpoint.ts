@@ -7,6 +7,13 @@ import { checkCompanyNotifications } from '@/tasks/checkCompanyNotifications'
  */
 export const CheckCompanyNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
     // Call the core function directly
     const result = await checkCompanyNotifications(req)
     return Response.json(
@@ -16,7 +23,9 @@ export const CheckCompanyNotificationsEndpoint = async (req: PayloadRequest) => 
       { status: 200 },
     )
   } catch (error) {
-    req.payload.logger.error(`Error in checkCompanyNotifications endpoint: ${JSON.stringify(error)}`)
+    req.payload.logger.error(
+      `Error in checkCompanyNotifications endpoint: ${JSON.stringify(error)}`,
+    )
     return Response.json(
       {
         success: false,

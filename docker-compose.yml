@@ -18,6 +18,8 @@ services:
       - GCS_ENDPOINT
       - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
       - LOGTAIL_SOURCE_TOKEN
+      - TURNSTILE_SITE_KEY
+      - TURNSTILE_SECRET_KEY
 
     volumes:
       - node_modules:/app/node_modules

@@ -61,7 +61,7 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
                   {item.quantity?.toLocaleString() || '-'}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
-                  {item.accountNum?.toLocaleString() || '-'}
+                  {item.accountNum || '-'}
                 </td>
                 {/* {!isMeeting && (
                   <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
@@ -77,4 +77,3 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
   )
 }
 export default ArrayTableField
-

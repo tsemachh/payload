@@ -333,14 +333,15 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
       {
         name: 'system@shefing.com',
         isAdmin: true,
+        isSystem: true,
         email: 'system@shefing.com',
         password: 'system@shefing.com',
       },
       {
         name: 'amosp@praedicta.com',
         isAdmin: true, //TODO Change to userRoles
-        userRoles: [],
         enableAPIKey: true,
+        isSystem: true,
         apiKey: '3dbb49cb-ce8f-4032-a3df-4ed088d4234c',
         email: 'amosp@praedicta.com',
         password: '7Kdy46pN4CNmGq6',

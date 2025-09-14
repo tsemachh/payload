@@ -4,6 +4,10 @@ import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 export const detailsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
     // Get user from the request
     const { user } = req
 
@@ -23,6 +27,7 @@ export const detailsEndpoint = async (req: PayloadRequest) => {
         name: true,
         parentCompany: true,
         subCompanies: true,
+        passiveFund: true,
       },
       hidden: true,
       depth: 0,

@@ -5,6 +5,7 @@ import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRe
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { stockTypeOptions } from '@/consts/otipns-const'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
+import { isAdmin, isLoggedIn } from '@/utils/authUtils'
 
 const stockLinkProps: IconLinkProps = {
   urlTemplate: 'https://market.tase.co.il/he/market_data/security/${value}/major_data',
@@ -71,6 +72,12 @@ export const Stocks: CollectionConfig = {
       [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
     ],
     defaultFilter: { active: { equals: true } },
+  },
+  access: {
+    create: isAdmin,
+    read: isLoggedIn,
+    update: isAdmin,
+    delete: isAdmin,
   },
   enableQueryPresets: true,
   admin: {
@@ -232,6 +239,7 @@ export const Stocks: CollectionConfig = {
                             where: {
                               relatedStock: { equals: originalDoc.id },
                             },
+                            req,
                           })
                         }
                         return value

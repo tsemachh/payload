@@ -279,6 +279,12 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
 
     // Get query parameters
@@ -437,6 +443,12 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -619,8 +631,17 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           const match = meeting?.fundsWithHolding?.find((item) => {
             return item.fund && (item.fund as string) == fundId
           })
-          if (match && match.fund && match?.quantity) {
-            quantity = match.quantity
+          if (match && match.fund) {
+            if (match?.ownedQuantity) {
+              quantity = match.ownedQuantity
+            } else if (match.quantity) {
+              quantity = match.quantity
+            } else {
+              console.error(
+                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }
           } else {
             console.error(
               `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
@@ -799,6 +820,12 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
     const payload = req.payload
+
+    // Check if user is logged in
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
     const { user } = req
 
     const meetingId = (req.query.meetingId as string) || '1'
