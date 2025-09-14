@@ -189,12 +189,16 @@ export default function VotingForm() {
 
   const swrKeyAll =
     meetingIdPayload && companiesIDs.length > 0
-      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'draft'}`
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'latest'}`
       : null
 
-  const { data: fetchedVotesAll } = useSWR(swrKeyAll, fetcherVote, {
-    revalidateOnFocus: false,
-  })
+  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(
+    swrKeyAll,
+    fetcherVote,
+    {
+      revalidateOnFocus: false,
+    },
+  )
 
   useEffect(() => {
     if (votesError) {
@@ -253,31 +257,27 @@ export default function VotingForm() {
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
-      if (fetchedVotes && fetchedVotes.length > 0 && fetchedVotes.length < companiesIDs.length) {
-        setIsGeneralVoteOption(false)
-        setCompaniesIDs([defaultIds[0]])
+      let isGeneralVoteOptionTmp
+      if (
+        fetchedAllLatestVots &&
+        fetchedAllLatestVots.length > 0 &&
+        fetchedAllLatestVots.length < defaultIds.length
+      ) {
+        isGeneralVoteOptionTmp = false
       } else {
-        let isGeneralVoteOptionTmp
-        if (fetchedVotes?.length == 1 && meetingData?.companies.length > 1) {
-          isGeneralVoteOptionTmp = isGeneralVote([
-            ...(fetchedVotes || []),
-            ...(fetchedVotesAll || []),
-          ])
+        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVots)
+      }
+      if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
+        if (isGeneralVoteOptionTmp) {
+          setCompaniesIDs(defaultIds)
         } else {
-          isGeneralVoteOptionTmp = isGeneralVote(fetchedVotes)
-        }
-        setIsGeneralVoteOption(isGeneralVoteOptionTmp)
-        if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
-          if (isGeneralVoteOptionTmp) {
-            setCompaniesIDs(defaultIds)
-          } else {
-            setCompaniesIDs([defaultIds[0]])
-          }
+          setCompaniesIDs([defaultIds[0]])
         }
       }
+      setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedVotes, meetingData?.companies, fetchedVotesAll])
+  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVots])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -550,6 +550,7 @@ export default function VotingForm() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         setPublishSuccess(true)
         mutatePublish()
+        mutateAllLatestVots()
       } catch (error: any) {
         // Error already logged and notified by postWithErrorHandling
         // Additional error handling if needed
@@ -558,7 +559,15 @@ export default function VotingForm() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [validateForm, meetingIdPayload, companiesIDs, toast, router, mutatePublish],
+    [
+      validateForm,
+      meetingIdPayload,
+      companiesIDs,
+      toast,
+      router,
+      mutatePublish,
+      mutateAllLatestVots,
+    ],
   )
 
   const saveDraftData = useCallback(
@@ -952,6 +961,8 @@ export default function VotingForm() {
                                   handleVoteChange(item.topicIndex, value as UserVote['choice'])
                                 }
                                 disabled={isReadOnly}
+                                dir="rtl"
+                                aria-label="בחר אפשרות הצבעה"
                               >
                                 <SelectTrigger
                                   className={`w-full ${
@@ -969,20 +980,40 @@ export default function VotingForm() {
                                 <SelectContent>
                                   <SelectItem
                                     value="בעד"
-                                    className="text-green-700 dark:text-green-400"
+                                    className="py-2 px-4 text-right text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors duration-150"
                                   >
                                     בעד
                                   </SelectItem>
                                   <SelectItem
                                     value="נגד"
-                                    className="text-red-700 dark:text-red-400"
+                                    className="py-2 px-4 text-right text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 transition-colors duration-150"
                                   >
                                     נגד
                                   </SelectItem>
-                                  <SelectItem value="נמנע">נמנע</SelectItem>
-                                  <SelectItem value="אין חובת השתתפות">אין חובת השתתפות</SelectItem>
-                                  <SelectItem value="לא משתתף">לא משתתף</SelectItem>
-                                  <SelectItem value="----">----</SelectItem>
+                                  <SelectItem
+                                    value="נמנע"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    נמנע
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="אין חובת השתתפות"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    אין חובת השתתפות
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="לא משתתף"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    לא משתתף
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="----"
+                                    className="py-2 px-4 text-right text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    ----
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <VoteReason
