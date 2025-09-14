@@ -200,16 +200,12 @@ export const preloadStocks = async (
 
   stocksResult.docs.forEach((stock: Partial<Stock>) => {
     // Ensure related.docs exists and check if it's not empty
-    const hasRelatedDocs = stock?.relations?.docs && stock.relations.docs.length > 0
+    const hasParentStock = stock?.relatedStock
     const stockKey = stock?.stockId
-    const stockParentMongoId =
-      stock?.relatedStock && hasRelatedDocs
-        ? ((stock.relatedStock as Stock).id as string)
-        : stock?.id
-    const stockName =
-      stock?.relatedStock && hasRelatedDocs
-        ? ((stock.relatedStock as Stock).name as string)
-        : stock?.name
+    const stockParentMongoId = hasParentStock
+      ? ((stock.relatedStock as Stock).id as string)
+      : stock?.id
+    const stockName = hasParentStock ? ((stock.relatedStock as Stock).name as string) : stock?.name
     const isActive = stock?.active !== false // Default to true if undefined or null
     const origin = stock?.origin as string
 
@@ -264,7 +260,7 @@ export const createHoldings = async (
       const company = accountToCompanyMap.get(accountId) as string
       const stockInfo = stocksMap.get(record.stockId as string)
       const stock = stockInfo?.stockParentMongoId as string
-      const key = `${company}-${stock}-${record.stockId}`
+      const key = `${company}-${stock}`
 
       const existingRecord = aggregatedRecords.get(key)
 

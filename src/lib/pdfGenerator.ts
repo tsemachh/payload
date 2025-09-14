@@ -344,7 +344,7 @@ export async function generateParticipationsPDF(
         {
           content:
             companyValues[0].length > 10
-              ? prepareTextWithLineBreaks(companyValues[0], doc, 30)
+              ? prepareTextWithLineBreaks(companyValues[0], doc, 70)
               : prepareText(companyValues[0]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
@@ -367,7 +367,7 @@ export async function generateParticipationsPDF(
         {
           content:
             companyValues[5].length > 30
-              ? prepareTextWithLineBreaks(companyValues[5], doc, 30)
+              ? prepareTextWithLineBreaks(companyValues[5], doc, 80)
               : prepareText(companyValues[5]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
@@ -423,7 +423,6 @@ export async function generateParticipationsPDF(
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
             let fontToUse = 'Ariel'
-            const fontStyle = 'normal'
             if (content === '✓') {
               thisTextColor = [0, 153, 0]
               fontToUse = 'DejaVuSans'
@@ -434,7 +433,7 @@ export async function generateParticipationsPDF(
                 fillColor: rowBg,
                 textColor: thisTextColor,
                 font: fontToUse,
-                fontStyle: fontStyle,
+                fontStyle: 'normal',
               },
             }
           }),

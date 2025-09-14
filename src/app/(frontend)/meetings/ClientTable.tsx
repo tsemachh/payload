@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { Button } from '@/components/ui/button'
 import { FaFileExcel } from 'react-icons/fa'
+import { checksum } from '@/app/(frontend)/lib/checksum'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -70,9 +71,10 @@ export function MeetingsTableClient() {
 
     return { meetings: meetingsPayload }
   }, [meetingsResponse?.data])
+  const meetingCheckSum = checksum(JSON.stringify(meetingsForPercentagesQuery?.meetings))
 
   const swrKeyForPercentages = meetingsForPercentagesQuery
-    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: JSON.stringify(meetingsForPercentagesQuery.meetings) }).toString()}`
+    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: meetingCheckSum }).toString()}`
     : null
 
   const { data: percentagesResponse } = useSWR(

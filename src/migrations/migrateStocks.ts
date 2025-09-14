@@ -198,9 +198,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             // Determine active status:
             // - Not active stocks are never active
-            // - Stocks with meetings are not active unless they are Predicta or EMDA stocks
+            // - Stocks with meetings are active
             let isActive =
               stockStatuses.hasLatestMeeting ||
+              stockStatuses.hasActiveMeeting ||
               stockStatuses.isPredictaStock ||
               stockStatuses.isPrivateShaked ||
               stockStatuses.isNotActiveShaked || //Should be active as well
@@ -214,15 +215,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 successCount++
                 return
               } else {
-                // Check if no meeting since January 1st, 2024 and set as inactive
+                // Stocks with active meetings should always be active
+                isActive = true
                 if (stock && !stockStatuses.hasLatestMeeting) {
-                  isActive = false
-                } else {
-                  if (stock) {
-                    // Others, that has meetings in 2024, put in a collections stocks for review and ask Shaked to check
-                    isActive = true
-                    comments += 'Shaked , please review'
-                  }
+                  // Add a comment for stocks with active meetings but no latest meetings
+                  comments += ' Shaked, please review - has active meeting but no latest meeting'
                 }
               }
             }

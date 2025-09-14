@@ -11,6 +11,7 @@ import { useCompaniesContext } from '../../context/companiesContext'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompanyTreeSelector } from '../../holdings/components/CompanySelector'
 import useSWR from 'swr'
+import { checksum } from '@/app/(frontend)/lib/checksum'
 
 export function MeetingsTableServer() {
   const { companies, funds } = useCompaniesContext()
@@ -91,8 +92,10 @@ export function MeetingsTableServer() {
     return { meetings: meetingsPayload }
   }, [meetingsResponse?.data])
 
+  const meetingCheckSum = checksum(JSON.stringify(meetingsForPercentagesQuery?.meetings))
+
   const swrKeyForPercentages = meetingsForPercentagesQuery
-    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: JSON.stringify(meetingsForPercentagesQuery.meetings) }).toString()}`
+    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: meetingCheckSum }).toString()}`
     : null
 
   const { data: percentagesResponse } = useSWR(
