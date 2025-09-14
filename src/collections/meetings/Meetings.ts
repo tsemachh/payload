@@ -541,6 +541,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד קובע',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '200px',
                     date: {
@@ -571,6 +572,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד האסיפה',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '220px',
                     date: {
