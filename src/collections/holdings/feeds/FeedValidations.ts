@@ -360,7 +360,7 @@ export const checkFeedWarnings = async (
     // Get previous holdings for this company
     const previousHolding = await getPreviousHoldings(req, valueDate, companyId)
 
-    if (previousHolding) {
+    if (previousHolding && Object.keys(previousHolding.stats).length > 0) {
       // Get previous stats
       const previousStats = previousHolding.stats || {}
       const previousCount = previousStats.recordCount || 0
