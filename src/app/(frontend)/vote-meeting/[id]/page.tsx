@@ -40,7 +40,7 @@ import {
 } from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { handleApiError, notifyError } from '../../helpers/error-handler'
+import { handleApiError } from '../../helpers/error-handler'
 import { postWithErrorHandling } from '../../helpers/fetch-helpers'
 import {
   AGENDA_QUESTIONS_CONFIG,
@@ -217,13 +217,13 @@ export default function VotingForm() {
       ? `/api/votes/voted-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
       : null
 
-  const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(
-    swrKeyVotedCompanies,
-    fetchVotedCompanies,
-    {
-      revalidateOnFocus: false,
-    },
-  )
+  const {
+    data: votedCompaniesArray,
+    isLoading: isVotedCompaniesArray,
+    mutate: mutateVotedCompaniesArray,
+  } = useSWR(swrKeyVotedCompanies, fetchVotedCompanies, {
+    revalidateOnFocus: false,
+  })
 
   const isDirty = useMemo(() => {
     if (!initialVotingData) return true
@@ -410,10 +410,6 @@ export default function VotingForm() {
     enabled: (isDirty || isDraftSaved) && !isReadOnly,
   })
 
-  // Note: beforeunload handler removed to prevent browser's default "Leave site" alert
-  // The auto-draft system handles data persistence, and useNavigationGuard handles in-app navigation
-  // For external navigation (browser back to different site, refresh, close), we rely on auto-saves
-
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
 
@@ -551,6 +547,7 @@ export default function VotingForm() {
         setPublishSuccess(true)
         mutatePublish()
         mutateAllLatestVots()
+        mutateVotedCompaniesArray()
       } catch (error: any) {
         // Error already logged and notified by postWithErrorHandling
         // Additional error handling if needed
@@ -567,6 +564,7 @@ export default function VotingForm() {
       router,
       mutatePublish,
       mutateAllLatestVots,
+      mutateVotedCompaniesArray,
     ],
   )
 
@@ -604,11 +602,20 @@ export default function VotingForm() {
           duration: 1500,
         })
         mutateDraft()
+        mutateAllLatestVots()
       } catch (error) {
         //Handle rollback in UI level on Error
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
+    [
+      meetingIdPayload,
+      companiesIDs,
+      meetingData,
+      toast,
+      mutateDraft,
+      setIsDraftSaved,
+      mutateAllLatestVots,
+    ],
   )
 
   const handleQuestionChange = useCallback(
