@@ -13,6 +13,8 @@ import { useSearchParams } from 'next/navigation'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import useSWR from 'swr'
 import { fetcher } from '../../helpers/utils-data-table'
+import { getWithErrorHandling } from '../../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../../helpers/error-handler'
 
 export default function HoldingsView() {
   const { user } = useAuth()
@@ -49,7 +51,6 @@ export default function HoldingsView() {
         setError('')
       } catch (e) {
         setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
-        console.error('Invalid data', e)
       }
     } else {
       setError('לצפייה בהחזקות יש לבחור תאריך,  הנתונים יוצגו בהתאם ליום הנבחר.')
@@ -62,55 +63,22 @@ export default function HoldingsView() {
     }
   }, [date, user])
 
-  const getHoldingsFromAPI = async (formattedDate: string, selectedCompanies: string[]) => {
-    const query: Where = {
-      and: [
-        {
-          valueDate: {
-            equals: formattedDate,
-          },
-        },
-        {
-          fund: {
-            in: selectedCompanies,
-          },
-        },
-      ],
-    }
-
-    const stringifiedQuery = stringify(
-      {
-        where: query,
-        limit: 0,
-        select: {
-          fund: true,
-          holdings: {
-            stock: true,
-            fund: true,
-            quantity: true,
-          },
-        },
-        depth: 1, // Need to get stock details
-      },
-      { addQueryPrefix: true },
-    )
-
-    const response = await fetch(`/api/holdings${stringifiedQuery}`)
-    return response
-  }
-
   // Create an action to update the date
   const handleDateChangeAction = async (newDate: Date | undefined) => {
     setDate(newDate)
     setError('')
+    setProcessedHoldings([]) // Clear previous data when date changes
   }
 
   const fetchHoldings = async () => {
     if (!date) {
       setError('תאריך לא נבחר.')
+      setProcessedHoldings([])
       return
     }
+
     setIsLoading(true)
+    setError('')
 
     try {
       let selectedCompanies: string[] = []
@@ -119,45 +87,81 @@ export default function HoldingsView() {
       }
       if (selectedCompanies.length === 0) {
         setError('לא נמצאו חברות.')
+        setProcessedHoldings([])
         return
       }
-      const formattedDate = date.toISOString()
-      const response = await getHoldingsFromAPI(formattedDate, selectedCompanies)
-      const data = await response.json()
-      if (response.ok) {
-        if (!data.docs.length) {
-          setError('לא נמצאו נתונים עבור הבחירה הנוכחית. ')
-        } else {
-          setError('')
-        }
 
-        // Process the holding days data for display
-        const processed = []
-        for (const holdingDay of data.docs) {
-          const fundName = holdingDay.fund?.name || 'N/A'
-          const accountId = holdingDay.fund.mainAccount[0].accountNumber
-          // Process each holding item in the holdings array
-          if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
-            for (const item of holdingDay.holdings) {
-              processed.push({
-                id: `${holdingDay.id}-${item.stock?.id || 'unknown'}`,
-                stockId: item.stock?.stockId || item.feedStockNum || 'N/A',
-                stockName: item.stock?.name || 'N/A',
-                quantity: item.quantity || 'N/A',
-                company: fundName,
-                accountId: accountId,
-              })
-            }
+      const formattedDate = date.toISOString()
+      const query: Where = {
+        and: [
+          {
+            valueDate: {
+              equals: formattedDate,
+            },
+          },
+          {
+            fund: {
+              in: selectedCompanies,
+            },
+          },
+        ],
+      }
+
+      const stringifiedQuery = stringify(
+        {
+          where: query,
+          limit: 0,
+          select: {
+            fund: true,
+            holdings: {
+              stock: true,
+              fund: true,
+              quantity: true,
+            },
+          },
+          depth: 1, // Need to get stock details
+        },
+        { addQueryPrefix: true },
+      )
+
+      const response = await getWithErrorHandling(`/api/holdings${stringifiedQuery}`, {
+        errorMessage: 'שגיאה בטעינת הנתונים',
+        notifyOnError: true,
+      })
+
+      const data = response as any // Assuming JSON response
+
+      if (!data.docs || data.docs.length === 0) {
+        setError('לא נמצאו נתונים עבור הבחירה הנוכחית.')
+        setProcessedHoldings([])
+        return
+      }
+
+      // Process the holding days data for display
+      const processed = []
+      for (const holdingDay of data.docs) {
+        const fundName = holdingDay.fund?.name || 'N/A'
+        const accountId = holdingDay.fund.mainAccount[0].accountNumber
+        // Process each holding item in the holdings array
+        if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
+          for (const item of holdingDay.holdings) {
+            processed.push({
+              id: `${holdingDay.id}-${item.stock?.id || 'unknown'}`,
+              stockId: item.stock?.stockId || item.feedStockNum || 'N/A',
+              stockName: item.stock?.name || 'N/A',
+              quantity: item.quantity || 'N/A',
+              company: fundName,
+              accountId: accountId,
+            })
           }
         }
-
-        setProcessedHoldings(processed)
-      } else {
-        setError('שגיאת נתונים.')
       }
+
+      setProcessedHoldings(processed)
+      setError('')
     } catch (error) {
-      console.error('Error fetching holdings:', error)
-      setError('שגיאה בטעינת הנתונים.')
+      setProcessedHoldings([]) // Clear data on error
+      handleAndNotifyError(error, 'שגיאה בטעינת הנתונים')
     } finally {
       setIsLoading(false)
     }
@@ -170,7 +174,6 @@ export default function HoldingsView() {
           <label className="text-base font-semibold mb-2 block h-100 text-center">תאריך ערך</label>
           <DateSelector
             date={date}
-            // markedDates={markedDates}
             isDateAlwaysOpen={true}
             onDateChangeAction={handleDateChangeAction}
             className="w-full"
@@ -187,7 +190,7 @@ export default function HoldingsView() {
 
       <div className="w-full flex justify-center mt-3">
         {isLoading ? (
-          <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+          <div className="flex flex-col h-[500px] items-center pt-[100px]">
             <LoadingSpinnerDiamond />
           </div>
         ) : (

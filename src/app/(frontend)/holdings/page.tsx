@@ -28,6 +28,8 @@ import {
 import { AlertTriangle } from 'lucide-react'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import { useNavigationGuard } from 'next-navigation-guard'
+import { fetchWithErrorHandling, postWithErrorHandling } from '../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../helpers/error-handler'
 
 export default function HoldingsFeedView() {
   const router = useRouter()
@@ -43,48 +45,40 @@ export default function HoldingsFeedView() {
   const [fatals, setFatals] = useState<FeedFatalError[]>([])
   const [recordErrors, setRecordErrors] = useState<HoldingFeedLine[]>([])
   const [silencedRecords, setSilencedRecords] = useState<HoldingFeedLine[]>([])
-  const [validRecords, setvalidRecords] = useState<HoldingFeedLine[]>([])
+  const [validRecords, setValidRecords] = useState<HoldingFeedLine[]>([])
   const [warnings, setWarnings] = useState<FeedWarning[]>([])
   const [editForm, setEditForm] = useState(true)
   const [saveError, setSaveError] = useState(false)
+
   useEffect(() => {
     if (user) {
-      // Get companies with write permission
       const companiesWithWritePermission = getCompaniesWithPermission(user, 'write')
-      // Set read-only mode if user has no write permissions
       const hasWritePermissions = companiesWithWritePermission.length > 0
       setIsReadOnly(!hasWritePermissions)
     }
   }, [user])
 
-  // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
     enabled: (params) => {
-      // Disable for programmatic navigation (push/replace)
       if (params.to.includes('/holdings/view?date')) {
         return false
       }
-      // Enable for user-initiated navigation (popstate/beforeunload) when form is being edited
       return !editForm
     },
   })
 
-  // Create an action to update selected companies
   const handleSelectionChangeAction = async (selected: string[]) => {
     setSelectedCompanies(selected)
   }
 
-  // Create an action to update the date
   const handleDateChangeAction = async (newDate: Date | undefined) => {
     setDate(newDate)
   }
 
-  // Create an action to handle file changes
   const handleFileChangeAction = async (file: File | null) => {
     setFile(file)
   }
 
-  // Create actions for ProcessingResults
   const setIsSuccessAction = async (value: boolean) => {
     setIsSuccess(value)
   }
@@ -116,9 +110,10 @@ export default function HoldingsFeedView() {
       })
       return
     }
+
     setEditForm(false)
     setIsValidating(true)
-    setvalidRecords([])
+    setValidRecords([])
     setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
@@ -126,45 +121,32 @@ export default function HoldingsFeedView() {
 
     try {
       const formattedDate = format(date, 'yyyy-MM-dd')
-      // Upload file with company selection
-      const response = await fetch(
+      const response = await fetchWithErrorHandling(
         `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${encodeURIComponent(JSON.stringify(selectedCompanies))}&validateOnly=true`,
         {
           method: 'POST',
           body: file,
+          errorMessage: 'שגיאה בהעלאת הקובץ',
+          notifyOnError: true,
         },
       )
 
-      const result = await response.json()
-      setIsValidating(false)
-
-      if (response.ok) {
-        const feedResults: FeedValidationResult = result.feedResult
-        setvalidRecords(feedResults.validRecords)
-        setFatals(feedResults.fatalErrors)
-        setWarnings(feedResults.warnings)
-        setRecordErrors(feedResults.recordErrors)
-        setSilencedRecords(feedResults.silencedRecords)
-      } else {
-        toast({
-          title: 'שגיאה בהעלאת הקובץ',
-          description: result.error || 'אירעה שגיאה בהעלאת הקובץ',
-          variant: 'destructive',
-        })
-      }
+      const feedResults: FeedValidationResult = (response as any).feedResult
+      setValidRecords(feedResults.validRecords)
+      setFatals(feedResults.fatalErrors)
+      setWarnings(feedResults.warnings)
+      setRecordErrors(feedResults.recordErrors)
+      setSilencedRecords(feedResults.silencedRecords)
     } catch (error) {
-      console.error('Error uploading file:', error)
-      toast({
-        title: 'שגיאה בהעלאת הקובץ',
-        description: 'אירעה שגיאה בהעלאת הקובץ',
-        variant: 'destructive',
-      })
+      handleAndNotifyError(error, 'שגיאה בהעלאת הקובץ')
+      setEditForm(true) 
     } finally {
-      setIsUploading(false)
+      setIsValidating(false)
     }
   }
+
   const handleRefreshAction = async (records: HoldingFeedLine[]) => {
-    setvalidRecords([])
+    setValidRecords([])
     setSilencedRecords([])
     setRecordErrors([])
     setFatals([])
@@ -178,63 +160,55 @@ export default function HoldingsFeedView() {
 
     setIsRefreshing(true)
     try {
-      const response = await fetch(`/api/holdings/refresh?companies=${selectedCompanies}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await postWithErrorHandling(
+        `/api/holdings/refresh?companies=${selectedCompanies}`,
+        standardizedRecords,
+        {
+          errorMessage: 'שגיאה בעדכון טבלאות',
+          notifyOnError: true,
         },
-        body: JSON.stringify(standardizedRecords),
-      })
+      )
 
-      const result = await response.json()
-      if (response.ok) {
-        const validationResult: FeedValidationResult = result.validationResult
-        setvalidRecords(validationResult.validRecords)
-        setFatals(validationResult.fatalErrors)
-        setWarnings(validationResult.warnings)
-        setRecordErrors(validationResult.recordErrors)
-        setSilencedRecords(validationResult.silencedRecords)
-      } else {
-        toast({
-          title: 'עדכון טבלאות נכשל',
-          description: result.error || 'עדכון טבלאות נכשל',
-          variant: 'destructive',
-        })
-      }
+      const validationResult: FeedValidationResult = (response as any).validationResult
+      setValidRecords(validationResult.validRecords)
+      setFatals(validationResult.fatalErrors)
+      setWarnings(validationResult.warnings)
+      setRecordErrors(validationResult.recordErrors)
+      setSilencedRecords(validationResult.silencedRecords)
     } catch (error) {
-      console.error('Error uploading file:', error)
-      toast({
-        title: 'שגיאה בעדכון טבלאות',
-        description: 'אירעה שגיאה בעדכון טבלאות',
-        variant: 'destructive',
-      })
+      handleAndNotifyError(error, 'שגיאה בעדכון טבלאות')
     } finally {
       setIsRefreshing(false)
     }
   }
+
   const handleSaveConfirmedAction = async () => {
     if (!date || !file) {
+      handleAndNotifyError(new Error('תאריך או קובץ חסרים'), 'שגיאה בשמירת הקובץ')
       return
     }
+
     setIsUploading(true)
     try {
       const formattedDate = date.toISOString()
       const cleanedCompanies = selectedCompanies.filter(Boolean)
-      const formattedCompanies = encodeURIComponent(JSON.stringify(cleanedCompanies)) // Save the file (validateOnly=false)
-      const response = await fetch(
+      const formattedCompanies = encodeURIComponent(JSON.stringify(cleanedCompanies))
+
+      const response = await fetchWithErrorHandling(
         `/api/holdings/upload-holdings?valueDate=${formattedDate}&companies=${formattedCompanies}&validateOnly=false`,
         {
           method: 'POST',
           body: file,
+          errorMessage: 'שגיאה בשמירת הקובץ',
+          notifyOnError: true,
         },
       )
-      if (response.ok) {
-        router.push(`/holdings/view?date=${format(date, 'yyyy-MM-dd')}`)
-      } else {
-        setSaveError(true)
-      }
+
+      router.push(`/holdings/view?date=${format(date, 'yyyy-MM-dd')}`)
     } catch (error) {
       setSaveError(true)
+      setEditForm(true) 
+      handleAndNotifyError(error, 'שגיאה בשמירת הקובץ')
     } finally {
       setIsUploading(false)
     }
@@ -247,20 +221,21 @@ export default function HoldingsFeedView() {
     setWarnings([])
     setFile(null)
   }
+
   if (isRefreshing) {
     return (
-      <div className="flex flex-col h-[500px] items-center pt-[100px] ">
+      <div className="flex flex-col h-[500px] items-center pt-[100px]">
         <LoadingSpinnerDiamond />
         <p className="text-center">טוען את הנתונים העדכניים...</p>
       </div>
     )
   }
+
   return (
     <div className="space-y-6">
       {editForm ? (
         <>
           <div className="flex flex-col gap-6 px-4 pt-10 md:flex-row md:justify-right md:gap-6 md:px-10">
-            {/* Add a read-only notice if needed */}
             {isReadOnly && (
               <div className="w-full bg-yellow-100 p-4 rounded-md text-yellow-800 mb-4">
                 אין לך הרשאות להזנת החזקות לחברות אלו. צפייה בלבד.
@@ -281,7 +256,7 @@ export default function HoldingsFeedView() {
               />
             </div>
 
-            <div className="">
+            <div>
               <label className="text-base font-semibold mb-2 block">תאריך ערך</label>
               <DateSelector
                 date={date}
@@ -291,12 +266,12 @@ export default function HoldingsFeedView() {
                   const now = new Date()
                   now.setHours(0, 0, 0, 0)
                   const day = date.getDay()
-                  return day == 5 || day == 6 || date > now
+                  return day === 5 || day === 6 || date > now
                 }}
               />
             </div>
 
-            <div className="">
+            <div>
               <label className="text-base font-semibold mb-2 block">קובץ החזקות</label>
               <FileUploader
                 onFileChangeAction={handleFileChangeAction}
@@ -378,7 +353,6 @@ export default function HoldingsFeedView() {
         </>
       )}
 
-      {/* Navigation Warning Dialog */}
       <Dialog open={navGuard.active}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
