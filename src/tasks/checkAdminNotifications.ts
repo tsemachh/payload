@@ -131,11 +131,11 @@ async function checkHoldingsFeeds(req: PayloadRequest, notifications: any) {
         }
 
         await createAdminNotification(
-          req.payload,
+          req,
           message,
           'companyNotReportedHoldings',
           `/admin/collections/companies/${company.id}`,
-          company.id,
+          [company.id],
         )
         notifications.holdingsNotFed++
       }
@@ -234,11 +234,11 @@ async function checkMeetingVotes(req: PayloadRequest, notifications: any) {
         })
 
         await createAdminNotification(
-          req.payload,
+          req,
           `חברה ${company.name || companyId} לא הצביעה באסיפה שתתקיים ביום העבודה הבא: ${meeting.fullName}`,
           'companyNotVotedMeetingNextDay',
           `/admin/collections/meetings/${meeting.id}`,
-          companyId,
+          [companyId],
         )
         notifications.meetingsNotVoted++
       }
@@ -303,7 +303,7 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
         message += `אסיפות`
       }
 
-      await createAdminNotification(req.payload, message, 'predictaFeed', `/admin`)
+      await createAdminNotification(req, message, 'predictaFeed', `/admin`)
       notifications.noFeedFromPredictae = true
     }
   } catch (error) {
@@ -408,7 +408,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
 
           // Create notification
           await createAdminNotification(
-            req.payload,
+            req,
             message,
             'newVoteAfterHoldingLimit',
             url,
@@ -432,7 +432,7 @@ export const checkAdminNotificationsHandler: TaskHandler<'checkAdminNotification
 }) => {
   try {
     console.log('checkAdminNotificationsHandler', job)
-    await sanitizeRequest(req)
+    await sanitizeRequest(req, 'checkAdminNotifications')
 
     // Call the core function
     const result = await checkAdminNotifications(req)

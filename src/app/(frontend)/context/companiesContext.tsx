@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useAuth } from '@/providers/auth-provider'
 import { CompanyType, FundType } from '../types/companies'
 import { Company } from '@/payload-types'
+import { getWithErrorHandling } from '../helpers/fetch-helpers'
 
 type CompaniesContextType = {
   companies: CompanyType[]
@@ -74,10 +75,11 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`/api/companies/details`)
-      if (!response.ok) throw new Error('Failed to fetch compnies data')
+      const result = await getWithErrorHandling('/api/companies/details', {
+        errorMessage: 'שגיאה בטעינת נתוני החברות',
+        notifyOnError: true
+      });
 
-      const result = await response.json()
       const allCompanies = result.data
 
       const companyMap = new Map<string, Company>(allCompanies?.map((c: Company) => [c.id, c]))
@@ -107,6 +109,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
             id: fullCompany.id,
             name: fullCompany.name,
             parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
+            passiveFund: fullCompany.passiveFund || false,
           }
         })
         .filter(Boolean)
@@ -117,7 +120,10 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('companies', JSON.stringify(detailedCompanies))
       localStorage.setItem('funds', JSON.stringify(detailedFunds))
     } catch (error) {
-      console.error('Error fetching data:', error)
+      // Error already logged and notified by getWithErrorHandling
+      // Clear any cached data to prevent stale data display
+      setCompanies([])
+      setFunds([])
     }
   }
 

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/utils/authUtils'
 
 export const MeetingsFeed: CollectionConfig = {
   slug: 'meetings-feed',
@@ -19,7 +20,10 @@ export const MeetingsFeed: CollectionConfig = {
     filterList: [[{ name: 'createdAt' }]],
   },
   access: {
-    read: () => true,
+    create: isAdmin,
+    read: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   fields: [
     {

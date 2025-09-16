@@ -1,13 +1,19 @@
 import { UserVote, VoteDataType } from '@/app/(frontend)/types/vote'
-import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest, TypedUser } from 'payload'
 import { addDays } from '@/utils/dateUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Meeting } from '@/payload-types'
 
 import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
+import { getUserCompanyIds } from '@/utils/authUtils'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
+
   try {
     const { meetingId, companiesIds, status } = req.query
 
@@ -17,10 +23,14 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
         { status: 400 },
       )
     }
-
-    const companiesIdsArray = (companiesIds as string).split(',')
+    const userCompanies: string[] = getUserCompanyIds(req.user)
+    const companiesIdsArray = (companiesIds as string)
+      .split(',')
+      .filter((companyId) => userCompanies.includes(companyId))
     const meetingIdString = meetingId as string
     const statusString = status as string
+
+    const isDraftOrLatest = statusString === 'draft' || statusString === 'latest'
 
     const existingVotes = await req.payload.find({
       collection: 'votes',
@@ -28,13 +38,30 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
         and: [
           { meeting: { equals: meetingIdString } },
           { company: { in: companiesIdsArray } },
-          statusString === 'draft' ? {} : { _status: { equals: statusString } },
+          isDraftOrLatest ? {} : { _status: { equals: statusString } },
         ],
       },
-      draft: statusString === 'draft',
+      draft: isDraftOrLatest,
+      sort: statusString === 'latest' ? '-updatedAt' : undefined,
       depth: 1,
       limit: companiesIdsArray.length,
     })
+
+    if (statusString === 'latest') {
+      const latestVotesByCompany = Object.values(
+        existingVotes.docs.reduce(
+          (acc, vote) => {
+            const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+            if (companyId && !acc[companyId]) {
+              acc[companyId] = vote
+            }
+            return acc
+          },
+          {} as Record<string, (typeof existingVotes.docs)[0]>,
+        ),
+      )
+      return Response.json(latestVotesByCompany, { status: 200 })
+    }
 
     return Response.json(existingVotes.docs, { status: 200 })
   } catch (error: any) {
@@ -47,14 +74,21 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
 
 export const getVotedCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
+
   try {
     const { meetingId, companiesIds } = req.query
 
     if (!meetingId || !companiesIds) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
-
-    const companiesIdsArray = (companiesIds as string).split(',')
+    const userCompanies: string[] = getUserCompanyIds(req.user)
+    const companiesIdsArray = (companiesIds as string)
+      .split(',')
+      .filter((companyId) => userCompanies.includes(companyId))
     const meetingIdString = meetingId as string
 
     const existingVotes = await req.payload.find({
@@ -79,6 +113,11 @@ export const getVotedCompanies = async (req: PayloadRequest) => {
 
 export const upsertVote = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
+
   try {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
@@ -105,6 +144,11 @@ export const upsertVote = async (req: PayloadRequest) => {
 
 export const publishVotes = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
+
   try {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
@@ -114,11 +158,19 @@ export const publishVotes = async (req: PayloadRequest) => {
     if (!meetingId || !companiesIds?.length) {
       return Response.json({ error: 'Meeting ID and Company IDs are required' }, { status: 400 })
     }
+    const userCompanies: string[] = getUserCompanyIds(req.user)
 
     const votesToPublish = await req.payload.find({
       collection: 'votes',
       where: {
-        and: [{ meeting: { equals: meetingId } }, { company: { in: companiesIds } }],
+        and: [
+          { meeting: { equals: meetingId } },
+          {
+            company: {
+              in: companiesIds.filter((companyId: string) => userCompanies.includes(companyId)),
+            },
+          },
+        ],
       },
       draft: true,
       depth: 0,
@@ -187,7 +239,7 @@ export const publishVotes = async (req: PayloadRequest) => {
 
           // Create one notification with all companies and meeting ID
           await createAdminNotification(
-            req.payload,
+            req,
             message,
             'newVoteAfterHoldingLimit',
             url,
@@ -248,11 +300,15 @@ const upsertVotesInternal = async ({
     hasPersonalInterest: userVote.questions.hasPersonalInterest,
     personalInterestExplanation: userVote.questions.personalInterestExplanation,
   }))
+  const userCompanies: string[] = getUserCompanyIds(req?.user as TypedUser)
 
   const existingVotes = await req.payload.find({
     collection: 'votes',
     where: {
-      and: [{ meeting: { equals: meetingId } }, { company: { in: companiesIds } }],
+      and: [
+        { meeting: { equals: meetingId } },
+        { company: { in: companiesIds.filter((companyId) => userCompanies.includes(companyId)) } },
+      ],
     },
     depth: 0,
     limit: companiesIds.length,
@@ -320,6 +376,14 @@ const upsertVotesInternal = async ({
 
 export const updateGroupedVotes = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  // Check if user is logged in
+  if (!req.user) {
+    return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+  }
+  if (!req.user.isAdmin) {
+    return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+  }
+
   try {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
@@ -338,6 +402,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
       data: {
         reported: votesData.reported,
       },
+      req,
     })
 
     if (votesData.fundsWithHolding?.length) {
@@ -361,6 +426,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
         collection: 'meetings',
         id: meetingId,
         data: { fundsWithHolding: merged },
+        req,
       })
       console.log('!updated', updatedfundsWithHolding)
     }

@@ -15,7 +15,7 @@ export function hasCompanyPermission(
   permissionType: PermissionType = 'read',
 ): boolean {
   // Admin users have all permissions
-  //if (user?.isAdmin) return true
+  //if (user?.authUtils) return true
 
   // If no user or no companies, no permissions
   if (!user || !user.companies) return false
@@ -50,7 +50,7 @@ export function getCompaniesWithPermission(
 ): string[] {
   /*
   // Admin users have all permissions for all companies
-  if (user?.isAdmin && user.funds) {
+  if (user?.authUtils && user.funds) {
     return user.funds.map(fund => typeof fund === 'string' ? fund : fund.id)
   }
 */

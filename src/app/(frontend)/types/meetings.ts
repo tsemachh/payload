@@ -58,6 +58,7 @@ export type FundType = {
   holdingValueInMillions: number
   nominalValue: number
   parentCompany?: TreeCompanyType // Parent company structure
+  passiveFund?: boolean
 }
 
 export type AgendasType = {

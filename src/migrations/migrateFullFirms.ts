@@ -335,23 +335,59 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
     console.log('\n=== Starting Sub Accounts Migration ===')
     pool = await createMSSqlPool()
 
-    // Get all Holdings tables
-    const holdingsTables = await getHoldingsTables(pool)
+    // Define Holdings tables as constants
+    const HOLDINGS_TABLES = [
+      'Holdings107accounts',
+      'Holdings114accounts',
+      'Holdings1164accounts',
+      'Holdings1176accounts',
+      'Holdings1178accounts',
+      'Holdings1199accounts',
+      'Holdings119accounts',
+      'Holdings1200accounts',
+      'Holdings1201accounts',
+      'Holdings124accounts',
+      'Holdings150accounts',
+      'Holdings17accounts',
+      'Holdings21accounts',
+      'Holdings50accounts',
+      'Holdings96accounts',
+    ]
 
-    console.log(`Found ${holdingsTables.length} Holdings tables`)
+    console.log(`Found ${HOLDINGS_TABLES.length} Holdings tables`)
 
     let successCount = 0
     let errorCount = 0
 
+    debugger
     // Process each Holdings table
-    for (const tableName of holdingsTables) {
-      console.log(`Processing table: ${tableName}`)
-      const subAccounts = await getSubAccounts(pool, tableName)
+    for (const tableName of HOLDINGS_TABLES) {
+      // Extract firm ID from table name (between "Holdings" and "accounts")
+      const firmIdMatch = tableName.match(/Holdings(\d+)accounts/)
+      if (!firmIdMatch) {
+        console.error(`Could not extract firm ID from table name: ${tableName}`)
+        continue
+      }
 
-      // Group sub-accounts by firmId
+      const firmId = parseInt(firmIdMatch[1], 10)
+      console.log(`Processing table: ${tableName} for firm ID: ${firmId}`)
+
+      // Get sub-accounts only for this firm
+      const request = pool.request()
+      request.input('firmId', sql.Int, firmId)
+      const result = await request.query(`
+        SELECT 
+          [firm_id] as firmId,
+          [account_id_old] as accountIdOld,
+          [account_id_new] as accountIdNew
+        FROM [dbEmda].[dbo].[${tableName}]
+        WHERE [firm_id] = @firmId
+      `)
+
+      // Create a map with only this firm's sub-accounts
       const subAccountsByFirmId = new Map<number, SubAccountRow[]>()
 
-      for (const row of subAccounts.recordset) {
+      for (const row of result.recordset) {
         if (row.accountIdNew == row.accountIdOld) {
           payload.create({
             collection: 'migration-faults',
@@ -364,13 +400,13 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
           continue
         }
 
-        if (!subAccountsByFirmId.has(row.firmId)) {
-          subAccountsByFirmId.set(row.firmId, [])
+        if (!subAccountsByFirmId.has(firmId)) {
+          subAccountsByFirmId.set(firmId, [])
         }
-        subAccountsByFirmId.get(row.firmId)?.push(row)
+        subAccountsByFirmId.get(firmId)?.push(row)
       }
 
-      console.log(`Grouped sub-accounts into ${subAccountsByFirmId.size} firms`)
+      console.log(`Processed ${result.recordset.length} sub-accounts for firm ID: ${firmId}`)
 
       // Process firms in batches with a promise pool
       const processFirm = async (
@@ -413,6 +449,7 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
           // Get the mainAccount array
           const mainAccount = company.mainAccount || []
           let updated = false
+          console.log('firmSubbAccounts', JSON.stringify(firmSubAccounts))
 
           // Process all sub-accounts for this firm
           for (const row of firmSubAccounts) {
@@ -448,9 +485,11 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
                 // Add new subaccount
                 mainAccountEntry.subAccounts.push(row.accountIdOld.toString())
                 updated = true
+                /*
                 console.log(
                   `Added subaccount ${row.accountIdOld} to mainAccount ${row.accountIdNew} for company ${companyId}`,
                 )
+*/
               }
 
               successCount++
@@ -472,7 +511,10 @@ async function migrateSubAccounts({ payload, req }: MigrateUpArgs): Promise<void
                 mainAccount,
               },
             })
-            console.log(`Updated company ${companyId} with all sub-accounts`)
+            console.log(
+              `Updated company ${companyId} with all sub-accounts`,
+              JSON.stringify(mainAccount),
+            )
           }
         } catch (error) {
           console.error(`Error processing firm ${firmId}:`, error)
@@ -917,6 +959,7 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
               name: companyName,
               active: company.active,
               type: 'fund',
+              passiveFund: companyName.includes('מחקות') || companyName.includes('פסיביות'),
               // Set the account number in the appropriate field using the new structure
               mainAccount: [
                 {

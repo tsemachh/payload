@@ -23,7 +23,7 @@ export default function VoteCompanySelector({
   isGeneralVoteOption,
   votedCompanies,
 }: VoteCompanySelectorProps) {
-  const { companies: companiesMap } = useCompaniesContext()
+  const { companies: companiesMap, funds } = useCompaniesContext()
   const [selectedCompanies, setSelectedCompanies] = useState<string>(
     meetingCompanies.length > 1 && isGeneralVoteOption
       ? 'all'
@@ -31,6 +31,11 @@ export default function VoteCompanySelector({
         ? companiesIDs[0]
         : 'none',
   )
+  const [fundPassiveMap, setFundPassiveMap] = useState<Map<string, boolean>>(new Map())
+
+  useEffect(() => {
+    setFundPassiveMap(new Map(funds?.map((fund) => [fund.id, fund.passiveFund]) || []))
+  }, [funds])
 
   useEffect(() => {
     if (companiesIDs.length > 1 && isGeneralVoteOption) {
@@ -50,15 +55,50 @@ export default function VoteCompanySelector({
     }
   }
 
+  const isCompanyPassive = (company?: CompanyTableDate) => {
+    return (
+      company?.funds?.every((fund) =>
+        fundPassiveMap.has(fund.id) ? fundPassiveMap.get(fund.id) : false,
+      ) ?? false
+    )
+  }
+
+  const areAllCompaniesPassive = () => {
+    return meetingCompanies?.length > 0
+      ? meetingCompanies.every((company) =>
+          company.funds.every((fund) =>
+            fundPassiveMap.has(fund.id) ? fundPassiveMap.get(fund.id) : false,
+          ),
+        )
+      : false
+  }
+
   const getSummaryText = () => {
     if (selectedCompanies === 'none') {
       return 'אין חברות זמינות להצבעה'
     } else if (selectedCompanies === 'all') {
-      return 'הצבעה עבור כל החברות'
-    } else {
       return (
         <>
-          הצבעה עבור חברת: <i>{companiesMap.find((c) => c.id === selectedCompanies)?.name || ''}</i>
+          הצבעה עבור כל החברות
+          {areAllCompaniesPassive() && (
+            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4">
+              אין חובת הצבעה
+            </span>
+          )}
+        </>
+      )
+    } else {
+      const companyName = companiesMap.find((c) => c.id === selectedCompanies)?.name || ''
+      const isPassive = isCompanyPassive(meetingCompanies.find((c) => c.id === selectedCompanies))
+
+      return (
+        <>
+          הצבעה עבור חברת: <i>{`${companyName} `}</i>
+          {isPassive && (
+            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4">
+              אין חובת הצבעה
+            </span>
+          )}
         </>
       )
     }
@@ -98,7 +138,7 @@ export default function VoteCompanySelector({
                     onChange={() => handleCompanyChange('all')}
                   />
                   <span className="flex items-center gap-1">
-                    {isGeneralVoteOption && (
+                    {isGeneralVoteOption && votedCompanies.size === meetingCompanies.length && (
                       <CheckIcon
                         className={`w-4 h-4 ${selectedCompanies === 'all' && 'text-primary-foreground '}`}
                       />

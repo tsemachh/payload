@@ -1,5 +1,5 @@
 import type { TaskHandler } from 'payload'
-import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { PayloadRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
@@ -12,12 +12,6 @@ import { sendMailFromRequest } from '@/utils/sendMail'
  */
 export const adminMailNotifications = async (req: PayloadRequest) => {
   try {
-    await addDataAndFileToRequest(req)
-    // Authentication check
-    if (!req.user) {
-      return { error: 'forbidden', status: 403 }
-    }
-
     const emailsSent = {
       count: 0,
     }
@@ -215,7 +209,7 @@ export const adminMailNotificationsHandler: TaskHandler<'adminMailNotifications'
 }) => {
   try {
     console.log('adminMailNotificationsHandler', job)
-    await sanitizeRequest(req)
+    await sanitizeRequest(req, 'adminMailNotificationsHandler')
 
     // Call the core function
     const result = await adminMailNotifications(req)

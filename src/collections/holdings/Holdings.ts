@@ -3,6 +3,7 @@ import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
 import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
 import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
 import { scheduleProcessHoldingsChangeTask } from '@/tasks/processHoldingsChange'
+import { isUserCompanyHolding, isUserCompanyHoldingWrite } from '@/utils/authUtils'
 
 export const Holdings: CollectionConfig = {
   slug: 'holdings',
@@ -19,6 +20,12 @@ export const Holdings: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
+  },
+  access: {
+    create: isUserCompanyHoldingWrite,
+    read: isUserCompanyHolding,
+    update: isUserCompanyHoldingWrite,
+    delete: isUserCompanyHoldingWrite,
   },
   custom: {
     filterList: [[{ name: 'valueDate' }]],
@@ -65,6 +72,26 @@ export const Holdings: CollectionConfig = {
               pickerAppearance: 'default',
             },
           },
+        },
+      ],
+    },
+    {
+      name: 'stats',
+      label: 'סטטיסטיקות',
+      type: 'group',
+      admin: {
+        readOnly: true,
+      },
+      fields: [
+        {
+          name: 'recordCount',
+          label: 'מספר רשומות',
+          type: 'number',
+        },
+        {
+          name: 'accountIds',
+          label: 'מזהי חשבונות',
+          type: 'json',
         },
       ],
     },

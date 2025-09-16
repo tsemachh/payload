@@ -4,6 +4,7 @@ import { HoldingsFeed } from '@/payload-types'
 import { FeedValidationResult } from '@/collections/holdings/feeds/FeedTypes'
 import { getBufferFromStream } from '@/utils/dataUtils'
 import { performance } from 'perf_hooks'
+import { getIdOfRelationField } from '@/utils/utils'
 
 const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
   const startTime = performance.now()
@@ -31,7 +32,9 @@ const uploadHoldingsCsvEndPoint = async (req: PayloadRequest) => {
         selectedCompanies = (companies as string).split(',')
       }
     }
-
+    const userFundIds = req.user?.funds?.map(getIdOfRelationField) || []
+    //Filter only companyIds of the user
+    selectedCompanies = selectedCompanies.filter((companyId) => userFundIds.includes(companyId))
     // Check if user has write permission for all selected companies
     if (!isValidationOnly) {
       // Only check permissions for actual uploads, not validations

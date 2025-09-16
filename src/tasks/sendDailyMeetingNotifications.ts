@@ -1143,7 +1143,7 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
 > = async ({ input, req }) => {
   // Set the global logger to use req.payload.logger
   logger = req.payload.logger
-
+  await sanitizeRequest(req, 'sendDailyMeetingNotifications')
   const handlerStartTime = Date.now()
 
   // No validation needed
@@ -1165,9 +1165,6 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
 
   try {
     console.log('sendDailyMeetingNotificationsHandler started')
-
-    // Sanitize request to ensure proper user context
-    await sanitizeRequest(req)
 
     // Call the core function with validated input
     const result = await sendDailyMeetingNotifications(req, validatedInput)

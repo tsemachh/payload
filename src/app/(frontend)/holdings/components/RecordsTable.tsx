@@ -170,7 +170,6 @@ export const RecordsTable: React.FC<{
     quantity: holding.quantity ?? 'N/A',
     error: holding.error ?? ' ',
   }))
-  console.log('!!records', records)
 
   const allRecords = [...records, ...(valid ?? []), ...(silenced ?? [])]
   const columns =

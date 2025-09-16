@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import React, { useState, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import LogoImage from '@/graphics/Logo/emda_logo.png'
@@ -19,6 +19,9 @@ import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
+import TurnstileCaptcha, { TurnstileStatus } from '@/components/TurnstileCaptcha'
+import { v4 as uuidv4 } from 'uuid'
+import { postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 
 // Client component that uses useSearchParams
 function SignInContent() {
@@ -31,14 +34,55 @@ function SignInContent() {
     password: '',
   })
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('required')
+  const idempotencyKey = useRef(uuidv4()).current
   const { login } = useAuth()
+
+  const handleTurnstileVerify = (token: string) => {
+    setTurnstileToken(token);
+    setTurnstileStatus('success');
+  };
+
+  const handleTurnstileError = () => {
+    setTurnstileStatus('error');
+    setTurnstileToken(null);
+  };
+
+  const handleTurnstileExpire = () => {
+    setTurnstileStatus('expired');
+    setTurnstileToken(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (turnstileStatus !== 'success' || !turnstileToken) {
+      setError('אנא אמת שאינך רובוט');
+      return;
+    }
+
     setIsLoading(true)
     setError('')
 
     try {
+      // First verify the Turnstile token
+      const verifyResult = await postWithErrorHandling('/api/verify-turnstile', { 
+        token: turnstileToken,
+        idempotencyKey
+      }, {
+        errorMessage: 'אימות האבטחה נכשל',
+        notifyOnError: true // We'll handle errors manually
+      });
+
+      if (!verifyResult.success) {
+        setError('אימות האבטחה נכשל. אנא נסה שוב.');
+        setTurnstileStatus('required');
+        setIsLoading(false);
+        return;
+      }
+
+      // Then attempt to login
       await login({
         email: formData.email,
         password: formData.password,
@@ -47,7 +91,7 @@ function SignInContent() {
       router.push(callbackUrl)
       router.refresh()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'פרטי התחברות שגויים')
+      setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
     } finally {
       setIsLoading(false)
     }
@@ -101,9 +145,22 @@ function SignInContent() {
                 disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || turnstileStatus !== 'success'}
+            >
               {isLoading ? 'מתחבר...' : 'התחבר'}
             </Button>
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="turnstile">אימות אבטחה</Label>
+              <TurnstileCaptcha
+                onVerify={handleTurnstileVerify}
+                onError={handleTurnstileError}
+                onExpire={handleTurnstileExpire}
+                className="mt-2"
+              />
+            </div>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">

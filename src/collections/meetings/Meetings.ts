@@ -27,6 +27,7 @@ import {
 } from '@/collections/meetings/hooks/adminHooks'
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
+import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -112,6 +113,12 @@ export const Meetings: CollectionConfig = {
         { name: '_status' },
       ],
     ],
+  },
+  access: {
+    create: isAdmin,
+    read: isUserCompanyMeeting,
+    update: isUserCompanyMeetingWrite,
+    delete: isAdmin,
   },
   enableQueryPresets: true,
   defaultSort: 'meetingDate',
@@ -300,19 +307,6 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-            {
-              name: 'participationReport',
-              label: 'דוח השתתפות',
-              type: 'upload',
-              relationTo: 'documents',
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
-                },
-              },
-            },
-
             {
               name: 'votes',
               label: 'הצבעות',
@@ -534,6 +528,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד קובע',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '200px',
                     date: {
@@ -564,6 +559,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד האסיפה',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '220px',
                     date: {
@@ -995,6 +991,7 @@ export const Meetings: CollectionConfig = {
                 collection: 'meetings',
                 data: dualMeeting,
                 context: { from: 'process' },
+                req,
               })
 
               await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
@@ -1008,6 +1005,7 @@ export const Meetings: CollectionConfig = {
                   changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
+                req,
               })
             } catch (error) {
               console.error('Error creating dual meeting:', error)

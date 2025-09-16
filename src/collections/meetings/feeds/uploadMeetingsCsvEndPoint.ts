@@ -9,9 +9,16 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
     if (req === null) {
       return Response.json({ error: 'forbidden' }, { status: 403 })
     }
+
+    // Check if user is logged in
     if (!req.user) {
-      return Response.json({ error: 'forbidden' }, { status: 403 })
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
+
+    if (!req.user.isAdmin) {
+      return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
+    }
+
     // Get the ReadableStream from the request body
     const stream = req.body
 
@@ -58,8 +65,14 @@ const uploadMeetingsCsvEndPoint = async (req: PayloadRequest) => {
       req,
     })
 
-    const { errors, successCount, fileLength, successPrevCount, countTotalPrev, processedMeetingIds } =
-      await processMeetingsFeedCsv(req, { file })
+    const {
+      errors,
+      successCount,
+      fileLength,
+      successPrevCount,
+      countTotalPrev,
+      processedMeetingIds,
+    } = await processMeetingsFeedCsv(req, { file })
     const endTime = Date.now()
     const durationMs = endTime - startTime
     const durationSeconds = (durationMs / 1000).toFixed(2)

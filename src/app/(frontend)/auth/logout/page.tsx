@@ -12,6 +12,10 @@ export default function Logout() {
 
   useEffect(() => {
     const performLogout = async () => {
+      localStorage.removeItem('companies')
+      localStorage.removeItem('funds')
+      localStorage.removeItem('userCompaniesIds')
+      localStorage.removeItem('userFunds')
       await logout()
       router.push('/auth/signin')
     }

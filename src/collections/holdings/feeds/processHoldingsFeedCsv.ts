@@ -116,7 +116,7 @@ export const processHoldingsFeedCsv = async (
     )
 
     // Check for warnings
-    const warnings = await checkFeedWarnings(
+    const { warnings, companiesWithData } = await checkFeedWarnings(
       req,
       valueDate,
       uniqueAccountIds,
@@ -155,16 +155,17 @@ export const processHoldingsFeedCsv = async (
     })
 
     doc.processingResults = [...lineErrors]
-    doc.accountsJson = JSON.stringify(uniqueAccountIds)
 
     if (validateOnly) {
       return validationResult
     }
 
     // If we're here, this is a save request
-    // Delete existing holdings for the date if they exist
+    // companiesWithData is already calculated in checkFeedWarnings
+
+    // Delete existing holdings for the date if they exist, but only for companies with data
     if (warnings.some((w) => w.type === 'duplicateFeedForDate')) {
-      deleteExistingHoldings(req, valueDate, doc.selectedCompanies as string[])
+      deleteExistingHoldings(req, valueDate, Array.from(companiesWithData))
     }
 
     //Create the holding feed

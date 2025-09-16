@@ -1,7 +1,13 @@
-import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
 const getHoldingsDatesEndPoint = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
+  if (req === null) {
+    return Response.json({ error: 'forbidden' }, { status: 403 })
+  }
+  if (!req.user) {
+    return Response.json({ error: 'forbidden' }, { status: 403 })
+  }
   const payload = req.payload
   const { user } = req
 

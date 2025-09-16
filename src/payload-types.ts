@@ -169,37 +169,6 @@ export type HoldingsPerDay = {
 }[];
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "RolePermissions".
- */
-export type RolePermissions =
-  | {
-      entity: (
-        | 'admin-notifications'
-        | 'meetings'
-        | 'stocks'
-        | 'holdings'
-        | 'companies'
-        | 'roles'
-        | 'stocks-feed'
-        | 'meetings-feed'
-        | 'recommendation-reasons'
-        | 'company-meeting-notifications'
-        | 'votes'
-        | 'holdings-feed'
-        | 'research-documents'
-        | 'documents'
-        | 'silenced-stocks'
-        | 'stock-migration-mapping'
-        | 'migration-faults'
-        | 'stock-values'
-        | 'exports'
-      )[];
-      type: ('write' | 'read' | 'publish')[];
-      id?: string | null;
-    }[]
-  | null;
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "UserNotificationType".
  */
 export type UserNotificationType =
@@ -295,7 +264,6 @@ export interface Config {
     holdings: Holding;
     companies: Company;
     users: User;
-    roles: Role;
     'stocks-feed': StocksFeed;
     'meetings-feed': MeetingsFeed;
     'recommendation-reasons': RecommendationReason;
@@ -338,7 +306,6 @@ export interface Config {
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
     companies: CompaniesSelect<false> | CompaniesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    roles: RolesSelect<false> | RolesSelect<true>;
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
     'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
@@ -435,6 +402,8 @@ export interface User {
   name?: string | null;
   legacyId?: number | null;
   active?: boolean | null;
+  isAdmin?: boolean | null;
+  isSystem?: boolean | null;
   companies?: UserCompany;
   funds?: (string | Company)[] | null;
   lastLogin?: string | null;
@@ -444,9 +413,6 @@ export interface User {
    * הזן כתובות IP מופרדות בנקודה-פסיק (;)
    */
   userIp?: string | null;
-  isAdmin?: boolean | null;
-  isGeneratorUser?: boolean | null;
-  userRoles?: (string | Role)[] | null;
   creator?: string | null;
   updator?: string | null;
   treeCompanies?: string | null;
@@ -571,6 +537,18 @@ export interface Holding {
   id: string;
   fund: string | Company;
   valueDate: string;
+  stats?: {
+    recordCount?: number | null;
+    accountIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
   holdings: HoldingsPerDay;
   creator?: string | null;
   updator?: string | null;
@@ -649,7 +627,6 @@ export interface Meeting {
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   activity?: string | null;
-  participationReport?: (string | null) | Document;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -665,9 +642,9 @@ export interface Meeting {
   invitationDocument?: (string | null) | Document;
   fullName?: string | null;
   state: MeetingState;
-  holdingsLimit?: string | null;
+  holdingsLimit: string;
   proxyVotingDate?: string | null;
-  meetingDate?: string | null;
+  meetingDate: string;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
@@ -690,27 +667,6 @@ export interface Meeting {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "documents".
- */
-export interface Document {
-  id: string;
-  alt?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -743,16 +699,24 @@ export interface Vote {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
+ * via the `definition` "documents".
  */
-export interface Role {
+export interface Document {
   id: string;
-  name?: string | null;
-  permissions?: RolePermissions;
+  alt?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
   updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -863,7 +827,6 @@ export interface HoldingsFeed {
         id?: string | null;
       }[]
     | null;
-  accountsJson?: string | null;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -1116,10 +1079,6 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
-        relationTo: 'roles';
-        value: string | Role;
-      } | null)
-    | ({
         relationTo: 'stocks-feed';
         value: string | StocksFeed;
       } | null)
@@ -1310,7 +1269,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   companies?: T;
   companiesNotYetVoted?: T;
   activity?: T;
-  participationReport?: T;
   votes?: T;
   stock?: T;
   isFinancialStock?: T;
@@ -1430,6 +1388,12 @@ export interface StocksSelect<T extends boolean = true> {
 export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
   valueDate?: T;
+  stats?:
+    | T
+    | {
+        recordCount?: T;
+        accountIds?: T;
+      };
   holdings?: T | HoldingsPerDaySelect<T>;
   creator?: T;
   updator?: T;
@@ -1505,15 +1469,14 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   legacyId?: T;
   active?: T;
+  isAdmin?: T;
+  isSystem?: T;
   companies?: T | UserCompanySelect<T>;
   funds?: T;
   lastLogin?: T;
   changePassword?: T;
   receiveMailNotification?: T;
   userIp?: T;
-  isAdmin?: T;
-  isGeneratorUser?: T;
-  userRoles?: T;
   creator?: T;
   updator?: T;
   treeCompanies?: T;
@@ -1546,27 +1509,6 @@ export interface UsersSelect<T extends boolean = true> {
 export interface UserCompanySelect<T extends boolean = true> {
   companyId?: T;
   permission?: T;
-  id?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles_select".
- */
-export interface RolesSelect<T extends boolean = true> {
-  name?: T;
-  permissions?: T | RolePermissionsSelect<T>;
-  creator?: T;
-  updator?: T;
-  createdAt?: T;
-  updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "RolePermissions_select".
- */
-export interface RolePermissionsSelect<T extends boolean = true> {
-  entity?: T;
-  type?: T;
   id?: T;
 }
 /**
@@ -1702,7 +1644,6 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
         line?: T | HoldingFeedLineSelect<T>;
         id?: T;
       };
-  accountsJson?: T;
   creator?: T;
   updator?: T;
   createdAt?: T;

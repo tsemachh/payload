@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
+import { isAdmin, isUserCompany } from '@/utils/authUtils'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -35,6 +36,12 @@ export const Companies: CollectionConfig = {
       limits: [10, 20, 50, 100, 200, 500],
     },
     group: 'ניהול',
+  },
+  access: {
+    create: isAdmin,
+    read: isUserCompany,
+    update: isAdmin,
+    delete: isAdmin,
   },
   custom: {
     filterList: [['type', 'active', 'passiveFund']],

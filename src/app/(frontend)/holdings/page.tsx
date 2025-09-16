@@ -277,6 +277,7 @@ export default function HoldingsFeedView() {
                   typeof company === 'string' ? company : company.id,
                 )}
                 showFunds={true}
+                showBorder={true}
               />
             </div>
 

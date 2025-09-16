@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@logtail/browser':
+        specifier: ^0.5.6
+        version: 0.5.6
       '@logtail/node':
         specifier: ^0.5.2
         version: 0.5.6
@@ -128,9 +131,6 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.8
         version: 1.2.8(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@shefing/authorization':
-        specifier: ^1.0.10
-        version: 1.0.10
       '@shefing/authors-info':
         specifier: ^1.0.10
         version: 1.0.10(@payloadcms/ui@3.54.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.54.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.54.0(graphql@16.11.0)(typescript@5.7.3))
@@ -224,6 +224,9 @@ importers:
       next-themes:
         specifier: ^0.4.4
         version: 0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      next-turnstile:
+        specifier: ^1.0.7
+        version: 1.0.7(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       nodemailer:
         specifier: ^7.0.3
         version: 7.0.6
@@ -1399,6 +1402,9 @@ packages:
     peerDependencies:
       yjs: '>=13.5.22'
 
+  '@logtail/browser@0.5.6':
+    resolution: {integrity: sha512-JFiMCWarPnjMMtUvReTauwQ9Mtt/C5qQw6O3oDDxysP8ZE8JN2C7VAPr/gCIV1x351cbkeLBDcXrhy7B3jOPgg==}
+
   '@logtail/core@0.4.21':
     resolution: {integrity: sha512-QDq194+24bwi4e+a/pxyf4X67NewhTvBmh9iwM2NhbSVSQz4Fo8xQn1Ul8zuUrXETycu/Od2D8wT2tZFNFx/7A==}
 
@@ -2248,9 +2254,6 @@ packages:
 
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
-
-  '@shefing/authorization@1.0.10':
-    resolution: {integrity: sha512-G3RV15KtU4wLENB/983YhPrKpcnGveppG2Jc89MsBUQ+B0Ax+4y8s6SPvVd5IJW7Rqi+ny+1syM0PEg5QHPccA==}
 
   '@shefing/authors-info@1.0.10':
     resolution: {integrity: sha512-yI7cXYWkyU5xst+llvsOlMMA1ArmuXQc0dB0sO1PHBqkrcUwJUIeJ7KhKNY8CZ6VvlJ5YU/NmehDDNkJckpOEQ==}
@@ -5104,6 +5107,13 @@ packages:
     peerDependencies:
       react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
       react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
+  next-turnstile@1.0.7:
+    resolution: {integrity: sha512-hN0fr5fwOiK0o8draaJmcYElDqsiYBd4OOCy+0IKMlJgjpPzxtoyagojPBoHsyw9i3jVoBpusPZcUMuKuKQsNw==}
+    peerDependencies:
+      next: '>=12'
+      react: '>=16'
+      react-dom: '>=16'
 
   next@15.3.3:
     resolution: {integrity: sha512-JqNj29hHNmCLtNvd090SyRbXJiivQ+58XjCcrC50Crb5g5u2zi7Y2YivbsEfzk6AtVI80akdOQbaMZwWB1Hthw==}
@@ -8111,6 +8121,11 @@ snapshots:
       lexical: 0.28.0
       yjs: 13.6.27
 
+  '@logtail/browser@0.5.6':
+    dependencies:
+      '@logtail/core': 0.5.6
+      '@logtail/tools': 0.5.6
+
   '@logtail/core@0.4.21':
     dependencies:
       '@logtail/tools': 0.4.21
@@ -9131,8 +9146,6 @@ snapshots:
   '@rushstack/eslint-patch@1.12.0': {}
 
   '@scarf/scarf@1.4.0': {}
-
-  '@shefing/authorization@1.0.10': {}
 
   '@shefing/authors-info@1.0.10(@payloadcms/ui@3.54.0(@types/react@19.0.7)(monaco-editor@0.52.2)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.54.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.54.0(graphql@16.11.0)(typescript@5.7.3))':
     dependencies:
@@ -12769,6 +12782,12 @@ snapshots:
 
   next-themes@0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
+  next-turnstile@1.0.7(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      next: 15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
