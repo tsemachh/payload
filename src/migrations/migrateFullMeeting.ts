@@ -206,18 +206,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         newState = meetingDate && meetingDate > now ? 'scheduled' : 'completed'
       }
 
-      switch (newState) {
-        case 'postponed':
-        case 'ongoing':
-          if (meetingDate && meetingDate < now) {
-            newState = 'completed'
-          }
-          break
-        case 'on-hold':
-          // Preserving original meeting date for on-hold meetings
-          break
-      }
-
       if (row.mdate == null && newState != 'on-hold') {
         await logMigrationFault({
           payload,
