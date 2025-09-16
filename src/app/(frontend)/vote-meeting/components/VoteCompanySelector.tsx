@@ -138,7 +138,7 @@ export default function VoteCompanySelector({
                     onChange={() => handleCompanyChange('all')}
                   />
                   <span className="flex items-center gap-1">
-                    {isGeneralVoteOption && (
+                    {isGeneralVoteOption && votedCompanies.size === meetingCompanies.length && (
                       <CheckIcon
                         className={`w-4 h-4 ${selectedCompanies === 'all' && 'text-primary-foreground '}`}
                       />

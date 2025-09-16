@@ -314,18 +314,6 @@ export const Meetings: CollectionConfig = {
               },
             },
             {
-              name: 'participationReport',
-              label: 'דוח השתתפות',
-              type: 'upload',
-              relationTo: 'documents',
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
-                },
-              },
-            },
-            {
               name: 'hasResearchDoc',
               label: 'יש מסמך מחקר',
               type: 'checkbox',
