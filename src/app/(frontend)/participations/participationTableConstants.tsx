@@ -120,8 +120,8 @@ export const createParticipationColumns = (
       key: 'meetingDate',
       header: 'מועד האסיפה',
       type: 'datetime',
-      render: (row) => formatDateTime(row.meetingDate),
-      minWidth: 120,
+      render: (row) => formatDateTime(row.meetingDate, true),
+      minWidth: 80,
     },
     { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
     {
