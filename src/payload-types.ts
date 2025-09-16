@@ -636,6 +636,7 @@ export interface Meeting {
   stock: string | Stock;
   isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
+  stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
@@ -1275,6 +1276,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   stock?: T;
   isFinancialStock?: T;
   isDualStock?: T;
+  stockOrigin?: T;
   type?: T;
   meetingId?: T;
   magnaId?: T;

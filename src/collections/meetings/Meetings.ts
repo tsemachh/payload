@@ -28,6 +28,7 @@ import {
 import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
+import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -106,11 +107,14 @@ export const Meetings: CollectionConfig = {
         { name: 'type', width: '200px' },
       ],
       [
-        { name: 'resultsConfirmationStatus' },
-        { name: 'electronicVotingEnabled' },
-        { name: 'votesStatus' },
-        { name: 'votesReportStatus' },
-        { name: '_status' },
+        { name: 'resultsConfirmationStatus', width: '100px' },
+        { name: 'electronicVotingEnabled', width: '100px' },
+        { name: 'votesStatus', width: '120px' },
+        { name: 'votesReportStatus', width: '120px' },
+        { name: '_status', width: '120px' },
+        { name: 'stockOrigin', width: '120px' },
+        { name: 'isFinancialStock', width: '100px' },
+        { name: 'isDualStock', width: '100px' },
       ],
     ],
   },
@@ -408,6 +412,16 @@ export const Meetings: CollectionConfig = {
                   label: 'אסיפה דואלית',
                   type: 'checkbox',
                   virtual: 'stock.isDual',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockOrigin',
+                  label: 'מקור הנייר',
+                  type: 'select',
+                  virtual: 'stock.origin',
+                  options: stockOriginOptions,
                   admin: {
                     hidden: true,
                   },
