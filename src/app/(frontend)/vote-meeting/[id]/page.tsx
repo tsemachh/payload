@@ -192,7 +192,7 @@ export default function VotingForm() {
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'latest'}`
       : null
 
-  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(
+  const { data: fetchedAllLatestVotes, mutate: mutateAllLatestVotes } = useSWR(
     swrKeyAll,
     fetcherVote,
     {
@@ -259,13 +259,13 @@ export default function VotingForm() {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       let isGeneralVoteOptionTmp
       if (
-        fetchedAllLatestVots &&
-        fetchedAllLatestVots.length > 0 &&
-        fetchedAllLatestVots.length < defaultIds.length
+        fetchedAllLatestVotes &&
+        fetchedAllLatestVotes.length > 0 &&
+        fetchedAllLatestVotes.length < defaultIds.length
       ) {
         isGeneralVoteOptionTmp = false
       } else {
-        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVots)
+        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVotes)
       }
       if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
         if (isGeneralVoteOptionTmp) {
@@ -277,7 +277,7 @@ export default function VotingForm() {
       setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVots])
+  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVotes])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -546,7 +546,7 @@ export default function VotingForm() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         setPublishSuccess(true)
         mutatePublish()
-        mutateAllLatestVots()
+        mutateAllLatestVotes()
         mutateVotedCompaniesArray()
       } catch (error: any) {
         // Error already logged and notified by postWithErrorHandling
@@ -563,7 +563,7 @@ export default function VotingForm() {
       toast,
       router,
       mutatePublish,
-      mutateAllLatestVots,
+      mutateAllLatestVotes,
       mutateVotedCompaniesArray,
     ],
   )
@@ -602,7 +602,7 @@ export default function VotingForm() {
           duration: 1500,
         })
         mutateDraft()
-        mutateAllLatestVots()
+        mutateAllLatestVotes()
       } catch (error) {
         //Handle rollback in UI level on Error
       }
@@ -614,7 +614,7 @@ export default function VotingForm() {
       toast,
       mutateDraft,
       setIsDraftSaved,
-      mutateAllLatestVots,
+      mutateAllLatestVotes,
     ],
   )
 
