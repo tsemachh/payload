@@ -115,8 +115,8 @@ export const Meetings: CollectionConfig = {
         { name: 'stockOrigin', width: '120px' },
         { name: 'isFinancialStock', width: '100px' },
         { name: 'isDualStock', width: '100px' },
-        { name: 'hasVoteRecommendation' , width: '100px'},
-        { name: 'hasResearchDoc' , width: '100px'},
+        { name: 'hasVoteRecommendation', width: '100px' },
+        { name: 'hasResearchDoc', width: '100px' },
       ],
     ],
   },
@@ -342,7 +342,6 @@ export const Meetings: CollectionConfig = {
                       return false
                     }
                     return data.agenda.some((item) => {
-                      console.log('Here', item?.recommendation?.votingRecommendation)
                       // Check regular recommendation
                       return item?.recommendation?.votingRecommendation
                     })
