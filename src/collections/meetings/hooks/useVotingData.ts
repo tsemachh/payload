@@ -11,6 +11,8 @@ interface Company {
   percentageHolding: number
   hasVoted?: boolean
   hasActualVote?: boolean
+  originalStockId?: string
+  quantity?: number
   vote?: {
     id: string
     decision: 'בעד' | 'נגד' | 'נמנע'
@@ -23,15 +25,15 @@ interface Company {
 }
 
 export const useVotingData = () => {
-  const { savedDocumentData } = useDocumentInfo()
+  const { data } = useDocumentInfo()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!savedDocumentData) return
+    if (!data) return
 
     const fetchCompaniesData = async () => {
-      if (!Array.isArray(savedDocumentData.companies)) {
+      if (!Array.isArray(data.companies)) {
         setCompanies([])
         setLoading(false)
         return
@@ -42,7 +44,7 @@ export const useVotingData = () => {
         const companiesQuery = {
           where: {
             id: {
-              in: savedDocumentData?.companies,
+              in: data?.companies,
             },
           },
           select: {
@@ -65,23 +67,21 @@ export const useVotingData = () => {
         const companies = companiesData.docs || []
 
         // Get votes data
-        const votesData = savedDocumentData.votes.docs
+        const votesData = data.votes.docs
 
         // Fetch stock value data if we have a stock value ID
         let stockValueData = null
-        if (savedDocumentData.stockValue && typeof savedDocumentData.stockValue === 'string') {
+        if (data.stockValue && typeof data.stockValue === 'string') {
           try {
-            const stockValueResponse = await fetch(
-              `/api/stock-values/${savedDocumentData.stockValue}`,
-            )
+            const stockValueResponse = await fetch(`/api/stock-values/${data.stockValue}`)
             if (stockValueResponse.ok) {
               stockValueData = await stockValueResponse.json()
             }
           } catch (error) {
             console.error('Error fetching stock value:', error)
           }
-        } else if (typeof savedDocumentData.stockValue === 'object') {
-          stockValueData = savedDocumentData.stockValue
+        } else if (typeof data.stockValue === 'object') {
+          stockValueData = data.stockValue
         }
 
         // If we have votes, fetch them efficiently
@@ -112,7 +112,9 @@ export const useVotingData = () => {
         }
 
         // Map companies with voting status and calculate holding values
-        const processedCompanies = companies.map((company: any) => {
+        const processedCompanies: Company[] = []
+
+        companies.forEach((company: any) => {
           const companyVote = votesDetails.find((vote: any) => {
             const voteCompanyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
             return voteCompanyId === company.id
@@ -121,53 +123,123 @@ export const useVotingData = () => {
           // Check if this is an actual/reported vote
           const hasActualVote = companyVote && companyVote.reported === true
 
-          // Calculate holding values for this company
-          let calculatedValues = {
-            nominalValue: 0,
-            percentageHolding: 0,
-            holdingValueInMillions: 0,
-          }
+          // Get company holdings
+          const companyHoldings = Array.isArray(data.fundsWithHolding)
+            ? data.fundsWithHolding.filter((holding: any) => holding.company === company.id)
+            : []
 
-          if (Array.isArray(savedDocumentData.fundsWithHolding)) {
-            // Filter fundsWithHolding by company id to get quantity
-            const companyHoldings = savedDocumentData.fundsWithHolding.filter((holding: any) => {
-              return holding.company === company.id
+          // If company has holdings with original data, create separate entries for each original stock
+          if (companyHoldings.length > 0) {
+            companyHoldings.forEach((holding: any) => {
+              if (Array.isArray(holding.original) && holding.original.length > 0) {
+                // Create separate company entry for each original stock
+                holding.original.forEach((originalStock: any) => {
+                  const calculatedValues = calculateHoldingValues(
+                    originalStock.quantity || 0,
+                    stockValueData,
+                  )
+
+                  processedCompanies.push({
+                    id: company.id,
+                    name: company.name || company.fullName || `Company ${company.id}`,
+                    motherCompany:
+                      company.parentCompany?.docs?.[0]?.name ||
+                      company.parentCompany?.docs?.[0]?.fullName ||
+                      (typeof company.parentCompany === 'string' ? company.parentCompany : null),
+                    nominalValue: calculatedValues.nominalValue,
+                    percentageHolding: calculatedValues.percentageHolding,
+                    originalStockId: originalStock.stockId,
+                    quantity: originalStock.quantity || 0,
+                    hasVoted: !!companyVote,
+                    hasActualVote: hasActualVote,
+                    vote: companyVote
+                      ? {
+                          id: companyVote.id,
+                          decision: companyVote.decision || 'נמנע',
+                          voter:
+                            typeof companyVote.creator === 'string'
+                              ? companyVote.creator
+                              : companyVote.creator?.name ||
+                                companyVote.creator?.email ||
+                                'Unknown',
+                          votedAt:
+                            companyVote.updatedAt ||
+                            companyVote.createdAt ||
+                            new Date().toISOString(),
+                          notes: companyVote.notes || '',
+                          isReported: companyVote.reported || false,
+                          checksum: companyVote.checksum || '',
+                        }
+                      : undefined,
+                  })
+                })
+              } else {
+                // No original data, use total quantity
+                const calculatedValues = calculateHoldingValues(
+                  holding.quantity || 0,
+                  stockValueData,
+                )
+
+                processedCompanies.push({
+                  id: company.id,
+                  name: company.name || company.fullName || `Company ${company.id}`,
+                  motherCompany:
+                    company.parentCompany?.docs?.[0]?.name ||
+                    company.parentCompany?.docs?.[0]?.fullName ||
+                    (typeof company.parentCompany === 'string' ? company.parentCompany : null),
+                  nominalValue: calculatedValues.nominalValue,
+                  percentageHolding: calculatedValues.percentageHolding,
+                  hasVoted: !!companyVote,
+                  hasActualVote: hasActualVote,
+                  vote: companyVote
+                    ? {
+                        id: companyVote.id,
+                        decision: companyVote.decision || 'נמנע',
+                        voter:
+                          typeof companyVote.creator === 'string'
+                            ? companyVote.creator
+                            : companyVote.creator?.name || companyVote.creator?.email || 'Unknown',
+                        votedAt:
+                          companyVote.updatedAt ||
+                          companyVote.createdAt ||
+                          new Date().toISOString(),
+                        notes: companyVote.notes || '',
+                        isReported: companyVote.reported || false,
+                        checksum: companyVote.checksum || '',
+                      }
+                    : undefined,
+                })
+              }
             })
-            if (companyHoldings.length > 0) {
-              // Sum up quantities for this company
-              const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
-                return sum + (holding.quantity || 0)
-              }, 0)
-              // Calculate holding values using the imported function
-              calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
-            }
-          }
-
-          return {
-            id: company.id,
-            name: company.name || company.fullName || `Company ${company.id}`,
-            motherCompany:
-              company.parentCompany?.docs?.[0]?.name ||
-              company.parentCompany?.docs?.[0]?.fullName ||
-              (typeof company.parentCompany === 'string' ? company.parentCompany : null),
-            nominalValue: calculatedValues.nominalValue,
-            percentageHolding: calculatedValues.percentageHolding,
-            hasVoted: !!companyVote,
-            hasActualVote: hasActualVote,
-            vote: companyVote
-              ? {
-                  id: companyVote.id,
-                  voter:
-                    typeof companyVote.creator === 'string'
-                      ? companyVote.creator
-                      : companyVote.creator?.name || companyVote.creator?.email || 'Unknown',
-                  votedAt:
-                    companyVote.updatedAt || companyVote.createdAt || new Date().toISOString(),
-                  notes: companyVote.notes || '',
-                  isReported: companyVote.reported || false,
-                  checksum: companyVote.checksum || '',
-                }
-              : undefined,
+          } else {
+            // No holdings data, create basic entry
+            processedCompanies.push({
+              id: company.id,
+              name: company.name || company.fullName || `Company ${company.id}`,
+              motherCompany:
+                company.parentCompany?.docs?.[0]?.name ||
+                company.parentCompany?.docs?.[0]?.fullName ||
+                (typeof company.parentCompany === 'string' ? company.parentCompany : null),
+              nominalValue: 0,
+              percentageHolding: 0,
+              hasVoted: !!companyVote,
+              hasActualVote: hasActualVote,
+              vote: companyVote
+                ? {
+                    id: companyVote.id,
+                    decision: companyVote.decision || 'נמנע',
+                    voter:
+                      typeof companyVote.creator === 'string'
+                        ? companyVote.creator
+                        : companyVote.creator?.name || companyVote.creator?.email || 'Unknown',
+                    votedAt:
+                      companyVote.updatedAt || companyVote.createdAt || new Date().toISOString(),
+                    notes: companyVote.notes || '',
+                    isReported: companyVote.reported || false,
+                    checksum: companyVote.checksum || '',
+                  }
+                : undefined,
+            })
           }
         })
         setCompanies(processedCompanies)
@@ -180,7 +252,7 @@ export const useVotingData = () => {
     }
 
     fetchCompaniesData()
-  }, [savedDocumentData])
+  }, [data])
 
   const exportToCSV = (data: any[], filename: string, columns: any) => {
     const exportData = data.filter((item) => !item.isGroupHeader)
@@ -190,6 +262,8 @@ export const useVotingData = () => {
       motherCompany: { header: 'חברת אם', field: 'motherCompany' },
       nominalValue: { header: 'ערך נקוב', field: 'nominalValue' },
       percentageHolding: { header: 'אחוזים', field: 'percentageHolding' },
+      originalStockId: { header: 'נייר מקורי', field: 'originalStockId' },
+      quantity: { header: 'כמות', field: 'quantity' },
       voter: { header: 'מצביע', field: 'vote.voter' },
       voteTime: { header: 'זמן הצבעה', field: 'vote.votedAt' },
       actualVoteAction: { header: 'הצבעה בפועל', field: 'vote.decision' },
