@@ -2,6 +2,7 @@ import { type PayloadRequest, type TaskHandler } from 'payload'
 import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from './utils'
 import { Meeting, User } from '@/payload-types'
+import { sendMailFromRequest } from '@/utils/sendMail'
 
 // Define a global logger variable that will be set in each function with req.payload.logger
 let logger: any
@@ -907,7 +908,7 @@ export const sendDailyMeetingNotifications = async (
       // Function to send email to a batch of recipients with retry logic
       const sendEmailBatch = async (batchRecipients: string[], retryCount = 0) => {
         try {
-          await req.payload.sendEmail({
+          await sendMailFromRequest(req, {
             from: process.env.EMAIL_FROM,
             bcc: batchRecipients,
             subject: emailContent.subject,

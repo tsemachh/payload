@@ -1,7 +1,8 @@
 import { type TaskHandler } from 'payload'
 import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
+import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
+import { sendMail } from '@/utils/sendMail'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -169,7 +170,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
 
     // Send the email
     try {
-      await payload.sendEmail({
+      await sendMail(payload, {
         from: process.env.EMAIL_FROM,
         to: usersMails,
         subject,
