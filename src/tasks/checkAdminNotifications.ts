@@ -396,7 +396,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
             await req.payload.delete({
               collection: 'admin-notifications',
               where: {
-                relatedUser: { equals: userId },
+                /*                relatedUser: { equals: userId },*/
                 message: { equals: message },
                 meeting: { equals: meeting.id },
                 url: { equals: url },
@@ -413,7 +413,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
             'newVoteAfterHoldingLimit',
             url,
             companiesArray,
-            userId,
+            undefined,
             meeting.id,
           )
 
