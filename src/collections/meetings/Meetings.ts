@@ -115,6 +115,8 @@ export const Meetings: CollectionConfig = {
         { name: 'stockOrigin', width: '120px' },
         { name: 'isFinancialStock', width: '100px' },
         { name: 'isDualStock', width: '100px' },
+        { name: 'hasVoteRecommendation' , width: '100px'},
+        { name: 'hasResearchDoc' , width: '100px'},
       ],
     ],
   },
@@ -321,6 +323,43 @@ export const Meetings: CollectionConfig = {
                 components: {
                   Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
                 },
+              },
+            },
+            {
+              name: 'hasResearchDoc',
+              label: 'יש מסמך מחקר',
+              type: 'checkbox',
+              admin: {
+                hidden: true,
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    return data?.researchDocuments?.length > 0
+                  },
+                ],
+              },
+            },
+            {
+              name: 'hasVoteRecommendation',
+              label: 'יש המלצת הצבעה',
+              type: 'checkbox',
+              admin: {
+                hidden: true,
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    if (!data?.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
+                      return false
+                    }
+                    return data.agenda.some((item) => {
+                      console.log('Here', item?.recommendation?.votingRecommendation)
+                      // Check regular recommendation
+                      return item?.recommendation?.votingRecommendation
+                    })
+                  },
+                ],
               },
             },
 
@@ -1000,11 +1039,6 @@ export const Meetings: CollectionConfig = {
           })
 
           if (stock?.hasDual && stock?.dualStock) {
-            const updatedDualStock = await req.payload.findByID({
-              collection: 'stocks',
-              id: getIdOfRelationField(stock.dualStock) as string,
-            })
-
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
