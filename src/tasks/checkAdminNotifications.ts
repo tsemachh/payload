@@ -354,6 +354,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         select: {
           company: true,
           creator: true,
+          checksum: true,
         },
         where: {
           meeting: {
@@ -361,6 +362,10 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
           },
           _status: {
             equals: 'published',
+          },
+          updatedAt: {
+            greater_than_equal: yesterdayStart.toISOString(),
+            less_than_equal: now,
           },
         },
         limit: 0,
@@ -372,7 +377,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         const votesByUser = new Map<string, { voteIds: string[]; companies: Set<string> }>()
 
         votes.forEach((vote: any) => {
-          const userId = vote.createdBy
+          const userId = vote.creator
           const companyId = getIdOfRelationField(vote.company) as string
 
           if (userId && companyId) {
@@ -388,8 +393,8 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         for (const [userId, { voteIds, companies }] of votesByUser.entries()) {
           const meetingName = meeting?.fullName
           const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
-          const url = `/admin/collections/meetings/${meeting.id}`
           const companiesArray = Array.from(companies)
+          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesArray}`
 
           // Delete any existing notifications with the same message for this user
           try {
@@ -399,7 +404,6 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
                 relatedUser: { equals: userId },
                 message: { equals: message },
                 meeting: { equals: meeting.id },
-                url: { equals: url },
               },
             })
           } catch (error) {
@@ -413,7 +417,6 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
             'newVoteAfterHoldingLimit',
             url,
             companiesArray,
-            userId,
             meeting.id,
           )
 
