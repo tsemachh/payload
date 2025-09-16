@@ -627,7 +627,6 @@ export interface Meeting {
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   activity?: string | null;
-  participationReport?: (string | null) | Document;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -643,9 +642,9 @@ export interface Meeting {
   invitationDocument?: (string | null) | Document;
   fullName?: string | null;
   state: MeetingState;
-  holdingsLimit?: string | null;
+  holdingsLimit: string;
   proxyVotingDate?: string | null;
-  meetingDate?: string | null;
+  meetingDate: string;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
@@ -668,27 +667,6 @@ export interface Meeting {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "documents".
- */
-export interface Document {
-  id: string;
-  alt?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -718,6 +696,27 @@ export interface Vote {
   createdAt: string;
   updatedAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents".
+ */
+export interface Document {
+  id: string;
+  alt?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1270,7 +1269,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   companies?: T;
   companiesNotYetVoted?: T;
   activity?: T;
-  participationReport?: T;
   votes?: T;
   stock?: T;
   isFinancialStock?: T;

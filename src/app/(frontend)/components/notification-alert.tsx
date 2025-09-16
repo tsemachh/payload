@@ -27,26 +27,12 @@ export function NotificationAlert({ onOpenNotificationsAction, notifications }: 
   const [hasShownAlert, setHasShownAlert] = useState(false)
 
   useEffect(() => {
-    // Check if we've already shown the alert today
-    const alertShownDate = sessionStorage.getItem("notification-alert-shown")
-    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
-
-    if (alertShownDate === today) {
-      setHasShownAlert(true)
-      return
-    }
-
-    // Use the passed notifications to check for unread count
+    // Check for unread notifications count but don't show alert automatically
     const unreadNotifications = notifications.filter(n => !n.isRead)
-
-    if (unreadNotifications.length > 0 && !hasShownAlert) {
+    if (unreadNotifications.length > 0) {
       setUnreadCount(unreadNotifications.length)
-      setShowAlert(true)
-      // Mark that we've shown the alert for today
-      sessionStorage.setItem("notification-alert-shown", today)
-      setHasShownAlert(true)
     }
-  }, [notifications, hasShownAlert])
+  }, [notifications])
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation()

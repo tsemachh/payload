@@ -308,19 +308,6 @@ export const Meetings: CollectionConfig = {
               },
             },
             {
-              name: 'participationReport',
-              label: 'דוח השתתפות',
-              type: 'upload',
-              relationTo: 'documents',
-              admin: {
-                hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
-                },
-              },
-            },
-
-            {
               name: 'votes',
               label: 'הצבעות',
               type: 'join',
@@ -541,6 +528,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד קובע',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '200px',
                     date: {
@@ -571,6 +559,7 @@ export const Meetings: CollectionConfig = {
                   label: 'מועד האסיפה',
                   type: 'date',
                   index: true,
+                  required: true,
                   admin: {
                     width: '220px',
                     date: {

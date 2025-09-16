@@ -9,6 +9,8 @@ import { DataTableStatic } from '@/components/data-table-client'
 import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
+import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
+import { handleApiError, notifyError } from '../helpers/error-handler'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
@@ -16,6 +18,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { Button } from '@/components/ui/button'
 import { FaFileExcel } from 'react-icons/fa'
+import { checksum } from '@/app/(frontend)/lib/checksum'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -46,10 +49,15 @@ export function MeetingsTableClient() {
     return url
   }, [selectedCompanyIds])
 
-  const { data: meetingsResponse, isLoading: isLoadingMeetings } = useSWR(apiUrl, fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
+  const { data: meetingsResponse, isLoading: isLoadingMeetings } = useSWRWithErrorHandling(
+    apiUrl,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      errorMessage: 'שגיאה בטעינת נתוני האסיפות',
+    },
+  )
 
   const meetingsForPercentagesQuery = useMemo(() => {
     if (!meetingsResponse?.data || meetingsResponse?.data.length === 0) {
@@ -63,15 +71,26 @@ export function MeetingsTableClient() {
 
     return { meetings: meetingsPayload }
   }, [meetingsResponse?.data])
+  const meetingCheckSum = checksum(JSON.stringify(meetingsForPercentagesQuery?.meetings))
 
   const swrKeyForPercentages = meetingsForPercentagesQuery
-    ? ['/api/votes/voting-percentages', meetingsForPercentagesQuery]
+    ? `/api/votes/voting-percentages?${new URLSearchParams({ meetings: meetingCheckSum }).toString()}`
     : null
 
-  const { data: percentagesResponse } = useSWR(swrKeyForPercentages, postFetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
+  const { data: percentagesResponse } = useSWR(
+    swrKeyForPercentages && meetingsForPercentagesQuery
+      ? [swrKeyForPercentages, meetingsForPercentagesQuery]
+      : null,
+    ([url, body]: [string, object]) => postFetcher([url, body]),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      onError: (error) => {
+        handleApiError(error, 'שגיאה בטעינת נתוני אחוזי הצבעה')
+        notifyError({ message: 'שגיאה בטעינת נתוני אחוזי הצבעה' })
+      },
+    },
+  )
 
   const votingPercentagesMap = percentagesResponse?.percentages
 
@@ -151,11 +170,14 @@ export function MeetingsTableClient() {
       if (params.toString()) {
         exportUrl += `?${params.toString()}`
       }
-      // Make API call to get export data
+      // Make API call to get export data using our helper
+      // We need to handle the blob response manually since our helper expects JSON
       const response = await fetch(exportUrl)
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        // Use our error handling utility
+        const errorText = await response.text().catch(() => 'Unknown error')
+        throw new Error(errorText || `HTTP error! status: ${response.status}`)
       }
 
       const blob = await response.blob()
@@ -170,8 +192,11 @@ export function MeetingsTableClient() {
 
       console.log('הקובץ הורד בהצלחה!')
     } catch (error) {
-      console.error('Export failed:', error)
-      alert('הייתה שגיאה בהורדת הקובץ')
+      // Use our error handling utility
+      handleApiError(error, 'שגיאה בייצוא הקובץ')
+      notifyError({
+        message: 'הייתה שגיאה בהורדת הקובץ. אנא נסה שוב מאוחר יותר.',
+      })
     } finally {
       setIsExporting(false)
     }
