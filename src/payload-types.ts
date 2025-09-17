@@ -627,6 +627,8 @@ export interface Meeting {
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   activity?: string | null;
+  hasResearchDoc?: boolean | null;
+  hasVoteRecommendation?: boolean | null;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -635,6 +637,7 @@ export interface Meeting {
   stock: string | Stock;
   isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
+  stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
@@ -1269,10 +1272,13 @@ export interface MeetingsSelect<T extends boolean = true> {
   companies?: T;
   companiesNotYetVoted?: T;
   activity?: T;
+  hasResearchDoc?: T;
+  hasVoteRecommendation?: T;
   votes?: T;
   stock?: T;
   isFinancialStock?: T;
   isDualStock?: T;
+  stockOrigin?: T;
   type?: T;
   meetingId?: T;
   magnaId?: T;
