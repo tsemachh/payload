@@ -124,7 +124,7 @@ export default buildConfig({
       defaultJobsCollection.admin.group = 'ניהול'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
-        singular: 'תהליף מערכת',
+        singular: 'תהליך מערכת',
       }
       return defaultJobsCollection
     },
