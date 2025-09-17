@@ -28,6 +28,7 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
       meetingsNotVoted: 0,
       noFeedFromPredictae: false,
       votesAfterHoldingDate: 0,
+      meetingToPublish: 0,
     }
 
     if (isHolidayOrShabbat(new Date())) {
@@ -47,7 +48,8 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
 
     // 4. Check for votes that were done before the holding date
     await checkVotesAfterHoldingDate(req, notifications)
-
+    // 5.Check for new meeting from predicta feed
+    await checkNewMeetingsCreated(req, notifications)
     return {
       success: true,
       notifications,
@@ -354,6 +356,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         select: {
           company: true,
           creator: true,
+          checksum: true,
         },
         where: {
           meeting: {
@@ -361,6 +364,10 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
           },
           _status: {
             equals: 'published',
+          },
+          updatedAt: {
+            greater_than_equal: yesterdayStart.toISOString(),
+            less_than_equal: now,
           },
         },
         limit: 0,
@@ -372,7 +379,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         const votesByUser = new Map<string, { voteIds: string[]; companies: Set<string> }>()
 
         votes.forEach((vote: any) => {
-          const userId = vote.createdBy
+          const userId = vote.creator
           const companyId = getIdOfRelationField(vote.company) as string
 
           if (userId && companyId) {
@@ -388,18 +395,17 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         for (const [userId, { voteIds, companies }] of votesByUser.entries()) {
           const meetingName = meeting?.fullName
           const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
-          const url = `/admin/collections/meetings/${meeting.id}`
           const companiesArray = Array.from(companies)
+          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesArray}`
 
           // Delete any existing notifications with the same message for this user
           try {
             await req.payload.delete({
               collection: 'admin-notifications',
               where: {
-                relatedUser: { equals: userId },
+                /*                relatedUser: { equals: userId },*/
                 message: { equals: message },
                 meeting: { equals: meeting.id },
-                url: { equals: url },
               },
             })
           } catch (error) {
@@ -413,7 +419,7 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
             'newVoteAfterHoldingLimit',
             url,
             companiesArray,
-            userId,
+            undefined,
             meeting.id,
           )
 
@@ -423,6 +429,76 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
     }
   } catch (error) {
     req.payload.logger.error(`Error checking votes after holding date: ${JSON.stringify(error)}`)
+  }
+}
+async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) {
+  try {
+    // Get current date
+    const now = new Date()
+
+    // אתמול
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const yesterdayStart = new Date(yesterday)
+    yesterdayStart.setHours(0, 0, 0, 0)
+
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+
+    const { docs: meetings } = await req.payload.find({
+      collection: 'meetings',
+      select: {
+        id: true,
+        fullName: true,
+        publishDate: true,
+      },
+      where: {
+        updatedAt: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
+        },
+        _status: {
+          equals: 'draft',
+        },
+      },
+      limit: 0,
+      depth: 0,
+    })
+    if (meetings.length > 0) {
+      for (const meeting of meetings) {
+        const meetingName = meeting?.fullName || 'אסיפה'
+        const message = meeting.publishDate
+          ? `יש אסיפה חדשה לעדכון: ${meetingName}`
+          : `יש אסיפה חדשה לפרסום: ${meetingName}`
+        const url = `/admin/collections/meetings/${meeting.id}`
+
+        try {
+          await req.payload.delete({
+            collection: 'admin-notifications',
+            where: {
+              message: { equals: message },
+              meeting: { equals: meeting.id },
+            },
+          })
+        } catch (error) {
+          req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
+        }
+        await createAdminNotification(
+          req,
+          message,
+          'meetingToPublish',
+          url,
+          undefined,
+          undefined,
+          meeting.id,
+        )
+
+        notifications.meetingToPublish++
+      }
+    }
+  } catch (error) {
+    req.payload.logger.error(`Error checking meetings created yesterday: ${JSON.stringify(error)}`)
   }
 }
 

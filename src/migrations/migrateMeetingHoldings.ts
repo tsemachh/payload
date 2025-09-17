@@ -2,7 +2,7 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
-import { Stock } from '@/payload-types'
+import { Meeting, Stock } from '@/payload-types'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import { getCompanyIdFromFundId, initFundIdToCompanyIdMap } from '@/utils/utils'
 import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
@@ -154,8 +154,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Update the meeting with companies, funds, and fundsWithHolding
             const updatedMeeting = {
               funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
+              companies: Array.from(new Set(fundsWithHolding.map((item) => item.company))),
               fundsWithHolding: fundsWithHolding,
-            }
+            } as Partial<Meeting>
 
             // Update the meeting in MongoDB
             const updateResult = await payload.update({
@@ -168,7 +169,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             successCount++
             console.log(
-              `✓ Updated Meeting: ${meetingSeq} with  ${updatedMeeting.funds.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
+              `✓ Updated Meeting: ${meetingSeq} with  ${updatedMeeting?.funds?.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
             )
           } catch (updateError: any) {
             errorCount++
