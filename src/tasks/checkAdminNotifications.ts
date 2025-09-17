@@ -451,7 +451,7 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
       select: {
         id: true,
         fullName: true,
-        createdAt: true,
+        publishDate: true,
       },
       where: {
         updatedAt: {
@@ -468,7 +468,9 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
     if (meetings.length > 0) {
       for (const meeting of meetings) {
         const meetingName = meeting?.fullName || 'אסיפה'
-        const message = `ישנה אסיפה חדשה לפירסום : ${meetingName}`
+        const message = meeting.publishDate
+          ? `יש אסיפה חדשה לעדכון: ${meetingName}`
+          : `יש אסיפה חדשה לפרסום: ${meetingName}`
         const url = `/admin/collections/meetings/${meeting.id}`
 
         try {
