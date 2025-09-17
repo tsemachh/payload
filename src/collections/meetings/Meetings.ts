@@ -25,7 +25,7 @@ import {
   validateMeetingInvitationLink,
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
-import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
+import { meetingStateOptions, meetingTypeOptions, stockTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
@@ -105,18 +105,21 @@ export const Meetings: CollectionConfig = {
         { name: 'proxyVotingDate' },
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
+        { name: '_status', width: '120px' },
       ],
       [
-        { name: 'resultsConfirmationStatus', width: '100px' },
         { name: 'electronicVotingEnabled', width: '100px' },
+        { name: 'hasVoteRecommendation', width: '100px' },
+        { name: 'hasResearchDoc', width: '100px' },
         { name: 'votesStatus', width: '120px' },
         { name: 'votesReportStatus', width: '120px' },
-        { name: '_status', width: '120px' },
+        { name: 'resultsConfirmationStatus', width: '100px' },
+      ],
+      [
+        { name: 'stockType', width: '200px' },
         { name: 'stockOrigin', width: '120px' },
         { name: 'isFinancialStock', width: '100px' },
         { name: 'isDualStock', width: '100px' },
-        { name: 'hasVoteRecommendation', width: '100px' },
-        { name: 'hasResearchDoc', width: '100px' },
       ],
     ],
   },
@@ -448,6 +451,16 @@ export const Meetings: CollectionConfig = {
                   type: 'select',
                   virtual: 'stock.origin',
                   options: stockOriginOptions,
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockType',
+                  label: 'סוג הנייר',
+                  type: 'select',
+                  virtual: 'stock.type',
+                  options: stockTypeOptions,
                   admin: {
                     hidden: true,
                   },
