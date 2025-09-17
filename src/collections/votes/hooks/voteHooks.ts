@@ -29,7 +29,14 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
   }
 }
 
-export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req }) => {
+export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req ,originalDoc}) => {
+  
+  if (data._status === 'published') {
+    if (originalDoc?.publishedchecksum != '' && originalDoc?.publishedchecksum != data.checksum) {
+      data.reported = false
+      data.publishedchecksum = data.checksum
+    }}
+
   const meetingId = data?.meeting
   const votes = data?.votes
 
@@ -99,56 +106,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   const statusChangedFromDraftToPublished =
     previousDoc?._status === 'draft' && doc._status === 'published'
   const statusChanged = statusChangedFromPublishedToDraft || statusChangedFromDraftToPublished
-  let publishedChecksumForUpdate
-
-  if (doc._status === 'published') {
-    if (previousDoc.publishedchecksum != '' && previousDoc.publishedchecksum != doc.checksum) {
-      //need to revote
-      try {
-        await req.payload.update({
-          collection: 'votes',
-          id: doc.id,
-          data: {
-            reported: false,
-          },
-          context: { ...req.context, from: 'calc' },
-          req,
-        })
-      } catch (e: any) {
-        req.payload.logger.error(`Error updating reported on second vote. ex:`, e)
-      }
-    }
-
-    publishedChecksumForUpdate = doc.checksum
-  } else {
-    publishedChecksumForUpdate = previousDoc.publishedchecksum
-  }
-  console.log(
-    '###  doc.checksum:' +
-      doc.checksum +
-      '. previousDoc.publishedchecksum:' +
-      previousDoc.publishedchecksum +
-      '. publishedChecksumForUpdate: ' +
-      publishedChecksumForUpdate,
-  )
-  if (publishedChecksumForUpdate != doc.publishedchecksum) {
-    try {
-      //need to update the new published checksum
-      await req.payload.update({
-        collection: 'votes',
-        id: doc.id,
-        data: {
-          publishedchecksum: publishedChecksumForUpdate,
-        },
-        context: { ...req.context, from: 'calc' },
-        req,
-      })
-    } catch (e: any) {
-      req.payload.logger.error(`Error updating reported on second vote. ex:`, e)
-    }
-  }
-
-  // Recalculate meeting vote counts when reported status changes or status changes between published and draft
+ 
   if (
     (doc._status === 'published' && reportedChanged && doc.meeting) ||
     (statusChanged && doc.meeting)
