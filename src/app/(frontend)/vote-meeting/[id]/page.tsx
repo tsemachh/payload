@@ -40,7 +40,7 @@ import {
 } from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { handleApiError, notifyError } from '../../helpers/error-handler'
+import { handleApiError } from '../../helpers/error-handler'
 import { postWithErrorHandling } from '../../helpers/fetch-helpers'
 import {
   AGENDA_QUESTIONS_CONFIG,
@@ -192,7 +192,7 @@ export default function VotingForm() {
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=${isReadOnly ? 'published' : 'latest'}`
       : null
 
-  const { data: fetchedAllLatestVots, mutate: mutateAllLatestVots } = useSWR(
+  const { data: fetchedAllLatestVotes, mutate: mutateAllLatestVotes } = useSWR(
     swrKeyAll,
     fetcherVote,
     {
@@ -217,13 +217,13 @@ export default function VotingForm() {
       ? `/api/votes/voted-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}`
       : null
 
-  const { data: votedCompaniesArray, isLoading: isVotedCompaniesArray } = useSWR(
-    swrKeyVotedCompanies,
-    fetchVotedCompanies,
-    {
-      revalidateOnFocus: false,
-    },
-  )
+  const {
+    data: votedCompaniesArray,
+    isLoading: isVotedCompaniesArray,
+    mutate: mutateVotedCompaniesArray,
+  } = useSWR(swrKeyVotedCompanies, fetchVotedCompanies, {
+    revalidateOnFocus: false,
+  })
 
   const isDirty = useMemo(() => {
     if (!initialVotingData) return true
@@ -259,13 +259,13 @@ export default function VotingForm() {
       const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
       let isGeneralVoteOptionTmp
       if (
-        fetchedAllLatestVots &&
-        fetchedAllLatestVots.length > 0 &&
-        fetchedAllLatestVots.length < defaultIds.length
+        fetchedAllLatestVotes &&
+        fetchedAllLatestVotes.length > 0 &&
+        fetchedAllLatestVotes.length < defaultIds.length
       ) {
         isGeneralVoteOptionTmp = false
       } else {
-        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVots)
+        isGeneralVoteOptionTmp = isGeneralVote(fetchedAllLatestVotes)
       }
       if (companiesIDs.length > 1 && isGeneralVoteOptionTmp !== isGeneralVoteOption) {
         if (isGeneralVoteOptionTmp) {
@@ -277,7 +277,7 @@ export default function VotingForm() {
       setIsGeneralVoteOption(isGeneralVoteOptionTmp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVots])
+  }, [fetchedVotes, meetingData?.companies, fetchedAllLatestVotes])
 
   useEffect(() => {
     if (isMeetingLoading || isSWRLoading || !meetingData) {
@@ -409,10 +409,6 @@ export default function VotingForm() {
   const navGuard = useNavigationGuard({
     enabled: (isDirty || isDraftSaved) && !isReadOnly,
   })
-
-  // Note: beforeunload handler removed to prevent browser's default "Leave site" alert
-  // The auto-draft system handles data persistence, and useNavigationGuard handles in-app navigation
-  // For external navigation (browser back to different site, refresh, close), we rely on auto-saves
 
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
@@ -550,7 +546,8 @@ export default function VotingForm() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         setPublishSuccess(true)
         mutatePublish()
-        mutateAllLatestVots()
+        mutateAllLatestVotes()
+        mutateVotedCompaniesArray()
       } catch (error: any) {
         // Error already logged and notified by postWithErrorHandling
         // Additional error handling if needed
@@ -566,7 +563,8 @@ export default function VotingForm() {
       toast,
       router,
       mutatePublish,
-      mutateAllLatestVots,
+      mutateAllLatestVotes,
+      mutateVotedCompaniesArray,
     ],
   )
 
@@ -604,11 +602,20 @@ export default function VotingForm() {
           duration: 1500,
         })
         mutateDraft()
+        mutateAllLatestVotes()
       } catch (error) {
         //Handle rollback in UI level on Error
       }
     },
-    [meetingIdPayload, companiesIDs, meetingData, toast, mutateDraft, setIsDraftSaved],
+    [
+      meetingIdPayload,
+      companiesIDs,
+      meetingData,
+      toast,
+      mutateDraft,
+      setIsDraftSaved,
+      mutateAllLatestVotes,
+    ],
   )
 
   const handleQuestionChange = useCallback(
