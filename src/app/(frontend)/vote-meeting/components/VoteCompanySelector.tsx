@@ -186,8 +186,27 @@ export default function VoteCompanySelector({
                 </label>
               </TooltipTrigger>
               <TooltipContent>
+                {company.originalStockIds?.length ? (
+                  <div className="flex flex-col">
+                    <div className="flex w-[160px] justify-between">
+                      <div>נייר מקורי</div>
+                      <div>ע׳ נקוב</div>
+                    </div>
+                    {company.originalStockIds.map((stock: any) => (
+                      <div className="flex w-[160px] justify-between">
+                        <div>{stock.stockId}</div>
+                        <div>{stock.quantity.toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <></>
+                )}
                 <div className="text-sm">
-                  <p>ע׳ נקוב {company.nominalValue.toLocaleString()}</p>
+                  <p>
+                    {`${company.originalStockIds?.length ? 'סה״כ' : 'ע׳ נקוב'} `}
+                    {company.nominalValue.toLocaleString()}
+                  </p>
                   <p>{Math.round(company.percentageHolding * 100) / 100}%</p>
                 </div>
               </TooltipContent>
