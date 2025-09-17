@@ -28,6 +28,7 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
       meetingsNotVoted: 0,
       noFeedFromPredictae: false,
       votesAfterHoldingDate: 0,
+      meetingToPublish: 0,
     }
 
     if (isHolidayOrShabbat(new Date())) {
@@ -47,7 +48,8 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
 
     // 4. Check for votes that were done before the holding date
     await checkVotesAfterHoldingDate(req, notifications)
-
+    // 5.Check for new meeting from predicta feed
+    await checkNewMeetingsCreated(req, notifications)
     return {
       success: true,
       notifications,
@@ -427,6 +429,74 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
     }
   } catch (error) {
     req.payload.logger.error(`Error checking votes after holding date: ${JSON.stringify(error)}`)
+  }
+}
+async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) {
+  try {
+    // Get current date
+    const now = new Date()
+
+    // אתמול
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const yesterdayStart = new Date(yesterday)
+    yesterdayStart.setHours(0, 0, 0, 0)
+
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+
+    const { docs: meetings } = await req.payload.find({
+      collection: 'meetings',
+      select: {
+        id: true,
+        fullName: true,
+        createdAt: true,
+      },
+      where: {
+        updatedAt: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
+        },
+        _status: {
+          equals: 'draft',
+        },
+      },
+      limit: 0,
+      depth: 0,
+    })
+    if (meetings.length > 0) {
+      for (const meeting of meetings) {
+        const meetingName = meeting?.fullName || 'אסיפה'
+        const message = `ישנה אסיפה חדשה לפירסום : ${meetingName}`
+        const url = `/admin/collections/meetings/${meeting.id}`
+
+        try {
+          await req.payload.delete({
+            collection: 'admin-notifications',
+            where: {
+              message: { equals: message },
+              meeting: { equals: meeting.id },
+            },
+          })
+        } catch (error) {
+          req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
+        }
+        await createAdminNotification(
+          req,
+          message,
+          'meetingToPublish',
+          url,
+          undefined,
+          undefined,
+          meeting.id,
+        )
+
+        notifications.meetingToPublish++
+      }
+    }
+  } catch (error) {
+    req.payload.logger.error(`Error checking meetings created yesterday: ${JSON.stringify(error)}`)
   }
 }
 

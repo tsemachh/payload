@@ -18,6 +18,7 @@ export type AdminNotificationType =
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
       | 'userImpersonation'
+      | 'meetingToPublish'
     )
   | null;
 /**
