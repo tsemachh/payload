@@ -65,3 +65,14 @@ continue.config.yaml
 /meetings-feed/*.json
 /stocks-feed/*.json
 /tmp/*.json
+/scripts/dev/sqlserver/**
+/*.md
+/scripts/copyMongoDB_alternatives.sh
+/scripts/copyMongoDBTables.sh
+/scripts/firestore_billing_guide.md
+/scripts/migrate.log
+/scripts/mongodb_firestore_solution.md
+/scripts/switch-mongodb.sh
+/migrate.log
+/test-date.js
+/vercel.json

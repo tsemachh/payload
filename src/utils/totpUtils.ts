@@ -18,8 +18,7 @@ export interface BackupCode {
  */
 export function generateTOTPSecret(userEmail: string, serviceName: string = 'EMDA'): TOTPSecret {
   const secret = speakeasy.generateSecret({
-    name: userEmail,
-    issuer: serviceName,
+    name: `${serviceName}: ${userEmail}`,
     length: 32,
   })
 
