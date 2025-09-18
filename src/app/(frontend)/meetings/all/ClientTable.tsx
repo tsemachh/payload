@@ -187,27 +187,6 @@ export function MeetingsTableServer() {
 
   return (
     <div className="space-y-4">
-      {/* COMPANY SELECTOR */}
-      <div className="absolute mr-[50.5rem] mt-[1.2rem] ">
-        <div className="flex items-center">
-          <Select>
-            <SelectTrigger className="w-64 flex-row-reverse justify-between text-right h-8">
-              <SelectValue placeholder={getCompanySelectSummary()} />
-            </SelectTrigger>
-            <SelectContent align="end" dir="rtl" className="p-0">
-              <CompanyTreeSelector
-                selectedCompanies={selectedCompanyIds}
-                showSearch={false}
-                onSelectionChangeAction={handleCompanySelectionChange}
-                className="w-full"
-                allCompaniesIds={[...companies.map((com) => com.id)]}
-                showFunds={false}
-              />
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <DataTableServer
         data={dataWithPercentages}
         columns={createMeetingColumns(
@@ -244,6 +223,10 @@ export function MeetingsTableServer() {
         pastDateFilterOptions={pastDateFilterOptions}
         futureDateFilterOptions={futureDateFilterOptions}
         selectedCompanyIds={selectedCompanyIds}
+        // New props for integrated functionality
+        showCompanySelector={true}
+        onCompanySelectionChange={handleCompanySelectionChange}
+        getCompanySelectSummary={getCompanySelectSummary}
       />
     </div>
   )

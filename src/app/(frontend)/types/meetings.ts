@@ -167,6 +167,15 @@ export interface DataTableProps<T extends Record<string, any>> {
       | undefined,
     data: MeetingTableDataType[],
   ) => Column<MeetingTableDataType>[]
+  showExport?: boolean
+  onExportExcel?: () => void
+  isExporting?: boolean
+  showCompanySelector?: boolean
+  onCompanySelectionChange?: (selectedIds: string[]) => void
+  getCompanySelectSummary?: () => string
+  showViewModeToggle?: boolean
+  viewMode?: 'companies' | 'agenda'
+  onViewModeChange?: (mode: 'companies' | 'agenda') => void
 }
 
 export interface UrlFilenameMap {

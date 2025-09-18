@@ -61,6 +61,9 @@ import {
 } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
 import CustomRadio from './custom-radio'
+import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FaFileExcel } from 'react-icons/fa'
+import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -87,6 +90,16 @@ export function DataTableStatic<T extends Record<string, any>>({
   displayMode,
   selectedCompanyIds,
   createColumnsWithExpand,
+  // New props
+  showExport = false,
+  onExportExcel,
+  isExporting = false,
+  showCompanySelector = false,
+  onCompanySelectionChange,
+  getCompanySelectSummary,
+  showViewModeToggle = false,
+  viewMode,
+  onViewModeChange,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
@@ -1006,7 +1019,74 @@ export function DataTableStatic<T extends Record<string, any>>({
             disabled={isLoading}
           />
         </div>
+
         <div className="flex space-x-2 space-x-reverse">
+          {/* Export button */}
+          {showExport && onExportExcel && (
+            <Button
+              onClick={onExportExcel}
+              variant="outline"
+              size="sm"
+              disabled={isExporting}
+              title="ייצוא"
+              className="h-8 px-3 border text-[rgb(31,65,71)] hover:bg-[rgb(31,65,71)] hover:text-white transition-colors duration-200 flex items-center"
+            >
+              <FaFileExcel className="h-4 w-4 ml-1" />
+              <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
+            </Button>
+          )}
+
+          {/* View mode toggle */}
+          {showViewModeToggle && viewMode && onViewModeChange && (
+            <div className="flex items-center">
+              <div className="flex bg-muted rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange('companies')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    viewMode === 'companies'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  חברות
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange('agenda')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    viewMode === 'agenda'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  סדר יום
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Company selector */}
+          {showCompanySelector && onCompanySelectionChange && getCompanySelectSummary && (
+            <div className="flex w-[180px]">
+              <Select>
+                <SelectTrigger className="w-full flex-row-reverse justify-between text-right h-8">
+                  <SelectValue placeholder={getCompanySelectSummary()} />
+                </SelectTrigger>
+                <SelectContent align="end" dir="rtl" className="p-0">
+                  <CompanyTreeSelector
+                    selectedCompanies={selectedCompanyIds || []}
+                    showSearch={false}
+                    onSelectionChangeAction={onCompanySelectionChange}
+                    className="w-full"
+                    allCompaniesIds={companies.map((com) => com.id)}
+                    showFunds={false}
+                  />
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {filterOption && (
             <Button
               variant="outline"
