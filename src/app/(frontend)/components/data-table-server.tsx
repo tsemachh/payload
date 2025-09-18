@@ -182,16 +182,19 @@ export function DataTableServer<T extends Record<string, any>>({
     const loadColumnVisibility = () => {
       const storedColumns = localStorage.getItem(storageKey)
       const alwaysVisible = columns
-        .filter((col) => col.isAlwaysVisible)
+        .filter((col) => {
+          if (!col.isAlwaysVisible) return false
+          if (col.key === 'companies' && displayMode !== 'companies') return false
+          if (col.key === 'agenda' && displayMode !== 'agenda') return false
+          return true
+        })
         .map((col) => String(col.key))
 
       if (storedColumns) {
         try {
           const parsedColumns = JSON.parse(storedColumns)
           const validColumns = columns.map((col) => String(col.key))
-          const filteredColumns = parsedColumns.filter(
-            (col: string) => validColumns.includes(col) && col !== 'agenda',
-          )
+          const filteredColumns = parsedColumns.filter((col: string) => validColumns.includes(col))
           const mergedColumns = Array.from(new Set([...filteredColumns, ...alwaysVisible]))
           if (mergedColumns.length !== parsedColumns.length) {
             localStorage.setItem(storageKey, JSON.stringify(mergedColumns))
@@ -211,7 +214,12 @@ export function DataTableServer<T extends Record<string, any>>({
 
     const setDefaultVisibility = () => {
       const alwaysVisible = columns
-        .filter((col) => col.isAlwaysVisible)
+        .filter((col) => {
+          if (!col.isAlwaysVisible) return false
+          if (col.key === 'companies' && displayMode !== 'companies') return false
+          if (col.key === 'agenda' && displayMode !== 'agenda') return false
+          return true
+        })
         .map((col) => String(col.key))
       const mergedVisible = Array.from(
         new Set([...defaultVisibleColumns.map(String), ...alwaysVisible]),
@@ -224,7 +232,7 @@ export function DataTableServer<T extends Record<string, any>>({
     }
 
     loadColumnVisibility()
-  }, [columns, data, tableId])
+  }, [columns, data, tableId, displayMode])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -564,18 +572,24 @@ export function DataTableServer<T extends Record<string, any>>({
                   maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
                 }}
               >
-                {columns.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={String(column.key)}
-                    disabled={column.isAlwaysVisible}
-                    checked={columnVisibility[String(column.key)]}
-                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                    onSelect={(event) => event.preventDefault()}
-                    dir="rtl"
-                  >
-                    {column.header ? column.header : 'עמודה'}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {columns
+                  .filter((column) => {
+                    if (displayMode === 'companies' && column.key === 'agenda') return false
+                    if (displayMode === 'agenda' && column.key === 'companies') return false
+                    return true
+                  })
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={String(column.key)}
+                      disabled={column.isAlwaysVisible}
+                      checked={columnVisibility[String(column.key)]}
+                      onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                      onSelect={(event) => event.preventDefault()}
+                      dir="rtl"
+                    >
+                      {column.header ? column.header : 'עמודה'}
+                    </DropdownMenuCheckboxItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

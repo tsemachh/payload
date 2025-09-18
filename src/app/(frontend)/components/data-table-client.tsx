@@ -160,7 +160,12 @@ export function DataTableStatic<T extends Record<string, any>>({
       const loadColumnVisibility = () => {
         const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
         const alwaysVisible = columns
-          .filter((col) => col.isAlwaysVisible)
+          .filter((col) => {
+            if (!col.isAlwaysVisible) return false
+            if (col.key === 'companies' && displayMode !== 'companies') return false
+            if (col.key === 'agenda' && displayMode !== 'agenda') return false
+            return true
+          })
           .map((col) => String(col.key))
 
         if (storedColumns) {
@@ -192,9 +197,13 @@ export function DataTableStatic<T extends Record<string, any>>({
       }
 
       const setDefaultColumnVisibility = () => {
-        // Always-visible column keys
         const alwaysVisible = columns
-          .filter((col) => col.isAlwaysVisible)
+          .filter((col) => {
+            if (!col.isAlwaysVisible) return false
+            if (col.key === 'companies' && displayMode !== 'companies') return false
+            if (col.key === 'agenda' && displayMode !== 'agenda') return false
+            return true
+          })
           .map((col) => String(col.key))
 
         // Merge defaultVisibleColumns with alwaysVisible, removing duplicates
@@ -237,7 +246,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     })
     setDateFilters(initialDateFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, data, tableId])
+  }, [columns, data, tableId, displayMode])
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
@@ -979,18 +988,24 @@ export function DataTableStatic<T extends Record<string, any>>({
                   maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
                 }}
               >
-                {columns.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={String(column.key)}
-                    disabled={column.isAlwaysVisible}
-                    checked={columnVisibility[String(column.key)]}
-                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                    onSelect={(event) => event.preventDefault()}
-                    dir="rtl"
-                  >
-                    {column.header ? column.header : 'עמודה'}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {columns
+                  .filter((column) => {
+                    if (displayMode === 'companies' && column.key === 'agenda') return false
+                    if (displayMode === 'agenda' && column.key === 'companies') return false
+                    return true
+                  })
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={String(column.key)}
+                      disabled={column.isAlwaysVisible}
+                      checked={columnVisibility[String(column.key)]}
+                      onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                      onSelect={(event) => event.preventDefault()}
+                      dir="rtl"
+                    >
+                      {column.header ? column.header : 'עמודה'}
+                    </DropdownMenuCheckboxItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

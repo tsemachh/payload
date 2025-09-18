@@ -105,6 +105,7 @@ export const createMeetingColumns = (
     header: 'חברות',
     type: 'string',
     sortKey: 'companies',
+    isAlwaysVisible: true,
     minWidth: 50,
     width: 80,
     renderHeader: () =>
@@ -120,6 +121,7 @@ export const createMeetingColumns = (
     header: 'סדר יום',
     type: 'string',
     sortKey: 'agendas',
+    isAlwaysVisible: true,
     minWidth: 80,
     width: 80,
     renderHeader: () =>
