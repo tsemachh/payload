@@ -4,6 +4,11 @@ import { isAdmin, isAdminFieldLevel, isAdminOrSelf } from '@/utils/authUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
+import TwoFactorSetupEndpoint from '@/collections/endpoints/TwoFactorSetupEndpoint'
+import TwoFactorVerifyEndpoint from '@/collections/endpoints/TwoFactorVerifyEndpoint'
+import TwoFactorDisableEndpoint from '@/collections/endpoints/TwoFactorDisableEndpoint'
+import TwoFactorBackupCodesEndpoint from '@/collections/endpoints/TwoFactorBackupCodesEndpoint'
+import LoginWith2FAEndpoint from '@/collections/endpoints/LoginWith2FAEndpoint'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -370,6 +375,135 @@ export const Users: CollectionConfig = {
         },
       ],
     },
+
+    {
+      name: 'twoFactorAuth',
+      label: 'אימות דו-שלבי (2FA)',
+      type: 'group',
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'enabled',
+              label: 'אימות דו-שלבי מופעל',
+              type: 'checkbox',
+              defaultValue: false,
+              index: true,
+            },
+            {
+              name: 'verified',
+              label: 'אימות דו-שלבי מאומת',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                readOnly: true,
+              },
+            },
+          ],
+        },
+        {
+          name: 'secret',
+          label: 'מפתח סודי TOTP',
+          type: 'text',
+          admin: {
+            hidden: true,
+          },
+          access: {
+            read: ({ req }) => req.user?.isAdmin || false,
+            update: ({ req }) => req.user?.isAdmin || false,
+          },
+        },
+        {
+          name: 'backupCodes',
+          label: 'קודי גיבוי',
+          type: 'array',
+          admin: {
+            hidden: true,
+          },
+          access: {
+            read: ({ req }) => req.user?.isAdmin || false,
+            update: ({ req }) => req.user?.isAdmin || false,
+          },
+          fields: [
+            {
+              name: 'code',
+              label: 'קוד גיבוי',
+              type: 'text',
+            },
+            {
+              name: 'used',
+              label: 'נוצל',
+              type: 'checkbox',
+              defaultValue: false,
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'lastUsed',
+              label: 'שימוש אחרון באימות דו-שלבי',
+              type: 'date',
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
+              name: 'failureCount',
+              label: 'מספר ניסיונות כושלים',
+              type: 'number',
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+              },
+            },
+          ],
+        },
+        {
+          name: 'lastFailureTime',
+          label: 'זמן כישלון אחרון',
+          type: 'date',
+          admin: {
+            hidden: true,
+            readOnly: true,
+          },
+        },
+      ],
+    },
+  ],
+  endpoints: [
+    {
+      path: '/login-2fa',
+      method: 'post',
+      handler: LoginWith2FAEndpoint,
+    },
+    {
+      path: '/2fa-setup',
+      method: 'post',
+      handler: TwoFactorSetupEndpoint,
+    },
+    {
+      path: '/2fa-verify',
+      method: 'post',
+      handler: TwoFactorVerifyEndpoint,
+    },
+    {
+      path: '/2fa-disable',
+      method: 'post',
+      handler: TwoFactorDisableEndpoint,
+    },
+    {
+      path: '/2fa-backup-codes',
+      method: 'post',
+      handler: TwoFactorBackupCodesEndpoint,
+    },
+    {
+      path: '/2fa-backup-codes',
+      method: 'get',
+      handler: TwoFactorBackupCodesEndpoint,
+    },
   ],
   hooks: {
     beforeChange: [
@@ -395,7 +529,7 @@ export const Users: CollectionConfig = {
       },
     ],
     beforeLogin: [
-      async ({ user }) => {
+      async ({ user, req }) => {
         if (!user.active) {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
@@ -407,6 +541,14 @@ export const Users: CollectionConfig = {
           throw new APIError('המשתמש אינו מורשה, אנא פנה למנהל המערכת', 403)
         }
 */
+
+        // Check if user has 2FA enabled and request is NOT from the 2FA login endpoint
+        if (user.twoFactorAuth?.enabled && 
+            user.twoFactorAuth?.verified && 
+            !req.headers.get('x-2fa-verified')) {
+          // Block login - require 2FA verification first
+          throw new APIError('נדרש אימות דו-שלבי', 428, { requires2FA: true })
+        }
 
         return user
       },

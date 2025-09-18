@@ -3,7 +3,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 //import type { Permissions } from 'payload/auth'
 import type { User } from '@/payload-types'
-import type { AuthContext, ForgotPassword, Login, Logout, ResetPassword } from './auth/types'
+import type { 
+  AuthContext, 
+  ForgotPassword, 
+  Login, 
+  LoginWith2FA,
+  Verify2FA,
+  Setup2FA,
+  Disable2FA,
+  RegenerateBackupCodes,
+  Logout, 
+  ResetPassword 
+} from './auth/types'
 import { handleApiError, notifyError } from '@/app/(frontend)/helpers/error-handler'
 import { getWithErrorHandling, postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 
@@ -97,12 +108,128 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [])
 
+  // Enhanced login with 2FA support
+  const loginWith2FA = useCallback<LoginWith2FA>(async (args) => {
+    try {
+      const result = await postWithErrorHandling('/api/users/login-2fa', {
+        email: args.email,
+        password: args.password,
+        totpCode: args.totpCode,
+        backupCode: args.backupCode,
+        isBackupCode: !!args.backupCode,
+      }, {
+        errorMessage: 'שגיאה בהתחברות למערכת',
+        notifyOnError: false
+      })
+
+      // Check if 2FA is required
+      if (result.requires2FA) {
+        return { requiresTwoFactor: true }
+      }
+
+      // Successful login (with or without 2FA)
+      if (result.success && result.user) {
+        setUser(result.user)
+        return { 
+          user: result.user,
+          remainingBackupCodes: result.remainingBackupCodes 
+        }
+      }
+
+      throw new Error('שגיאה בהתחברות')
+      
+    } catch (error) {
+      notifyError({ message: (error as any)?.message || 'שגיאה בהתחברות למערכת' })
+      throw error
+    }
+  }, [])
+
+  // Verify 2FA code
+  const verify2FA = useCallback<Verify2FA>(async (args) => {
+    try {
+      const result = await postWithErrorHandling('/api/users/2fa-verify', {
+        token: args.token,
+        isBackupCode: args.isBackupCode,
+      }, {
+        errorMessage: 'שגיאה באימות דו-שלבי',
+        notifyOnError: false
+      })
+
+      return result.success
+    } catch (error) {
+      notifyError({ message: (error as any)?.message || 'שגיאה באימות דו-שלבי' })
+      throw error
+    }
+  }, [])
+
+  // Setup 2FA
+  const setup2FA = useCallback<Setup2FA>(async () => {
+    try {
+      const result = await postWithErrorHandling('/api/users/2fa-setup', {}, {
+        errorMessage: 'שגיאה בהגדרת אימות דו-שלבי',
+        notifyOnError: false
+      })
+
+      return {
+        qrCode: result.qrCode,
+        manualEntryKey: result.manualEntryKey,
+        backupCodes: result.backupCodes,
+      }
+    } catch (error) {
+      notifyError({ message: (error as any)?.message || 'שגיאה בהגדרת אימות דו-שלבי' })
+      throw error
+    }
+  }, [])
+
+  // Disable 2FA
+  const disable2FA = useCallback<Disable2FA>(async (args) => {
+    try {
+      const result = await postWithErrorHandling('/api/users/2fa-disable', args, {
+        errorMessage: 'שגיאה בביטול אימות דו-שלבי',
+        notifyOnError: false
+      })
+
+      // Refresh user data
+      const updatedUser = await getWithErrorHandling('/api/users/me', {
+        notifyOnError: false
+      })
+      if (updatedUser) {
+        setUser(updatedUser.user)
+      }
+
+      return result.success
+    } catch (error) {
+      notifyError({ message: (error as any)?.message || 'שגיאה בביטול אימות דו-שלבי' })
+      throw error
+    }
+  }, [])
+
+  // Regenerate backup codes
+  const regenerateBackupCodes = useCallback<RegenerateBackupCodes>(async () => {
+    try {
+      const result = await postWithErrorHandling('/api/users/2fa-backup-codes', {}, {
+        errorMessage: 'שגיאה ביצירת קודי גיבוי חדשים',
+        notifyOnError: false
+      })
+
+      return result.backupCodes
+    } catch (error) {
+      notifyError({ message: (error as any)?.message || 'שגיאה ביצירת קודי גיבוי חדשים' })
+      throw error
+    }
+  }, [])
+
   return (
     <Context.Provider
       value={{
         user,
         setUser,
         login,
+        loginWith2FA,
+        verify2FA,
+        setup2FA,
+        disable2FA,
+        regenerateBackupCodes,
         logout,
         forgotPassword,
         resetPassword,

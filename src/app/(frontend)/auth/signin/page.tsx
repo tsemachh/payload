@@ -32,12 +32,14 @@ function SignInContent() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    totpCode: '',
   })
   const [error, setError] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('required')
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
   const idempotencyKey = useRef(uuidv4()).current
-  const { login } = useAuth()
+  const { loginWith2FA } = useAuth()
 
   const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token);
@@ -82,14 +84,24 @@ function SignInContent() {
         return;
       }
 
-      // Then attempt to login
-      await login({
+      // Then attempt to login with 2FA support
+      const result = await loginWith2FA({
         email: formData.email,
         password: formData.password,
+        totpCode: formData.totpCode,
       })
 
-      router.push(callbackUrl)
-      router.refresh()
+      if (result.requiresTwoFactor) {
+        setRequiresTwoFactor(true)
+        setError('')
+        setIsLoading(false)
+        return
+      }
+
+      if (result.user) {
+        router.push(callbackUrl)
+        router.refresh()
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
     } finally {
@@ -106,7 +118,10 @@ function SignInContent() {
           </div>
           <CardTitle className="text-2xl font-bold text-center">התחברות</CardTitle>
           <CardDescription className="text-center">
-            הזן את פרטי ההתחברות שלך כדי להיכנס למערכת
+            {requiresTwoFactor 
+              ? 'הזן את קוד האימות הדו-שלבי כדי להשלים את ההתחברות'
+              : 'הזן את פרטי ההתחברות שלך כדי להיכנס למערכת'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,12 +160,31 @@ function SignInContent() {
                 disabled={isLoading}
               />
             </div>
+            {requiresTwoFactor && (
+              <div className="space-y-2">
+                <Label htmlFor="totpCode">קוד אימות דו-שלבי</Label>
+                <Input
+                  id="totpCode"
+                  type="text"
+                  placeholder="123456"
+                  value={formData.totpCode}
+                  onChange={(e) => setFormData({ ...formData, totpCode: e.target.value })}
+                  required={requiresTwoFactor}
+                  disabled={isLoading}
+                  maxLength={6}
+                  minLength={6}
+                />
+                <p className="text-sm text-muted-foreground">
+                  הזן את הקוד מאפליקציית האימות שלך
+                </p>
+              </div>
+            )}
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || turnstileStatus !== 'success'}
+              disabled={isLoading || turnstileStatus !== 'success' || (requiresTwoFactor && !formData.totpCode)}
             >
-              {isLoading ? 'מתחבר...' : 'התחבר'}
+              {isLoading ? 'מתחבר...' : requiresTwoFactor ? 'אמת קוד' : 'התחבר'}
             </Button>
             <div className="space-y-2 mb-4">
               <Label htmlFor="turnstile">אימות אבטחה</Label>
