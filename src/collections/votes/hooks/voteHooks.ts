@@ -95,8 +95,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
 }) => {
   if (
     req.context?.from == 'migration' ||
-    req.context?.from == 'process' ||
-    req.context?.from == 'calc'
+    req.context?.from == 'process'
   ) {
     return
   }
