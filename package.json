@@ -63,7 +63,7 @@
     "@radix-ui/react-toggle": "^1.1.2",
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
-    "@shefing/authors-info": "^1.0.10",
+    "@shefing/authors-info": "^1.0.15",
     "@shefing/field-type-component-override": "^1.0.5",
     "@shefing/quickfilter": "^1.0.46",
     "@shefing/reset-list-view": "^0.2.6",
