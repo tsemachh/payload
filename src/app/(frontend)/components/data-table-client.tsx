@@ -115,14 +115,19 @@ export function DataTableStatic<T extends Record<string, any>>({
   // Create columns with expand functionality if provided
   const columns = useMemo(() => {
     if (createColumnsWithExpand) {
+      // Pass companies and funds state only if displayMode is 'companies'
+      const companiesState = displayMode === 'companies' ? companiesExpandedRows : {}
+      const setCompaniesState = displayMode === 'companies' ? setCompaniesExpandedRows : () => {}
+      const setFundsState = displayMode === 'companies' ? setFundsExpandedRows : () => {}
+
       // Pass agendas state only if displayMode is 'agenda'
       const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
       const setAgendasState = displayMode === 'agenda' ? setAgendasExpandedRows : undefined
 
       return createColumnsWithExpand(
-        companiesExpandedRows,
-        setCompaniesExpandedRows,
-        setFundsExpandedRows,
+        companiesState,
+        setCompaniesState,
+        setFundsState,
         agendasState,
         setAgendasState,
         data as any,
@@ -1257,7 +1262,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             )
                           }}
                         >
-                          {column.key === 'companies'
+                          {column.key === 'companies' && displayMode === 'companies'
                             ? renderCompaniesCell(
                                 {
                                   ...row,
@@ -1269,11 +1274,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                                 setCompaniesExpandedRows,
                                 setFundsExpandedRows,
                               )
-                            : column.key === 'agenda'
+                            : column.key === 'agenda' && displayMode === 'agenda'
                               ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
                               : column.render
-                              ? column.render(row as MeetingTableDataType & T)
-                              : highlightText(getDisplayValue(row, column.key), searchTerm)}
+                                ? column.render(row as MeetingTableDataType & T)
+                                : highlightText(getDisplayValue(row, column.key), searchTerm)}
                         </TableCell>
                       ))}
                       {renderRowActions && (
