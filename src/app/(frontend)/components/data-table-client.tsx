@@ -104,6 +104,14 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [inputSearchTerm, setInputSearchTerm] = useState('')
+
+  // Scroll position preservation
+  const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      // Store reference for scroll position preservation
+      node.setAttribute('data-scroll-container', 'true')
+    }
+  }, [])
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
@@ -112,17 +120,62 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [currentPage, setCurrentPage] = useState<number>(pagination?.currentPage || 1)
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
+  // Simple scroll preservation function
+  const preserveScrollAndSetState = useCallback(
+    (
+      stateSetter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+      newValue: React.SetStateAction<Record<string, boolean>>,
+    ) => {
+      const container = document.querySelector('[data-scroll-container="true"]') as HTMLDivElement
+      const scrollTop = container?.scrollTop || 0
+
+      stateSetter(newValue)
+
+      // Restore scroll position after React updates DOM
+      if (container && scrollTop > 0) {
+        requestAnimationFrame(() => {
+          container.scrollTop = scrollTop
+        })
+      }
+    },
+    [],
+  )
+
+  // Enhanced state setters with scroll preservation
+  const setCompaniesExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setCompaniesExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setAgendasExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setAgendasExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setFundsExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setFundsExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
   // Create columns with expand functionality if provided
   const columns = useMemo(() => {
     if (createColumnsWithExpand) {
       // Pass companies and funds state only if displayMode is 'companies'
       const companiesState = displayMode === 'companies' ? companiesExpandedRows : {}
-      const setCompaniesState = displayMode === 'companies' ? setCompaniesExpandedRows : () => {}
-      const setFundsState = displayMode === 'companies' ? setFundsExpandedRows : () => {}
+      const setCompaniesState =
+        displayMode === 'companies' ? setCompaniesExpandedRowsWithScroll : () => {}
+      const setFundsState = displayMode === 'companies' ? setFundsExpandedRowsWithScroll : () => {}
 
       // Pass agendas state only if displayMode is 'agenda'
       const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
-      const setAgendasState = displayMode === 'agenda' ? setAgendasExpandedRows : undefined
+      const setAgendasState =
+        displayMode === 'agenda' ? setAgendasExpandedRowsWithScroll : undefined
 
       return createColumnsWithExpand(
         companiesState,
@@ -264,6 +317,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
     return filteredColumns
   }, [columnsOption, columns, columnVisibility, displayMode])
+
   // Component for individual agenda item with tooltip
   const AgendaItem = ({ agenda, index }: { agenda: any; index: number }) => {
     const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
@@ -1022,6 +1076,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         )}
         <div className="rounded-md border cursor-default">
           <div
+            ref={scrollContainerRef}
             className="overflow-auto relative"
             style={{
               maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
@@ -1286,11 +1341,15 @@ export function DataTableStatic<T extends Record<string, any>>({
                                   ),
                                 },
                                 companiesExpandedRows,
-                                setCompaniesExpandedRows,
-                                setFundsExpandedRows,
+                                setCompaniesExpandedRowsWithScroll,
+                                setFundsExpandedRowsWithScroll,
                               )
                             : column.key === 'agenda' && displayMode === 'agenda'
-                              ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
+                              ? renderAgendaCell(
+                                  row,
+                                  agendasExpandedRows,
+                                  setAgendasExpandedRowsWithScroll,
+                                )
                               : column.render
                                 ? column.render(row as MeetingTableDataType & T)
                                 : highlightText(getDisplayValue(row, column.key), searchTerm)}
@@ -1459,7 +1518,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       )}
                     {displayMode === 'agenda' && agendasExpandedRows[row.meetingId] && (
                       <>
-                        {row.agendas.map((agenda: any, index: number) => (
+                        {row.agendas.map((agenda: unknown, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
                             className="bg-muted/40 border-t-0 hover:bg-primary/20"

@@ -100,12 +100,64 @@ export function DataTableServer<T extends Record<string, any>>({
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 50)
-  const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
-  const [agendasExpandedRows, setAgendasExpandedRows] = useState<Record<string, boolean>>({})
-  const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
+  const [companiesExpandedRowsState, setCompaniesExpandedRowsState] = useState<
+    Record<string, boolean>
+  >({})
+  const [agendasExpandedRowsState, setAgendasExpandedRowsState] = useState<Record<string, boolean>>(
+    {},
+  )
+  const [fundsExpandedRowsState, setFundsExpandedRowsState] = useState<Record<string, boolean>>({})
   const [columnVisibility, setColumnVisibility] = useState<{
     [key: string]: boolean
   }>({})
+
+  // Simple scroll preservation function
+  const preserveScrollAndSetState = useCallback(
+    (
+      stateSetter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+      newValue: React.SetStateAction<Record<string, boolean>>,
+    ) => {
+      const container = document.querySelector('[data-scroll-container="true"]') as HTMLDivElement
+      const scrollTop = container?.scrollTop || 0
+
+      stateSetter(newValue)
+
+      // Restore scroll position after React updates DOM
+      if (container && scrollTop > 0) {
+        requestAnimationFrame(() => {
+          container.scrollTop = scrollTop
+        })
+      }
+    },
+    [],
+  )
+
+  // Enhanced state setters that preserve scroll position
+  const setCompaniesExpandedRows = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setCompaniesExpandedRowsState, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setAgendasExpandedRows = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setAgendasExpandedRowsState, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setFundsExpandedRows = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setFundsExpandedRowsState, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  // Use the state values
+  const companiesExpandedRows = companiesExpandedRowsState
+  const agendasExpandedRows = agendasExpandedRowsState
+  const fundsExpandedRows = fundsExpandedRowsState
 
   // Create columns with expand functionality if provided
   const columns = useMemo(() => {
@@ -574,8 +626,7 @@ export function DataTableServer<T extends Record<string, any>>({
               >
                 {columns
                   .filter((column) => {
-                    if (displayMode === 'companies' && column.key === 'agenda') return false
-                    if (displayMode === 'agenda' && column.key === 'companies') return false
+                    if (column.key === 'agenda') return false
                     return true
                   })
                   .map((column) => (
@@ -605,6 +656,11 @@ export function DataTableServer<T extends Record<string, any>>({
         )}
         <div className="rounded-md border cursor-default">
           <div
+            ref={(node) => {
+              if (node) {
+                node.setAttribute('data-scroll-container', 'true')
+              }
+            }}
             className="overflow-auto relative"
             style={{
               maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
