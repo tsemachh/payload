@@ -7,18 +7,19 @@ export type Create = (args: {
   lastName: string
 }) => Promise<User>
 
-export type Login = (args: { email: string; password: string }) => Promise<User>
+export type Login = (args: { email: string; password: string; totpCode?: string }) => Promise<User>
 
 export type LoginWith2FA = (args: { 
   email: string; 
   password: string;
   totpCode?: string;
   backupCode?: string;
-}) => Promise<{ user?: User; requiresTwoFactor?: boolean }>
+}) => Promise<{ user?: User; requiresTwoFactor?: boolean; requiresSetup?: boolean; remainingBackupCodes?: number }>
 
 export type Verify2FA = (args: {
   token: string;
   isBackupCode?: boolean;
+  enableAfterVerification?: boolean;
 }) => Promise<boolean>
 
 export type Setup2FA = () => Promise<{

@@ -46,19 +46,32 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
       }
     }
 
-    // Step 2: If no 2FA required, the login succeeded
+    // Step 2: If no 2FA required, perform the actual login
     if (!requiresTwoFactor) {
-      const result = await req.payload.login({
-        collection: 'users',
-        data: { email, password },
-      })
-      
-      return Response.json({
-        success: true,
-        user: result.user,
-        token: result.token,
-        exp: result.exp,
-      })
+      // Use Payload's native login which handles cookies properly
+      try {
+        const loginResult = await req.payload.login({
+          collection: 'users',
+          data: { email, password },
+          req // Pass the request so cookies are set properly
+        })
+
+        // Return success with user data - cookies are automatically set by Payload
+        return new Response(JSON.stringify({
+          success: true,
+          user: loginResult.user,
+          token: loginResult.token,
+          exp: loginResult.exp,
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            // Let Payload's built-in auth cookies be set automatically
+          }
+        })
+      } catch (error) {
+        return Response.json({ error: 'שגיאה בהתחברות' }, { status: 401 })
+      }
     }
 
     // Step 3: 2FA is required - check if code is provided
@@ -136,36 +149,43 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
         },
       })
 
-      // Now perform login with special header to bypass 2FA check
-      const headers = new Headers()
-      headers.set('x-2fa-verified', 'true')
+      req.payload.logger.info('2FA verification successful, attempting login for user:', user.email)
       
-      // Create a new request object with the special header
-      const newReq = {
-        ...req,
-        headers: {
-          ...req.headers,
-          get: (name: string) => {
-            if (name === 'x-2fa-verified') return 'true'
-            return req.headers.get(name)
+      // Now perform login with context flag to bypass 2FA check
+      // Set a context flag that the beforeLogin hook can check
+      req.context = { ...req.context, '2fa-verified': true }
+      
+      req.payload.logger.info('Context set for 2FA bypass:', req.context)
+
+      try {
+        const loginResult = await req.payload.login({
+          collection: 'users',
+          data: { email, password },
+          req // Pass the original request so cookies are set properly
+        })
+
+        req.payload.logger.info('Login successful, user authenticated:', loginResult.user.email)
+        req.payload.logger.info('Login result token:', loginResult.token ? 'Present' : 'Missing')
+
+        // Return exactly the same format as the working non-2FA case
+        return new Response(JSON.stringify({
+          success: true,
+          user: loginResult.user,
+          token: loginResult.token,
+          exp: loginResult.exp,
+          remainingBackupCodes: (isBackupCode || backupCode) ? 
+            updatedBackupCodes?.filter(code => !code.used).length : undefined
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            // Let Payload's built-in auth cookies be set automatically
           }
-        }
+        })
+      } catch (loginError) {
+        req.payload.logger.error('Login failed after 2FA verification:', loginError)
+        return Response.json({ error: 'שגיאה בהתחברות אחרי אימות דו-שלבי' }, { status: 500 })
       }
-
-      const loginResult = await req.payload.login({
-        collection: 'users',
-        data: { email, password },
-        req: newReq
-      })
-
-      return Response.json({
-        success: true,
-        user: loginResult.user,
-        token: loginResult.token,
-        exp: loginResult.exp,
-        remainingBackupCodes: (isBackupCode || backupCode) ? 
-          updatedBackupCodes?.filter(code => !code.used).length : undefined
-      })
 
     } else {
       // Increment failure count

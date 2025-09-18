@@ -9,7 +9,6 @@ import { CompaniesProvider } from './context/companiesContext'
 import { ErrorDialogProvider } from './context/error-dialog-context'
 import { ImpersonationProvider } from '@/plugins/impersonate/components'
 import { NavigationGuardProvider } from 'next-navigation-guard'
-import { LogtailProvider } from './providers/logtail-provider'
 import { RouteTracker } from './components/route-tracker'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const appVersion = process.env.APP_VERSION || process.env.BUILD_TIME || Date.now().toString()
-  
+
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <head>
@@ -34,8 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`useTw ${inter.className}`} suppressHydrationWarning>
         <AuthProvider>
-          <LogtailProvider>
-            <ImpersonationProvider checkInterval={600000}>
+          <ImpersonationProvider checkInterval={600000}>
             <CompaniesProvider>
               <ErrorDialogProvider>
                 <ThemeProvider
@@ -56,8 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </ThemeProvider>
               </ErrorDialogProvider>
             </CompaniesProvider>
-            </ImpersonationProvider>
-          </LogtailProvider>
+          </ImpersonationProvider>
         </AuthProvider>
       </body>
     </html>

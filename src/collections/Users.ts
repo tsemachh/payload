@@ -530,26 +530,88 @@ export const Users: CollectionConfig = {
     ],
     beforeLogin: [
       async ({ user, req }) => {
+        req.payload.logger.info('beforeLogin hook called for user:', user.email)
+
         if (!user.active) {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
         if (user.isSystem) {
           throw new APIError('המשתמש מערכת אינו מורשה, אנא פנה למנהל המערכת', 403)
         }
-        /*
-        if (!user.isAdmin) {
-          throw new APIError('המשתמש אינו מורשה, אנא פנה למנהל המערכת', 403)
-        }
-*/
 
-        // Check if user has 2FA enabled and request is NOT from the 2FA login endpoint
-        if (user.twoFactorAuth?.enabled && 
-            user.twoFactorAuth?.verified && 
-            !req.headers.get('x-2fa-verified')) {
-          // Block login - require 2FA verification first
-          throw new APIError('נדרש אימות דו-שלבי', 428, { requires2FA: true })
+        // Check if user has 2FA enabled and verified
+        if (user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified) {
+          req.payload.logger.info('User has 2FA enabled, checking for TOTP code')
+          
+          // Get the request body to check for totpCode
+          const body = req.data || {}
+          const { totpCode } = body
+          
+          if (!totpCode) {
+            req.payload.logger.info('No TOTP code provided, requiring 2FA')
+            throw new APIError('נדרש אימות דו-שלבי', 428, { requires2FA: true })
+          }
+          
+          req.payload.logger.info('TOTP code provided, verifying...')
+          
+          // Verify the TOTP code inline
+          const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import('@/utils/totpUtils')
+          
+          // Check rate limiting
+          const rateLimitCheck = checkRateLimit(
+            user.twoFactorAuth.failureCount || 0,
+            user.twoFactorAuth.lastFailureTime ? new Date(user.twoFactorAuth.lastFailureTime) : undefined
+          )
+          
+          if (rateLimitCheck.isLocked) {
+            throw new APIError(`חשבון נחסם זמנית. נסה שוב בעוד ${rateLimitCheck.remainingTime} דקות`, 429)
+          }
+          
+          try {
+            const decryptedSecret = decryptTOTPSecret(user.twoFactorAuth.secret!)
+            const isValid = verifyTOTPToken(totpCode, decryptedSecret)
+            
+            if (!isValid) {
+              // Increment failure count
+              const newFailureCount = (user.twoFactorAuth.failureCount || 0) + 1
+              
+              await req.payload.update({
+                collection: 'users',
+                id: user.id,
+                data: {
+                  twoFactorAuth: {
+                    ...user.twoFactorAuth,
+                    failureCount: newFailureCount,
+                    lastFailureTime: new Date().toISOString(),
+                  }
+                },
+              })
+              
+              throw new APIError('קוד אימות דו-שלבי שגוי', 401)
+            }
+            
+            req.payload.logger.info('2FA verification successful, allowing login')
+            
+            // Reset failure count on successful verification
+            await req.payload.update({
+              collection: 'users',
+              id: user.id,
+              data: {
+                twoFactorAuth: {
+                  ...user.twoFactorAuth,
+                  lastUsed: new Date().toISOString(),
+                  failureCount: 0,
+                }
+              },
+            })
+            
+          } catch (error) {
+            req.payload.logger.error('2FA verification error:', error)
+            throw new APIError('שגיאה באימות הקוד', 500)
+          }
         }
 
+        req.payload.logger.info('beforeLogin hook completed successfully')
         return user
       },
     ],

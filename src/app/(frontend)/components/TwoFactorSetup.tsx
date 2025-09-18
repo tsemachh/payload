@@ -57,6 +57,7 @@ export function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupProps) {
       const isValid = await verify2FA({
         token: verificationCode,
         isBackupCode: false,
+        enableAfterVerification: true,
       })
 
       if (isValid) {
