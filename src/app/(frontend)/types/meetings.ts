@@ -157,6 +157,16 @@ export interface DataTableProps<T extends Record<string, any>> {
   removeAll?: string
   displayMode?: 'companies' | 'agenda' // New prop for display mode
   selectedCompanyIds?: string[]
+  createColumnsWithExpand?: (
+    companiesExpandedRows: Record<string, boolean>,
+    setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+    setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+    agendasExpandedRows: Record<string, boolean> | undefined,
+    setAgendasExpandedRows:
+      | React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+      | undefined,
+    data: MeetingTableDataType[],
+  ) => Column<MeetingTableDataType>[]
 }
 
 export interface UrlFilenameMap {

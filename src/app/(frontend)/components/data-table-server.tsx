@@ -50,7 +50,11 @@ import type {
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
-import { renderCompaniesCell, renderFundsCell } from '../meetings/renderExpandableCell'
+import {
+  renderCompaniesCell,
+  renderFundsCell,
+  renderAgendaCell,
+} from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
 import CustomRadio from './custom-radio'
 import { format } from 'date-fns'
@@ -61,7 +65,7 @@ import { BooleanIcon } from './ui/icons'
 
 export function DataTableServer<T extends Record<string, any>>({
   data = [],
-  columns,
+  columns: initialColumns,
   pastDateFilterOptions = [],
   futureDateFilterOptions = [],
   idField,
@@ -72,7 +76,7 @@ export function DataTableServer<T extends Record<string, any>>({
   searchPlaceholder = 'חיפוש כללי...',
   filterLabel = 'סינון',
   columnsLabel = 'עמודות',
-  defaultVisibleColumns = columns.map((column) => column.key),
+  defaultVisibleColumns = initialColumns.map((column) => column.key),
   pagination,
   isLoading = false,
   onServerSort,
@@ -90,15 +94,44 @@ export function DataTableServer<T extends Record<string, any>>({
   selectAll = 'בחר הכל',
   removeAll = 'הסר הכל',
   selectedCompanyIds,
+  createColumnsWithExpand,
+  displayMode,
 }: DataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 50)
   const [companiesExpandedRows, setCompaniesExpandedRows] = useState<Record<string, boolean>>({})
+  const [agendasExpandedRows, setAgendasExpandedRows] = useState<Record<string, boolean>>({})
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [columnVisibility, setColumnVisibility] = useState<{
     [key: string]: boolean
   }>({})
+
+  // Create columns with expand functionality if provided
+  const columns = useMemo(() => {
+    if (createColumnsWithExpand) {
+      // Pass agendas state only if displayMode is 'agenda'
+      const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
+      const setAgendasState = displayMode === 'agenda' ? setAgendasExpandedRows : undefined
+
+      return createColumnsWithExpand(
+        companiesExpandedRows,
+        setCompaniesExpandedRows,
+        setFundsExpandedRows,
+        agendasState,
+        setAgendasState,
+        data as any,
+      )
+    }
+    return initialColumns
+  }, [
+    createColumnsWithExpand,
+    companiesExpandedRows,
+    agendasExpandedRows,
+    data,
+    initialColumns,
+    displayMode,
+  ])
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [inputSearchTerm, setInputSearchTerm] = useState(initialSearchTerm)
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
@@ -891,12 +924,14 @@ export function DataTableServer<T extends Record<string, any>>({
                                 setCompaniesExpandedRows,
                                 setFundsExpandedRows,
                               )
-                            : column.render
-                              ? column.render(row)
-                              : highlightText(
-                                  String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
-                                  searchTerm,
-                                )}
+                            : column.key === 'agenda'
+                              ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
+                              : column.render
+                                ? column.render(row as MeetingTableDataType & T)
+                                : highlightText(
+                                    String(row[column.key] === '-' ? '' : (row[column.key] ?? '')),
+                                    searchTerm,
+                                  )}
                         </TableCell>
                       ))}
                       {renderRowActions && (
@@ -1057,6 +1092,39 @@ export function DataTableServer<T extends Record<string, any>>({
                             ))}
                         </>
                       )}
+                    {agendasExpandedRows[row.meetingId] && (
+                      <>
+                        {row.agendas?.map((agenda: any, index: number) => (
+                          <TableRow
+                            key={`agenda-${row.meetingId}-${index}`}
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                          >
+                            <TableCell className="py-2 px-3"></TableCell>
+                            {visibleColumns.slice(1).map((column, columnIndex) => (
+                              <TableCell
+                                key={`agenda-${row.meetingId}-${index}-${String(column.key)}`}
+                                className="py-2 px-3 whitespace-nowrap"
+                                style={{ textAlign: 'right' }}
+                              >
+                                {columnIndex === 0 && (
+                                  <div className="relative">
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                      <span className="shrink-0">{index + 1}.</span>
+                                      <span className="truncate">{agenda.text}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </TableCell>
+                            ))}
+                            {renderRowActions && (
+                              <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
+                                {renderRowActions(row)}
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
                   </React.Fragment>
                 ))}
               </TableBody>

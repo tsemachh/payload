@@ -2,7 +2,7 @@
 
 import {
   defaultVisibleColumns,
-  meetingColumns,
+  createMeetingColumns,
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
@@ -26,6 +26,7 @@ export function MeetingsTableClient() {
   const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
   const [isExporting, setIsExporting] = useState(false)
   const [fundPassiveMap, setFundPassiveMap] = useState(new Map())
+
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0) {
@@ -264,7 +265,15 @@ export function MeetingsTableClient() {
 
       <DataTableStatic
         data={dataWithPercentages}
-        columns={meetingColumns}
+        columns={createMeetingColumns(
+          {},
+          () => {},
+          () => {},
+          undefined,
+          undefined,
+          [],
+        )}
+        createColumnsWithExpand={createMeetingColumns}
         isLoading={isLoadingMeetings}
         idField="meetingId"
         defaultSortField={'meetingDate' as keyof MeetingTableDataType}

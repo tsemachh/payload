@@ -14,11 +14,83 @@ import {
 } from './filtersConst'
 import { VotingStatusCell } from '../components/VotingStatusCell'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
+import { toggleAllCompanies, toggleAllAgendas } from './renderExpandableCell'
+import { ChevronDown, ChevronLeft } from 'lucide-react'
+import { Button } from '../components/ui/button'
 
-export const meetingColumns: Column<MeetingTableDataType>[] = [
+// Function to create expand all header for companies
+const createCompaniesExpandHeader = (
+  companiesExpandedRows: Record<string, boolean>,
+  setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  data: MeetingTableDataType[],
+) => {
+  const allMeetingIds = data.map((row) => row.meetingId)
+  const allExpanded = allMeetingIds.every((id) => companiesExpandedRows[id])
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="p-0 h-6 w-6"
+        onClick={(e) => {
+          e.stopPropagation()
+          toggleAllCompanies(
+            data,
+            companiesExpandedRows,
+            setCompaniesExpandedRows,
+            setFundsExpandedRows,
+          )
+        }}
+        title={allExpanded ? 'סגור את כל החברות' : 'פתח את כל החברות'}
+      >
+        {allExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </Button>
+      <span>חברות</span>
+    </div>
+  )
+}
+
+// Function to create expand all header for agendas
+const createAgendasExpandHeader = (
+  agendasExpandedRows: Record<string, boolean>,
+  setAgendasExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  data: MeetingTableDataType[],
+) => {
+  const allMeetingIds = data.map((row) => row.meetingId)
+  const allExpanded = allMeetingIds.every((id) => agendasExpandedRows[id])
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="p-0 h-6 w-6"
+        onClick={(e) => {
+          e.stopPropagation()
+          toggleAllAgendas(data, agendasExpandedRows, setAgendasExpandedRows)
+        }}
+        title={allExpanded ? 'סגור את כל סדרי היום' : 'פתח את כל סדרי היום'}
+      >
+        {allExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </Button>
+      <span>סדר יום</span>
+    </div>
+  )
+}
+
+export const createMeetingColumns = (
+  companiesExpandedRows: Record<string, boolean>,
+  setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  agendasExpandedRows: Record<string, boolean> | undefined,
+  setAgendasExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>> | undefined,
+  data: MeetingTableDataType[] = [],
+): Column<MeetingTableDataType>[] => [
   {
-    key: 'agendas',
-    header: 'סדר היום',
+    key: 'information',
+    header: 'מידע על ההצבעה',
     noHeader: true,
     type: 'other',
     isAlwaysVisible: true,
@@ -26,7 +98,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     render: (row) => {
       return <AgendaTooltipWithNavigation row={row} />
     },
-    minWidth: 20,
+    minWidth: 30,
   },
   {
     key: 'companies',
@@ -34,15 +106,26 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'string',
     sortKey: 'companies',
     minWidth: 50,
-    width: 50,
+    width: 80,
+    renderHeader: () =>
+      createCompaniesExpandHeader(
+        companiesExpandedRows,
+        setCompaniesExpandedRows,
+        setFundsExpandedRows,
+        data,
+      ),
   },
   {
     key: 'agenda',
     header: 'סדר יום',
     type: 'string',
     sortKey: 'agendas',
-    minWidth: 50,
-    width: 50,
+    minWidth: 80,
+    width: 80,
+    renderHeader: () =>
+      agendasExpandedRows && setAgendasExpandedRows
+        ? createAgendasExpandHeader(agendasExpandedRows, setAgendasExpandedRows, data)
+        : 'סדר יום',
   },
   {
     key: 'stockNumber',
@@ -68,7 +151,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.stockTradable} showX={false}/>,
+    render: (row) => <BooleanIcon iconType={row.stockTradable} showX={false} />,
     minWidth: 40,
   },
   {
@@ -133,8 +216,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     key: 'nominalValue',
     header: 'ערך נקוב ליום קובע',
     type: 'number',
-    render: (row) =>
-      formatNumberWithLocale(row.nominalValue, 0, 'he-IL'),
+    render: (row) => formatNumberWithLocale(row.nominalValue, 0, 'he-IL'),
     minWidth: 90,
   },
   {
@@ -148,8 +230,7 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     key: 'holdingValueInMillions',
     header: 'שווי החזקה  (מיליוני ₪)',
     type: 'number',
-    render: (row) =>
-      formatNumberWithLocale(row.holdingValueInMillions, 0, 'he-IL'),
+    render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 0, 'he-IL'),
     minWidth: 90,
   },
   { key: 'reference', header: 'אסמכתא', type: 'string', minWidth: 120 },
@@ -234,13 +315,24 @@ export const meetingColumns: Column<MeetingTableDataType>[] = [
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.committeeInitiated} showX={false}/>,
+    render: (row) => <BooleanIcon iconType={row.committeeInitiated} showX={false} />,
     minWidth: 70,
   },
 ]
+
+// Legacy export for backward compatibility
+export const meetingColumns: Column<MeetingTableDataType>[] = createMeetingColumns(
+  {},
+  () => {},
+  () => {},
+  {},
+  () => {},
+  [],
+)
 export const defaultVisibleColumns = [
-  'agendas',
+  'information',
   'companies',
+  'agenda',
   'stockNumber',
   'stockType',
   'stockName',

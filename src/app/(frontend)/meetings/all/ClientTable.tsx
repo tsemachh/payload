@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DataTableServer } from '@/components/data-table-server'
-import { meetingColumns, renderMeetingActions } from '../meetingTableConstants'
+import { createMeetingColumns, renderMeetingActions } from '../meetingTableConstants'
 import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
@@ -210,7 +210,15 @@ export function MeetingsTableServer() {
 
       <DataTableServer
         data={dataWithPercentages}
-        columns={meetingColumns}
+        columns={createMeetingColumns(
+          {},
+          () => {},
+          () => {},
+          undefined,
+          undefined,
+          [],
+        )}
+        createColumnsWithExpand={createMeetingColumns}
         idField="meetingId"
         defaultSortField={sortField as keyof MeetingTableDataType}
         defaultSortDirection={sortDirection}
