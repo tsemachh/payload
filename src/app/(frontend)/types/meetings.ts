@@ -49,6 +49,7 @@ export type CompanyTableDate = {
   holdingValueInMillions: number
   nominalValue: number
   funds: FundType[]
+  originalStockIds?: any[]
 }
 
 export type FundType = {
@@ -59,6 +60,7 @@ export type FundType = {
   nominalValue: number
   parentCompany?: TreeCompanyType // Parent company structure
   passiveFund?: boolean
+  originalStockIds?: any[]
 }
 
 export type AgendasType = {

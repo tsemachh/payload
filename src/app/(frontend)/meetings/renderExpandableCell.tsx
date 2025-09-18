@@ -8,8 +8,12 @@ export function renderCompaniesCell<T>(
   row: T,
   companiesExpandedRows: Record<string, boolean>,
   setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
 ) {
   if ((row as any).companies?.length === 0) return null
+  const companyIds: string[] = ((row as any).companies as CompanyTableDate[])?.map(
+    (company) => company.id,
+  )
   return (
     <div className="flex items-center justify-start w-[20px] p-0 m-0">
       <Button
@@ -19,6 +23,7 @@ export function renderCompaniesCell<T>(
         onClick={(e) => {
           e.stopPropagation()
           toggleRowExpansion((row as any).meetingId, setCompaniesExpandedRows)
+          toggleMultipleRows(companyIds, setFundsExpandedRows, true)
         }}
       >
         {companiesExpandedRows[(row as any).meetingId] ? (
@@ -115,4 +120,18 @@ function toggleRowExpansion(
     ...prev,
     [id]: !prev[id],
   }))
+}
+
+function toggleMultipleRows(
+  ids: string[],
+  setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  expand: boolean,
+) {
+  setExpanded((prev) => {
+    const updated = { ...prev }
+    ids?.forEach((id) => {
+      updated[id] = expand
+    })
+    return updated
+  })
 }

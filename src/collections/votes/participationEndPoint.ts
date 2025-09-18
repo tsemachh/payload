@@ -213,6 +213,7 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
         company: true,
         votes: true,
       },
+      sort: 'meeting.meetingDate',
       limit: batchSize,
       page,
       overrideAccess: true,
@@ -287,7 +288,6 @@ async function fetchAndProcessVotesData(
         votes: true,
       },
       collection: 'meetings',
-      sort: '-meetingDate',
       where: { id: { in: uniqueMeetingIds } },
       depth: 1,
       limit: 0,
@@ -363,6 +363,7 @@ async function fetchAndProcessVotesData(
         company: true,
         votes: true,
       },
+      sort: 'meeting.meetingDate',
       limit: pageSize,
       page: page,
       overrideAccess: true,
@@ -553,7 +554,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
           : `attachment; filename="${reportName}.xlsx"`
-        return new Response(excelBuffer, {
+        return new Response(Buffer.from(excelBuffer), {
           status: 200,
           headers: {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -566,7 +567,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         const contentDisposition = /[^\x00-\x7F]/.test(reportName)
           ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
           : `attachment; filename="${reportName}.pdf"`
-        return new Response(pdfBytes, {
+        return new Response(Buffer.from(pdfBytes), {
           status: 200,
           headers: {
             'Content-Type': 'application/pdf',
@@ -579,7 +580,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
     const totalPages = Math.ceil(totalItems / pageSize)
     return createSuccessResponse(processedData, totalItems, totalPages)
-  } catch (error: any) {
+  } catch (error: unknown) {
     return createErrorResponse(error, 'Failed to fetch votes')
   }
 }

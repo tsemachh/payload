@@ -29,7 +29,14 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
   }
 }
 
-export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req }) => {
+export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req ,originalDoc}) => {
+  
+  if (data._status === 'published') {
+    if (originalDoc?.publishedchecksum != '' && originalDoc?.publishedchecksum != data.checksum) {
+      data.reported = false
+      data.publishedchecksum = data.checksum
+    }}
+
   const meetingId = data?.meeting
   const votes = data?.votes
 
@@ -86,7 +93,10 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   previousDoc,
   req,
 }) => {
-  if (req.context?.from == 'migration' || req.context?.from == 'process') {
+  if (
+    req.context?.from == 'migration' ||
+    req.context?.from == 'process'
+  ) {
     return
   }
   const reportedChanged = doc.reported !== previousDoc?.reported
@@ -95,8 +105,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   const statusChangedFromDraftToPublished =
     previousDoc?._status === 'draft' && doc._status === 'published'
   const statusChanged = statusChangedFromPublishedToDraft || statusChangedFromDraftToPublished
-
-  // Recalculate meeting vote counts when reported status changes or status changes between published and draft
+ 
   if (
     (doc._status === 'published' && reportedChanged && doc.meeting) ||
     (statusChanged && doc.meeting)
