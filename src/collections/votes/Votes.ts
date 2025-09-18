@@ -190,6 +190,14 @@ export const Votes: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'publishedchecksum',
+                  type: 'text',
+                  defaultValue:'',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'isInterested',
                   label: 'בעל עניין',
                   type: 'checkbox',
@@ -435,3 +443,5 @@ export const Votes: CollectionConfig = {
     },
   ],
 }
+
+

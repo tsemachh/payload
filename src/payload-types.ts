@@ -699,6 +699,7 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   checksum?: string | null;
+  publishedchecksum?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1618,6 +1619,7 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   checksum?: T;
+  publishedchecksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
