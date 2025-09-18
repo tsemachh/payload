@@ -14,10 +14,6 @@ import { handleApiError, notifyError } from '../helpers/error-handler'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
-import { Button } from '@/components/ui/button'
-import { FaFileExcel } from 'react-icons/fa'
 import { checksum } from '@/app/(frontend)/lib/checksum'
 
 export function MeetingsTableClient() {
@@ -125,7 +121,6 @@ export function MeetingsTableClient() {
       return 'בחר חברות'
     }
 
-    const totalFundIds = funds.map((fund) => fund.id)
     const totalCompaniesIds = companies.map((com) => com.id)
     const allIds = [...totalCompaniesIds]
     const allSelected =

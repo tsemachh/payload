@@ -1520,7 +1520,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                                   {renderRowActions && (
                                     <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                      {renderRowActions(row)}
+                                      {/* Empty cell for company rows */}
                                     </TableCell>
                                   )}
                                 </TableRow>
@@ -1585,7 +1585,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                                           {renderRowActions && (
                                             <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                              {renderRowActions(row)}
+                                              {/* Empty cell for fund rows */}
                                             </TableCell>
                                           )}
                                         </TableRow>
@@ -1617,7 +1617,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             ))}
                             {renderRowActions && (
                               <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                {renderRowActions(row)}
+                                {/* Empty cell for agenda rows */}
                               </TableCell>
                             )}
                           </TableRow>

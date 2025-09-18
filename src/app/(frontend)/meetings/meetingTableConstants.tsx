@@ -142,10 +142,10 @@ export const createMeetingColumns = (
     type: 'enum',
     filterable: true,
     options: stockTypeOptions,
-    minWidth: 60,
+    minWidth: 90,
   },
-  { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 100 },
-  { key: 'companyName', header: 'שם תאגיד', type: 'string', minWidth: 120 },
+  { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 130 },
+  { key: 'companyName', header: 'שם תאגיד', type: 'string', minWidth: 130 },
   { key: 'stockSymbol', header: 'סימול', type: 'string', minWidth: 100 },
   {
     key: 'stockTradable',
@@ -154,7 +154,7 @@ export const createMeetingColumns = (
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.stockTradable} showX={false} />,
-    minWidth: 40,
+    minWidth: 70,
   },
   {
     key: 'stockOrigin',
@@ -309,7 +309,7 @@ export const createMeetingColumns = (
     filterable: true,
     positionCenter: true,
     render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} showX={false} />,
-    minWidth: 70,
+    minWidth: 80,
   },
   {
     key: 'committeeInitiated',

@@ -8,8 +8,6 @@ import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
 import { useCompaniesContext } from '../../context/companiesContext'
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CompanyTreeSelector } from '../../holdings/components/CompanySelector'
 import useSWR from 'swr'
 import { checksum } from '@/app/(frontend)/lib/checksum'
 

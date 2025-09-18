@@ -746,7 +746,7 @@ export function DataTableServer<T extends Record<string, any>>({
               maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
             }}
           >
-            <Table className="table-fixed w-full border-collapse relative" dir="rtl">
+            <Table className="table-auto w-full border-collapse relative" dir="rtl">
               <TableHeader className="sticky top-0 bg-background z-20 bg-secondary">
                 <TableRow className="bg-muted border-b border-border hover:bg-muted/80">
                   {visibleColumns.map((column) => (
@@ -1018,7 +1018,7 @@ export function DataTableServer<T extends Record<string, any>>({
                       </div>
                     </TableHead>
                   ))}
-                  {renderRowActions && <TableHead className="sticky left-0 z-10 w-0"></TableHead>}
+                  {renderRowActions && <TableHead className="sticky left-0 z-[-1] w-0"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1170,7 +1170,7 @@ export function DataTableServer<T extends Record<string, any>>({
 
                                   {renderRowActions && (
                                     <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                      {renderRowActions(row)}
+                                      {/* Empty cell for company rows */}
                                     </TableCell>
                                   )}
                                 </TableRow>
@@ -1231,7 +1231,7 @@ export function DataTableServer<T extends Record<string, any>>({
 
                                           {renderRowActions && (
                                             <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                              {renderRowActions(row)}
+                                              {/* Empty cell for fund rows */}
                                             </TableCell>
                                           )}
                                         </TableRow>
@@ -1268,7 +1268,7 @@ export function DataTableServer<T extends Record<string, any>>({
                             ))}
                             {renderRowActions && (
                               <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                {renderRowActions(row)}
+                                {/* Empty cell for agenda rows */}
                               </TableCell>
                             )}
                           </TableRow>
