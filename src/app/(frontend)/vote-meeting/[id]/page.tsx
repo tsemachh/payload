@@ -106,30 +106,44 @@ export default function VotingForm() {
       revalidateOnFocus: false,
     },
   )
+  const checkImpersonation = async () => {
+  try {
+    const res = await fetch('/api/users/impersonate/status');
+    const { isImpersonating } = await res.json();
+    return Boolean(isImpersonating); 
+  } catch {
+    return false; 
+  }
+};
 
-  useEffect(() => {
+ 
+ useEffect(() => {
+  const run = async () => {
     if (meetingData) {
-      // Check date restriction
       let isReadOnlyDueToDate = false
       if (meetingData.proxyVotingDate) {
         const proxyVotingDate = new Date(meetingData.proxyVotingDate)
         const now = new Date()
-        if (proxyVotingDate < now) {
+
+        const impersonating = await checkImpersonation()
+
+        if (proxyVotingDate < now && impersonating!= true) {
           isReadOnlyDueToDate = true
         }
       }
 
-      // Check permission restriction
       let isReadOnlyDueToPermission = false
       if (user && meetingData?.companies.length > 0) {
-        // Check if user has write permission for this company
-        const hasWritePermission = hasCompanyPermission(user, meetingData?.companies[0].id, 'write')
+        const hasWritePermission = hasCompanyPermission(
+          user,
+          meetingData?.companies[0].id,
+          'write'
+        )
         if (!hasWritePermission) {
           isReadOnlyDueToPermission = true
         }
       }
 
-      // Set read-only reason based on which restriction applies
       if (isReadOnlyDueToPermission) {
         setReadOnlyReason('permission')
       } else if (isReadOnlyDueToDate) {
@@ -138,10 +152,12 @@ export default function VotingForm() {
         setReadOnlyReason(null)
       }
 
-      // Set read-only if either restriction applies
       setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-  }, [meetingData, user])
+  }
+
+  run()
+}, [meetingData, user])
 
   useEffect(() => {
     if (meetingDataError) {
