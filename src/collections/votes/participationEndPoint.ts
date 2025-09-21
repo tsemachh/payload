@@ -551,10 +551,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
       if (exportFormat === 'excel') {
         const excelBuffer = await generateParticipationsExcel(processedData, exportOptions)
-        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
-          : `attachment; filename="${reportName}.xlsx"`
-        return new Response(Buffer.from(excelBuffer), {
+        const excelUint8Array = new Uint8Array(excelBuffer)
+        return new Response(excelUint8Array, {
           status: 200,
           headers: {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -564,10 +562,8 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         })
       } else {
         const pdfBytes = await generateParticipationsPDF(processedData, exportOptions)
-        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
-          : `attachment; filename="${reportName}.pdf"`
-        return new Response(Buffer.from(pdfBytes), {
+        const pdfUint8Array = new Uint8Array(pdfBytes)
+        return new Response(pdfUint8Array, {
           status: 200,
           headers: {
             'Content-Type': 'application/pdf',
