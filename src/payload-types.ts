@@ -640,6 +640,23 @@ export interface Meeting {
   isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
+  stockType?:
+    | (
+        | 'מניות'
+        | 'אופציות'
+        | 'איגרות חוב'
+        | 'איגרות חוב להמרה'
+        | 'יחידת השתתפות'
+        | 'תעודות מדד'
+        | 'תעודות סל'
+        | 'קרנות נאמנות'
+        | 'נייר ערך מסחרי'
+        | 'אחר'
+        | 'זכויות'
+        | 'מק"מ'
+        | 'שטרי הון'
+      )
+    | null;
   type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
@@ -684,6 +701,7 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   checksum?: string | null;
+  publishedchecksum?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1283,6 +1301,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   isFinancialStock?: T;
   isDualStock?: T;
   stockOrigin?: T;
+  stockType?: T;
   type?: T;
   meetingId?: T;
   magnaId?: T;
@@ -1604,6 +1623,7 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   checksum?: T;
+  publishedchecksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
