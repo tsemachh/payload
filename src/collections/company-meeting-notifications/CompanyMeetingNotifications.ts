@@ -48,6 +48,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
         { label: 'הצבעה תנעל בקרוב', value: 'before-voting-end' },
         { label: 'העדר הזנת החזקות', value: 'holdings-not-fed' },
         { label: 'כניסה לחשבון שלך', value: 'user-impersonation' },
+        { label: 'עדכון באסיפה ', value: 'meeting-updated' },
       ],
       required: true,
     },

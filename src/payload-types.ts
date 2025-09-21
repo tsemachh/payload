@@ -176,7 +176,8 @@ export type UserNotificationType =
   | 'after-holding-limit'
   | 'before-voting-end'
   | 'holdings-not-fed'
-  | 'user-impersonation';
+  | 'user-impersonation'
+  | 'meeting-updated';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -700,6 +701,7 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   checksum?: string | null;
+  publishedchecksum?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -1621,6 +1623,7 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   checksum?: T;
+  publishedchecksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;

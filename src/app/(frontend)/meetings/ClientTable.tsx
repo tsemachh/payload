@@ -10,11 +10,12 @@ import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
-import { handleApiError, notifyError } from '../helpers/error-handler'
+import { handleAndNotifyError, handleApiError, notifyError } from '../helpers/error-handler'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
 import { checksum } from '@/app/(frontend)/lib/checksum'
+import { downloadFileWithErrorHandling } from '../helpers/fetch-helpers'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -148,7 +149,6 @@ export function MeetingsTableClient() {
       // Add export parameter
       params.append('export', 'true')
       const storedColumns = localStorage.getItem(`columnVisibility-${'meetings-table'}`)
-      console.log('storedColumns', storedColumns)
       if (storedColumns) {
         params.append('columns', storedColumns)
       }
@@ -158,33 +158,17 @@ export function MeetingsTableClient() {
       if (params.toString()) {
         exportUrl += `?${params.toString()}`
       }
-      // Make API call to get export data using our helper
-      // We need to handle the blob response manually since our helper expects JSON
-      const response = await fetch(exportUrl)
 
-      if (!response.ok) {
-        // Use our error handling utility
-        const errorText = await response.text().catch(() => 'Unknown error')
-        throw new Error(errorText || `HTTP error! status: ${response.status}`)
-      }
+      const fileName = 'דו״ח השתתפות.xlsx'
 
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'דו"ח השתתפות.xlsx'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      console.log('הקובץ הורד בהצלחה!')
-    } catch (error) {
-      // Use our error handling utility
-      handleApiError(error, 'שגיאה בייצוא הקובץ')
-      notifyError({
-        message: 'הייתה שגיאה בהורדת הקובץ. אנא נסה שוב מאוחר יותר.',
+      await downloadFileWithErrorHandling(exportUrl, fileName, {
+        errorMessage: 'שגיאה בייצוא הקובץ',
+        headers: {
+          Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
       })
+    } catch (error) {
+      handleAndNotifyError(error, 'שגיאה בייצוא הקובץ')
     } finally {
       setIsExporting(false)
     }
