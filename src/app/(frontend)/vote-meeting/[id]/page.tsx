@@ -61,6 +61,7 @@ import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
 import { hasCompanyPermission } from '@/utils/permissions'
 import { useAuth } from '@/providers/auth-provider'
+import { useImpersonation } from '@/plugins/impersonate/components'
 
 export default function VotingForm() {
   const params = useParams()
@@ -106,16 +107,8 @@ export default function VotingForm() {
       revalidateOnFocus: false,
     },
   )
-  const checkImpersonation = async () => {
-  try {
-    const res = await fetch('/api/users/impersonate/status');
-    const { isImpersonating } = await res.json();
-    return Boolean(isImpersonating); 
-  } catch {
-    return false; 
-  }
-};
 
+ const { isImpersonating } = useImpersonation();
  
  useEffect(() => {
   const run = async () => {
@@ -124,10 +117,7 @@ export default function VotingForm() {
       if (meetingData.proxyVotingDate) {
         const proxyVotingDate = new Date(meetingData.proxyVotingDate)
         const now = new Date()
-
-        const impersonating = await checkImpersonation()
-
-        if (proxyVotingDate < now && impersonating!= true) {
+        if (proxyVotingDate < now && !isImpersonating ) {
           isReadOnlyDueToDate = true
         }
       }
