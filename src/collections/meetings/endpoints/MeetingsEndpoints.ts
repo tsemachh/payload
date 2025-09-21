@@ -396,7 +396,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
+    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User, req)
 
     return createSuccessResponse(
       meetingData.filter((item): item is MeetingTableDataType => item !== null),
@@ -607,6 +607,7 @@ async function processMeetingsData(
   meetings: any[],
   funds?: string[] | null,
   user?: User | null,
+  req?: PayloadRequest,
 ): Promise<(MeetingTableDataType | null)[]> {
   const companyTree = JSON.parse(user?.treeCompanies || '[]')
 
@@ -822,8 +823,14 @@ async function processMeetingsData(
       )
       if (companiesArray.length === 0) {
         console.error(
-          'Emda Error:\nMeeting without funds, The company is invited to the meeting but fund data is missing\nSkipping meeting with ID: ' +
+          '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
             meeting.meetingId,
+          'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 4px;',
+        )
+        req?.payload.logger.error(
+          '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
+            meeting.meetingId,
+          'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 4px;',
         )
         return null
       }

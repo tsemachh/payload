@@ -77,11 +77,12 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
           onRefreshAction(allRecords)
         }, 2000)
       } else {
-        setResultMessage('שגיאה בהוספת החשבון')
+        setResultMessage(null)
       }
     } catch (error) {
       handleAndNotifyError(error, 'שגיאה בהוספת חשבון')
-      setResultMessage('שגיאה כללית בהוספה.')
+      setResultMessage(null)
+      handleClose()
     } finally {
       setLoading(false)
       setTimeout(() => {
@@ -104,9 +105,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle className="direction-rtl text-right">
-              האם להוסיף את החשבון לחברה שנבחרה?
-            </DialogTitle>
+            <DialogTitle className="direction-rtl text-right">הוספת חשבון עבור תיק</DialogTitle>
           </DialogHeader>
 
           {resultMessage ? (

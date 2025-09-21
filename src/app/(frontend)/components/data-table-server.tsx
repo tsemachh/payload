@@ -98,7 +98,7 @@ export function DataTableServer<T extends Record<string, any>>({
   removeAll = 'הסר הכל',
   selectedCompanyIds,
   createColumnsWithExpand,
-  displayMode,
+  displayMode = 'companies',
   showExport = false,
   onExportExcel,
   isExporting = false,
@@ -317,7 +317,15 @@ export function DataTableServer<T extends Record<string, any>>({
   })
 
   const visibleColumns = useMemo(() => {
-    return columns.filter((column) => columnVisibility[column.key as string])
+    let columnsTmp = columns.filter((column) => columnVisibility[column.key as string])
+    // Filter columns based on displayMode
+    if (displayMode === 'companies') {
+      // Show companies column, hide agenda column
+      columnsTmp = columnsTmp.filter((column) => column.key !== 'agenda')
+    } else if (displayMode === 'agenda') {
+      columnsTmp = columnsTmp.filter((column) => column.key !== 'companies')
+    }
+    return columnsTmp
   }, [columns, columnVisibility])
 
   const columnWidths = useMemo(() => {

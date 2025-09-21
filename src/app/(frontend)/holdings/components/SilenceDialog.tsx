@@ -50,12 +50,12 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
         setTimeout(() => {
           onRefreshAction(allRecords)
         }, 2000)
-      } else {
-        setResultMessage('נכשל להשתיק את השגיאות.')
+        setResultMessage(null)
       }
     } catch (error) {
-      handleAndNotifyError(error, 'נכשל להשתיק את השגיאות.')
-      setResultMessage('נכשל להשתיק את השגיאות.')
+      handleAndNotifyError(error, 'השתקת השגיאות נכשלה.')
+      setResultMessage(null)
+      onClose()
     } finally {
       setLoading(false)
       setTimeout(() => {
@@ -79,8 +79,8 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="direction-rtl text-right">
             {stockCount === 1
-              ? 'האם בטוח שברצונך להשתיק את נייר הערך?'
-              : `האם בטוח שברצונך להשתיק ${stockCount} ניירות ערך?`}
+              ? 'האם ברצונך להשתיק את נייר הערך הזה?'
+              : `האם ברצונך להשתיק את ניירות הערך הבאים: ${stockCount} ?`}
           </DialogTitle>
         </DialogHeader>
 
