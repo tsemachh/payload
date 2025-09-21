@@ -221,7 +221,6 @@ export function MeetingsTableServer() {
         pastDateFilterOptions={pastDateFilterOptions}
         futureDateFilterOptions={futureDateFilterOptions}
         selectedCompanyIds={selectedCompanyIds}
-        // New props for integrated functionality
         showCompanySelector={true}
         onCompanySelectionChange={handleCompanySelectionChange}
         getCompanySelectSummary={getCompanySelectSummary}

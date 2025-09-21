@@ -99,7 +99,6 @@ export function DataTableServer<T extends Record<string, any>>({
   selectedCompanyIds,
   createColumnsWithExpand,
   displayMode,
-  // New props
   showExport = false,
   onExportExcel,
   isExporting = false,
@@ -153,16 +152,16 @@ export function DataTableServer<T extends Record<string, any>>({
     [preserveScrollAndSetState],
   )
 
-  const setAgendasExpandedRows = useCallback(
+  const setFundsExpandedRows = useCallback(
     (updater: React.SetStateAction<Record<string, boolean>>) => {
-      preserveScrollAndSetState(setAgendasExpandedRowsState, updater)
+      preserveScrollAndSetState(setFundsExpandedRowsState, updater)
     },
     [preserveScrollAndSetState],
   )
 
-  const setFundsExpandedRows = useCallback(
+  const setAgendasExpandedRows = useCallback(
     (updater: React.SetStateAction<Record<string, boolean>>) => {
-      preserveScrollAndSetState(setFundsExpandedRowsState, updater)
+      preserveScrollAndSetState(setAgendasExpandedRowsState, updater)
     },
     [preserveScrollAndSetState],
   )

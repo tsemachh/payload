@@ -217,7 +217,6 @@ export function MeetingsTableClient() {
         tableHeightOffset={200}
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
-        // New props for integrated functionality
         showExport={true}
         onExportExcel={handleExportExcel}
         isExporting={isExporting}

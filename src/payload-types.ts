@@ -684,6 +684,7 @@ export interface Meeting {
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -713,6 +714,7 @@ export interface Vote {
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1250,7 +1252,7 @@ export interface PayloadQueryPreset {
     | 'documents'
     | 'migration-faults';
   /**
-   * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
   isTemp?: boolean | null;
   updatedAt: string;
@@ -1323,6 +1325,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1632,6 +1635,7 @@ export interface VotesSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
