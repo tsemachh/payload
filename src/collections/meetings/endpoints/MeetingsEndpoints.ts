@@ -398,7 +398,11 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
-    return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
+    return createSuccessResponse(
+      meetingData.filter((item): item is MeetingTableDataType => item !== null),
+      meetings.totalDocs,
+      meetings.totalPages,
+    )
   } catch (error) {
     req.payload.logger.error(`Error in allMeetingsEndpoint: ${JSON.stringify(error)}`)
     return createErrorResponse(error, 'Failed to fetch meetings')
@@ -489,7 +493,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       const encodedFilename = encodeURIComponent('דו"ח השתתפות באסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
 
-      return new Response(buffer, {
+      return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -498,7 +502,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
         },
       })
     }
-    return createSuccessResponse(meetingData, meetings.totalDocs, totalPages)
+    return createSuccessResponse(
+      meetingData.filter((item): item is MeetingTableDataType => item !== null),
+      meetings.totalDocs,
+      totalPages,
+    )
   } catch (error) {
     req.payload.logger.error(`Error in futureMeetingsEndpoint: ${JSON.stringify(error)}`)
     return createErrorResponse(error, 'Failed to fetch future meetings')
@@ -595,7 +603,11 @@ function getDbFieldName(clientField: string): string {
 /**
  * Process meetings data to standardized format for frontend table
  */
-async function processMeetingsData(meetings: any[], funds?: string[] | null, user?: User | null) {
+async function processMeetingsData(
+  meetings: any[],
+  funds?: string[] | null,
+  user?: User | null,
+): Promise<(MeetingTableDataType | null)[]> {
   const companyTree = JSON.parse(user?.treeCompanies || '[]')
 
   // Create a map between fundId and parent company structure from the companyTree
@@ -808,6 +820,13 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           return fullCompany?.researchDocuments?.defaultVotingRecommendation === true
         },
       )
+      if (companiesArray.length === 0) {
+        console.error(
+          'Emda Error:\nMeeting without funds, The company is invited to the meeting but fund data is missing\nSkipping meeting with ID: ' +
+            meeting.meetingId,
+        )
+        return null
+      }
 
       return createMeetingDataObject(
         meeting,
@@ -861,7 +880,11 @@ export const meetingForVotingEndPoint = async (req: PayloadRequest) => {
     // Process results to standardized format
     const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User)
 
-    return createSuccessResponse(meetingData, meetings.totalDocs, meetings.totalPages)
+    return createSuccessResponse(
+      meetingData.filter((item): item is MeetingTableDataType => item !== null),
+      meetings.totalDocs,
+      meetings.totalPages,
+    )
   } catch (error) {
     req.payload.logger.error(`Error in allMeetingsEndpoint: ${JSON.stringify(error)}`)
     return createErrorResponse(error, 'Failed to fetch meetings')
