@@ -84,20 +84,25 @@ async function processMeeting(
     )
 
     const fundsWithHolding = flattenedHoldings.map((h) => {
-      const originalForeignDataArray = Array.isArray(h.holdings[0].originalForeignData)
-        ? h.holdings[0].originalForeignData
-        : [h.holdings[0].originalForeignData]
+      const rawOriginal = h.holdings[0]?.originalForeignData
+      const originalForeignDataArray = rawOriginal
+        ? Array.isArray(rawOriginal)
+          ? rawOriginal
+          : [rawOriginal]
+        : []
 
       const fundId = String(getIdOfRelationField(h.fund))
       return {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
-        quantity: h.holdings[0].quantity,
-        original: originalForeignDataArray.map((item: any) => ({
-          stockId: item.stockId,
-          accountNum: item.accountNum,
-          quantity: item.quantity,
-        })),
+        quantity: h.holdings[0]?.quantity ?? 0,
+        original: originalForeignDataArray
+          .filter(Boolean)
+          .map((item: any) => ({
+            stockId: item.stockId,
+            accountNum: item.accountNum,
+            quantity: item.quantity,
+          })),
       }
     })
     let stockValue = meeting.stockValue
