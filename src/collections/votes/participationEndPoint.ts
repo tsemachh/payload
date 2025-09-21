@@ -101,6 +101,7 @@ async function processVotesData(
           topicIndex: voteItem.topicIndex ?? index + 1,
           text: agendaItem.text || voteItem.text || `פריט ${index + 1}`,
           vote: voteItem.voteDecision || null,
+          voteReason: voteItem.voteReason || null,
           policyCompliance: voteItem.isInvestmentCommittee ?? null,
           conflictOfInterest: voteItem.hasConflictOfInterest ?? null,
           relatedParty: voteItem.isRelatedParty ?? null,

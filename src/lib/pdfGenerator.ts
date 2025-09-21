@@ -15,6 +15,7 @@ const PAGE_HEIGHT = A4[0]
 const MARGIN = 15
 
 const MIN_ROW_HEIGHT = 15
+const VOTE_REASON_ROW_HEIGHT = 10
 
 const FONT_SIZE_HEADER = 7
 const FONT_SIZE_SUBHEADER = 7
@@ -297,6 +298,8 @@ export async function generateParticipationsPDF(
     const head = [headerRow1, headerRow2.reverse()]
 
     const body: any[] = []
+    const voteReasons: { index: number; reason: string }[] = []
+    let voteReasonCounter = 1
 
     for (const meeting of data) {
       const companyHeaderBgColor = [210, 228, 255]
@@ -401,6 +404,13 @@ export async function generateParticipationsPDF(
         const preparedAgendaText = isEnglish
           ? (agenda.text || '').replace(/[\r\n]+/g, ' ').trim()
           : prepareTextWithLineBreaks(agenda.text || '', doc, 950) // Reverse for non-English
+        // Check if voteReason exists and is not empty
+        let voteContent = agenda.vote || ''
+        if (agenda.voteReason && agenda.voteReason.trim() !== '') {
+          voteContent = `${voteContent} ]${voteReasonCounter}[`
+          voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
+          voteReasonCounter++
+        }
         // Organize agenda data for columns 0-8
         const agendaData = [
           booleanToIcon(agenda.personalInterest), // עמודה 0
@@ -416,7 +426,7 @@ export async function generateParticipationsPDF(
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
             : agenda.meetingResults || '', // עמודה 6
-          agenda.vote || '', // עמודה 7
+          voteContent, // עמודה 7 - Updated with voteReason number
           agenda.recommendation?.votingRecommendation || '', // עמודה 8
         ]
         const row = [
@@ -456,6 +466,34 @@ export async function generateParticipationsPDF(
         ]
         body.push(row)
       })
+      // הוספת הערות ההצבעה לפני השורה הריקה
+      if (voteReasons.length > 0) {
+        voteReasons.forEach(({ index, reason }) => {
+          const reasonText = prepareTextWithLineBreaks(
+            `]${index}[ ${reason}`,
+            doc,
+            PAGE_WIDTH - 2 * MARGIN,
+          )
+          body.push([
+            {
+              content: reasonText,
+              colSpan: 19,
+              styles: {
+                font: 'Ariel',
+                fontStyle: 'normal',
+                fontSize: FONT_SIZE_DATA,
+                cellPadding: PADDING,
+                textColor: [51, 51, 51],
+                halign: 'right',
+                minCellHeight: VOTE_REASON_ROW_HEIGHT,
+                fillColor: [255, 255, 255],
+              },
+            },
+          ])
+        })
+        // איפוס רשימת ההערות לאחר הוספתם
+        voteReasons.length = 0
+      }
       // הוספת שורה ריקה להפרדה בין חברות
       body.push([
         {
