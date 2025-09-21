@@ -104,10 +104,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await unifyMeetings({ payload, req })
     console.log('=== Unify Meetings Migration Completed ===\n')
 
-    // 19. Migrate processCompaniesMeetings
-    console.log('\n=== Starting processCompaniesMeetings ===')
-    await processCompaniesMeetings(req)
-    console.log('=== processCompaniesMeetings Completed ===\n')
+    // 19. Skipping processCompaniesMeetings here to preserve MSSQL meeting holdings as source of truth.
+    console.log('\n=== Skipping processCompaniesMeetings (preserve MSSQL meeting holdings) ===')
+    //void processCompaniesMeetings
 
     // 20. Migrate Vote Counts
     console.log('\n=== Starting Vote Counts Migration ===')

@@ -63,6 +63,11 @@ async function processMeeting(
 
   const flattenedHoldings = holdings.flat()
 
+  if (flattenedHoldings.length === 0) {
+    req.payload.logger.info(`No holdings found for meeting ${meeting.id}, skipping update`)
+    return
+  }
+
   // Check and update funds list
   const newFundsSet = new Set<string>()
 
@@ -83,6 +88,9 @@ async function processMeeting(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
 
+    const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
+    const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
+
     const fundsWithHolding = flattenedHoldings.map((h) => {
       const rawOriginal = h.holdings[0]?.originalForeignData
       const originalForeignDataArray = rawOriginal
@@ -92,7 +100,7 @@ async function processMeeting(
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
-      return {
+      const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
@@ -104,6 +112,8 @@ async function processMeeting(
             quantity: item.quantity,
           })),
       }
+      const prev = prevByFund.get(fundId) || {}
+      return { ...prev, ...base }
     })
     let stockValue = meeting.stockValue
     if (!stockValue) {
