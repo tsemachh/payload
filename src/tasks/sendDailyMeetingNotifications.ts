@@ -84,7 +84,10 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
           less_than_equal: yesterdayEnd.toISOString(),
         },
         _status: { equals: 'published' },
-        firstPublished: { equals: true },
+        publishDate: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
+        },
       },
       limit: 0, // Get all results
       depth: 0, // Don't populate relations for performance

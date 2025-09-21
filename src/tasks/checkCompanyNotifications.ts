@@ -383,7 +383,9 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
     },
     where: {
       _status: { equals: 'published' },
-      firstPublished: { equals: false },
+      publishDate: {
+        less_than_equal: yesterdayStart.toISOString(),
+      },
       updatedAt: {
         greater_than_equal: yesterdayStart.toISOString(),
         less_than_equal: today,
