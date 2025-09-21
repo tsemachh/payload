@@ -2,7 +2,8 @@ import type { TaskHandler } from 'payload'
 import { PayloadRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
+import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
+import { sendMailFromRequest } from '@/utils/sendMail'
 
 /**
  * Core function to send admin mail notifications
@@ -147,7 +148,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 
     // Send email to each admin user
     try {
-      await req.payload.sendEmail({
+      await sendMailFromRequest(req, {
         to: adminUsers.map((user) => user.email),
         subject: emailSubject,
         html: emailContent,

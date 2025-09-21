@@ -1252,6 +1252,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                 },
                                 companiesExpandedRows,
                                 setCompaniesExpandedRows,
+                                setFundsExpandedRows,
                               )
                             : column.key === 'agenda'
                               ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)

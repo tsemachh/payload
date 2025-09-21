@@ -16,7 +16,6 @@ import {
   findRelevantCompanyIds,
 } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
-import { meetingColumns } from '@/app/(frontend)/meetings/meetingTableConstants'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -653,6 +652,9 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             calculateHoldingValues(quantity, meeting.stockValue)
           const parentCompany = fundToParentMap.get(fundId as string)
           const holdingsCompanyName = findSubCompanyNameById(parentCompany, fundId)
+          const originalStockIds = match.original?.map((o) => {
+            return { stockId: o.stockId, quantity: o.quantity }
+          })
           return {
             id: fundId,
             holdingsCompanyName,
@@ -660,6 +662,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             holdingValueInMillions,
             nominalValue,
             parentCompany,
+            originalStockIds,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
@@ -685,6 +688,7 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
           holdingValueInMillions: fund.holdingValueInMillions,
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
+          originalStockIds: fund.originalStockIds,
         }
         if (parentCompaniesMap.has(parentCompanyID)) {
           parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
@@ -715,11 +719,16 @@ async function processMeetingsData(meetings: any[], funds?: string[] | null, use
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
 
+          const originalStockIds = [
+            ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
+          ]
+
           return {
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
             nominalValue: totalNominalValue,
+            originalStockIds,
             funds,
           }
         },

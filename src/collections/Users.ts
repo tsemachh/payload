@@ -117,6 +117,10 @@ export const Users: CollectionConfig = {
     defaultFilter: { active: { equals: true } },
   },
   access: {
+    admin: ({ req }) => {
+      // Check if user is authenticated and has allowed role
+      return !!req.user?.isAdmin
+    },
     // Only admins can create users
     create: isAdmin,
     // Admins can read all, but any other logged in user can only read themselves

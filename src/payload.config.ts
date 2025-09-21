@@ -6,7 +6,6 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
-import { en } from '@payloadcms/translations/languages/en'
 import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
@@ -91,7 +90,7 @@ export default buildConfig({
     process.env.PUBLIC_SERVER_URL ||
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
   i18n: {
-    supportedLanguages: { he, en },
+    supportedLanguages: { he },
     translations: {
       he: {
         // or any other locale you're using
@@ -125,7 +124,7 @@ export default buildConfig({
       defaultJobsCollection.admin.group = 'ניהול'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
-        singular: 'תהליף מערכת',
+        singular: 'תהליך מערכת',
       }
       return defaultJobsCollection
     },

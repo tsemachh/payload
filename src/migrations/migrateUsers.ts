@@ -391,9 +391,9 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
 
     console.log(`Found ${testUsers.length} users in test.users.json`)
     const companies = new Map<string, string[]>([
-      ['tsemachh@shefing.com', ['15', '22', '23', '49', '25', '17']],
-      ['efrats@shefing.com', ['17', '22', '23', '49', '25']],
-      ['shaked@emdaresearch.co.il', ['17', '22', '23', '49', '25']],
+      ['tsemachh@shefing.com', ['15', '22', '49', '25', '17']],
+      ['efrats@shefing.com', ['17', '22', '49', '25']],
+      /*      ['shaked@emdaresearch.co.il', ['17', '22', '49', '25']],*/
       ['philc@shefing.com', ['1167', '1168', '15', '17']],
     ])
     let createdCount = 0

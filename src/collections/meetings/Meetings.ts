@@ -25,9 +25,10 @@ import {
   validateMeetingInvitationLink,
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
-import { meetingStateOptions, meetingTypeOptions } from '@/consts/otipns-const'
+import { meetingStateOptions, meetingTypeOptions, stockTypeOptions } from '@/consts/otipns-const'
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
+import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -104,13 +105,21 @@ export const Meetings: CollectionConfig = {
         { name: 'proxyVotingDate' },
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
+        { name: '_status', width: '120px' },
       ],
       [
-        { name: 'resultsConfirmationStatus' },
-        { name: 'electronicVotingEnabled' },
-        { name: 'votesStatus' },
-        { name: 'votesReportStatus' },
-        { name: '_status' },
+        { name: 'electronicVotingEnabled', width: '100px' },
+        { name: 'hasVoteRecommendation', width: '100px' },
+        { name: 'hasResearchDoc', width: '100px' },
+        { name: 'votesStatus', width: '120px' },
+        { name: 'votesReportStatus', width: '120px' },
+        { name: 'resultsConfirmationStatus', width: '100px' },
+      ],
+      [
+        { name: 'stockType', width: '200px' },
+        { name: 'stockOrigin', width: '120px' },
+        { name: 'isFinancialStock', width: '100px' },
+        { name: 'isDualStock', width: '100px' },
       ],
     ],
   },
@@ -308,15 +317,39 @@ export const Meetings: CollectionConfig = {
               },
             },
             {
-              name: 'participationReport',
-              label: 'דוח השתתפות',
-              type: 'upload',
-              relationTo: 'documents',
+              name: 'hasResearchDoc',
+              label: 'יש מסמך מחקר',
+              type: 'checkbox',
               admin: {
                 hidden: true,
-                components: {
-                  Cell: { path: '/admincomponents/icon/ParticipationReportStatusCell' },
-                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    return data?.researchDocuments?.length > 0
+                  },
+                ],
+              },
+            },
+            {
+              name: 'hasVoteRecommendation',
+              label: 'יש המלצת הצבעה',
+              type: 'checkbox',
+              admin: {
+                hidden: true,
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data }) => {
+                    if (!data?.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
+                      return false
+                    }
+                    return data.agenda.some((item) => {
+                      // Check regular recommendation
+                      return item?.recommendation?.votingRecommendation
+                    })
+                  },
+                ],
               },
             },
 
@@ -408,6 +441,26 @@ export const Meetings: CollectionConfig = {
                   label: 'אסיפה דואלית',
                   type: 'checkbox',
                   virtual: 'stock.isDual',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockOrigin',
+                  label: 'מקור הנייר',
+                  type: 'select',
+                  virtual: 'stock.origin',
+                  options: stockOriginOptions,
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockType',
+                  label: 'סוג הנייר',
+                  type: 'select',
+                  virtual: 'stock.type',
+                  options: stockTypeOptions,
                   admin: {
                     hidden: true,
                   },
@@ -986,11 +1039,6 @@ export const Meetings: CollectionConfig = {
           })
 
           if (stock?.hasDual && stock?.dualStock) {
-            const updatedDualStock = await req.payload.findByID({
-              collection: 'stocks',
-              id: getIdOfRelationField(stock.dualStock) as string,
-            })
-
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id

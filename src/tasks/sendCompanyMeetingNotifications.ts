@@ -3,6 +3,7 @@ import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
+import { sendMail } from '@/utils/sendMail'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -140,7 +141,11 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     companyDetail.notificationsSent.beforeVotingEnd = beforeVotingEnd.length
     results.notificationsByType.afterHoldingLimit += afterHoldingLimit.length
     results.notificationsByType.beforeVotingEnd += beforeVotingEnd.length
-
+    if (afterHoldingLimit.length === 0 && beforeVotingEnd.length === 0) {
+      companyDetail.emailStatus = 'skipped'
+      results.companyDetails.push(companyDetail)
+      continue
+    }
     const companyName = (companyNotifications[0].company as Company).name
     // Create email content
     const subject = `סיכום התראות אסיפות חברה - ${companyName}`
@@ -170,7 +175,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
 
     // Send the email
     try {
-      await payload.sendEmail({
+      await sendMail(payload, {
         from: process.env.EMAIL_FROM,
         to: usersMails,
         subject,

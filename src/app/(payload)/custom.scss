@@ -221,10 +221,10 @@ form[action*="/api/research-documents"] .file-field__filename {
     .query-preset-bar {
       width: auto;
       position: absolute;
-      left: 230px;
       z-index: 3;
-      padding-left: 20px;
       margin-left: 0;
+      left: 245px;
+      padding-left: 0;
     }
 
     .table {

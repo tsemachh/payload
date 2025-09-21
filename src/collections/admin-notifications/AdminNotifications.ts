@@ -79,6 +79,10 @@ export const AdminNotifications: CollectionConfig = {
               label: 'התחזות למשתמש',
               value: 'userImpersonation',
             },
+            {
+              label: 'אסיפה לפירסום',
+              value: 'meetingToPublish',
+            },
           ],
           admin: {
             width: '200px',

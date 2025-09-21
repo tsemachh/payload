@@ -77,9 +77,10 @@ interface VotingFormProps {
   voteData: VoteData
   meetingId: string
   companyIds: string
+  originalStockId?: string
 }
 
-export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps) {
+export function VotingForm({ voteData, meetingId, companyIds, originalStockId }: VotingFormProps) {
   const [formData, setFormData] = useState<VoteData>()
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -188,6 +189,12 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
               <span className="font-medium">מועד קובע:</span>
               <span>{formatDateTime(formData.holdingsLimit)}</span>
             </div>
+            {originalStockId && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium"> נייר מקורי:</span>
+                <span>{originalStockId}</span>
+              </div>
+            )}
           </div>
           <CardTitle className="text-right text-base text-gray-900 dark:text-white">
             חברות

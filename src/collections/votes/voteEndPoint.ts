@@ -30,19 +30,38 @@ export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
     const meetingIdString = meetingId as string
     const statusString = status as string
 
+    const isDraftOrLatest = statusString === 'draft' || statusString === 'latest'
+
     const existingVotes = await req.payload.find({
       collection: 'votes',
       where: {
         and: [
           { meeting: { equals: meetingIdString } },
           { company: { in: companiesIdsArray } },
-          statusString === 'draft' ? {} : { _status: { equals: statusString } },
+          isDraftOrLatest ? {} : { _status: { equals: statusString } },
         ],
       },
-      draft: statusString === 'draft',
+      draft: isDraftOrLatest,
+      sort: statusString === 'latest' ? '-updatedAt' : undefined,
       depth: 1,
       limit: companiesIdsArray.length,
     })
+
+    if (statusString === 'latest') {
+      const latestVotesByCompany = Object.values(
+        existingVotes.docs.reduce(
+          (acc, vote) => {
+            const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+            if (companyId && !acc[companyId]) {
+              acc[companyId] = vote
+            }
+            return acc
+          },
+          {} as Record<string, (typeof existingVotes.docs)[0]>,
+        ),
+      )
+      return Response.json(latestVotesByCompany, { status: 200 })
+    }
 
     return Response.json(existingVotes.docs, { status: 200 })
   } catch (error: any) {

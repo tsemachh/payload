@@ -553,7 +553,6 @@ export default function Participations() {
               data={participationData}
               columns={participationColumns}
               idField="id"
-              defaultSortField={'meetingDate'}
               defaultVisibleColumns={participationColumns.map((col) => col.key)}
               tableId="participations-table"
               searchOption={true}

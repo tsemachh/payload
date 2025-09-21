@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, use } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -33,6 +33,8 @@ interface Company {
   percentageHolding: number
   hasVoted?: boolean
   hasActualVote?: boolean
+  originalStockId?: string
+  quantity?: number
   vote?: {
     decision: 'בעד' | 'נגד' | 'נמנע'
     voter: string
@@ -69,12 +71,19 @@ export const VotingTablesField = () => {
   const getGroupedVoteUrl = (item: any) => {
     const motherCompany = item.motherCompany || item.name
     const checksum = item.vote?.checksum
+    const originalStockId = item.originalStockId
     const groupedCompanies = votedCompanies.filter((company) => {
       const companyMotherCompany = company.motherCompany || company.name
-      return companyMotherCompany === motherCompany && company.vote?.checksum === checksum
+      return (
+        companyMotherCompany === motherCompany &&
+        company.vote?.checksum === checksum &&
+        company.originalStockId === originalStockId
+      )
     })
     const companyIds = groupedCompanies.map((c) => c.id).join(',')
-    return `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
+    const commonUrl = `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
+    const url = originalStockId ? `${commonUrl}&originalStockId=${originalStockId}` : commonUrl
+    return url
   }
 
   // Sorting functions
@@ -104,6 +113,10 @@ export const VotingTablesField = () => {
   // Separate companies by voting status
   const notVotedCompanies = useMemo(() => companies.filter((c) => !c.hasVoted), [companies])
   const votedCompanies = useMemo(() => companies.filter((c) => c.hasVoted), [companies])
+  const shouldDisplayOriginalStockIdCol = useMemo(
+    () => votedCompanies.some((c) => c.originalStockId),
+    [votedCompanies],
+  )
 
   // Group toggle functions
   const toggleNotVotedGroup = (groupId: string) => {
@@ -248,7 +261,7 @@ export const VotingTablesField = () => {
 
     const result: any[] = []
 
-    // Two-level grouping: first by mother company, then by checksum
+    // Three-level grouping: first by mother company, then by checksum, then by originalStockId
     const motherCompanyGroups = new Map<string, Company[]>()
     processedCompanies.forEach((company) => {
       const motherKey = company.motherCompany || company.name
@@ -258,9 +271,9 @@ export const VotingTablesField = () => {
       motherCompanyGroups.get(motherKey)!.push(company)
     })
 
-    // Color palette for checksum groups - moved outside to continue across mother companies
+    // Color palette for groups
     const colorPalette = ['#F7CFD8', '#A6D6D6', '#8E7DBE', '#A3DC9A']
-    let checksumGroupIndex = Math.floor(Math.random() * colorPalette.length) // Start from random position
+    let groupIndex = Math.floor(Math.random() * colorPalette.length)
 
     Array.from(motherCompanyGroups.entries()).forEach(([motherCompany, companies]) => {
       const motherGroupId = `mother-${motherCompany}`
@@ -281,25 +294,28 @@ export const VotingTablesField = () => {
         isCollapsed: collapsedVotedGroups.has(motherGroupId),
       })
 
-      // Add checksum subgroups only if mother company group is not collapsed
+      // Add subgroups only if mother company group is not collapsed
       if (!collapsedVotedGroups.has(motherGroupId)) {
-        const checksumGroups = new Map<string, Company[]>()
+        // Group by checksum and originalStockId combination
+        const subGroups = new Map<string, Company[]>()
         companies.forEach((company) => {
-          const checksumKey = company.vote?.checksum || 'ללא checksum'
-          if (!checksumGroups.has(checksumKey)) {
-            checksumGroups.set(checksumKey, [])
+          const checksum = company.vote?.checksum || 'ללא checksum'
+          const originalStockId = company.originalStockId || 'ללא מקור'
+          const subGroupKey = `${checksum}-${originalStockId}`
+
+          if (!subGroups.has(subGroupKey)) {
+            subGroups.set(subGroupKey, [])
           }
-          checksumGroups.get(checksumKey)!.push(company)
+          subGroups.get(subGroupKey)!.push(company)
         })
 
-        Array.from(checksumGroups.entries()).forEach(([checksum, checksumCompanies]) => {
-          const checksumGroupId = `checksum-${motherCompany}-${checksum}`
-          const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
-          checksumGroupIndex++
+        Array.from(subGroups.entries()).forEach(([subGroupKey, subGroupCompanies]) => {
+          const groupColor = colorPalette[groupIndex % colorPalette.length]
+          groupIndex++
 
-          // Sort checksum companies if sorting is applied
+          // Sort companies if sorting is applied
           if (votedSort.field) {
-            checksumCompanies.sort((a, b) => {
+            subGroupCompanies.sort((a, b) => {
               let aValue: any
               let bValue: any
 
@@ -319,16 +335,16 @@ export const VotingTablesField = () => {
             })
           }
 
-          // Don't add checksum group header - just show companies with background colors
-          checksumCompanies.forEach((company, index) => {
+          // Add companies with background colors
+          subGroupCompanies.forEach((company, index) => {
             result.push({
               ...company,
               isGroupHeader: false,
               isGroupItem: true,
               isCompanyItem: true,
-              isLastInChecksumGroup: index === checksumCompanies.length - 1,
-              isFirstInChecksumGroup: index === 0,
-              checksumGroupSize: checksumCompanies.length,
+              isLastInSubGroup: index === subGroupCompanies.length - 1,
+              isFirstInSubGroup: index === 0,
+              subGroupSize: subGroupCompanies.length,
               groupColor: groupColor,
             })
           })
@@ -349,6 +365,7 @@ export const VotingTablesField = () => {
     company: true,
     nominalValue: true,
     percentageHolding: true,
+    originalStockId: true,
     voter: true,
     voteTime: true,
     actualVoteAction: true,
@@ -471,9 +488,9 @@ export const VotingTablesField = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {processedNotVotedData.map((item) => (
+                {processedNotVotedData.map((item, index) => (
                   <TableRow
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     className={cn(
                       item.isGroupHeader && 'bg-muted/50 font-semibold',
                       item.isGroupItem && 'bg-muted/20',
@@ -520,12 +537,12 @@ export const VotingTablesField = () => {
       )}
 
       {/* Companies that voted */}
-      <Card style={{ width: '75%' }}>
+      <Card style={{ width: '90%' }}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg">חברות שהצביעו</CardTitle>
-              <CardDescription>{votedCompanies.length} חברות הצביעו</CardDescription>
+              <CardDescription>{votedCompanies.length} רשומות הצבעה</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <span
@@ -612,6 +629,8 @@ export const VotingTablesField = () => {
                     )}
                   </div>
                 </TableHead>
+                {shouldDisplayOriginalStockIdCol && <TableHead>נייר מקורי</TableHead>}
+                <TableHead>מצביע</TableHead>
                 <TableHead>
                   <div
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
@@ -629,18 +648,16 @@ export const VotingTablesField = () => {
                     )}
                   </div>
                 </TableHead>
+                <TableHead>הצבעה בפועל</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {processedVotedData.map((item) => {
+              {processedVotedData.map((item, index) => {
                 return (
                   <TableRow
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     className={cn(
-                      item.isGroupHeader &&
-                        item.isMotherGroup &&
-                        !item.isChecksumGroup &&
-                        'bg-muted/50 font-semibold',
+                      item.isGroupHeader && item.isMotherGroup && 'bg-muted/50 font-semibold',
                     )}
                     style={{
                       backgroundColor: item.groupColor ? `${item.groupColor}40` : undefined,
@@ -651,11 +668,10 @@ export const VotingTablesField = () => {
                         className={cn(
                           'flex items-center gap-2',
                           item.isGroupItem && !item.isGroupHeader && 'mr-6',
-                          item.isChecksumGroup && 'mr-6',
                           item.isCompanyItem && 'mr-12',
                         )}
                       >
-                        {item.isGroupHeader && !item.isChecksumGroup && (
+                        {item.isGroupHeader && (
                           <>
                             <span
                               className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-6 w-6 p-0 hover:bg-accent hover:text-accent-foreground"
@@ -671,7 +687,7 @@ export const VotingTablesField = () => {
                             <span className="font-semibold">
                               {item.name}
                               <span className="text-base text-muted-foreground mr-2">
-                                ({item.subsidiaryCount} חברות)
+                                ({item.subsidiaryCount} רשומות)
                                 {item.isCollapsed && ' - מכווץ'}
                               </span>
                             </span>
@@ -696,16 +712,17 @@ export const VotingTablesField = () => {
                       </div>
                     </TableCell>
 
-                    <TableCell>
-                      <div className="flex items-center justify-between">
-                        {item.nominalValue.toLocaleString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-between">
-                        {`${item.percentageHolding.toFixed(4)}%`}
-                      </div>
-                    </TableCell>
+                    <TableCell>{item.nominalValue.toLocaleString()}</TableCell>
+
+                    <TableCell>{`${item.percentageHolding.toFixed(4)}%`}</TableCell>
+
+                    {shouldDisplayOriginalStockIdCol && (
+                      <TableCell>
+                        {!item.isGroupHeader && item.originalStockId && (
+                          <span className="font-mono text-sm">{item.originalStockId}</span>
+                        )}
+                      </TableCell>
+                    )}
 
                     <TableCell>
                       {!item.isGroupHeader && item.vote?.voter && (
@@ -717,14 +734,12 @@ export const VotingTablesField = () => {
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex items-center justify-between">
-                        {!item.isGroupHeader && item.vote?.votedAt && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            {formatRelativeTime(item.vote.votedAt)}
-                          </div>
-                        )}
-                      </div>
+                      {!item.isGroupHeader && item.vote?.votedAt && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          {formatRelativeTime(item.vote.votedAt)}
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell>

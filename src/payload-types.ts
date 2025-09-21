@@ -18,6 +18,7 @@ export type AdminNotificationType =
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
       | 'userImpersonation'
+      | 'meetingToPublish'
     )
   | null;
 /**
@@ -175,7 +176,8 @@ export type UserNotificationType =
   | 'after-holding-limit'
   | 'before-voting-end'
   | 'holdings-not-fed'
-  | 'user-impersonation';
+  | 'user-impersonation'
+  | 'meeting-updated';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -627,7 +629,8 @@ export interface Meeting {
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   activity?: string | null;
-  participationReport?: (string | null) | Document;
+  hasResearchDoc?: boolean | null;
+  hasVoteRecommendation?: boolean | null;
   votes?: {
     docs?: (string | Vote)[];
     hasNextPage?: boolean;
@@ -636,6 +639,24 @@ export interface Meeting {
   stock: string | Stock;
   isFinancialStock?: boolean | null;
   isDualStock?: boolean | null;
+  stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
+  stockType?:
+    | (
+        | 'מניות'
+        | 'אופציות'
+        | 'איגרות חוב'
+        | 'איגרות חוב להמרה'
+        | 'יחידת השתתפות'
+        | 'תעודות מדד'
+        | 'תעודות סל'
+        | 'קרנות נאמנות'
+        | 'נייר ערך מסחרי'
+        | 'אחר'
+        | 'זכויות'
+        | 'מק"מ'
+        | 'שטרי הון'
+      )
+    | null;
   type: MeetingType;
   meetingId?: string | null;
   magnaId?: string | null;
@@ -664,6 +685,38 @@ export interface Meeting {
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
+  publisher?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "votes".
+ */
+export interface Vote {
+  id: string;
+  meeting: string | Meeting;
+  company: string | Company;
+  title?: string | null;
+  checksum?: string | null;
+  publishedchecksum?: string | null;
+  isInterested?: boolean | null;
+  interestedExplanation?: string | null;
+  isSeniorOfficial?: boolean | null;
+  seniorOfficialExplanation?: string | null;
+  isInstitutionalInvestor?: boolean | null;
+  voteAgainstRecommendation?: boolean | null;
+  voteDifferentFromResult?: boolean | null;
+  reported?: boolean | null;
+  votes?: TopicVote;
+  voteDocuments?: (string | Document)[] | null;
+  clientComment?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -689,35 +742,6 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "votes".
- */
-export interface Vote {
-  id: string;
-  meeting: string | Meeting;
-  company: string | Company;
-  title?: string | null;
-  checksum?: string | null;
-  isInterested?: boolean | null;
-  interestedExplanation?: string | null;
-  isSeniorOfficial?: boolean | null;
-  seniorOfficialExplanation?: string | null;
-  isInstitutionalInvestor?: boolean | null;
-  voteAgainstRecommendation?: boolean | null;
-  voteDifferentFromResult?: boolean | null;
-  reported?: boolean | null;
-  votes?: TopicVote;
-  voteDocuments?: (string | Document)[] | null;
-  clientComment?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  publishDate?: string | null;
-  publisher?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1270,11 +1294,14 @@ export interface MeetingsSelect<T extends boolean = true> {
   companies?: T;
   companiesNotYetVoted?: T;
   activity?: T;
-  participationReport?: T;
+  hasResearchDoc?: T;
+  hasVoteRecommendation?: T;
   votes?: T;
   stock?: T;
   isFinancialStock?: T;
   isDualStock?: T;
+  stockOrigin?: T;
+  stockType?: T;
   type?: T;
   meetingId?: T;
   magnaId?: T;
@@ -1300,6 +1327,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1595,6 +1623,7 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   checksum?: T;
+  publishedchecksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1609,6 +1638,7 @@ export interface VotesSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
