@@ -77,6 +77,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
+    const subAccountKeySet = new Set<string>()
     const stockCache = await getStockIdToSequenceMap(req)
     let successCount = 0
     let errorCount = 0
@@ -98,7 +99,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Prefetch foreign stocks (by origin === 'Foreign') to know when to attach originalForeignData
     const foreignStocks = await payload.find({
       collection: 'stocks',
-      select: { id: true },
+      select: { name: true },
       where: { origin: { equals: 'Foreign' } },
       limit: 0,
       req,
@@ -134,6 +135,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
 
+        // If matched via a sub-account, log informative message
+        if (subAccountKeySet.has(accountKey)) {
+          console.info(
+            `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`,
+          )
+        }
+
         // Find the holding in the map if not found add it to the map
         let stocksMap = companyHoldings.get(companyId)
         if (!stocksMap) {
@@ -154,7 +162,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           existingHolding.quantity += holding.qty
           existingHolding.originals.push({
             stockId: String(holding.stockNum),
-            accountNum: holding.subAccountNum,
+            accountNum: holding.subAccountNum as unknown as string,
             quantity: holding.qty,
           })
         } else {
@@ -165,7 +173,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             originals: [
               {
                 stockId: String(holding.stockNum),
-                accountNum: holding.subAccountNum,
+                accountNum: holding.subAccountNum as unknown as string,
                 quantity: holding.qty,
               },
             ],
@@ -265,8 +273,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       if (company.mainAccount && Array.isArray(company.mainAccount)) {
         company.mainAccount.forEach((account) => {
           if (parentCompanyId) {
-            const key = `${parentCompanyId}-${account.accountNumber}`
-            accountCache.set(key, company.id)
+            // Map the main account number
+            const baseKey = `${parentCompanyId}-${String(account.accountNumber)}`
+            accountCache.set(baseKey, company.id)
+            // Map all sub-account numbers as well
+            const subs = Array.isArray(account.subAccounts)
+              ? account.subAccounts.map((s: any) => String(s))
+              : []
+            for (const sub of subs) {
+              const subKey = `${parentCompanyId}-${sub}`
+              accountCache.set(subKey, company.id)
+              subAccountKeySet.add(subKey)
+            }
           }
         })
       }
