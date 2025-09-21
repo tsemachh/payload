@@ -822,8 +822,9 @@ async function processMeetingsData(
       )
       if (companiesArray.length === 0) {
         console.error(
-          'Emda Error:\nMeeting without funds, The company is invited to the meeting but fund data is missing\nSkipping meeting with ID: ' +
+          '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
             meeting.meetingId,
+          'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 4px;',
         )
         return null
       }
