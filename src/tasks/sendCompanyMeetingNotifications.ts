@@ -141,7 +141,11 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     companyDetail.notificationsSent.beforeVotingEnd = beforeVotingEnd.length
     results.notificationsByType.afterHoldingLimit += afterHoldingLimit.length
     results.notificationsByType.beforeVotingEnd += beforeVotingEnd.length
-
+    if (afterHoldingLimit.length === 0 && beforeVotingEnd.length === 0) {
+      companyDetail.emailStatus = 'skipped'
+      results.companyDetails.push(companyDetail)
+      continue
+    }
     const companyName = (companyNotifications[0].company as Company).name
     // Create email content
     const subject = `סיכום התראות אסיפות חברה - ${companyName}`
