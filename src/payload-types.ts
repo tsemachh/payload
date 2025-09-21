@@ -176,7 +176,8 @@ export type UserNotificationType =
   | 'after-holding-limit'
   | 'before-voting-end'
   | 'holdings-not-fed'
-  | 'user-impersonation';
+  | 'user-impersonation'
+  | 'meeting-updated';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -684,6 +685,7 @@ export interface Meeting {
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -714,6 +716,7 @@ export interface Vote {
   creator?: string | null;
   updator?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1324,6 +1327,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1634,6 +1638,7 @@ export interface VotesSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;

@@ -61,18 +61,16 @@ export const checkCompanyNotifications = async (req: any) => {
   const yesterdayMidnight = setToMidnight(addDays(today, -1))
   const tomorrowMidnight = setToMidnight(addDays(today, 1))
 
-  console.log(`yesterdayMidnight`, yesterdayMidnight)
-  console.log(`todayMidnight`, todayMidnight)
-  console.log(`tomorrowMidnight`, tomorrowMidnight)
+  
 
   // 1. Check for meeting notifications
   await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight, tomorrowMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
-
-  console.log('Company notifications check completed')
-  console.log('Summary:', JSON.stringify(results, null, 2))
+  await checkMeetingUpdates(req, results)
+   console.log('Company notifications check completed')
+   console.log('Summary:', JSON.stringify(results, null, 2))
 
   return {
     success: true,
@@ -154,7 +152,6 @@ async function checkMeetingNotifications(
     limit: 0,
   })
 
-  console.log(`Found ${meetings.docs.length} meetings with relevant dates`)
   results.meetingsProcessed = meetings.docs.length
 
   // Process each meeting
@@ -364,5 +361,72 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
   } catch (error) {
     console.error(error)
     console.error(`Error checking holdings feeds: ${JSON.stringify(error)}`)
+  }
+}
+async function checkMeetingUpdates(req: any, results: any, userId?: string) {
+  const payload = req.payload
+  const today = new Date()
+  const yesterday = new Date(today)
+  const formattedYesterday = yesterday.toLocaleDateString('he-IL')
+  yesterday.setDate(today.getDate() - 1)
+  const yesterdayStart = new Date(yesterday)
+  yesterdayStart.setHours(0, 0, 0, 0)
+  const yesterdayEnd = new Date(yesterday)
+  yesterdayEnd.setHours(23, 59, 59, 999)
+
+  const { docs: meetings } = await payload.find({
+    collection: 'meetings',
+    select: {
+      companies: true,
+      id: true,
+      fullName: true,
+    },
+    where: {
+      _status: { equals: 'published' },
+      publishDate: {
+        less_than_equal: yesterdayStart.toISOString(),
+      },
+      updatedAt: {
+        greater_than_equal: yesterdayStart.toISOString(),
+        less_than_equal: today,
+      },
+      changeDetails: {
+        not_equals: null,
+      },
+    },
+    limit: 0,
+    depth: 0,
+  })
+
+
+  for (const meeting of meetings) {
+    const companies = meeting.companies as string[]
+    if (!companies || companies.length === 0) continue
+
+    for (const companyId of companies) {
+      const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedYesterday}), יש לשים לב לשינויים`
+      await payload.delete({
+        collection: 'company-meeting-notifications',
+        where: {
+          company: { equals: companyId },
+          message: { equals: message },
+          notificationType: { equals: 'meeting-updated' },
+          meeting: { equals: meeting.id },
+        },
+      })
+      await payload.create({
+        collection: 'company-meeting-notifications',
+        data: {
+          message,
+          notificationType: 'meeting-updated',
+          meeting: meeting.id,
+          company: companyId,
+        },
+      })
+
+      //(`Created update notification for company ${companyId} in meeting ${meeting.id}`)
+      results.notificationsCreated.meetingUpdates =
+        (results.notificationsCreated.meetingUpdates || 0) + 1
+    }
   }
 }
