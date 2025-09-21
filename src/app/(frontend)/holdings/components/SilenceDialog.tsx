@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { HoldingFeedLine } from '@/payload-types'
+import { postWithErrorHandling } from '../../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../../helpers/error-handler'
 
 interface SilenceDialogProps {
   stockIds: (string | number)[]
@@ -34,14 +36,15 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
   const handleSilence = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/silenced-stocks/upsert?companies=${companies}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await postWithErrorHandling(
+        `/api/silenced-stocks/upsert?companies=${companies}`,
+        { stockIds },
+        {
+          errorMessage: 'שגיאה בהשתקת ניירות הערך',
+          notifyOnError: true,
         },
-        body: JSON.stringify({ stockIds }),
-      })
-      if (response.ok) {
+      )
+      if (response) {
         const count = stockIds.length
         setResultMessage(`${count} ניירות הוספו לניירות מושתקים בהצלחה!`)
         setTimeout(() => {
@@ -51,11 +54,10 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
         setResultMessage('נכשל להשתיק את השגיאות.')
       }
     } catch (error) {
-      console.error('שגיאה בהשתקה', error)
+      handleAndNotifyError(error, 'נכשל להשתיק את השגיאות.')
       setResultMessage('נכשל להשתיק את השגיאות.')
     } finally {
       setLoading(false)
-
       setTimeout(() => {
         setResultMessage(null)
         onClose()

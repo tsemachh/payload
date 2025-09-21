@@ -372,11 +372,11 @@ export async function generateParticipationsPDF(
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: prepareTextWithLineBreaks(companyValues[6], doc, 150),
+          content: prepareTextWithLineBreaks(companyValues[6], doc, 130),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
-          content: prepareTextWithLineBreaks(companyValues[7], doc, 150),
+          content: prepareTextWithLineBreaks(companyValues[7], doc, 130),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
         {
