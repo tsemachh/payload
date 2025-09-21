@@ -110,44 +110,41 @@ export default function VotingForm() {
 
  const { isImpersonating } = useImpersonation();
  
- useEffect(() => {
-  const run = async () => {
-    if (meetingData) {
-      let isReadOnlyDueToDate = false
-      if (meetingData.proxyVotingDate) {
-        const proxyVotingDate = new Date(meetingData.proxyVotingDate)
-        const now = new Date()
-        if (proxyVotingDate < now && !isImpersonating ) {
-          isReadOnlyDueToDate = true
-        }
+useEffect(() => {
+  if (meetingData) {
+    let isReadOnlyDueToDate = false;
+    if (meetingData.proxyVotingDate) {
+      const proxyVotingDate = new Date(meetingData.proxyVotingDate);
+      const now = new Date();
+      if (proxyVotingDate < now && !isImpersonating) {
+        isReadOnlyDueToDate = true;
       }
-
-      let isReadOnlyDueToPermission = false
-      if (user && meetingData?.companies.length > 0) {
-        const hasWritePermission = hasCompanyPermission(
-          user,
-          meetingData?.companies[0].id,
-          'write'
-        )
-        if (!hasWritePermission) {
-          isReadOnlyDueToPermission = true
-        }
-      }
-
-      if (isReadOnlyDueToPermission) {
-        setReadOnlyReason('permission')
-      } else if (isReadOnlyDueToDate) {
-        setReadOnlyReason('date')
-      } else {
-        setReadOnlyReason(null)
-      }
-
-      setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-  }
 
-  run()
-}, [meetingData, user])
+    let isReadOnlyDueToPermission = false;
+    if (user && meetingData?.companies.length > 0) {
+      const hasWritePermission = hasCompanyPermission(
+        user,
+        meetingData?.companies[0].id,
+        'write'
+      );
+      if (!hasWritePermission) {
+        isReadOnlyDueToPermission = true;
+      }
+    }
+
+    if (isReadOnlyDueToPermission) {
+      setReadOnlyReason('permission');
+    } else if (isReadOnlyDueToDate) {
+      setReadOnlyReason('date');
+    } else {
+      setReadOnlyReason(null);
+    }
+
+    setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission);
+  }
+}, [meetingData, user, isImpersonating]);
+
 
   useEffect(() => {
     if (meetingDataError) {
