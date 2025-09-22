@@ -46,7 +46,7 @@ async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
         data: { stockId },
         req: {
           ...req,
-          context: { ...req.context, from: 'migration' },
+          context: { ...req.context, from: 'migration' , process:'migrateStocks' },
         },
       })
     }
@@ -309,7 +309,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 },
                 req: {
                   ...req,
-                  context: { ...req.context, from: 'migration' },
+                  context: { ...req.context, from: 'migration', process: 'migrateStocks' },
                 },
               })
               successCount++

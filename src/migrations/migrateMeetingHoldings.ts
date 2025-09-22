@@ -104,8 +104,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                       { legacyCompanyId: { equals: holding.firmid } },
                       {
                         or: [
-                          { 'mainAccount.accountNumber': { equals: holding.accountNum.toString() } },
-                          { 'mainAccount.subAccounts': { contains: holding.accountNum.toString() } },
+                          {
+                            'mainAccount.accountNumber': { equals: holding.accountNum.toString() },
+                          },
+                          {
+                            'mainAccount.subAccounts': { contains: holding.accountNum.toString() },
+                          },
                         ],
                       },
                     ],
@@ -184,7 +188,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               id: meetingId,
               data: updatedMeeting,
               req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateMeetingHoldings' },
             })
 
             successCount++
@@ -233,7 +237,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const mockReq = {
         payload,
         query: {},
-        context: { from: 'migration' },
+        context: { from: 'migration', process: 'migrateMeetingHoldings' },
       }
 
       // Import the endpoint handler

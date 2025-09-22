@@ -111,7 +111,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
       const companyHoldings = new Map<
         string,
-        Map<string, { stockId: string; quantity: number; feedStockNum: string; originals: { accountNum: string; quantity: number; stockId: string }[] }>
+        Map<
+          string,
+          {
+            stockId: string
+            quantity: number
+            feedStockNum: string
+            originals: { accountNum: string; quantity: number; stockId: string }[]
+          }
+        >
       >()
 
       // Iterate each row
@@ -145,7 +153,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         // Find the holding in the map if not found add it to the map
         let stocksMap = companyHoldings.get(companyId)
         if (!stocksMap) {
-          stocksMap = new Map<string, { stockId: string; quantity: number; feedStockNum: string; originals: { accountNum: string; quantity: number; stockId: string }[] }>()
+          stocksMap = new Map<
+            string,
+            {
+              stockId: string
+              quantity: number
+              feedStockNum: string
+              originals: { accountNum: string; quantity: number; stockId: string }[]
+            }
+          >()
           companyHoldings.set(companyId, stocksMap)
         }
 
@@ -209,7 +225,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'holdings',
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
             },
             where: {
               fund: {
@@ -233,7 +249,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: holdingDayData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
             },
           })
 
@@ -313,7 +329,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             )
 
             // Get all distinct holding dates for this company in the last 3 months (inclusive)
-            const dates = await getHoldingDatesInLast3Months(pool, company.firm, company.latest_date1)
+            const dates = await getHoldingDatesInLast3Months(
+              pool,
+              company.firm,
+              company.latest_date1,
+            )
             console.log(
               `Found ${dates.length} holding date(s) in the last 3 months for company ${company.name} (ID: ${company.firm})`,
             )
@@ -344,7 +364,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     }
   }
 }
-
 
 // Returns all distinct holding dates for the given firm in the last 3 months (inclusive),
 // relative to the provided latestDate. Dates are returned as strings in MM-DD-YYYY format.

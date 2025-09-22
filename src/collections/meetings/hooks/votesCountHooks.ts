@@ -92,7 +92,7 @@ export async function recalculateMeetingVoteCounts(
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'voteCountHooks' },
           },
         })
 

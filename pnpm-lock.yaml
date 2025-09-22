@@ -132,8 +132,8 @@ importers:
         specifier: ^1.1.8
         version: 1.2.8(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@shefing/authors-info':
-        specifier: ^1.0.10
-        version: 1.0.10(@payloadcms/ui@3.55.1(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))
+        specifier: ^1.0.16
+        version: 1.0.17(@payloadcms/ui@3.55.1(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))
       '@shefing/field-type-component-override':
         specifier: ^1.0.5
         version: 1.0.5
@@ -2259,8 +2259,8 @@ packages:
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
-  '@shefing/authors-info@1.0.10':
-    resolution: {integrity: sha512-yI7cXYWkyU5xst+llvsOlMMA1ArmuXQc0dB0sO1PHBqkrcUwJUIeJ7KhKNY8CZ6VvlJ5YU/NmehDDNkJckpOEQ==}
+  '@shefing/authors-info@1.0.17':
+    resolution: {integrity: sha512-JgmiBFKft8v7bKWAgzsM9tXHzNx22RCI2J3ukhEEXPb8FsLz9OaEkfBiSu8yVO2F8a6/wu/tJ2ICl9kmnjNFLg==}
     peerDependencies:
       '@payloadcms/ui': 3.35.1
       i18next: ^23.0.0
@@ -9163,7 +9163,7 @@ snapshots:
 
   '@scarf/scarf@1.4.0': {}
 
-  '@shefing/authors-info@1.0.10(@payloadcms/ui@3.55.1(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))':
+  '@shefing/authors-info@1.0.17(@payloadcms/ui@3.55.1(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))':
     dependencies:
       '@payloadcms/ui': 3.55.1(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.55.1(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       i18next: 23.16.8

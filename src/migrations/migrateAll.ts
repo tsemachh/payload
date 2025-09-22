@@ -13,7 +13,6 @@ import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
 import { up as migrateMeetingStockValues } from './migrateMeetingStockValues'
 import { up as unifyMeetings } from './UnifyMeetings'
 import { up as migrateVoteCounts } from './migrateVoteCounts'
-import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCompaniesMeetings'
 
 /**
  * Migrates all collections in the following order:
@@ -36,6 +35,28 @@ import { processCompaniesMeetings } from '@/collections/meetings/hooks/processCo
  * is now part of the Meetings migration.
  */
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
+  // Enhance logging with timestamp and actor info (who triggered the migration)
+  const actor =
+    (req as any)?.user?.email ||
+    (req as any)?.user?.id ||
+    (req as any)?.user?.username ||
+    (req as any)?.user?.name ||
+    'system'
+
+  // Preserve original console methods to restore later
+  const originalLog = console.log
+  const originalError = console.error
+
+  // Prefix logs with ISO timestamp and actor
+  const prefix = () => `[${new Date().toISOString()}] [actor:${actor}]`
+
+  console.log = (...args: any[]) => {
+    originalLog(prefix(), ...args)
+  }
+  console.error = (...args: any[]) => {
+    originalError(prefix(), ...args)
+  }
+
   console.log('Starting migrateAll process...')
 
   try {
@@ -79,15 +100,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
 
-    // 17. Migrate Meeting Holdings
-    console.log('\n=== Starting Meeting Holdings Migration ===')
-    await migrateMeetingHoldings({ payload, req })
-    console.log('=== Meeting Holdings Migration Completed ===\n')
-
     // 18. Migrate Meeting Stock Values
     console.log('\n=== Starting Meeting Stock Values Migration ===')
     await migrateMeetingStockValues({ payload, req })
     console.log('=== Meeting Stock Values Migration Completed ===\n')
+
+    // 17. Migrate Meeting Holdings
+    console.log('\n=== Starting Meeting Holdings Migration ===')
+    await migrateMeetingHoldings({ payload, req })
+    console.log('=== Meeting Holdings Migration Completed ===\n')
 
     // 14. Migrate Votes
     console.log('\n=== Starting Votes Migration ===')
@@ -117,6 +138,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   } catch (error) {
     console.error('Error during migrateAll process:', error)
     throw error
+  } finally {
+    // Restore original console methods
+    console.log = originalLog
+    console.error = originalError
   }
 }
 

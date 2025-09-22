@@ -133,7 +133,7 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
             data: companyData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
             },
           })
         } else {
@@ -143,7 +143,7 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
             data: companyData as Company,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
             },
           })
         }
@@ -241,7 +241,7 @@ async function migrateAccounts({ payload, req }: MigrateUpArgs): Promise<void> {
               },
               req: {
                 ...req,
-                context: { ...req.context, from: 'migration' },
+                context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
               },
             })
             errorCount++
@@ -273,7 +273,7 @@ async function migrateAccounts({ payload, req }: MigrateUpArgs): Promise<void> {
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
           },
         })
 
@@ -1246,7 +1246,7 @@ export async function migrateSilencedStocksCompanies(payload: any, req: any): Pr
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
           },
         })
 

@@ -242,7 +242,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: userData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
         } else {
@@ -254,7 +254,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'users',
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
             // @ts-ignore
             data: {
@@ -434,7 +434,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             data: userData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
           updatedCount++
@@ -446,7 +446,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             data: userData as User,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
           createdCount++
