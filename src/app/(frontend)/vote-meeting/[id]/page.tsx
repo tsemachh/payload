@@ -61,6 +61,7 @@ import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
 import { hasCompanyPermission } from '@/utils/permissions'
 import { useAuth } from '@/providers/auth-provider'
+import { useImpersonation } from '@/plugins/impersonate/components'
 
 export default function VotingForm() {
   const params = useParams()
@@ -107,41 +108,43 @@ export default function VotingForm() {
     },
   )
 
-  useEffect(() => {
-    if (meetingData) {
-      // Check date restriction
-      let isReadOnlyDueToDate = false
-      if (meetingData.proxyVotingDate) {
-        const proxyVotingDate = new Date(meetingData.proxyVotingDate)
-        const now = new Date()
-        if (proxyVotingDate < now) {
-          isReadOnlyDueToDate = true
-        }
+ const { isImpersonating } = useImpersonation();
+ 
+useEffect(() => {
+  if (meetingData) {
+    let isReadOnlyDueToDate = false;
+    if (meetingData.proxyVotingDate) {
+      const proxyVotingDate = new Date(meetingData.proxyVotingDate);
+      const now = new Date();
+      if (proxyVotingDate < now && !isImpersonating) {
+        isReadOnlyDueToDate = true;
       }
-
-      // Check permission restriction
-      let isReadOnlyDueToPermission = false
-      if (user && meetingData?.companies.length > 0) {
-        // Check if user has write permission for this company
-        const hasWritePermission = hasCompanyPermission(user, meetingData?.companies[0].id, 'write')
-        if (!hasWritePermission) {
-          isReadOnlyDueToPermission = true
-        }
-      }
-
-      // Set read-only reason based on which restriction applies
-      if (isReadOnlyDueToPermission) {
-        setReadOnlyReason('permission')
-      } else if (isReadOnlyDueToDate) {
-        setReadOnlyReason('date')
-      } else {
-        setReadOnlyReason(null)
-      }
-
-      // Set read-only if either restriction applies
-      setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-  }, [meetingData, user])
+
+    let isReadOnlyDueToPermission = false;
+    if (user && meetingData?.companies.length > 0) {
+      const hasWritePermission = hasCompanyPermission(
+        user,
+        meetingData?.companies[0].id,
+        'write'
+      );
+      if (!hasWritePermission) {
+        isReadOnlyDueToPermission = true;
+      }
+    }
+
+    if (isReadOnlyDueToPermission) {
+      setReadOnlyReason('permission');
+    } else if (isReadOnlyDueToDate) {
+      setReadOnlyReason('date');
+    } else {
+      setReadOnlyReason(null);
+    }
+
+    setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission);
+  }
+}, [meetingData, user, isImpersonating]);
+
 
   useEffect(() => {
     if (meetingDataError) {

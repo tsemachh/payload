@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DateRangeSelector } from '../components/ui/date-range-selector'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
-import useSWR from 'swr'
 import { fetcher } from '../helpers/utils-data-table'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
@@ -17,7 +16,9 @@ import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
 import { createParticipationColumns, renderAgendaRows } from './participationTableConstants'
-import { getWithErrorHandling } from '../helpers/fetch-helpers'
+import { downloadFileWithErrorHandling } from '../helpers/fetch-helpers'
+import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
+import { handleAndNotifyError } from '../helpers/error-handler'
 
 export interface Company {
   id: string
@@ -170,9 +171,10 @@ export default function Participations() {
     data: votesResponse,
     isLoading: votesLoading,
     error: votesError,
-  } = useSWR(votesQuery, fetcher, {
+  } = useSWRWithErrorHandling(votesQuery, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
+    errorMessage: 'שגיאה בטעינת נתוני ההשתתפויות',
   })
 
   // Server-side handlers
@@ -338,34 +340,23 @@ export default function Participations() {
         params.append('dualMeetingsOnly', 'true')
       }
 
-      const response = await getWithErrorHandling(`/api/votes/by-companies?${params.toString()}`, {
-        errorMessage: 'שגיאה בייצוא הקובץ',
-        notifyOnError: true,
-        headers: {
-          Accept:
-            format === 'excel'
-              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-              : 'application/pdf',
+      const fileName = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+
+      await downloadFileWithErrorHandling(
+        `/api/votes/by-companies?${params.toString()}`,
+        fileName,
+        {
+          errorMessage: 'שגיאה ביצוא הקובץ',
+          headers: {
+            Accept:
+              format === 'excel'
+                ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                : 'application/pdf',
+          },
         },
-      })
-
-      if (!(response instanceof Blob)) {
-        throw new Error('Expected a file response, but received JSON')
-      }
-
-      // Use reportName as fallback filename
-      const filename = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
-
-      // Create and trigger download
-      const url = window.URL.createObjectURL(response)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
+      )
+    } catch (error: any) {
+      handleAndNotifyError(error, 'שגיאה בייצוא הקובץ')
     } finally {
       setIsExporting(false)
     }
@@ -456,7 +447,7 @@ export default function Participations() {
                 type="text"
                 value={reportName}
                 onChange={handleReportNameChange}
-                placeholder="הכנס שם לדו״ח"
+                placeholder="הכנס שם וכותרת לדו״ח"
                 className={cn(
                   'w-full text-right rounded-md border border-input bg-background h-10 shadow-sm',
                   validationErrors.includes('reportName') && 'border-red-500 ring-1 ring-red-500',
@@ -562,7 +553,6 @@ export default function Participations() {
               data={participationData}
               columns={participationColumns}
               idField="id"
-              defaultSortField={'meetingDate'}
               defaultVisibleColumns={participationColumns.map((col) => col.key)}
               tableId="participations-table"
               searchOption={true}

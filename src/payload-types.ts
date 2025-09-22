@@ -176,7 +176,8 @@ export type UserNotificationType =
   | 'after-holding-limit'
   | 'before-voting-end'
   | 'holdings-not-fed'
-  | 'user-impersonation';
+  | 'user-impersonation'
+  | 'meeting-updated';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -692,6 +693,7 @@ export interface Meeting {
   updator?: string | null;
   process?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -707,6 +709,7 @@ export interface Vote {
   company: string | Company;
   title?: string | null;
   checksum?: string | null;
+  publishedchecksum?: string | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
@@ -722,6 +725,7 @@ export interface Vote {
   updator?: string | null;
   process?: string | null;
   publishDate?: string | null;
+  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1269,7 +1273,7 @@ export interface PayloadQueryPreset {
     | 'documents'
     | 'migration-faults';
   /**
-   * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
   isTemp?: boolean | null;
   updatedAt: string;
@@ -1344,6 +1348,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   updator?: T;
   process?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1647,6 +1652,7 @@ export interface VotesSelect<T extends boolean = true> {
   company?: T;
   title?: T;
   checksum?: T;
+  publishedchecksum?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
@@ -1662,6 +1668,7 @@ export interface VotesSelect<T extends boolean = true> {
   updator?: T;
   process?: T;
   publishDate?: T;
+  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;

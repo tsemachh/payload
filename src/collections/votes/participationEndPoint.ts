@@ -9,7 +9,6 @@ import {
 } from '@/utils/dataUtils'
 import { TreeCompanyType } from '@/types/companies'
 
-// Shared interfaces for both endpoints
 interface VotesQueryParams {
   companiesIds: string
   status?: string
@@ -213,6 +212,7 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
         company: true,
         votes: true,
       },
+      sort: 'meeting.meetingDate',
       limit: batchSize,
       page,
       overrideAccess: true,
@@ -287,7 +287,6 @@ async function fetchAndProcessVotesData(
         votes: true,
       },
       collection: 'meetings',
-      sort: '-meetingDate',
       where: { id: { in: uniqueMeetingIds } },
       depth: 1,
       limit: 0,
@@ -363,6 +362,7 @@ async function fetchAndProcessVotesData(
         company: true,
         votes: true,
       },
+      sort: 'meeting.meetingDate',
       limit: pageSize,
       page: page,
       overrideAccess: true,
@@ -468,7 +468,6 @@ async function fetchAndProcessVotesData(
 
 export const getVotesByCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
-  // Check if user is logged in
   if (!req.user) {
     return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
   }
@@ -546,32 +545,30 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         selectedRecords: processedData.length,
       }
 
-      const encodedFilename = encodeURIComponent(reportName)
+      const encodedFilename = encodeURIComponent(reportName).replace(/'/g, '%27')
+      const extension = exportFormat === 'excel' ? 'xlsx' : 'pdf'
+      const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.${extension}`
 
       if (exportFormat === 'excel') {
         const excelBuffer = await generateParticipationsExcel(processedData, exportOptions)
-        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
-          : `attachment; filename="${reportName}.xlsx"`
-        return new Response(excelBuffer, {
+        const excelUint8Array = new Uint8Array(excelBuffer)
+        return new Response(excelUint8Array, {
           status: 200,
           headers: {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition': contentDisposition,
-            'Content-Length': excelBuffer.length.toString(),
+            'Content-Length': excelUint8Array.length.toString(),
           },
         })
       } else {
         const pdfBytes = await generateParticipationsPDF(processedData, exportOptions)
-        const contentDisposition = /[^\x00-\x7F]/.test(reportName)
-          ? `attachment; filename*=UTF-8''${encodedFilename}.pdf;`
-          : `attachment; filename="${reportName}.pdf"`
-        return new Response(pdfBytes, {
+        const pdfUint8Array = new Uint8Array(pdfBytes)
+        return new Response(pdfUint8Array, {
           status: 200,
           headers: {
             'Content-Type': 'application/pdf',
             'Content-Disposition': contentDisposition,
-            'Content-Length': pdfBytes.length.toString(),
+            'Content-Length': pdfUint8Array.length.toString(),
           },
         })
       }
@@ -579,7 +576,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
 
     const totalPages = Math.ceil(totalItems / pageSize)
     return createSuccessResponse(processedData, totalItems, totalPages)
-  } catch (error: any) {
+  } catch (error: unknown) {
     return createErrorResponse(error, 'Failed to fetch votes')
   }
 }

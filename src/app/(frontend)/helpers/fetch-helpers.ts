@@ -4,6 +4,8 @@ import { logApiCall } from '../lib/api-logger'
 interface FetchOptions extends RequestInit {
   notifyOnError?: boolean
   errorMessage?: string
+  expectFile?: boolean
+  downloadFileName?: string
 }
 
 export async function fetchWithErrorHandling<T = any>(
@@ -13,6 +15,8 @@ export async function fetchWithErrorHandling<T = any>(
   const {
     notifyOnError = true,
     errorMessage = 'שגיאה בביצוע הפעולה',
+    expectFile = false,
+    downloadFileName,
     ...fetchOptions
   } = options || {}
 
@@ -45,13 +49,23 @@ export async function fetchWithErrorHandling<T = any>(
       throw error
     }
 
-    // Check Content-Type to handle PDF or Excel
+    // בדיקה אם זה קובץ או אם ציינו במפורש שאנחנו מצפים לקובץ
     const contentType = response.headers.get('Content-Type')
-    if (
+    const isFile =
+      expectFile ||
       contentType?.includes('application/pdf') ||
-      contentType?.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    ) {
-      return await response.blob() // Return Blob for PDF or Excel
+      contentType?.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+      contentType?.includes('application/octet-stream') ||
+      contentType?.includes('application/download')
+
+    if (isFile) {
+      const blob = await response.blob()
+
+      if (downloadFileName) {
+        downloadBlob(blob, downloadFileName, response)
+      }
+
+      return blob as T
     }
 
     return await response.json() // Default to JSON
@@ -68,6 +82,34 @@ export async function fetchWithErrorHandling<T = any>(
     throw errorDetails
   }
 }
+
+function downloadBlob(blob: Blob, defaultFileName: string, response: Response) {
+  let fileName = defaultFileName
+  const contentDisposition = response.headers.get('Content-Disposition')
+
+  if (contentDisposition) {
+    const fileNameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]*)/)
+    if (fileNameMatch && fileNameMatch[1]) {
+      fileName = decodeURIComponent(fileNameMatch[1])
+    } else {
+      const fallbackMatch = contentDisposition.match(/filename="([^"]*)"/)
+      if (fallbackMatch && fallbackMatch[1]) {
+        fileName = decodeURIComponent(fallbackMatch[1])
+      }
+    }
+  }
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  window.URL.revokeObjectURL(url)
+}
+
 // Specialized versions for common HTTP methods
 export const getWithErrorHandling = <T = any>(url: string, options?: FetchOptions) =>
   fetchWithErrorHandling<T>(url, { method: 'GET', ...options })
@@ -79,3 +121,15 @@ export const postWithErrorHandling = <T = any>(url: string, data: any, options?:
     body: JSON.stringify(data),
     ...options,
   })
+
+export const downloadFileWithErrorHandling = async (
+  url: string,
+  fileName: string,
+  options?: Omit<FetchOptions, 'expectFile' | 'downloadFileName'>,
+) => {
+  return getWithErrorHandling(url, {
+    ...options,
+    expectFile: true,
+    downloadFileName: fileName,
+  })
+}

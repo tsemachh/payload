@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { HoldingFeedLine } from '@/payload-types'
+import { postWithErrorHandling } from '../../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../../helpers/error-handler'
 
 interface SilenceDialogProps {
   stockIds: (string | number)[]
@@ -34,28 +36,28 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
   const handleSilence = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/silenced-stocks/upsert?companies=${companies}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await postWithErrorHandling(
+        `/api/silenced-stocks/upsert?companies=${companies}`,
+        { stockIds },
+        {
+          errorMessage: 'שגיאה בהשתקת ניירות הערך',
+          notifyOnError: true,
         },
-        body: JSON.stringify({ stockIds }),
-      })
-      if (response.ok) {
+      )
+      if (response) {
         const count = stockIds.length
         setResultMessage(`${count} ניירות הוספו לניירות מושתקים בהצלחה!`)
         setTimeout(() => {
           onRefreshAction(allRecords)
         }, 2000)
-      } else {
-        setResultMessage('נכשל להשתיק את השגיאות.')
+        setResultMessage(null)
       }
     } catch (error) {
-      console.error('שגיאה בהשתקה', error)
-      setResultMessage('נכשל להשתיק את השגיאות.')
+      handleAndNotifyError(error, 'השתקת השגיאות נכשלה.')
+      setResultMessage(null)
+      onClose()
     } finally {
       setLoading(false)
-
       setTimeout(() => {
         setResultMessage(null)
         onClose()
@@ -77,8 +79,8 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="direction-rtl text-right">
             {stockCount === 1
-              ? 'האם בטוח שברצונך להשתיק את נייר הערך?'
-              : `האם בטוח שברצונך להשתיק ${stockCount} ניירות ערך?`}
+              ? 'האם ברצונך להשתיק את נייר הערך הזה?'
+              : `האם ברצונך להשתיק את ניירות הערך הבאים: ${stockCount} ?`}
           </DialogTitle>
         </DialogHeader>
 
