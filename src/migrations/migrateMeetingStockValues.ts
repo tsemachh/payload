@@ -147,7 +147,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValues' },
             },
           })
 
