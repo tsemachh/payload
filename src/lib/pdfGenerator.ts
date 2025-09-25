@@ -13,6 +13,7 @@ const A4 = [595.28, 841.89]
 const PAGE_WIDTH = A4[1]
 const PAGE_HEIGHT = A4[0]
 const MARGIN = 15
+const TABLE_WIDTH = 811 // Sum of column widths from columnStyles
 
 const MIN_ROW_HEIGHT = 15
 const VOTE_REASON_ROW_HEIGHT = 10
@@ -469,11 +470,10 @@ export async function generateParticipationsPDF(
       // הוספת הערות ההצבעה לפני השורה הריקה
       if (voteReasons.length > 0) {
         voteReasons.forEach(({ index, reason }) => {
-          const reasonText = prepareTextWithLineBreaks(
-            `]${index}[ ${reason}`,
-            doc,
-            PAGE_WIDTH - 2 * MARGIN,
-          )
+          const isEnglish = /^[A-Za-z]/.test(reason?.trim?.() || '')
+          const reasonText = isEnglish
+            ? reason
+            : prepareTextWithLineBreaks(`[${index}] ${reason}`, doc, TABLE_WIDTH + 900)
           body.push([
             {
               content: reasonText,
@@ -487,6 +487,7 @@ export async function generateParticipationsPDF(
                 halign: 'right',
                 minCellHeight: VOTE_REASON_ROW_HEIGHT,
                 fillColor: [255, 255, 255],
+                // overflow: 'linebreak',
               },
             },
           ])

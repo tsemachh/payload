@@ -107,6 +107,10 @@ export async function generateParticipationsExcel(
       cellStyles: { col: number; font: any }[]
     }[] = []
 
+    // Initialize vote reason counter and storage
+    const voteReasons: { index: number; reason: string }[] = []
+    let voteReasonCounter = 1
+
     data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
         parseNumber(meeting.marketValue) / 1_000_000,
@@ -135,7 +139,6 @@ export async function generateParticipationsExcel(
         const fillColor = 'FFD2E4FF'
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
-            // Only format cells within table
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -168,6 +171,7 @@ export async function generateParticipationsExcel(
               conflictOfInterest: any
               relatedParty: any
               personalInterest: any
+              voteReason?: string
             },
             index: number,
           ) => {
@@ -179,11 +183,17 @@ export async function generateParticipationsExcel(
                 ? `${index + 1}. ${agenda.text}`
                 : `\u200F${index + 1}. ${agenda.text}`
               : ''
-
+            // Check if voteReason exists and is not empty
+            let voteContent = agenda.vote || ''
+            if (agenda.voteReason && agenda.voteReason.trim() !== '') {
+              voteContent = `${voteContent} [${voteReasonCounter}]`
+              voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
+              voteReasonCounter++
+            }
             const agendaData = [
               numberedAgendaText,
               agenda.recommendation?.votingRecommendation || '',
-              agenda.vote || '',
+              voteContent,
               agenda.result
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
@@ -232,7 +242,39 @@ export async function generateParticipationsExcel(
             rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
           },
         )
+        // Add vote reasons as merged rows with white background
+        if (voteReasons.length > 0) {
+          voteReasons.forEach(({ index, reason }) => {
+            const isEnglishReason = /^[A-Za-z]/.test(reason?.trim?.() || '')
+            const reasonText = isEnglishReason ? `${reason} [${index}]` : `[${index}] ${reason}`
+            const reasonRow = worksheet.addRow([reasonText, ...Array(headers.length - 1).fill('')])
+            worksheet.mergeCells(reasonRow.number, 1, reasonRow.number, headers.length)
+            reasonRow.eachCell((cell, colNumber) => {
+              if (colNumber <= headers.length) {
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFFFFFFF' },
+                }
+                cell.font = { name: 'Arial', size: 10 }
+                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              }
+            })
+            const cellStyles: { col: number; font: any }[] = []
+            reasonRow.eachCell((cell, colNumber) => {
+              if (colNumber <= headers.length) {
+                cellStyles.push({ col: colNumber, font: cell.font })
+              }
+            })
+            rowFormats.push({ rowIndex: reasonRow.number, fillColor: 'FFFFFFFF', cellStyles })
+          })
+          voteReasons.length = 0 // Reset vote reasons for the next meeting
+        }
       }
+      // Add empty row as separator between meetings
+      const emptyRow = worksheet.addRow(Array(headers.length).fill(''))
+      worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, headers.length)
+      rowFormats.push({ rowIndex: emptyRow.number, fillColor: 'FFFFFFFF', cellStyles: [] })
     })
 
     // Add Excel table with explicit header configuration
@@ -241,7 +283,7 @@ export async function generateParticipationsExcel(
     worksheet.addTable({
       name: 'ParticipationTable',
       ref: `A${tableStartRow}`,
-      headerRow: true, // Explicitly indicate that the table has headers
+      headerRow: true,
       totalsRow: false,
       style: {
         theme: 'TableStyleMedium2',
@@ -252,7 +294,7 @@ export async function generateParticipationsExcel(
       },
       columns: headers.map((header) => ({
         name: header,
-        filterButton: true, // Enable filter buttons for sorting and filtering
+        filterButton: true,
         totalsRowFunction: 'none',
       })),
       rows:
@@ -266,7 +308,6 @@ export async function generateParticipationsExcel(
     const headerRow = worksheet.getRow(headerRowOffset)
     headerRow.eachCell((cell, colNumber) => {
       if (colNumber <= headers.length) {
-        // Only format cells within table headers
         cell.font = { bold: true, size: 10, color: { argb: 'FF000000' }, name: 'Arial' }
         cell.fill = {
           type: 'pattern',
@@ -282,7 +323,6 @@ export async function generateParticipationsExcel(
       const row = worksheet.getRow(rowIndex)
       row.eachCell((cell, colNumber) => {
         if (colNumber <= headers.length) {
-          // Only format cells within table
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
