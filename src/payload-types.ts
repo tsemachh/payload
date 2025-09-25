@@ -139,15 +139,17 @@ export type FundWithHolding =
       company?: string | null;
       quantity?: number | null;
       ownedQuantity?: number | null;
+      verifiedHoldings?: boolean | null;
       original?:
         | {
             stockId?: string | null;
             accountNum?: number | null;
             quantity?: number | null;
+            verifiedHoldings?: boolean | null;
+            ownedQuantity?: number | null;
             id?: string | null;
           }[]
         | null;
-      verifiedHoldings?: boolean | null;
       id?: string | null;
     }[]
   | null;
@@ -1389,15 +1391,17 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   company?: T;
   quantity?: T;
   ownedQuantity?: T;
+  verifiedHoldings?: T;
   original?:
     | T
     | {
         stockId?: T;
         accountNum?: T;
         quantity?: T;
+        verifiedHoldings?: T;
+        ownedQuantity?: T;
         id?: T;
       };
-  verifiedHoldings?: T;
   id?: T;
 }
 /**

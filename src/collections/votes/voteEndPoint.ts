@@ -406,6 +406,51 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
     })
 
     if (votesData.fundsWithHolding?.length) {
+      // Check if any fund has original data
+      const hasOriginalData = votesData.fundsWithHolding.some(
+        (fund: any) => fund.original && Object.keys(fund.original).length > 0,
+      )
+
+      let processedFunds = votesData.fundsWithHolding
+
+      if (hasOriginalData) {
+        // Group fundsWithHolding by fund and aggregate original data
+        const groupedByFund = votesData.fundsWithHolding.reduce((acc: any, fund: any) => {
+          const fundId = fund.fund
+
+          if (!acc[fundId]) {
+            acc[fundId] = {
+              company: fund.company,
+              fund: fund.fund,
+              quantity: fund.quantity || 0,
+              ownedQuantity: fund.ownedQuantity || 0,
+              verifiedHoldings: fund.verifiedHoldings,
+              original: [],
+            }
+          }
+
+          if (fund.original && fund.original.stockId) {
+            // Add original data to the original array and sum quantities
+            acc[fundId].original.push({
+              stockId: fund.original.stockId,
+              quantity: fund.original.quantity || 0,
+              ownedQuantity: fund.original.ownedQuantity || 0,
+              verifiedHoldings: fund.original.verifiedHoldings,
+            })
+            acc[fundId].quantity += fund.original.quantity || 0
+          } else {
+            acc[fundId] = { ...fund }
+          }
+
+          return acc
+        }, {})
+
+        // Convert back to array and clean up empty original arrays
+        processedFunds = Object.values(groupedByFund).map((fund: any) => {
+          return fund
+        })
+      }
+
       // Get current meeting and merge fundsWithHolding
       const currentMeeting = await req.payload.findByID({
         collection: 'meetings',
@@ -416,9 +461,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
       const existingFundsWithHolding = currentMeeting?.fundsWithHolding || []
 
       const merged = existingFundsWithHolding.map((existingFund: any) => {
-        const matchingFund = votesData.fundsWithHolding.find(
-          (vote: any) => vote.fund === existingFund.fund,
-        )
+        const matchingFund = processedFunds.find((vote: any) => vote.fund === existingFund.fund)
         return matchingFund ? { ...existingFund, ...matchingFund } : existingFund
       })
 
