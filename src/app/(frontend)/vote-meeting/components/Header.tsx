@@ -31,7 +31,6 @@ const VoteHeader = ({
   isReported,
   approvalDoc
 }: MeetingHeaderProps) => {
-  console.log("approvalDoc @@@@",approvalDoc)
   return (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
       <div className="mb-3 mt-[-30px]">
@@ -82,7 +81,7 @@ const VoteHeader = ({
           />
           
            {/* Download button for the approval doc */}
-           { approvalDoc?.url && (
+           {isReported&& approvalDoc?.url && (
             <a
               href={approvalDoc?.url}
               download={approvalDoc?.filename || 'approval.xlsx'}

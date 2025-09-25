@@ -32,10 +32,18 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
 export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req ,originalDoc}) => {
   
   if (data._status === 'published') {
-    if (originalDoc?.publishedchecksum != '' && originalDoc?.publishedchecksum != data.checksum) {
-      data.reported = false
+   
+    if (originalDoc?.publishedchecksum === ''){
       data.publishedchecksum = data.checksum
-    }}
+    }
+    else if(originalDoc?.publishedchecksum != data.checksum) {
+      data.reported = false
+      data.reportApproval=null
+      data.publishedchecksum = data.checksum
+    }else{
+      data.publishedchecksum = originalDoc?.publishedchecksum
+    }
+  }
 
   const meetingId = data?.meeting
   const votes = data?.votes

@@ -201,6 +201,12 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     }
   }
   const isOriginal = formData?.fundsData.some((fund) => fund.original)
+  
+  const saveDraftData = (label: string, updatedData: any) => {
+    console.log(`Draft saved for ${label}`, updatedData)
+    setFormData(updatedData)
+  }
+
   return formData ? (
     <div
       className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] text-gray-900 dark:text-white`}
