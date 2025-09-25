@@ -388,7 +388,10 @@ export async function upsertStockValueFromImport(
     const newStockValue = await req.payload.create({
       collection: 'stock-values',
       data: stockValue as StockValue,
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
+      },
     })
     valueId = newStockValue?.id
   }

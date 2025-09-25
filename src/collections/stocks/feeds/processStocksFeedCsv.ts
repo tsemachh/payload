@@ -1,9 +1,5 @@
 import { PayloadRequest } from 'payload'
-import {
-  createStocksMap,
-  upsertStockFromImport,
-  upsertStockValueFromImport,
-} from '@/migrations/utils/migrateUtils'
+import { createStocksMap, upsertStockFromImport, upsertStockValueFromImport, } from '@/migrations/utils/migrateUtils'
 import { getStockType, parseDate } from '@/migrations/utils/migrateStockUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
 import { StocksFeed, StockType } from '@/payload-types'
@@ -106,7 +102,11 @@ export const processStocksFeedCsv = async (
 
         if (stock == null) stocksCreated++
         const stockSequence = await upsertStockFromImport(stock || null, row, req, true)
-        if (stockSequence) await upsertStockValueFromImport(stockSequence, row, req)
+        if (stockSequence)
+          await upsertStockValueFromImport(stockSequence, row, {
+            ...req,
+            context: { ...req.context, from: 'process', process: 'processStocksFeed' },
+          })
 
         processedRows++
         // Notify progress every 10 stocks

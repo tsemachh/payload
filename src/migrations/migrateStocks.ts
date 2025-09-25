@@ -46,7 +46,7 @@ async function insertSilenceStocks(stockId: string, req: PayloadRequest) {
         data: { stockId },
         req: {
           ...req,
-          context: { ...req.context, from: 'migration' , process:'migrateStocks' },
+          context: { ...req.context, from: 'migration', process: 'migrateStocks' },
         },
       })
     }
@@ -386,7 +386,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         try {
-          await upsertStockValueFromImport(stockSequence, row, req)
+          await upsertStockValueFromImport(stockSequence, row, {
+            ...req,
+            context: { ...req.context, from: 'migration', process: 'migrateStocks' },
+          })
 
           successCount++
           if (successCount % 1000 === 0 || successCount === resultStockValues.recordset.length) {

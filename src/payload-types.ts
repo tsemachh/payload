@@ -693,7 +693,6 @@ export interface Meeting {
   updator?: string | null;
   process?: string | null;
   publishDate?: string | null;
-  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -725,7 +724,6 @@ export interface Vote {
   updator?: string | null;
   process?: string | null;
   publishDate?: string | null;
-  firstPublished?: boolean | null;
   publisher?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1348,7 +1346,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   updator?: T;
   process?: T;
   publishDate?: T;
-  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1668,7 +1665,6 @@ export interface VotesSelect<T extends boolean = true> {
   updator?: T;
   process?: T;
   publishDate?: T;
-  firstPublished?: T;
   publisher?: T;
   createdAt?: T;
   updatedAt?: T;

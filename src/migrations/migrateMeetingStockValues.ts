@@ -131,7 +131,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           const stockValueId = await upsertStockValueFromImport(
             stockId as string,
             stockData,
-            req,
+            {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValue' },
+            },
             true,
           )
           const stockName = `${stockData?.name} - ${stockData?.stockID}`
