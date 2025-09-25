@@ -4,6 +4,11 @@ import { isAdmin, isAdminFieldLevel, isAdminOrSelf } from '@/utils/authUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
+import TwoFactorSetupEndpoint from '@/collections/endpoints/TwoFactorSetupEndpoint'
+import TwoFactorVerifyEndpoint from '@/collections/endpoints/TwoFactorVerifyEndpoint'
+import TwoFactorDisableEndpoint from '@/collections/endpoints/TwoFactorDisableEndpoint'
+import TwoFactorBackupCodesEndpoint from '@/collections/endpoints/TwoFactorBackupCodesEndpoint'
+import LoginWith2FAEndpoint from '@/collections/endpoints/LoginWith2FAEndpoint'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -370,6 +375,135 @@ export const Users: CollectionConfig = {
         },
       ],
     },
+
+    {
+      name: 'twoFactorAuth',
+      label: 'אימות דו-שלבי (2FA)',
+      type: 'group',
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'enabled',
+              label: 'אימות דו-שלבי מופעל',
+              type: 'checkbox',
+              defaultValue: false,
+              index: true,
+            },
+            {
+              name: 'verified',
+              label: 'אימות דו-שלבי מאומת',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                readOnly: true,
+              },
+            },
+          ],
+        },
+        {
+          name: 'secret',
+          label: 'מפתח סודי TOTP',
+          type: 'text',
+          admin: {
+            hidden: true,
+          },
+          access: {
+            read: ({ req }) => req.user?.isAdmin || false,
+            update: ({ req }) => req.user?.isAdmin || false,
+          },
+        },
+        {
+          name: 'backupCodes',
+          label: 'קודי גיבוי',
+          type: 'array',
+          admin: {
+            hidden: true,
+          },
+          access: {
+            read: ({ req }) => req.user?.isAdmin || false,
+            update: ({ req }) => req.user?.isAdmin || false,
+          },
+          fields: [
+            {
+              name: 'code',
+              label: 'קוד גיבוי',
+              type: 'text',
+            },
+            {
+              name: 'used',
+              label: 'נוצל',
+              type: 'checkbox',
+              defaultValue: false,
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'lastUsed',
+              label: 'שימוש אחרון באימות דו-שלבי',
+              type: 'date',
+              admin: {
+                readOnly: true,
+              },
+            },
+            {
+              name: 'failureCount',
+              label: 'מספר ניסיונות כושלים',
+              type: 'number',
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+              },
+            },
+          ],
+        },
+        {
+          name: 'lastFailureTime',
+          label: 'זמן כישלון אחרון',
+          type: 'date',
+          admin: {
+            hidden: true,
+            readOnly: true,
+          },
+        },
+      ],
+    },
+  ],
+  endpoints: [
+    {
+      path: '/login-2fa',
+      method: 'post',
+      handler: LoginWith2FAEndpoint,
+    },
+    {
+      path: '/2fa-setup',
+      method: 'post',
+      handler: TwoFactorSetupEndpoint,
+    },
+    {
+      path: '/2fa-verify',
+      method: 'post',
+      handler: TwoFactorVerifyEndpoint,
+    },
+    {
+      path: '/2fa-disable',
+      method: 'post',
+      handler: TwoFactorDisableEndpoint,
+    },
+    {
+      path: '/2fa-backup-codes',
+      method: 'post',
+      handler: TwoFactorBackupCodesEndpoint,
+    },
+    {
+      path: '/2fa-backup-codes',
+      method: 'get',
+      handler: TwoFactorBackupCodesEndpoint,
+    },
   ],
   hooks: {
     beforeChange: [
@@ -395,19 +529,102 @@ export const Users: CollectionConfig = {
       },
     ],
     beforeLogin: [
-      async ({ user }) => {
+      async ({ user, req }) => {
+        req.payload.logger.info('beforeLogin hook called for user:', user.email)
+
         if (!user.active) {
           throw new APIError('המשתמש אינו פעיל, אנא פנה למנהל המערכת', 403)
         }
         if (user.isSystem) {
           throw new APIError('המשתמש מערכת אינו מורשה, אנא פנה למנהל המערכת', 403)
         }
-        /*
-        if (!user.isAdmin) {
-          throw new APIError('המשתמש אינו מורשה, אנא פנה למנהל המערכת', 403)
-        }
-*/
 
+        // Check if this is admin login (via admin routes) vs frontend login
+        const isAdminLogin = req.url?.includes('/admin') || req.headers.get('referer')?.includes('/admin')
+        
+        if (isAdminLogin) {
+          // Skip 2FA verification in beforeLogin for admin context
+          // This will be handled by the AdminTwoFactor component after login
+          req.payload.logger.info('Admin login detected, 2FA check will be handled post-login')
+        } else {
+          // For frontend login, check 2FA status
+          if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
+            // User has started 2FA setup but not completed - allow login but indicate setup needed
+            req.payload.logger.info('Frontend user has 2FA enabled but not verified, requiring setup completion after login')
+            // Don't throw error - let login succeed but indicate setup needed
+          } else if (user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified) {
+            req.payload.logger.info('Frontend user has 2FA enabled, checking for TOTP code')
+
+            // Get the request body to check for totpCode
+            const body = req.data || {}
+            const { totpCode } = body
+
+            if (!totpCode) {
+              req.payload.logger.info('No TOTP code provided, requiring 2FA')
+              throw new APIError('נדרש אימות דו-שלבי', 428, { requires2FA: true })
+            }
+
+            req.payload.logger.info('TOTP code provided, verifying...')
+
+            // Verify the TOTP code inline
+            const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import('@/utils/totpUtils')
+
+            // Check rate limiting
+            const rateLimitCheck = checkRateLimit(
+              user.twoFactorAuth.failureCount || 0,
+              user.twoFactorAuth.lastFailureTime ? new Date(user.twoFactorAuth.lastFailureTime) : undefined
+            )
+
+            if (rateLimitCheck.isLocked) {
+              throw new APIError(`חשבון נחסם זמנית. נסה שוב בעוד ${rateLimitCheck.remainingTime} דקות`, 429)
+            }
+
+            try {
+              const decryptedSecret = decryptTOTPSecret(user.twoFactorAuth.secret!)
+              const isValid = verifyTOTPToken(totpCode, decryptedSecret)
+
+              if (!isValid) {
+                // Increment failure count
+                const newFailureCount = (user.twoFactorAuth.failureCount || 0) + 1
+
+                await req.payload.update({
+                  collection: 'users',
+                  id: user.id,
+                  data: {
+                    twoFactorAuth: {
+                      ...user.twoFactorAuth,
+                      failureCount: newFailureCount,
+                      lastFailureTime: new Date().toISOString(),
+                    }
+                  },
+                })
+
+                throw new APIError('קוד אימות דו-שלבי שגוי', 401)
+              }
+
+              req.payload.logger.info('2FA verification successful, allowing frontend login')
+
+              // Reset failure count on successful verification
+              await req.payload.update({
+                collection: 'users',
+                id: user.id,
+                data: {
+                  twoFactorAuth: {
+                    ...user.twoFactorAuth,
+                    lastUsed: new Date().toISOString(),
+                    failureCount: 0,
+                  }
+                },
+              })
+
+            } catch (error) {
+              req.payload.logger.error('2FA verification error:', error)
+              throw new APIError('שגיאה באימות הקוד', 500)
+            }
+          }
+        }
+
+        req.payload.logger.info('beforeLogin hook completed successfully')
         return user
       },
     ],

@@ -418,6 +418,21 @@ export interface User {
    * הזן כתובות IP מופרדות בנקודה-פסיק (;)
    */
   userIp?: string | null;
+  twoFactorAuth?: {
+    enabled?: boolean | null;
+    verified?: boolean | null;
+    secret?: string | null;
+    backupCodes?:
+      | {
+          code?: string | null;
+          used?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+    lastUsed?: string | null;
+    failureCount?: number | null;
+    lastFailureTime?: string | null;
+  };
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -1533,6 +1548,23 @@ export interface UsersSelect<T extends boolean = true> {
   changePassword?: T;
   receiveMailNotification?: T;
   userIp?: T;
+  twoFactorAuth?:
+    | T
+    | {
+        enabled?: T;
+        verified?: T;
+        secret?: T;
+        backupCodes?:
+          | T
+          | {
+              code?: T;
+              used?: T;
+              id?: T;
+            };
+        lastUsed?: T;
+        failureCount?: T;
+        lastFailureTime?: T;
+      };
   creator?: T;
   updator?: T;
   process?: T;

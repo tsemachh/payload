@@ -216,7 +216,7 @@ export default buildConfig({
 
     components: {
       afterLogin: ['/admincomponents/auth/LoginCaptcha'],
-      providers: ['/providers/CustomContext#CustomContextProvider'],
+      providers: ['/providers/CustomContext#CustomContextProvider', '/admincomponents/providers/TwoFactorProvider'],
       graphics: {
         Logo: '/graphics/Logo',
       },

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, Suspense, useRef } from 'react'
+import React, { Suspense, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import LogoImage from '@/graphics/Logo/emda_logo.png'
@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { AlertCircle } from 'lucide-react'
@@ -21,7 +21,8 @@ import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
 import TurnstileCaptcha, { TurnstileStatus } from '@/components/TurnstileCaptcha'
 import { v4 as uuidv4 } from 'uuid'
-import { postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
+import { postWithErrorHandling, getWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
+import { TwoFactorSetup } from '@/components/TwoFactorSetup'
 
 // Client component that uses useSearchParams
 function SignInContent() {
@@ -32,69 +33,154 @@ function SignInContent() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    totpCode: '',
   })
   const [error, setError] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('required')
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [requiresSetup, setRequiresSetup] = useState(false)
   const idempotencyKey = useRef(uuidv4()).current
-  const { login } = useAuth()
+  const { login, setUser } = useAuth()
 
   const handleTurnstileVerify = (token: string) => {
-    setTurnstileToken(token);
-    setTurnstileStatus('success');
-  };
+    setTurnstileToken(token)
+    setTurnstileStatus('success')
+  }
 
   const handleTurnstileError = () => {
-    setTurnstileStatus('error');
-    setTurnstileToken(null);
-  };
+    setTurnstileStatus('error')
+    setTurnstileToken(null)
+  }
 
   const handleTurnstileExpire = () => {
-    setTurnstileStatus('expired');
-    setTurnstileToken(null);
-  };
+    setTurnstileStatus('expired')
+    setTurnstileToken(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (turnstileStatus !== 'success' || !turnstileToken) {
-      setError('אנא אמת שאינך רובוט');
-      return;
+    // Only verify Turnstile on first login attempt, not when submitting 2FA code
+    if (!requiresTwoFactor) {
+      if (turnstileStatus !== 'success' || !turnstileToken) {
+        setError('אנא אמת שאינך רובוט')
+        return
+      }
     }
 
     setIsLoading(true)
     setError('')
 
     try {
-      // First verify the Turnstile token
-      const verifyResult = await postWithErrorHandling('/api/verify-turnstile', { 
-        token: turnstileToken,
-        idempotencyKey
-      }, {
-        errorMessage: 'אימות האבטחה נכשל',
-        notifyOnError: true // We'll handle errors manually
-      });
+      // Only verify Turnstile token on first login attempt
+      if (!requiresTwoFactor) {
+        const verifyResult = await postWithErrorHandling(
+          '/api/verify-turnstile',
+          {
+            token: turnstileToken,
+            idempotencyKey,
+          },
+          {
+            errorMessage: 'אימות האבטחה נכשל',
+            notifyOnError: false, // We'll handle errors manually
+          },
+        )
 
-      if (!verifyResult.success) {
-        setError('אימות האבטחה נכשל. אנא נסה שוב.');
-        setTurnstileStatus('required');
-        setIsLoading(false);
-        return;
+        if (!verifyResult.success) {
+          setError('אימות האבטחה נכשל. אנא נסה שוב.')
+          setTurnstileStatus('required')
+          setIsLoading(false)
+          return
+        }
       }
 
-      // Then attempt to login
-      await login({
+      // Attempt login with regular endpoint
+      const user = await login({
         email: formData.email,
         password: formData.password,
+        totpCode: requiresTwoFactor ? formData.totpCode : undefined,
       })
 
+      // Check if user has incomplete 2FA setup
+      if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
+        console.log('User has incomplete 2FA setup, showing setup interface')
+        setRequiresSetup(true)
+        setError('')
+        return
+      }
+
+      // Login successful - redirect to callback URL
       router.push(callbackUrl)
       router.refresh()
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
+    } catch (error: any) {
+      // Check if this is a 2FA required case (which is a legitimate flow, not an error)
+      if (error.requires2FA) {
+        console.log('2FA required detected, showing TOTP input')
+        setRequiresTwoFactor(true)
+        setError('')
+      } else {
+        console.log('Actual login error:', error)
+        setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
+      }
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show 2FA setup message if incomplete setup detected
+  if (requiresSetup) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-4">
+            <div className="flex justify-center">
+              <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center text-orange-600">דרושה השלמת הגדרת אימות</CardTitle>
+            <CardDescription className="text-center">
+              ההתחברות בוצעה בהצלחה, אך נדרש להשלים את הגדרת האימות הדו-שלבי
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>מה עליך לעשות:</strong>
+                <br />
+                1. היכנס לממשק הניהול (Admin)
+                <br />
+                2. השלם את הגדרת האימות הדו-שלבי
+                <br />
+                3. חזור לכאן והתחבר שוב
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => window.open('/admin', '_blank')}
+                className="w-full"
+                variant="default"
+              >
+                פתח ממשק ניהול בטאב חדש
+              </Button>
+
+              <Button
+                onClick={() => setRequiresSetup(false)}
+                className="w-full"
+                variant="outline"
+              >
+                חזור למסך התחברות
+              </Button>
+            </div>
+
+            <div className="text-sm text-center text-muted-foreground">
+              צריך עזרה? צור קשר עם מנהל המערכת
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -106,7 +192,9 @@ function SignInContent() {
           </div>
           <CardTitle className="text-2xl font-bold text-center">התחברות</CardTitle>
           <CardDescription className="text-center">
-            הזן את פרטי ההתחברות שלך כדי להיכנס למערכת
+            {requiresTwoFactor
+              ? 'הזן את קוד האימות הדו-שלבי כדי להשלים את ההתחברות'
+              : 'הזן את פרטי ההתחברות שלך כדי להיכנס למערכת'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,22 +233,45 @@ function SignInContent() {
                 disabled={isLoading}
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading || turnstileStatus !== 'success'}
+            {requiresTwoFactor && (
+              <div className="space-y-2">
+                <Label htmlFor="totpCode">קוד אימות דו-שלבי</Label>
+                <Input
+                  id="totpCode"
+                  type="text"
+                  placeholder="123456"
+                  value={formData.totpCode}
+                  onChange={(e) => setFormData({ ...formData, totpCode: e.target.value })}
+                  required={requiresTwoFactor}
+                  disabled={isLoading}
+                  maxLength={6}
+                  minLength={6}
+                />
+                <p className="text-sm text-muted-foreground">הזן את הקוד מאפליקציית האימות שלך</p>
+              </div>
+            )}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                isLoading ||
+                (!requiresTwoFactor && turnstileStatus !== 'success') ||
+                (requiresTwoFactor && !formData.totpCode)
+              }
             >
-              {isLoading ? 'מתחבר...' : 'התחבר'}
+              {isLoading ? 'מתחבר...' : requiresTwoFactor ? 'אמת קוד' : 'התחבר'}
             </Button>
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="turnstile">אימות אבטחה</Label>
-              <TurnstileCaptcha
-                onVerify={handleTurnstileVerify}
-                onError={handleTurnstileError}
-                onExpire={handleTurnstileExpire}
-                className="mt-2"
-              />
-            </div>
+            {!requiresTwoFactor && (
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="turnstile">אימות אבטחה</Label>
+                <TurnstileCaptcha
+                  onVerify={handleTurnstileVerify}
+                  onError={handleTurnstileError}
+                  onExpire={handleTurnstileExpire}
+                  className="mt-2"
+                />
+              </div>
+            )}
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
