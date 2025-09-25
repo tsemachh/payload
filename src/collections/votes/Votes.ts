@@ -260,6 +260,15 @@ export const Votes: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                 },
+                {
+                  name: 'reportApproval',
+                  label: 'העלה אישור הצבעה בפועל',
+                  type: 'upload',
+                  relationTo: 'documents',
+                  admin: {
+                    width: '220px',
+                  },
+                },
               ],
             },
             {

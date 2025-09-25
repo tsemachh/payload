@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
+import { ReportApprovalUpload } from './uploadApproval'
 
 export interface VoteData {
   fundsData: Array<{
@@ -48,6 +49,7 @@ export interface VoteData {
   voteAgainstRecommendation: boolean
   voteDifferentFromResult: boolean
   reported: boolean
+  reportApproval?: File
   clientComment?: string
   voteDocuments?: Array<{
     id: string
@@ -120,7 +122,11 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     const reqBody = {
       meetingId,
       companyIds: companyIds.split(','),
-      votesData: { reported: formData?.reported, fundsWithHolding },
+      votesData: {
+        reported: formData?.reported,
+        reportApproval: formData?.reportApproval,
+        fundsWithHolding,
+      },
     }
     setIsLoading(true)
     try {
@@ -195,6 +201,12 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     }
   }
   const isOriginal = formData?.fundsData.some((fund) => fund.original)
+  
+  const saveDraftData = (label: string, updatedData: any) => {
+    console.log(`Draft saved for ${label}`, updatedData)
+    setFormData(updatedData)
+  }
+
   return formData ? (
     <div
       className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] text-gray-900 dark:text-white`}
@@ -243,6 +255,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
             <label className="text-base font-medium text-gray-900 dark:text-white mr-3">
               הצבעה בפועל
             </label>
+            <ReportApprovalUpload formData={formData} setFormData ={setFormData} saveDraftData={saveDraftData }/>
           </div>
           <Table>
             <TableHeader>

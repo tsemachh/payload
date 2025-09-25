@@ -719,6 +719,7 @@ export interface Vote {
   voteAgainstRecommendation?: boolean | null;
   voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
+  reportApproval?: (string | null) | Document;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
@@ -1662,6 +1663,7 @@ export interface VotesSelect<T extends boolean = true> {
   voteAgainstRecommendation?: T;
   voteDifferentFromResult?: T;
   reported?: T;
+  reportApproval?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;

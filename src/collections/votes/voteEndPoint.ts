@@ -401,6 +401,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
       },
       data: {
         reported: votesData.reported,
+        reportApproval: votesData.reportApproval,
       },
       req,
     })
