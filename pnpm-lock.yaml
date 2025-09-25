@@ -171,8 +171,8 @@ importers:
         specifier: ^1.0.4
         version: 1.1.1(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       convert-csv-to-json:
-        specifier: ^2.50.0
-        version: 2.50.0
+        specifier: ^3.8.0
+        version: 3.8.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -3415,8 +3415,8 @@ packages:
   console-table-printer@2.12.1:
     resolution: {integrity: sha512-wKGOQRRvdnd89pCeH96e2Fn4wkbenSP6LMHfjfyNLMbGuHEFbMqQNuxXqd0oXG9caIOQ1FTvc5Uijp9/4jujnQ==}
 
-  convert-csv-to-json@2.50.0:
-    resolution: {integrity: sha512-60Z7bV3mRFREVCKXAyGnUfZzrABGi4e1SUTjBw01PXyqp8tbKOjgO2hCWhgOM8MaiIr5I4Ix3+xgxg1Id1L5SA==}
+  convert-csv-to-json@3.8.0:
+    resolution: {integrity: sha512-yBeP7leaEBXSZGFaFRfsaBckjv9KfvKj/iLYc3mf7KPe3hSOQfGXFFGyoRbPoWS8hyMtIIMtlqlq9KbKO5H4nQ==}
 
   convert-source-map@1.9.0:
     resolution: {integrity: sha512-ASFBup0Mz1uyiIjANan1jzLQami9z1PoYSZCiiYW2FczPbenXc45FZdBZLzOT+r6+iciuEModtmCti+hjaAk0A==}
@@ -10890,7 +10890,7 @@ snapshots:
     dependencies:
       simple-wcswidth: 1.1.2
 
-  convert-csv-to-json@2.50.0: {}
+  convert-csv-to-json@3.8.0: {}
 
   convert-source-map@1.9.0: {}
 

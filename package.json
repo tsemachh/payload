@@ -76,7 +76,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
-    "convert-csv-to-json": "^2.50.0",
+    "convert-csv-to-json": "^3.8.0",
     "date-fns": "^4.1.0",
     "date-holidays": "^3.24.2",
     "dotenv": "^16.4.7",
