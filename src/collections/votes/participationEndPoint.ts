@@ -92,6 +92,7 @@ async function processVotesData(
         id: company?.id || companyId || '',
         name: company?.name || '',
       },
+      displayVotingRecommendation: company?.researchDocuments?.displayVotingRecommendation === true,
       votes: [vote],
       hasVotes: true,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {

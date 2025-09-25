@@ -194,29 +194,55 @@ export async function generateParticipationsPDF(
       return new Uint8Array(doc.output('arraybuffer'))
     }
 
-    const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } = {
-      '0': { halign: 'center', cellWidth: 30 },
-      '1': { halign: 'center', cellWidth: 30 },
-      '2': { halign: 'center', cellWidth: 30 },
-      '3': { halign: 'center', cellWidth: 40 },
-      '4': { halign: 'center', cellWidth: 35 },
-      '5': { halign: 'center', cellWidth: 35 },
-      '6': { halign: 'center', cellWidth: 50 },
-      '7': { halign: 'center', cellWidth: 50 },
-      '8': { halign: 'center', cellWidth: 50 },
-      '9': { halign: 'center', cellWidth: 45 }, // סוג אסיפה
-      '10': { halign: 'center', cellWidth: 48 }, // מועד אסיפה
-      '11': { halign: 'center', cellWidth: 43 }, // שווי החזקה
-      '12': { halign: 'center', cellWidth: 35 }, // החזקה באחוזים
-      '13': { halign: 'center', cellWidth: 35 }, // שווי שוק
-      '14': { halign: 'center', cellWidth: 45 }, // שם נייר
-      '15': { halign: 'center', cellWidth: 75 }, // שם חברה
-      '16': { halign: 'center', cellWidth: 70 }, // תשם תאגיד
-      '17': { halign: 'center', cellWidth: 45 }, // מספר נייר
-      '18': { halign: 'center', cellWidth: 20 }, // מספר סעיף
-    }
+    // Determine if any meeting has displayVotingRecommendation: true
+    const showAdvisorColumn = data.some((meeting) => meeting.displayVotingRecommendation === true)
+    //TODORachelBra: isOneCompany variable
+    // Define column styles based on whether the advisor column is included
+    const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } =
+      showAdvisorColumn
+        ? {
+            '0': { halign: 'center', cellWidth: 30 }, // Personal Interest
+            '1': { halign: 'center', cellWidth: 30 }, // Related Party
+            '2': { halign: 'center', cellWidth: 30 }, // Conflict of Interest
+            '3': { halign: 'center', cellWidth: 40 }, // Policy Compliance
+            '4': { halign: 'center', cellWidth: 35 }, // Special Majority
+            '5': { halign: 'center', cellWidth: 35 }, // Regular Majority
+            '6': { halign: 'center', cellWidth: 50 }, // Meeting Results
+            '7': { halign: 'center', cellWidth: 50 }, // Vote
+            '8': { halign: 'center', cellWidth: 50 }, // ADVISOR_RECOMMENDATION
+            '9': { halign: 'center', cellWidth: 45 }, // Meeting Type
+            '10': { halign: 'center', cellWidth: 48 }, // Meeting Date
+            '11': { halign: 'center', cellWidth: 43 }, // Holding Value
+            '12': { halign: 'center', cellWidth: 35 }, // Percentage Holding
+            '13': { halign: 'center', cellWidth: 35 }, // Market Value
+            '14': { halign: 'center', cellWidth: 45 }, // Stock Name
+            '15': { halign: 'center', cellWidth: 75 }, // Company Name
+            '16': { halign: 'center', cellWidth: 70 }, // Corporate Name
+            '17': { halign: 'center', cellWidth: 45 }, // Stock Number
+            '18': { halign: 'center', cellWidth: 20 }, // Agenda Number
+          }
+        : {
+            '0': { halign: 'center', cellWidth: 32 }, // Personal Interest (+6)
+            '1': { halign: 'center', cellWidth: 32 }, // Related Party (+6)
+            '2': { halign: 'center', cellWidth: 32 }, // Conflict of Interest (+6)
+            '3': { halign: 'center', cellWidth: 44 }, // Policy Compliance (+8)
+            '4': { halign: 'center', cellWidth: 37 }, // Special Majority (+6)
+            '5': { halign: 'center', cellWidth: 37 }, // Regular Majority (+6)
+            '6': { halign: 'center', cellWidth: 52 }, // Meeting Results (+6)
+            '7': { halign: 'center', cellWidth: 52 }, // Vote (+6)
+            '8': { halign: 'center', cellWidth: 45 }, // Meeting Type
+            '9': { halign: 'center', cellWidth: 48 }, // Meeting Date
+            '10': { halign: 'center', cellWidth: 43 }, // Holding Value
+            '11': { halign: 'center', cellWidth: 35 }, // Percentage Holding
+            '12': { halign: 'center', cellWidth: 35 }, // Market Value
+            '13': { halign: 'center', cellWidth: 45 }, // Stock Name
+            '14': { halign: 'center', cellWidth: 75 }, // Company Name
+            '15': { halign: 'center', cellWidth: 70 }, // Corporate Name
+            '16': { halign: 'center', cellWidth: 45 }, // Stock Number
+            '17': { halign: 'center', cellWidth: 20 }, // Agenda Number
+          }
 
-    // יצירת הכותרות - שורה ראשונה עם המיזוג
+    // Define header rows based on showAdvisorColumn
     const headerRow1 = [
       { content: prepareTextWithLineBreaks(SHARED_COLUMNS.PERSONAL_INTEREST, doc, 35), rowSpan: 2 },
       { content: prepareTextWithLineBreaks(SHARED_COLUMNS.RELATED_PARTY, doc, 35), rowSpan: 2 },
@@ -232,10 +258,14 @@ export async function generateParticipationsPDF(
       { content: prepareTextWithLineBreaks(SHARED_COLUMNS.REGULAR_MAJORITY, doc, 45), rowSpan: 2 },
       { content: prepareTextWithLineBreaks(SHARED_COLUMNS.MEETING_RESULTS, doc, 55), rowSpan: 2 },
       { content: prepareTextWithLineBreaks(SHARED_COLUMNS.VOTE, doc, 50), rowSpan: 2 },
-      {
-        content: prepareTextWithLineBreaks(SHARED_COLUMNS.ADVISOR_RECOMMENDATION, doc, 50),
-        rowSpan: 2,
-      },
+      ...(showAdvisorColumn
+        ? [
+            {
+              content: prepareTextWithLineBreaks(SHARED_COLUMNS.ADVISOR_RECOMMENDATION, doc, 50),
+              rowSpan: 2,
+            },
+          ]
+        : []),
       {
         content: prepareText('נושא'),
         colSpan: 9, // מיזוג8 עמודות - עמודות 9-16
@@ -343,8 +373,10 @@ export async function generateParticipationsPDF(
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
-        { content: '', styles: { fillColor: companyHeaderBgColor } },
-        // עמודות 9-16 עם נתוני החברה
+        ...(showAdvisorColumn
+          ? [{ content: '', styles: { fillColor: companyHeaderBgColor } }]
+          : []),
+        // Company data columns
         {
           content:
             companyValues[0].length > 10
@@ -385,16 +417,17 @@ export async function generateParticipationsPDF(
         },
         {
           content:
-            companyValues[7].length > 10
+            companyValues[8].length > 10
               ? prepareTextWithLineBreaks(companyValues[8], doc, 30)
               : prepareText(companyValues[8]),
           styles: { fillColor: companyHeaderBgColor, halign: 'center', textColor },
         },
-        // עמודה 16 ריקה
+        // Agenda Number column (empty)
         { content: '', styles: { fillColor: companyHeaderBgColor } },
       ]
       body.push(companyRow)
-      // הוספת שורות הסעיפים
+
+      // Add agenda rows
       meeting.agendas.forEach((agenda: any, i: number) => {
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [230, 237, 255]
         const defaultTextColor = [51, 51, 51]
@@ -412,23 +445,29 @@ export async function generateParticipationsPDF(
           voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
           voteReasonCounter++
         }
-        // Organize agenda data for columns 0-8
+        // Organize agenda data for columns 0-7 (or 0-6 if no advisor column)
         const agendaData = [
-          booleanToIcon(agenda.personalInterest), // עמודה 0
-          booleanToIcon(agenda.relatedParty), // עמודה 1
-          booleanToIcon(agenda.conflictOfInterest), // עמודה 2
-          booleanToIcon(agenda.policyCompliance), // עמודה 3
+          booleanToIcon(agenda.personalInterest), // Column 0
+          booleanToIcon(agenda.relatedParty), // Column 1
+          booleanToIcon(agenda.conflictOfInterest), // Column 2
+          booleanToIcon(agenda.policyCompliance), // Column 3
           agenda.privilegedMajority && agenda.percentResult
             ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            : booleanToIcon(agenda.privilegedMajority),
+            : booleanToIcon(agenda.privilegedMajority), // Column 4
           agenda.simpleMajority && agenda.percentResult
             ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            : booleanToIcon(agenda.simpleMajority), // עמודה 4
+            : booleanToIcon(agenda.simpleMajority), // Column 5
           agenda.result
             ? resultMapping[agenda.result] || agenda.result
-            : agenda.meetingResults || '', // עמודה 6
-          voteContent, // עמודה 7 - Updated with voteReason number
-          agenda.recommendation?.votingRecommendation || '', // עמודה 8
+            : agenda.meetingResults || '', // Column 6
+          voteContent, // Column 7
+          ...(showAdvisorColumn
+            ? [
+                meeting.displayVotingRecommendation
+                  ? agenda.recommendation?.votingRecommendation
+                  : '',
+              ] // Column 8
+            : []),
         ]
         const row = [
           ...agendaData.map((content) => {
@@ -448,10 +487,10 @@ export async function generateParticipationsPDF(
               },
             }
           }),
-          // עמודה 9 - טקסט הסעיף עם מיזוג 7 עמודות
+          // Agenda text column with adjusted colSpan
           {
             content: preparedAgendaText,
-            colSpan: 9, // מיזוג עמודות 9-16
+            colSpan: showAdvisorColumn ? 9 : 10, // Columns 9-17 or 8-16
             styles: {
               fillColor: rowBg,
               textColor: defaultTextColor,
@@ -459,7 +498,7 @@ export async function generateParticipationsPDF(
               valign: 'top',
             },
           },
-          // עמודה 17 - מספר הסעיף
+          // Agenda Number column
           {
             content: prepareText('.' + (i + 1).toString()),
             styles: { fillColor: rowBg, textColor: defaultTextColor, halign: 'center' },
@@ -467,17 +506,18 @@ export async function generateParticipationsPDF(
         ]
         body.push(row)
       })
-      // הוספת הערות ההצבעה לפני השורה הריקה
+
+      // Add vote reason rows
       if (voteReasons.length > 0) {
         voteReasons.forEach(({ index, reason }) => {
           const isEnglish = /^[A-Za-z]/.test(reason?.trim?.() || '')
           const reasonText = isEnglish
-            ? reason
-            : prepareTextWithLineBreaks(`[${index}] ${reason}`, doc, TABLE_WIDTH + 900)
+            ? ` ${reason} [${index}]`
+            : prepareTextWithLineBreaks(`]${index}[ ${reason}`, doc, TABLE_WIDTH + 900)
           body.push([
             {
               content: reasonText,
-              colSpan: 19,
+              colSpan: showAdvisorColumn ? 19 : 18, // Adjust colSpan
               styles: {
                 font: 'Ariel',
                 fontStyle: 'normal',
@@ -487,23 +527,23 @@ export async function generateParticipationsPDF(
                 halign: 'right',
                 minCellHeight: VOTE_REASON_ROW_HEIGHT,
                 fillColor: [255, 255, 255],
-                // overflow: 'linebreak',
               },
             },
           ])
         })
-        // איפוס רשימת ההערות לאחר הוספתם
-        voteReasons.length = 0
+        voteReasons.length = 0 // Reset vote reasons
       }
-      // הוספת שורה ריקה להפרדה בין חברות
+
+      // Add empty row for separation
       body.push([
         {
           content: '',
-          colSpan: 19, // מיזוג כל העמודות
+          colSpan: showAdvisorColumn ? 19 : 18, // Adjust colSpan
           styles: { minCellHeight: 10, fillColor: [255, 255, 255] },
         },
       ])
     }
+
     autoTable(doc, {
       head,
       body,
@@ -535,6 +575,7 @@ export async function generateParticipationsPDF(
         addHeader(doc, options, logoBase64, logoWidth, logoHeight)
       },
     })
+
     const totalPages = doc.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
@@ -545,6 +586,7 @@ export async function generateParticipationsPDF(
       const footerWidth = doc.getTextWidth(footerText)
       doc.text(footerText, (PAGE_WIDTH - footerWidth) / 2, PAGE_HEIGHT - MARGIN)
     }
+
     return new Uint8Array(doc.output('arraybuffer'))
   } catch (error) {
     console.trace(error)

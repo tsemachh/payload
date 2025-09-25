@@ -29,9 +29,11 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_TYPE,
     ]
 
+    // Conditionally define agenda headers based on displayVotingRecommendation
+    const showAdvisorColumn = data.some((meeting) => meeting.displayVotingRecommendation === true)
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
-      SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
+      ...(showAdvisorColumn ? [SHARED_COLUMNS.ADVISOR_RECOMMENDATION] : []),
       SHARED_COLUMNS.VOTE,
       SHARED_COLUMNS.MEETING_RESULTS,
       SHARED_COLUMNS.REGULAR_MAJORITY,
@@ -192,7 +194,13 @@ export async function generateParticipationsExcel(
             }
             const agendaData = [
               numberedAgendaText,
-              agenda.recommendation?.votingRecommendation || '',
+              ...(showAdvisorColumn
+                ? [
+                    meeting.displayVotingRecommendation
+                      ? agenda.recommendation?.votingRecommendation
+                      : '',
+                  ]
+                : []),
               voteContent,
               agenda.result
                 ? resultMapping[agenda.result] || agenda.result
@@ -336,28 +344,54 @@ export async function generateParticipationsExcel(
       })
     })
 
+    // Define fixed column widths with comments indicating corresponding columns
+    const columnWidths = showAdvisorColumn
+      ? [
+          10, // Column 1: מספר נייר ערך (Stock Number)
+          20, // Column 2: שם תאגיד (Corporate Name)
+          20, // Column 3: שם החברה (Company Name)
+          15, // Column 4: שם נייר ערך (Stock Name)
+          10, // Column 5: שווי שוק (Market Value)
+          10, // Column 6: אחוז החזקה (Percentage Holding)
+          10, // Column 7: שווי החזקה (Holding Value)
+          10, // Column 8: תאריך אסיפה (Meeting Date)
+          10, // Column 9: סוג אסיפה (Meeting Type)
+          70, // Column 10: נושא (Subject)
+          10, // Column 11: המלצת יועץ (Advisor Recommendation)
+          10, // Column 12: הצבעה (Vote)
+          10, // Column 13: תוצאות האסיפה (Meeting Results)
+          10, // Column 14: רוב רגיל (Regular Majority)
+          10, // Column 15: רוב מיוחד (%) (Special Majority)
+          10, // Column 16: בהתאם למדיניות (Policy Compliance)
+          10, // Column 17: ניגוד עניינים (Conflict of Interest)
+          10, // Column 18: קשר (Related Party)
+          10, // Column 19: אישי (Personal Interest)
+        ]
+      : [
+          10, // Column 1: מספר נייר ערך (Stock Number)
+          20, // Column 2: שם תאגיד (Corporate Name)
+          20, // Column 3: שם החברה (Company Name)
+          15, // Column 4: שם נייר ערך (Stock Name)
+          10, // Column 5: שווי שוק (Market Value)
+          10, // Column 6: אחוז החזקה (Percentage Holding)
+          10, // Column 7: שווי החזקה (Holding Value)
+          10, // Column 8: תאריך אסיפה (Meeting Date)
+          10, // Column 9: סוג אסיפה (Meeting Type)
+          70, // Column 10: נושא (Subject)
+          11, // Column 11: הצבעה (Vote) +1
+          11, // Column 12: תוצאות האסיפה (Meeting Results) +1
+          11, // Column 13: רוב רגיל (Regular Majority) +1
+          11, // Column 14: רוב מיוחד (%) (Special Majority) +1
+          12, // Column 15: בהתאם למדיניות (Policy Compliance) +2
+          11, // Column 16: ניגוד עניינים (Conflict of Interest) +1
+          11, // Column 17: קשר (Related Party) +1
+          11, // Column 18: אישי (Personal Interest) +1
+        ]
+
+    // Apply fixed column widths
     worksheet.columns.forEach((column, i) => {
-      let maxLength = 0
-      if (typeof column.eachCell === 'function') {
-        column.eachCell({ includeEmpty: true }, (cell) => {
-          const columnLength = cell.value
-            ? cell.value
-                .toString()
-                .split('\n')
-                .reduce((max, line) => Math.max(max, line.length), 0)
-            : 0
-          if (columnLength > maxLength) {
-            maxLength = columnLength
-          }
-        })
-      }
-      let newWidth = Math.max(maxLength + 2, 10)
-      if (i + 1 === agendaTextIndex) {
-        newWidth *= 1.5
-        column.width = Math.min(newWidth, 70)
-      } else {
-        newWidth *= 0.75
-        column.width = Math.min(newWidth, 50)
+      if (i < columnWidths.length) {
+        column.width = columnWidths[i]
       }
     })
 
