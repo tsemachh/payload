@@ -10,6 +10,7 @@ import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from 
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
 import { default as default_805fe4906b6268b5debc0aa79d07f9dd } from '../../../collections/admin-notifications/components/TaskMenu'
 import { default as default_4dd24e2ec1d9dc857c6d5bb6d71a585f } from '@shefing/quickfilter/QuickFilter'
+import { default as default_0ba0d6a826c1cdb82a195f359f1d01b6 } from '@shefing/custom-version-view/index'
 import { default as default_b5963f820ebd4c76ff582b865f9558e8 } from '../../../admincomponents/icon/CompactMeetingBarCell'
 import { default as default_0c2f08cfc08a46ea136745d5d8f7b6e5 } from '../../../collections/meetings/components/ActivityStatsField'
 import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
@@ -68,6 +69,7 @@ export const importMap = {
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,
   "/collections/admin-notifications/components/TaskMenu#default": default_805fe4906b6268b5debc0aa79d07f9dd,
   "@shefing/quickfilter/QuickFilter#default": default_4dd24e2ec1d9dc857c6d5bb6d71a585f,
+  "@shefing/custom-version-view/index#default": default_0ba0d6a826c1cdb82a195f359f1d01b6,
   "/admincomponents/icon/CompactMeetingBarCell#default": default_b5963f820ebd4c76ff582b865f9558e8,
   "/collections/meetings/components/ActivityStatsField#default": default_0c2f08cfc08a46ea136745d5d8f7b6e5,
   "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
