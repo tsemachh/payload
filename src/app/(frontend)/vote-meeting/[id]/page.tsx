@@ -172,7 +172,9 @@ export default function VotingForm() {
   const { data: publishedVotes, mutate: mutatePublish } = useSWR(swrKeyPublish, fetcherVote, {
     revalidateOnFocus: false,
   })
-
+  // publishedVotes is an array of full vote objects
+  const reportApproval = publishedVotes?.[0]?.reportApproval
+  const reported = publishedVotes?.[0]?.reported
   const swrKey =
     meetingIdPayload && companiesIDs.length > 0
       ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${companiesIDs}&status=${isReadOnly ? 'published' : 'draft'}`
@@ -852,6 +854,8 @@ export default function VotingForm() {
             isDirty={isDirty}
             lastPublishedVoteInfo={lastPublishedVoteInfo}
             fetchedVotes={fetchedVotes}
+            isReported={reported}
+            approvalDoc={reportApproval}
           />
 
           {/* Main content */}

@@ -23,16 +23,19 @@ interface VoteStatusProps {
   isDraft: boolean
   draftInfo?: VoteInfo
   isFirstDraft: boolean
+  isReported: boolean
 }
 
 function StatusIconWithTooltip({
   info,
   isPublished,
   isFirstDraft,
+  isReported,
 }: {
   info: VoteInfo
   isPublished: boolean
   isFirstDraft?: boolean
+  isReported: boolean
 }) {
   const [relativeTime, setRelativeTime] = useState(() => getRelativeTime(info.date))
 
@@ -41,17 +44,28 @@ function StatusIconWithTooltip({
   }
 
   const isSystemUser = info.user === '' || info.user === 'system'
-  const tooltipText = isPublished
-    ? isSystemUser
-      ? `ההצבעה נשלחה ${relativeTime}`
-      : `ההצבעה נשלחה על ידי ${info.user} ${relativeTime}`
-    : `טיוטה ${isFirstDraft ? 'נוספת' : ''} עודכנה ${relativeTime}`
+
+  let tooltipText
+  if (isPublished && isReported) {
+    tooltipText = 'הצבעה בפועל נעשתה'
+  } else {
+    tooltipText = isPublished
+      ? isSystemUser
+        ? `ההצבעה נשלחה ${relativeTime}`
+        : `ההצבעה נשלחה על ידי ${info.user} ${relativeTime}`
+      : `טיוטה ${isFirstDraft ? 'נוספת' : ''} עודכנה ${relativeTime}`
+  }
 
   const IconComponent = isPublished ? FileCheck : FileEdit
-  const colors = isPublished
-    ? 'bg-green-100 border-green-200 text-green-600'
-    : 'bg-orange-100 border-orange-200 text-orange-600'
-
+  
+  let colors
+  if (isPublished && isReported) {
+    colors = 'bg-blue-100 border-blue-200 text-blue-600'
+  } else {
+    colors = isPublished
+      ? 'bg-green-100 border-green-200 text-green-600'
+      : 'bg-orange-100 border-orange-200 text-orange-600'
+  }
   return (
     <TooltipProvider>
       <Tooltip>
@@ -78,14 +92,20 @@ export default function VoteStatus({
   isDraft,
   draftInfo,
   isFirstDraft,
+  isReported,
 }: VoteStatusProps) {
   if (isPublished && publishedInfo) {
-    return <StatusIconWithTooltip info={publishedInfo} isPublished={true} />
+    return <StatusIconWithTooltip info={publishedInfo} isPublished={true} isReported={isReported} />
   }
 
   if (isDraft && draftInfo) {
     return (
-      <StatusIconWithTooltip info={draftInfo} isPublished={false} isFirstDraft={isFirstDraft} />
+      <StatusIconWithTooltip
+        info={draftInfo}
+        isPublished={false}
+        isFirstDraft={isFirstDraft}
+        isReported={isReported}
+      />
     )
   }
 

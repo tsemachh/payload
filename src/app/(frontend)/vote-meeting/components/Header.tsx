@@ -13,6 +13,12 @@ interface MeetingHeaderProps {
   isDirty: boolean
   lastPublishedVoteInfo: { user: string; date: Date } | undefined
   fetchedVotes: Vote[]
+  isReported: boolean
+  approvalDoc?: {
+    url: string
+    filename: string
+    mimeType?: string
+  }
 }
 
 const VoteHeader = ({
@@ -22,7 +28,10 @@ const VoteHeader = ({
   isDirty,
   lastPublishedVoteInfo,
   fetchedVotes,
+  isReported,
+  approvalDoc
 }: MeetingHeaderProps) => {
+  console.log("approvalDoc @@@@",approvalDoc)
   return (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
       <div className="mb-3 mt-[-30px]">
@@ -38,6 +47,7 @@ const VoteHeader = ({
             </div>
           </div>
         )}
+
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
           <div className="w-full md:w-auto">
             {meetingData.meetingInviteUrl ? (
@@ -56,20 +66,34 @@ const VoteHeader = ({
             )}
           </div>
 
+         
           <VoteStatus
             isPublished={!isDirty}
             publishedInfo={lastPublishedVoteInfo}
             isFirstDraft={!!lastPublishedVoteInfo}
             isDraft={fetchedVotes?.length > 0 && isDirty}
-            draftInfo={
-              fetchedVotes?.length > 0 && fetchedVotes[0].updatedAt != ''
-                ? {
-                    user: 'לא ידוע',
-                    date: fetchedVotes[0].updatedAt,
-                  }
-                : undefined
-            }
+            draftInfo={fetchedVotes?.length > 0 && fetchedVotes[0].updatedAt != ''
+              ? {
+                user: 'לא ידוע',
+                date: fetchedVotes[0].updatedAt,
+              }
+              : undefined}
+            isReported={isReported}         
           />
+          
+           {/* Download button for the approval doc */}
+           { approvalDoc?.url && (
+            <a
+              href={approvalDoc?.url}
+              download={approvalDoc?.filename || 'approval.xlsx'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              הורד אישור הצבעה
+            </a>
+          )}
+
         </div>
       </div>
     </div>
