@@ -63,7 +63,8 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       userId: user?.id,
       lastUserId,
       showSetup,
-      showVerification
+      showVerification,
+      twoFactorAuth: user?.twoFactorAuth
     })
 
     if (!user) {
@@ -114,19 +115,29 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       previousUserId: lastUserId
     })
 
-    const has2FASetup = user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified
+    const has2FAEnabled = user.twoFactorAuth?.enabled
+    const has2FAVerified = user.twoFactorAuth?.verified
+    const has2FASetup = has2FAEnabled && has2FAVerified
 
-    if (!has2FASetup) {
-      console.log('TwoFactorProvider: User needs 2FA setup')
-      setShowSetup(true)
+    if (has2FAEnabled && !has2FAVerified) {
+      // User has started 2FA setup but hasn't completed verification - allow admin access without forcing setup
+      // They'll complete setup when they're ready, and frontend will guide them
+      console.log('TwoFactorProvider: User has 2FA enabled but not verified, allowing admin access without setup requirement')
+      setShowSetup(false)
       setShowVerification(false)
-    } else {
-      // Check if already verified in this session for this specific user
+    } else if (has2FASetup) {
+      // User has fully enabled and verified 2FA - check if verification needed for this session
       const verificationKey = `admin-2fa-verified-${user.id}`
       const alreadyVerified = sessionStorage.getItem(verificationKey) === 'true'
 
+      console.log('TwoFactorProvider: 2FA verification check', {
+        verificationKey,
+        alreadyVerified,
+        sessionStorageValue: sessionStorage.getItem(verificationKey)
+      })
+
       if (!alreadyVerified) {
-        console.log('TwoFactorProvider: User needs 2FA verification')
+        console.log('TwoFactorProvider: User has 2FA enabled, requiring verification')
         setShowVerification(true)
         setShowSetup(false)
       } else {
@@ -134,6 +145,11 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
         setShowVerification(false)
         setShowSetup(false)
       }
+    } else {
+      // User doesn't have 2FA enabled at all - allow them to access admin without 2FA
+      console.log('TwoFactorProvider: User does not have 2FA enabled, allowing access')
+      setShowVerification(false)
+      setShowSetup(false)
     }
 
     setIsChecking(false)
