@@ -12,22 +12,13 @@ async function VoteDataLoader({
   req,
   meetingId,
   companyIds,
-  originalStockId,
 }: {
   req: any
   meetingId: string
   companyIds: string
-  originalStockId?: string
 }) {
   const voteData = await getVoteData(req, meetingId, companyIds)
-  return (
-    <VotingForm
-      voteData={voteData}
-      meetingId={meetingId}
-      companyIds={companyIds}
-      originalStockId={originalStockId}
-    />
-  )
+  return <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
 }
 
 const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminViewServerProps) => {
@@ -53,7 +44,6 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
 
   const meetingId = (searchParams?.meetingId || '') as string
   const companyIds = (searchParams?.companyIds || '') as string
-  const originalStockId = searchParams?.originalStockId
 
   // Get meeting name for header
   const meetingData = await payload.findByID({
@@ -103,12 +93,7 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
         ]}
       />
       <Suspense fallback={<LoadingFallback />}>
-        <VoteDataLoader
-          req={req}
-          meetingId={meetingId}
-          companyIds={companyIds}
-          originalStockId={originalStockId as string | undefined}
-        />
+        <VoteDataLoader req={req} meetingId={meetingId} companyIds={companyIds} />
       </Suspense>
     </DefaultTemplate>
   )

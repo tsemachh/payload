@@ -959,6 +959,11 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                     },
                     {
+                      name: 'verifiedHoldings',
+                      type: 'checkbox',
+                      label: 'אימות החזקות',
+                    },
+                    {
                       name: 'original',
                       label: 'מניה מקורית חול',
                       type: 'array',
@@ -977,12 +982,17 @@ export const Meetings: CollectionConfig = {
                         { name: 'stockId', label: 'מניה', type: 'text' },
                         { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
                         { name: 'quantity', label: 'כמות', type: 'number' },
+                        {
+                          name: 'verifiedHoldings',
+                          type: 'checkbox',
+                          label: 'אימות החזקות',
+                        },
+                        {
+                          name: 'ownedQuantity',
+                          label: 'כמות בבעלות',
+                          type: 'number',
+                        },
                       ],
-                    },
-                    {
-                      name: 'verifiedHoldings',
-                      type: 'checkbox',
-                      label: 'אימות החזקות',
                     },
                   ],
                 },

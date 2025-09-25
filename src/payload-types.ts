@@ -139,15 +139,17 @@ export type FundWithHolding =
       company?: string | null;
       quantity?: number | null;
       ownedQuantity?: number | null;
+      verifiedHoldings?: boolean | null;
       original?:
         | {
             stockId?: string | null;
             accountNum?: number | null;
             quantity?: number | null;
+            verifiedHoldings?: boolean | null;
+            ownedQuantity?: number | null;
             id?: string | null;
           }[]
         | null;
-      verifiedHoldings?: boolean | null;
       id?: string | null;
     }[]
   | null;
@@ -732,6 +734,7 @@ export interface Vote {
   voteAgainstRecommendation?: boolean | null;
   voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
+  reportApproval?: (string | null) | Document;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
@@ -1404,15 +1407,17 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   company?: T;
   quantity?: T;
   ownedQuantity?: T;
+  verifiedHoldings?: T;
   original?:
     | T
     | {
         stockId?: T;
         accountNum?: T;
         quantity?: T;
+        verifiedHoldings?: T;
+        ownedQuantity?: T;
         id?: T;
       };
-  verifiedHoldings?: T;
   id?: T;
 }
 /**
@@ -1690,6 +1695,7 @@ export interface VotesSelect<T extends boolean = true> {
   voteAgainstRecommendation?: T;
   voteDifferentFromResult?: T;
   reported?: T;
+  reportApproval?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;
