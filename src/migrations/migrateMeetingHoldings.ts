@@ -95,19 +95,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 payload.find({
                   collection: 'companies',
                   select: {
-                    mainAccount: { accountNumber: true },
+                    mainAccount: { accountNumber: true, subAccounts: true },
                     legacyCompanyId: true,
                   },
                   where: {
-                    type: {
-                      equals: 'fund',
-                    },
-                    legacyCompanyId: {
-                      equals: holding.firmid,
-                    },
-                    'mainAccount.accountNumber': {
-                      equals: holding.accountNum.toString(),
-                    },
+                    and: [
+                      { type: { equals: 'fund' } },
+                      { legacyCompanyId: { equals: holding.firmid } },
+                      {
+                        or: [
+                          {
+                            'mainAccount.accountNumber': { equals: holding.accountNum.toString() },
+                          },
+                          {
+                            'mainAccount.subAccounts': { contains: holding.accountNum.toString() },
+                          },
+                        ],
+                      },
+                    ],
                   },
                   depth: 0,
                   limit: 0,
@@ -116,20 +121,39 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             }
 
             const fundsResults = await Promise.all(fundsPromises)
-            // Flatten the results and filter for funds whose parent company is one of the firmIds
-            const allFunds = fundsResults.flatMap((result) => result.docs)
 
-            // Create a map of firmId + accountNum -> fundId
+            // Create a map of firmId + accountNum -> fundId using the matched account number per holding
             const fundMap = new Map()
-            for (const fund of allFunds) {
-              // Create a key using firmId + accountNum
-
-              // @ts-ignore
-              const key = `${fund.legacyCompanyId}_${fund?.mainAccount[0].accountNumber}`
-
-              // Map to fundId
-              fundMap.set(key, fund.id)
-            }
+            filteredHoldings.forEach((holding, idx) => {
+              const docs = fundsResults[idx]?.docs || []
+              if (docs.length > 0) {
+                const fund = docs[0] as any
+                const key = `${holding.firmid}_${holding.accountNum}`
+                fundMap.set(key, fund.id)
+                // Detect whether the match was via a subAccountNum and log it
+                const accountStr = holding.accountNum?.toString?.() ?? String(holding.accountNum)
+                const accounts = Array.isArray(fund.mainAccount) ? fund.mainAccount : []
+                let matchedBySub = false
+                for (const acc of accounts) {
+                  const subAccounts = Array.isArray(acc?.subAccounts)
+                    ? acc.subAccounts.map((s: any) => String(s))
+                    : []
+                  if (subAccounts.includes(accountStr)) {
+                    matchedBySub = true
+                    break
+                  }
+                  if (String(acc?.accountNumber) === accountStr) {
+                    matchedBySub = false
+                    break
+                  }
+                }
+                if (matchedBySub) {
+                  console.info(
+                    `Matched by subAccountNum: firmId=${holding.firmid}, accountNum=${accountStr}, fundId=${fund.id}`,
+                  )
+                }
+              }
+            })
 
             // Create fundsWithHolding array
             const fundsWithHolding = []
@@ -164,7 +188,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               id: meetingId,
               data: updatedMeeting,
               req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateMeetingHoldings' },
             })
 
             successCount++
@@ -213,7 +237,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const mockReq = {
         payload,
         query: {},
-        context: { from: 'migration' },
+        context: { from: 'migration', process: 'migrateMeetingHoldings' },
       }
 
       // Import the endpoint handler

@@ -133,7 +133,7 @@ export const processMeetingsAgendaFeedCsv = async (
             collection: 'meetings',
             id: meeting.id,
             data: { agenda: agendaRows },
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'processMeetingAgendaFeed' },
             req,
           })
           .catch((e) => {

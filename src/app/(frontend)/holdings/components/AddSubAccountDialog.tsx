@@ -13,6 +13,8 @@ import { HoldingFeedLine } from '@/payload-types'
 import { SelectParentCompanyTree } from './SelectParentCompanyTree'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { FundType } from '../../types/companies'
+import { postWithErrorHandling } from '../../helpers/fetch-helpers'
+import { handleAndNotifyError } from '../../helpers/error-handler'
 
 interface AddSubAccountDialogProps {
   accountId: string | number
@@ -58,31 +60,29 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
 
   const handleAddSubAccount = async () => {
     if (!selectedCompanyId) return
-    //TODO:
     setLoading(true)
     try {
-      const response = await fetch(
+      const response = await postWithErrorHandling(
         `/api/companies/add-sub-account?companyId=${selectedCompanyId}`,
+        { accountId },
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ accountId }),
+          errorMessage: 'שגיאה בהוספת החשבון',
+          notifyOnError: true,
         },
       )
 
-      if (response.ok) {
+      if (response) {
         setResultMessage('החשבון נוסף בהצלחה!')
         setTimeout(() => {
           onRefreshAction(allRecords)
         }, 2000)
       } else {
-        setResultMessage('נכשל להוסיף את החשבון.')
+        setResultMessage(null)
       }
     } catch (error) {
-      console.error('שגיאה בהוספת החשבון:', error)
-      setResultMessage('שגיאה כללית בהוספה.')
+      handleAndNotifyError(error, 'שגיאה בהוספת חשבון')
+      setResultMessage(null)
+      handleClose()
     } finally {
       setLoading(false)
       setTimeout(() => {
@@ -105,9 +105,7 @@ export const AddSubAccountDialog: React.FC<AddSubAccountDialogProps> = ({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle className="direction-rtl text-right">
-              האם להוסיף את החשבון לחברה שנבחרה?
-            </DialogTitle>
+            <DialogTitle className="direction-rtl text-right">הוספת חשבון עבור תיק</DialogTitle>
           </DialogHeader>
 
           {resultMessage ? (

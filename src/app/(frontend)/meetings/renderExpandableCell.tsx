@@ -135,3 +135,62 @@ function toggleMultipleRows(
     return updated
   })
 }
+
+// Function to expand/collapse all companies
+export function toggleAllCompanies(
+  data: any[],
+  companiesExpandedRows: Record<string, boolean>,
+  setCompaniesExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+) {
+  const allMeetingIds = data.map((row) => row.meetingId)
+  const allCompanyIds = data.flatMap(
+    (row) => row.companies?.map((company: any) => company.id) || [],
+  )
+
+  // Check if all are expanded
+  const allExpanded = allMeetingIds.every((id) => companiesExpandedRows[id])
+
+  // Toggle all to opposite state
+  const newState = !allExpanded
+
+  setCompaniesExpandedRows((prev) => {
+    const updated = { ...prev }
+    allMeetingIds.forEach((id) => {
+      updated[id] = newState
+    })
+    return updated
+  })
+
+  // Also expand/collapse all funds when expanding/collapsing companies
+  setFundsExpandedRows((prev) => {
+    const updated = { ...prev }
+    allCompanyIds.forEach((id) => {
+      updated[id] = newState
+    })
+    return updated
+  })
+}
+
+// Function to expand/collapse all agendas
+export function toggleAllAgendas(
+  data: any[],
+  agendasExpandedRows: Record<string, boolean>,
+  setAgendasExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+) {
+  const allMeetingIds = data.map((row) => row.meetingId)
+
+  // Check if all are expanded
+  const allExpanded = allMeetingIds.every((id) => agendasExpandedRows[id])
+
+  // Toggle all to opposite state
+  const newState = !allExpanded
+
+  setAgendasExpandedRows((prev) => {
+    const updated = { ...prev }
+    allMeetingIds.forEach((id) => {
+      updated[id] = newState
+    })
+    return updated
+  })
+}

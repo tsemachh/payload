@@ -82,7 +82,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateForeign' },
             },
           })
           // Update all stocks that had this stock as related to point to the new ISIN stock
@@ -101,7 +101,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateForeign' },
             },
           })
           req.payload.update({
@@ -116,7 +116,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateForeign' },
             },
           })
           console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
@@ -521,7 +521,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             },
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateForeign' },
             },
           })
         }
@@ -546,7 +546,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'migrateForeign' },
           },
         })
 
@@ -568,7 +568,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
                   },
                   req: {
                     ...req,
-                    context: { ...req.context, from: 'migration' },
+                    context: { ...req.context, from: 'migration', process: 'migrateForeign' },
                   },
                 })
             }

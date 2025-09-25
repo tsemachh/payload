@@ -144,7 +144,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           collection: 'meetings',
           id: meeting.id,
           data: { agenda: agendaItems },
-          context: { ...req.context, from: 'migration' },
+          context: { ...req.context, from: 'migration', process: 'migrateMagnaMeetings' },
           req,
         })
 
