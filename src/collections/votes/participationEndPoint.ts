@@ -1,5 +1,5 @@
 import { addDataAndFileToRequest, type PayloadRequest } from 'payload'
-import { Stock } from '@/payload-types'
+import { Company, Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
 import {
@@ -98,6 +98,26 @@ async function processVotesData(
       hasVotes: true,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
         const agendaItem = meeting.agenda?.[index] || {}
+        let votingRecommendation: string | undefined =
+          agendaItem.recommendation?.votingRecommendation
+        let recommendationExplanation: string | undefined =
+          agendaItem.recommendation?.recommendationExplanation
+        if (agendaItem.exceptionalRecommendation.showExceptional) {
+          const hasExceptionalCompany = agendaItem.exceptionalRecommendation.companies.some(
+            (currentCompany: string | Company) => {
+              if (typeof currentCompany === 'string') {
+                return currentCompany === company?.id
+              }
+              return currentCompany.id === company?.id
+            },
+          )
+
+          if (hasExceptionalCompany) {
+            votingRecommendation = agendaItem.exceptionalRecommendation.votingRecommendation
+            recommendationExplanation = agendaItem.exceptionalRecommendation.reasonText
+          }
+        }
+
         return {
           id: `${vote.id}_agenda_${index}`,
           topicIndex: voteItem.topicIndex ?? index + 1,
@@ -109,12 +129,8 @@ async function processVotesData(
           relatedParty: voteItem.isRelatedParty ?? null,
           personalInterest: voteItem.hasPersonalInterest ?? null,
           recommendation: {
-            votingRecommendation: displayVotingRecommendation
-              ? agendaItem.recommendation?.votingRecommendation
-              : '',
-            recommendationExplanation: displayVotingRecommendation
-              ? agendaItem.recommendation?.recommendationExplanation
-              : '',
+            votingRecommendation: displayVotingRecommendation ? votingRecommendation : '',
+            recommendationExplanation: displayVotingRecommendation ? recommendationExplanation : '',
           },
           result: agendaItem.result || voteItem.meetingResult || null,
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
