@@ -176,7 +176,8 @@ export type UserNotificationType =
   | 'after-holding-limit'
   | 'before-voting-end'
   | 'holdings-not-fed'
-  | 'user-impersonation';
+  | 'user-impersonation'
+  | 'meeting-updated';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -390,6 +391,7 @@ export interface AdminNotification {
   relatedUser?: (string | null) | User;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   acquireTask?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -431,6 +433,7 @@ export interface User {
   };
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   treeCompanies?: string | null;
   qrCodeData?: {
     showQr?: boolean | null;
@@ -520,6 +523,7 @@ export interface Company {
   silencedStocks?: string[] | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -533,6 +537,7 @@ export interface ResearchDocument {
   uploadedAt?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -568,6 +573,7 @@ export interface Holding {
   holdings: HoldingsPerDay;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -610,6 +616,7 @@ export interface Stock {
   };
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -627,6 +634,7 @@ export interface StockValue {
   registeredValue?: number | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -698,6 +706,7 @@ export interface Meeting {
   stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   publishDate?: string | null;
   publisher?: string | null;
   createdAt: string;
@@ -728,6 +737,7 @@ export interface Vote {
   clientComment?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   publishDate?: string | null;
   publisher?: string | null;
   createdAt: string;
@@ -743,6 +753,7 @@ export interface Document {
   alt?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -775,6 +786,7 @@ export interface StocksFeed {
   summary?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -808,6 +820,7 @@ export interface MeetingsFeed {
   hash?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -829,6 +842,7 @@ export interface RecommendationReason {
   content: string;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -845,6 +859,7 @@ export interface CompanyMeetingNotification {
   company: string | Company;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -866,6 +881,7 @@ export interface HoldingsFeed {
     | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -900,6 +916,7 @@ export interface SilencedStock {
   companies?: (string | Company)[] | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -914,6 +931,7 @@ export interface StockMigrationMapping {
   isin?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -929,6 +947,7 @@ export interface MigrationFault {
   comments?: string | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -959,6 +978,7 @@ export interface Export {
     | null;
   creator?: string | null;
   updator?: string | null;
+  process?: string | null;
   createdAt: string;
   updatedAt: string;
   url?: string | null;
@@ -1266,7 +1286,7 @@ export interface PayloadQueryPreset {
     | 'documents'
     | 'migration-faults';
   /**
-   * This is a tempoary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
    */
   isTemp?: boolean | null;
   updatedAt: string;
@@ -1290,6 +1310,7 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   relatedUser?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   acquireTask?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -1338,6 +1359,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   stockMarketValue?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   publishDate?: T;
   publisher?: T;
   createdAt?: T;
@@ -1419,6 +1441,7 @@ export interface StocksSelect<T extends boolean = true> {
   meetings?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1438,6 +1461,7 @@ export interface HoldingsSelect<T extends boolean = true> {
   holdings?: T | HoldingsPerDaySelect<T>;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1499,6 +1523,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   silencedStocks?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1537,6 +1562,7 @@ export interface UsersSelect<T extends boolean = true> {
       };
   creator?: T;
   updator?: T;
+  process?: T;
   treeCompanies?: T;
   qrCodeData?:
     | T
@@ -1580,6 +1606,7 @@ export interface StocksFeedSelect<T extends boolean = true> {
   summary?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;
@@ -1604,6 +1631,7 @@ export interface MeetingsFeedSelect<T extends boolean = true> {
   hash?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;
@@ -1624,6 +1652,7 @@ export interface RecommendationReasonsSelect<T extends boolean = true> {
   content?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1639,6 +1668,7 @@ export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
   company?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1665,6 +1695,7 @@ export interface VotesSelect<T extends boolean = true> {
   clientComment?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   publishDate?: T;
   publisher?: T;
   createdAt?: T;
@@ -1705,6 +1736,7 @@ export interface HoldingsFeedSelect<T extends boolean = true> {
       };
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;
@@ -1738,6 +1770,7 @@ export interface ResearchDocumentsSelect<T extends boolean = true> {
   uploadedAt?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;
@@ -1758,6 +1791,7 @@ export interface DocumentsSelect<T extends boolean = true> {
   alt?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;
@@ -1779,6 +1813,7 @@ export interface SilencedStocksSelect<T extends boolean = true> {
   companies?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1792,6 +1827,7 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
   isin?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1806,6 +1842,7 @@ export interface MigrationFaultsSelect<T extends boolean = true> {
   comments?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1822,6 +1859,7 @@ export interface StockValuesSelect<T extends boolean = true> {
   registeredValue?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1843,6 +1881,7 @@ export interface ExportsSelect<T extends boolean = true> {
   where?: T;
   creator?: T;
   updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
   url?: T;

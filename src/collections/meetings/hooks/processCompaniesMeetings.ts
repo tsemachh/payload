@@ -63,6 +63,11 @@ async function processMeeting(
 
   const flattenedHoldings = holdings.flat()
 
+  if (flattenedHoldings.length === 0) {
+    req.payload.logger.info(`No holdings found for meeting ${meeting.id}, skipping update`)
+    return
+  }
+
   // Check and update funds list
   const newFundsSet = new Set<string>()
 
@@ -83,22 +88,32 @@ async function processMeeting(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
 
+    const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
+    const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
+
     const fundsWithHolding = flattenedHoldings.map((h) => {
-      const originalForeignDataArray = Array.isArray(h.holdings[0].originalForeignData)
-        ? h.holdings[0].originalForeignData
-        : [h.holdings[0].originalForeignData]
+      const rawOriginal = h.holdings[0]?.originalForeignData
+      const originalForeignDataArray = rawOriginal
+        ? Array.isArray(rawOriginal)
+          ? rawOriginal
+          : [rawOriginal]
+        : []
 
       const fundId = String(getIdOfRelationField(h.fund))
-      return {
+      const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
-        quantity: h.holdings[0].quantity,
-        original: originalForeignDataArray.map((item: any) => ({
-          stockId: item.stockId,
-          accountNum: item.accountNum,
-          quantity: item.quantity,
-        })),
+        quantity: h.holdings[0]?.quantity ?? 0,
+        original: originalForeignDataArray
+          .filter(Boolean)
+          .map((item: any) => ({
+            stockId: item.stockId,
+            accountNum: item.accountNum,
+            quantity: item.quantity,
+          })),
       }
+      const prev = prevByFund.get(fundId) || {}
+      return { ...prev, ...base }
     })
     let stockValue = meeting.stockValue
     if (!stockValue) {

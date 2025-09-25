@@ -2,7 +2,7 @@
 
 import {
   defaultVisibleColumns,
-  meetingColumns,
+  createMeetingColumns,
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
@@ -10,15 +10,12 @@ import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
-import { handleApiError, notifyError } from '../helpers/error-handler'
+import { handleAndNotifyError, handleApiError, notifyError } from '../helpers/error-handler'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { futureDateFilterOptions, pastDateFilterOptions } from './filtersConst'
 import { useCompaniesContext } from '../context/companiesContext'
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
-import { Button } from '@/components/ui/button'
-import { FaFileExcel } from 'react-icons/fa'
 import { checksum } from '@/app/(frontend)/lib/checksum'
+import { downloadFileWithErrorHandling } from '../helpers/fetch-helpers'
 
 export function MeetingsTableClient() {
   const { companies, funds } = useCompaniesContext()
@@ -26,6 +23,7 @@ export function MeetingsTableClient() {
   const [viewMode, setViewMode] = useState<'companies' | 'agenda'>('companies')
   const [isExporting, setIsExporting] = useState(false)
   const [fundPassiveMap, setFundPassiveMap] = useState(new Map())
+
   // Initialize with all companies and funds selected
   useEffect(() => {
     if (companies.length > 0) {
@@ -124,7 +122,6 @@ export function MeetingsTableClient() {
       return 'בחר חברות'
     }
 
-    const totalFundIds = funds.map((fund) => fund.id)
     const totalCompaniesIds = companies.map((com) => com.id)
     const allIds = [...totalCompaniesIds]
     const allSelected =
@@ -136,14 +133,6 @@ export function MeetingsTableClient() {
     }
 
     return `נבחרו ${selectedCompanyIds.length} חברות`
-  }
-
-  const commonButtonClasses = 'px-3 py-1 text-xs rounded-full transition-all'
-
-  const getButtonClasses = (isSelected: boolean) => {
-    const selectedStyle = 'bg-primary text-primary-foreground shadow-sm'
-    const unselectedStyle = 'text-muted-foreground hover:bg-muted-foreground/10'
-    return `${commonButtonClasses} ${isSelected ? selectedStyle : unselectedStyle}`
   }
 
   const handleExportExcel = async () => {
@@ -160,7 +149,6 @@ export function MeetingsTableClient() {
       // Add export parameter
       params.append('export', 'true')
       const storedColumns = localStorage.getItem(`columnVisibility-${'meetings-table'}`)
-      console.log('storedColumns', storedColumns)
       if (storedColumns) {
         params.append('columns', storedColumns)
       }
@@ -170,33 +158,17 @@ export function MeetingsTableClient() {
       if (params.toString()) {
         exportUrl += `?${params.toString()}`
       }
-      // Make API call to get export data using our helper
-      // We need to handle the blob response manually since our helper expects JSON
-      const response = await fetch(exportUrl)
 
-      if (!response.ok) {
-        // Use our error handling utility
-        const errorText = await response.text().catch(() => 'Unknown error')
-        throw new Error(errorText || `HTTP error! status: ${response.status}`)
-      }
+      const fileName = 'דו״ח השתתפות.xlsx'
 
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'דו"ח השתתפות.xlsx'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      console.log('הקובץ הורד בהצלחה!')
-    } catch (error) {
-      // Use our error handling utility
-      handleApiError(error, 'שגיאה בייצוא הקובץ')
-      notifyError({
-        message: 'הייתה שגיאה בהורדת הקובץ. אנא נסה שוב מאוחר יותר.',
+      await downloadFileWithErrorHandling(exportUrl, fileName, {
+        errorMessage: 'שגיאה בייצוא הקובץ',
+        headers: {
+          Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
       })
+    } catch (error) {
+      handleAndNotifyError(error, 'שגיאה בייצוא הקובץ')
     } finally {
       setIsExporting(false)
     }
@@ -204,67 +176,17 @@ export function MeetingsTableClient() {
 
   return (
     <div className="space-y-4">
-      <div
-        className="flex flex-row items-center gap-4 mr-10 mb-4"
-        style={{ position: 'absolute', left: '400px', top: '128px' }}
-      >
-        <Button
-          onClick={handleExportExcel}
-          variant="outline"
-          size="sm"
-          disabled={isExporting}
-          title="ייצוא"
-          className="h-8 px-3  border text-[rgb(31,65,71)] hover:bg-[rgb(31,65,71)] hover:text-white transition-colors duration-200 flex items-center"
-        >
-          <FaFileExcel className="h-4 w-4 ml-1" />
-          <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
-        </Button>
-
-        {/* toggle */}
-        <div className="flex items-center">
-          <div className="flex bg-muted rounded-full p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode('companies')}
-              className={getButtonClasses(viewMode === 'companies')}
-            >
-              חברות
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('agenda')}
-              className={getButtonClasses(viewMode === 'agenda')}
-            >
-              סדר יום
-            </button>
-          </div>
-        </div>
-
-        {/* COMPANY SELECTOR */}
-        <div className=" flex w-[300px] -mr-14 -ml-6 ">
-          <div className="flex items-center gap-3 mr-[50px]">
-            <Select>
-              <SelectTrigger className="w-[250px] flex-row-reverse justify-between text-right h-8 mt-[3px]">
-                <SelectValue placeholder={getCompanySelectSummary()} />
-              </SelectTrigger>
-              <SelectContent align="end" dir="rtl" className="p-0">
-                <CompanyTreeSelector
-                  selectedCompanies={selectedCompanyIds}
-                  showSearch={false}
-                  onSelectionChangeAction={handleCompanySelectionChange}
-                  className="w-full"
-                  allCompaniesIds={[...companies.map((com) => com.id)]}
-                  showFunds={false}
-                />
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
       <DataTableStatic
         data={dataWithPercentages}
-        columns={meetingColumns}
+        columns={createMeetingColumns(
+          {},
+          () => {},
+          () => {},
+          undefined,
+          undefined,
+          [],
+        )}
+        createColumnsWithExpand={createMeetingColumns}
         isLoading={isLoadingMeetings}
         idField="meetingId"
         defaultSortField={'meetingDate' as keyof MeetingTableDataType}
@@ -279,6 +201,15 @@ export function MeetingsTableClient() {
         tableHeightOffset={200}
         displayMode={viewMode}
         selectedCompanyIds={selectedCompanyIds}
+        showExport={true}
+        onExportExcel={handleExportExcel}
+        isExporting={isExporting}
+        showCompanySelector={true}
+        onCompanySelectionChange={handleCompanySelectionChange}
+        getCompanySelectSummary={getCompanySelectSummary}
+        showViewModeToggle={true}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
     </div>
   )

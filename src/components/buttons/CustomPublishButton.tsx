@@ -121,7 +121,7 @@ export const CustomPublishButton: React.FC = () => {
           }
           modalSlug={significantChangeModalSlug}
           onConfirm={() => handleSignificantChangeConfirm(true, changeDetails)}
-          onCancel={() => handleSignificantChangeConfirm(false, changeDetails)}
+          onCancel={() => handleSignificantChangeConfirm(false, undefined)}
           confirmingLabel={'כן'}
           cancelLabel={'לא'}
         />

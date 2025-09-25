@@ -102,7 +102,7 @@ async function processMeetingGroup(
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
           },
         })
       }
@@ -118,7 +118,7 @@ async function processMeetingGroup(
         },
         req: {
           ...req,
-          context: { ...req.context, from: 'migration' },
+          context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
         },
       })
 
@@ -197,7 +197,7 @@ async function processMeetingGroup(
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
           },
         })
       }
@@ -208,7 +208,7 @@ async function processMeetingGroup(
         id: meetingToRemove.id,
         req: {
           ...req,
-          context: { ...req.context, from: 'migration' },
+          context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
         },
       })
     }

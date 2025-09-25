@@ -46,7 +46,16 @@ export interface DailyMeetingNotificationResult {
 export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<Meeting[]> => {
   // Set the global logger to use req.payload.logger
   logger = req.payload.logger
+  const now = new Date()
 
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const yesterdayStart = new Date(yesterday)
+  yesterdayStart.setHours(0, 0, 0, 0)
+
+  const yesterdayEnd = new Date(yesterday)
+  yesterdayEnd.setHours(23, 59, 59, 999)
   const startTime = Date.now()
   const sinceISO = since.toISOString()
 
@@ -70,8 +79,14 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
         invitationLink: true,
       },
       where: {
-        createdAt: {
-          greater_than_equal: sinceISO,
+        updatedAt: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
+        },
+        _status: { equals: 'published' },
+        publishDate: {
+          greater_than_equal: yesterdayStart.toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
         },
       },
       limit: 0, // Get all results
@@ -80,7 +95,6 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
 
     const queryDuration = Date.now() - startTime
     const meetingsFound = result.docs.length
-
     // Log successful query with performance metrics
     logger.info('Successfully queried new  meetings', {
       operation: 'getNewMeetings',
@@ -113,108 +127,6 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
     })
 
     throw new Error(`Failed to query new  meetings: ${errorMessage}`)
-  }
-}
-
-/**
- * Query meetings that had agenda updates based on provided meeting IDs
- * @param req PayloadRequest object for database access
- * @param meetingIds Array of meeting IDs that had agenda updates
- * @param since Date to query from (24 hours ago) for additional validation
- * @returns Array of meetings that had agenda updates
- */
-export const getAgendaUpdatedMeetings = async (
-  req: PayloadRequest,
-  meetingIds: string[],
-  since: Date,
-): Promise<Meeting[]> => {
-  // Set the global logger to use req.payload.logger
-  logger = req.payload.logger
-
-  const startTime = Date.now()
-  const sinceISO = since.toISOString()
-
-  // Log query start with detailed parameters
-  logger.info('Starting query for agenda updated meetings', {
-    operation: 'getAgendaUpdatedMeetings',
-    meetingIdsCount: meetingIds?.length || 0,
-    meetingIds: meetingIds?.slice(0, 10), // Log first 10 IDs to avoid log overflow
-    since: sinceISO,
-    queryParameters: {
-      collection: 'meetings',
-      idFilter: meetingIds?.length || 0,
-      updatedAtFilter: sinceISO,
-    },
-  })
-
-  try {
-    if (!meetingIds || meetingIds.length === 0) {
-      logger.info('No meeting IDs provided for agenda updates query', {
-        operation: 'getAgendaUpdatedMeetings',
-        result: 'empty_input',
-        meetingsFound: 0,
-      })
-      return []
-    }
-
-    const result = await req.payload.find({
-      collection: 'meetings',
-      select: {
-        meetingDate: true,
-        fullName: true,
-        invitationLink: true,
-      },
-      where: {
-        id: {
-          in: meetingIds,
-        },
-        updatedAt: {
-          greater_than_equal: sinceISO,
-        },
-      },
-      limit: 0, // Get all results
-      depth: 0, // Don't populate relations for performance
-    })
-
-    const queryDuration = Date.now() - startTime
-    const meetingsFound = result.docs.length
-
-    // Log successful query with performance metrics
-    logger.info('Successfully queried agenda updated meetings', {
-      operation: 'getAgendaUpdatedMeetings',
-      meetingsFound,
-      queryDuration,
-      inputMeetingIds: meetingIds.length,
-      since: sinceISO,
-      performance: {
-        executionTimeMs: queryDuration,
-        resultsReturned: meetingsFound,
-        inputSize: meetingIds.length,
-      },
-    })
-    return result.docs as Meeting[]
-  } catch (error) {
-    const queryDuration = Date.now() - startTime
-    const errorMessage = error instanceof Error ? error.message : String(error)
-
-    // Enhanced error logging with context and performance data
-    logger.error('Failed to query agenda updated meetings', {
-      operation: 'getAgendaUpdatedMeetings',
-      error: errorMessage,
-      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
-      meetingIdsCount: meetingIds?.length || 0,
-      meetingIds: meetingIds?.slice(0, 10), // Log first 10 IDs to avoid log overflow
-      since: sinceISO,
-      queryDuration,
-      queryParameters: {
-        collection: 'meetings',
-        idFilter: meetingIds?.length || 0,
-        updatedAtFilter: sinceISO,
-      },
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-
-    throw new Error(`Failed to query agenda updated meetings: ${errorMessage}`)
   }
 }
 
@@ -354,8 +266,9 @@ export const generateEmailBody = (
 ): string => {
   // Use counts as is
   const validatedNewCount = newMeetingsCount
-  const validatedAgendaCount = agendaUpdatesCount
-
+  if (validatedNewCount === 0) {
+    return ''
+  }
   // Start with RTL div container for proper Hebrew text formatting
   let html = '<div dir="rtl" style="font-family: Arial, sans-serif; text-align: right;">'
 
@@ -363,7 +276,7 @@ export const generateEmailBody = (
   html += '<h1>שלום,</h1>'
 
   // Add main message with meeting counts
-  html += `<p>היום פורסמו ${validatedNewCount} אסיפות חדשות במערכת ו-${validatedAgendaCount} עדכונים לאסיפות.</p>`
+  html += `<p>היום פורסמו ${validatedNewCount} אסיפות חדשות במערכת .</p>`
 
   // Add new meetings section with links if available
   if (validatedNewCount > 0 && newMeetings.length > 0) {
@@ -371,49 +284,6 @@ export const generateEmailBody = (
     html += '<ul>'
 
     for (const meeting of newMeetings) {
-      html += '<li>'
-
-      // Add meeting name/title if available
-      if (meeting.fullName && typeof meeting.fullName === 'string') {
-        html += `<strong>${meeting.fullName}</strong>`
-      } else if (meeting.meetingId && typeof meeting.meetingId === 'string') {
-        html += `<strong>אסיפה ${meeting.meetingId}</strong>`
-      } else {
-        html += '<strong>אסיפה</strong>'
-      }
-
-      // Add meeting link if available
-      if (meeting.invitationLink && typeof meeting.invitationLink === 'string') {
-        html += ` - <a href="${meeting.invitationLink}" target="_blank">קישור לאסיפה</a>`
-      }
-
-      // Add meeting date if available
-      if (meeting.meetingDate) {
-        try {
-          const meetingDate = new Date(meeting.meetingDate)
-          const formattedDate = meetingDate.toLocaleDateString('he-IL')
-          html += ` (תאריך: ${formattedDate})`
-        } catch (error) {
-          logger.warn('Failed to format meeting date', {
-            meetingId: meeting.id,
-            meetingDate: meeting.meetingDate,
-            error: error instanceof Error ? error.message : String(error),
-          })
-        }
-      }
-
-      html += '</li>'
-    }
-
-    html += '</ul>'
-  }
-
-  // Add agenda updates section with links if available
-  if (validatedAgendaCount > 0 && agendaUpdatedMeetings.length > 0) {
-    html += '<h3>עדכוני סדר יום:</h3>'
-    html += '<ul>'
-
-    for (const meeting of agendaUpdatedMeetings) {
       html += '<li>'
 
       // Add meeting name/title if available
@@ -487,6 +357,13 @@ export const generateEmailContent = (
 
   // Use counts as is
   const validatedNewCount = newMeetingsCount
+  if (validatedNewCount === 0) {
+    return {
+      subject: '',
+      html: '',
+      to: [],
+    }
+  }
   const validatedAgendaCount = agendaUpdatesCount
 
   // Use meetings as is
@@ -653,64 +530,6 @@ export const sendDailyMeetingNotifications = async (
       // Continue processing even if this query fails
     }
 
-    // Query for agenda updated meetings if meeting IDs are provided
-    let agendaUpdatedMeetings: Meeting[] = []
-    if (
-      validatedInput?.agendaUpdatedMeetingIds &&
-      validatedInput.agendaUpdatedMeetingIds.length > 0
-    ) {
-      const meetingIds = validatedInput.agendaUpdatedMeetingIds
-        .map((item) => item?.id)
-        .filter((id) => id != null) as string[]
-
-      try {
-        const rawAgendaUpdatedMeetings = await getAgendaUpdatedMeetings(
-          req,
-          meetingIds,
-          validatedLookbackDate,
-        )
-        // No validation needed
-        agendaUpdatedMeetings = rawAgendaUpdatedMeetings
-        results.summary.agendaUpdatesCount = agendaUpdatedMeetings.length
-
-        // Log successful agenda updates query
-        logger.info('Agenda updated meetings query completed successfully', {
-          operation: 'sendDailyMeetingNotifications',
-          queryType: 'agenda_updated_meetings',
-          inputMeetingIds: meetingIds.length,
-          rawMeetingsFound: rawAgendaUpdatedMeetings.length,
-          validatedMeetingsFound: agendaUpdatedMeetings.length,
-          since: validatedLookbackDate.toISOString(),
-        })
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-
-        // Enhanced error logging for agenda updates query failure
-        logger.error('Agenda updated meetings query failed', {
-          operation: 'sendDailyMeetingNotifications',
-          queryType: 'agenda_updated_meetings',
-          error: errorMessage,
-          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
-          inputMeetingIds: meetingIds.length,
-          meetingIds: meetingIds.slice(0, 10), // Log first 10 IDs to avoid overflow
-          since: validatedLookbackDate.toISOString(),
-          impact: 'continuing_with_partial_data',
-          stack: error instanceof Error ? error.stack : undefined,
-        })
-
-        results.details?.errors.push(`Failed to query agenda updated meetings: ${errorMessage}`)
-        // Continue processing even if this query fails
-      }
-    } else {
-      // Log when no agenda updates are being processed
-      logger.info('No agenda updated meeting IDs provided', {
-        operation: 'sendDailyMeetingNotifications',
-        queryType: 'agenda_updated_meetings',
-        result: 'skipped_no_input',
-        agendaUpdatesCount: 0,
-      })
-    }
-
     // Query for active users with companies
     let activeUsers: User[] = []
     try {
@@ -842,7 +661,6 @@ export const sendDailyMeetingNotifications = async (
         results.summary.agendaUpdatesCount,
         userEmails,
         newMeetings,
-        agendaUpdatedMeetings,
       )
 
       const emailGenerationDuration = Date.now() - emailGenerationStartTime

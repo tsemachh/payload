@@ -200,7 +200,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   await payload.create({
                     collection: 'votes',
                     data: voteData as Vote,
-                    req,
+                    req: {
+                      ...req,
+                      context: { ...req.context, from: 'migration', process: 'migrateVotes' },
+                    },
                   })
                   console.log(
                     `✓ Created vote for meeting ${meeting.id} and company ${company.firmid}`,
@@ -218,35 +221,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                 }
               }
-
-            // Update the meeting with the collected company IDs
-            try {
-              if (meetingCompanyIds.length > 0) {
-                await payload.update({
-                  collection: 'meetings',
-                  id: mongoMeetingId,
-                  data: {
-                    companies: meetingCompanyIds,
-                  },
-                  req: {
-                    ...req,
-                    context: { ...req.context, from: 'migration' },
-                  },
-                })
-                console.log(
-                  `✓ Updated meeting ${meeting.id} with ${meetingCompanyIds.length} companies`,
-                )
-              }
-            } catch (updateError: any) {
-              console.error(`✗ Failed to update meeting ${meeting.id} with companies:`, updateError)
-              await logMigrationFault({
-                payload,
-                type: 'meeting',
-                typeId: `meeting-${meeting.id}`,
-                comments: `Failed to update meeting ${meeting.id} with companies: ${updateError.message}`,
-                row: meeting,
-              })
-            }
           } catch (error: any) {
             errorCount++
             console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)

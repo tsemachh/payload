@@ -45,6 +45,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       'before-voting-end': 'הצבעה תנעל בקרוב',
       'holdings-not-fed': 'דיווח החזקה',
       'user-impersonation': 'התחזות למשתמש',
+      'meeting-updated': 'עודכנה אסיפה ',
     }
 
     // Transform notifications to the required format
@@ -63,6 +64,9 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
           break
         case 'user-impersonation':
           route = '/admin/collections/users'
+          break
+        case 'meeting-updated':
+          route = '/'
           break
       }
       return {
