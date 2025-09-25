@@ -216,7 +216,7 @@ export default function Participations() {
       deselectedIds,
       setDeselectedIds,
     )
-  }, [allSelected, participationData, deselectedIds, selectedCompaniesCount])
+  }, [allSelected, participationData, deselectedIds, selectedCompaniesCount ])
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
