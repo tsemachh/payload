@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Briefcase, Calendar, CalendarCheck } from 'lucide-react'
+import { Briefcase, Calendar, CalendarCheck, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -45,6 +45,18 @@ export function MainNav() {
       >
         <Briefcase className="h-4 w-4 ml-2" />
         החזקות
+      </Link>
+      <Link
+        href="/settings"
+        className={cn(
+          'flex items-center text-sm font-medium transition-all duration-200 hover:text-primary px-3 py-2 rounded-md cursor-pointer',
+          pathname === '/settings'
+            ? 'text-primary bg-primary/10 shadow-sm border border-primary/20'
+            : 'text-muted-foreground hover:bg-muted',
+        )}
+      >
+        <Settings className="h-4 w-4 ml-2" />
+        הגדרות
       </Link>
     </nav>
   )

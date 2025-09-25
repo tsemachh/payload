@@ -193,6 +193,31 @@ export const Companies: CollectionConfig = {
               ],
             },
             {
+              name:'labels',
+              type: 'array',
+              fields: [
+                {
+                  name: 'label',
+                  label: 'שם התגית',
+                  type: 'text',
+                },
+                {
+                  name:'color',
+                  label:'צבע התגית',
+                  type:'text',
+                },
+                {
+                  name:'stock',
+                  label:'נייר ערך',
+                  type:'relationship',
+                  relationTo:'stocks'
+                }
+              ],
+              // admin:{
+              //   hidden:true
+              // }
+            },
+            {
               name: 'researchDocuments',
               label: 'חוות דעת',
               type: 'group',
