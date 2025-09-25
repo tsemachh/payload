@@ -758,8 +758,17 @@ useEffect(() => {
       setIsUploading(true)
       try {
         const uploadPromises = filesArray.map((file) => {
+          // Remove special characters from filename (keep alphanumeric, dot, dash, underscore, space)
+          // Allow Hebrew, English letters, numbers, dot, dash, underscore, space
+          const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.\-_ \u0590-\u05FF]/g, '')
+          // Create a new File object with the sanitized filename
+          const sanitizedFile =
+            sanitizedFilename === file.name
+              ? file
+              : new File([file], sanitizedFilename, { type: file.type })
+
           const formData = new FormData()
-          formData.append('file', file)
+          formData.append('file', sanitizedFile)
           return fetch('/api/documents', {
             method: 'POST',
             body: formData,
@@ -775,7 +784,7 @@ useEffect(() => {
             })
             .catch((err) => {
               // Log each individual file upload error
-              handleApiError(err, `שגיאה בהעלאת קובץ: ${file.name}`)
+              handleApiError(err, `שגיאה בהעלאת קובץ: ${sanitizedFilename}`)
               throw err
             })
         })
