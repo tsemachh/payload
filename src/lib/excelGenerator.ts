@@ -254,7 +254,7 @@ export async function generateParticipationsExcel(
         if (voteReasons.length > 0) {
           voteReasons.forEach(({ index, reason }) => {
             const isEnglishReason = /^[A-Za-z]/.test(reason?.trim?.() || '')
-            const reasonText = isEnglishReason ? `${reason} [${index}]` : `[${index}] ${reason}`
+            const reasonText = isEnglishReason ? `${reason} .${index}` : `${index}. ${reason}`
             const reasonRow = worksheet.addRow([reasonText, ...Array(headers.length - 1).fill('')])
             worksheet.mergeCells(reasonRow.number, 1, reasonRow.number, headers.length)
             reasonRow.eachCell((cell, colNumber) => {

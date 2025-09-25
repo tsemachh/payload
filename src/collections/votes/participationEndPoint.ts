@@ -68,7 +68,8 @@ async function processVotesData(
         return { id: fundId, percentageHolding, holdingValueInMillions }
       })
       .filter((result) => result !== null)
-
+    const displayVotingRecommendation =
+      company?.researchDocuments?.displayVotingRecommendation === true
     const baseRecord = {
       id: vote.id,
       originalMeetingId: meeting.id,
@@ -92,7 +93,7 @@ async function processVotesData(
         id: company?.id || companyId || '',
         name: company?.name || '',
       },
-      displayVotingRecommendation: company?.researchDocuments?.displayVotingRecommendation === true,
+      displayVotingRecommendation,
       votes: [vote],
       hasVotes: true,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
@@ -108,8 +109,12 @@ async function processVotesData(
           relatedParty: voteItem.isRelatedParty ?? null,
           personalInterest: voteItem.hasPersonalInterest ?? null,
           recommendation: {
-            votingRecommendation: agendaItem.recommendation?.votingRecommendation || '',
-            recommendationExplanation: agendaItem.recommendation?.recommendationExplanation || '',
+            votingRecommendation: displayVotingRecommendation
+              ? agendaItem.recommendation?.votingRecommendation
+              : '',
+            recommendationExplanation: displayVotingRecommendation
+              ? agendaItem.recommendation?.recommendationExplanation
+              : '',
           },
           result: agendaItem.result || voteItem.meetingResult || null,
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,

@@ -308,33 +308,34 @@ export async function generateParticipationsPDF(
         content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[5], doc, 50),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // אחוז החזקה
+      }, // Percentage Holding
       {
         content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[6], doc, 80),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // שווי החזקה
+      }, // Holding Value
       {
         content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[7], doc, 90),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // תאריך ישיבה
+      }, // Meeting Date
       {
         content: prepareText(COMPANY_SUB_HEADERS[8]),
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // סוג ישיבה
+      }, // Meeting Type
     ]
 
     const head = [headerRow1, headerRow2.reverse()]
 
     const body: any[] = []
-    const voteReasons: { index: number; reason: string }[] = []
-    let voteReasonCounter = 1
 
     for (const meeting of data) {
       const companyHeaderBgColor = [210, 228, 255]
       const textColor = [51, 51, 51]
+      // Initialize vote reason counter and array for each meeting
+      const voteReasons: { index: number; reason: string }[] = []
+      let voteReasonCounter = 1
 
       const formattedDate = meeting.meetingDate
         ? formatNormalDate(new Date(meeting.meetingDate))
@@ -349,22 +350,22 @@ export async function generateParticipationsPDF(
         2,
       )
 
-      // ארגון נתוני החברה בסדר הנכון (עמודות 9-15)
+      // Organize company data for columns 9-17 (or 9-16 if no advisor column)
       const companyValues = [
-        meeting.meetingType || '', // עמודה 15
-        formattedDate, // עמודה 14
-        formattedHoldingValueInMillions, // עמודה 13
-        formattedPercentageHolding, // עמודה 12
-        formattedMarketValue, // עמודה 11
-        meeting.stockName || '', // עמודה 10
-        meeting.currentCompany.name || 'מוק שם החברה',
-        meeting.corporateName || '',
-        meeting.stockNumber || '', // עמודה 9
+        meeting.meetingType || '', // Meeting Type
+        formattedDate, // Meeting Date
+        formattedHoldingValueInMillions, // Holding Value
+        formattedPercentageHolding, // Percentage Holding
+        formattedMarketValue, // Market Value
+        meeting.stockName || '', // Stock Name
+        meeting.currentCompany.name || 'מוק שם החברה', // Company Name
+        meeting.corporateName || '', // Corporate Name
+        meeting.stockNumber || '', // Stock Number
       ]
 
-      // יצירת שורת כותרת חברה עם רקע צבעוני
+      // Create company header row with colored background
       const companyRow = [
-        // עמודות 0-8 ריקות עם רקע צבעוני
+        // Columns 0-7 (or 0-6) empty with colored background
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
         { content: '', styles: { fillColor: companyHeaderBgColor } },
@@ -464,7 +465,7 @@ export async function generateParticipationsPDF(
           ...(showAdvisorColumn
             ? [
                 meeting.displayVotingRecommendation
-                  ? agenda.recommendation?.votingRecommendation
+                  ? agenda.recommendation?.votingRecommendation || ''
                   : '',
               ] // Column 8
             : []),
@@ -512,8 +513,8 @@ export async function generateParticipationsPDF(
         voteReasons.forEach(({ index, reason }) => {
           const isEnglish = /^[A-Za-z]/.test(reason?.trim?.() || '')
           const reasonText = isEnglish
-            ? ` ${reason} [${index}]`
-            : prepareTextWithLineBreaks(`]${index}[ ${reason}`, doc, TABLE_WIDTH + 900)
+            ? `${reason} .${index} `
+            : prepareTextWithLineBreaks(`${index}. ${reason} `, doc, TABLE_WIDTH + 900)
           body.push([
             {
               content: reasonText,
@@ -531,7 +532,6 @@ export async function generateParticipationsPDF(
             },
           ])
         })
-        voteReasons.length = 0 // Reset vote reasons
       }
 
       // Add empty row for separation
