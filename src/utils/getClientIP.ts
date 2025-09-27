@@ -1,4 +1,5 @@
 import type { PayloadRequest } from 'payload'
+import { debugHeaders } from '@/utils/debugHeaders'
 
 function normalizeIP(raw: string): string {
   if (!raw) return 'unknown'
@@ -87,6 +88,7 @@ function pickFromXFFChain(xff: string): string | undefined {
 // and Express Request (with req.get and plain headers object)
 export function getClientIP(req: PayloadRequest | any): string {
   const headers: any = req?.headers
+  req.payload.logger.info('Header debug info:', JSON.stringify(debugHeaders(req), null, 2))
 
   let forwarded: string | undefined
   let realIP: string | undefined
@@ -107,9 +109,11 @@ export function getClientIP(req: PayloadRequest | any): string {
 
   // Fallback to Express style (case-insensitive)
   const getHeader = (nameLower: string, nameUpper: string): string | undefined => {
-    return (typeof req.get === 'function' ? req.get(nameLower) || req.get(nameUpper) : undefined) ||
+    return (
+      (typeof req.get === 'function' ? req.get(nameLower) || req.get(nameUpper) : undefined) ||
       (headers && ((headers[nameLower] as string) || (headers[nameUpper] as string))) ||
       undefined
+    )
   }
   if (!forwarded) forwarded = getHeader('x-forwarded-for', 'X-Forwarded-For')
   if (!realIP) realIP = getHeader('x-real-ip', 'X-Real-IP')
