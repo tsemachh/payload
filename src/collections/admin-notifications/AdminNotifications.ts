@@ -83,6 +83,10 @@ export const AdminNotifications: CollectionConfig = {
               label: 'אסיפה לפירסום',
               value: 'meetingToPublish',
             },
+            {
+              label: 'גישה לא מורשית מכתובת IP',
+              value: 'unauthorizedIPAccess',
+            },
           ],
           admin: {
             width: '200px',
