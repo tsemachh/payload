@@ -19,6 +19,7 @@ export type AdminNotificationType =
       | 'companyNotVotedMeetingNextDay'
       | 'userImpersonation'
       | 'meetingToPublish'
+      | 'unauthorizedIPAccess'
     )
   | null;
 /**
@@ -409,15 +410,22 @@ export interface User {
   active?: boolean | null;
   isAdmin?: boolean | null;
   isSystem?: boolean | null;
-  companies?: UserCompany;
-  funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   receiveMailNotification?: boolean | null;
+  companies?: UserCompany;
+  funds?: (string | Company)[] | null;
+  treeCompanies?: string | null;
+  bypassIPCheck?: boolean | null;
   /**
-   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   * רשימת כתובות IP המורשות למשתמש זה
    */
-  userIp?: string | null;
+  allowedIPs?: string[] | null;
+  /**
+   * כתובת ה-IP האחרונה שהשתמשה להתחברות
+   */
+  lastLoginIP?: string | null;
+  lastLoginAt?: string | null;
   twoFactorAuth?: {
     enabled?: boolean | null;
     verified?: boolean | null;
@@ -436,13 +444,6 @@ export interface User {
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
-  treeCompanies?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
   createdAt: string;
   updatedAt: string;
   impersonate?: string | null;
@@ -1542,12 +1543,16 @@ export interface UsersSelect<T extends boolean = true> {
   active?: T;
   isAdmin?: T;
   isSystem?: T;
-  companies?: T | UserCompanySelect<T>;
-  funds?: T;
   lastLogin?: T;
   changePassword?: T;
   receiveMailNotification?: T;
-  userIp?: T;
+  companies?: T | UserCompanySelect<T>;
+  funds?: T;
+  treeCompanies?: T;
+  bypassIPCheck?: T;
+  allowedIPs?: T;
+  lastLoginIP?: T;
+  lastLoginAt?: T;
   twoFactorAuth?:
     | T
     | {
@@ -1568,15 +1573,6 @@ export interface UsersSelect<T extends boolean = true> {
   creator?: T;
   updator?: T;
   process?: T;
-  treeCompanies?: T;
-  qrCodeData?:
-    | T
-    | {
-        showQr?: T;
-        createDate?: T;
-        lastCodeFailureDate?: T;
-        codeFailuresSinceLastSuccess?: T;
-      };
   createdAt?: T;
   updatedAt?: T;
   impersonate?: T;

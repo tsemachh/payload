@@ -1,6 +1,11 @@
 import type { CollectionConfig, PayloadRequest, Where } from 'payload'
 import { APIError } from 'payload'
-import { isAdmin, isAdminFieldLevel, isAdminOrSelf } from '@/utils/authUtils'
+import {
+  isAdmin,
+  isAdminFieldLevel,
+  isAdminOrSelf,
+  isAdminOrSelfFieldLevel,
+} from '@/utils/authUtils'
 import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
@@ -9,6 +14,7 @@ import TwoFactorVerifyEndpoint from '@/collections/endpoints/TwoFactorVerifyEndp
 import TwoFactorDisableEndpoint from '@/collections/endpoints/TwoFactorDisableEndpoint'
 import TwoFactorBackupCodesEndpoint from '@/collections/endpoints/TwoFactorBackupCodesEndpoint'
 import LoginWith2FAEndpoint from '@/collections/endpoints/LoginWith2FAEndpoint'
+import { getClientIP } from '@/utils/getClientIP'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -163,312 +169,334 @@ export const Users: CollectionConfig = {
   },
   fields: [
     {
-      type: 'row',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'name',
-          label: 'שם משתמש',
-          type: 'text',
-        },
-
-        {
-          name: 'legacyId',
-          label: 'מספר משתמש לגאסי',
-          type: 'number',
-          index: true,
-        },
-        {
-          name: 'active',
-          label: 'משתמש פעיל',
-          type: 'checkbox',
-          index: true,
-        },
-        {
-          name: 'isAdmin',
-          type: 'checkbox',
-          defaultValue: false,
-          saveToJWT: true,
-          access: {
-            create: isAdminFieldLevel,
-            update: isAdminFieldLevel,
-          },
-        },
-        {
-          name: 'isSystem',
-          type: 'checkbox',
-          defaultValue: false,
-          saveToJWT: true,
-          access: {
-            create: isAdminFieldLevel,
-            update: isAdminFieldLevel,
-          },
-        },
-      ],
-    },
-    {
-      name: 'companies',
-      label: 'חברות',
-      labels: {
-        plural: 'חברות',
-        singular: 'חברה',
-      },
-      type: 'array',
-      validate: (value) => {
-        if (!Array.isArray(value)) {
-          return true // No companies selected, so valid
-        }
-        const ids = value.map((item) => {
-          if (typeof item !== 'object' || item === null || !('companyId' in item)) {
-            return null
-          }
-          return item.companyId
-        })
-        const filtered = ids.filter(Boolean)
-        const unique = new Set(filtered)
-
-        if (filtered.length !== unique.size) {
-          return 'Each company can only be selected once.'
-        }
-
-        return true
-      },
-      interfaceName: 'UserCompany',
-      fields: [
-        {
-          type: 'row',
+          label: 'כללי',
           fields: [
             {
-              label: 'חברה',
-              name: 'companyId',
-              maxDepth: 0,
-              type: 'relationship',
-              relationTo: 'companies',
-              required: true,
-              admin: {
-                sortOptions: 'name',
-              },
-              filterOptions: ({ data, siblingData, req }) => {
-                if (req.context?.from == 'migration' || req.context?.from == 'process') return true
-                const currentId = (siblingData as { companyId?: string })?.companyId
-
-                const selectedIds = Array.isArray(data?.companies)
-                  ? data.companies
-                      .map((item: { companyId?: string }) => item?.companyId)
-                      .filter((id: string | undefined) => id && id !== currentId)
-                  : []
-                const query: Where = {
-                  type: {
-                    equals: 'regular',
-                  },
-                  /*                  active: {
-                    equals: true,
-                  },*/
-                }
-                if (selectedIds.length === 0) {
-                  return query
-                }
-                query.id = {
-                  not_in: selectedIds,
-                }
-                return query
-              },
-            },
-            {
-              name: 'permission',
-              label: 'הרשאה',
-              type: 'select',
-              options: [
-                { label: 'צפיה בהצבעות ודוחות', value: 'read' },
+              type: 'row',
+              fields: [
                 {
-                  label: 'הזנת החזקות והצבעה',
-                  value: 'write',
+                  name: 'name',
+                  label: 'שם משתמש',
+                  type: 'text',
+                },
+                {
+                  name: 'legacyId',
+                  label: 'מספר משתמש לגאסי',
+                  type: 'number',
+                  index: true,
+                },
+                {
+                  name: 'active',
+                  label: 'משתמש פעיל',
+                  type: 'checkbox',
+                  index: true,
+                },
+                {
+                  name: 'isAdmin',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  saveToJWT: true,
+                  access: {
+                    create: isAdminFieldLevel,
+                    update: isAdminFieldLevel,
+                  },
+                },
+                {
+                  name: 'isSystem',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  saveToJWT: true,
+                  access: {
+                    create: isAdminFieldLevel,
+                    update: isAdminFieldLevel,
+                  },
                 },
               ],
-              defaultValue: 'write',
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'lastLogin',
+                  label: 'התחברות אחרונה',
+                  type: 'text',
+                },
+                {
+                  name: 'changePassword',
+                  label: 'שינוי סיסמה',
+                  type: 'checkbox',
+                  admin: { hidden: true },
+                },
+                {
+                  name: 'receiveMailNotification',
+                  label: 'קבלת התראות במייל',
+                  type: 'checkbox',
+                  defaultValue: true,
+                },
+              ],
             },
           ],
         },
-      ],
-    },
-    {
-      name: 'funds',
-      label: 'תיקים',
-      type: 'relationship',
-      relationTo: 'companies',
-      maxDepth: 0,
-      hasMany: true,
-      admin: {
-        readOnly: true,
-      },
-    },
-    {
-      name: 'treeCompanies',
-      label: 'מבנה החברות כעץ מחרוזתי',
-      type: 'text',
-      admin: {
-        hidden: true,
-      },
-    },
-    {
-      type: 'row',
-      fields: [
         {
-          name: 'lastLogin',
-          label: 'התחברות אחרונה',
-          type: 'text',
-        },
-        {
-          name: 'changePassword',
-          label: 'שינוי סיסמה',
-          type: 'checkbox',
-          admin: { hidden: true },
-        },
-        {
-          name: 'receiveMailNotification',
-          label: 'קבלת התראות במייל',
-          type: 'checkbox',
-          defaultValue: true,
-        },
-      ],
-    },
-    {
-      name: 'userIp',
-      label: 'כתובות IP',
-      type: 'text',
-      admin: {
-        description: 'הזן כתובות IP מופרדות בנקודה-פסיק (;)',
-      },
-    },
-
-    {
-      name: 'qrCodeData',
-      label: 'נתוני QR',
-      type: 'group',
-      admin: {
-        hidden: true,
-      },
-      fields: [
-        {
-          type: 'row',
+          label: 'חברות',
           fields: [
             {
-              name: 'showQr',
-              label: 'הצג QR',
-              type: 'checkbox',
-            },
-            {
-              name: 'createDate',
-              label: 'תאריך יצירה',
-              type: 'date',
-            },
-            {
-              name: 'lastCodeFailureDate',
-              label: 'תאריך כישלון אחרון',
-              type: 'date',
-            },
-            {
-              name: 'codeFailuresSinceLastSuccess',
-              label: 'מספר כישלונות מאז הצלחה אחרונה',
-              type: 'number',
-            },
-          ],
-        },
-      ],
-    },
+              name: 'companies',
+              label: 'חברות',
+              labels: {
+                plural: 'חברות',
+                singular: 'חברה',
+              },
+              type: 'array',
+              validate: (value) => {
+                if (!Array.isArray(value)) {
+                  return true // No companies selected, so valid
+                }
+                const ids = value.map((item) => {
+                  if (typeof item !== 'object' || item === null || !('companyId' in item)) {
+                    return null
+                  }
+                  return item.companyId
+                })
+                const filtered = ids.filter(Boolean)
+                const unique = new Set(filtered)
 
-    {
-      name: 'twoFactorAuth',
-      label: 'אימות דו-שלבי (2FA)',
-      type: 'group',
-      fields: [
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'enabled',
-              label: 'אימות דו-שלבי מופעל',
-              type: 'checkbox',
-              defaultValue: false,
-              index: true,
+                if (filtered.length !== unique.size) {
+                  return 'Each company can only be selected once.'
+                }
+
+                return true
+              },
+              interfaceName: 'UserCompany',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      label: 'חברה',
+                      name: 'companyId',
+                      maxDepth: 0,
+                      type: 'relationship',
+                      relationTo: 'companies',
+                      required: true,
+                      admin: {
+                        sortOptions: 'name',
+                      },
+                      filterOptions: ({ data, siblingData, req }) => {
+                        if (req.context?.from == 'migration' || req.context?.from == 'process')
+                          return true
+                        const currentId = (siblingData as { companyId?: string })?.companyId
+
+                        const selectedIds = Array.isArray(data?.companies)
+                          ? data.companies
+                              .map((item: { companyId?: string }) => item?.companyId)
+                              .filter((id: string | undefined) => id && id !== currentId)
+                          : []
+                        const query: Where = {
+                          type: {
+                            equals: 'regular',
+                          },
+                          /*                  active: {
+                            equals: true,
+                          },*/
+                        }
+                        if (selectedIds.length === 0) {
+                          return query
+                        }
+                        query.id = {
+                          not_in: selectedIds,
+                        }
+                        return query
+                      },
+                    },
+                    {
+                      name: 'permission',
+                      label: 'הרשאה',
+                      type: 'select',
+                      options: [
+                        { label: 'צפיה בהצבעות ודוחות', value: 'read' },
+                        {
+                          label: 'הזנת החזקות והצבעה',
+                          value: 'write',
+                        },
+                      ],
+                      defaultValue: 'write',
+                    },
+                  ],
+                },
+              ],
             },
             {
-              name: 'verified',
-              label: 'אימות דו-שלבי מאומת',
-              type: 'checkbox',
-              defaultValue: false,
+              name: 'funds',
+              label: 'תיקים',
+              type: 'relationship',
+              relationTo: 'companies',
+              maxDepth: 0,
+              hasMany: true,
               admin: {
                 readOnly: true,
               },
             },
-          ],
-        },
-        {
-          name: 'secret',
-          label: 'מפתח סודי TOTP',
-          type: 'text',
-          admin: {
-            hidden: true,
-          },
-          access: {
-            read: ({ req }) => req.user?.isAdmin || false,
-            update: ({ req }) => req.user?.isAdmin || false,
-          },
-        },
-        {
-          name: 'backupCodes',
-          label: 'קודי גיבוי',
-          type: 'array',
-          admin: {
-            hidden: true,
-          },
-          access: {
-            read: ({ req }) => req.user?.isAdmin || false,
-            update: ({ req }) => req.user?.isAdmin || false,
-          },
-          fields: [
             {
-              name: 'code',
-              label: 'קוד גיבוי',
+              name: 'treeCompanies',
+              label: 'מבנה החברות כעץ מחרוזתי',
               type: 'text',
-            },
-            {
-              name: 'used',
-              label: 'נוצל',
-              type: 'checkbox',
-              defaultValue: false,
+              admin: {
+                hidden: true,
+              },
             },
           ],
         },
         {
-          type: 'row',
+          label: 'IP',
           fields: [
             {
-              name: 'lastUsed',
-              label: 'שימוש אחרון באימות דו-שלבי',
-              type: 'date',
-              admin: {
-                readOnly: true,
+              name: 'bypassIPCheck',
+              label: 'דלג על בדיקת IP למשתמש זה',
+              type: 'checkbox',
+              defaultValue: true,
+              access: {
+                create: isAdminFieldLevel,
+                update: isAdminFieldLevel,
+                read: isAdminOrSelfFieldLevel,
               },
             },
             {
-              name: 'failureCount',
-              label: 'מספר ניסיונות כושלים',
-              type: 'number',
-              defaultValue: 0,
-              admin: {
-                readOnly: true,
+              name: 'allowedIPs',
+              label: 'כתובות IP מורשות',
+              type: 'text',
+              hasMany: true,
+              admin: { description: 'רשימת כתובות IP המורשות למשתמש זה' },
+              access: {
+                read: isAdminOrSelfFieldLevel,
+                create: isAdminFieldLevel,
+                update: isAdminFieldLevel,
               },
+              validate: (val: unknown) => {
+                const v = typeof val === 'string' ? val.trim() : ''
+                if (!v) return true
+                const ipRegex =
+                  /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/
+                return ipRegex.test(v) ? true : 'כתובת IP לא תקינה'
+              },
+            },
+            {
+              name: 'lastLoginIP',
+              label: 'כתובת IP אחרונה להתחברות',
+              type: 'text',
+              admin: { readOnly: true, description: 'כתובת ה-IP האחרונה שהשתמשה להתחברות' },
+            },
+            {
+              name: 'lastLoginAt',
+              label: 'מועד התחברות אחרון',
+              type: 'date',
+              admin: { readOnly: true },
             },
           ],
         },
         {
-          name: 'lastFailureTime',
-          label: 'זמן כישלון אחרון',
-          type: 'date',
-          admin: {
-            hidden: true,
-            readOnly: true,
-          },
+          label: '2FA',
+          fields: [
+            {
+              name: 'twoFactorAuth',
+              label: 'אימות דו-שלבי (2FA)',
+              type: 'group',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'enabled',
+                      label: 'אימות דו-שלבי מופעל',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      index: true,
+                    },
+                    {
+                      name: 'verified',
+                      label: 'אימות דו-שלבי מאומת',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        readOnly: true,
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: 'secret',
+                  label: 'מפתח סודי TOTP',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                  access: {
+                    read: ({ req }) => req.user?.isAdmin || false,
+                    update: ({ req }) => req.user?.isAdmin || false,
+                  },
+                },
+                {
+                  name: 'backupCodes',
+                  label: 'קודי גיבוי',
+                  type: 'array',
+                  admin: {
+                    hidden: true,
+                  },
+                  access: {
+                    read: ({ req }) => req.user?.isAdmin || false,
+                    update: ({ req }) => req.user?.isAdmin || false,
+                  },
+                  fields: [
+                    {
+                      name: 'code',
+                      label: 'קוד גיבוי',
+                      type: 'text',
+                    },
+                    {
+                      name: 'used',
+                      label: 'נוצל',
+                      type: 'checkbox',
+                      defaultValue: false,
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'lastUsed',
+                      label: 'שימוש אחרון באימות דו-שלבי',
+                      type: 'date',
+                      admin: {
+                        readOnly: true,
+                      },
+                    },
+                    {
+                      name: 'failureCount',
+                      label: 'מספר ניסיונות כושלים',
+                      type: 'number',
+                      defaultValue: 0,
+                      admin: {
+                        readOnly: true,
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: 'lastFailureTime',
+                  label: 'זמן כישלון אחרון',
+                  type: 'date',
+                  admin: {
+                    hidden: true,
+                    readOnly: true,
+                  },
+                },
+              ],
+            },
+          ],
         },
       ],
     },
@@ -539,9 +567,39 @@ export const Users: CollectionConfig = {
           throw new APIError('המשתמש מערכת אינו מורשה, אנא פנה למנהל המערכת', 403)
         }
 
+        // Enforce per-user IP allowlist (if configured)
+        const clientIP = getClientIP(req)
+        req.payload.logger.info(`user client IP:${clientIP} for user: ${user.email}`)
+        const bypass = user.bypassIPCheck === true
+        if (!bypass && Array.isArray(user.allowedIPs) && user.allowedIPs.length > 0) {
+          const allowedList = (user.allowedIPs as any[])
+            .map((e: any) => (typeof e === 'string' ? e : e?.ip))
+            .filter(Boolean)
+          // In development, allow localhost connections
+          const isDevelopmentLocalhost =
+            process.env.NODE_ENV === 'development' && clientIP === '127.0.0.1'
+          const allowed = allowedList.includes(clientIP) || isDevelopmentLocalhost
+          if (!allowed) {
+            try {
+              await createAdminNotification(
+                req,
+                `ניסיון התחברות מכתובת IP לא מורשית (${clientIP}) עבור המשתמש ${user.email}`,
+                'unauthorizedIPAccess' as any,
+                undefined,
+                undefined,
+                user.id,
+              )
+            } catch (e) {
+              req.payload.logger.warn('Failed to create admin notification for unauthorized IP', e)
+            }
+            throw new APIError(`הגישה נדחתה: כתובת IP ${clientIP}  אינה מורשית `, 403)
+          }
+        }
+
         // Check if this is admin login (via admin routes) vs frontend login
-        const isAdminLogin = req.url?.includes('/admin') || req.headers.get('referer')?.includes('/admin')
-        
+        const isAdminLogin =
+          req.url?.includes('/admin') || req.headers.get('referer')?.includes('/admin')
+
         if (isAdminLogin) {
           // Skip 2FA verification in beforeLogin for admin context
           // This will be handled by the AdminTwoFactor component after login
@@ -550,7 +608,9 @@ export const Users: CollectionConfig = {
           // For frontend login, check 2FA status
           if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
             // User has started 2FA setup but not completed - allow login but indicate setup needed
-            req.payload.logger.info('Frontend user has 2FA enabled but not verified, requiring setup completion after login')
+            req.payload.logger.info(
+              'Frontend user has 2FA enabled but not verified, requiring setup completion after login',
+            )
             // Don't throw error - let login succeed but indicate setup needed
           } else if (user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified) {
             req.payload.logger.info('Frontend user has 2FA enabled, checking for TOTP code')
@@ -567,16 +627,23 @@ export const Users: CollectionConfig = {
             req.payload.logger.info('TOTP code provided, verifying...')
 
             // Verify the TOTP code inline
-            const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import('@/utils/totpUtils')
+            const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import(
+              '@/utils/totpUtils'
+            )
 
             // Check rate limiting
             const rateLimitCheck = checkRateLimit(
               user.twoFactorAuth.failureCount || 0,
-              user.twoFactorAuth.lastFailureTime ? new Date(user.twoFactorAuth.lastFailureTime) : undefined
+              user.twoFactorAuth.lastFailureTime
+                ? new Date(user.twoFactorAuth.lastFailureTime)
+                : undefined,
             )
 
             if (rateLimitCheck.isLocked) {
-              throw new APIError(`חשבון נחסם זמנית. נסה שוב בעוד ${rateLimitCheck.remainingTime} דקות`, 429)
+              throw new APIError(
+                `חשבון נחסם זמנית. נסה שוב בעוד ${rateLimitCheck.remainingTime} דקות`,
+                429,
+              )
             }
 
             try {
@@ -595,7 +662,7 @@ export const Users: CollectionConfig = {
                       ...user.twoFactorAuth,
                       failureCount: newFailureCount,
                       lastFailureTime: new Date().toISOString(),
-                    }
+                    },
                   },
                 })
 
@@ -613,10 +680,9 @@ export const Users: CollectionConfig = {
                     ...user.twoFactorAuth,
                     lastUsed: new Date().toISOString(),
                     failureCount: 0,
-                  }
+                  },
                 },
               })
-
             } catch (error) {
               req.payload.logger.error('2FA verification error:', error)
               throw new APIError('שגיאה באימות הקוד', 500)
@@ -626,6 +692,24 @@ export const Users: CollectionConfig = {
 
         req.payload.logger.info('beforeLogin hook completed successfully')
         return user
+      },
+    ],
+    afterLogin: [
+      async ({ req, user }) => {
+        const clientIP = getClientIP(req)
+        try {
+          await req.payload.update({
+            collection: 'users',
+            id: user.id,
+            data: {
+              lastLoginIP: clientIP,
+              lastLoginAt: new Date().toISOString(),
+            },
+          })
+        } catch (e) {
+          req.payload.logger.warn('Failed to update last login info', e)
+        }
+        req.payload.logger.info(`Successful login from IP ${clientIP} for ${user.email}`)
       },
     ],
     afterChange: [

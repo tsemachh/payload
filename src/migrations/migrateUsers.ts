@@ -191,20 +191,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Firm relationships
           companies: companies,
           // Profile settings
-          userIp: userProfile?.UserIP || '',
+          allowedIPs: (userProfile?.UserIP || '')
+            .split(/[;,]/)
+            .map((s) => s.trim())
+            .filter((s, idx, arr) => s.length > 0 && arr.indexOf(s) === idx),
           changePassword: !!userProfile?.ChangePassword,
           lastLogin: userProfile?.LastLogin as string | null | undefined,
-          // QR code lifecycle data
-          qrCodeData: userProfileCode
+
+          // Two-factor authentication lifecycle data (migrated from legacy QR code data)
+          twoFactorAuth: userProfileCode
             ? {
-                showQr: !!userProfile?.ShowQr,
-                createDate: userProfileCode.CreateDate
-                  ? new Date(userProfileCode.CreateDate).toISOString()
-                  : null,
-                lastCodeFailureDate: userProfileCode.LastCodeFailureDate
+                enabled: !!userProfile?.ShowQr,
+                verified: false,
+                lastFailureTime: userProfileCode.LastCodeFailureDate
                   ? new Date(userProfileCode.LastCodeFailureDate).toISOString()
-                  : null,
-                codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess,
+                  : undefined,
+                failureCount: userProfileCode.CodeFailuresSinceLastSuccess || 0,
               }
             : undefined,
 
