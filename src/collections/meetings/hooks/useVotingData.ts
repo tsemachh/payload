@@ -71,9 +71,7 @@ export const useVotingData = () => {
         let stockValueData = null
         if (data.stockValue && typeof data.stockValue === 'string') {
           try {
-            const stockValueResponse = await fetch(
-              `/api/stock-values/${data.stockValue}`,
-            )
+            const stockValueResponse = await fetch(`/api/stock-values/${data.stockValue}`)
             if (stockValueResponse.ok) {
               stockValueData = await stockValueResponse.json()
             }
@@ -136,7 +134,7 @@ export const useVotingData = () => {
             if (companyHoldings.length > 0) {
               // Sum up quantities for this company
               const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
-                return sum + (holding.quantity || 0)
+                return sum + (holding.ownedQuantity || holding.quantity || 0)
               }, 0)
               // Calculate holding values using the imported function
               calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
