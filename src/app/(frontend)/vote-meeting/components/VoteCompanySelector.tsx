@@ -192,8 +192,11 @@ export default function VoteCompanySelector({
                       <div>נייר מקורי</div>
                       <div>ע׳ נקוב</div>
                     </div>
-                    {company.originalStockIds.map((stock: any) => (
-                      <div className="flex w-[160px] justify-between">
+                    {company.originalStockIds.map((stock: any, index: number) => (
+                      <div
+                        className="flex w-[160px] justify-between"
+                        key={`${index}-${stock.stockId}`}
+                      >
                         <div>{stock.stockId}</div>
                         <div>{stock.quantity.toLocaleString()}</div>
                       </div>

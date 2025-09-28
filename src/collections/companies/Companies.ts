@@ -183,6 +183,7 @@ export const Companies: CollectionConfig = {
                     custom: {
                       cellWidth: '100px',
                     },
+                    disableListColumn: true,
                     width: '100px',
                     className: 'truncate',
                     allowCreate: false,
@@ -267,6 +268,7 @@ export const Companies: CollectionConfig = {
                   on: 'companies',
                   maxDepth: 0,
                   admin: {
+                    disableListColumn: true,
                     allowCreate: false,
                     defaultColumns: ['filename'],
                     condition: (siblingData) => {
@@ -325,6 +327,9 @@ export const Companies: CollectionConfig = {
               collection: 'users',
               on: 'companies.companyId',
               name: 'usersWrite',
+              admin: {
+                disableListColumn: true,
+              },
               where: {
                 'companies.permission': { equals: 'write' },
               },
@@ -335,6 +340,9 @@ export const Companies: CollectionConfig = {
               collection: 'users',
               on: 'companies.companyId',
               name: 'usersRead',
+              admin: {
+                disableListColumn: true,
+              },
               where: {
                 'companies.permission': { equals: 'read' },
               },
@@ -353,6 +361,9 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'fund',
               name: 'holdings',
+              admin: {
+                disableListColumn: true,
+              },
             },
           ],
         },
@@ -367,6 +378,9 @@ export const Companies: CollectionConfig = {
               collection: 'meetings',
               on: 'companies',
               name: 'meetings',
+              admin: {
+                disableListColumn: true,
+              },
             },
           ],
         },
