@@ -1,10 +1,8 @@
 import type { PayloadRequest } from 'payload'
-import { getClientIP } from './getClientIP'
 
 export function debugHeaders(req: PayloadRequest | any): { [key: string]: any } {
   const headers: any = req?.headers
   const result: { [key: string]: any } = {
-    detectedIP: getClientIP(req),
     rawHeaders: {},
     relevantHeaders: {}
   }
