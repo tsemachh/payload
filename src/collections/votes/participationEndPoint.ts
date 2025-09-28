@@ -224,6 +224,7 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
   let allVotes: any[] = []
   let page = 1
   let hasMore = true
+
   while (hasMore) {
     const batch = await req.payload.find({
       collection: 'votes',
@@ -240,10 +241,17 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
       page,
       overrideAccess: true,
     })
+
     allVotes = allVotes.concat(batch.docs)
     hasMore = batch.hasNextPage
     page++
+
+    // Add progress logging for large exports
+    if (allVotes.length % 5000 === 0) {
+      console.log(`Processed ${allVotes.length} votes...`)
+    }
   }
+
   return allVotes
 }
 
@@ -333,6 +341,7 @@ async function fetchAndProcessVotesData(
         depth: 0,
         limit: 0,
         overrideAccess: true,
+        //TODO: add select
       }),
       req.payload.find({
         collection: 'companies',
@@ -340,6 +349,7 @@ async function fetchAndProcessVotesData(
         depth: 0,
         limit: 0,
         overrideAccess: true,
+        //TODO: add select
       }),
     ])
 
@@ -546,12 +556,16 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       processedData = result as any[]
       totalItems = processedData.length
     } else {
-      ;({ processedData, totalItems } = result as { processedData: any[]; totalItems: number })
+      ;({ processedData, totalItems } = result as { processedData: unknown[]; totalItems: number })
     }
 
     if (isExport && totalItems > 10000) {
       return Response.json(
-        { error: 'Export too large; apply filters or contact support' },
+        {
+          error: 'Export too large; apply filters or contact support',
+          totalItems,
+          maxAllowed: 10000,
+        },
         { status: 400 },
       )
     }
