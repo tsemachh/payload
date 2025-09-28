@@ -40,6 +40,7 @@ function SignInContent() {
   const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('required')
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
   const [requiresSetup, setRequiresSetup] = useState(false)
+  const [tempUser, setTempUser] = useState<any>(null)
   const idempotencyKey = useRef(uuidv4()).current
   const { login, setUser } = useAuth()
 
@@ -83,7 +84,7 @@ function SignInContent() {
           },
           {
             errorMessage: 'אימות האבטחה נכשל',
-            notifyOnError: false, // We'll handle errors manually
+            notifyOnError: true, // We'll handle errors manually
           },
         )
 
@@ -102,15 +103,18 @@ function SignInContent() {
         totpCode: requiresTwoFactor ? formData.totpCode : undefined,
       })
 
-      // Check if user has incomplete 2FA setup
-      if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
-        console.log('User has incomplete 2FA setup, showing setup interface')
+      // Check if user needs 2FA setup
+      const has2FASetup = user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified
+
+      if (!has2FASetup) {
         setRequiresSetup(true)
+        setTempUser(user)
         setError('')
+        setIsLoading(false)
         return
       }
 
-      // Login successful - redirect to callback URL
+      // User has 2FA setup - redirect normally
       router.push(callbackUrl)
       router.refresh()
     } catch (error: any) {
@@ -128,50 +132,57 @@ function SignInContent() {
     }
   }
 
-  // Show 2FA setup message if incomplete setup detected
-  if (requiresSetup) {
+  // Handle 2FA setup requirement
+  if (requiresSetup && tempUser) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">
-        <div className="w-full max-w-md">
-          <Card className="mb-4">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
-              </div>
-              <CardTitle className="text-center text-red-600">אימות דו-שלבי נדרש</CardTitle>
-              <CardDescription className="text-center">
-                למטרות אבטחה, עליך להגדיר אימות דו-שלבי כדי להמשיך
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-4">
+            <div className="flex justify-center">
+              <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center text-orange-600">דרושה השלמת הגדרת אימות</CardTitle>
+            <CardDescription className="text-center">
+              ההתחברות בוצעה בהצלחה, אך נדרש להשלים את הגדרת האימות הדו-שלבי
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>מה עליך לעשות:</strong>
+                <br />
+                1. היכנס לממשק הניהול (Admin)
+                <br />
+                2. השלם את הגדרת האימות הדו-שלבי
+                <br />
+                3. חזור לכאן והתחבר שוב
+              </AlertDescription>
+            </Alert>
 
-          <TwoFactorSetup
-            onComplete={async () => {
-              try {
-                // Fetch updated user data after successful 2FA setup
-                const updatedUserResponse = await getWithErrorHandling('/api/users/me', {
-                  notifyOnError: false,
-                })
+            <div className="space-y-3">
+              <Button
+                onClick={() => window.open('/admin', '_blank')}
+                className="w-full"
+                variant="default"
+              >
+                פתח ממשק ניהול בטאב חדש
+              </Button>
 
-                if (updatedUserResponse?.user) {
-                  // Update the user in auth context with the fresh data
-                  setUser(updatedUserResponse.user)
-                }
+              <Button
+                onClick={() => setRequiresSetup(false)}
+                className="w-full"
+                variant="outline"
+              >
+                חזור למסך התחברות
+              </Button>
+            </div>
 
-                // After successful setup, update state and redirect
-                setRequiresSetup(false)
-                router.push(callbackUrl)
-                router.refresh()
-              } catch (error) {
-                // If fetching updated user fails, still proceed with redirect
-                setRequiresSetup(false)
-                router.push(callbackUrl)
-                router.refresh()
-              }
-            }}
-            onCancel={undefined} // No cancel option - setup is mandatory
-          />
-        </div>
+            <div className="text-sm text-center text-muted-foreground">
+              צריך עזרה? צור קשר עם מנהל המערכת
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -187,6 +198,8 @@ function SignInContent() {
           <CardDescription className="text-center">
             {requiresTwoFactor
               ? 'הזן את קוד האימות הדו-שלבי כדי להשלים את ההתחברות'
+              : requiresSetup
+              ? 'עליך להגדיר אימות דו-שלבי לפני הכניסה למערכת'
               : 'הזן את פרטי ההתחברות שלך כדי להיכנס למערכת'}
           </CardDescription>
         </CardHeader>

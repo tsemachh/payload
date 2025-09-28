@@ -54,11 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw twoFactorError
       }
 
-
       // Handle actual errors
       const errorMessage = result.errors?.[0]?.message || result.error || 'שגיאה בהתחברות למערכת'
       notifyError({ message: errorMessage })
-
+      
       const loginError = new Error(errorMessage) as any
       loginError.details = result
       throw loginError

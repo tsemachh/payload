@@ -608,9 +608,7 @@ export const Users: CollectionConfig = {
           // For frontend login, check 2FA status
           if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
             // User has started 2FA setup but not completed - allow login but indicate setup needed
-            req.payload.logger.info(
-              'Frontend user has 2FA enabled but not verified, requiring setup completion after login',
-            )
+            req.payload.logger.info('Frontend user has 2FA enabled but not verified, requiring setup completion after login')
             // Don't throw error - let login succeed but indicate setup needed
           } else if (user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified) {
             req.payload.logger.info('Frontend user has 2FA enabled, checking for TOTP code')
@@ -630,7 +628,6 @@ export const Users: CollectionConfig = {
             const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import(
               '@/utils/totpUtils'
             )
-
             // Check rate limiting
             const rateLimitCheck = checkRateLimit(
               user.twoFactorAuth.failureCount || 0,
@@ -683,6 +680,7 @@ export const Users: CollectionConfig = {
                   },
                 },
               })
+
             } catch (error) {
               req.payload.logger.error('2FA verification error:', error)
               throw new APIError('שגיאה באימות הקוד', 500)
