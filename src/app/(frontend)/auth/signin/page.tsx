@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
 import TurnstileCaptcha, { TurnstileStatus } from '@/components/TurnstileCaptcha'
 import { v4 as uuidv4 } from 'uuid'
-import { postWithErrorHandling, getWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
+import { getWithErrorHandling, postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 import { TwoFactorSetup } from '@/components/TwoFactorSetup'
 
 // Client component that uses useSearchParams
@@ -132,53 +132,46 @@ function SignInContent() {
   if (requiresSetup) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-4">
-            <div className="flex justify-center">
-              <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
-            </div>
-            <CardTitle className="text-2xl font-bold text-center text-orange-600">דרושה השלמת הגדרת אימות</CardTitle>
-            <CardDescription className="text-center">
-              ההתחברות בוצעה בהצלחה, אך נדרש להשלים את הגדרת האימות הדו-שלבי
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert className="border-orange-200 bg-orange-50">
-              <AlertCircle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                <strong>מה עליך לעשות:</strong>
-                <br />
-                1. היכנס לממשק הניהול (Admin)
-                <br />
-                2. השלם את הגדרת האימות הדו-שלבי
-                <br />
-                3. חזור לכאן והתחבר שוב
-              </AlertDescription>
-            </Alert>
+        <div className="w-full max-w-md">
+          <Card className="mb-4">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <Image src={LogoImage} alt="Emda Logo" width={150} height={150} priority />
+              </div>
+              <CardTitle className="text-center text-red-600">אימות דו-שלבי נדרש</CardTitle>
+              <CardDescription className="text-center">
+                למטרות אבטחה, עליך להגדיר אימות דו-שלבי כדי להמשיך
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-            <div className="space-y-3">
-              <Button
-                onClick={() => window.open('/admin', '_blank')}
-                className="w-full"
-                variant="default"
-              >
-                פתח ממשק ניהול בטאב חדש
-              </Button>
+          <TwoFactorSetup
+            onComplete={async () => {
+              try {
+                // Fetch updated user data after successful 2FA setup
+                const updatedUserResponse = await getWithErrorHandling('/api/users/me', {
+                  notifyOnError: false,
+                })
 
-              <Button
-                onClick={() => setRequiresSetup(false)}
-                className="w-full"
-                variant="outline"
-              >
-                חזור למסך התחברות
-              </Button>
-            </div>
+                if (updatedUserResponse?.user) {
+                  // Update the user in auth context with the fresh data
+                  setUser(updatedUserResponse.user)
+                }
 
-            <div className="text-sm text-center text-muted-foreground">
-              צריך עזרה? צור קשר עם מנהל המערכת
-            </div>
-          </CardContent>
-        </Card>
+                // After successful setup, update state and redirect
+                setRequiresSetup(false)
+                router.push(callbackUrl)
+                router.refresh()
+              } catch (error) {
+                // If fetching updated user fails, still proceed with redirect
+                setRequiresSetup(false)
+                router.push(callbackUrl)
+                router.refresh()
+              }
+            }}
+            onCancel={undefined} // No cancel option - setup is mandatory
+          />
+        </div>
       </div>
     )
   }
