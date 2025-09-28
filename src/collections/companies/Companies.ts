@@ -2,6 +2,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
+import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -191,31 +192,6 @@ export const Companies: CollectionConfig = {
                   },
                 },
               ],
-            },
-            {
-              name:'labels',
-              type: 'array',
-              fields: [
-                {
-                  name: 'label',
-                  label: 'שם התגית',
-                  type: 'text',
-                },
-                {
-                  name:'color',
-                  label:'צבע התגית',
-                  type:'text',
-                },
-                {
-                  name:'stock',
-                  label:'נייר ערך',
-                  type:'relationship',
-                  relationTo:'stocks'
-                }
-              ],
-              // admin:{
-              //   hidden:true
-              // }
             },
             {
               name: 'researchDocuments',
@@ -409,6 +385,42 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+        {
+          name: 'label',
+          label: 'תגיות',
+          fields: [
+            {
+              name: 'labels',
+              type: 'array',
+              fields: [
+                {
+                  name: 'label',
+                  label: 'שם התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'color',
+                  label: 'צבע התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'stock',
+                  label: 'נייר ערך',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  hasMany: true,
+                },
+                {
+                  name: 'companiesWithSameLabel',
+                  label: 'חברות עם אותו תוית',
+                  type: 'relationship',
+                  relationTo: 'companies',
+                  hasMany: true,
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
   ],
@@ -463,6 +475,21 @@ export const Companies: CollectionConfig = {
       path: '/voting-recommendations',
       method: 'get',
       handler: getVotingRecommendation,
+    },
+    {
+      path: '/createLabel',
+      method: 'post',
+      handler: addTagToCompany,
+    },
+    {
+      path: '/deleteLabel',
+      method: 'delete',
+      handler: deleteTagFromCompany,
+    },
+    {
+      path: '/getLabels',
+      method: 'post',
+      handler: getLabelsForCompanies,
     },
   ],
 }

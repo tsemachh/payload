@@ -462,14 +462,6 @@ export interface Company {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  labels?:
-    | {
-        label?: string | null;
-        color?: string | null;
-        stock?: (string | null) | Stock;
-        id?: string | null;
-      }[]
-    | null;
   researchDocuments?: {
     showResearchTrusteeship?: boolean | null;
     showResearchBond?: boolean | null;
@@ -512,6 +504,65 @@ export interface Company {
     totalDocs?: number;
   };
   silencedStocks?: string[] | null;
+  label?: {
+    labels?:
+      | {
+          label?: string | null;
+          color?: string | null;
+          stock?: (string | Stock)[] | null;
+          companiesWithSameLabel?: (string | Company)[] | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-documents".
+ */
+export interface ResearchDocument {
+  id: string;
+  companies?: (string | Company)[] | null;
+  uploadedAt?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holdings".
+ */
+export interface Holding {
+  id: string;
+  fund: string | Company;
+  valueDate: string;
+  stats?: {
+    recordCount?: number | null;
+    accountIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  holdings: HoldingsPerDay;
   creator?: string | null;
   updator?: string | null;
   createdAt: string;
@@ -702,54 +753,6 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "research-documents".
- */
-export interface ResearchDocument {
-  id: string;
-  companies?: (string | Company)[] | null;
-  uploadedAt?: string | null;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "holdings".
- */
-export interface Holding {
-  id: string;
-  fund: string | Company;
-  valueDate: string;
-  stats?: {
-    recordCount?: number | null;
-    accountIds?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-  };
-  holdings: HoldingsPerDay;
-  creator?: string | null;
-  updator?: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1470,14 +1473,6 @@ export interface CompaniesSelect<T extends boolean = true> {
   privateRegistrationNumber?: T;
   subCompanies?: T;
   parentCompany?: T;
-  labels?:
-    | T
-    | {
-        label?: T;
-        color?: T;
-        stock?: T;
-        id?: T;
-      };
   researchDocuments?:
     | T
     | {
@@ -1502,6 +1497,19 @@ export interface CompaniesSelect<T extends boolean = true> {
   holdings?: T;
   meetings?: T;
   silencedStocks?: T;
+  label?:
+    | T
+    | {
+        labels?:
+          | T
+          | {
+              label?: T;
+              color?: T;
+              stock?: T;
+              companiesWithSameLabel?: T;
+              id?: T;
+            };
+      };
   creator?: T;
   updator?: T;
   createdAt?: T;

@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
-import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
+import fixStockRelationsEndPoint, {
+  getTradableStocks,
+} from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { stockTypeOptions } from '@/consts/otipns-const'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
@@ -408,6 +410,11 @@ export const Stocks: CollectionConfig = {
       path: '/fix-stock-relations',
       method: 'post',
       handler: fixStockRelationsEndPoint,
+    },
+    {
+      path: '/tradable',
+      method: 'get',
+      handler: getTradableStocks,
     },
   ],
 }
