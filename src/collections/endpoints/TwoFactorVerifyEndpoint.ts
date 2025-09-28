@@ -21,8 +21,12 @@ const TwoFactorVerifyEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'נדרש קוד אימות' }, { status: 400 })
     }
 
-    if (!req.user || !req.user.twoFactorAuth?.secret) {
-      return Response.json({ error: 'לא מאומת או אימות דו-שלבי לא מוגדר' }, { status: 401 })
+    if (!req.user) {
+      return Response.json({ error: 'לא מאומת' }, { status: 401 })
+    }
+
+    if (!req.user.twoFactorAuth?.secret) {
+      return Response.json({ error: 'אימות דו-שלבי לא מוגדר - אנא בצע הגדרה תחילה' }, { status: 400 })
     }
 
     // Check rate limiting
@@ -71,9 +75,12 @@ const TwoFactorVerifyEndpoint = async (req: PayloadRequest) => {
         }
       }
 
-      // If this is the initial verification, enable 2FA
+      // If this is the initial verification, enable and verify 2FA
       if (enableAfterVerification) {
         updateData.twoFactorAuth.enabled = true
+        updateData.twoFactorAuth.verified = true
+      } else if (req.user.twoFactorAuth.enabled && !req.user.twoFactorAuth.verified) {
+        // If already enabled (e.g., by admin) but not verified, mark as verified
         updateData.twoFactorAuth.verified = true
       }
 
