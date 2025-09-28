@@ -553,6 +553,18 @@ export const Users: CollectionConfig = {
             data.treeCompanies = treeCompanies
           }
         }
+        // If 2FA is explicitly disabled, clear its related fields
+        if (data?.twoFactorAuth && data.twoFactorAuth.enabled === false) {
+          data.twoFactorAuth = {
+            enabled: false,
+            verified: false,
+            secret: null as any,
+            backupCodes: [],
+            lastUsed: null as any,
+            failureCount: 0,
+            lastFailureTime: null as any,
+          }
+        }
         return data
       },
     ],
@@ -608,8 +620,11 @@ export const Users: CollectionConfig = {
           // For frontend login, check 2FA status
           if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
             // User has started 2FA setup but not completed - allow login but indicate setup needed
-            req.payload.logger.info('Frontend user has 2FA enabled but not verified, requiring setup completion after login')
-            // Don't throw error - let login succeed but indicate setup needed
+            req.payload.logger.info(
+              'Frontend user has 2FA enabled but not verified, allowing login for setup completion',
+            )
+            // Don't throw error - let login succeed so user can authenticate for setup
+            // The frontend will detect this state and show setup interface
           } else if (user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified) {
             req.payload.logger.info('Frontend user has 2FA enabled, checking for TOTP code')
 
@@ -628,6 +643,7 @@ export const Users: CollectionConfig = {
             const { verifyTOTPToken, decryptTOTPSecret, checkRateLimit } = await import(
               '@/utils/totpUtils'
             )
+
             // Check rate limiting
             const rateLimitCheck = checkRateLimit(
               user.twoFactorAuth.failureCount || 0,
@@ -680,7 +696,6 @@ export const Users: CollectionConfig = {
                   },
                 },
               })
-
             } catch (error) {
               req.payload.logger.error('2FA verification error:', error)
               throw new APIError('שגיאה באימות הקוד', 500)

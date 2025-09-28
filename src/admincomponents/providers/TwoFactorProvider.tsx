@@ -23,22 +23,25 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   // Detect dark mode
   useEffect(() => {
     const checkDarkMode = () => {
-      const isDark = 
-        document.documentElement.classList.contains('dark') || 
+      const isDark =
+        document.documentElement.classList.contains('dark') ||
         document.documentElement.getAttribute('data-theme') === 'dark' ||
         window.matchMedia('(prefers-color-scheme: dark)').matches
       setIsDarkMode(isDark)
     }
-    
+
     checkDarkMode()
-    
+
     // Listen for theme changes
     const observer = new MutationObserver(checkDarkMode)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] })
-    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    })
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQuery.addEventListener('change', checkDarkMode)
-    
+
     return () => {
       observer.disconnect()
       mediaQuery.removeEventListener('change', checkDarkMode)
@@ -63,7 +66,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       userId: user?.id,
       lastUserId,
       showSetup,
-      showVerification
+      showVerification,
     })
 
     if (!user) {
@@ -74,7 +77,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
         sessionStorage.removeItem('admin-2fa-verified')
         sessionStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
       }
-      
+
       // Reset all state when user logs out
       setLastUserId(null)
       setShowSetup(false)
@@ -93,7 +96,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       // Clear both old and new verification keys for previous user
       sessionStorage.removeItem('admin-2fa-verified')
       sessionStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
-      
+
       // Reset verification states for new user
       setShowSetup(false)
       setShowVerification(false)
@@ -111,22 +114,33 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       enabled: user.twoFactorAuth?.enabled,
       verified: user.twoFactorAuth?.verified,
       userId: user.id,
-      previousUserId: lastUserId
+      previousUserId: lastUserId,
     })
 
-    const has2FASetup = user.twoFactorAuth?.enabled && user.twoFactorAuth?.verified
+    const has2FAEnabled = user.twoFactorAuth?.enabled
+    const has2FAVerified = user.twoFactorAuth?.verified
+    const has2FASetup = has2FAEnabled && has2FAVerified
 
-    if (!has2FASetup) {
-      console.log('TwoFactorProvider: User needs 2FA setup')
+    if (has2FAEnabled && !has2FAVerified) {
+      // User has started 2FA setup but hasn't completed verification - force setup completion
+      console.log(
+        'TwoFactorProvider: User has 2FA enabled but not verified, requiring setup completion',
+      )
       setShowSetup(true)
       setShowVerification(false)
-    } else {
-      // Check if already verified in this session for this specific user
+    } else if (has2FASetup) {
+      // User has fully enabled and verified 2FA - check if verification needed for this session
       const verificationKey = `admin-2fa-verified-${user.id}`
       const alreadyVerified = sessionStorage.getItem(verificationKey) === 'true'
 
+      console.log('TwoFactorProvider: 2FA verification check', {
+        verificationKey,
+        alreadyVerified,
+        sessionStorageValue: sessionStorage.getItem(verificationKey),
+      })
+
       if (!alreadyVerified) {
-        console.log('TwoFactorProvider: User needs 2FA verification')
+        console.log('TwoFactorProvider: User has 2FA enabled, requiring verification')
         setShowVerification(true)
         setShowSetup(false)
       } else {
@@ -134,6 +148,11 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
         setShowVerification(false)
         setShowSetup(false)
       }
+    } else {
+      // User doesn't have 2FA enabled at all - allow them to access admin without 2FA
+      console.log('TwoFactorProvider: User does not have 2FA enabled, allowing access')
+      setShowVerification(false)
+      setShowSetup(false)
     }
 
     setIsChecking(false)
@@ -200,7 +219,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   // Full-screen overlay that blocks all interaction
   const renderOverlay = (content: ReactNode) => {
     const colors = getThemeColors()
-    
+
     return (
       <div
         style={{
@@ -235,7 +254,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   // Show setup overlay
   if (showSetup) {
     const colors = getThemeColors()
-    
+
     return (
       <>
         {renderOverlay(
@@ -244,7 +263,9 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
               backgroundColor: colors.background,
               borderRadius: '8px',
               padding: '40px',
-              boxShadow: isDarkMode ? '0 4px 20px rgba(0, 0, 0, 0.8)' : '0 4px 20px rgba(0, 0, 0, 0.3)',
+              boxShadow: isDarkMode
+                ? '0 4px 20px rgba(0, 0, 0, 0.8)'
+                : '0 4px 20px rgba(0, 0, 0, 0.3)',
               maxWidth: '500px',
               width: '100%',
               maxHeight: '90vh',
@@ -287,7 +308,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   // Show verification overlay
   if (showVerification) {
     const colors = getThemeColors()
-    
+
     return (
       <>
         {renderOverlay(
@@ -296,7 +317,9 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
               backgroundColor: colors.background,
               borderRadius: '8px',
               padding: '40px',
-              boxShadow: isDarkMode ? '0 4px 20px rgba(0, 0, 0, 0.8)' : '0 4px 20px rgba(0, 0, 0, 0.3)',
+              boxShadow: isDarkMode
+                ? '0 4px 20px rgba(0, 0, 0, 0.8)'
+                : '0 4px 20px rgba(0, 0, 0, 0.3)',
               maxWidth: '400px',
               width: '100%',
               border: `1px solid ${colors.border}`,
@@ -426,17 +449,19 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   if (isChecking) {
     console.log('TwoFactorProvider: Still checking, showing loading state')
     const colors = getThemeColors()
-    
+
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        fontSize: '14px',
-        color: colors.textSecondary,
-        backgroundColor: isDarkMode ? '#111827' : '#ffffff'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          fontSize: '14px',
+          color: colors.textSecondary,
+          backgroundColor: isDarkMode ? '#111827' : '#ffffff',
+        }}
+      >
         בודק מצב האימות...
       </div>
     )

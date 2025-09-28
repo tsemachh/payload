@@ -57,11 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Handle actual errors
       const errorMessage = result.errors?.[0]?.message || result.error || 'שגיאה בהתחברות למערכת'
       notifyError({ message: errorMessage })
-      
+
       const loginError = new Error(errorMessage) as any
       loginError.details = result
       throw loginError
-
     } catch (error: any) {
       // If it's our 2FA required "error", don't show notification - just rethrow
       if (error.requires2FA) {
@@ -72,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error.details) {
         notifyError({ message: 'שגיאה בהתחברות למערכת' })
       }
-      
+
       throw error
     }
   }, [])
