@@ -58,9 +58,40 @@ async function processMeetingGroup(
     const meetingToKeep = sortedMeetings[0]
     const meetingsToRemove = sortedMeetings.slice(1)
 
+    const displayId = (m: any) => (m?.meetingId ? m.meetingId : m?.id)
     console.log(
-      `Keeping meeting ${meetingToKeep.id}, removing ${meetingsToRemove.length} duplicates for key ${groupKey}`,
+      `Keeping meeting ${displayId(meetingToKeep)}, removing ${meetingsToRemove.length} duplicates for key ${groupKey}`,
     )
+
+    // Detailed log of which meetings are unified into which meeting
+    try {
+      const removedIds = meetingsToRemove
+        .map((m) => displayId(m))
+        .filter(Boolean)
+        .join(',')
+      if (removedIds) {
+        console.log(`meetings - ${removedIds} were unified to meeting ${displayId(meetingToKeep)}`)
+      }
+    } catch (e) {
+      // no-op: logging failure should not affect migration flow
+    }
+
+    // Initialize accumulators for a single final update
+    const companiesSet = new Set<string>((meetingToKeep.companies as any) || [])
+    const agendaMapGlobal: Map<number, any> | null = meetingToKeep.agenda
+      ? new Map(meetingToKeep.agenda.map((item: any, idx: number) => [idx, { ...item }]))
+      : null
+    // Accumulators for funds and fundsWithHolding to move from removed meetings
+    const fundsSet = new Set<string>(((meetingToKeep.funds as any) || []).map(getIdOfRelationField))
+    const fundsWithHoldingAcc: any[] = [
+      ...(((meetingToKeep as any).fundsWithHolding as any[]) || []),
+    ]
+    const removedMeetingIds: string[] = []
+    let totalVotesMoved = 0
+    let agendaChangesCount = 0
+    let fundsAddedFromRemoved = 0
+    let fundsWithHoldingAddedFromRemoved = 0
+    const summaryLines: string[] = []
 
     // Collect all votes from meetings to be removed
     for (const meetingToRemove of meetingsToRemove) {
@@ -73,38 +104,31 @@ async function processMeetingGroup(
           },
         },
         limit: 0,
+        depth: 0,
       })
 
       const votes = votesResult.docs as Vote[]
-      console.log(`Found ${votes.length} votes for meeting ${meetingToRemove.id}`)
+      console.log(`Found ${votes.length} votes for meeting ${displayId(meetingToRemove)}`)
 
-      // Collect companies from votes to add to the kept meeting
-      const voteCompanies = votes.map((vote) => vote.company).filter(Boolean)
+      // Merge companies from the removed meeting into an accumulator (single update later)
+      const incomingCompanies = meetingToRemove.companies || []
+      if (incomingCompanies.length > 0) {
+        incomingCompanies.forEach((c: any) => companiesSet.add(c as any))
+      }
 
-      if (voteCompanies.length > 0) {
-        console.log(
-          `Adding ${voteCompanies.length} companies from votes to meeting ${meetingToKeep.id}`,
-        )
+      // Merge funds from the removed meeting (ids) into accumulator
+      const incomingFunds = (meetingToRemove.funds as any[]) || []
+      if (incomingFunds.length > 0) {
+        const before = fundsSet.size
+        incomingFunds.map(getIdOfRelationField).forEach((f: any) => fundsSet.add(f as any))
+        fundsAddedFromRemoved += fundsSet.size - before
+      }
 
-        // Use companies directly from meetingToKeep
-        const existingCompanies = meetingToKeep.companies || []
-        const allCompanies = [...existingCompanies, ...voteCompanies]
-
-        // Remove duplicates
-        const uniqueCompanies = Array.from(new Set(allCompanies))
-
-        // Update the kept meeting with the combined companies
-        await payload.update({
-          collection: 'meetings',
-          id: meetingToKeep.id,
-          data: {
-            companies: uniqueCompanies,
-          },
-          req: {
-            ...req,
-            context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
-          },
-        })
+      // Merge fundsWithHolding rows from the removed meeting into accumulator (no complex dedupe)
+      const incomingFundsWithHolding = ((meetingToRemove as any).fundsWithHolding as any[]) || []
+      if (incomingFundsWithHolding.length > 0) {
+        fundsWithHoldingAcc.push(...incomingFundsWithHolding)
+        fundsWithHoldingAddedFromRemoved += incomingFundsWithHolding.length
       }
 
       // Move votes to the kept meeting
@@ -121,84 +145,66 @@ async function processMeetingGroup(
           context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
         },
       })
+      totalVotesMoved += votes.length
 
-      // Merge agenda items with different recommendations
-      if (meetingToKeep.agenda && meetingToRemove.agenda) {
-        // Create a map of agenda items by topicIndex
-        const agendaMap = new Map()
-
-        // Initialize with the kept meeting's agenda
-        meetingToKeep.agenda.forEach((item, index) => {
-          agendaMap.set(index, { ...item })
-        })
-
+      // Merge agenda items comparing base recommendations; defer DB update until end
+      if (agendaMapGlobal && meetingToRemove.agenda) {
         // Process agenda items from the meeting to remove
         meetingToRemove.agenda.forEach((item, index) => {
-          if (meetingToKeep?.agenda && index < meetingToKeep?.agenda?.length) {
-            const keptItem = agendaMap.get(index)
+          if (agendaMapGlobal && index < agendaMapGlobal.size) {
+            const keptItem = agendaMapGlobal.get(index)
 
-            // If there's an exceptional recommendation in the item to remove
-            if (
+            const keptBaseRec = keptItem?.recommendation?.votingRecommendation
+            const srcBaseRec = item?.recommendation?.votingRecommendation
+
+            // If base recommendations differ → create/align exceptional on kept item and merge meeting-level companies
+            if (srcBaseRec && keptBaseRec && srcBaseRec !== keptBaseRec) {
+              agendaChangesCount++
+              if (!keptItem.exceptionalRecommendation?.showExceptional) {
+                keptItem.exceptionalRecommendation = {
+                  showExceptional: true,
+                  companies: [],
+                  votingRecommendation: srcBaseRec,
+                  reasonRef: item?.exceptionalRecommendation?.reasonRef,
+                  reasonText: item?.exceptionalRecommendation?.reasonText,
+                }
+              } else {
+                keptItem.exceptionalRecommendation.votingRecommendation = srcBaseRec
+                keptItem.exceptionalRecommendation.reasonRef =
+                  item?.exceptionalRecommendation?.reasonRef || keptItem.exceptionalRecommendation.reasonRef
+                keptItem.exceptionalRecommendation.reasonText =
+                  item?.exceptionalRecommendation?.reasonText || keptItem.exceptionalRecommendation.reasonText
+              }
+
+              if (meetingToRemove.companies && meetingToRemove.companies.length > 0) {
+                keptItem.exceptionalRecommendation.companies = Array.from(
+                  new Set([
+                    ...(keptItem.exceptionalRecommendation.companies || []),
+                    ...meetingToRemove.companies,
+                  ]),
+                )
+              }
+            } else if (
               item.exceptionalRecommendation?.showExceptional &&
               item.exceptionalRecommendation.companies &&
               item.exceptionalRecommendation.companies?.length > 0
             ) {
-              // Check if the recommendations are different
-              const keptItemRecommendation =
-                keptItem.exceptionalRecommendation?.votingRecommendation ||
-                keptItem.recommendation?.votingRecommendation
-              const isRecommendationDifferent =
-                item.exceptionalRecommendation.votingRecommendation !== keptItemRecommendation
+              // Recommendations equal; merge exceptional companies from source item
+              keptItem.exceptionalRecommendation =
+                keptItem.exceptionalRecommendation?.showExceptional
+                  ? keptItem.exceptionalRecommendation
+                  : { showExceptional: true, companies: [] }
 
-              // If the recommendations are different, set the exceptionalRecommendation in meetingToKeep
-              // as in meetingToRemove and add the companies of meetingToRemove to the companies of the exceptionalRecommendation
-              if (isRecommendationDifferent) {
-                // If the kept item doesn't have exceptional recommendations yet, initialize it
-                if (!keptItem.exceptionalRecommendation?.showExceptional) {
-                  keptItem.exceptionalRecommendation = {
-                    showExceptional: true,
-                    companies: [],
-                    votingRecommendation: item.exceptionalRecommendation.votingRecommendation,
-                    reasonRef: item.exceptionalRecommendation.reasonRef,
-                    reasonText: item.exceptionalRecommendation.reasonText,
-                  }
-                }
-
-                // Add companies from meetingToRemove to the exceptionalRecommendation companies
-                if (meetingToRemove.companies && meetingToRemove.companies.length > 0) {
-                  keptItem.exceptionalRecommendation.companies = [
-                    ...(keptItem.exceptionalRecommendation.companies || []),
-                    ...meetingToRemove.companies,
-                  ]
-                }
-              } else {
-                // If the recommendations are the same, just add companies from the removed item's exceptional recommendation
-                if (item.exceptionalRecommendation.companies) {
-                  keptItem.exceptionalRecommendation.companies = [
-                    ...(keptItem.exceptionalRecommendation.companies || []),
-                    ...(item.exceptionalRecommendation.companies || []),
-                  ]
-                }
-              }
+              keptItem.exceptionalRecommendation.companies = Array.from(
+                new Set([
+                  ...(keptItem.exceptionalRecommendation.companies || []),
+                  ...(item.exceptionalRecommendation.companies || []),
+                ]),
+              )
             }
 
-            agendaMap.set(index, keptItem)
+            agendaMapGlobal.set(index, keptItem)
           }
-        })
-
-        // Update the kept meeting with merged agenda
-        const updatedAgenda = Array.from(agendaMap.values())
-
-        await payload.update({
-          collection: 'meetings',
-          id: meetingToKeep.id,
-          data: {
-            agenda: updatedAgenda,
-          },
-          req: {
-            ...req,
-            context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
-          },
         })
       }
 
@@ -211,6 +217,54 @@ async function processMeetingGroup(
           context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
         },
       })
+
+      removedMeetingIds.push(String(displayId(meetingToRemove)))
+      summaryLines.push(
+        `- Removed meeting ${String(displayId(meetingToRemove))} and moved ${votes.length} votes.`,
+      )
+    }
+
+    // Final single update for companies, agenda, and comments
+    try {
+      const finalCompanies = Array.from(companiesSet)
+      const updatedAgenda = agendaMapGlobal ? Array.from(agendaMapGlobal.values()) : undefined
+      const finalFunds = Array.from(fundsSet)
+      const finalFundsWithHolding = fundsWithHoldingAcc
+
+      const existingComments = (meetingToKeep as any)?.comments || ''
+      const summaryHeader = `UnifyMeetings migration summary for key ${groupKey} on ${new Date().toISOString()}`
+      const companiesSummary = `- Companies merged total: ${finalCompanies.length}`
+      const votesSummary = `- Total votes moved: ${totalVotesMoved}`
+      const removedSummary = removedMeetingIds.length
+        ? `- Removed meetings: ${removedMeetingIds.join(',')}`
+        : '- Removed meetings: none'
+      const agendaSummary = `- Agenda items updated (base rec differed): ${agendaChangesCount}`
+      const fundsSummary = `- Funds merged total: ${finalFunds.length} (+${fundsAddedFromRemoved} from removed)`
+      const fundsWithHoldingSummary = `- FundsWithHolding rows merged total: ${finalFundsWithHolding.length} (+${fundsWithHoldingAddedFromRemoved} from removed)`
+
+      const finalSummary = [summaryHeader, removedSummary, votesSummary, companiesSummary, agendaSummary, fundsSummary, fundsWithHoldingSummary, ...summaryLines].join('\n')
+
+      const newComments = existingComments
+        ? `${existingComments}\n\n${finalSummary}`
+        : finalSummary
+
+      await payload.update({
+        collection: 'meetings',
+        id: meetingToKeep.id,
+        data: {
+          ...(updatedAgenda ? { agenda: updatedAgenda } : {}),
+          companies: finalCompanies,
+          funds: finalFunds,
+          fundsWithHolding: finalFundsWithHolding as any,
+          comments: newComments,
+        },
+        req: {
+          ...req,
+          context: { ...req.context, from: 'migration', process: 'unifyMeetings' },
+        },
+      })
+    } catch (e) {
+      console.warn('Warning: final update failed for meeting', displayId(meetingToKeep), e)
     }
 
     // Allow garbage collection to run after processing each meeting group
@@ -248,7 +302,7 @@ async function processMeetingsInBatches(
     const result = await payload.find({
       collection: 'meetings',
       limit: batchSize,
-      while: { _status: { equals: 'published' } },
+      where: { _status: { equals: 'published' } },
       page: page,
       depth: 0,
     })

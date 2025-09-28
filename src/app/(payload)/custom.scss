@@ -227,6 +227,10 @@ form[action*="/api/research-documents"] .file-field__filename {
       padding-left: 0;
     }
 
+    .icon.icon--search{
+      padding-left: 19px;
+    }
+
     .table {
       max-height: calc(100vh - 260px); /* 100vh - (header + footer heights) */
       overflow-y: auto !important; /* Enable vertical scrolling */
