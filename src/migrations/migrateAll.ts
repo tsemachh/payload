@@ -64,6 +64,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Stocks Migration ===')
     await migrateStocks({ payload, req })
     console.log('=== Stocks Migration Completed ===\n')
+    // 3. Migrate Foreign
+    console.log('\n=== Starting Foreign Stocks Migration ===')
+    await migrateForeign({ payload, req })
+    console.log('=== Foreign Stocks Migration Completed ===\n')
+
+    // 4. Migrate Dual-Listed Stocks
+    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
+    await migrateDual({ payload, req })
+    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
 
     // 2. Migrate Meetings
     console.log('\n=== Starting Meetings Migration ===')
@@ -79,16 +88,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Firms Migration ===')
     await migrateFullFirms({ payload, req })
     console.log('=== Meetings Firms Completed ===\n')
-
-    // 3. Migrate Foreign
-    console.log('\n=== Starting Foreign Stocks Migration ===')
-    await migrateForeign({ payload, req })
-    console.log('=== Foreign Stocks Migration Completed ===\n')
-
-    // 4. Migrate Dual-Listed Stocks
-    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
-    await migrateDual({ payload, req })
-    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
 
     // 5. Migrate Users
     console.log('\n=== Starting Users Migration ===')
