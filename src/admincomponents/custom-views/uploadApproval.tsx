@@ -79,7 +79,7 @@ export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: R
             {uploadedDoc.filename}
           </span>
           <Button size="sm" variant="ghost" onClick={removeFile}>
-            ❌
+          X 
           </Button>
         </div>
       )}

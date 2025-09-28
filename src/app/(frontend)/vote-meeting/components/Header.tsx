@@ -1,6 +1,7 @@
 import { Vote } from '@/payload-types'
 import VoteStatus from './Status'
 import { Lock } from 'lucide-react'
+import { SingleDocumentIcon } from '../../components/ui/icons'
 
 interface MeetingHeaderProps {
   meetingData: {
@@ -29,7 +30,7 @@ const VoteHeader = ({
   lastPublishedVoteInfo,
   fetchedVotes,
   isReported,
-  approvalDoc
+  approvalDoc,
 }: MeetingHeaderProps) => {
   return (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
@@ -39,7 +40,7 @@ const VoteHeader = ({
             <div className="flex flex-col items-center justify-center space-y-2">
               <Lock className="w-6 h-6 text-gray-600" />
               <div className="text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                {readOnlyReason === 'permission' 
+                {readOnlyReason === 'permission'
                   ? 'אין לך הרשאות להצביע באסיפה זו'
                   : 'האסיפה נעולה להצבעה'}
               </div>
@@ -65,34 +66,34 @@ const VoteHeader = ({
             )}
           </div>
 
-         
           <VoteStatus
             isPublished={!isDirty}
             publishedInfo={lastPublishedVoteInfo}
             isFirstDraft={!!lastPublishedVoteInfo}
             isDraft={fetchedVotes?.length > 0 && isDirty}
-            draftInfo={fetchedVotes?.length > 0 && fetchedVotes[0].updatedAt != ''
-              ? {
-                user: 'לא ידוע',
-                date: fetchedVotes[0].updatedAt,
-              }
-              : undefined}
-            isReported={isReported}         
+            draftInfo={
+              fetchedVotes?.length > 0 && fetchedVotes[0].updatedAt != ''
+                ? {
+                    user: 'לא ידוע',
+                    date: fetchedVotes[0].updatedAt,
+                  }
+                : undefined
+            }
+            isReported={isReported}
           />
-          
-           {/* Download button for the approval doc */}
-           {isReported&& approvalDoc?.url && (
+
+          {isReported && approvalDoc?.url && (
             <a
-              href={approvalDoc?.url}
-              download={approvalDoc?.filename || 'approval.xlsx'}
+              href={approvalDoc.url}
+              download={approvalDoc.filename || 'approval.xlsx'}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+              title="הורד אישור הצבעה" // <-- Hover text
+              className="inline-flex items-center justify-center"
             >
-              הורד אישור הצבעה
+              <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 hover:text-blue-600" />
             </a>
           )}
-
         </div>
       </div>
     </div>
