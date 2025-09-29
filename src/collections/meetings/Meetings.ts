@@ -23,6 +23,7 @@ import { calculateHoldingValues } from '@/utils/dataUtils'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
+  updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
@@ -1073,6 +1074,14 @@ export const Meetings: CollectionConfig = {
               maxDepth: 1,
             },
             {
+              name: 'stockRegisteredValue',
+              type: 'number',
+              admin: {
+                hidden: false,
+                disableListColumn: true,
+              },
+            },
+            {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
               label: 'שווי שוק',
@@ -1175,6 +1184,7 @@ export const Meetings: CollectionConfig = {
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
+      updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
     ],
   },
   endpoints: [

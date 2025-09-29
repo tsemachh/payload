@@ -706,6 +706,7 @@ export interface Meeting {
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
   stockValue?: (string | null) | StockValue;
+  stockRegisteredValue?: number | null;
   stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
@@ -1360,6 +1361,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
   stockValue?: T;
+  stockRegisteredValue?: T;
   stockMarketValue?: T;
   creator?: T;
   updator?: T;
