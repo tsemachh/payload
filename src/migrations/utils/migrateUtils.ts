@@ -301,22 +301,26 @@ export async function upsertStockFromImport(
   fromMagna: boolean = false,
   isFinancial: boolean = false,
 ) {
+  // Collect all fields we intend to persist
   const stockData: Partial<Stock> = {
     active: active,
     stockId: `${row.stockID}`,
-    name: row.name || null,
-    symbol: row.symbol || null,
-    type: row.type || null,
-    longName: row.longName || null,
+    name: row.name ?? null,
+    symbol: row.symbol ?? null,
+    type: row.type ?? null,
+    longName: row.longName ?? null,
     tradable: tradable as boolean | null,
     origin: origin,
     comments: comments,
     fromMagna: fromMagna,
     isFinancial: isFinancial,
+    // Pass-through flags from the import row
+    isDual: row.isDual ?? undefined,
   }
+
   try {
     if (!stock) {
-      // Insert into Payload CMS
+      // Create new stock with all fields
       const newStock = await req.payload.create({
         collection: 'stocks',
         data: stockData as Stock,
@@ -325,14 +329,22 @@ export async function upsertStockFromImport(
       })
       return newStock.id
     } else {
-      //Update the Stock only if name or longName have changed
-      if (
-        stock.name != stockData.name ||
-        stock.active != stockData.active ||
-        stock.comments != stockData.comments ||
-        stock.isFinancial != stockData.isFinancial ||
-        (stockData.longName && stock.longName != stockData.longName)
-      ) {
+      // Determine if anything relevant changed
+      const needsUpdate =
+        stock.active !== stockData.active ||
+        stock.comments !== stockData.comments ||
+        stock.name !== stockData.name ||
+        stock.longName !== stockData.longName ||
+        stock.isFinancial !== stockData.isFinancial ||
+        stock.tradable !== stockData.tradable ||
+        stock.origin !== stockData.origin ||
+        stock.symbol !== stockData.symbol ||
+        stock.type !== stockData.type ||
+        // Only compare/update isDual if provided
+        (stockData.isDual !== undefined && stock.isDual !== stockData.isDual) ||
+        stock.fromMagna !== stockData.fromMagna
+
+      if (needsUpdate) {
         await req.payload.update({
           collection: 'stocks',
           id: stock.id,
@@ -342,6 +354,13 @@ export async function upsertStockFromImport(
             name: stockData.name,
             longName: stockData.longName,
             isFinancial: stockData.isFinancial,
+            tradable: stockData.tradable,
+            origin: stockData.origin,
+            symbol: stockData.symbol,
+            type: stockData.type,
+            fromMagna: stockData.fromMagna,
+            // Only set isDual if caller provided it
+            ...(stockData.isDual !== undefined ? { isDual: stockData.isDual } : {}),
           },
           context: { from: 'process' },
           req,
@@ -354,7 +373,7 @@ export async function upsertStockFromImport(
       `Error processing stock ${stockData?.stockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       error,
     )
-    // Don't rethrow the error to allow other stocks to be processed
+    // Continue processing others
   }
 }
 
