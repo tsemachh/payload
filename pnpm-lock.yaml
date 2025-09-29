@@ -141,8 +141,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@shefing/quickfilter':
-        specifier: ^1.0.52
-        version: 1.0.52(graphql@16.11.0)(monaco-editor@0.53.0)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
+        specifier: ^1.0.64
+        version: 1.1.0(graphql@16.11.0)(monaco-editor@0.53.0)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)
       '@shefing/reset-list-view':
         specifier: ^0.2.6
         version: 0.2.7(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))
@@ -2291,8 +2291,8 @@ packages:
   '@shefing/field-type-component-override@1.0.5':
     resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
 
-  '@shefing/quickfilter@1.0.52':
-    resolution: {integrity: sha512-vMoZQXFmt1DNEgGvgTgOMUDWN0CuR6lq4OOV5xBsUh24r2DkzSPI9vQkITS7EmgbZ6RCpX7WTe4O31Fv2xUc9g==}
+  '@shefing/quickfilter@1.1.0':
+    resolution: {integrity: sha512-p8Ei11S92fuqZb8sI3HgQJEWmcWcyy7/hhj1ytp9SztekBxgmjUFcwoIP7+3+AkwnRQNdPRbG2OqLmIjNjYw/w==}
 
   '@shefing/reset-list-view@0.2.7':
     resolution: {integrity: sha512-EOxWTNq/Om1Gtm59saBrEz/TBy5Ko5WeAKS4WVpLG0gu1ooMdyOAHUIYeLG/jTW4ZYZaFH3qVNyBZkfEupq+RA==}
@@ -3990,6 +3990,7 @@ packages:
   fast-equals@5.3.0:
     resolution: {integrity: sha512-xwP+dG/in/nJelMOUEQBiIYeOoHKihWPB2sNZ8ZeDbZFoGb1OwTGMggGRgg6CRitNx7kmHgtIz2dOHDQ8Ap7Bw==}
     engines: {node: '>=6.0.0'}
+    deprecated: Please upgrade to `5.3.1`; this version incorrectly installs the internal `.yarn` package, which balloons installation size, and can cause errors with pnpm installs.
 
   fast-glob@3.3.1:
     resolution: {integrity: sha512-kNFPyjhh5cKjrUltxs+wFx+ZkbRaxxmZ+X0ZU31SOsxCEtP9VPgtq2teZw1DebupL5GmDaNQ6yKMMVcM41iqDg==}
@@ -9284,9 +9285,8 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.5': {}
 
-  '@shefing/quickfilter@1.0.52(graphql@16.11.0)(monaco-editor@0.53.0)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
+  '@shefing/quickfilter@1.1.0(graphql@16.11.0)(monaco-editor@0.53.0)(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(sass@1.77.4)':
     dependencies:
-      '@payloadcms/next': 3.56.0(@types/react@19.0.7)(graphql@16.11.0)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@payloadcms/translations': 3.56.0
       '@payloadcms/ui': 3.56.0(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -9306,7 +9306,6 @@ snapshots:
       lucide-react: 0.475.0(react@19.0.0)
       next: 15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4)
       payload: 3.56.0(graphql@16.11.0)(typescript@5.7.3)
-      qs-esm: 7.0.2
       react: 19.0.0
       react-day-picker: 9.11.0(react@19.0.0)
       tailwind-merge: 3.3.1

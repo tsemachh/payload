@@ -372,6 +372,20 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         // "companies":['15','3918','3928']
       },
       {
+        name: 'Michael',
+        isAdmin: true,
+        email: 'michalk@shefing.com',
+        password: 'michalk@shefing.com',
+        // "companies":['15','3918','3928']
+      },
+      {
+        name: 'Rachel Porush',
+        isAdmin: true,
+        email: 'rachelb@shefing.com',
+        password: 'rachel@shefing.com',
+        // "companies":['15','3918','3928']
+      },
+      {
         name: 'shaked',
         isAdmin: true,
         email: 'shaked@emdaresearch.co.il',

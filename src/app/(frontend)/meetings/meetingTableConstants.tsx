@@ -247,6 +247,15 @@ export const createMeetingColumns = (
     minWidth: 100,
   },
   {
+    key: 'isDualStock',
+    header: 'אסיפה דואלית',
+    type: 'boolean',
+    filterable: true,
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.isDualStock} showX={false} />,
+    minWidth: 70,
+  },
+  {
     key: 'reported',
     header: 'הצבעה בפועל',
     type: 'boolean',
