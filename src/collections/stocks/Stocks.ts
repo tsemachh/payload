@@ -69,7 +69,7 @@ export const Stocks: CollectionConfig = {
   custom: {
     filterList: [
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
-      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }, { name: 'isDual' }],
     ],
     defaultFilter: { active: { equals: true } },
   },
