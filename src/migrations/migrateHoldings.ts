@@ -121,6 +121,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
         >
       >()
+      // Collect per-company missing stock numbers (excluding silenced) to log once per holding day
+      const notFoundByCompany = new Map<string, Set<string>>()
 
       // Iterate each row
       for (const holding of holdings.recordset) {
@@ -168,7 +170,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const stockId = stockCache.get(`${holding.stockNum}`)
         if (!stockId) {
           if (!silentStockSet.has(`${holding.stockNum}`)) {
-            console.warn(`Stock ID not found for stock number: ${holding.stockNum}`)
+            let set = notFoundByCompany.get(companyId)
+            if (!set) {
+              set = new Set<string>()
+              notFoundByCompany.set(companyId, set)
+            }
+            set.add(String(holding.stockNum))
           }
           continue
         }
@@ -194,6 +201,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               },
             ],
           })
+        }
+      }
+
+      // Emit one consolidated warning per company for missing stock numbers on this holding date
+      for (const [companyId, set] of Array.from(notFoundByCompany.entries())) {
+        if (set && set.size > 0) {
+          const list = Array.from(set).join(',')
+          console.warn(`Stock IDs not found for company ${companyId} on ${holdingDate}: ${list}`)
         }
       }
 

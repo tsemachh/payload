@@ -3,6 +3,7 @@ import {
   SelectFieldSingleValidation,
   TextFieldSingleValidation,
 } from 'payload'
+import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
 
 export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   data,
@@ -74,4 +75,36 @@ export const validateMeetingState: SelectFieldSingleValidation = (
   }
   // Ensure we always return a valid value
   return true
+}
+
+export const updateStockRegisteredValue: CollectionBeforeChangeHook = async ({
+  data,
+  originalDoc,
+  req,
+}) => {
+  // Update stockRegisteredValue when stockValue changes
+  const currentStockValue = getIdOfRelationField(data?.stockValue)
+  const previousStockValue = getIdOfRelationField(originalDoc?.stockValue)
+
+  if (currentStockValue && currentStockValue !== previousStockValue) {
+    try {
+      const stockValueDoc = await getCollectionDoc(
+        req,
+        'stock-values',
+        String(currentStockValue),
+        0,
+      )
+      data.stockRegisteredValue = stockValueDoc?.registeredValue || 0
+      console.log(
+        'Updated stockRegisteredValue:',
+        data.stockRegisteredValue,
+        'for stock value:',
+        currentStockValue,
+      )
+    } catch (error) {
+      console.error('Error fetching stock value for registeredValue:', error)
+      data.stockRegisteredValue = 0
+    }
+  }
+  return data
 }

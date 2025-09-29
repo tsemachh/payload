@@ -36,13 +36,15 @@ const TwoFactorSetupEndpoint = async (req: PayloadRequest) => {
     // Encrypt the secret before storing
     const encryptedSecret = encryptTOTPSecret(totpSecret.secret)
     
-    // Update user with TOTP data (but don't enable yet - wait for verification)
+    // Update user with TOTP data (preserve enabled status if already set by admin)
+    const currentEnabled = req.user.twoFactorAuth?.enabled || false
+
     await req.payload.update({
       collection: 'users',
       id: req.user.id,
       data: {
         twoFactorAuth: {
-          enabled: false, // Will be enabled after verification
+          enabled: currentEnabled, // Preserve current enabled status
           verified: false,
           secret: encryptedSecret,
           backupCodes,
