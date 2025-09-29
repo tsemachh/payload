@@ -709,6 +709,13 @@ export interface Meeting {
   changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
+  labels?:
+    | {
+        label?: string | null;
+        color?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -1366,6 +1373,13 @@ export interface MeetingsSelect<T extends boolean = true> {
   changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
+  labels?:
+    | T
+    | {
+        label?: T;
+        color?: T;
+        id?: T;
+      };
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;

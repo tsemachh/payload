@@ -55,13 +55,16 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 }
 
 export const deleteTagFromCompany = async (req: PayloadRequest) => {
+  if (!req.json) {
+    return Response.json({ error: 'Invalid request' }, { status: 400 })
+  }
   try {
-    if (!req.json) {
-      return Response.json({ error: 'Invalid request' }, { status: 400 })
-    }
-
     const body = await req.json()
-    const { companyIds, tagColor, tagLabel, labelId } = body
+    console.log('body', body)
+    if (body.action !== 'delete') {
+      return Response.json({ error: 'Invalid action' }, { status: 400 })
+    }
+    const { action, companyIds, tagColor, tagLabel, labelId } = body
     if (!companyIds || !Array.isArray(companyIds) || !labelId) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 })
     }

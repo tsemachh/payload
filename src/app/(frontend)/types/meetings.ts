@@ -36,6 +36,7 @@ export type MeetingTableDataType = {
   votes: any
   displayMode?: string
   selectedCompanyIds?: string[]
+  labels: any
 }
 
 export type DateFilterOption = {

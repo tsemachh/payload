@@ -97,11 +97,10 @@ export default function SettingsPage() {
     setDeletingTagId(tagId)
     try {
       const response = await fetch('/api/companies/deleteLabel', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'delete',
           companyIds,
           tagColor,
           tagLabel,

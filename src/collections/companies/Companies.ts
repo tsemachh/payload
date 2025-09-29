@@ -3,6 +3,7 @@ import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
 import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
+import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -434,6 +435,9 @@ export const Companies: CollectionConfig = {
               ],
             },
           ],
+          hooks: {
+            afterChange: [syncMeetingsOnCompanyChange],
+          },
         },
       ],
     },
@@ -497,7 +501,7 @@ export const Companies: CollectionConfig = {
     },
     {
       path: '/deleteLabel',
-      method: 'delete',
+      method: 'post',
       handler: deleteTagFromCompany,
     },
     {

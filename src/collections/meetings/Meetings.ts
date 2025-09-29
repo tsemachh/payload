@@ -777,6 +777,25 @@ export const Meetings: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'labels',
+              type: 'array',
+              // admin: {
+              //   hidden: true,
+              // },
+              fields: [
+                {
+                  name: 'label',
+                  label: 'שם התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'color',
+                  label: 'צבע התגית',
+                  type: 'text',
+                },
+              ],
+            },
           ],
         },
         {

@@ -17,6 +17,7 @@ import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { toggleAllCompanies, toggleAllAgendas } from './renderExpandableCell'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Button } from '../components/ui/button'
+import { LabelsIcon } from '../components/labels-icon'
 
 // Function to create expand all header for companies
 const createCompaniesExpandHeader = (
@@ -128,6 +129,13 @@ export const createMeetingColumns = (
       agendasExpandedRows && setAgendasExpandedRows
         ? createAgendasExpandHeader(agendasExpandedRows, setAgendasExpandedRows, data)
         : 'סדר יום',
+  },
+  {
+    key: 'labels',
+    header: 'תגיות',
+    type: 'string',
+    render: (row) => <LabelsIcon row={row} />,
+    minWidth: 50,
   },
   {
     key: 'stockNumber',
