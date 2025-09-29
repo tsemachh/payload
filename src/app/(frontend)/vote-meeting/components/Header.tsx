@@ -1,6 +1,7 @@
 import { Vote } from '@/payload-types'
 import VoteStatus from './Status'
 import { Lock } from 'lucide-react'
+import { SingleDocumentIcon } from '../../components/ui/icons'
 
 interface MeetingHeaderProps {
   meetingData: {
@@ -13,6 +14,12 @@ interface MeetingHeaderProps {
   isDirty: boolean
   lastPublishedVoteInfo: { user: string; date: Date } | undefined
   fetchedVotes: Vote[]
+  isReported: boolean
+  approvalDoc?: {
+    url: string
+    filename: string
+    mimeType?: string
+  }
 }
 
 const VoteHeader = ({
@@ -22,6 +29,8 @@ const VoteHeader = ({
   isDirty,
   lastPublishedVoteInfo,
   fetchedVotes,
+  isReported,
+  approvalDoc,
 }: MeetingHeaderProps) => {
   return (
     <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 rtl">
@@ -31,13 +40,14 @@ const VoteHeader = ({
             <div className="flex flex-col items-center justify-center space-y-2">
               <Lock className="w-6 h-6 text-gray-600" />
               <div className="text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                {readOnlyReason === 'permission' 
+                {readOnlyReason === 'permission'
                   ? 'אין לך הרשאות להצביע באסיפה זו'
                   : 'האסיפה נעולה להצבעה'}
               </div>
             </div>
           </div>
         )}
+
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 text-center relative">
           <div className="w-full md:w-auto">
             {meetingData.meetingInviteUrl ? (
@@ -69,7 +79,21 @@ const VoteHeader = ({
                   }
                 : undefined
             }
+            isReported={isReported}
           />
+
+          {isReported && approvalDoc?.url && (
+            <a
+              href={approvalDoc.url}
+              download={approvalDoc.filename || 'approval.xlsx'}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="הורד אישור הצבעה" // <-- Hover text
+              className="inline-flex items-center justify-center"
+            >
+              <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 hover:text-blue-600" />
+            </a>
+          )}
         </div>
       </div>
     </div>

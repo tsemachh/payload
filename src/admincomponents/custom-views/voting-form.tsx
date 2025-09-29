@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
+import { ReportApprovalUpload } from './uploadApproval'
 
 export interface VoteData {
   fundsData: Array<{
@@ -25,6 +26,12 @@ export interface VoteData {
     quantity: number
     ownedQuantity: number
     verifiedHoldings: boolean
+    original?: {
+      stockId: string
+      quantity: number
+      ownedQuantity: number
+      verifiedHoldings: boolean
+    }
   }>
   companies?: string[]
   id: string
@@ -42,6 +49,7 @@ export interface VoteData {
   voteAgainstRecommendation: boolean
   voteDifferentFromResult: boolean
   reported: boolean
+  reportApproval?: File
   clientComment?: string
   voteDocuments?: Array<{
     id: string
@@ -77,10 +85,9 @@ interface VotingFormProps {
   voteData: VoteData
   meetingId: string
   companyIds: string
-  originalStockId?: string
 }
 
-export function VotingForm({ voteData, meetingId, companyIds, originalStockId }: VotingFormProps) {
+export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps) {
   const [formData, setFormData] = useState<VoteData>()
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -97,10 +104,10 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
       const theme = document.documentElement.getAttribute('data-theme')
       setIsDarkMode(theme === 'dark')
     }
-
     // Check initial theme
     checkTheme()
   }, [])
+
 
   const handleSave = async () => {
     const fundsWithHolding = formData?.fundsData.map((fund) => {
@@ -109,12 +116,17 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
         fund: fund.fund.id,
         ownedQuantity: fund.ownedQuantity,
         verifiedHoldings: fund.verifiedHoldings,
+        original: fund.original,
       }
     })
     const reqBody = {
       meetingId,
       companyIds: companyIds.split(','),
-      votesData: { reported: formData?.reported, fundsWithHolding },
+      votesData: {
+        reported: formData?.reported,
+        reportApproval: formData?.reportApproval,
+        fundsWithHolding,
+      },
     }
     setIsLoading(true)
     try {
@@ -141,9 +153,28 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
 
   const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
-    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
+    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : undefined
     const updatedFunds = [...formData.fundsData]
-    updatedFunds[index] = { ...updatedFunds[index], [field]: booleanValue }
+
+    if (field.startsWith('original.')) {
+      // Handle nested original fields
+      const originalField = field.replace('original.', '')
+      const currentOriginal = updatedFunds[index].original || ({} as any)
+      updatedFunds[index] = {
+        ...updatedFunds[index],
+        original: {
+          ...currentOriginal,
+          [originalField]: originalField === 'ownedQuantity' ? value : booleanValue,
+        },
+      }
+    } else {
+      // Handle regular fields
+      updatedFunds[index] =
+        field === 'ownedQuantity'
+          ? { ...updatedFunds[index], [field]: value }
+          : { ...updatedFunds[index], [field]: booleanValue }
+    }
+
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
@@ -169,6 +200,12 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
       return 'text-gray-700 bg-gray-100 border-gray-200 dark:text-gray-800 dark:bg-gray-100 dark:border-gray-200'
     }
   }
+  const isOriginal = formData?.fundsData.some((fund) => fund.original)
+  
+  const saveDraftData = (label: string, updatedData: any) => {
+    console.log(`Draft saved for ${label}`, updatedData)
+    setFormData(updatedData)
+  }
 
   return formData ? (
     <div
@@ -189,12 +226,6 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
               <span className="font-medium">מועד קובע:</span>
               <span>{formatDateTime(formData.holdingsLimit)}</span>
             </div>
-            {originalStockId && (
-              <div className="flex items-center gap-2">
-                <span className="font-medium"> נייר מקורי:</span>
-                <span>{originalStockId}</span>
-              </div>
-            )}
           </div>
           <CardTitle className="text-right text-base text-gray-900 dark:text-white">
             חברות
@@ -224,6 +255,7 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
             <label className="text-base font-medium text-gray-900 dark:text-white mr-3">
               הצבעה בפועל
             </label>
+            <ReportApprovalUpload formData={formData} setFormData ={setFormData} saveDraftData={saveDraftData }/>
           </div>
           <Table>
             <TableHeader>
@@ -231,14 +263,19 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
                 <TableHead className="text-right w-64 text-gray-900 dark:text-white">
                   חברה
                 </TableHead>
-                <TableHead className="text-right w-64 text-gray-900 dark:text-white">
+                <TableHead className="text-right w-80 text-gray-900 dark:text-white">
                   שם תיק
                 </TableHead>
+                {isOriginal && (
+                  <TableHead className="text-right w-32 text-gray-900 dark:text-white">
+                    נייר מקורי
+                  </TableHead>
+                )}
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
                   ערך נקוב במערכת
                 </TableHead>
                 <TableHead className="text-right w-24 text-gray-900 dark:text-white">
-                  אימות אחזקות
+                  אימות החזקות
                 </TableHead>
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
                   ערך נקוב ברשות
@@ -246,51 +283,73 @@ export function VotingForm({ voteData, meetingId, companyIds, originalStockId }:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {formData.fundsData.map((fund, index) => (
-                <TableRow
-                  key={index}
-                  className="text-base border-b border-gray-100 dark:border-gray-800"
-                >
-                  <TableCell className="text-right font-medium text-base text-gray-900 dark:text-white">
-                    {fund.company.name}
-                  </TableCell>
-                  <TableCell className="text-right text-base text-gray-900 dark:text-white">
-                    {fund.fund.name}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-right text-gray-600 dark:text-gray-300 text-base">
-                      {formatNumberWithLocale(fund.quantity)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <CheckboxFilter
-                        value={
-                          fund.verifiedHoldings === false
-                            ? 'unchecked'
-                            : fund.verifiedHoldings === true
-                              ? 'checked'
-                              : 'indeterminate'
+              {formData.fundsData.map((fund, index) => {
+                const hasOriginal = fund.original
+                const displayData = hasOriginal ? fund.original : fund
+                return (
+                  <TableRow
+                    key={index}
+                    className="text-base border-b border-gray-100 dark:border-gray-800"
+                  >
+                    <TableCell className="text-right font-medium text-base text-gray-900 dark:text-white">
+                      {fund.company.name}
+                    </TableCell>
+                    <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                      {fund.fund.name}
+                    </TableCell>
+                    {isOriginal && (
+                      <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                        {fund.original?.stockId || ''}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <span className="text-right text-gray-600 dark:text-gray-300 text-base">
+                        {formatNumberWithLocale(displayData?.quantity || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <CheckboxFilter
+                          value={
+                            displayData?.verifiedHoldings === false
+                              ? 'unchecked'
+                              : displayData?.verifiedHoldings === true
+                                ? 'checked'
+                                : 'indeterminate'
+                          }
+                          onChangeAction={(state) =>
+                            updateFundData(
+                              index,
+                              hasOriginal ? 'original.verifiedHoldings' : 'verifiedHoldings',
+                              state,
+                            )
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={displayData?.ownedQuantity?.toLocaleString()}
+                        onChange={(e) =>
+                          updateFundData(
+                            index,
+                            hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',
+                            e.target.value,
+                          )
                         }
-                        onChangeAction={(state) => updateFundData(index, 'verifiedHoldings', state)}
+                        className="text-right h-8 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white max-w-[100px]"
+                        style={{
+                          visibility:
+                            displayData?.verifiedHoldings ||
+                            displayData?.verifiedHoldings === undefined
+                              ? 'hidden'
+                              : 'visible',
+                        }}
                       />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      value={formatNumberWithLocale(fund.ownedQuantity)}
-                      onChange={(e) => updateFundData(index, 'ownedQuantity', e.target.value)}
-                      className="text-right h-8 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white max-w-[100px]"
-                      style={{
-                        visibility:
-                          fund.verifiedHoldings || fund.verifiedHoldings === undefined
-                            ? 'hidden'
-                            : 'visible',
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

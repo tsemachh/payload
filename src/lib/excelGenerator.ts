@@ -29,9 +29,11 @@ export async function generateParticipationsExcel(
       SHARED_COLUMNS.MEETING_TYPE,
     ]
 
+    // Conditionally define agenda headers based on displayVotingRecommendation
+    const showAdvisorColumn = data.some((meeting) => meeting.displayVotingRecommendation === true)
     const agendaHeaders = [
       SHARED_COLUMNS.SUBJECT,
-      SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
+      ...(showAdvisorColumn ? [SHARED_COLUMNS.ADVISOR_RECOMMENDATION] : []),
       SHARED_COLUMNS.VOTE,
       SHARED_COLUMNS.MEETING_RESULTS,
       SHARED_COLUMNS.REGULAR_MAJORITY,
@@ -107,6 +109,10 @@ export async function generateParticipationsExcel(
       cellStyles: { col: number; font: any }[]
     }[] = []
 
+    // Initialize vote reason counter and storage
+    const voteReasons: { index: number; reason: string }[] = []
+    let voteReasonCounter = 1
+
     data.forEach((meeting) => {
       const formattedMarketValue = formatNumberWithLocale(
         parseNumber(meeting.marketValue) / 1_000_000,
@@ -135,7 +141,6 @@ export async function generateParticipationsExcel(
         const fillColor = 'FFD2E4FF'
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
-            // Only format cells within table
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -168,6 +173,7 @@ export async function generateParticipationsExcel(
               conflictOfInterest: any
               relatedParty: any
               personalInterest: any
+              voteReason?: string
             },
             index: number,
           ) => {
@@ -179,11 +185,23 @@ export async function generateParticipationsExcel(
                 ? `${index + 1}. ${agenda.text}`
                 : `\u200F${index + 1}. ${agenda.text}`
               : ''
-
+            // Check if voteReason exists and is not empty
+            let voteContent = agenda.vote || ''
+            if (agenda.voteReason && agenda.voteReason.trim() !== '') {
+              voteContent = `${voteContent} [${voteReasonCounter}]`
+              voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
+              voteReasonCounter++
+            }
             const agendaData = [
               numberedAgendaText,
-              agenda.recommendation?.votingRecommendation || '',
-              agenda.vote || '',
+              ...(showAdvisorColumn
+                ? [
+                    meeting.displayVotingRecommendation
+                      ? agenda.recommendation?.votingRecommendation
+                      : '',
+                  ]
+                : []),
+              voteContent,
               agenda.result
                 ? resultMapping[agenda.result] || agenda.result
                 : agenda.meetingResults || '',
@@ -232,7 +250,39 @@ export async function generateParticipationsExcel(
             rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
           },
         )
+        // Add vote reasons as merged rows with white background
+        if (voteReasons.length > 0) {
+          voteReasons.forEach(({ index, reason }) => {
+            const isEnglishReason = /^[A-Za-z]/.test(reason?.trim?.() || '')
+            const reasonText = isEnglishReason ? `${reason} .${index}` : `${index}. ${reason}`
+            const reasonRow = worksheet.addRow([reasonText, ...Array(headers.length - 1).fill('')])
+            worksheet.mergeCells(reasonRow.number, 1, reasonRow.number, headers.length)
+            reasonRow.eachCell((cell, colNumber) => {
+              if (colNumber <= headers.length) {
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFFFFFFF' },
+                }
+                cell.font = { name: 'Arial', size: 10 }
+                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              }
+            })
+            const cellStyles: { col: number; font: any }[] = []
+            reasonRow.eachCell((cell, colNumber) => {
+              if (colNumber <= headers.length) {
+                cellStyles.push({ col: colNumber, font: cell.font })
+              }
+            })
+            rowFormats.push({ rowIndex: reasonRow.number, fillColor: 'FFFFFFFF', cellStyles })
+          })
+          voteReasons.length = 0 // Reset vote reasons for the next meeting
+        }
       }
+      // Add empty row as separator between meetings
+      const emptyRow = worksheet.addRow(Array(headers.length).fill(''))
+      worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, headers.length)
+      rowFormats.push({ rowIndex: emptyRow.number, fillColor: 'FFFFFFFF', cellStyles: [] })
     })
 
     // Add Excel table with explicit header configuration
@@ -241,7 +291,7 @@ export async function generateParticipationsExcel(
     worksheet.addTable({
       name: 'ParticipationTable',
       ref: `A${tableStartRow}`,
-      headerRow: true, // Explicitly indicate that the table has headers
+      headerRow: true,
       totalsRow: false,
       style: {
         theme: 'TableStyleMedium2',
@@ -252,7 +302,7 @@ export async function generateParticipationsExcel(
       },
       columns: headers.map((header) => ({
         name: header,
-        filterButton: true, // Enable filter buttons for sorting and filtering
+        filterButton: true,
         totalsRowFunction: 'none',
       })),
       rows:
@@ -266,7 +316,6 @@ export async function generateParticipationsExcel(
     const headerRow = worksheet.getRow(headerRowOffset)
     headerRow.eachCell((cell, colNumber) => {
       if (colNumber <= headers.length) {
-        // Only format cells within table headers
         cell.font = { bold: true, size: 10, color: { argb: 'FF000000' }, name: 'Arial' }
         cell.fill = {
           type: 'pattern',
@@ -282,7 +331,6 @@ export async function generateParticipationsExcel(
       const row = worksheet.getRow(rowIndex)
       row.eachCell((cell, colNumber) => {
         if (colNumber <= headers.length) {
-          // Only format cells within table
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
@@ -296,28 +344,54 @@ export async function generateParticipationsExcel(
       })
     })
 
+    // Define fixed column widths with comments indicating corresponding columns
+    const columnWidths = showAdvisorColumn
+      ? [
+          10, // Column 1: מספר נייר ערך (Stock Number)
+          20, // Column 2: שם תאגיד (Corporate Name)
+          20, // Column 3: שם החברה (Company Name)
+          15, // Column 4: שם נייר ערך (Stock Name)
+          10, // Column 5: שווי שוק (Market Value)
+          10, // Column 6: אחוז החזקה (Percentage Holding)
+          10, // Column 7: שווי החזקה (Holding Value)
+          10, // Column 8: תאריך אסיפה (Meeting Date)
+          10, // Column 9: סוג אסיפה (Meeting Type)
+          70, // Column 10: נושא (Subject)
+          10, // Column 11: המלצת יועץ (Advisor Recommendation)
+          10, // Column 12: הצבעה (Vote)
+          10, // Column 13: תוצאות האסיפה (Meeting Results)
+          10, // Column 14: רוב רגיל (Regular Majority)
+          10, // Column 15: רוב מיוחד (%) (Special Majority)
+          10, // Column 16: בהתאם למדיניות (Policy Compliance)
+          10, // Column 17: ניגוד עניינים (Conflict of Interest)
+          10, // Column 18: קשר (Related Party)
+          10, // Column 19: אישי (Personal Interest)
+        ]
+      : [
+          10, // Column 1: מספר נייר ערך (Stock Number)
+          20, // Column 2: שם תאגיד (Corporate Name)
+          20, // Column 3: שם החברה (Company Name)
+          15, // Column 4: שם נייר ערך (Stock Name)
+          10, // Column 5: שווי שוק (Market Value)
+          10, // Column 6: אחוז החזקה (Percentage Holding)
+          10, // Column 7: שווי החזקה (Holding Value)
+          10, // Column 8: תאריך אסיפה (Meeting Date)
+          10, // Column 9: סוג אסיפה (Meeting Type)
+          70, // Column 10: נושא (Subject)
+          11, // Column 11: הצבעה (Vote) +1
+          11, // Column 12: תוצאות האסיפה (Meeting Results) +1
+          11, // Column 13: רוב רגיל (Regular Majority) +1
+          11, // Column 14: רוב מיוחד (%) (Special Majority) +1
+          12, // Column 15: בהתאם למדיניות (Policy Compliance) +2
+          11, // Column 16: ניגוד עניינים (Conflict of Interest) +1
+          11, // Column 17: קשר (Related Party) +1
+          11, // Column 18: אישי (Personal Interest) +1
+        ]
+
+    // Apply fixed column widths
     worksheet.columns.forEach((column, i) => {
-      let maxLength = 0
-      if (typeof column.eachCell === 'function') {
-        column.eachCell({ includeEmpty: true }, (cell) => {
-          const columnLength = cell.value
-            ? cell.value
-                .toString()
-                .split('\n')
-                .reduce((max, line) => Math.max(max, line.length), 0)
-            : 0
-          if (columnLength > maxLength) {
-            maxLength = columnLength
-          }
-        })
-      }
-      let newWidth = Math.max(maxLength + 2, 10)
-      if (i + 1 === agendaTextIndex) {
-        newWidth *= 1.5
-        column.width = Math.min(newWidth, 70)
-      } else {
-        newWidth *= 0.75
-        column.width = Math.min(newWidth, 50)
+      if (i < columnWidths.length) {
+        column.width = columnWidths[i]
       }
     })
 

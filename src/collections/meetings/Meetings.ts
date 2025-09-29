@@ -19,6 +19,7 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { calculateHoldingValues } from '@/utils/dataUtils'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
@@ -142,6 +143,7 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'proxyVotingDate',
       'activity',
+      // 'totalHoldings',
       'electronicVotingEnabled',
       'invitationLink',
     ],
@@ -291,6 +293,66 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
+            // {
+            //   name: 'totalHoldings',
+            //   label: 'סך החזקות (%)',
+            //   type: 'number',
+            //   virtual: true,
+            //   admin: {
+            //     hidden: true,
+            //     components: {
+            //       Cell: {
+            //         path: '/admincomponents/cell/FormattedNumber',
+            //         clientProps: { decimals: 4, suffix: '%' },
+            //       },
+            //     },
+            //   },
+            //   hooks: {
+            //     afterRead: [
+            //       async ({ data, req }) => {
+            //         if (
+            //           !data?.fundsWithHolding ||
+            //           !Array.isArray(data.fundsWithHolding) ||
+            //           data.fundsWithHolding.length === 0
+            //         ) {
+            //           return 0
+            //         }
+
+            //         // Get stock value data for calculations
+            //         let stockValueData = null
+            //         if (data.stockValue && typeof data.stockValue === 'string') {
+            //           try {
+            //             stockValueData = await req.payload.findByID({
+            //               collection: 'stock-values',
+            //               id: data.stockValue,
+            //               depth: 0,
+            //             })
+            //           } catch (error) {
+            //             console.error('Error fetching stock value:', error)
+            //           }
+            //         } else if (typeof data.stockValue === 'object') {
+            //           stockValueData = data.stockValue
+            //         }
+
+            //         // Sum up all quantities first, then calculate percentage on the total
+            //         const totalQuantity = data.fundsWithHolding.reduce(
+            //           (sum: number, holding: any) => {
+            //             return sum + (holding.ownedQuantity || holding.quantity || 0)
+            //           },
+            //           0,
+            //         )
+
+            //         // Calculate holding values using the imported function on the total sum
+            //         const { percentageHolding } = calculateHoldingValues(
+            //           totalQuantity,
+            //           stockValueData,
+            //         )
+
+            //         return percentageHolding // Already rounded to 4 decimal places by calculateHoldingValues
+            //       },
+            //     ],
+            //   },
+            // },
             {
               name: 'activity',
               label: 'פעילות',
@@ -363,6 +425,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 1,
               admin: {
                 allowCreate: false,
+                disableListColumn: true,
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
@@ -959,6 +1022,11 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                     },
                     {
+                      name: 'verifiedHoldings',
+                      type: 'checkbox',
+                      label: 'אימות החזקות',
+                    },
+                    {
                       name: 'original',
                       label: 'מניה מקורית חול',
                       type: 'array',
@@ -977,12 +1045,17 @@ export const Meetings: CollectionConfig = {
                         { name: 'stockId', label: 'מניה', type: 'text' },
                         { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
                         { name: 'quantity', label: 'כמות', type: 'number' },
+                        {
+                          name: 'verifiedHoldings',
+                          type: 'checkbox',
+                          label: 'אימות החזקות',
+                        },
+                        {
+                          name: 'ownedQuantity',
+                          label: 'כמות בבעלות',
+                          type: 'number',
+                        },
                       ],
-                    },
-                    {
-                      name: 'verifiedHoldings',
-                      type: 'checkbox',
-                      label: 'אימות החזקות',
                     },
                   ],
                 },

@@ -288,7 +288,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 data: meetingData,
                 req: {
                   ...req,
-                  context: { ...req.context, from: 'migration' },
+                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
                 },
               })
             } else {
@@ -298,7 +298,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 data: meetingData as Meeting,
                 req: {
                   ...req,
-                  context: { ...req.context, from: 'migration' },
+                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
                 },
               })
             }

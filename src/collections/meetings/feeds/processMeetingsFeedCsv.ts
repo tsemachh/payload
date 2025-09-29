@@ -121,7 +121,7 @@ async function processRowInner(
             collection: 'meetings',
             id: prevMeetingId,
             data: dataToUpdate,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
             req,
           })
           context.successPrevCount++
@@ -164,7 +164,7 @@ async function processRowInner(
             collection: 'meetings',
             id: meetingId,
             data: row,
-            context: { ...req.context, from: 'migration' },
+            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
             req,
           })
           context.successCount++
@@ -178,7 +178,7 @@ async function processRowInner(
         const newMeeting = await req.payload.create({
           collection: 'meetings',
           data: row,
-          context: { ...req.context, from: 'migration' },
+          context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
           req,
         })
         context.successCount++

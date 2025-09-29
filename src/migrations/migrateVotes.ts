@@ -107,7 +107,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const meetingCompanyIds: string[] = []
 
             // For each company, create a vote document
-            if (companies)
+            if (companies) {
+              const createdFirmIds: (number | string)[] = []
               for (const company of companies) {
                 const mongoCompanyId = companyMap.get(company.firmid.toString())
 
@@ -200,11 +201,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   await payload.create({
                     collection: 'votes',
                     data: voteData as Vote,
-                    req,
+                    req: {
+                      ...req,
+                      context: { ...req.context, from: 'migration', process: 'migrateVotes' },
+                    },
                   })
-                  console.log(
-                    `✓ Created vote for meeting ${meeting.id} and company ${company.firmid}`,
-                  )
+                  createdFirmIds.push(company.firmid)
                   successCount++
                 } catch (error: any) {
                   errorCount++
@@ -219,33 +221,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 }
               }
 
-            // Update the meeting with the collected company IDs
-            try {
-              if (meetingCompanyIds.length > 0) {
-                await payload.update({
-                  collection: 'meetings',
-                  id: mongoMeetingId,
-                  data: {
-                    companies: meetingCompanyIds,
-                  },
-                  req: {
-                    ...req,
-                    context: { ...req.context, from: 'migration' },
-                  },
-                })
+              if (createdFirmIds.length > 0) {
                 console.log(
-                  `✓ Updated meeting ${meeting.id} with ${meetingCompanyIds.length} companies`,
+                  `✓ Created vote for meeting ${meeting.id} and companies ${createdFirmIds.join(',')}`,
                 )
               }
-            } catch (updateError: any) {
-              console.error(`✗ Failed to update meeting ${meeting.id} with companies:`, updateError)
-              await logMigrationFault({
-                payload,
-                type: 'meeting',
-                typeId: `meeting-${meeting.id}`,
-                comments: `Failed to update meeting ${meeting.id} with companies: ${updateError.message}`,
-                row: meeting,
-              })
             }
           } catch (error: any) {
             errorCount++

@@ -66,12 +66,29 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     return companiesIdsArray.includes(fundHold.company)
   })
 
-  const fundsWithHoldings = fundsWithHolding.map((fundHold: any) => {
-    return {
+  const fundsWithHoldings = fundsWithHolding.flatMap((fundHold: any) => {
+    const baseData = {
       company: { id: fundHold.company, name: companyIdToNameMap.get(fundHold?.company) },
       fund: { id: fundHold.fund, name: fundIdToNameMap.get(fundHold?.fund) },
+    }
+
+    if (fundHold.original && fundHold.original.length > 0) {
+      // Return a row for each original stock entry
+      return fundHold.original.map((o: any) => ({
+        ...baseData,
+        original: {
+          stockId: o.stockId,
+          quantity: o.quantity || 0,
+          ownedQuantity: o.ownedQuantity || 0,
+          verifiedHoldings: o.verifiedHoldings,
+        },
+      }))
+    }
+    // Return single row with regular data
+    return {
+      ...baseData,
       quantity: fundHold.quantity || 0,
-      ownedQuantity: fundHold.ownedQuantity,
+      ownedQuantity: fundHold.ownedQuantity || 0,
       verifiedHoldings: fundHold.verifiedHoldings,
     }
   })

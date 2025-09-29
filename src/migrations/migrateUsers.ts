@@ -191,20 +191,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Firm relationships
           companies: companies,
           // Profile settings
-          userIp: userProfile?.UserIP || '',
+          allowedIPs: (userProfile?.UserIP || '')
+            .split(/[;,]/)
+            .map((s) => s.trim())
+            .filter((s, idx, arr) => s.length > 0 && arr.indexOf(s) === idx),
           changePassword: !!userProfile?.ChangePassword,
           lastLogin: userProfile?.LastLogin as string | null | undefined,
-          // QR code lifecycle data
-          qrCodeData: userProfileCode
+
+          // Two-factor authentication lifecycle data (migrated from legacy QR code data)
+          twoFactorAuth: userProfileCode
             ? {
-                showQr: !!userProfile?.ShowQr,
-                createDate: userProfileCode.CreateDate
-                  ? new Date(userProfileCode.CreateDate).toISOString()
-                  : null,
-                lastCodeFailureDate: userProfileCode.LastCodeFailureDate
+                enabled: !!userProfile?.ShowQr,
+                verified: false,
+                lastFailureTime: userProfileCode.LastCodeFailureDate
                   ? new Date(userProfileCode.LastCodeFailureDate).toISOString()
-                  : null,
-                codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess,
+                  : undefined,
+                failureCount: userProfileCode.CodeFailuresSinceLastSuccess || 0,
               }
             : undefined,
 
@@ -242,7 +244,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: userData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
         } else {
@@ -254,7 +256,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'users',
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
             // @ts-ignore
             data: {
@@ -434,7 +436,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             data: userData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
           updatedCount++
@@ -446,7 +448,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
             data: userData as User,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
           })
           createdCount++

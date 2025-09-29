@@ -73,10 +73,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
     console.log('Starting holding days migration process...')
     pool = await createMSSqlPool()
-    console.log('Importing latest holdings for all active companies')
+    console.log('Importing holdings from the last 3 months for all active companies')
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
+    const subAccountKeySet = new Set<string>()
     const stockCache = await getStockIdToSequenceMap(req)
     let successCount = 0
     let errorCount = 0
@@ -95,11 +96,33 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
     console.log('Silent Stock Set size is:' + silentStockSet.size)
 
+    // Prefetch foreign stocks (by origin === 'Foreign') to know when to attach originalForeignData
+    const foreignStocks = await payload.find({
+      collection: 'stocks',
+      select: { name: true },
+      where: { origin: { equals: 'Foreign' } },
+      limit: 0,
+      req,
+      depth: 0,
+    })
+    const foreignStockIdSet = new Set<string>()
+    foreignStocks.docs.forEach((s: any) => foreignStockIdSet.add(String(s.id)))
+
     const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
       const companyHoldings = new Map<
         string,
-        Map<string, { stockId: string; quantity: number; feedStockNum: string }>
+        Map<
+          string,
+          {
+            stockId: string
+            quantity: number
+            feedStockNum: string
+            originals: { accountNum: string; quantity: number; stockId: string }[]
+          }
+        >
       >()
+      // Collect per-company missing stock numbers (excluding silenced) to log once per holding day
+      const notFoundByCompany = new Map<string, Set<string>>()
 
       // Iterate each row
       for (const holding of holdings.recordset) {
@@ -122,17 +145,37 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
 
+        // If matched via a sub-account, log informative message
+        if (subAccountKeySet.has(accountKey)) {
+          console.info(
+            `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`,
+          )
+        }
+
         // Find the holding in the map if not found add it to the map
         let stocksMap = companyHoldings.get(companyId)
         if (!stocksMap) {
-          stocksMap = new Map<string, { stockId: string; quantity: number; feedStockNum: string }>()
+          stocksMap = new Map<
+            string,
+            {
+              stockId: string
+              quantity: number
+              feedStockNum: string
+              originals: { accountNum: string; quantity: number; stockId: string }[]
+            }
+          >()
           companyHoldings.set(companyId, stocksMap)
         }
 
         const stockId = stockCache.get(`${holding.stockNum}`)
         if (!stockId) {
           if (!silentStockSet.has(`${holding.stockNum}`)) {
-            console.warn(`Stock ID not found for stock number: ${holding.stockNum}`)
+            let set = notFoundByCompany.get(companyId)
+            if (!set) {
+              set = new Set<string>()
+              notFoundByCompany.set(companyId, set)
+            }
+            set.add(String(holding.stockNum))
           }
           continue
         }
@@ -140,12 +183,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const existingHolding = stocksMap.get(String(holding.stockNum))
         if (existingHolding) {
           existingHolding.quantity += holding.qty
+          existingHolding.originals.push({
+            stockId: String(holding.stockNum),
+            accountNum: holding.subAccountNum as unknown as string,
+            quantity: holding.qty,
+          })
         } else {
           stocksMap.set(String(holding.stockNum), {
             stockId,
             quantity: holding.qty,
             feedStockNum: holding.stockNum,
+            originals: [
+              {
+                stockId: String(holding.stockNum),
+                accountNum: holding.subAccountNum as unknown as string,
+                quantity: holding.qty,
+              },
+            ],
           })
+        }
+      }
+
+      // Emit one consolidated warning per company for missing stock numbers on this holding date
+      for (const [companyId, set] of Array.from(notFoundByCompany.entries())) {
+        if (set && set.size > 0) {
+          const list = Array.from(set).join(',')
+          console.warn(`Stock IDs not found for company ${companyId} on ${holdingDate}: ${list}`)
         }
       }
 
@@ -155,11 +218,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Prepare holdings array
           const holdingsArray = []
           for (const [_, holdingData] of Array.from(stocksMap.entries())) {
-            holdingsArray.push({
+            const isForeign = foreignStockIdSet.has(holdingData.stockId)
+            const item: any = {
               stock: holdingData.stockId,
               quantity: holdingData.quantity,
               feedStockNum: holdingData.feedStockNum,
-            })
+            }
+            if (isForeign) {
+              item.originalForeignData = holdingData.originals
+            }
+            holdingsArray.push(item)
           }
 
           if (holdingsArray.length === 0) {
@@ -172,7 +240,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             collection: 'holdings',
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
             },
             where: {
               fund: {
@@ -196,7 +264,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             data: holdingDayData,
             req: {
               ...req,
-              context: { ...req.context, from: 'migration' },
+              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
             },
           })
 
@@ -236,8 +304,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       if (company.mainAccount && Array.isArray(company.mainAccount)) {
         company.mainAccount.forEach((account) => {
           if (parentCompanyId) {
-            const key = `${parentCompanyId}-${account.accountNumber}`
-            accountCache.set(key, company.id)
+            // Map the main account number
+            const baseKey = `${parentCompanyId}-${String(account.accountNumber)}`
+            accountCache.set(baseKey, company.id)
+            // Map all sub-account numbers as well
+            const subs = Array.isArray(account.subAccounts)
+              ? account.subAccounts.map((s: any) => String(s))
+              : []
+            for (const sub of subs) {
+              const subKey = `${parentCompanyId}-${sub}`
+              accountCache.set(subKey, company.id)
+              subAccountKeySet.add(subKey)
+            }
           }
         })
       }
@@ -254,23 +332,35 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Process companies in batches with controlled concurrency
     for (let i = 0; i < activeCompanies.length; i += MAX_CONCURRENT_PROCESSES) {
-      const batch = []
+      const batch: Promise<void>[] = []
 
       // Create a batch of promises up to MAX_CONCURRENT_PROCESSES
       for (let j = 0; j < MAX_CONCURRENT_PROCESSES && i + j < activeCompanies.length; j++) {
         const company = activeCompanies[i + j]
-        console.log(
-          `Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`,
+        batch.push(
+          (async () => {
+            console.log(
+              `Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`,
+            )
+
+            // Get all distinct holding dates for this company in the last 3 months (inclusive)
+            const dates = await getHoldingDatesInLast3Months(
+              pool,
+              company.firm,
+              company.latest_date1,
+            )
+            console.log(
+              `Found ${dates.length} holding date(s) in the last 3 months for company ${company.name} (ID: ${company.firm})`,
+            )
+
+            // Process each date sequentially to keep per-company load reasonable
+            for (const dateStr of dates) {
+              const holdings = await getHoldingsPage(pool, company.firm, String(dateStr))
+              const formattedDate = formatDateForSQL(String(dateStr))
+              await processHoldingsChunk(holdings, formattedDate)
+            }
+          })(),
         )
-
-        // Process all holdings for this company on its latest date
-        const holdings = await getHoldingsPage(pool, company.firm, company.latest_date1)
-
-        // Format the date for the holding day
-        const formattedDate = formatDateForSQL(company.latest_date1)
-
-        // Add to batch
-        batch.push(processHoldingsChunk(holdings, formattedDate))
       }
 
       // Wait for all promises in the current batch to complete
@@ -288,4 +378,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       await pool.close()
     }
   }
+}
+
+// Returns all distinct holding dates for the given firm in the last 3 months (inclusive),
+// relative to the provided latestDate. Dates are returned as strings in MM-DD-YYYY format.
+async function getHoldingDatesInLast3Months(
+  pool: sql.ConnectionPool,
+  firm: string,
+  latestDate: string,
+): Promise<string[]> {
+  const formattedLatest = formatDateForSQL(latestDate)
+  const result = await pool.request().query(`
+      SELECT DISTINCT CONVERT(VARCHAR(10), [date1], 110) AS [date1]
+      FROM [${sqlConfig.database}].[dbo].[holdings]
+      WHERE [firm] = '${firm}'
+        AND [date1] BETWEEN DATEADD(month, -3, '${formattedLatest}') AND '${formattedLatest}'
+      ORDER BY [date1]
+  `)
+  return result.recordset.map((row: any) => row.date1 as string)
 }

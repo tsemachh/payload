@@ -61,10 +61,13 @@ import {
 } from '../meetings/renderExpandableCell'
 import { useCompaniesContext } from '../context/companiesContext'
 import CustomRadio from './custom-radio'
+import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FaFileExcel } from 'react-icons/fa'
+import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
-  columns,
+  columns: initialColumns,
   pastDateFilterOptions = [],
   futureDateFilterOptions = [],
   idField,
@@ -77,7 +80,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   filterLabel = 'סינון',
   columnsOption = true,
   columnsLabel = 'עמודות',
-  defaultVisibleColumns = columns.map((column) => column.key),
+  defaultVisibleColumns = initialColumns.map((column) => column.key),
   onlyFuture = false,
   tableHeightOffset = 200,
   isLoading = false,
@@ -86,12 +89,22 @@ export function DataTableStatic<T extends Record<string, any>>({
   pagination,
   displayMode,
   selectedCompanyIds,
+  createColumnsWithExpand,
+  showExport = false,
+  onExportExcel,
+  isExporting = false,
+  showCompanySelector = false,
+  onCompanySelectionChange,
+  getCompanySelectSummary,
+  showViewModeToggle = false,
+  viewMode,
+  onViewModeChange,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
   }>({
-    key: (defaultSortField || columns[0].key) as keyof T,
+    key: (defaultSortField || initialColumns[0].key) as keyof T,
     direction: defaultSortDirection,
   })
   const { companies } = useCompaniesContext()
@@ -103,6 +116,14 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [fundsExpandedRows, setFundsExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [inputSearchTerm, setInputSearchTerm] = useState('')
+
+  // Scroll position preservation
+  const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      // Store reference for scroll position preservation
+      node.setAttribute('data-scroll-container', 'true')
+    }
+  }, [])
   const [filters, setFilters] = useState<{ [key: string]: any }>({})
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [dateFilters, setDateFilters] = useState<{
@@ -110,6 +131,82 @@ export function DataTableStatic<T extends Record<string, any>>({
   }>({})
   const [currentPage, setCurrentPage] = useState<number>(pagination?.currentPage || 1)
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
+
+  // Simple scroll preservation function
+  const preserveScrollAndSetState = useCallback(
+    (
+      stateSetter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+      newValue: React.SetStateAction<Record<string, boolean>>,
+    ) => {
+      const container = document.querySelector('[data-scroll-container="true"]') as HTMLDivElement
+      const scrollTop = container?.scrollTop || 0
+
+      stateSetter(newValue)
+
+      // Restore scroll position after React updates DOM
+      if (container && scrollTop > 0) {
+        requestAnimationFrame(() => {
+          container.scrollTop = scrollTop
+        })
+      }
+    },
+    [],
+  )
+
+  // Enhanced state setters with scroll preservation
+  const setCompaniesExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setCompaniesExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setFundsExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setFundsExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  const setAgendasExpandedRowsWithScroll = useCallback(
+    (updater: React.SetStateAction<Record<string, boolean>>) => {
+      preserveScrollAndSetState(setAgendasExpandedRows, updater)
+    },
+    [preserveScrollAndSetState],
+  )
+
+  // Create columns with expand functionality if provided
+  const columns = useMemo(() => {
+    if (createColumnsWithExpand) {
+      // Pass companies and funds state only if displayMode is 'companies'
+      const companiesState = displayMode === 'companies' ? companiesExpandedRows : {}
+      const setCompaniesState =
+        displayMode === 'companies' ? setCompaniesExpandedRowsWithScroll : () => {}
+      const setFundsState = displayMode === 'companies' ? setFundsExpandedRowsWithScroll : () => {}
+
+      // Pass agendas state only if displayMode is 'agenda'
+      const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
+      const setAgendasState =
+        displayMode === 'agenda' ? setAgendasExpandedRowsWithScroll : undefined
+
+      return createColumnsWithExpand(
+        companiesState,
+        setCompaniesState,
+        setFundsState,
+        agendasState,
+        setAgendasState,
+        data as any,
+      )
+    }
+    return initialColumns
+  }, [
+    createColumnsWithExpand,
+    companiesExpandedRows,
+    agendasExpandedRows,
+    data,
+    initialColumns,
+    displayMode,
+  ])
 
   useEffect(() => {
     setInputSearchTerm(searchTerm)
@@ -128,7 +225,12 @@ export function DataTableStatic<T extends Record<string, any>>({
       const loadColumnVisibility = () => {
         const storedColumns = localStorage.getItem(`columnVisibility-${tableId}`)
         const alwaysVisible = columns
-          .filter((col) => col.isAlwaysVisible)
+          .filter((col) => {
+            if (!col.isAlwaysVisible) return false
+            if (col.key === 'companies' && displayMode !== 'companies') return false
+            if (col.key === 'agenda' && displayMode !== 'agenda') return false
+            return true
+          })
           .map((col) => String(col.key))
 
         if (storedColumns) {
@@ -160,9 +262,13 @@ export function DataTableStatic<T extends Record<string, any>>({
       }
 
       const setDefaultColumnVisibility = () => {
-        // Always-visible column keys
         const alwaysVisible = columns
-          .filter((col) => col.isAlwaysVisible)
+          .filter((col) => {
+            if (!col.isAlwaysVisible) return false
+            if (col.key === 'companies' && displayMode !== 'companies') return false
+            if (col.key === 'agenda' && displayMode !== 'agenda') return false
+            return true
+          })
           .map((col) => String(col.key))
 
         // Merge defaultVisibleColumns with alwaysVisible, removing duplicates
@@ -205,7 +311,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     })
     setDateFilters(initialDateFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, data, tableId])
+  }, [columns, data, tableId, displayMode])
 
   // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
@@ -218,27 +324,12 @@ export function DataTableStatic<T extends Record<string, any>>({
       // Show companies column, hide agenda column
       filteredColumns = filteredColumns.filter((column) => column.key !== 'agenda')
     } else if (displayMode === 'agenda') {
-      // Show agenda column, hide companies column
-      if (!filteredColumns.some((col) => col.key === 'agenda')) {
-        const [first, ...rest] = filteredColumns
-        filteredColumns = [
-          first,
-          {
-            key: 'agenda',
-            header: 'סדר יום',
-            type: 'string',
-            sortKey: 'agendas',
-            minWidth: 50,
-            width: 50,
-          },
-          ...rest,
-        ]
-      }
       filteredColumns = filteredColumns.filter((column) => column.key !== 'companies')
     }
 
     return filteredColumns
   }, [columnsOption, columns, columnVisibility, displayMode])
+
   // Component for individual agenda item with tooltip
   const AgendaItem = ({ agenda, index }: { agenda: any; index: number }) => {
     const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
@@ -927,7 +1018,74 @@ export function DataTableStatic<T extends Record<string, any>>({
             disabled={isLoading}
           />
         </div>
+
         <div className="flex space-x-2 space-x-reverse">
+          {/* Export button */}
+          {showExport && onExportExcel && (
+            <Button
+              onClick={onExportExcel}
+              variant="outline"
+              size="sm"
+              disabled={isExporting}
+              title="ייצוא"
+              className="h-8 px-3 border text-[rgb(31,65,71)] hover:bg-[rgb(31,65,71)] hover:text-white transition-colors duration-200 flex items-center"
+            >
+              <FaFileExcel className="h-4 w-4 ml-1" />
+              <span className="font-medium text-xs">{isExporting ? 'מייצא...' : 'ייצוא'}</span>
+            </Button>
+          )}
+
+          {/* View mode toggle */}
+          {showViewModeToggle && viewMode && onViewModeChange && (
+            <div className="flex items-center">
+              <div className="flex bg-muted rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange('companies')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    viewMode === 'companies'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  חברות
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange('agenda')}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    viewMode === 'agenda'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  סדר יום
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Company selector */}
+          {showCompanySelector && onCompanySelectionChange && getCompanySelectSummary && (
+            <div className="flex w-[180px]">
+              <Select>
+                <SelectTrigger className="w-full flex-row-reverse justify-between text-right h-8">
+                  <SelectValue placeholder={getCompanySelectSummary()} />
+                </SelectTrigger>
+                <SelectContent align="end" dir="rtl" className="p-0">
+                  <CompanyTreeSelector
+                    selectedCompanies={selectedCompanyIds || []}
+                    showSearch={false}
+                    onSelectionChangeAction={onCompanySelectionChange}
+                    className="w-full"
+                    allCompaniesIds={companies.map((com) => com.id)}
+                    showFunds={false}
+                  />
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {filterOption && (
             <Button
               variant="outline"
@@ -963,18 +1121,24 @@ export function DataTableStatic<T extends Record<string, any>>({
                   maxHeight: `calc(100vh - ${tableHeightOffset + 20}px)`,
                 }}
               >
-                {columns.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={String(column.key)}
-                    disabled={column.isAlwaysVisible}
-                    checked={columnVisibility[String(column.key)]}
-                    onCheckedChange={() => toggleColumnVisibility(String(column.key))}
-                    onSelect={(event) => event.preventDefault()}
-                    dir="rtl"
-                  >
-                    {column.header ? column.header : 'עמודה'}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {columns
+                  .filter((column) => {
+                    if (displayMode === 'companies' && column.key === 'agenda') return false
+                    if (displayMode === 'agenda' && column.key === 'companies') return false
+                    return true
+                  })
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={String(column.key)}
+                      disabled={column.isAlwaysVisible}
+                      checked={columnVisibility[String(column.key)]}
+                      onCheckedChange={() => toggleColumnVisibility(String(column.key))}
+                      onSelect={(event) => event.preventDefault()}
+                      dir="rtl"
+                    >
+                      {column.header ? column.header : 'עמודה'}
+                    </DropdownMenuCheckboxItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -991,6 +1155,7 @@ export function DataTableStatic<T extends Record<string, any>>({
         )}
         <div className="rounded-md border cursor-default">
           <div
+            ref={scrollContainerRef}
             className="overflow-auto relative"
             style={{
               maxHeight: `calc(100vh - ${tableHeightOffset}px)`,
@@ -1014,7 +1179,11 @@ export function DataTableStatic<T extends Record<string, any>>({
                           className={`${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => !isLoading && handleSort(column.key)}
                         >
-                          {column.noHeader ? '' : column.header}
+                          {column.renderHeader
+                            ? column.renderHeader()
+                            : column.noHeader
+                              ? ''
+                              : column.header}
                         </span>
                         <span
                           className={`${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
@@ -1242,7 +1411,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             )
                           }}
                         >
-                          {column.key === 'companies'
+                          {column.key === 'companies' && displayMode === 'companies'
                             ? renderCompaniesCell(
                                 {
                                   ...row,
@@ -1251,13 +1420,17 @@ export function DataTableStatic<T extends Record<string, any>>({
                                   ),
                                 },
                                 companiesExpandedRows,
-                                setCompaniesExpandedRows,
-                                setFundsExpandedRows,
+                                setCompaniesExpandedRowsWithScroll,
+                                setFundsExpandedRowsWithScroll,
                               )
-                            : column.key === 'agenda'
-                              ? renderAgendaCell(row, agendasExpandedRows, setAgendasExpandedRows)
+                            : column.key === 'agenda' && displayMode === 'agenda'
+                              ? renderAgendaCell(
+                                  row,
+                                  agendasExpandedRows,
+                                  setAgendasExpandedRowsWithScroll,
+                                )
                               : column.render
-                                ? column.render(row)
+                                ? column.render(row as MeetingTableDataType & T)
                                 : highlightText(getDisplayValue(row, column.key), searchTerm)}
                         </TableCell>
                       ))}
@@ -1346,7 +1519,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                                   {renderRowActions && (
                                     <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                      {renderRowActions(row)}
+                                      {/* Empty cell for company rows */}
                                     </TableCell>
                                   )}
                                 </TableRow>
@@ -1411,7 +1584,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
                                           {renderRowActions && (
                                             <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                              {renderRowActions(row)}
+                                              {/* Empty cell for fund rows */}
                                             </TableCell>
                                           )}
                                         </TableRow>
@@ -1424,7 +1597,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                       )}
                     {displayMode === 'agenda' && agendasExpandedRows[row.meetingId] && (
                       <>
-                        {row.agendas.map((agenda: any, index: number) => (
+                        {row.agendas.map((agenda: unknown, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
                             className="bg-muted/40 border-t-0 hover:bg-primary/20"
@@ -1443,7 +1616,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                             ))}
                             {renderRowActions && (
                               <TableCell className="relative group sticky left-[0px] z-10 p-0 w-0 hover:z-20">
-                                {renderRowActions(row)}
+                                {/* Empty cell for agenda rows */}
                               </TableCell>
                             )}
                           </TableRow>

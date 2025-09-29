@@ -17,6 +17,43 @@ export type HoldingFeedLineWithName = HoldingFeedLine & {
 }
 
 /**
+ * Helper function to convert text quantity values to numbers, handling comma-separated numbers
+ * @param results The parsed file content
+ * @param hasHebrewHeader Whether the file has a Hebrew header row
+ */
+const convertQuantityTextToNumbers = (results: Array<any>, hasHebrewHeader: boolean): void => {
+  const startIndex = hasHebrewHeader ? 1 : 0
+
+  for (let i = startIndex; i < results.length; i++) {
+    const row = results[i]
+
+    if (Array.isArray(row)) {
+      // For XLSX files
+      const quantity = row[QUANTITY_COL]
+
+      if (typeof quantity === 'string' && quantity.trim() !== '') {
+        // Remove commas and convert to number
+        const cleanedQuantity = quantity.replace(/,/g, '')
+        if (!isNaN(Number(cleanedQuantity))) {
+          row[QUANTITY_COL] = Number(cleanedQuantity)
+        }
+      }
+    } else {
+      // For CSV files
+      const quantity = row[QUANTITY_COL.toString()]
+
+      if (typeof quantity === 'string' && quantity.trim() !== '') {
+        // Remove commas and convert to number
+        const cleanedQuantity = quantity.replace(/,/g, '')
+        if (!isNaN(Number(cleanedQuantity))) {
+          row[QUANTITY_COL.toString()] = Number(cleanedQuantity)
+        }
+      }
+    }
+  }
+}
+
+/**
  * Validate the whole feed for fatal errors
  * @param results The parsed file content
  * @returns Object containing fatal errors and optional header warning
@@ -56,6 +93,9 @@ export const validateWholeFeed = (
     }
     firstRow = results[1]
   }
+
+  // Always convert text quantity values to numbers (handles comma-separated numbers)
+  convertQuantityTextToNumbers(results, hasHebrewHeader)
 
   // Check column format
   let hasWrongFormat = false

@@ -121,32 +121,31 @@ export const StockValues: CollectionConfig = {
       async ({ doc, req }) => {
         const { stockId, id } = doc
 
-        await req.payload.update({
-          collection: 'meetings',
-          req: {
-            ...req,
-            context: { ...req.context, from: 'process' },
-          },
-          data: {
-            stockValue: id,
-          },
-          where: {
-            and: [
-              { stockValue: { not_equals: id } },
-              { stock: { equals: stockId } },
-              {
-                or: [
-                  {
-                    meetingDate: { greater_than_equal: new Date() },
-                  },
-                  {
-                    meetingDate: { exists: false },
-                  },
-                ],
-              },
-            ],
-          },
-        })
+        if (req.context?.from !== 'migration') {
+          await req.payload.update({
+            collection: 'meetings',
+            req: {
+              ...req,
+              context: { ...req.context, from: 'process' },
+            },
+            data: {
+              stockValue: id,
+            },
+            where: {
+              and: [
+                { stockValue: { not_equals: id } },
+                { stock: { equals: stockId } },
+                {
+                  or: [
+                    {
+                      meetingDate: { greater_than_equal: new Date() },
+                    },
+                  ],
+                },
+              ],
+            },
+          })
+        }
       },
     ],
   },

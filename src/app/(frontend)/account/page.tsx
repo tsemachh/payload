@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/providers/auth-provider'
+import { TwoFactorManager } from '@/components/TwoFactorManager'
 
 export default function AccountPage() {
   const { user } = useAuth()
@@ -160,7 +161,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6">
+    <div className="container max-w-4xl py-6 space-y-6">
       <Card>
         <CardHeader className="space-y-1">
           <div className="flex items-center space-x-4 space-x-reverse">
@@ -283,6 +284,9 @@ export default function AccountPage() {
           </Button>
         </CardFooter>
       </Card>
+      
+      {/* 2FA Management Section */}
+      <TwoFactorManager />
     </div>
   )
 }
