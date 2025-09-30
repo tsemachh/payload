@@ -49,6 +49,14 @@ export const calculateHoldingValues = (
   }
 }
 
+export const calculatPercentageHolding = (quantity: number, registeredValue: number) => {
+  // Handle division by zero for percentage calculation
+  const percentageHolding =
+    registeredValue > 0 ? parseFloat(((quantity / registeredValue) * 100).toFixed(4)) : 0
+
+  return percentageHolding
+}
+
 export function findRelevantCompanyIds(
   meetingCompanies: string[] | undefined,
   funds: string[] | null | undefined,
