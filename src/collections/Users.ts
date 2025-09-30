@@ -120,7 +120,10 @@ export const Users: CollectionConfig = {
       limits: [10, 20, 50, 100, 200, 500],
     },
     components: {
-      listMenuItems: ['/admincomponents/BulkResetPasswordMenuItem'],
+      listMenuItems: [
+        '/admincomponents/BulkResetPasswordMenuItem',
+        '/admincomponents/BulkRecalculateUserMembershipsMenuItem',
+      ],
     },
   },
   custom: {
