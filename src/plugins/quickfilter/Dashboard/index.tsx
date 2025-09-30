@@ -1,15 +1,15 @@
 import type { groupNavItems } from '@payloadcms/ui/shared'
+import { EntityType } from '@payloadcms/ui/shared'
 import type { ClientUser, Locale, ServerProps } from 'payload'
 
 import { getTranslation } from '@payloadcms/translations'
 import { Button, Card, Gutter, Locked } from '@payloadcms/ui'
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent'
-import { EntityType } from '@payloadcms/ui/shared'
 import { formatAdminURL } from 'payload/shared'
 import React, { Fragment } from 'react'
 
-import {EntityWithHref} from "../types";
-import { processNavGroups } from '../lib/utils';
+import { EntityWithHref } from '../types'
+import { processNavGroups } from '../lib/utils'
 
 const baseClass = 'dashboard'
 
@@ -33,7 +33,6 @@ export type DashboardViewServerPropsOnly = {
 } & ServerProps
 
 export type DashboardViewServerProps = DashboardViewClientProps & DashboardViewServerPropsOnly
-
 
 export function DefaultDashboard(props: DashboardViewServerProps) {
   const {
@@ -59,7 +58,9 @@ export function DefaultDashboard(props: DashboardViewServerProps) {
   } = props
 
   // Process navGroups to calculate href values
-  const navGroups = originalNavGroups ? processNavGroups(originalNavGroups, collections, payload, i18n) : []
+  const navGroups = originalNavGroups
+    ? processNavGroups(originalNavGroups, collections, payload, i18n)
+    : []
 
   return (
     <div className={baseClass}>
@@ -88,92 +89,103 @@ export function DefaultDashboard(props: DashboardViewServerProps) {
                 <div className={`${baseClass}__group`} key={groupIndex}>
                   <h2 className={`${baseClass}__label`}>{label}</h2>
                   <ul className={`${baseClass}__card-list`}>
-                      {entities.map(({ slug, type, label, href: entityHref }:EntityWithHref, entityIndex) => {
-                      let title: string
-                      let buttonAriaLabel: string
-                      let createHREF: string
-                      let href: string
-                      let hasCreatePermission: boolean
-                      let isLocked = null
-                      let userEditing = null
+                    {entities.map(
+                      (
+                        { slug, type, label, href: entityHref }: EntityWithHref,
+                        entityIndex: number,
+                      ) => {
+                        let title: string
+                        let buttonAriaLabel: string = ''
+                        let createHREF: string = ''
+                        let href: string = ''
+                        let hasCreatePermission: boolean
+                        let isLocked = null
+                        let userEditing = null
 
-                      if (type === EntityType.collection) {
-                        title = getTranslation(label, i18n)
+                        if (type === EntityType.collection) {
+                          title = getTranslation(label, i18n)
 
-                        buttonAriaLabel = t('general:showAllLabel', { label: title })
+                          buttonAriaLabel = t('general:showAllLabel', { label: title })
 
-                        // Use the processed href if available, otherwise use the default
-                        href = entityHref || formatAdminURL({ adminRoute, path: `/collections/${slug}` })
+                          // Use the processed href if available, otherwise use the default
+                          href =
+                            entityHref ||
+                            formatAdminURL({ adminRoute, path: `/collections/${slug}` })
 
-                        createHREF = formatAdminURL({
-                          adminRoute,
-                          path: `/collections/${slug}/create`,
-                        })
+                          createHREF = formatAdminURL({
+                            adminRoute,
+                            path: `/collections/${slug}/create`,
+                          })
 
-                        hasCreatePermission = permissions?.collections?.[slug]?.create
-                      }
+                          hasCreatePermission = permissions?.collections?.[slug]?.create as boolean
+                        }
 
-                      if (type === EntityType.global) {
-                        buttonAriaLabel = t('general:editLabel', {
-                          label: getTranslation(label, i18n),
-                        })
+                        if (type === EntityType.global) {
+                          buttonAriaLabel = t('general:editLabel', {
+                            label: getTranslation(label, i18n),
+                          })
 
-                        href = formatAdminURL({
-                          adminRoute,
-                          path: `/globals/${slug}`,
-                        })
+                          href = formatAdminURL({
+                            adminRoute,
+                            path: `/globals/${slug}`,
+                          })
 
-                        // Find the lock status for the global
-                        const globalLockData = globalData.find((global) => global.slug === slug)
-                        if (globalLockData) {
-                          isLocked = globalLockData.data._isLocked
-                          userEditing = globalLockData.data._userEditing
+                          // Find the lock status for the global
+                          const globalLockData = globalData.find((global) => global.slug === slug)
+                          if (globalLockData) {
+                            isLocked = globalLockData.data._isLocked
+                            userEditing = globalLockData.data._userEditing
 
-                          // Check if the lock is expired
-                          const lockDuration = globalLockData?.lockDuration
-                          const lastEditedAt = new Date(
-                            globalLockData.data?._lastEditedAt,
-                          ).getTime()
+                            // Check if the lock is expired
+                            const lockDuration = globalLockData?.lockDuration
+                            const lastEditedAt = new Date(
+                              globalLockData.data?._lastEditedAt,
+                            ).getTime()
 
-                          const lockDurationInMilliseconds = lockDuration * 1000
-                          const lockExpirationTime = lastEditedAt + lockDurationInMilliseconds
+                            const lockDurationInMilliseconds = lockDuration
+                              ? lockDuration * 1000
+                              : 0
+                            const lockExpirationTime = lastEditedAt + lockDurationInMilliseconds
 
-                          if (new Date().getTime() > lockExpirationTime) {
-                            isLocked = false
-                            userEditing = null
+                            if (new Date().getTime() > lockExpirationTime) {
+                              isLocked = false
+                              userEditing = null
+                            }
                           }
                         }
-                      }
 
-                      return (
-                        <li key={entityIndex}>
-                          <Card
-                            actions={
-                              isLocked && user?.id !== userEditing?.id ? (
-                                <Locked className={`${baseClass}__locked`} user={userEditing} />
-                              ) : hasCreatePermission && type === EntityType.collection ? (
-                                <Button
-                                  aria-label={t('general:createNewLabel', {
-                                    label,
-                                  })}
-                                  buttonStyle="icon-label"
-                                  el="link"
-                                  icon="plus"
-                                  iconStyle="with-border"
-                                  round
-                                  to={createHREF}
-                                />
-                              ) : undefined
-                            }
-                            buttonAriaLabel={buttonAriaLabel}
-                            href={href}
-                            id={`card-${slug}`}
-                            title={getTranslation(label, i18n)}
-                            titleAs="h3"
-                          />
-                        </li>
-                      )
-                    })}
+                        return (
+                          <li key={entityIndex}>
+                            <Card
+                              actions={
+                                // @ts-ignore
+                                isLocked && user?.id !== userEditing?.id ? ( // @ts-ignore
+                                  <Locked className={`${baseClass}__locked`} user={userEditing} />
+                                ) : // @ts-ignore
+                                hasCreatePermission && type === EntityType.collection ? (
+                                  <Button
+                                    aria-label={t('general:createNewLabel', {
+                                      label,
+                                    })}
+                                    buttonStyle="icon-label"
+                                    el="link"
+                                    icon="plus"
+                                    iconStyle="with-border"
+                                    round
+                                    to={createHREF}
+                                  />
+                                ) : undefined
+                              }
+                              buttonAriaLabel={buttonAriaLabel}
+                              href={href}
+                              id={`card-${slug}`}
+                              title={getTranslation(label, i18n)}
+                              titleAs="h3"
+                            />
+                          </li>
+                        )
+                      },
+                    )}
                   </ul>
                 </div>
               )

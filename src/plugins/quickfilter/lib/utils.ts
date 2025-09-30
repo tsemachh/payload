@@ -8,12 +8,9 @@ import type {
   SelectFilterValue,
 } from '../filters/types/filters-type'
 import { SupportedLocale } from '../labels'
-import {
-  futureOptionKeys,
-  pastOptionKeys,
-} from '../filters/constants/date-filter-options'
+import { futureOptionKeys, pastOptionKeys } from '../filters/constants/date-filter-options'
 import { getDateRangeForOption } from '../filters/utils/date-helpers'
-import type {Field, FieldAffectingData, SelectField,  UIField} from 'payload'
+import type { Field, FieldAffectingData, SelectField, UIField } from 'payload'
 import { formatAdminURL } from 'payload/shared'
 import { stringify } from 'qs-esm'
 import { EntityType } from '@payloadcms/ui/shared'
@@ -77,7 +74,8 @@ export const parseWhereClauseToFilterValues = (
         if (fieldDef && condition && typeof condition === 'object') {
           if ('equals' in condition) {
             if (fieldDef.type === 'checkbox') {
-              values[fieldName] = (condition.equals == 'true'  || condition.equals === true) ? 'checked' : 'unchecked'
+              values[fieldName] =
+                condition.equals == 'true' || condition.equals === true ? 'checked' : 'unchecked'
             } else if (fieldDef.type === 'select') {
               values[fieldName] = { selectedValues: [condition.equals] }
             }
@@ -96,14 +94,14 @@ export const parseWhereClauseToFilterValues = (
 
               for (const option of allDateOptions) {
                 const range = getDateRangeForOption(option, locale)
-                let isFromMatch : boolean
+                let isFromMatch: boolean = false
                 if (fromDate) {
                   isFromMatch = range.from?.toDateString() === fromDate.toDateString()
                 } else if (fromDate == null && range.to == undefined) {
                   // all future: fromDate == null & range.to == undefined
                   isFromMatch = true
                 }
-                let isToMatch: boolean
+                let isToMatch: boolean = false
                 if (toDate) {
                   isToMatch = range.to?.toDateString() === toDate.toDateString()
                 } else if (toDate == null && range.to == undefined) {
@@ -216,11 +214,9 @@ export const buildQuickFilterConditions = (
 }
 
 // Recursive function to find a field by name
-export function findFieldByName(fields: Field[], fieldName: string): Field {
+export function findFieldByName(fields: Field[], fieldName: string): Field | null {
   // First check at the current level
-  const directMatch = fields.find(
-    (f) => (f as FieldAffectingData).name === fieldName,
-  )
+  const directMatch = fields.find((f) => (f as FieldAffectingData).name === fieldName)
   if (directMatch) return directMatch
 
   // If not found, search recursively in nested structures
@@ -233,7 +229,7 @@ export function findFieldByName(fields: Field[], fieldName: string): Field {
     ) {
       const nestedMatch = findFieldByName(item.fields, fieldName)
       if (nestedMatch) return nestedMatch
-    } 
+    }
     // Check in tabs
     else if (item.type === 'tabs' && Array.isArray(item.tabs)) {
       for (const tab of item.tabs) {
@@ -242,7 +238,7 @@ export function findFieldByName(fields: Field[], fieldName: string): Field {
           if (tabMatch) return tabMatch
         }
       }
-    } 
+    }
     // Check in blocks
     else if (item.type === 'blocks' && Array.isArray(item.blocks)) {
       for (const block of item.blocks) {
@@ -259,23 +255,23 @@ export function findFieldByName(fields: Field[], fieldName: string): Field {
 
 // Process nav groups to add href with defaultFilter query parameters
 export function processNavGroups(
-  groups: any[], 
-  collections: any[], 
-  payload: any, 
-  i18n: any
+  groups: any[],
+  collections: any[],
+  payload: any,
+  i18n: any,
 ): any[] {
-  return groups.map(group => {
-    const processedEntities = group.entities.map(entity => {
+  return groups.map((group) => {
+    const processedEntities = group.entities.map((entity: any) => {
       if (entity.type === EntityType.collection) {
-        const collection = collections.find(c => c.slug === entity.slug);
+        const collection = collections.find((c) => c.slug === entity.slug)
 
         // Check if collection has defaultFilter in custom props
         if (collection?.custom?.defaultFilter) {
           // Base URL without query parameters
-          const baseHref = formatAdminURL({ 
-            adminRoute: payload.config.routes.admin, 
-            path: `/collections/${entity.slug}` 
-          });
+          const baseHref = formatAdminURL({
+            adminRoute: payload.config.routes.admin,
+            path: `/collections/${entity.slug}`,
+          })
 
           // Get the fields from the collection for parsing the where clause
           const fields: FilterDetaild[] =
@@ -289,7 +285,7 @@ export function processNavGroups(
                   options: (fieldConfig as SelectField)?.options,
                   label: (fieldConfig as UIField)?.label || fieldName,
                   row: 0,
-                  virtual: 'virtual' in fieldConfig && fieldConfig.virtual,
+                  virtual: fieldConfig && 'virtual' in fieldConfig && fieldConfig.virtual,
                 } as FilterDetaild
               })
               .filter(Boolean) || []
