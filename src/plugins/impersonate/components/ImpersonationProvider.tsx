@@ -23,13 +23,13 @@ const ImpersonationContext = createContext<ImpersonationContextType | null>(null
 
 interface ImpersonationProviderProps {
   children: ReactNode
-  checkInterval?: number // in milliseconds, default 30000 (30 seconds)
+  checkInterval?: number // in milliseconds, default 300000 (5 minutes)
   authCollection?: string // collection slug for auth, default 'users'
 }
 
 export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   children,
-  checkInterval = 30000,
+  checkInterval = 300000,
   authCollection = 'users',
 }) => {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData>({
