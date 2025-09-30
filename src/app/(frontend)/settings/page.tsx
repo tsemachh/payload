@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Label } from '@/components/ui/label'
 import { X, Plus, Palette } from 'lucide-react'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
@@ -490,9 +491,18 @@ export default function SettingsPage() {
                           {tag.stock && tag.stock.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {tag.stock.map((stock: any, index: number) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {stock.stockId}
-                                </Badge>
+                                <TooltipProvider key={index}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="text-xs">
+                                        {stock.stockId}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p>{stock.name}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               ))}
                             </div>
                           ) : (

@@ -30,6 +30,7 @@ import { meetingStateOptions, meetingTypeOptions, stockTypeOptions } from '@/con
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
+import { syncLabelsOnStockChange } from './hooks/syncLabelsOnStockChange'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -780,9 +781,9 @@ export const Meetings: CollectionConfig = {
             {
               name: 'labels',
               type: 'array',
-              admin: {
-                hidden: true,
-              },
+              // admin: {
+              //   hidden: true,
+              // },
               fields: [
                 {
                   name: 'label',
@@ -915,6 +916,9 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                          hooks: {
+                            afterChange: [syncLabelsOnStockChange],
                           },
                         },
                       ],
