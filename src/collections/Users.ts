@@ -746,15 +746,15 @@ export const Users: CollectionConfig = {
       },
     ],
     afterLogout: [
-      async ({ req, user }) => {
+      async ({ req }) => {
         try {
           await logEvent({
             eventType: 'auth.logout',
             category: 'auth',
             severity: 'info',
-            actor: (user as any)?.id || req?.user?.id || null,
+            actor: (req.user as any)?.id || req?.user?.id || null,
             success: true,
-            message: user?.email ? `Logout for ${user.email}` : 'User logged out',
+            message: req.user?.email ? `Logout for ${req.user.email}` : 'User logged out',
             req,
             source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
           })
