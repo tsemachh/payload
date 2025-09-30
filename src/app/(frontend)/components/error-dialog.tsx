@@ -54,7 +54,10 @@ URL: ${typeof window !== 'undefined' ? window.location.href : 'לא זמין'}
         <div className="space-y-4">
           {/* Main error message */}
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-            <p className="text-sm font-medium text-destructive text-right">
+            <p
+              className="text-sm font-medium text-destructive text-right"
+              style={{ width: '400px' }}
+            >
               {error.message}
             </p>
           </div>
@@ -92,12 +95,7 @@ URL: ${typeof window !== 'undefined' ? window.location.href : 'לא זמין'}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={copyErrorDetails}
-            className="gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={copyErrorDetails} className="gap-2">
             <Copy className="h-4 w-4" />
             העתק פרטים
           </Button>
