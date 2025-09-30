@@ -37,6 +37,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   location: true,
   proxyVotingDate: true,
   state: true,
+  isDualStock: true,
   comments: true,
   electronicVotingEnabled: true,
   resultsConfirmationStatus: true,
@@ -141,22 +142,69 @@ function createRegularFilters(filters: Record<string, string[]>) {
         conditions.push({
           type: { in: values.length ? values : [null] },
         })
+      } else if (field === 'isDualStock') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
+        const booleanValues = values.map((v) => v === 'true')
+        const booleanValue = booleanValues.length === 1 ? booleanValues[0] : booleanValues
+        console.log('!!!!! isDualStock filter values: ', values, booleanValue)
+        conditions.push({
+          isDualStock: { equals: booleanValue },
+        })
       } else if (field === 'electronicVotingEnabled') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           electronicVotingEnabled: { in: booleanValues },
         })
       } else if (field === 'resultsConfirmationStatus') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           resultsConfirmationStatus: { in: booleanValues },
         })
       } else if (field === 'stockTradable') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           'stock.tradable': { in: booleanValues },
         })
       } else if (field === 'committeeInitiated') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           'stock.isFinancial': { in: booleanValues },
@@ -434,6 +482,7 @@ export const meetingColumnsForServer = [
   { key: 'holdingValueInMillions', header: 'שווי החזקה  (מיליוני ₪)' },
   { key: 'reference', header: 'אסמכתא' },
   { key: 'meetingState', header: 'מצב' },
+  { key: 'isDualStock', header: 'דואלית' },
   { key: 'researchDocuments', header: 'מחקר' },
   { key: 'location', header: 'מיקום' },
   { key: 'comments', header: 'הערות' },
@@ -553,6 +602,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
+    isDualStock: !!meeting?.isDualStock,
     meetingInviteUrl: meeting.invitationLink || '',
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,

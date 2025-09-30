@@ -468,7 +468,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   }
 
   // If we get here, user is properly authenticated and no 2FA needed
-  console.log('TwoFactorProvider: Rendering children - user authenticated, no 2FA needed')
+  //  console.log('TwoFactorProvider: Rendering children - user authenticated, no 2FA needed')
   return <>{children}</>
 }
 
