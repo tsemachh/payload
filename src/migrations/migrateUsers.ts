@@ -358,10 +358,10 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         password: 'channahk@shefing.com',
       },
       {
-        name: 'אפרת שפריי',
+        name: 'דבורה',
         isAdmin: true,
-        email: 'efrats@shefing.com',
-        password: 'efrats@shefing.com',
+        email: 'dvorac@shefing.com',
+        password: 'dvorac@shefing.com',
         // "companies":['17','22','23','49','25']
       },
       {
@@ -372,17 +372,17 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         // "companies":['15','3918','3928']
       },
       {
-        name: 'Michael',
+        name: 'MichalK',
         isAdmin: true,
         email: 'michalk@shefing.com',
         password: 'michalk@shefing.com',
         // "companies":['15','3918','3928']
       },
       {
-        name: 'Rachel Porush',
+        name: 'RachelP',
         isAdmin: true,
         email: 'rachelb@shefing.com',
-        password: 'rachel@shefing.com',
+        password: 'rachelb@shefing.com',
         // "companies":['15','3918','3928']
       },
       {
