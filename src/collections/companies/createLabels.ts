@@ -55,16 +55,18 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 }
 
 export const deleteTagFromCompany = async (req: PayloadRequest) => {
-  if (!req.json) {
+  if (typeof req.json !== 'function') {
     return Response.json({ error: 'Invalid request' }, { status: 400 })
   }
+
   try {
     const body = await req.json()
-    console.log('body', body)
+
     if (body.action !== 'delete') {
       return Response.json({ error: 'Invalid action' }, { status: 400 })
     }
-    const { action, companyIds, tagColor, tagLabel, labelId } = body
+
+    const { companyIds, tagColor, tagLabel, labelId } = body
     if (!companyIds || !Array.isArray(companyIds) || !labelId) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -78,9 +80,11 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
       })
 
       const existingLabels = company?.label?.labels || []
+
       const updatedLabels = existingLabels.filter(
-        (lbl: any) => !(lbl.label === tagLabel && lbl.color === tagColor), // צריך לשלוח גם את labelName וה-color מהבקשה
+        (lbl: any) => !(lbl.label === tagLabel && lbl.color === tagColor),
       )
+
       const updatedCompany = await req.payload.update({
         collection: 'companies',
         id: companyId,
@@ -90,6 +94,7 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
           },
         },
       })
+      console.log('✅ Updated company:', updatedCompany?.id)
 
       results.push(updatedCompany)
     }
