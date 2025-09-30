@@ -34,11 +34,13 @@ async function computeCompanyTreeAndLeafs(
       holdings: false,
       'subCompanies.id': true,
       'subCompanies.name': true,
+      'subCompanies.active': true,
     },
     populate: {
       companies: {
         subCompanies: true,
         name: true,
+        active: true,
       },
     },
     where: {
@@ -89,6 +91,7 @@ async function computeCompanyTreeAndLeafs(
     return {
       id: company.id,
       name: company.name,
+      active: company.active,
       subCompanies: (company.subCompanies || []).map((sub: Company) => cleanCompanyTree(sub)),
     }
   }
