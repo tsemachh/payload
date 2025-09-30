@@ -10,7 +10,7 @@ import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
 //Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionQuickFilterPlugin } from '@shefing/quickfilter'
+import { CollectionQuickFilterPlugin } from '@/plugins/quickfilter'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -223,14 +223,14 @@ export default buildConfig({
       graphics: {
         Logo: '/graphics/Logo',
       },
-      Nav: '@shefing/quickfilter/nav',
+      Nav: '@/plugins/quickfilter/nav',
       views: {
         CustomView: {
           Component: '/admincomponents/custom-views/VotePage',
           path: '/grouped-votes',
         },
         dashboard: {
-          Component: '@shefing/quickfilter/Dashboard',
+          Component: '@/plugins/quickfilter/Dashboard',
         },
       },
     },
