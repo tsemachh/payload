@@ -11,10 +11,8 @@ import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/re
 import { default as default_805fe4906b6268b5debc0aa79d07f9dd } from '../../../collections/admin-notifications/components/TaskMenu'
 import { default as default_186657a96b0661df585d34c95242a519 } from '@/plugins/quickfilter/QuickFilter'
 import { default as default_0ba0d6a826c1cdb82a195f359f1d01b6 } from '@shefing/custom-version-view/index'
-import { default as default_2b43ae3eacf6cbe55200e00ae48e682f } from '../../../admincomponents/cell/FormattedNumber'
 import { default as default_b5963f820ebd4c76ff582b865f9558e8 } from '../../../admincomponents/icon/CompactMeetingBarCell'
 import { default as default_0c2f08cfc08a46ea136745d5d8f7b6e5 } from '../../../collections/meetings/components/ActivityStatsField'
-import { default as default_5afd0140fc7ba52afd83ccfe6007c5d5 } from '../../../admincomponents/cell/YesNoCell'
 import { default as default_654101c27e06395b509426c1f06579e2 } from '../../../collections/meetings/components/VotingTablesField'
 import { default as default_e1e91278a16f25538739696dc1dee72a } from '../../../collections/meetings/components/RecommendationReasonSelect'
 import { default as default_01b6ede7689a44abe9ffe43b59ce999f } from '../../../collections/meetings/components/ConditionalReasonText'
@@ -72,10 +70,8 @@ export const importMap = {
   "/collections/admin-notifications/components/TaskMenu#default": default_805fe4906b6268b5debc0aa79d07f9dd,
   "@/plugins/quickfilter/QuickFilter#default": default_186657a96b0661df585d34c95242a519,
   "@shefing/custom-version-view/index#default": default_0ba0d6a826c1cdb82a195f359f1d01b6,
-  "/admincomponents/cell/FormattedNumber#default": default_2b43ae3eacf6cbe55200e00ae48e682f,
   "/admincomponents/icon/CompactMeetingBarCell#default": default_b5963f820ebd4c76ff582b865f9558e8,
   "/collections/meetings/components/ActivityStatsField#default": default_0c2f08cfc08a46ea136745d5d8f7b6e5,
-  "/admincomponents/cell/YesNoCell#default": default_5afd0140fc7ba52afd83ccfe6007c5d5,
   "/collections/meetings/components/VotingTablesField#default": default_654101c27e06395b509426c1f06579e2,
   "/collections/meetings/components/RecommendationReasonSelect#default": default_e1e91278a16f25538739696dc1dee72a,
   "/collections/meetings/components/ConditionalReasonText#default": default_01b6ede7689a44abe9ffe43b59ce999f,
