@@ -21,7 +21,9 @@ export const syncMeetingsOnCompanyChange = async ({ req, data }: any) => {
       try {
         const existingLabels = meeting.labels || []
 
-        const updatedLabels = [...existingLabels]
+        let updatedLabels = existingLabels.filter((lbl: any) =>
+          companyLabels.some((cl: any) => cl.label === lbl.label),
+        )
 
         for (const companyLabel of companyLabels) {
           const idx = updatedLabels.findIndex((lbl: any) => lbl.label === companyLabel.label)
@@ -35,7 +37,6 @@ export const syncMeetingsOnCompanyChange = async ({ req, data }: any) => {
             })
           }
         }
-        console.log('updatedLabels', updatedLabels)
         await req.payload.update({
           collection: 'meetings',
           id: meeting.id,
