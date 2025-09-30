@@ -11,11 +11,12 @@ interface Stock {
 }
 
 interface StockSelectorProps {
-  stocks: Stock[] 
-  selectedStocks: string[] 
+  stocks: Stock[]
+  selectedStocks: string[]
   onSelectionChange: (selected: string[]) => void
   className?: string
   isLoading?: boolean
+  resetTrigger?: number
 }
 
 export function StockSelector({
@@ -24,10 +25,13 @@ export function StockSelector({
   onSelectionChange,
   className,
   isLoading = false,
+  resetTrigger,
 }: StockSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredStocks, setFilteredStocks] = useState<Stock[]>(stocks)
-
+  useEffect(() => {
+    setSearchQuery('')
+  }, [resetTrigger])
   useEffect(() => {
     if (!searchQuery) {
       setFilteredStocks(stocks)
@@ -36,7 +40,7 @@ export function StockSelector({
         stocks.filter(
           (stock) =>
             stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            stock.id.toLowerCase().includes(searchQuery.toLowerCase()), 
+            stock.stockId.toLowerCase().includes(searchQuery.toLowerCase()),
         ),
       )
     }

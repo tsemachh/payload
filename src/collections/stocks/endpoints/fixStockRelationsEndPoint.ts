@@ -67,16 +67,16 @@ export const getTradableStocks = async (req: PayloadRequest) => {
           equals: true,
         },
       },
-      limit: 0, 
+      limit: 0,
+      depth: 0,
+      select: {
+        id: true,
+        stockId: true,
+        name: true,
+      },
     })
 
-    const formatted = stocks.docs.map((s: any) => ({
-      id: s.id,
-      name: s.name,
-      stockId: s.stockId,
-    }))
-
-    return Response.json({ stocks: formatted })
+    return Response.json({ stocks: stocks.docs })
   } catch (error) {
     console.error('❌ Failed to fetch tradable stocks:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })

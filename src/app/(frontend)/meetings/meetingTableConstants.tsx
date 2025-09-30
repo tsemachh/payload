@@ -135,7 +135,7 @@ export const createMeetingColumns = (
     header: 'תגיות',
     type: 'string',
     render: (row) => <LabelsIcon row={row} />,
-    minWidth: 50,
+    minWidth: 60,
   },
   {
     key: 'stockNumber',

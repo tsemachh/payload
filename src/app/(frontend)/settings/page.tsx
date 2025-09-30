@@ -71,6 +71,8 @@ export default function SettingsPage() {
   const [loadingStocks, setLoadingStocks] = useState(true)
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null)
   const [loadingTags, setLoadingTags] = useState(false)
+  const [isCreatingTag, setIsCreatingTag] = useState(false)
+  const [stockSelectorResetTrigger, setStockSelectorResetTrigger] = useState(0)
 
   // --- Fetch stocks from endpoint ---
   useEffect(() => {
@@ -237,6 +239,7 @@ export default function SettingsPage() {
 
   const createTag = async () => {
     if (currentTag.label && currentTag.color) {
+      setIsCreatingTag(true)
       try {
         const response = await fetch(`/api/companies/createLabel`, {
           method: 'POST',
@@ -282,6 +285,8 @@ export default function SettingsPage() {
         setSelectedFundIds([])
       } catch (error) {
         console.error('❌ Error creating tag:', error)
+      } finally {
+        setIsCreatingTag(false)
       }
     }
   }
@@ -377,7 +382,13 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="stocks">ניירות ערך</Label>
                 {
-                  <Select>
+                  <Select
+                    onOpenChange={(open) => {
+                      if (!open) {
+                        setStockSelectorResetTrigger((prev) => prev + 1)
+                      }
+                    }}
+                  >
                     <SelectTrigger
                       className={cn(
                         'w-full flex-row-reverse justify-between text-right h-9',
@@ -395,6 +406,7 @@ export default function SettingsPage() {
                         }
                         className="w-full"
                         isLoading={loadingStocks}
+                        resetTrigger={stockSelectorResetTrigger}
                       />
                     </SelectContent>
                   </Select>
@@ -412,11 +424,21 @@ export default function SettingsPage() {
                   !currentTag.label ||
                   !currentTag.color ||
                   !currentTag.stocks?.length ||
-                  !currentTag.companies?.length
+                  !currentTag.companies?.length ||
+                  isCreatingTag
                 }
               >
-                <Plus className="h-4 w-4 ml-2" />
-                צור תגית
+                {isCreatingTag ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    יוצר תגית...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 ml-2" />
+                    צור תגית
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

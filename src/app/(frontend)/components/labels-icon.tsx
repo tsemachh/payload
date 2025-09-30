@@ -33,7 +33,7 @@ export function LabelsIcon({ row }: LabelsIconProps) {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-start gap-1">
+      <div className="flex items-center justify-end gap-1">
         {/* הצג את התגית הראשונה */}
         <div
           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white max-w-[80px] ${colorClasses[firstLabel.color] || 'bg-gray-500'}`}
