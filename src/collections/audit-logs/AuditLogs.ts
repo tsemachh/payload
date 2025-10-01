@@ -1,21 +1,29 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/utils/authUtils'
 
 export const AuditLogs: CollectionConfig = {
   slug: 'audit-logs',
-  labels: { singular: 'Audit Log', plural: 'Audit Logs' },
+  labels: { singular: 'יומן ביקורת', plural: 'יומני ביקורת' },
   enableQueryPresets: true,
   admin: {
-    useAsTitle: 'eventType',
-    group: 'פעילות',
-    defaultColumns: ['createdAt', 'severity', 'eventType', 'actor', 'targetCollection', 'targetId'],
+    useAsTitle: 'message',
+    group: 'ניהול',
+    defaultColumns: ['message', 'createdAt', 'severity', 'eventType', 'actor', 'details'],
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
   },
+  custom: {
+    filterList: [
+      [{ name: 'createdAt' }, { name: 'success' }, { name: 'source' }],
+      [{ name: 'severity' }, { name: 'eventType' }, { name: 'category' }],
+      [{ name: 'actor' }, { name: 'targetCollection' }, { name: 'targetId' }],
+    ],
+  },
   defaultSort: '-createdAt',
   access: {
-    read: ({ req }) => !!req.user?.isAdmin,
+    read: isAdmin,
     create: () => false,
     update: () => false,
     delete: () => false,

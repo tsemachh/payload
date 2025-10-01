@@ -259,8 +259,6 @@ export default buildConfig({
   collections: [
     // פעילות
     AdminNotifications,
-    AuditLogs,
-    AuditLogReads,
     Meetings,
     Stocks,
     Holdings,
@@ -270,6 +268,8 @@ export default buildConfig({
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
+    AuditLogs,
+    AuditLogReads,
     // תחזוקה
     CompanyMeetingNotifications,
     Votes,
