@@ -264,6 +264,8 @@ export interface Config {
   blocks: {};
   collections: {
     'admin-notifications': AdminNotification;
+    'audit-logs': AuditLog;
+    'audit-log-reads': AuditLogRead;
     meetings: Meeting;
     stocks: Stock;
     holdings: Holding;
@@ -308,6 +310,8 @@ export interface Config {
   };
   collectionsSelect: {
     'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
+    'audit-log-reads': AuditLogReadsSelect<false> | AuditLogReadsSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;
@@ -778,6 +782,79 @@ export interface Document {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: string;
+  eventType:
+    | 'auth.login.success'
+    | 'auth.login.failure'
+    | 'auth.logout'
+    | 'auth.impersonation.start'
+    | 'auth.impersonation.end'
+    | 'user.create'
+    | 'user.update'
+    | 'company.create'
+    | 'company.update'
+    | 'access.denied';
+  severity: 'info' | 'warning' | 'high' | 'critical';
+  category: 'security' | 'auth' | 'user' | 'company' | 'ops' | 'system';
+  actor?: (string | null) | User;
+  impersonator?: (string | null) | User;
+  targetCollection?: string | null;
+  targetId?: string | null;
+  success?: boolean | null;
+  message?: string | null;
+  details?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+  source?: ('rest' | 'admin-ui' | 'local-api' | 'cron' | 'webhook') | null;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log-reads".
+ */
+export interface AuditLogRead {
+  id: string;
+  admin: string | User;
+  mode: 'list' | 'document';
+  filters?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  countReturned?: number | null;
+  documentId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+  source?: ('admin-ui' | 'rest' | 'local-api' | 'cron' | 'webhook') | null;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stocks-feed".
  */
 export interface StocksFeed {
@@ -1199,6 +1276,14 @@ export interface PayloadLockedDocument {
         value: string | AdminNotification;
       } | null)
     | ({
+        relationTo: 'audit-logs';
+        value: string | AuditLog;
+      } | null)
+    | ({
+        relationTo: 'audit-log-reads';
+        value: string | AuditLogRead;
+      } | null)
+    | ({
         relationTo: 'meetings';
         value: string | Meeting;
       } | null)
@@ -1366,6 +1451,8 @@ export interface PayloadQueryPreset {
     | null;
   relatedCollection:
     | 'admin-notifications'
+    | 'audit-logs'
+    | 'audit-log-reads'
     | 'meetings'
     | 'stocks'
     | 'holdings'
@@ -1405,6 +1492,51 @@ export interface AdminNotificationsSelect<T extends boolean = true> {
   updator?: T;
   process?: T;
   acquireTask?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  eventType?: T;
+  severity?: T;
+  category?: T;
+  actor?: T;
+  impersonator?: T;
+  targetCollection?: T;
+  targetId?: T;
+  success?: T;
+  message?: T;
+  details?: T;
+  ip?: T;
+  userAgent?: T;
+  requestId?: T;
+  source?: T;
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log-reads_select".
+ */
+export interface AuditLogReadsSelect<T extends boolean = true> {
+  admin?: T;
+  mode?: T;
+  filters?: T;
+  countReturned?: T;
+  documentId?: T;
+  ip?: T;
+  userAgent?: T;
+  requestId?: T;
+  source?: T;
+  creator?: T;
+  updator?: T;
+  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
