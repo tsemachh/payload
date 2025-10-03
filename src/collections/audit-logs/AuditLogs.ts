@@ -3,8 +3,12 @@ import { isAdmin } from '@/utils/authUtils'
 
 export const AuditLogs: CollectionConfig = {
   slug: 'audit-logs',
+  labels: { singular: 'יומן ביקורת', plural: 'יומני ביקורת' },
   enableQueryPresets: true,
   admin: {
+    useAsTitle: 'message',
+    group: 'ניהול',
+    defaultColumns: ['message', 'createdAt', 'severity', 'eventType', 'actor', 'details'],
     pagination: {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
