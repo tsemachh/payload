@@ -9,7 +9,7 @@ import { CreatedAtCell as CreatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from 
 import { UpdatedAtCell as UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264 } from '@shefing/authors-info/client'
 import { default as default_1afdd2ced6b437928e53a2d8fe60489e } from '@shefing/reset-list-view/ResetListViewButton'
 import { default as default_805fe4906b6268b5debc0aa79d07f9dd } from '../../../collections/admin-notifications/components/TaskMenu'
-import { default as default_186657a96b0661df585d34c95242a519 } from '@/plugins/quickfilter/QuickFilter'
+import { default as default_4dd24e2ec1d9dc857c6d5bb6d71a585f } from '@shefing/quickfilter/QuickFilter'
 import { default as default_0ba0d6a826c1cdb82a195f359f1d01b6 } from '@shefing/custom-version-view/index'
 import { default as default_2b43ae3eacf6cbe55200e00ae48e682f } from '../../../admincomponents/cell/FormattedNumber'
 import { default as default_b5963f820ebd4c76ff582b865f9558e8 } from '../../../admincomponents/icon/CompactMeetingBarCell'
@@ -47,7 +47,7 @@ import { QueryPresetsWhereCell as QueryPresetsWhereCell_3817bf644402e67bfe6577f6
 import { QueryPresetsWhereField as QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnsCell as QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnField as QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
-import { default as default_205a34795d5a4d55af4dafed464d8e0f } from '@/plugins/quickfilter/nav'
+import { default as default_a5852a3a735d9299b693b4d2e7b266de } from '@shefing/quickfilter/nav'
 import { UnImpersonate as UnImpersonate_30fd60f7d4c856977e9f58a871290892 } from '@/plugins/impersonate/ui/UnImpersonate'
 import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../graphics/Logo'
 import { default as default_cac31904aad45bab4a11d91326db141f } from '../../../admincomponents/auth/LoginCaptcha'
@@ -56,7 +56,7 @@ import { default as default_df853e25197daebb811a24ccda92f351 } from '../../../ad
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 import { default as default_b7ce0dd15673c054966f89b2a35e3a65 } from '../../../admincomponents/custom-views/VotePage'
-import { default as default_e06a5b83c0e859eb531973c3e75c961d } from '@/plugins/quickfilter/Dashboard'
+import { default as default_f828cce1950382b69f94d117f188940f } from '@shefing/quickfilter/Dashboard'
 
 export const importMap = {
   "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
@@ -70,7 +70,7 @@ export const importMap = {
   "@shefing/authors-info/client#UpdatedAtCell": UpdatedAtCell_9dfaaf04648a02116882e3167fe3e264,
   "@shefing/reset-list-view/ResetListViewButton#default": default_1afdd2ced6b437928e53a2d8fe60489e,
   "/collections/admin-notifications/components/TaskMenu#default": default_805fe4906b6268b5debc0aa79d07f9dd,
-  "@/plugins/quickfilter/QuickFilter#default": default_186657a96b0661df585d34c95242a519,
+  "@shefing/quickfilter/QuickFilter#default": default_4dd24e2ec1d9dc857c6d5bb6d71a585f,
   "@shefing/custom-version-view/index#default": default_0ba0d6a826c1cdb82a195f359f1d01b6,
   "/admincomponents/cell/FormattedNumber#default": default_2b43ae3eacf6cbe55200e00ae48e682f,
   "/admincomponents/icon/CompactMeetingBarCell#default": default_b5963f820ebd4c76ff582b865f9558e8,
@@ -108,7 +108,7 @@ export const importMap = {
   "@payloadcms/ui#QueryPresetsWhereField": QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnsCell": QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnField": QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
-  "@/plugins/quickfilter/nav#default": default_205a34795d5a4d55af4dafed464d8e0f,
+  "@shefing/quickfilter/nav#default": default_a5852a3a735d9299b693b4d2e7b266de,
   "@/plugins/impersonate/ui/UnImpersonate#UnImpersonate": UnImpersonate_30fd60f7d4c856977e9f58a871290892,
   "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,
   "/admincomponents/auth/LoginCaptcha#default": default_cac31904aad45bab4a11d91326db141f,
@@ -117,5 +117,5 @@ export const importMap = {
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
   "/admincomponents/custom-views/VotePage#default": default_b7ce0dd15673c054966f89b2a35e3a65,
-  "@/plugins/quickfilter/Dashboard#default": default_e06a5b83c0e859eb531973c3e75c961d
+  "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f
 }
