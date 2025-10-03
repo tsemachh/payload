@@ -19,6 +19,7 @@ export const AuditLogs: CollectionConfig = {
   },
   defaultSort: '-createdAt',
   access: {
+    read: isAdmin,
     create: () => false,
     update: () => false,
     delete: () => false,

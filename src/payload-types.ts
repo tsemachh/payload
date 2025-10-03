@@ -264,8 +264,6 @@ export interface Config {
   blocks: {};
   collections: {
     'admin-notifications': AdminNotification;
-    'audit-logs': AuditLog;
-    'audit-log-reads': AuditLogRead;
     meetings: Meeting;
     stocks: Stock;
     holdings: Holding;
@@ -310,8 +308,6 @@ export interface Config {
   };
   collectionsSelect: {
     'admin-notifications': AdminNotificationsSelect<false> | AdminNotificationsSelect<true>;
-    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
-    'audit-log-reads': AuditLogReadsSelect<false> | AuditLogReadsSelect<true>;
     meetings: MeetingsSelect<false> | MeetingsSelect<true>;
     stocks: StocksSelect<false> | StocksSelect<true>;
     holdings: HoldingsSelect<false> | HoldingsSelect<true>;

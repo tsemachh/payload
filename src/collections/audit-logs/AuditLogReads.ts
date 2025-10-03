@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/utils/authUtils'
 
 export const AuditLogReads: CollectionConfig = {
   slug: 'audit-log-reads',
@@ -20,7 +21,7 @@ export const AuditLogReads: CollectionConfig = {
   },
   defaultSort: '-createdAt',
   access: {
-    read: ({ req }) => !!req.user?.isAdmin,
+    read: isAdmin,
     create: () => false,
     update: () => false,
     delete: () => false,
