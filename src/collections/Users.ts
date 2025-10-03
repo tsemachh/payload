@@ -6,7 +6,6 @@ import {
   isAdminOrSelf,
   isAdminOrSelfFieldLevel,
 } from '@/utils/authUtils'
-import { createAdminNotification } from '@/utils/utils'
 import { Company } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 import TwoFactorSetupEndpoint from '@/collections/endpoints/TwoFactorSetupEndpoint'
@@ -15,6 +14,7 @@ import TwoFactorDisableEndpoint from '@/collections/endpoints/TwoFactorDisableEn
 import TwoFactorBackupCodesEndpoint from '@/collections/endpoints/TwoFactorBackupCodesEndpoint'
 import LoginWith2FAEndpoint from '@/collections/endpoints/LoginWith2FAEndpoint'
 import { getClientIP } from '@/utils/getClientIP'
+import { logEvent } from '@/lib/audit/logEvent'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -598,18 +598,21 @@ export const Users: CollectionConfig = {
             process.env.NODE_ENV === 'development' && clientIP === '127.0.0.1'
           const allowed = allowedList.includes(clientIP) || isDevelopmentLocalhost
           if (!allowed) {
-            try {
-              await createAdminNotification(
-                req,
-                `ניסיון התחברות מכתובת IP לא מורשית (${clientIP}) עבור המשתמש ${user.email}`,
-                'unauthorizedIPAccess' as any,
-                undefined,
-                undefined,
-                user.id,
-              )
-            } catch (e) {
-              req.payload.logger.warn('Failed to create admin notification for unauthorized IP', e)
-            }
+            // No admin notification here; log to audit-logs only
+            await logEvent({
+              eventType: 'auth.login.failure',
+              severity: 'warning',
+              category: 'auth',
+              actor: user.id as any,
+              success: false,
+              message: `Login blocked: unauthorized IP ${clientIP}`,
+              details: { email: user.email, clientIP },
+              req,
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
+            // Debounce to avoid double logging in afterError
+            req.context = req.context || {}
+            req.context.__loginFailureLogged = true
             throw new APIError(`הגישה נדחתה: כתובת IP ${clientIP}  אינה מורשית `, 403)
           }
         }
@@ -729,6 +732,35 @@ export const Users: CollectionConfig = {
           req.payload.logger.warn('Failed to update last login info', e)
         }
         req.payload.logger.info(`Successful login from IP ${clientIP} for ${user.email}`)
+        await logEvent({
+          eventType: 'auth.login.success',
+          severity: 'info',
+          category: 'auth',
+          actor: user.id as any,
+          success: true,
+          message: `Login success for ${user.email}`,
+          details: { clientIP },
+          req,
+          source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+        })
+      },
+    ],
+    afterLogout: [
+      async ({ req }) => {
+        try {
+          await logEvent({
+            eventType: 'auth.logout',
+            category: 'auth',
+            severity: 'info',
+            actor: (req.user as any)?.id || req?.user?.id || null,
+            success: true,
+            message: req.user?.email ? `Logout for ${req.user.email}` : 'User logged out',
+            req,
+            source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+          })
+        } catch (e) {
+          req?.payload?.logger?.warn?.({ e }, 'Failed to write logout audit log')
+        }
       },
     ],
     afterChange: [
@@ -737,14 +769,17 @@ export const Users: CollectionConfig = {
           if (req.context.from == 'migration') return
           // Case 1: New user created
           if (operation === 'create') {
-            await createAdminNotification(
+            await logEvent({
+              eventType: 'user.create',
+              category: 'user',
+              severity: 'info',
+              targetCollection: 'users',
+              targetId: String(doc.id),
+              message: `משתמש חדש נוצר: ${doc.email}`,
+              details: { email: doc.email, isAdmin: doc.isAdmin, active: doc.active },
               req,
-              `משתמש חדש נוצר: ${doc.email}`,
-              'usersUpdated',
-              `/admin/collections/users/${doc.id}`,
-              undefined,
-              doc.id,
-            )
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
             return
           }
 
@@ -771,20 +806,67 @@ export const Users: CollectionConfig = {
               changes.push('הרשאות חברות שונו')
             }
 
-            // If any changes were detected, create a notification
+            // If any changes were detected, log to audit (no admin notification)
             if (changes.length > 0) {
-              await createAdminNotification(
+              await logEvent({
+                eventType: 'user.update',
+                category: 'user',
+                severity: 'info',
+                targetCollection: 'users',
+                targetId: String(doc.id),
+                message: `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
+                details: { changes },
                 req,
-                `הרשאות משתמש שונו עבור ${doc.email}: ${changes.join(', ')}`,
-                'usersUpdated',
-                `/admin/collections/users/${doc.id}`,
-                undefined,
-                doc.id,
-              )
+                source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+              })
             }
           }
         } catch (error) {
           console.error('Error creating notification for user changes:', error)
+        }
+      },
+    ],
+    afterError: [
+      async ({ req, error }) => {
+        try {
+          const status =
+            (error as any)?.status ||
+            (error instanceof APIError ? (error as any).status : undefined)
+
+          // Log access.denied for 401/403
+          if (status === 401 || status === 403) {
+            await logEvent({
+              eventType: 'access.denied',
+              category: 'security',
+              severity: status === 401 ? 'warning' : 'high',
+              success: false,
+              message: (error as any)?.message || 'Access denied',
+              details: {
+                status,
+                email: (req.data && (req.data.email || req.data.username)) || undefined,
+              },
+              req,
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
+          }
+
+          // Log login failure if not already explicitly logged
+          req.context = req.context || {}
+          if (!req.context.__loginFailureLogged) {
+            const email = (req.data && (req.data.email || req.data.username)) || undefined
+            await logEvent({
+              eventType: 'auth.login.failure',
+              severity: status === 401 || status === 403 ? 'warning' : 'info',
+              category: 'auth',
+              success: false,
+              message: `Login failed${status ? ` (${status})` : ''}${email ? ` for ${email}` : ''}`,
+              details: { status, email, reason: (error as any)?.message },
+              req,
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
+          }
+        } catch (e) {
+          req?.payload?.logger?.warn?.({ e }, 'Failed to write audit logs for login error')
         }
       },
     ],

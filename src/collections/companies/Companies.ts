@@ -2,6 +2,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
+import { logEvent } from '@/lib/audit/logEvent'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -404,7 +405,51 @@ export const Companies: CollectionConfig = {
   hooks: {
     beforeChange: [beforeChangeCompanyId],
     afterChange: [
-      async ({ doc, req, previousDoc }) => {
+      async ({ doc, req, previousDoc, operation }) => {
+        // Audit logging for company create/update
+        try {
+          if (!previousDoc) {
+            // Create
+            await logEvent({
+              eventType: 'company.create',
+              category: 'company',
+              severity: 'info',
+              targetCollection: 'companies',
+              targetId: String(doc.id),
+              message: `Company created: ${doc.name} (${doc.companyId ?? doc.id})`,
+              details: { type: doc.type, active: doc.active },
+              req,
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
+          } else {
+            // Update - detect simple field changes
+            const changes: string[] = []
+            if (doc.name !== previousDoc.name) changes.push('name')
+            if (doc.active !== previousDoc.active) changes.push('active')
+            if (doc.type !== previousDoc.type) changes.push('type')
+            if (JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies))
+              changes.push('subCompanies')
+            if (JSON.stringify(doc.parentCompany) !== JSON.stringify(previousDoc.parentCompany))
+              changes.push('parentCompany')
+
+            if (changes.length > 0) {
+              await logEvent({
+                eventType: 'company.update',
+                category: 'company',
+                severity: 'info',
+                targetCollection: 'companies',
+                targetId: String(doc.id),
+                message: `Company updated: ${doc.name} – fields changed: ${changes.join(', ')}`,
+                details: { changes },
+                req,
+                source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+              })
+            }
+          }
+        } catch (e) {
+          req?.payload?.logger?.warn?.({ e }, 'Failed to write company audit log')
+        }
+
         // Only proceed if the company is of type 'fund'
         const isRegular = doc.type === 'regular'
 

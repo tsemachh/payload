@@ -27,6 +27,8 @@ import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
+import { AuditLogs } from '@/collections/audit-logs/AuditLogs'
+import { AuditLogReads } from '@/collections/audit-logs/AuditLogReads'
 import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -266,6 +268,8 @@ export default buildConfig({
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
+    AuditLogs,
+    AuditLogReads,
     // תחזוקה
     CompanyMeetingNotifications,
     Votes,
