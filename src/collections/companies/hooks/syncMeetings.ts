@@ -1,49 +1,78 @@
-export const syncMeetingsOnCompanyChange = async ({ req, data }: any) => {
+export const syncMeetingsOnCompanyChange = async ({ req, data, previousDoc }: any) => {
   try {
-    const companyId = data.id
-    const companyLabels = data?.label?.labels || []
+    const prevLabels = previousDoc?.label?.labels || []
+    const newLabels = data?.label?.labels || []
 
-    const companyStocksIds = companyLabels.flatMap((lbl: any) =>
-      (lbl.stock || []).map((s: any) => (typeof s === 'string' ? s : s?.id || s?._id)),
+    const addedLabels = newLabels.filter(
+      (curr: any) =>
+        !prevLabels.some((prev: any) => prev.label === curr.label && prev.color === curr.color),
     )
-    const meetingsRes = await req.payload.find({
-      collection: 'meetings',
-      where: {
-        companies: { contains: companyId },
-        stock: {
-          in: companyStocksIds,
+    const removedLabels = prevLabels.filter(
+      (prev: any) =>
+        !newLabels.some((curr: any) => curr.label === prev.label && curr.color === prev.color),
+    )
+
+    for (const companyLabel of addedLabels) {
+      const stockIds = (companyLabel.stock || []).map((s: any) =>
+        typeof s === 'string' ? s : s?.id || s?._id,
+      )
+      const labelCompanyIds = (companyLabel.companiesWithSameLabel || []).map((c: any) =>
+        typeof c === 'string' ? c : c?.id || c?._id,
+      )
+
+      const meetingsRes = await req.payload.find({
+        collection: 'meetings',
+        where: {
+          companies: { in: labelCompanyIds },
+          stock: { in: stockIds },
         },
-      },
-      limit: 0,
-    })
-    const meetings = meetingsRes.docs || []
-    for (const meeting of meetings) {
-      try {
+        limit: 0,
+      })
+
+      for (const meeting of meetingsRes.docs) {
         const existingLabels = meeting.labels || []
+        const updatedLabels = existingLabels.filter((lbl: any) => lbl.label !== companyLabel.label)
 
-        let updatedLabels = existingLabels.filter((lbl: any) =>
-          companyLabels.some((cl: any) => cl.label === lbl.label),
-        )
+        updatedLabels.push({
+          label: companyLabel.label,
+          color: companyLabel.color,
+          stock: stockIds,
+          companiesWithSameLabel: labelCompanyIds,
+        })
 
-        for (const companyLabel of companyLabels) {
-          const idx = updatedLabels.findIndex((lbl: any) => lbl.label === companyLabel.label)
-
-          if (idx > -1) {
-            updatedLabels[idx].color = companyLabel.color
-          } else {
-            updatedLabels.push({
-              label: companyLabel.label,
-              color: companyLabel.color,
-            })
-          }
-        }
         await req.payload.update({
           collection: 'meetings',
           id: meeting.id,
           data: { labels: updatedLabels },
         })
-      } catch (err) {
-        console.error(`❌ Failed to update meeting ${meeting.id}:`, err)
+
+        console.log(`✅ Added label ${companyLabel.label} to meeting ${meeting.id}`)
+      }
+    }
+
+    for (const companyLabel of removedLabels) {
+      const meetingsRes = await req.payload.find({
+        collection: 'meetings',
+        where: {
+          'labels.label': { equals: companyLabel.label },
+          'labels.color': { equals: companyLabel.color },
+        },
+        limit: 0,
+      })
+
+      for (const meeting of meetingsRes.docs) {
+        const existingLabels = meeting.labels || []
+        const updatedLabels = existingLabels.filter(
+          (lbl: any) => !(lbl.label === companyLabel.label && lbl.color === companyLabel.color),
+        )
+
+        await req.payload.update({
+          collection: 'meetings',
+          id: meeting.id,
+          data: { labels: updatedLabels },
+        })
+
+        console.log(`✅ Removed label ${companyLabel.label} from meeting ${meeting.id}`)
       }
     }
   } catch (err) {

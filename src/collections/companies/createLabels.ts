@@ -22,11 +22,9 @@ export const addTagToCompany = async (req: PayloadRequest) => {
           id: companyId,
         })
 
-        // השדה labels נמצא תחת label
         const existingLabels = company?.label?.labels || []
 
-        // חברות אחרות עם אותו tag
-        const companiesWithSameLabel = companyIds.filter((id) => id !== companyId)
+        const companiesWithSameLabel = companyIds
 
         const updatedLabels = [...existingLabels, { label, color, stock, companiesWithSameLabel }]
 
