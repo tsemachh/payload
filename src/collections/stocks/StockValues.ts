@@ -122,6 +122,15 @@ export const StockValues: CollectionConfig = {
         const { stockId, id } = doc
 
         if (req.context?.from !== 'migration') {
+          // Try to resolve dual counterpart ID from populated relation (if available)
+          const dualId = typeof stockId === 'object' && stockId && 'dualStock' in (stockId as any)
+            ? (stockId as any).dualStock
+            : undefined
+
+          const stockFilter = dualId
+            ? { or: [{ stock: { equals: stockId } }, { stock: { equals: dualId } }] }
+            : { stock: { equals: stockId } }
+
           await req.payload.update({
             collection: 'meetings',
             req: {
@@ -134,7 +143,7 @@ export const StockValues: CollectionConfig = {
             where: {
               and: [
                 { stockValue: { not_equals: id } },
-                { stock: { equals: stockId } },
+                stockFilter as any,
                 {
                   or: [
                     {
