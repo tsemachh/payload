@@ -28,19 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-
-const colorClasses: Record<string, string> = {
-  red: 'bg-red-500',
-  blue: 'bg-blue-500',
-  green: 'bg-green-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  pink: 'bg-pink-500',
-  orange: 'bg-orange-500',
-  teal: 'bg-teal-500',
-  gray: 'bg-gray-500',
-  black: 'bg-black',
-}
+import { colorClasses } from '../helpers/maps'
 
 const colorLabels: Record<string, string> = {
   red: 'אדום',
@@ -138,7 +126,18 @@ export default function SettingsPage() {
 
     return Array.from(companyMap.values())
   }, [companies, funds])
+  useEffect(() => {
+    if (companiesWithFunds.length > 0 && selectedComIds.length === 0) {
+      const allCompanyIds = companiesWithFunds.map((company) => company.id)
+      const allFundIds = companiesWithFunds
+        .flatMap((company) => company.funds)
+        .map((fund) => fund.id)
 
+      setSelectedComIds(allCompanyIds)
+      setSelectedFundIds(allFundIds)
+      setCurrentTag((prev: any) => ({ ...prev, companies: allCompanyIds }))
+    }
+  }, [companiesWithFunds])
   useEffect(() => {
     const fetchTags = async () => {
       setLoadingTags(true)

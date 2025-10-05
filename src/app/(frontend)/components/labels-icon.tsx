@@ -1,4 +1,5 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { colorClasses } from '../helpers/maps'
 
 interface LabelsIconProps {
   row: {
@@ -8,19 +9,6 @@ interface LabelsIconProps {
       color: string
     }>
   }
-}
-
-const colorClasses: Record<string, string> = {
-  red: 'bg-red-500',
-  blue: 'bg-blue-500',
-  green: 'bg-green-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  pink: 'bg-pink-500',
-  orange: 'bg-orange-500',
-  teal: 'bg-teal-500',
-  gray: 'bg-gray-500',
-  black: 'bg-black',
 }
 
 export function LabelsIcon({ row }: LabelsIconProps) {
@@ -33,18 +21,11 @@ export function LabelsIcon({ row }: LabelsIconProps) {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-end " dir="ltr">
-        <div
-          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white max-w-[80px] ${colorClasses[firstLabel.color] || 'bg-gray-500'}`}
-          title={firstLabel.label}
-        >
-          <span className="truncate">{firstLabel.label}</span>
-        </div>
-
+      <div className="flex items-center justify-end" dir="ltr">
         {remainingCount > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-xs text-muted-foreground cursor-help hover:text-foreground transition-colors font-medium">
+              <span className="text-xs text-muted-foreground cursor-help hover:text-foreground transition-colors font-medium mr-1">
                 +{remainingCount}
               </span>
             </TooltipTrigger>
@@ -55,7 +36,9 @@ export function LabelsIcon({ row }: LabelsIconProps) {
                   {row.labels.map((label) => (
                     <div
                       key={label.id}
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${colorClasses[label.color] || 'bg-gray-500'}`}
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${
+                        colorClasses[label.color] || 'bg-gray-500'
+                      }`}
                     >
                       {label.label}
                     </div>
@@ -65,6 +48,15 @@ export function LabelsIcon({ row }: LabelsIconProps) {
             </TooltipContent>
           </Tooltip>
         )}
+
+        <div
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white max-w-[80px] ${
+            colorClasses[firstLabel.color] || 'bg-gray-500'
+          }`}
+          title={firstLabel.label}
+        >
+          <span className="truncate">{firstLabel.label}</span>
+        </div>
       </div>
     </TooltipProvider>
   )
