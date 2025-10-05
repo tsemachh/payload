@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { colorClasses } from '../helpers/maps'
+import { postWithErrorHandling } from '../helpers/fetch-helpers'
 
 const colorLabels: Record<string, string> = {
   red: 'אדום',
@@ -85,23 +86,20 @@ export default function SettingsPage() {
     tagLabel: string,
     companyIds: string[],
   ) => {
+    if (!companyIds || companyIds.length === 0) {
+      console.log('ℹ️ No companies to delete tag from – skipping')
+      return
+    }
+
     setDeletingTagId(tagId)
     try {
-      const response = await fetch('/api/companies/deleteLabel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          companyIds,
-          tagColor,
-          tagLabel,
-          labelId: tagId,
-        }),
+      const data = await postWithErrorHandling('/api/companies/deleteLabel', {
+        action: 'delete',
+        companyIds,
+        tagColor,
+        tagLabel,
+        labelId: tagId,
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete tag')
-      }
 
       setTags((prev) => prev.filter((tag) => tag.id !== tagId))
     } catch (error) {
@@ -140,56 +138,56 @@ export default function SettingsPage() {
   }, [companiesWithFunds])
   useEffect(() => {
     const fetchTags = async () => {
+      if (!companies || companies.length === 0) {
+        setTags([])
+        setLoadingTags(false)
+        return
+      }
+
       setLoadingTags(true)
       setTags([])
       try {
-        const response = await fetch('/api/companies/getLabels', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ companyIds: companies }),
+        const data = await postWithErrorHandling('/api/companies/getLabels', {
+          companyIds: companies,
         })
-        const data = await response.json()
-        if (response.ok) {
-          const allTags = data.results.flatMap((c: any) =>
-            (c.labels || []).map((lbl: any) => {
-              const companyName =
-                companies.find((comp) => comp.id === c.companyId)?.name || c.companyId
-              const allCompaniesForLabel = [
-                companyName,
-                ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.name) || []),
-              ]
-              const allCompanyIdsForLabel = [
-                c.companyId,
-                ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.id) || []),
-              ]
-              const stocksWithStockId = (lbl.stocks || []).map((s: any) => ({
-                id: s.id,
-                stockId: s.stockId,
-              }))
 
-              return {
-                ...lbl,
-                companyId: c.companyId,
-                allCompaniesForLabel,
-                allCompanyIdsForLabel,
-                stocks: stocksWithStockId,
-              }
-            }),
-          )
-          const uniqueTags: any[] = []
-          const seen = new Set()
+        const allTags = data.results.flatMap((c: any) =>
+          (c.labels || []).map((lbl: any) => {
+            const companyName =
+              companies.find((comp) => comp.id === c.companyId)?.name || c.companyId
+            const allCompaniesForLabel = [
+              companyName,
+              ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.name) || []),
+            ]
+            const allCompanyIdsForLabel = [
+              c.companyId,
+              ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.id) || []),
+            ]
+            const stocksWithStockId = (lbl.stocks || []).map((s: any) => ({
+              id: s.id,
+              stockId: s.stockId,
+            }))
 
-          for (const tag of allTags) {
-            const key = `${tag.label}-${tag.color}-${tag.stocks}`
-            if (!seen.has(key)) {
-              seen.add(key)
-              uniqueTags.push(tag)
+            return {
+              ...lbl,
+              companyId: c.companyId,
+              allCompaniesForLabel,
+              allCompanyIdsForLabel,
+              stocks: stocksWithStockId,
             }
+          }),
+        )
+        const uniqueTags: any[] = []
+        const seen = new Set()
+
+        for (const tag of allTags) {
+          const key = `${tag.label}-${tag.color}-${tag.stocks}`
+          if (!seen.has(key)) {
+            seen.add(key)
+            uniqueTags.push(tag)
           }
-          setTags(uniqueTags)
-        } else {
-          console.error('❌ Failed to fetch tags:', data.error)
         }
+        setTags(uniqueTags)
       } catch (err) {
         console.error('❌ fetchTags error:', err)
       } finally {
@@ -241,23 +239,12 @@ export default function SettingsPage() {
     if (currentTag.label && currentTag.color) {
       setIsCreatingTag(true)
       try {
-        const response = await fetch(`/api/companies/createLabel`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            companyIds: selectedComIds,
-            label: currentTag.label,
-            color: currentTag.color,
-            stocks: currentTag.stocks,
-          }),
+        const result = await postWithErrorHandling(`/api/companies/createLabel`, {
+          companyIds: selectedComIds,
+          label: currentTag.label,
+          color: currentTag.color,
+          stocks: currentTag.stocks,
         })
-
-        const result = await response.json()
-
-        if (!response.ok) {
-          console.error('❌ Failed to create tag:', result.error)
-          return
-        }
 
         const stockObjects = (currentTag.stocks || []).map((stockId: any) => {
           const stock = stocks.find((s) => s.id === stockId)
