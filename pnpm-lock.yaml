@@ -135,14 +135,14 @@ importers:
         specifier: ^1.0.16
         version: 1.0.17(@payloadcms/ui@3.56.0(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(i18next@23.16.8)(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))
       '@shefing/custom-version-view':
-        specifier: 1.0.6
-        version: 1.0.6(@types/react@19.0.7)(monaco-editor@0.53.0)(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(sass@1.77.4)(typescript@5.7.3)
+        specifier: 1.0.9
+        version: 1.0.9
       '@shefing/field-type-component-override':
-        specifier: ^1.0.5
-        version: 1.0.5
+        specifier: ^1.0.8
+        version: 1.0.8
       '@shefing/quickfilter':
         specifier: latest
-        version: 1.0.72(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 1.0.74(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@shefing/reset-list-view':
         specifier: ^0.2.6
         version: 0.2.7(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))
@@ -2285,14 +2285,14 @@ packages:
       i18next: ^23.0.0
       payload: 3.35.1
 
-  '@shefing/custom-version-view@1.0.6':
-    resolution: {integrity: sha512-XUD9EJSfJSmuRGSIIW2fP2qi+TUscsYjoH8ssmznsHLNSTDYIWBaCHQHrIkPm1+n3jc3A4kCUCCSb1vuaMBA5w==}
+  '@shefing/custom-version-view@1.0.9':
+    resolution: {integrity: sha512-VkDCI5MLHNkWFjdKpFzEpxCzUJEYhLZhfWzfPafunHCW4NtRfVYf/gc5bTph0BSWHZu/ZrVtpRefLNaVG5Qt8w==}
 
-  '@shefing/field-type-component-override@1.0.5':
-    resolution: {integrity: sha512-FdsTbZtM3u3kija8WYMyG3Do+JZxeymslVWQwBWElbfhZC1DgbYf+xeg8PapYQ4SYRgfjTA5GaieWD5PmkOs1Q==}
+  '@shefing/field-type-component-override@1.0.8':
+    resolution: {integrity: sha512-inozpsHxasWJv+FeDzYOTj2zYuGTVaSKJ/I8oduRVtYDwHJdHzCRRPqs40utSHod2/QggjPlQiYWs0hkpfzbWg==}
 
-  '@shefing/quickfilter@1.0.72':
-    resolution: {integrity: sha512-Mk0H7EsOZDZCztMJJW2vUBcz3+0rfyLClBXVt5+UgpiHg17lJEWg12QehmV6sz/55Vei8GXZhiEauYWx8rqc4w==}
+  '@shefing/quickfilter@1.0.74':
+    resolution: {integrity: sha512-/9HsFTl2DL3DZqSjnf3H2DNvdGuiCmLzFUWlmNnC/iyooURuEr/4w3fH/b3FdGEzUVltR7BQPR+8dJH5g9bnjA==}
 
   '@shefing/reset-list-view@0.2.7':
     resolution: {integrity: sha512-EOxWTNq/Om1Gtm59saBrEz/TBy5Ko5WeAKS4WVpLG0gu1ooMdyOAHUIYeLG/jTW4ZYZaFH3qVNyBZkfEupq+RA==}
@@ -9272,30 +9272,13 @@ snapshots:
       moment: 2.30.1
       payload: 3.56.0(graphql@16.11.0)(typescript@5.7.3)
 
-  '@shefing/custom-version-view@1.0.6(@types/react@19.0.7)(monaco-editor@0.53.0)(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(sass@1.77.4)(typescript@5.7.3)':
+  '@shefing/custom-version-view@1.0.9':
     dependencies:
-      '@payloadcms/translations': 3.56.0
-      '@payloadcms/ui': 3.56.0(@types/react@19.0.7)(monaco-editor@0.53.0)(next@15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4))(payload@3.56.0(graphql@16.11.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       moment: 2.30.1
-      next: 15.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4)
-      react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@opentelemetry/api'
-      - '@playwright/test'
-      - '@types/react'
-      - babel-plugin-macros
-      - babel-plugin-react-compiler
-      - monaco-editor
-      - payload
-      - sass
-      - supports-color
-      - typescript
 
-  '@shefing/field-type-component-override@1.0.5': {}
+  '@shefing/field-type-component-override@1.0.8': {}
 
-  '@shefing/quickfilter@1.0.72(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@shefing/quickfilter@1.0.74(postcss@8.5.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
