@@ -24,6 +24,7 @@ export type MeetingTableDataType = {
   meetingDate: string //מועד האסיפה
   reference: string
   meetingState: MeetingState | null
+  isDualStock: boolean //האם נייר כפול
   researchDocuments: UrlFilenameMap[] //מסמכי מחקר
   location: string //מיקום
   holdingsLimit: string //תאריך קובע

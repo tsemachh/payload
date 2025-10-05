@@ -208,7 +208,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'אלומיי',
         englishName: 'Alumay',
         taseISIN: 'IL0010826357',
-        foreignISIN: 'IL0011050551',
+        foreignISIN: 'IL0010826357',
       },
       {
         hebrewName: 'אנלייבקס',
@@ -358,7 +358,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'סייברוואן',
         englishName: 'CyberOne',
         taseISIN: 'IL0011666935',
-        foreignISIN: 'IL0011050551',
+        foreignISIN: 'IL0011666935',
       },
       {
         hebrewName: 'פורמולה מערכות',

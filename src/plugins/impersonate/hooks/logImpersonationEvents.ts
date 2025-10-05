@@ -1,31 +1,44 @@
 import { PayloadRequest } from 'payload'
+import { logEvent } from '@/lib/audit/logEvent'
 
-interface LogImpersonationStartParams {
-  originalUser: any
-  impersonateUserId: string
-  req: PayloadRequest
-}
-
-interface LogImpersonationEndParams {
-  originalUserId: string
-}
-
-export const logImpersonationStart = ({
+export function logImpersonationStart({
   originalUser,
   impersonateUserId,
   req,
-}: LogImpersonationStartParams) => {
-  console.log(`🎭 Impersonation started:`, {
-    originalUser: originalUser?.email,
-    targetUser: impersonateUserId,
-    timestamp: new Date().toISOString(),
-    ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+}: {
+  originalUser: any
+  impersonateUserId: string
+  req: PayloadRequest
+}) {
+  return logEvent({
+    eventType: 'auth.impersonation.start',
+    category: 'security',
+    severity: 'high',
+    actor: impersonateUserId,
+    impersonator: originalUser?.id,
+    success: true,
+    message: `Admin ${originalUser?.email} impersonated user ${impersonateUserId}`,
+    details: { impersonatorEmail: originalUser?.email, impersonatedUserId: impersonateUserId },
+    req,
+    source: 'admin-ui',
   })
 }
 
-export const logImpersonationEnd = ({ originalUserId }: LogImpersonationEndParams) => {
-  console.log(`✅ Impersonation ended:`, {
-    returnedToUser: originalUserId,
-    timestamp: new Date().toISOString(),
+export function logImpersonationEnd({
+  originalUserId,
+  req,
+}: {
+  originalUserId: string
+  req: PayloadRequest
+}) {
+  return logEvent({
+    eventType: 'auth.impersonation.end',
+    category: 'security',
+    severity: 'info',
+    actor: originalUserId,
+    success: true,
+    message: `Impersonation ended; switched back to ${originalUserId}`,
+    req,
+    source: 'admin-ui',
   })
 }

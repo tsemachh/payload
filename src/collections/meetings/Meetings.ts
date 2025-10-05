@@ -19,10 +19,11 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
-import { calculateHoldingValues } from '@/utils/dataUtils'
+import { calculatPercentageHolding } from '@/utils/dataUtils'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
+  updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
@@ -107,21 +108,21 @@ export const Meetings: CollectionConfig = {
         { name: 'proxyVotingDate' },
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
-        { name: '_status', width: '120px' },
+        { name: '_status', width: '130px' },
       ],
       [
-        { name: 'electronicVotingEnabled', width: '100px' },
-        { name: 'hasVoteRecommendation', width: '100px' },
-        { name: 'hasResearchDoc', width: '100px' },
-        { name: 'votesStatus', width: '120px' },
-        { name: 'votesReportStatus', width: '120px' },
-        { name: 'resultsConfirmationStatus', width: '100px' },
+        { name: 'electronicVotingEnabled', width: '130px' },
+        { name: 'hasVoteRecommendation', width: '130px' },
+        { name: 'hasResearchDoc', width: '130px' },
+        { name: 'votesStatus', width: '130px' },
+        { name: 'votesReportStatus', width: '130px' },
+        { name: 'resultsConfirmationStatus', width: '130px' },
       ],
       [
-        { name: 'stockType', width: '200px' },
-        { name: 'stockOrigin', width: '120px' },
-        { name: 'isFinancialStock', width: '100px' },
-        { name: 'isDualStock', width: '100px' },
+        { name: 'stock.type', width: '200px' },
+        { name: 'stock.origin', width: '130px'},
+        { name: 'stock.isFinancial', width: '130px'},
+        { name: 'stock.isDual', width: '130px' },
       ],
     ],
   },
@@ -144,7 +145,7 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'proxyVotingDate',
       'activity',
-      // 'totalHoldings',
+      'totalHoldings',
       'electronicVotingEnabled',
       'invitationLink',
     ],
@@ -294,66 +295,50 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-            // {
-            //   name: 'totalHoldings',
-            //   label: 'סך החזקות (%)',
-            //   type: 'number',
-            //   virtual: true,
-            //   admin: {
-            //     hidden: true,
-            //     components: {
-            //       Cell: {
-            //         path: '/admincomponents/cell/FormattedNumber',
-            //         clientProps: { decimals: 4, suffix: '%' },
-            //       },
-            //     },
-            //   },
-            //   hooks: {
-            //     afterRead: [
-            //       async ({ data, req }) => {
-            //         if (
-            //           !data?.fundsWithHolding ||
-            //           !Array.isArray(data.fundsWithHolding) ||
-            //           data.fundsWithHolding.length === 0
-            //         ) {
-            //           return 0
-            //         }
+            {
+              name: 'totalHoldings',
+              label: 'סך החזקות (%)',
+              type: 'number',
+              virtual: true,
+              admin: {
+                hidden: true,
+                components: {
+                  Cell: {
+                    path: '/admincomponents/cell/FormattedNumber',
+                    clientProps: { decimals: 4, suffix: '%' },
+                  },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data, req }) => {
+                    if (
+                      !data?.fundsWithHolding ||
+                      !Array.isArray(data.fundsWithHolding) ||
+                      data.fundsWithHolding.length === 0
+                    ) {
+                      return 0
+                    }
 
-            //         // Get stock value data for calculations
-            //         let stockValueData = null
-            //         if (data.stockValue && typeof data.stockValue === 'string') {
-            //           try {
-            //             stockValueData = await req.payload.findByID({
-            //               collection: 'stock-values',
-            //               id: data.stockValue,
-            //               depth: 0,
-            //             })
-            //           } catch (error) {
-            //             console.error('Error fetching stock value:', error)
-            //           }
-            //         } else if (typeof data.stockValue === 'object') {
-            //           stockValueData = data.stockValue
-            //         }
+                    // Sum up all quantities first, then calculate percentage on the total
+                    const totalQuantity = data.fundsWithHolding.reduce(
+                      (sum: number, holding: any) => {
+                        return sum + (holding.ownedQuantity || holding.quantity || 0)
+                      },
+                      0,
+                    )
 
-            //         // Sum up all quantities first, then calculate percentage on the total
-            //         const totalQuantity = data.fundsWithHolding.reduce(
-            //           (sum: number, holding: any) => {
-            //             return sum + (holding.ownedQuantity || holding.quantity || 0)
-            //           },
-            //           0,
-            //         )
+                    // Calculate holding values using the imported function on the total sum
+                    const percentageHolding = calculatPercentageHolding(
+                      totalQuantity,
+                      data.stockRegisteredValue,
+                    )
 
-            //         // Calculate holding values using the imported function on the total sum
-            //         const { percentageHolding } = calculateHoldingValues(
-            //           totalQuantity,
-            //           stockValueData,
-            //         )
-
-            //         return percentageHolding // Already rounded to 4 decimal places by calculateHoldingValues
-            //       },
-            //     ],
-            //   },
-            // },
+                    return percentageHolding // Already rounded to 4 decimal places by calculateHoldingValues
+                  },
+                ],
+              },
+            },
             {
               name: 'activity',
               label: 'פעילות',
@@ -1096,6 +1081,14 @@ export const Meetings: CollectionConfig = {
               maxDepth: 1,
             },
             {
+              name: 'stockRegisteredValue',
+              type: 'number',
+              admin: {
+                hidden: false,
+                disableListColumn: true,
+              },
+            },
+            {
               name: 'stockMarketValue',
               virtual: 'stockValue.marketValue',
               label: 'שווי שוק',
@@ -1198,6 +1191,7 @@ export const Meetings: CollectionConfig = {
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
+      updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
     ],
   },
   endpoints: [
