@@ -119,8 +119,8 @@ export const Meetings: CollectionConfig = {
       ],
       [
         { name: 'stock.type', width: '200px' },
-        { name: 'stock.origin', width: '130px'},
-        { name: 'stock.isFinancial', width: '130px'},
+        { name: 'stock.origin', width: '130px' },
+        { name: 'stock.isFinancial', width: '130px' },
         { name: 'stock.isDual', width: '130px' },
       ],
     ],

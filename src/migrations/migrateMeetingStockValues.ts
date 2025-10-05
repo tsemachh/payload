@@ -44,7 +44,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         try {
           const holdingsLimit = meeting.holdingsLimit
 
-          const stockId = getIdOfRelationField(meeting.stock)
+          let stockId = getIdOfRelationField(meeting.stock)
           // Get stock details
           const stock = meeting.stock as Stock
 
@@ -70,10 +70,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               const sourceRes = await payload.find({
                 collection: 'stocks',
                 where: {
-                  and: [
-                    { hasDual: { equals: true } },
-                    { dualStock: { equals: stockId } },
-                  ],
+                  and: [{ hasDual: { equals: true } }, { dualStock: { equals: stockId } }],
                 },
                 limit: 1,
                 depth: 0,
@@ -83,6 +80,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
               if (sourceStock?.stockId && /^\d+$/.test(sourceStock.stockId)) {
                 sqlStockId = sourceStock.stockId
+                stockId = sourceStock.id
                 console.log(
                   `Meeting ${meeting.id}: dual stock detected. Using source stock ${sourceStock.id} (MSSQL ID ${sqlStockId}) for value lookup.`,
                 )
