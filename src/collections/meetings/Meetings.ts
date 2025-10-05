@@ -726,6 +726,15 @@ export const Meetings: CollectionConfig = {
                     width: '50%',
                   },
                 },
+                {
+                  name: 'migrationComments',
+                  label: 'הערות מיגרציה',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    readOnly: true,
+                  },
+                },
               ],
             },
             {
