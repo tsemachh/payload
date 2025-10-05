@@ -58,5 +58,29 @@ const fixStockRelationsEndPoint = async (req: PayloadRequest) => {
     return Response.json({ error: 'Error fixing stock relations' }, { status: 500 })
   }
 }
+export const getTradableStocks = async (req: PayloadRequest) => {
+  try {
+    const stocks = await req.payload.find({
+      collection: 'stocks',
+      where: {
+        tradable: {
+          equals: true,
+        },
+      },
+      limit: 0,
+      depth: 0,
+      select: {
+        id: true,
+        stockId: true,
+        name: true,
+      },
+    })
+
+    return Response.json({ stocks: stocks.docs })
+  } catch (error) {
+    console.error('❌ Failed to fetch tradable stocks:', error)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
 
 export default fixStockRelationsEndPoint

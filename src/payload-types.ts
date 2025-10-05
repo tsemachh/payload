@@ -528,6 +528,17 @@ export interface Company {
     totalDocs?: number;
   };
   silencedStocks?: string[] | null;
+  label?: {
+    labels?:
+      | {
+          label?: string | null;
+          color?: string | null;
+          stock?: (string | Stock)[] | null;
+          companiesWithSameLabel?: (string | Company)[] | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -703,6 +714,13 @@ export interface Meeting {
   changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
+  labels?:
+    | {
+        label?: string | null;
+        color?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -1445,6 +1463,13 @@ export interface MeetingsSelect<T extends boolean = true> {
   changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
+  labels?:
+    | T
+    | {
+        label?: T;
+        color?: T;
+        id?: T;
+      };
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
@@ -1618,6 +1643,19 @@ export interface CompaniesSelect<T extends boolean = true> {
   holdings?: T;
   meetings?: T;
   silencedStocks?: T;
+  label?:
+    | T
+    | {
+        labels?:
+          | T
+          | {
+              label?: T;
+              color?: T;
+              stock?: T;
+              companiesWithSameLabel?: T;
+              id?: T;
+            };
+      };
   creator?: T;
   updator?: T;
   process?: T;

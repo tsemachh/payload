@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Check if the request is for the frontend routes that need protection
-  const protectedRoutes = ['/account', '/meeting', '/dashboard', '/holdings', '/participations']
+  const protectedRoutes = ['/account', '/meeting', '/dashboard', '/holdings', '/participations' ,'/settings']
   const isFrontendRoute =
     pathname === '/' || protectedRoutes.some((route) => pathname.startsWith(route))
 
