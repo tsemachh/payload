@@ -248,7 +248,11 @@ export default function SettingsPage() {
 
         const stockObjects = (currentTag.stocks || []).map((stockId: any) => {
           const stock = stocks.find((s) => s.id === stockId)
-          return { stockId: stock?.stockId || stockId }
+          return {
+            id: stock?.id || stockId,
+            stockId: stock?.stockId || stockId,
+            name: stock?.name || '',
+          }
         })
 
         const selectedCompanyNames = companies
@@ -263,13 +267,20 @@ export default function SettingsPage() {
           companies: currentTag.companies || [],
           stock: stockObjects,
           allCompaniesForLabel: selectedCompanyNames,
+          allCompanyIdsForLabel: selectedComIds,
         }
 
         setTags([...tags, newTag])
 
-        setCurrentTag({ label: '', color: '', text: '', companies: [], stocks: [] })
-        setSelectedComIds([])
-        setSelectedFundIds([])
+        const allCompanyIds = companiesWithFunds.map((company) => company.id)
+        const allFundIds = companiesWithFunds
+          .flatMap((company) => company.funds)
+          .map((fund) => fund.id)
+
+        setCurrentTag({ label: '', color: '', text: '', companies: allCompanyIds, stocks: [] })
+        setSelectedComIds(allCompanyIds)
+        setSelectedFundIds(allFundIds)
+        setStockSelectorResetTrigger((prev) => prev + 1)
       } catch (error) {
         console.error('❌ Error creating tag:', error)
       } finally {
