@@ -481,9 +481,9 @@ export default function Participations() {
         </div>
 
         {/* Export Button */}
-        <div className="w-[300px]">
+        <div className="w-[230px]">
           <div className="relative pb-5">
-            <label className="text-sm text-right whitespace-nowrap invisible">ייצוא</label>
+            <label className="text-sm text-right whitespace-nowrap">ייצוא</label>
             <ExportDropdownButton
               onExportAction={handleExportFile}
               isExporting={isExporting}
