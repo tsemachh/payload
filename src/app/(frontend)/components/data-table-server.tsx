@@ -670,6 +670,7 @@ export function DataTableServer<T extends Record<string, any>>({
                     className="w-full"
                     allCompaniesIds={companies.map((com) => com.id)}
                     showFunds={false}
+                    checkActive={false}
                   />
                 </SelectContent>
               </Select>

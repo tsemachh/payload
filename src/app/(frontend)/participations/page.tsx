@@ -447,6 +447,7 @@ export default function Participations() {
                   showSearch={false}
                   allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
                   showFunds={false}
+                  checkActive={false}
                 />
               </SelectContent>
             </Select>
