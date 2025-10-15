@@ -4,6 +4,7 @@ import {
   TextFieldSingleValidation,
 } from 'payload'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { normalizeDate } from '@/utils/dateUtils'
 
 export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   data,
@@ -44,12 +45,6 @@ export const validateMeetingState: SelectFieldSingleValidation = (
 
   if (value === 'on-hold' && !meetingDate) return true
   if (!meetingDate) return 'יש לספק מועד אסיפה'
-
-  const normalizeDate = (date: Date) => {
-    const normalized = new Date(date)
-    normalized.setHours(0, 0, 0, 0)
-    return normalized
-  }
 
   const today = normalizeDate(currentDate)
   const meetingDay = normalizeDate(meetingDate)
