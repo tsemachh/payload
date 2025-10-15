@@ -23,12 +23,11 @@ function fuzzyMatch(text: string, query: string): { matches: boolean; score: num
   const trimmedQuery = query.trim()
   if (!trimmedQuery) return { matches: true, score: 0 }
 
-  const clean = (str: string) => str.toLowerCase().replace(/[^a-zA-Z0-9א-ת]/g, '') // מסיר רווחים וסימנים
+  const clean = (str: string) => str.toLowerCase().replace(/[^a-zA-Z0-9א-ת]/g, '')
 
   const cleanText = clean(text)
   const cleanQuery = clean(trimmedQuery)
 
-  
   if (cleanText === cleanQuery) return { matches: true, score: 1000 }
   if (cleanText.startsWith(cleanQuery)) return { matches: true, score: 900 }
   if (cleanText.includes(cleanQuery)) return { matches: true, score: 800 }
@@ -88,7 +87,6 @@ export function StockSelector({
           const nameMatch = fuzzyMatch(stock.name, searchQuery)
           const idMatch = fuzzyMatch(stock.stockId, searchQuery)
 
-          // בחירת ההתאמה הטובה ביותר
           const bestMatch = nameMatch.score > idMatch.score ? nameMatch : idMatch
 
           return {
