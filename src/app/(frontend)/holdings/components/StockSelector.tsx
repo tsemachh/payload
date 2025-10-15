@@ -19,6 +19,46 @@ interface StockSelectorProps {
   resetTrigger?: number
 }
 
+function fuzzyMatch(text: string, query: string): { matches: boolean; score: number } {
+  const trimmedQuery = query.trim()
+  if (!trimmedQuery) return { matches: true, score: 0 }
+
+  const clean = (str: string) => str.toLowerCase().replace(/[^a-zA-Z0-9א-ת]/g, '') // מסיר רווחים וסימנים
+
+  const cleanText = clean(text)
+  const cleanQuery = clean(trimmedQuery)
+
+  
+  if (cleanText === cleanQuery) return { matches: true, score: 1000 }
+  if (cleanText.startsWith(cleanQuery)) return { matches: true, score: 900 }
+  if (cleanText.includes(cleanQuery)) return { matches: true, score: 800 }
+
+  let textIndex = 0
+  let queryIndex = 0
+  const matchedPositions: number[] = []
+
+  while (textIndex < cleanText.length && queryIndex < cleanQuery.length) {
+    if (cleanText[textIndex] === cleanQuery[queryIndex]) {
+      matchedPositions.push(textIndex)
+      queryIndex++
+    }
+    textIndex++
+  }
+
+  if (queryIndex === cleanQuery.length) {
+    let totalDistance = 0
+    for (let i = 1; i < matchedPositions.length; i++) {
+      totalDistance += matchedPositions[i] - matchedPositions[i - 1]
+    }
+    const avgDistance =
+      matchedPositions.length > 1 ? totalDistance / (matchedPositions.length - 1) : 1
+    const score = Math.max(100, 700 - avgDistance * 10)
+    return { matches: true, score }
+  }
+
+  return { matches: false, score: 0 }
+}
+
 export function StockSelector({
   stocks,
   selectedStocks,
@@ -28,23 +68,53 @@ export function StockSelector({
   resetTrigger,
 }: StockSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filteredStocks, setFilteredStocks] = useState<Stock[]>(stocks)
+  const [filteredStocks, setFilteredStocks] = useState<Stock[]>(stocks || [])
+
   useEffect(() => {
     setSearchQuery('')
   }, [resetTrigger])
+
   useEffect(() => {
-    if (!searchQuery) {
-      setFilteredStocks(stocks)
-    } else {
-      setFilteredStocks(
-        stocks.filter(
-          (stock) =>
-            stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            stock.stockId.toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-      )
+    if (!stocks || stocks.length === 0) {
+      setFilteredStocks([])
+      return
     }
-  }, [searchQuery, stocks])
+
+    let result = stocks
+
+    if (searchQuery) {
+      const stocksWithScores = stocks
+        .map((stock) => {
+          const nameMatch = fuzzyMatch(stock.name, searchQuery)
+          const idMatch = fuzzyMatch(stock.stockId, searchQuery)
+
+          // בחירת ההתאמה הטובה ביותר
+          const bestMatch = nameMatch.score > idMatch.score ? nameMatch : idMatch
+
+          return {
+            stock,
+            matches: bestMatch.matches,
+            score: bestMatch.score,
+          }
+        })
+        .filter((item) => item.matches)
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.stock)
+
+      result = stocksWithScores
+    }
+
+    const sortedResult = [...result].sort((a, b) => {
+      const aSelected = selectedStocks.includes(a.id)
+      const bSelected = selectedStocks.includes(b.id)
+
+      if (aSelected && !bSelected) return -1
+      if (!aSelected && bSelected) return 1
+      return 0
+    })
+
+    setFilteredStocks(sortedResult)
+  }, [searchQuery, stocks, selectedStocks])
 
   const handleToggle = (stockId: string) => {
     let newSelection: string[]
@@ -59,7 +129,6 @@ export function StockSelector({
   return (
     <div className={cn(className)} dir="rtl">
       <div className="relative border rounded-md p-2">
-        {/* שדה חיפוש */}
         <div className="mb-2">
           <input
             type="text"
