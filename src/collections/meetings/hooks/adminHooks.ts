@@ -37,43 +37,43 @@ export const validateMeetingState: SelectFieldSingleValidation = (
   if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
     return true
   }
+
   const { siblingData } = options
   const currentDate = new Date()
   const meetingDate = siblingData.meetingDate ? new Date(siblingData.meetingDate) : null
-  if (value == 'on-hold' && !meetingDate) return true
 
-  if (!meetingDate) {
-    return 'יש לספק מועד אסיפה'
+  if (value === 'on-hold' && !meetingDate) return true
+  if (!meetingDate) return 'יש לספק מועד אסיפה'
+
+  const normalizeDate = (date: Date) => {
+    const normalized = new Date(date)
+    normalized.setHours(0, 0, 0, 0)
+    return normalized
   }
-  if (meetingDate) {
-    switch (value) {
-      case 'completed':
-        if (meetingDate > currentDate) {
-          return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן בעבר'
-        }
-        break
 
-      case 'postponed':
-        if (meetingDate < currentDate) {
-          return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן בעתיד'
-        }
-        break
+  const today = normalizeDate(currentDate)
+  const meetingDay = normalizeDate(meetingDate)
 
-      case 'scheduled':
-        if (meetingDate < currentDate) {
-          return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן בעתיד'
-        }
-        break
+  switch (value) {
+    case 'completed':
+      if (meetingDay > today) {
+        return 'מצב ״התקיימה״ מתאפשר רק לאסיפות שמועדן אתמול או בעבר'
+      }
+      break
 
-      case 'ongoing':
-        if (meetingDate < currentDate) {
-          return 'מצב ״נמשכת״ מתאפשר רק לאסיפות שמועדן בעתיד'
-        }
-        break
-    }
-    return true
+    case 'postponed':
+      if (meetingDay < today) {
+        return 'מצב ״נדחית״ מתאפשר רק לאסיפות שמועדן היום או בעתיד'
+      }
+      break
+
+    case 'scheduled':
+      if (meetingDay < today) {
+        return 'מצב ״מתוכננת״ מתאפשר רק לאסיפות שמועדן היום או בעתיד'
+      }
+      break
   }
-  // Ensure we always return a valid value
+
   return true
 }
 
