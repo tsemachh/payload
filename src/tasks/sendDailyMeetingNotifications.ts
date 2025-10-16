@@ -1,5 +1,5 @@
 import { type PayloadRequest, type TaskHandler } from 'payload'
-import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
+import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from './utils'
 import { Meeting, User } from '@/payload-types'
 import { sendMailFromRequest } from '@/utils/sendMail'
@@ -451,7 +451,7 @@ export const sendDailyMeetingNotifications = async (
 
   try {
     // Check if it's a working day
-    const isNonWorkingDay = isHolidayOrShabbat(currentDate)
+    const isNonWorkingDay = !isWorkingDay(currentDate)
 
     if (isNonWorkingDay) {
       // Log non-working day skip with detailed information

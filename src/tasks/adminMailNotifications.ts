@@ -2,7 +2,7 @@ import type { TaskHandler } from 'payload'
 import { PayloadRequest } from 'payload'
 import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { isHolidayOrShabbat } from '@/collections/meetings/hooks/calculateHoldingDate'
+import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sendMailFromRequest } from '@/utils/sendMail'
 
 /**
@@ -16,7 +16,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
       count: 0,
     }
 
-    if (isHolidayOrShabbat(new Date())) {
+    if (!isWorkingDay(new Date())) {
       return {
         success: true,
         message: 'non working day',

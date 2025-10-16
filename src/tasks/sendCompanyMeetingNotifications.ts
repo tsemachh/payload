@@ -1,7 +1,7 @@
 import { type TaskHandler } from 'payload'
 import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { isHolidayOrShabbat } from '../collections/meetings/hooks/calculateHoldingDate'
+import { isWorkingDay } from '../collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 import { sendMail } from '@/utils/sendMail'
 
@@ -39,7 +39,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     },
     companyDetails: [] as CompanyDetail[],
   }
-  if (isHolidayOrShabbat(new Date())) {
+  if (!isWorkingDay(new Date())) {
     return {
       success: true,
       message: 'non working day',
