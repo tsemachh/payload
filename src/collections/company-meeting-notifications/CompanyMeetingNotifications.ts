@@ -49,6 +49,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
         { label: 'העדר הזנת החזקות', value: 'holdings-not-fed' },
         { label: 'כניסה לחשבון שלך', value: 'user-impersonation' },
         { label: 'עדכון באסיפה ', value: 'meeting-updated' },
+        { label: 'פערי החזקות', value: 'holdings-gap' },
       ],
       required: true,
     },

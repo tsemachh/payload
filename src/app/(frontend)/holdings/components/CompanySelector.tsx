@@ -18,6 +18,7 @@ interface CompanyTreeSelectorProps {
   allCompaniesIds?: string[]
   showFunds?: boolean
   showBorder?: boolean
+  checkActive?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -29,6 +30,7 @@ export function CompanyTreeSelector({
   allCompaniesIds = [],
   showFunds = true,
   showBorder = false,
+  checkActive = false,
 }: CompanyTreeSelectorProps) {
   const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
@@ -130,7 +132,11 @@ export function CompanyTreeSelector({
       return internalSelectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
     }
 
-    const childStates = node.subCompanies.map((child) => {
+    const relevantChildren = checkActive
+      ? node.subCompanies.filter((child) => child.active)
+      : node.subCompanies
+
+    const childStates = relevantChildren.map((child) => {
       return {
         id: child.id,
         state: getNodeSelectionState(child),
@@ -247,17 +253,28 @@ export function CompanyTreeSelector({
         newSelection.push(childId)
       }
       if (parent && parent.subCompanies) {
-        const allSiblingsSelected = parent.subCompanies.every(
+        const relevantSiblings = checkActive
+          ? parent.subCompanies.filter((sibling) => sibling.active)
+          : parent.subCompanies
+        const allRelevantSiblingsSelected = relevantSiblings.every(
           (sibling) => sibling.id === childId || newSelection.includes(sibling.id),
         )
-        if (allSiblingsSelected && !newSelection.includes(parent.id)) {
+        if (allRelevantSiblingsSelected && !newSelection.includes(parent.id)) {
           newSelection.push(parent.id)
         }
       }
     } else {
       newSelection = newSelection.filter((id) => id !== childId)
       if (parent && newSelection.includes(parent.id)) {
-        newSelection = newSelection.filter((id) => id !== parent.id)
+        const relevantChildren = checkActive
+          ? parent?.subCompanies?.filter((child) => child.active)
+          : parent.subCompanies
+        const anyRelevantChildSelected = relevantChildren?.some((child) =>
+          newSelection.includes(child.id),
+        )
+        if (!anyRelevantChildSelected) {
+          newSelection = newSelection.filter((id) => id !== parent.id)
+        }
       }
     }
 
@@ -362,9 +379,9 @@ export function CompanyTreeSelector({
             style={{
               paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined,
             }}
-            title={!node.active?'חברה לא פעילה':''}
+            title={!node.active ? 'חברה לא פעילה' : ''}
             onClick={() => {
-              if (!node.active) return // prevent clicks for inactive nodes
+              if (checkActive && !node.active) return // prevent clicks for inactive nodes
               if (isNodeLeaf) {
                 handleChildSelect(node.id, selectionState !== 'checked')
               } else {
@@ -387,7 +404,7 @@ export function CompanyTreeSelector({
 
               <div className="relative mr-3 h-3.5 w-3.5">
                 <Checkbox
-                  title={!node.active?'חברה לא פעילה':''}
+                  title={!node.active ? 'חברה לא פעילה' : ''}
                   id={`checkbox-${node.id}`}
                   checked={selectionState === 'checked'}
                   data-state={selectionState}
@@ -407,7 +424,7 @@ export function CompanyTreeSelector({
                   )}
                   aria-label={`Select ${node.name}`}
                   onClick={(e) => e.stopPropagation()}
-                  disabled={!node.active}
+                  disabled={checkActive && !node.active}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -469,7 +486,7 @@ export function CompanyTreeSelector({
                   <div className="flex items-center min-w-0">
                     <div className="w-5" />
                     <div className="relative  h-3.5 w-3.5">
-                      <Checkbox 
+                      <Checkbox
                         id="select-all-checkbox"
                         checked={areAllCompaniesSelected}
                         data-state={

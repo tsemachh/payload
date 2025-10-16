@@ -180,7 +180,8 @@ export type UserNotificationType =
   | 'before-voting-end'
   | 'holdings-not-fed'
   | 'user-impersonation'
-  | 'meeting-updated';
+  | 'meeting-updated'
+  | 'holdings-gap';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".

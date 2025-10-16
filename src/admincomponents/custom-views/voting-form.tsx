@@ -108,19 +108,21 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     checkTheme()
   }, [])
 
-
   const handleSave = async () => {
     const fundsWithHolding = formData?.fundsData.map((fund) => {
       return {
         company: fund.company.id,
         fund: fund.fund.id,
+        fundName: fund.fund.name,
         ownedQuantity: fund.ownedQuantity,
+        quantity: fund.quantity,
         verifiedHoldings: fund.verifiedHoldings,
         original: fund.original,
       }
     })
     const reqBody = {
       meetingId,
+      meetingName: voteData.meeting,
       companyIds: companyIds.split(','),
       votesData: {
         reported: formData?.reported,
@@ -201,7 +203,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     }
   }
   const isOriginal = formData?.fundsData.some((fund) => fund.original)
-  
+
   const saveDraftData = (label: string, updatedData: any) => {
     console.log(`Draft saved for ${label}`, updatedData)
     setFormData(updatedData)
@@ -255,7 +257,11 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
             <label className="text-base font-medium text-gray-900 dark:text-white mr-3">
               הצבעה בפועל
             </label>
-            <ReportApprovalUpload formData={formData} setFormData ={setFormData} saveDraftData={saveDraftData }/>
+            <ReportApprovalUpload
+              formData={formData}
+              setFormData={setFormData}
+              saveDraftData={saveDraftData}
+            />
           </div>
           <Table>
             <TableHeader>
