@@ -30,6 +30,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { colorClasses } from '../helpers/maps'
 import { postWithErrorHandling } from '../helpers/fetch-helpers'
+import { useToast } from '@/hooks/use-toast'
+import { Toaster } from '@/components/ui/toaster'
 
 const colorLabels: Record<string, string> = {
   red: 'אדום',
@@ -63,7 +65,7 @@ export default function SettingsPage() {
   const [loadingTags, setLoadingTags] = useState(false)
   const [isCreatingTag, setIsCreatingTag] = useState(false)
   const [stockSelectorResetTrigger, setStockSelectorResetTrigger] = useState(0)
-
+  const { toast } = useToast()
   // --- Fetch stocks from endpoint ---
   useEffect(() => {
     const fetchStocks = async () => {
@@ -237,6 +239,21 @@ export default function SettingsPage() {
 
   const createTag = async () => {
     if (currentTag.label && currentTag.color) {
+      const duplicateTag = tags.find(
+        (tag) =>
+          tag.label.trim().toLowerCase() === currentTag.label.trim().toLowerCase() &&
+          tag.color === currentTag.color,
+      )
+
+      if (duplicateTag) {
+        toast({
+          title: '⚠️ שגיאה',
+          description: 'תגית עם אותו שם וצבע כבר קיימת!',
+          duration: 1200,
+        })
+        return
+      }
+
       setIsCreatingTag(true)
       try {
         const result = await postWithErrorHandling(`/api/companies/createLabel`, {
@@ -555,6 +572,7 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+        <Toaster />
       </div>
     </div>
   )
