@@ -249,7 +249,7 @@ export default function SettingsPage() {
         toast({
           title: '⚠️ שגיאה',
           description: 'תגית עם אותו שם וצבע כבר קיימת!',
-          duration: 1200,
+          duration: 1500,
         })
         return
       }

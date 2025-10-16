@@ -19,13 +19,34 @@ export function LabelsIcon({ row }: LabelsIconProps) {
   const firstLabel = row.labels[0]
   const remainingCount = row.labels.length - 1
 
+  const isHebrew = (text: string) => /[\u0590-\u05FF]/.test(text)
+
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-end" dir="ltr">
+      <div className="flex items-center justify-end gap-1 min-w-0 relative" dir="ltr">
+        <div
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white max-w-[80px] overflow-hidden ${
+            colorClasses[firstLabel.color] || 'bg-gray-500'
+          }`}
+          title={firstLabel.label}
+          style={{
+            direction: isHebrew(firstLabel.label) ? 'rtl' : 'ltr',
+            textAlign: isHebrew(firstLabel.label) ? 'right' : 'left',
+          }}
+        >
+          <span
+            className="truncate block max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            style={{ display: 'block' }}
+          >
+            {firstLabel.label}
+          </span>
+        </div>
+
+        {/* הפלוס וה-tooltip */}
         {remainingCount > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-xs text-muted-foreground cursor-help hover:text-foreground transition-colors font-medium mr-1">
+              <span className="text-xs text-muted-foreground cursor-help hover:text-foreground transition-colors font-medium shrink-0 relative z-10 bg-background px-0.5">
                 +{remainingCount}
               </span>
             </TooltipTrigger>
@@ -39,6 +60,10 @@ export function LabelsIcon({ row }: LabelsIconProps) {
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${
                         colorClasses[label.color] || 'bg-gray-500'
                       }`}
+                      style={{
+                        direction: isHebrew(label.label) ? 'rtl' : 'ltr',
+                        textAlign: isHebrew(label.label) ? 'right' : 'left',
+                      }}
                     >
                       {label.label}
                     </div>
@@ -48,15 +73,6 @@ export function LabelsIcon({ row }: LabelsIconProps) {
             </TooltipContent>
           </Tooltip>
         )}
-
-        <div
-          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white max-w-[80px] ${
-            colorClasses[firstLabel.color] || 'bg-gray-500'
-          }`}
-          title={firstLabel.label}
-        >
-          <span className="truncate">{firstLabel.label}</span>
-        </div>
       </div>
     </TooltipProvider>
   )
