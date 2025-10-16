@@ -133,7 +133,8 @@ export const createMeetingColumns = (
   {
     key: 'labels',
     header: 'תגיות',
-    type: 'string',
+    type: 'label',
+    filterable: true,
     render: (row) => <LabelsIcon row={row} />,
     minWidth: 60,
   },

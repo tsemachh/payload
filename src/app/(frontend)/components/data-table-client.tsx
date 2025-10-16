@@ -64,6 +64,7 @@ import CustomRadio from './custom-radio'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FaFileExcel } from 'react-icons/fa'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
+import { LabelIcon } from './label-one-icon'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -86,6 +87,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   isLoading = false,
   selectAll = 'בחר הכל',
   removeAll = 'הסר הכל',
+  noLabel = 'ללא תווית',
   pagination,
   displayMode,
   selectedCompanyIds,
@@ -291,9 +293,24 @@ export function DataTableStatic<T extends Record<string, any>>({
     const initialFilters: { [key: string]: any } = {}
     columns.forEach((column) => {
       if (column.filterable) {
-        initialFilters[String(column.key)] = Array.from(
-          new Set(data.map((item) => String(item[column.key as keyof T]))),
-        )
+        if (String(column.key) == 'labels') {
+          const labelKeys = new Set<string>()
+          data.forEach((item) => {
+            const itemLabels = item[column.key as keyof T]
+            if (Array.isArray(itemLabels)) {
+              itemLabels.forEach((lbl: { label: string; color: string }) => {
+                const key = `${lbl.label}__${lbl.color}`
+                labelKeys.add(key)
+              })
+              labelKeys.add(noLabel)
+            }
+          })
+          initialFilters[String(column.key)] = Array.from(labelKeys)
+        } else {
+          initialFilters[String(column.key)] = Array.from(
+            new Set(data.map((item) => String(item[column.key as keyof T]))),
+          )
+        }
       }
     })
     setFilters(initialFilters)
@@ -515,6 +532,29 @@ export function DataTableStatic<T extends Record<string, any>>({
               return false
             }
           }
+          // Handle labels filters
+          if (columns.find((col) => col.key === key)?.type === 'label') {
+            const itemLabels = item[key as keyof T]
+            if (!Array.isArray(itemLabels) || itemLabels.length === 0) {
+              if (Array.isArray(value) && value.includes(noLabel)) {
+                return true
+              } else {
+                return false
+              }
+            }
+
+            const itemLabelKeys = itemLabels.map(
+              (lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`,
+            )
+
+            const hasMatchingLabel = value.some((v: string) => {
+              return itemLabelKeys.includes(v)
+            })
+
+            if (!hasMatchingLabel) {
+              return false
+            }
+          }
           // Handle array filters (faceted)
           else if (Array.isArray(value)) {
             if (!value.includes(String(item[key as keyof T]))) {
@@ -718,6 +758,21 @@ export function DataTableStatic<T extends Record<string, any>>({
       setFilters((prev) => {
         const newFilters = { ...prev }
         if (value === selectAll) {
+          if (String(key) == 'labels') {
+            const labelKeys = new Set<string>()
+            data.forEach((item) => {
+              const itemLabels = item[key as keyof T]
+              if (Array.isArray(itemLabels)) {
+                itemLabels.forEach((lbl: { label: string; color: string }) => {
+                  const key = `${lbl.label}__${lbl.color}`
+                  labelKeys.add(key)
+                })
+                labelKeys.add(noLabel)
+              }
+            })
+
+            newFilters[String(key)] = Array.from(labelKeys)
+          }
           // Initialize all options as checked when resetting the filter
           newFilters[key] = Array.from(new Set(data.map((item) => String(item[key as keyof T]))))
         } else if (Array.isArray(value)) {
@@ -802,9 +857,25 @@ export function DataTableStatic<T extends Record<string, any>>({
       const initialFilters: { [key: string]: any } = {}
       columns.forEach((column) => {
         if (column.filterable) {
-          initialFilters[String(column.key)] = Array.from(
-            new Set(data.map((item) => String(item[column.key as keyof T]))),
-          )
+          if (String(column.key) == 'labels') {
+            const labelKeys = new Set<string>()
+
+            data.forEach((item) => {
+              const itemLabels = item[column.key as keyof T]
+              if (Array.isArray(itemLabels)) {
+                itemLabels.forEach((lbl: { label: string; color: string }) => {
+                  const key = `${lbl.label}__${lbl.color}`
+                  labelKeys.add(key)
+                })
+                labelKeys.add(noLabel)
+              }
+            })
+            initialFilters[String(column.key)] = Array.from(labelKeys)
+          } else {
+            initialFilters[String(column.key)] = Array.from(
+              new Set(data.map((item) => String(item[column.key as keyof T]))),
+            )
+          }
         }
       })
       setFilters(initialFilters)
@@ -942,7 +1013,7 @@ export function DataTableStatic<T extends Record<string, any>>({
               acc[stockOrigin as keyof typeof acc] = (acc[stockOrigin as keyof typeof acc] || 0) + 1
               return acc
             },
-            {} as Record<Exclude<MeetingState, null>, number>,
+            {} as Record<Exclude<StockOrigin, null>, number>,
           )
           const hasMultipleOptions = Object.keys(stockOriginCounts).length > 1
           facets[column.key as string] = [
@@ -953,7 +1024,60 @@ export function DataTableStatic<T extends Record<string, any>>({
               translate: stockOriginMap[state as Exclude<StockOrigin, null>] || state,
             })),
           ]
-        } else {
+        }
+        else if (column.key === 'labels') {
+          const labelsCount = new Map<string, { label: string; color: string; count: number }>()
+          const allItemsWithLabels: any[] = []
+          const allItemsWithoutLabels: any[] = []
+
+          for (const item of filteredData) {
+            const itemLabels = item[column.key]
+
+            if (Array.isArray(itemLabels) && itemLabels.length > 0) {
+              allItemsWithLabels.push(item)
+
+              for (const lbl of itemLabels) {
+                const key = `${lbl.label}__${lbl.color}`
+                const existing = labelsCount.get(key)
+
+                if (existing) {
+                  existing.count += 1
+                } else {
+                  labelsCount.set(key, { label: lbl.label, color: lbl.color, count: 1 })
+                }
+              }
+            } else {
+              allItemsWithoutLabels.push(item)
+            }
+          }
+
+          const labelFacets: any[] = []
+
+          if (labelsCount.size > 0) {
+            labelFacets.push({
+              value: selectAll,
+              count: filteredData.length,
+            })
+          }
+
+          for (const [key, data] of labelsCount.entries()) {
+            labelFacets.push({
+              value: key,
+              label: <LabelIcon id={key} label={data.label} color={data.color} />,
+              count: data.count,
+            })
+          }
+
+          if (allItemsWithoutLabels.length > 0) {
+            labelFacets.push({
+              value: noLabel,
+              count: allItemsWithoutLabels.length,
+            })
+          }
+          facets[column.key as string] = labelFacets
+        }
+
+        else {
           const values = new Set(filteredData.map((item) => String(item[column.key])))
           facets[column.key as string] = [
             ...(values.size > 1 ? [{ value: selectAll, count: filteredData.length }] : []),
@@ -1314,7 +1438,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                 </div>
                               ) : (
                                 facetedFilters[column.key as string]?.map(
-                                  ({ value, count, icon, translate }: FacetedFilterItem) => {
+                                  ({ value, count, icon, translate, label }: FacetedFilterItem) => {
                                     const isSelectAllOption = value === selectAll
                                     const allPossibleValues = facetedFilters[column.key as string]
                                       .map((item) => item.value)
@@ -1363,7 +1487,9 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                 ? translate
                                                 : isSelectAllOption && isChecked
                                                   ? removeAll
-                                                  : value}
+                                                  : label
+                                                    ? label
+                                                    : value}
                                           </span>
                                           <span className="inline-flex items-center justify-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-medium text-muted-foreground min-w-[2rem] text-left text-xs">
                                             {count}

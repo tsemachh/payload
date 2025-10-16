@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { colorClasses } from '../helpers/maps'
+import { LabelIcon } from './label-one-icon'
 
 interface LabelsIconProps {
   row: {
@@ -31,17 +32,15 @@ export function LabelsIcon({ row }: LabelsIconProps) {
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
               <div className="space-y-1">
-                <div className="text-xs font-medium mb-2">כל התגיות:</div>
+                <div className="text-xs font-medium mb-2">:כל התגיות</div>
                 <div className="flex flex-wrap gap-1">
                   {row.labels.map((label) => (
-                    <div
+                    <LabelIcon
                       key={label.id}
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${
-                        colorClasses[label.color] || 'bg-gray-500'
-                      }`}
-                    >
-                      {label.label}
-                    </div>
+                      id={label.id}
+                      label={label.label}
+                      color={label.color}
+                    />
                   ))}
                 </div>
               </div>

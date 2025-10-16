@@ -152,7 +152,6 @@ useEffect(() => {
       toast({
         title: '⚠️ שגיאה',
         description: 'שגיאה בטעינת נתוני ההצבעה.',
-        variant: 'destructive',
         duration: 1500,
       })
       if (typeof window !== 'undefined' && window.history.length > 1) {
