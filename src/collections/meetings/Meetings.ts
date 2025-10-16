@@ -766,9 +766,9 @@ export const Meetings: CollectionConfig = {
             {
               name: 'labels',
               type: 'array',
-              // admin: {
-              //   hidden: true,
-              // },
+              admin: {
+                hidden: true,
+              },
               fields: [
                 {
                   name: 'label',
