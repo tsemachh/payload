@@ -491,6 +491,7 @@ export const meetingColumnsForServer = [
   { key: 'resultsConfirmationStatus', header: 'אימות תוצאות' },
   { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
   { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
+  { key: 'reported', header: 'הצבעה בפועל' },
 ]
 
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
@@ -541,7 +542,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       const viewMode = req.query.viewMode || ''
       const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
 
-      const encodedFilename = encodeURIComponent('דו׳׳ח השתתפות')
+      const encodedFilename = encodeURIComponent('דו׳׳ח אסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
 
       return new Response(new Uint8Array(buffer), {

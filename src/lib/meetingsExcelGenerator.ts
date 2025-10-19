@@ -6,6 +6,7 @@ export async function downloadMeetingsExcel(
   columns: string[],
   viewMode: string,
 ): Promise<Buffer> {
+  columns = columns.filter((col) => !['information', 'תגית'].includes(col.toLowerCase()))
   const workbook = new ExcelJS.Workbook()
   const worksheet = workbook.addWorksheet('אסיפות')
   worksheet.views = [{ rightToLeft: true }]
@@ -54,9 +55,8 @@ export async function downloadMeetingsExcel(
     'מופיעה במערכת האלק׳': (m) => (m.electronicVotingEnabled ? '✅' : '❌'),
     'אימות תוצאות': (m) => (m.resultsConfirmationStatus ? '✅' : '❌'),
     'נייר ערך נסחר': (m) => (m.stockTradable ? '✅' : '❌'),
-    מחקר: (m) => m.researchDocuments?.length || 0,
+    מחקר: (m) => m.researchDocuments?.length || '',
     'ערך נקוב ליום קובע': (m) => m.nominalValue,
-    'סדר היום': () => '',
     מיקום: (m) => {
       if (!m.location) return ''
       const maxLength = 120
@@ -66,6 +66,7 @@ export async function downloadMeetingsExcel(
     מצב: (m) => meetingStateMap[m.meetingState] || m.meetingState,
     אסמכתא: (m) => m.reference,
     'סוג אסיפה': (m) => m.meetingType,
+    'הצבעה בפועל': (m) => (m.reported ? '✅' : '❌'),
   }
 
   const formatValue = (header: string, meeting: any) => {
@@ -97,7 +98,7 @@ export async function downloadMeetingsExcel(
     if (viewMode === 'agenda') {
       meeting.agendas?.forEach((agenda: any, idx: number) => {
         const agendaRow = Array(columns.length).fill('')
-        const agendaIndex = columns.indexOf('סדר היום')
+        const agendaIndex = columns.indexOf('סדר יום')
         const agendaText = `\u202B${idx + 1}. ${agenda.text || ''}\u202C`
         if (agendaIndex >= 0) {
           agendaRow[agendaIndex] = agendaText
@@ -220,8 +221,8 @@ export async function downloadMeetingsExcel(
     }
 
     const companiesIndex = columns.indexOf('חברות')
-    const agendaIndex = columns.indexOf('סדר היום')
-    if (viewMode === 'companies' && columnHeader === 'סדר היום') {
+    const agendaIndex = columns.indexOf('סדר יום')
+    if (viewMode === 'companies' && columnHeader === 'סדר יום') {
       col.hidden = true
     } else if (viewMode === 'agenda' && columnHeader === 'חברות') {
       col.hidden = true
