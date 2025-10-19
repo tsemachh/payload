@@ -658,9 +658,9 @@ export function DataTableStatic<T extends Record<string, any>>({
       // Apply other filters except for the current column
       Object.entries(filters).forEach(([key, value]) => {
         if (key === columnKey) return // Skip current column
-        // If the filter is an empty array, no items should pass
+        // If the filter is an empty array, treat it as no-op for option calculation
+        // This prevents empty options when a different filter uses an empty selection placeholder
         if (Array.isArray(value) && value.length === 0) {
-          filteredItems = []
           return
         }
         // Handle date filters
@@ -675,6 +675,20 @@ export function DataTableStatic<T extends Record<string, any>>({
               start: value.from,
               end: value.to,
             })
+          })
+        }
+        // Handle label filters explicitly (labels are arrays of {label,color})
+        else if (columns.find((col) => col.key === key)?.type === 'label' && Array.isArray(value)) {
+          filteredItems = filteredItems.filter((item) => {
+            const itemLabels = item[key as keyof MeetingTableDataType] as any
+            // Item without labels
+            if (!Array.isArray(itemLabels) || itemLabels.length === 0) {
+              return value.includes(noLabel)
+            }
+            // Build item label keys
+            const itemLabelKeys = itemLabels.map((lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`)
+            // At least one selected label must match
+            return value.some((v: string) => itemLabelKeys.includes(v))
           })
         }
         // Handle array filters (faceted)
