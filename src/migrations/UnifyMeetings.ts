@@ -231,7 +231,7 @@ async function processMeetingGroup(
       const finalFunds = Array.from(fundsSet)
       const finalFundsWithHolding = fundsWithHoldingAcc
 
-      const existingComments = (meetingToKeep as any)?.comments || ''
+      const existingMigrationComments = (meetingToKeep as any)?.migrationComments || ''
       const summaryHeader = `UnifyMeetings migration summary for key ${groupKey} on ${new Date().toISOString()}`
       const companiesSummary = `- Companies merged total: ${finalCompanies.length}`
       const votesSummary = `- Total votes moved: ${totalVotesMoved}`
@@ -244,8 +244,8 @@ async function processMeetingGroup(
 
       const finalSummary = [summaryHeader, removedSummary, votesSummary, companiesSummary, agendaSummary, fundsSummary, fundsWithHoldingSummary, ...summaryLines].join('\n')
 
-      const newComments = existingComments
-        ? `${existingComments}\n\n${finalSummary}`
+      const newMigrationComments = existingMigrationComments
+        ? `${existingMigrationComments}\n\n${finalSummary}`
         : finalSummary
 
       await payload.update({
@@ -256,7 +256,7 @@ async function processMeetingGroup(
           companies: finalCompanies,
           funds: finalFunds,
           fundsWithHolding: finalFundsWithHolding as any,
-          comments: newComments,
+          migrationComments: newMigrationComments,
         },
         req: {
           ...req,
