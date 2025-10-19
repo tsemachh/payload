@@ -57,7 +57,6 @@ export async function downloadMeetingsExcel(
     'נייר ערך נסחר': (m) => (m.stockTradable ? '✅' : '❌'),
     מחקר: (m) => m.researchDocuments?.length || '',
     'ערך נקוב ליום קובע': (m) => m.nominalValue,
-    'סדר היום': () => '',
     מיקום: (m) => {
       if (!m.location) return ''
       const maxLength = 120
@@ -222,8 +221,8 @@ export async function downloadMeetingsExcel(
     }
 
     const companiesIndex = columns.indexOf('חברות')
-    const agendaIndex = columns.indexOf('סדר היום')
-    if (viewMode === 'companies' && columnHeader === 'סדר היום') {
+    const agendaIndex = columns.indexOf('סדר יום')
+    if (viewMode === 'companies' && columnHeader === 'סדר יום') {
       col.hidden = true
     } else if (viewMode === 'agenda' && columnHeader === 'חברות') {
       col.hidden = true
