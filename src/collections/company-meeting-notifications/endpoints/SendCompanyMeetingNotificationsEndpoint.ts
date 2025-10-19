@@ -1,5 +1,6 @@
 import { PayloadRequest } from 'payload'
 import { sendCompanyMeetingNotifications } from '@/tasks/sendCompanyMeetingNotifications'
+import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 
 /**
  * Endpoint to send company meeting notifications
@@ -14,6 +15,28 @@ const SendCompanyMeetingNotificationsEndpoint = async (req: PayloadRequest) => {
     if (!req.user.isAdmin) {
       return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
     }
+
+    // Check if it's a working day
+    if (!isWorkingDay(new Date())) {
+      return Response.json({
+        details: {
+          success: true,
+          message: 'Company meeting notifications are suppressed during non working days',
+          summary: {
+            notificationsFound: 0,
+            companiesProcessed: 0,
+            emailsSent: 0,
+            emailErrors: 0,
+            notificationsByType: {
+              afterHoldingLimit: 0,
+              beforeVotingEnd: 0,
+            },
+          },
+          companyDetails: [],
+        },
+      })
+    }
+
     // Call the core function directly
     const result = await sendCompanyMeetingNotifications(req)
 

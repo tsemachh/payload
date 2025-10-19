@@ -1080,6 +1080,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                     className="w-full"
                     allCompaniesIds={companies.map((com) => com.id)}
                     showFunds={false}
+                    checkActive={true}
                   />
                 </SelectContent>
               </Select>

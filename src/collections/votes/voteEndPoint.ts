@@ -388,7 +388,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
 
-    const { meetingId, votesData, companyIds } = body
+    const { meetingId, meetingName, votesData, companyIds } = body
 
     if (!meetingId) {
       return Response.json({ error: 'Meeting ID is required' }, { status: 400 })
@@ -473,10 +473,60 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
         req,
       })
       console.log('!updated', updatedfundsWithHolding)
+
+      // Create company-meeting-notifications for companies with unverified holdings
+      try {
+        // Group funds by company that have unverified holdings
+        const companiesWithHoldingsGap = new Map()
+
+        processedFunds.forEach((fund: any) => {
+          if (fund.verifiedHoldings === false && fund.ownedQuantity && fund.ownedQuantity > 0) {
+            if (!companiesWithHoldingsGap.has(fund.company)) {
+              companiesWithHoldingsGap.set(fund.company, [])
+            }
+            companiesWithHoldingsGap.get(fund.company).push({
+              fundName: fund.fundName,
+              ownedQuantity: fund.ownedQuantity,
+              quantity: fund.quantity,
+            })
+          }
+        })
+
+        // Create one notification per company with detailed fund information
+        for (const [companyId, funds] of companiesWithHoldingsGap) {
+          const fundDetails = funds
+            .map(
+              (fund: any) =>
+                `תיק: ${fund.fundName}, ברשות: ${fund.ownedQuantity}, במערכת: ${fund.quantity}`,
+            )
+            .join('\n')
+
+          const gapText = funds.length > 1 ? 'התגלו פערים' : 'התגלה פער'
+          const holdingsText = funds.length > 1 ? 'החזקות שדווחו' : 'ההחזקה שדווחה'
+          const authorityHoldingsText = funds.length > 1 ? 'החזקות שמופיעות' : 'החזקה שמופיעה'
+
+          const message = `בהצבעה בפועל באסיפה ${meetingName} ${gapText} בין ${holdingsText} למערכת לבין ${authorityHoldingsText} ברשות.\n ${fundDetails}`
+
+          await req.payload.create({
+            collection: 'company-meeting-notifications',
+            data: {
+              message,
+              notificationType: 'holdings-gap',
+              company: companyId as string,
+              meeting: meetingId,
+            },
+            req,
+          })
+        }
+      } catch (error) {
+        console.error('Error creating unverified holdings notifications:', error)
+      }
     }
 
     return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
+    console.log('!!!!err', error)
+
     return Response.json(
       { error: 'Internal server error', message: error.message },
       { status: 500 },

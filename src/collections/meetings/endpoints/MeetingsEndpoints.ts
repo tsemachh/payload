@@ -25,6 +25,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   id: true,
   meetingId: true,
   agenda: true,
+  labels: true,
   companies: true,
   funds: true,
   stock: true,
@@ -465,6 +466,7 @@ export const meetingColumnsForServer = [
   { key: 'agendas', header: 'סדר היום' },
   { key: 'companies', header: 'חברות' },
   { key: 'agenda', header: 'סדר יום' },
+  { key: 'labels', header: 'תגית' },
   { key: 'stockNumber', header: 'מס׳ נייר' },
   { key: 'stockType', header: 'סוג נייר' },
   { key: 'stockName', header: 'שם נייר' },
@@ -578,6 +580,7 @@ function createMeetingDataObject(
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
+    labels: meeting.labels || [],
     votingPercentage: null, // mean have no data yet.
     displayVotingRecommendation,
     defaultVotingRecommendation,

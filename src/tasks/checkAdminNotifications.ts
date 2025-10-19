@@ -4,7 +4,7 @@ import { createAdminNotification, getIdOfRelationField } from '@/utils/utils'
 import {
   getWorkingDateAfter,
   getWorkingDateBefore,
-  isHolidayOrShabbat,
+  isWorkingDay,
 } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { Vote } from '@/payload-types'
 import { sanitizeRequest } from './utils'
@@ -31,7 +31,7 @@ export const checkAdminNotifications = async (req: PayloadRequest) => {
       meetingToPublish: 0,
     }
 
-    if (isHolidayOrShabbat(new Date())) {
+    if (!isWorkingDay(new Date())) {
       return {
         success: true,
         message: 'non working day',

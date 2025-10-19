@@ -77,8 +77,8 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await getWithErrorHandling('/api/companies/details', {
         errorMessage: 'שגיאה בטעינת נתוני החברות',
-        notifyOnError: true
-      });
+        notifyOnError: true,
+      })
 
       const allCompanies = result.data
 
@@ -95,6 +95,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
             name: fullCompany.name,
             parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
             subCompanies: fullCompany.subCompanies,
+            labels: fullCompany.label?.labels,
           }
         })
         .filter(Boolean)
