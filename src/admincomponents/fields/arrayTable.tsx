@@ -44,14 +44,14 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
               <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 כמות
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {/* <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 מספר חשבון
-              </th>
-              {/* {!isMeeting && (
+              </th> */}
+              {!isMeeting && (
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   נייר ערך
                 </th>
-              )} */}
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -60,14 +60,14 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                   {item.quantity?.toLocaleString() || '-'}
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                {/* <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                   {item.accountNum || '-'}
-                </td>
-                {/* {!isMeeting && (
+                </td> */}
+                {!isMeeting && (
                   <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                     {item.stockId || '-'}
                   </td>
-                )} */}
+                )}
               </tr>
             ))}
           </tbody>
