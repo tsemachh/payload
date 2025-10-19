@@ -267,3 +267,9 @@ form[action*="/api/research-documents"] .file-field__filename {
     }
   }
 }
+
+.array-field__header-action {
+  .popup__content {
+    left: 0;
+  }
+}
