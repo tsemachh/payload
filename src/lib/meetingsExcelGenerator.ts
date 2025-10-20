@@ -7,6 +7,11 @@ export async function downloadMeetingsExcel(
   viewMode: string,
 ): Promise<Buffer> {
   columns = columns.filter((col) => !['information', 'תגית'].includes(col.toLowerCase()))
+  const agendaIndex = columns.indexOf('סדר יום')
+  if (agendaIndex > 0) {
+    const [agendaCol] = columns.splice(agendaIndex, 1)
+    columns.unshift(agendaCol)
+  }
   const workbook = new ExcelJS.Workbook()
   const worksheet = workbook.addWorksheet('אסיפות')
   worksheet.views = [{ rightToLeft: true }]
