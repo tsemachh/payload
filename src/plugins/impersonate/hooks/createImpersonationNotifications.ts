@@ -15,7 +15,12 @@ export const createImpersonationNotifications = async ({
   impersonateUserId,
 }: CreateImpersonationNotificationsParams) => {
   try {
-    const message = `מנהל ${originalUser?.email || originalUser?.name || 'לא ידוע'} התחזה למשתמש ${targetUser?.email || targetUser?.name || 'לא ידוע'}`
+    // Use bidi control characters to ensure correct RTL rendering with LTR emails/names
+    const RLE = '\u202B' // Right-to-Left Embedding
+
+    const originalLabel = originalUser?.email || originalUser?.name || 'לא ידוע'
+    const targetLabel = targetUser?.email || targetUser?.name || 'לא ידוע'
+    const message = `${RLE}מנהל ${originalLabel} התחזה למשתמש ${targetLabel}`
 
     // Create admin notification
     await createAdminNotification(
