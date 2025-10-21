@@ -258,6 +258,10 @@ form[action*="/api/research-documents"] .file-field__filename {
     .condition{
       z-index: 3;
     }
+
+    .search-bar{
+      z-index: 3;
+    }
   }
 
   .collection-list.collection-list--admin-notifications {
