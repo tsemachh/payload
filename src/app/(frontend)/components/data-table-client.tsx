@@ -533,11 +533,13 @@ export function DataTableStatic<T extends Record<string, any>>({
     // Apply search filter only on visible columns
     if (searchTerm) {
       const trimmedSearchTerm = searchTerm.trim()
-      const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
+      const searchRegex = new RegExp(escapeRegExp(trimmedSearchTerm), 'i')
       filteredItems = filteredItems.filter((item) =>
         visibleColumns.some((column) => {
-          const displayValue = getDisplayValue(item, column.key)
-          return displayValue && searchRegex.test(displayValue)
+          const textForSearch = column.getSearchValue
+            ? column.getSearchValue(item as any)
+            : getDisplayValue(item, column.key)
+          return textForSearch && searchRegex.test(textForSearch)
         }),
       )
     }
@@ -606,11 +608,13 @@ export function DataTableStatic<T extends Record<string, any>>({
       // Apply search filter
       if (searchTerm) {
         const trimmedSearchTerm = searchTerm.trim()
-        const searchRegex = new RegExp(`(^|\\s)${escapeRegExp(trimmedSearchTerm)}`, 'i')
+        const searchRegex = new RegExp(escapeRegExp(trimmedSearchTerm), 'i')
         filteredItems = filteredItems.filter((item) =>
           visibleColumns.some((column) => {
-            const displayValue = getDisplayValue(item, column.key)
-            return displayValue && searchRegex.test(displayValue)
+            const textForSearch = column.getSearchValue
+              ? column.getSearchValue(item as any)
+              : getDisplayValue(item, column.key)
+            return textForSearch && searchRegex.test(textForSearch)
           }),
         )
       }
