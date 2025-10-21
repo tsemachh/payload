@@ -67,7 +67,7 @@ export const useVotingData = () => {
         const companies = companiesData.docs || []
 
         // Get votes data
-        const votesData = data.votes.docs
+        const votesData = data?.votes?.docs || []
 
         // Fetch stock value data if we have a stock value ID
         let stockValueData = null
