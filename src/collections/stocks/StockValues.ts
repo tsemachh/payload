@@ -7,6 +7,7 @@ export const StockValues: CollectionConfig = {
     plural: 'שווי ניירות ערך',
     singular: ' שווי נייר ערך',
   },
+  defaultSort: '-valueDate',
   admin: {
     hidden: false,
     group: 'פיתוח',
@@ -123,9 +124,10 @@ export const StockValues: CollectionConfig = {
 
         if (req.context?.from !== 'migration') {
           // Try to resolve dual counterpart ID from populated relation (if available)
-          const dualId = typeof stockId === 'object' && stockId && 'dualStock' in (stockId as any)
-            ? (stockId as any).dualStock
-            : undefined
+          const dualId =
+            typeof stockId === 'object' && stockId && 'dualStock' in (stockId as any)
+              ? (stockId as any).dualStock
+              : undefined
 
           const stockFilter = dualId
             ? { or: [{ stock: { equals: stockId } }, { stock: { equals: dualId } }] }
