@@ -65,6 +65,7 @@ continue.config.yaml
 /meetings-feed/*.json
 /stocks-feed/*.json
 /tmp/*.json
+/scripts/dev/sqlserver/data/**
 /scripts/dev/sqlserver/**
 /*.md
 /scripts/copyMongoDB_alternatives.sh
