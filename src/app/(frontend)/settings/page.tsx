@@ -160,7 +160,7 @@ export default function SettingsPage() {
             const allCompaniesForLabel = [
               companyName,
               ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.name) || []),
-            ]
+            ].filter((v, i, a) => a.indexOf(v) === i)
             const allCompanyIdsForLabel = [
               c.companyId,
               ...(lbl.companiesWithSameLabel?.map((comp: any) => comp.id) || []),
@@ -275,9 +275,8 @@ export default function SettingsPage() {
         const selectedCompanyNames = companies
           .filter((c) => selectedComIds.includes(c.id))
           .map((c) => c.name)
-
         const newTag = {
-          id: result.id,
+          id: result.results[0].updatedCompany.label.labels.at(-1).id,
           label: currentTag.label,
           color: currentTag.color,
           text: currentTag.text || '',
@@ -547,14 +546,14 @@ export default function SettingsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() =>
+                            onClick={() => {
                               handleDeleteTag(
                                 tag.id,
                                 tag.color,
                                 tag.label,
                                 tag.allCompanyIdsForLabel,
                               )
-                            }
+                            }}
                             className="h-8 w-8 hover:bg-muted"
                           >
                             {deletingTagId === tag.id ? (
