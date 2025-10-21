@@ -8,7 +8,9 @@ export const columns: Column<any>[] = [
     type: 'string',
     minWidth: 120,
     width: 300,
+    filterable: true,
     render: (row) => `${row.stockId ?? 'N/A'} - ${row.stockName ?? 'N/A'}`,
+    getSearchValue: (row) => `${row.stockId ?? ''} ${row.stockName ?? ''}`.trim(),
   },
   {
     key: 'quantity',
