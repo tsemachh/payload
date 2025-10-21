@@ -117,7 +117,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             stockId: string
             quantity: number
             feedStockNum: string
-            originals: { accountNum: string; quantity: number; stockId: string }[]
+            originals: { accountNum: number; quantity: number; stockId: string }[]
           }
         >
       >()
@@ -161,7 +161,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stockId: string
               quantity: number
               feedStockNum: string
-              originals: { accountNum: string; quantity: number; stockId: string }[]
+              originals: { accountNum: number; quantity: number; stockId: string }[]
             }
           >()
           companyHoldings.set(companyId, stocksMap)
@@ -180,23 +180,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           continue
         }
 
-        const existingHolding = stocksMap.get(String(holding.stockNum))
+        // IMPORTANT: aggregate by resolved stockId (not by feed stockNum)
+        const existingHolding = stocksMap.get(stockId)
         if (existingHolding) {
           existingHolding.quantity += holding.qty
           existingHolding.originals.push({
             stockId: String(holding.stockNum),
-            accountNum: holding.subAccountNum as unknown as string,
+            accountNum: Number(holding.subAccountNum),
             quantity: holding.qty,
           })
         } else {
-          stocksMap.set(String(holding.stockNum), {
+          stocksMap.set(stockId, {
             stockId,
             quantity: holding.qty,
             feedStockNum: holding.stockNum,
             originals: [
               {
                 stockId: String(holding.stockNum),
-                accountNum: holding.subAccountNum as unknown as string,
+                accountNum: Number(holding.subAccountNum),
                 quantity: holding.qty,
               },
             ],
@@ -216,7 +217,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       for (const [companyId, stocksMap] of Array.from(companyHoldings.entries())) {
         try {
           // Prepare holdings array
-          const holdingsArray = []
+          const rawHoldingsArray: any[] = []
           for (const [_, holdingData] of Array.from(stocksMap.entries())) {
             const isForeign = foreignStockIdSet.has(holdingData.stockId)
             const item: any = {
@@ -227,8 +228,26 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             if (isForeign) {
               item.originalForeignData = holdingData.originals
             }
-            holdingsArray.push(item)
+            rawHoldingsArray.push(item)
           }
+
+          // Defensive consolidation by stock to avoid duplicate items with same stock
+          const consolidatedByStock = new Map<string, any>()
+          for (const item of rawHoldingsArray) {
+            const existing = consolidatedByStock.get(item.stock)
+            if (existing) {
+              existing.quantity += item.quantity
+              if (Array.isArray(item.originalForeignData)) {
+                existing.originalForeignData = [
+                  ...(existing.originalForeignData || []),
+                  ...item.originalForeignData,
+                ]
+              }
+            } else {
+              consolidatedByStock.set(item.stock, { ...item })
+            }
+          }
+          const holdingsArray = Array.from(consolidatedByStock.values())
 
           if (holdingsArray.length === 0) {
             console.warn(`No valid stocks found for company: ${companyId}`)
