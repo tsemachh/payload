@@ -155,7 +155,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
 
   const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
-    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : undefined
+    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
 
     if (field.startsWith('original.')) {
@@ -347,7 +347,8 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                         style={{
                           visibility:
                             displayData?.verifiedHoldings ||
-                            displayData?.verifiedHoldings === undefined
+                            displayData?.verifiedHoldings === undefined ||
+                            displayData?.verifiedHoldings === null
                               ? 'hidden'
                               : 'visible',
                         }}
