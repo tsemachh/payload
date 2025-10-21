@@ -124,7 +124,7 @@ export default buildConfig({
       defaultJobsCollection.custom = {
         filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
       }
-      defaultJobsCollection.admin.group = 'ניהול'
+      defaultJobsCollection.admin.group = 'תחזוקה'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
         singular: 'תהליך מערכת',
@@ -298,7 +298,7 @@ export default buildConfig({
     importExportPlugin({
       collections: ['stocks', 'meetings'],
       overrideExportCollection: (collection) => {
-        collection.admin.group = 'ניהול'
+        collection.admin.group = 'תחזוק'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
