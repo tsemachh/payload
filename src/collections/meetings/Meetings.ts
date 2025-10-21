@@ -911,9 +911,6 @@ export const Meetings: CollectionConfig = {
                             width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
-                          // hooks: {
-                          //   afterChange: [syncLabelsOnStockChange],
-                          // },
                         },
                       ],
                     },
