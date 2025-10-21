@@ -3,7 +3,7 @@ import { isAdmin } from '@/utils/authUtils'
 
 export const AuditLogs: CollectionConfig = {
   slug: 'audit-logs',
-  labels: { singular: 'יומן ביקורת', plural: 'יומני ביקורת' },
+  labels: { singular: 'שורת ביקורת', plural: 'יומן ביקורת' },
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'message',
