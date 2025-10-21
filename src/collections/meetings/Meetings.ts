@@ -911,9 +911,9 @@ export const Meetings: CollectionConfig = {
                             width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
                           },
-                          hooks: {
-                            afterChange: [syncLabelsOnStockChange],
-                          },
+                          // hooks: {
+                          //   afterChange: [syncLabelsOnStockChange],
+                          // },
                         },
                       ],
                     },
@@ -1201,6 +1201,7 @@ export const Meetings: CollectionConfig = {
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
       updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
+      syncLabelsOnStockChange,
     ],
   },
   endpoints: [
