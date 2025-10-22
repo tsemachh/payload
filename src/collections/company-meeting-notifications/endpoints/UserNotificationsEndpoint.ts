@@ -92,7 +92,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
     const notificationTypeLabels: Record<string, string> = {
       'after-holding-limit': 'מועד קובע',
       'before-voting-end': 'הצבעה תנעל בקרוב',
-      'holdings-not-fed': 'דיווח החזקה',
+      'holdings-not-fed': 'העדר דיווח החזקה',
       'user-impersonation': 'התחזות למשתמש',
       'meeting-updated': 'עודכנה אסיפה ',
       'holdings-gap': 'פערי החזקות',
