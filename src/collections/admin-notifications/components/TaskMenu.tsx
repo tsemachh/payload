@@ -1,105 +1,68 @@
 'use client'
 
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth, useListQuery } from '@payloadcms/ui'
 import type { Where } from 'payload'
-
-export const defaultQuery: Where = {
-  handled: { equals: false },
-  type: { equals: 'newVoteAfterHoldingLimit' },
-}
-
-const allQuery: Where = { handled: { equals: false } }
 
 const TaskMenu: React.FC = () => {
   const { user } = useAuth()
   const { refineListData, query } = useListQuery()
-  const [activeMenu, setActiveMenu] = useState<'my-tasks' | 'all-tasks' | 'default'>('default')
 
-  // Determine active menu based on current query
+  const [onlyMy, setOnlyMy] = useState(false)
+
+  // Derive if current query filters by assignee to this user
+  const isMyAssigneeActive = useMemo(() => {
+    const w = query?.where as any
+    const assignee = w?.assignee
+    const equalsVal = assignee?.equals ?? assignee?.eq ?? assignee
+    return Boolean(equalsVal) && String(equalsVal) === String(user?.id ?? '')
+  }, [query?.where, user?.id])
+
   useEffect(() => {
-    if (query.where && typeof query.where === 'object') {
-      const currentQuery = JSON.stringify(query.where)
-      switch (currentQuery) {
-        case JSON.stringify(defaultQuery):
-          setActiveMenu('default')
-          return
-        case JSON.stringify(allQuery):
-          setActiveMenu('all-tasks')
-          return
-        default:
-          if (currentQuery.includes('assignee') && currentQuery.includes('handled'))
-            setActiveMenu('my-tasks')
+    setOnlyMy(isMyAssigneeActive)
+  }, [isMyAssigneeActive])
+
+  const toggleOnlyMy = useCallback(
+    (checked: boolean) => {
+      setOnlyMy(checked)
+
+      // Start from current where and only add/remove the assignee filter
+      const currentWhere: Record<string, any> =
+        query?.where && typeof query.where === 'object' ? { ...(query.where as any) } : {}
+
+      // Remove any existing assignee filter first
+      if (currentWhere && typeof currentWhere === 'object') {
+        delete (currentWhere as any).assignee
       }
-    }
-  }, [query.where])
 
-  const handleMyTasksClick = useCallback(() => {
-    setActiveMenu('my-tasks')
-    refineListData({
-      where: {
-        assignee: { equals: user?.id },
-        handled: { equals: false },
-      },
-      page: 1,
-    })
-  }, [refineListData, user?.id])
+      if (checked) {
+        currentWhere.assignee = { equals: user?.id }
+      }
 
-  const handleAllTasksClick = useCallback(() => {
-    setActiveMenu('all-tasks')
-    refineListData({
-      where: allQuery,
-      page: 1,
-    })
-  }, [refineListData])
-
-  const handleDefaultClick = useCallback(() => {
-    setActiveMenu('default')
-    refineListData({
-      where: defaultQuery,
-      page: 1,
-    })
-  }, [refineListData])
+      refineListData({ where: currentWhere as Where, page: 1 })
+    },
+    [query?.where, refineListData, user?.id],
+  )
 
   return (
     <div className="flex items-center justify-start" style={{ direction: 'ltr' }}>
       <div
-        className="flex items-center gap-1 mx-20"
+        className="flex items-center gap-2 mx-20"
         style={{
           position: 'absolute',
-          left: 0, // Aligns to the left side of the parent (in RTL, this is visually left)
-          direction: 'ltr', // Ensures left-alignment respects LTR for positioning
+          left: 0,
+          direction: 'ltr',
         }}
       >
-        <Button
-          variant={activeMenu === 'my-tasks' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => handleMyTasksClick()}
-          className="text-sm min-w-fit"
-          style={{ direction: 'rtl' }}
-        >
-          ההתראות שלי
-        </Button>{' '}
-        <Button
-          variant={activeMenu === 'all-tasks' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => handleAllTasksClick()}
-          className="text-sm min-w-fit"
-          style={{ direction: 'rtl' }}
-        >
-          כל ההתראות
-        </Button>
-        <Button
-          variant={activeMenu === 'default' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => handleDefaultClick()}
-          className="text-sm min-w-fit"
-          style={{ direction: 'rtl' }}
-        >
-          ברירת מחדל
-        </Button>
+        <label className="flex items-center gap-2 text-sm" style={{ direction: 'rtl' }}>
+          <input
+            type="checkbox"
+            checked={onlyMy}
+            onChange={(e) => toggleOnlyMy(e.target.checked)}
+          />
+          <span>הצג התראות שלי בלבד</span>
+        </label>
       </div>
     </div>
   )
