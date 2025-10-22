@@ -13,10 +13,24 @@ const TaskMenu: React.FC = () => {
 
   // Derive if current query filters by assignee to this user
   const isMyAssigneeActive = useMemo(() => {
-    const w = query?.where as any
-    const assignee = w?.assignee
-    const equalsVal = assignee?.equals ?? assignee?.eq ?? assignee
-    return Boolean(equalsVal) && String(equalsVal) === String(user?.id ?? '')
+    const w = (query?.where || {}) as any
+
+    // 1) Check root-level assignee
+    const rootAssignee = w?.assignee
+    const rootEquals = rootAssignee?.equals ?? rootAssignee?.eq ?? rootAssignee
+    if (Boolean(rootEquals) && String(rootEquals) === String(user?.id ?? '')) return true
+
+    // 2) Check inside existing `and` array
+    const andArr = Array.isArray(w?.and) ? (w.and as any[]) : []
+    for (const clause of andArr) {
+      if (clause && typeof clause === 'object' && 'assignee' in clause) {
+        const a = (clause as any).assignee
+        const eqVal = a?.equals ?? a?.eq ?? a
+        if (Boolean(eqVal) && String(eqVal) === String(user?.id ?? '')) return true
+      }
+    }
+
+    return false
   }, [query?.where, user?.id])
 
   useEffect(() => {
@@ -31,13 +45,37 @@ const TaskMenu: React.FC = () => {
       const currentWhere: Record<string, any> =
         query?.where && typeof query.where === 'object' ? { ...(query.where as any) } : {}
 
-      // Remove any existing assignee filter first
-      if (currentWhere && typeof currentWhere === 'object') {
-        delete (currentWhere as any).assignee
+      // Ensure we don't mutate nested arrays/objects inadvertently
+      if (Array.isArray(currentWhere.and)) {
+        currentWhere.and = [...currentWhere.and]
+      }
+
+      // Remove any existing assignee filter first — root and inside `and`
+      delete (currentWhere as any).assignee
+      if (Array.isArray(currentWhere.and)) {
+        currentWhere.and = currentWhere.and.filter((clause: any) => {
+          if (!clause || typeof clause !== 'object') return true
+          // remove any clause that specifies assignee (regardless of value)
+          return !('assignee' in clause)
+        })
       }
 
       if (checked) {
-        currentWhere.assignee = { equals: user?.id }
+        const assigneeClause = { assignee: { equals: user?.id } }
+
+        if (Array.isArray(currentWhere.and)) {
+          // If `and` exists, add assignee as part of it
+          currentWhere.and.push(assigneeClause)
+        } else if (currentWhere && Object.keys(currentWhere).length > 0) {
+          // If there are existing root filters but no `and`, keep behavior minimal:
+          // Requirement: only ensure assignee is part of `and` IF `and` exists.
+          // However, if we want to strictly normalize, we could wrap; but we'll keep it simple
+          // and attach at root only when no `and` exists.
+          currentWhere.assignee = assigneeClause.assignee
+        } else {
+          // No filters at all — just set root-level assignee
+          currentWhere.assignee = assigneeClause.assignee
+        }
       }
 
       refineListData({ where: currentWhere as Where, page: 1 })
