@@ -388,7 +388,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
     const body = req.json ? await req.json() : null
     if (!body) return Response.json({ error: 'Invalid request format' }, { status: 400 })
 
-    const { meetingId, votesData, companyIds } = body
+    const { meetingId, meetingName, votesData, companyIds } = body
 
     if (!meetingId) {
       return Response.json({ error: 'Meeting ID is required' }, { status: 400 })
@@ -401,11 +401,57 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
       },
       data: {
         reported: votesData.reported,
+        reportApproval: votesData.reportApproval,
       },
       req,
     })
 
     if (votesData.fundsWithHolding?.length) {
+      // Check if any fund has original data
+      const hasOriginalData = votesData.fundsWithHolding.some(
+        (fund: any) => fund.original && Object.keys(fund.original).length > 0,
+      )
+
+      let processedFunds = votesData.fundsWithHolding
+
+      if (hasOriginalData) {
+        // Group fundsWithHolding by fund and aggregate original data
+        const groupedByFund = votesData.fundsWithHolding.reduce((acc: any, fund: any) => {
+          const fundId = fund.fund
+
+          if (!acc[fundId]) {
+            acc[fundId] = {
+              company: fund.company,
+              fund: fund.fund,
+              quantity: fund.quantity || 0,
+              ownedQuantity: fund.ownedQuantity || 0,
+              verifiedHoldings: fund.verifiedHoldings,
+              original: [],
+            }
+          }
+
+          if (fund.original && fund.original.stockId) {
+            // Add original data to the original array and sum quantities
+            acc[fundId].original.push({
+              stockId: fund.original.stockId,
+              quantity: fund.original.quantity || 0,
+              ownedQuantity: fund.original.ownedQuantity || 0,
+              verifiedHoldings: fund.original.verifiedHoldings,
+            })
+            acc[fundId].quantity += fund.original.quantity || 0
+          } else {
+            acc[fundId] = { ...fund }
+          }
+
+          return acc
+        }, {})
+
+        // Convert back to array and clean up empty original arrays
+        processedFunds = Object.values(groupedByFund).map((fund: any) => {
+          return fund
+        })
+      }
+
       // Get current meeting and merge fundsWithHolding
       const currentMeeting = await req.payload.findByID({
         collection: 'meetings',
@@ -416,9 +462,7 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
       const existingFundsWithHolding = currentMeeting?.fundsWithHolding || []
 
       const merged = existingFundsWithHolding.map((existingFund: any) => {
-        const matchingFund = votesData.fundsWithHolding.find(
-          (vote: any) => vote.fund === existingFund.fund,
-        )
+        const matchingFund = processedFunds.find((vote: any) => vote.fund === existingFund.fund)
         return matchingFund ? { ...existingFund, ...matchingFund } : existingFund
       })
 
@@ -429,10 +473,60 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
         req,
       })
       console.log('!updated', updatedfundsWithHolding)
+
+      // Create company-meeting-notifications for companies with unverified holdings
+      try {
+        // Group funds by company that have unverified holdings
+        const companiesWithHoldingsGap = new Map()
+
+        processedFunds.forEach((fund: any) => {
+          if (fund.verifiedHoldings === false && fund.ownedQuantity && fund.ownedQuantity > 0) {
+            if (!companiesWithHoldingsGap.has(fund.company)) {
+              companiesWithHoldingsGap.set(fund.company, [])
+            }
+            companiesWithHoldingsGap.get(fund.company).push({
+              fundName: fund.fundName,
+              ownedQuantity: fund.ownedQuantity,
+              quantity: fund.quantity,
+            })
+          }
+        })
+
+        // Create one notification per company with detailed fund information
+        for (const [companyId, funds] of companiesWithHoldingsGap) {
+          const fundDetails = funds
+            .map(
+              (fund: any) =>
+                `תיק: ${fund.fundName}, ברשות: ${fund.ownedQuantity}, במערכת: ${fund.quantity}`,
+            )
+            .join('\n')
+
+          const gapText = funds.length > 1 ? 'התגלו פערים' : 'התגלה פער'
+          const holdingsText = funds.length > 1 ? 'החזקות שדווחו' : 'ההחזקה שדווחה'
+          const authorityHoldingsText = funds.length > 1 ? 'החזקות שמופיעות' : 'החזקה שמופיעה'
+
+          const message = `בהצבעה בפועל באסיפה ${meetingName} ${gapText} בין ${holdingsText} למערכת לבין ${authorityHoldingsText} ברשות.\n ${fundDetails}`
+
+          await req.payload.create({
+            collection: 'company-meeting-notifications',
+            data: {
+              message,
+              notificationType: 'holdings-gap',
+              company: companyId as string,
+              meeting: meetingId,
+            },
+            req,
+          })
+        }
+      } catch (error) {
+        console.error('Error creating unverified holdings notifications:', error)
+      }
     }
 
     return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
+    console.log('!!!!err', error)
+
     return Response.json(
       { error: 'Internal server error', message: error.message },
       { status: 500 },

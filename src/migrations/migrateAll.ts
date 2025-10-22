@@ -64,22 +64,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Stocks Migration ===')
     await migrateStocks({ payload, req })
     console.log('=== Stocks Migration Completed ===\n')
-
-    // 2. Migrate Meetings
-    console.log('\n=== Starting Meetings Migration ===')
-    await migrateFullMeetings({ payload, req })
-    console.log('=== Meetings Migration Completed ===\n')
-
-    // 2.1 Migrate Magna Meetings
-    console.log('\n=== Starting Magna Meetings Migration ===')
-    await migrateMagnaMeetings({ payload, req })
-    console.log('=== Magna Meetings Migration Completed ===\n')
-
-    // 3. Migrate Firms
-    console.log('\n=== Starting Firms Migration ===')
-    await migrateFullFirms({ payload, req })
-    console.log('=== Meetings Firms Completed ===\n')
-
     // 3. Migrate Foreign
     console.log('\n=== Starting Foreign Stocks Migration ===')
     await migrateForeign({ payload, req })
@@ -89,6 +73,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Dual-Listed Stocks Migration ===')
     await migrateDual({ payload, req })
     console.log('=== Dual-Listed Stocks Migration Completed ===\n')
+
+    // 2. Migrate Meetings
+    console.log('\n=== Starting Meetings Migration ===')
+    await migrateFullMeetings({ payload, req })
+    console.log('=== Meetings Migration Completed ===\n')
+
+    // 3. Migrate Firms
+    console.log('\n=== Starting Firms Migration ===')
+    await migrateFullFirms({ payload, req })
+    console.log('=== Meetings Firms Completed ===\n')
 
     // 5. Migrate Users
     console.log('\n=== Starting Users Migration ===')
@@ -133,6 +127,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Vote Counts Migration ===')
     await migrateVoteCounts({ payload, req })
     console.log('=== Vote Counts Migration Completed ===\n')
+
+    // 2.1 Migrate Magna Meetings
+    console.log('\n=== Starting Magna Meetings Migration ===')
+    await migrateMagnaMeetings({ payload, req })
+    console.log('=== Magna Meetings Migration Completed ===\n')
 
     console.log('migrateAll process completed successfully!')
   } catch (error) {

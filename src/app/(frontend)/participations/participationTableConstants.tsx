@@ -17,6 +17,9 @@ export const createParticipationColumns = (
   deselectedIds: Set<string>,
   setDeselectedIds: React.Dispatch<React.SetStateAction<Set<string>>>,
 ): Column<ParticipationTableDataType>[] => {
+  const displayVotingRecommendation = participationData.some(
+    (row) => row.displayVotingRecommendation == true,
+  )
   const baseColumns: Column<ParticipationTableDataType>[] = [
     // Uncomment if you want to enable selection
     // {
@@ -67,12 +70,14 @@ export const createParticipationColumns = (
       key: 'stockNumber',
       header: 'מספר נייר /  \n נושאי האסיפה',
       type: 'string',
+      isAlwaysVisible: true,
       minWidth: 80,
     },
     {
       key: 'corporateName',
       header: 'שם תאגיד',
       type: 'string',
+      isAlwaysVisible: true,
       minWidth: 80,
     },
   ]
@@ -95,6 +100,7 @@ export const createParticipationColumns = (
     {
       key: 'marketValue',
       header: `שווי שוק (מ' ₪)`,
+      isAlwaysVisible: true,
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
@@ -105,6 +111,7 @@ export const createParticipationColumns = (
     {
       key: 'percentageHolding',
       header: 'החזקה (%)',
+      isAlwaysVisible: true,
       type: 'number',
       render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
       minWidth: 80,
@@ -112,6 +119,7 @@ export const createParticipationColumns = (
     {
       key: 'holdingValueInMillions',
       header: `שווי החזקה (מ' ₪)`,
+      isAlwaysVisible: true,
       type: 'number',
       render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 2, 'he-IL'),
       minWidth: 80,
@@ -119,21 +127,29 @@ export const createParticipationColumns = (
     {
       key: 'meetingDate',
       header: 'מועד האסיפה',
+      isAlwaysVisible: true,
       type: 'datetime',
       render: (row) => formatDateTime(row.meetingDate, true),
       minWidth: 80,
     },
     { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
-    {
+  )
+  if (displayVotingRecommendation) {
+    baseColumns.push({
       key: 'recommendation',
-      header: 'המלצת גורם מייעץ',
+      header: 'המלצת הצבעה ',
+      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 70,
-    },
+    })
+  }
+
+  baseColumns.push(
     {
       key: 'vote',
       header: 'הצבעה',
+      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 70,
@@ -141,6 +157,7 @@ export const createParticipationColumns = (
     {
       key: 'meetingResults',
       header: 'תוצאות האסיפה',
+      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 75,
@@ -148,6 +165,7 @@ export const createParticipationColumns = (
     {
       key: 'simpleMajority',
       header: 'רוב רגיל',
+      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -156,6 +174,7 @@ export const createParticipationColumns = (
     {
       key: 'privilegedMajority',
       header: 'רוב מיוחד (%)',
+      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 40,
@@ -163,6 +182,7 @@ export const createParticipationColumns = (
     {
       key: 'policyCompliance',
       header: 'בהתאם למדיניות דריקטוריון ו/או וועדת השקעות',
+      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -171,6 +191,7 @@ export const createParticipationColumns = (
     {
       key: 'conflictOfInterest',
       header: 'ניגוד עניינים',
+      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -179,6 +200,7 @@ export const createParticipationColumns = (
     {
       key: 'relatedParty',
       header: 'צד קשר',
+      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -187,6 +209,7 @@ export const createParticipationColumns = (
     {
       key: 'personalInterest',
       header: 'עניין אישי',
+      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,

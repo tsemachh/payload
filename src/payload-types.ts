@@ -19,6 +19,7 @@ export type AdminNotificationType =
       | 'companyNotVotedMeetingNextDay'
       | 'userImpersonation'
       | 'meetingToPublish'
+      | 'unauthorizedIPAccess'
     )
   | null;
 /**
@@ -139,15 +140,17 @@ export type FundWithHolding =
       company?: string | null;
       quantity?: number | null;
       ownedQuantity?: number | null;
+      verifiedHoldings?: boolean | null;
       original?:
         | {
             stockId?: string | null;
             accountNum?: number | null;
             quantity?: number | null;
+            verifiedHoldings?: boolean | null;
+            ownedQuantity?: number | null;
             id?: string | null;
           }[]
         | null;
-      verifiedHoldings?: boolean | null;
       id?: string | null;
     }[]
   | null;
@@ -177,7 +180,8 @@ export type UserNotificationType =
   | 'before-voting-end'
   | 'holdings-not-fed'
   | 'user-impersonation'
-  | 'meeting-updated';
+  | 'meeting-updated'
+  | 'holdings-gap';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "MigrationType".
@@ -269,6 +273,8 @@ export interface Config {
     'stocks-feed': StocksFeed;
     'meetings-feed': MeetingsFeed;
     'recommendation-reasons': RecommendationReason;
+    'audit-logs': AuditLog;
+    'audit-log-reads': AuditLogRead;
     'company-meeting-notifications': CompanyMeetingNotification;
     votes: Vote;
     'holdings-feed': HoldingsFeed;
@@ -311,6 +317,8 @@ export interface Config {
     'stocks-feed': StocksFeedSelect<false> | StocksFeedSelect<true>;
     'meetings-feed': MeetingsFeedSelect<false> | MeetingsFeedSelect<true>;
     'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
+    'audit-log-reads': AuditLogReadsSelect<false> | AuditLogReadsSelect<true>;
     'company-meeting-notifications': CompanyMeetingNotificationsSelect<false> | CompanyMeetingNotificationsSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
     'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
@@ -407,25 +415,40 @@ export interface User {
   active?: boolean | null;
   isAdmin?: boolean | null;
   isSystem?: boolean | null;
-  companies?: UserCompany;
-  funds?: (string | Company)[] | null;
   lastLogin?: string | null;
   changePassword?: boolean | null;
   receiveMailNotification?: boolean | null;
+  companies?: UserCompany;
+  funds?: (string | Company)[] | null;
+  treeCompanies?: string | null;
+  bypassIPCheck?: boolean | null;
   /**
-   * הזן כתובות IP מופרדות בנקודה-פסיק (;)
+   * רשימת כתובות IP המורשות למשתמש זה
    */
-  userIp?: string | null;
+  allowedIPs?: string[] | null;
+  /**
+   * כתובת ה-IP האחרונה שהשתמשה להתחברות
+   */
+  lastLoginIP?: string | null;
+  lastLoginAt?: string | null;
+  twoFactorAuth?: {
+    enabled?: boolean | null;
+    verified?: boolean | null;
+    secret?: string | null;
+    backupCodes?:
+      | {
+          code?: string | null;
+          used?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+    lastUsed?: string | null;
+    failureCount?: number | null;
+    lastFailureTime?: string | null;
+  };
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
-  treeCompanies?: string | null;
-  qrCodeData?: {
-    showQr?: boolean | null;
-    createDate?: string | null;
-    lastCodeFailureDate?: string | null;
-    codeFailuresSinceLastSuccess?: number | null;
-  };
   createdAt: string;
   updatedAt: string;
   impersonate?: string | null;
@@ -506,6 +529,17 @@ export interface Company {
     totalDocs?: number;
   };
   silencedStocks?: string[] | null;
+  label?: {
+    labels?:
+      | {
+          label?: string | null;
+          color?: string | null;
+          stock?: (string | Stock)[] | null;
+          companiesWithSameLabel?: (string | Company)[] | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -635,6 +669,7 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
+  totalHoldings?: number | null;
   activity?: string | null;
   hasResearchDoc?: boolean | null;
   hasVoteRecommendation?: boolean | null;
@@ -677,9 +712,17 @@ export interface Meeting {
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
+  migrationComments?: string | null;
   changeDetails?: string | null;
   resultsConfirmationStatus?: boolean | null;
   electronicVotingEnabled?: boolean | null;
+  labels?:
+    | {
+        label?: string | null;
+        color?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -688,6 +731,7 @@ export interface Meeting {
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
   stockValue?: (string | null) | StockValue;
+  stockRegisteredValue?: number | null;
   stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
@@ -717,6 +761,7 @@ export interface Vote {
   voteAgainstRecommendation?: boolean | null;
   voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
+  reportApproval?: (string | null) | Document;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
@@ -825,6 +870,79 @@ export interface MeetingsFeed {
 export interface RecommendationReason {
   id: string;
   content: string;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: string;
+  eventType:
+    | 'auth.login.success'
+    | 'auth.login.failure'
+    | 'auth.logout'
+    | 'auth.impersonation.start'
+    | 'auth.impersonation.end'
+    | 'user.create'
+    | 'user.update'
+    | 'company.create'
+    | 'company.update'
+    | 'access.denied';
+  severity: 'info' | 'warning' | 'high' | 'critical';
+  category: 'security' | 'auth' | 'user' | 'company' | 'ops' | 'system';
+  actor?: (string | null) | User;
+  impersonator?: (string | null) | User;
+  targetCollection?: string | null;
+  targetId?: string | null;
+  success?: boolean | null;
+  message?: string | null;
+  details?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+  source?: ('rest' | 'admin-ui' | 'local-api' | 'cron' | 'webhook') | null;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log-reads".
+ */
+export interface AuditLogRead {
+  id: string;
+  admin: string | User;
+  mode: 'list' | 'document';
+  filters?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  countReturned?: number | null;
+  documentId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+  source?: ('admin-ui' | 'rest' | 'local-api' | 'cron' | 'webhook') | null;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -1133,6 +1251,14 @@ export interface PayloadLockedDocument {
         value: string | RecommendationReason;
       } | null)
     | ({
+        relationTo: 'audit-logs';
+        value: string | AuditLog;
+      } | null)
+    | ({
+        relationTo: 'audit-log-reads';
+        value: string | AuditLogRead;
+      } | null)
+    | ({
         relationTo: 'company-meeting-notifications';
         value: string | CompanyMeetingNotification;
       } | null)
@@ -1265,6 +1391,8 @@ export interface PayloadQueryPreset {
     | 'holdings'
     | 'companies'
     | 'users'
+    | 'audit-logs'
+    | 'audit-log-reads'
     | 'company-meeting-notifications'
     | 'votes'
     | 'research-documents'
@@ -1311,6 +1439,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   companiesNotYetVoted?: T;
+  totalHoldings?: T;
   activity?: T;
   hasResearchDoc?: T;
   hasVoteRecommendation?: T;
@@ -1333,14 +1462,23 @@ export interface MeetingsSelect<T extends boolean = true> {
   dualMeeting?: T;
   location?: T;
   comments?: T;
+  migrationComments?: T;
   changeDetails?: T;
   resultsConfirmationStatus?: T;
   electronicVotingEnabled?: T;
+  labels?:
+    | T
+    | {
+        label?: T;
+        color?: T;
+        id?: T;
+      };
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
   stockValue?: T;
+  stockRegisteredValue?: T;
   stockMarketValue?: T;
   creator?: T;
   updator?: T;
@@ -1389,15 +1527,17 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   company?: T;
   quantity?: T;
   ownedQuantity?: T;
+  verifiedHoldings?: T;
   original?:
     | T
     | {
         stockId?: T;
         accountNum?: T;
         quantity?: T;
+        verifiedHoldings?: T;
+        ownedQuantity?: T;
         id?: T;
       };
-  verifiedHoldings?: T;
   id?: T;
 }
 /**
@@ -1506,6 +1646,19 @@ export interface CompaniesSelect<T extends boolean = true> {
   holdings?: T;
   meetings?: T;
   silencedStocks?: T;
+  label?:
+    | T
+    | {
+        labels?:
+          | T
+          | {
+              label?: T;
+              color?: T;
+              stock?: T;
+              companiesWithSameLabel?: T;
+              id?: T;
+            };
+      };
   creator?: T;
   updator?: T;
   process?: T;
@@ -1522,24 +1675,36 @@ export interface UsersSelect<T extends boolean = true> {
   active?: T;
   isAdmin?: T;
   isSystem?: T;
-  companies?: T | UserCompanySelect<T>;
-  funds?: T;
   lastLogin?: T;
   changePassword?: T;
   receiveMailNotification?: T;
-  userIp?: T;
+  companies?: T | UserCompanySelect<T>;
+  funds?: T;
+  treeCompanies?: T;
+  bypassIPCheck?: T;
+  allowedIPs?: T;
+  lastLoginIP?: T;
+  lastLoginAt?: T;
+  twoFactorAuth?:
+    | T
+    | {
+        enabled?: T;
+        verified?: T;
+        secret?: T;
+        backupCodes?:
+          | T
+          | {
+              code?: T;
+              used?: T;
+              id?: T;
+            };
+        lastUsed?: T;
+        failureCount?: T;
+        lastFailureTime?: T;
+      };
   creator?: T;
   updator?: T;
   process?: T;
-  treeCompanies?: T;
-  qrCodeData?:
-    | T
-    | {
-        showQr?: T;
-        createDate?: T;
-        lastCodeFailureDate?: T;
-        codeFailuresSinceLastSuccess?: T;
-      };
   createdAt?: T;
   updatedAt?: T;
   impersonate?: T;
@@ -1626,6 +1791,51 @@ export interface RecommendationReasonsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  eventType?: T;
+  severity?: T;
+  category?: T;
+  actor?: T;
+  impersonator?: T;
+  targetCollection?: T;
+  targetId?: T;
+  success?: T;
+  message?: T;
+  details?: T;
+  ip?: T;
+  userAgent?: T;
+  requestId?: T;
+  source?: T;
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log-reads_select".
+ */
+export interface AuditLogReadsSelect<T extends boolean = true> {
+  admin?: T;
+  mode?: T;
+  filters?: T;
+  countReturned?: T;
+  documentId?: T;
+  ip?: T;
+  userAgent?: T;
+  requestId?: T;
+  source?: T;
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "company-meeting-notifications_select".
  */
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
@@ -1658,6 +1868,7 @@ export interface VotesSelect<T extends boolean = true> {
   voteAgainstRecommendation?: T;
   voteDifferentFromResult?: T;
   reported?: T;
+  reportApproval?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;

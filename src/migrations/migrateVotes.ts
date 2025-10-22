@@ -107,7 +107,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const meetingCompanyIds: string[] = []
 
             // For each company, create a vote document
-            if (companies)
+            if (companies) {
+              const createdFirmIds: (number | string)[] = []
               for (const company of companies) {
                 const mongoCompanyId = companyMap.get(company.firmid.toString())
 
@@ -205,9 +206,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                       context: { ...req.context, from: 'migration', process: 'migrateVotes' },
                     },
                   })
-                  console.log(
-                    `✓ Created vote for meeting ${meeting.id} and company ${company.firmid}`,
-                  )
+                  createdFirmIds.push(company.firmid)
                   successCount++
                 } catch (error: any) {
                   errorCount++
@@ -221,6 +220,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                 }
               }
+
+              if (createdFirmIds.length > 0) {
+                console.log(
+                  `✓ Created vote for meeting ${meeting.id} and companies ${createdFirmIds.join(',')}`,
+                )
+              }
+            }
           } catch (error: any) {
             errorCount++
             console.error(`✗ Failed to process votes for meeting ${meeting.id}:`, error)

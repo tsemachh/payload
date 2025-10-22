@@ -27,6 +27,8 @@ import { Votes } from '@/collections/votes/Votes'
 import { ResearchDocument } from '@/collections/research-documents/ResearchDocument'
 import { AdminNotifications } from '@/collections/admin-notifications/AdminNotifications'
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
+import { AuditLogs } from '@/collections/audit-logs/AuditLogs'
+import { AuditLogReads } from '@/collections/audit-logs/AuditLogReads'
 import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -195,7 +197,7 @@ export default buildConfig({
             queue: 'daily08am', // name of the queue
           },
           {
-            cron: '*/30 * * * *', // every 30 minutes
+            cron: '*/01 * * * *', // every 30 minutes
             limit: 100, // limit jobs to process each run
             queue: 'holdings', // name of the queue
           },
@@ -216,7 +218,10 @@ export default buildConfig({
 
     components: {
       afterLogin: ['/admincomponents/auth/LoginCaptcha'],
-      providers: ['/providers/CustomContext#CustomContextProvider'],
+      providers: [
+        '/providers/CustomContext#CustomContextProvider',
+        '/admincomponents/providers/TwoFactorProvider',
+      ],
       graphics: {
         Logo: '/graphics/Logo',
       },
@@ -263,6 +268,8 @@ export default buildConfig({
     StocksFeed,
     MeetingsFeed,
     RecommendationReasons,
+    AuditLogs,
+    AuditLogReads,
     // תחזוקה
     CompanyMeetingNotifications,
     Votes,

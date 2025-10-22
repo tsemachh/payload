@@ -191,20 +191,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Firm relationships
           companies: companies,
           // Profile settings
-          userIp: userProfile?.UserIP || '',
+          allowedIPs: (userProfile?.UserIP || '')
+            .split(/[;,]/)
+            .map((s) => s.trim())
+            .filter((s, idx, arr) => s.length > 0 && arr.indexOf(s) === idx),
           changePassword: !!userProfile?.ChangePassword,
           lastLogin: userProfile?.LastLogin as string | null | undefined,
-          // QR code lifecycle data
-          qrCodeData: userProfileCode
+
+          // Two-factor authentication lifecycle data (migrated from legacy QR code data)
+          twoFactorAuth: userProfileCode
             ? {
-                showQr: !!userProfile?.ShowQr,
-                createDate: userProfileCode.CreateDate
-                  ? new Date(userProfileCode.CreateDate).toISOString()
-                  : null,
-                lastCodeFailureDate: userProfileCode.LastCodeFailureDate
+                enabled: !!userProfile?.ShowQr,
+                verified: false,
+                lastFailureTime: userProfileCode.LastCodeFailureDate
                   ? new Date(userProfileCode.LastCodeFailureDate).toISOString()
-                  : null,
-                codeFailuresSinceLastSuccess: userProfileCode.CodeFailuresSinceLastSuccess,
+                  : undefined,
+                failureCount: userProfileCode.CodeFailuresSinceLastSuccess || 0,
               }
             : undefined,
 
@@ -356,10 +358,10 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         password: 'channahk@shefing.com',
       },
       {
-        name: 'אפרת שפריי',
+        name: 'דבורה',
         isAdmin: true,
-        email: 'efrats@shefing.com',
-        password: 'efrats@shefing.com',
+        email: 'dvorac@shefing.com',
+        password: 'dvorac@shefing.com',
         // "companies":['17','22','23','49','25']
       },
       {
@@ -367,6 +369,20 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         isAdmin: true,
         email: 'tsemachh@shefing.com',
         password: 'tsemachh@shefing.com',
+        // "companies":['15','3918','3928']
+      },
+      {
+        name: 'MichalK',
+        isAdmin: true,
+        email: 'michalk@shefing.com',
+        password: 'michalk@shefing.com',
+        // "companies":['15','3918','3928']
+      },
+      {
+        name: 'RachelP',
+        isAdmin: true,
+        email: 'rachelb@shefing.com',
+        password: 'rachelb@shefing.com',
         // "companies":['15','3918','3928']
       },
       {

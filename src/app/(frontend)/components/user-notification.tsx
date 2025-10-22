@@ -293,7 +293,10 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                                   {notification.title}
                                 </h4>
                               </div>
-                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2 text-right">
+                              <p
+                                className="text-sm text-muted-foreground line-clamp-2 mb-2 text-right"
+                                title={notification.message}
+                              >
                                 {notification.message}
                               </p>
                             </div>

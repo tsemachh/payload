@@ -44,7 +44,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         try {
           const holdingsLimit = meeting.holdingsLimit
 
-          const stockId = getIdOfRelationField(meeting.stock)
+          let stockId = getIdOfRelationField(meeting.stock)
           // Get stock details
           const stock = meeting.stock as Stock
 
@@ -61,9 +61,49 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // For past meetings, get the stock value at the holdings limit date
           const dateToUse = isFutureMeeting ? null : holdingsLimit
 
-          // Check if stock.stockId is numeric
-          if (!/^\d+$/.test(stock.stockId)) {
-            console.log(`Stock ${stock.stockId} has non-numeric ID, skipping meeting ${meeting.id}`)
+          // Determine SQL stock ID to use (default to the meeting stock’s own MSSQL id)
+          let sqlStockId = stock.stockId
+
+          // If the meeting stock is a dual stock, try to use its source stock's MSSQL ID first
+          if ((stock as any)?.isDual === true) {
+            try {
+              const sourceRes = await payload.find({
+                collection: 'stocks',
+                where: {
+                  and: [{ hasDual: { equals: true } }, { dualStock: { equals: stockId } }],
+                },
+                limit: 1,
+                depth: 0,
+              })
+
+              const sourceStock = (sourceRes?.docs?.[0] || null) as unknown as Stock | null
+
+              if (sourceStock?.stockId && /^\d+$/.test(sourceStock.stockId)) {
+                sqlStockId = sourceStock.stockId
+                stockId = sourceStock.id
+                console.log(
+                  `Meeting ${meeting.id}: dual stock detected. Using source stock ${sourceStock.id} (MSSQL ID ${sqlStockId}) for value lookup.`,
+                )
+              } else if (sourceStock) {
+                console.log(
+                  `Meeting ${meeting.id}: source stock ${sourceStock.id} has non-numeric MSSQL ID ${sourceStock.stockId}. Falling back to dual stock MSSQL ID ${stock.stockId}.`,
+                )
+              } else {
+                console.log(
+                  `Meeting ${meeting.id}: no source stock found for dual stock ${stock.id}. Using dual stock MSSQL ID ${stock.stockId}.`,
+                )
+              }
+            } catch (e) {
+              console.log(
+                `Meeting ${meeting.id}: error looking up source stock for dual stock ${stock.id}. Using dual stock MSSQL ID ${stock.stockId}.`,
+                e,
+              )
+            }
+          }
+
+          // Single numeric check on the final sqlStockId
+          if (!/^\d+$/.test(sqlStockId)) {
+            console.log(`Stock ${sqlStockId} has non-numeric ID, skipping meeting ${meeting.id}`)
             return
           }
 
@@ -90,7 +130,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, stock.stockId)
+              request.input('stockId', sql.VarChar, sqlStockId)
               request.input('valueDate', sql.DateTime, new Date(dateToUse as string).toISOString())
             }
             const result = await request?.query(query)
@@ -114,7 +154,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, stock.stockId)
+              request.input('stockId', sql.VarChar, sqlStockId)
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null

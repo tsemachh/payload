@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import ImportStocksEndPoint from '@/collections/stocks/imports/ImportStocksEndPoint'
 import uploadStockCsvEndPoint from '@/collections/stocks/feeds/uploadStockCsvEndPoint'
-import fixStockRelationsEndPoint from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
+import fixStockRelationsEndPoint, {
+  getTradableStocks,
+} from '@/collections/stocks/endpoints/fixStockRelationsEndPoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { stockTypeOptions } from '@/consts/otipns-const'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
@@ -69,7 +71,7 @@ export const Stocks: CollectionConfig = {
   custom: {
     filterList: [
       [{ name: 'type' }, { name: 'origin' }, { name: 'tradable' }, { name: 'active' }],
-      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }],
+      [{ name: 'fromMagna' }, { name: 'isFinancial' }, { name: 'hasDual' }, { name: 'isDual' }],
     ],
     defaultFilter: { active: { equals: true } },
   },
@@ -342,6 +344,7 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
                     defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                    disableListColumn: true,
                   },
                 },
               ],
@@ -367,6 +370,7 @@ export const Stocks: CollectionConfig = {
               //              _sanitized: true,
               admin: {
                 defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+                disableListColumn: true,
               },
             },
           ],
@@ -386,6 +390,7 @@ export const Stocks: CollectionConfig = {
               _sanitized: true,
               admin: {
                 defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+                disableListColumn: true,
               },
             },
           ],
@@ -408,6 +413,11 @@ export const Stocks: CollectionConfig = {
       path: '/fix-stock-relations',
       method: 'post',
       handler: fixStockRelationsEndPoint,
+    },
+    {
+      path: '/tradable',
+      method: 'get',
+      handler: getTradableStocks,
     },
   ],
 }

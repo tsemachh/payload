@@ -1,5 +1,5 @@
 import { addDataAndFileToRequest, type PayloadRequest } from 'payload'
-import { Stock } from '@/payload-types'
+import { Company, Stock } from '@/payload-types'
 import { generateParticipationsPDF } from '@/lib/pdfGenerator'
 import { generateParticipationsExcel } from '@/lib/excelGenerator'
 import {
@@ -68,7 +68,8 @@ async function processVotesData(
         return { id: fundId, percentageHolding, holdingValueInMillions }
       })
       .filter((result) => result !== null)
-
+    const displayVotingRecommendation =
+      company?.researchDocuments?.displayVotingRecommendation === true
     const baseRecord = {
       id: vote.id,
       originalMeetingId: meeting.id,
@@ -92,22 +93,44 @@ async function processVotesData(
         id: company?.id || companyId || '',
         name: company?.name || '',
       },
+      displayVotingRecommendation,
       votes: [vote],
       hasVotes: true,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
         const agendaItem = meeting.agenda?.[index] || {}
+        let votingRecommendation: string | undefined =
+          agendaItem.recommendation?.votingRecommendation
+        let recommendationExplanation: string | undefined =
+          agendaItem.recommendation?.recommendationExplanation
+        if (agendaItem.exceptionalRecommendation.showExceptional) {
+          const hasExceptionalCompany = agendaItem.exceptionalRecommendation.companies.some(
+            (currentCompany: string | Company) => {
+              if (typeof currentCompany === 'string') {
+                return currentCompany === company?.id
+              }
+              return currentCompany.id === company?.id
+            },
+          )
+
+          if (hasExceptionalCompany) {
+            votingRecommendation = agendaItem.exceptionalRecommendation.votingRecommendation
+            recommendationExplanation = agendaItem.exceptionalRecommendation.reasonText
+          }
+        }
+
         return {
           id: `${vote.id}_agenda_${index}`,
           topicIndex: voteItem.topicIndex ?? index + 1,
           text: agendaItem.text || voteItem.text || `פריט ${index + 1}`,
           vote: voteItem.voteDecision || null,
+          voteReason: voteItem.voteReason || null,
           policyCompliance: voteItem.isInvestmentCommittee ?? null,
           conflictOfInterest: voteItem.hasConflictOfInterest ?? null,
           relatedParty: voteItem.isRelatedParty ?? null,
           personalInterest: voteItem.hasPersonalInterest ?? null,
           recommendation: {
-            votingRecommendation: agendaItem.recommendation?.votingRecommendation || '',
-            recommendationExplanation: agendaItem.recommendation?.recommendationExplanation || '',
+            votingRecommendation: displayVotingRecommendation ? votingRecommendation : '',
+            recommendationExplanation: displayVotingRecommendation ? recommendationExplanation : '',
           },
           result: agendaItem.result || voteItem.meetingResult || null,
           meetingResults: agendaItem.meetingResult || voteItem.meetingResult || null,
@@ -201,6 +224,7 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
   let allVotes: any[] = []
   let page = 1
   let hasMore = true
+
   while (hasMore) {
     const batch = await req.payload.find({
       collection: 'votes',
@@ -217,10 +241,17 @@ async function fetchVotesInBatches(req: PayloadRequest, whereConditions: any[], 
       page,
       overrideAccess: true,
     })
+
     allVotes = allVotes.concat(batch.docs)
     hasMore = batch.hasNextPage
     page++
+
+    // Add progress logging for large exports
+    if (allVotes.length % 5000 === 0) {
+      console.log(`Processed ${allVotes.length} votes...`)
+    }
   }
+
   return allVotes
 }
 
@@ -310,6 +341,7 @@ async function fetchAndProcessVotesData(
         depth: 0,
         limit: 0,
         overrideAccess: true,
+        //TODO: add select
       }),
       req.payload.find({
         collection: 'companies',
@@ -317,6 +349,7 @@ async function fetchAndProcessVotesData(
         depth: 0,
         limit: 0,
         overrideAccess: true,
+        //TODO: add select
       }),
     ])
 
@@ -523,12 +556,16 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       processedData = result as any[]
       totalItems = processedData.length
     } else {
-      ;({ processedData, totalItems } = result as { processedData: any[]; totalItems: number })
+      ;({ processedData, totalItems } = result as { processedData: unknown[]; totalItems: number })
     }
 
     if (isExport && totalItems > 10000) {
       return Response.json(
-        { error: 'Export too large; apply filters or contact support' },
+        {
+          error: 'Export too large; apply filters or contact support',
+          totalItems,
+          maxAllowed: 10000,
+        },
         { status: 400 },
       )
     }

@@ -25,6 +25,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   id: true,
   meetingId: true,
   agenda: true,
+  labels: true,
   companies: true,
   funds: true,
   stock: true,
@@ -37,6 +38,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   location: true,
   proxyVotingDate: true,
   state: true,
+  isDualStock: true,
   comments: true,
   electronicVotingEnabled: true,
   resultsConfirmationStatus: true,
@@ -141,22 +143,69 @@ function createRegularFilters(filters: Record<string, string[]>) {
         conditions.push({
           type: { in: values.length ? values : [null] },
         })
+      } else if (field === 'isDualStock') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
+        const booleanValues = values.map((v) => v === 'true')
+        const booleanValue = booleanValues.length === 1 ? booleanValues[0] : booleanValues
+        console.log('!!!!! isDualStock filter values: ', values, booleanValue)
+        conditions.push({
+          isDualStock: { equals: booleanValue },
+        })
       } else if (field === 'electronicVotingEnabled') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           electronicVotingEnabled: { in: booleanValues },
         })
       } else if (field === 'resultsConfirmationStatus') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           resultsConfirmationStatus: { in: booleanValues },
         })
       } else if (field === 'stockTradable') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           'stock.tradable': { in: booleanValues },
         })
       } else if (field === 'committeeInitiated') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            isDualStock: { equals: true },
+          })
+          conditions.push({
+            isDualStock: { equals: false },
+          })
+        }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           'stock.isFinancial': { in: booleanValues },
@@ -417,6 +466,7 @@ export const meetingColumnsForServer = [
   { key: 'agendas', header: 'סדר היום' },
   { key: 'companies', header: 'חברות' },
   { key: 'agenda', header: 'סדר יום' },
+  { key: 'labels', header: 'תגית' },
   { key: 'stockNumber', header: 'מס׳ נייר' },
   { key: 'stockType', header: 'סוג נייר' },
   { key: 'stockName', header: 'שם נייר' },
@@ -434,12 +484,14 @@ export const meetingColumnsForServer = [
   { key: 'holdingValueInMillions', header: 'שווי החזקה  (מיליוני ₪)' },
   { key: 'reference', header: 'אסמכתא' },
   { key: 'meetingState', header: 'מצב' },
+  { key: 'isDualStock', header: 'דואלית' },
   { key: 'researchDocuments', header: 'מחקר' },
   { key: 'location', header: 'מיקום' },
   { key: 'comments', header: 'הערות' },
   { key: 'resultsConfirmationStatus', header: 'אימות תוצאות' },
   { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
   { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
+  { key: 'reported', header: 'הצבעה בפועל' },
 ]
 
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
@@ -490,7 +542,7 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
       const viewMode = req.query.viewMode || ''
       const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
 
-      const encodedFilename = encodeURIComponent('דו׳׳ח השתתפות')
+      const encodedFilename = encodeURIComponent('דו׳׳ח אסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
 
       return new Response(new Uint8Array(buffer), {
@@ -529,6 +581,7 @@ function createMeetingDataObject(
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
+    labels: meeting.labels || [],
     votingPercentage: null, // mean have no data yet.
     displayVotingRecommendation,
     defaultVotingRecommendation,
@@ -553,6 +606,7 @@ function createMeetingDataObject(
     holdingValueInMillions:
       companiesArray?.reduce((acc, obj) => acc + obj.holdingValueInMillions, 0) || 0,
     meetingState: meeting.state || null,
+    isDualStock: !!meeting?.isDualStock,
     meetingInviteUrl: meeting.invitationLink || '',
     comments: meeting.comments || '-',
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,

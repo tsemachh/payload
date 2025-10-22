@@ -44,5 +44,5 @@ export const handleImpersonationEnd = async ({
   req,
   originalUserId,
 }: HandleImpersonationEndParams) => {
-  logImpersonationEnd({ originalUserId })
+  logImpersonationEnd({ originalUserId, req })
 }

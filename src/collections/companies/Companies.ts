@@ -2,7 +2,9 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
-
+import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
+import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
+import { logEvent } from '@/lib/audit/logEvent'
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
     if (!data.companyId) {
@@ -183,6 +185,7 @@ export const Companies: CollectionConfig = {
                     custom: {
                       cellWidth: '100px',
                     },
+                    disableListColumn: true,
                     width: '100px',
                     className: 'truncate',
                     allowCreate: false,
@@ -267,6 +270,7 @@ export const Companies: CollectionConfig = {
                   on: 'companies',
                   maxDepth: 0,
                   admin: {
+                    disableListColumn: true,
                     allowCreate: false,
                     defaultColumns: ['filename'],
                     condition: (siblingData) => {
@@ -325,6 +329,9 @@ export const Companies: CollectionConfig = {
               collection: 'users',
               on: 'companies.companyId',
               name: 'usersWrite',
+              admin: {
+                disableListColumn: true,
+              },
               where: {
                 'companies.permission': { equals: 'write' },
               },
@@ -335,6 +342,9 @@ export const Companies: CollectionConfig = {
               collection: 'users',
               on: 'companies.companyId',
               name: 'usersRead',
+              admin: {
+                disableListColumn: true,
+              },
               where: {
                 'companies.permission': { equals: 'read' },
               },
@@ -353,6 +363,9 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'fund',
               name: 'holdings',
+              admin: {
+                disableListColumn: true,
+              },
             },
           ],
         },
@@ -367,6 +380,9 @@ export const Companies: CollectionConfig = {
               collection: 'meetings',
               on: 'companies',
               name: 'meetings',
+              admin: {
+                disableListColumn: true,
+              },
             },
           ],
         },
@@ -384,13 +400,96 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
+        {
+          name: 'label',
+          label: 'תגיות',
+          fields: [
+            {
+              name: 'labels',
+              type: 'array',
+              fields: [
+                {
+                  name: 'label',
+                  label: 'שם התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'color',
+                  label: 'צבע התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'stock',
+                  label: 'נייר ערך',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  hasMany: true,
+                },
+                {
+                  name: 'companiesWithSameLabel',
+                  label: 'חברות עם אותו תוית',
+                  type: 'relationship',
+                  relationTo: 'companies',
+                  hasMany: true,
+                },
+              ],
+            },
+          ],
+          hooks: {
+            afterChange: [syncMeetingsOnCompanyChange],
+          },
+        },
       ],
     },
   ],
   hooks: {
     beforeChange: [beforeChangeCompanyId],
     afterChange: [
-      async ({ doc, req, previousDoc }) => {
+      async ({ doc, req, previousDoc, operation }) => {
+        // Audit logging for company create/update
+        try {
+          if (!previousDoc) {
+            // Create
+            await logEvent({
+              eventType: 'company.create',
+              category: 'company',
+              severity: 'info',
+              targetCollection: 'companies',
+              targetId: String(doc.id),
+              message: `Company created: ${doc.name} (${doc.companyId ?? doc.id})`,
+              details: { type: doc.type, active: doc.active },
+              req,
+              source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+            })
+          } else {
+            // Update - detect simple field changes
+            const changes: string[] = []
+            if (doc.name !== previousDoc.name) changes.push('name')
+            if (doc.active !== previousDoc.active) changes.push('active')
+            if (doc.type !== previousDoc.type) changes.push('type')
+            if (JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies))
+              changes.push('subCompanies')
+            if (JSON.stringify(doc.parentCompany) !== JSON.stringify(previousDoc.parentCompany))
+              changes.push('parentCompany')
+
+            if (changes.length > 0) {
+              await logEvent({
+                eventType: 'company.update',
+                category: 'company',
+                severity: 'info',
+                targetCollection: 'companies',
+                targetId: String(doc.id),
+                message: `Company updated: ${doc.name} – fields changed: ${changes.join(', ')}`,
+                details: { changes },
+                req,
+                source: (req as any)?.isAdminUI ? 'admin-ui' : 'rest',
+              })
+            }
+          }
+        } catch (e) {
+          req?.payload?.logger?.warn?.({ e }, 'Failed to write company audit log')
+        }
+
         // Only proceed if the company is of type 'fund'
         const isRegular = doc.type === 'regular'
 
@@ -438,6 +537,21 @@ export const Companies: CollectionConfig = {
       path: '/voting-recommendations',
       method: 'get',
       handler: getVotingRecommendation,
+    },
+    {
+      path: '/createLabel',
+      method: 'post',
+      handler: addTagToCompany,
+    },
+    {
+      path: '/deleteLabel',
+      method: 'post',
+      handler: deleteTagFromCompany,
+    },
+    {
+      path: '/getLabels',
+      method: 'post',
+      handler: getLabelsForCompanies,
     },
   ],
 }

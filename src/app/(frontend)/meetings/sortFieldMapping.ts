@@ -11,6 +11,7 @@ export const sortFieldMapping: Record<string, string> = {
   stockTradable: 'stock.tradable',
   meetingType: 'type',
   meetingDate: 'meetingDate',
+  isDualStock: 'stock.isDualStock',
   reference: 'magnaId',
   location: 'location',
   holdingsLimit: 'holdingsLimit',

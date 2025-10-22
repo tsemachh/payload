@@ -19,9 +19,11 @@ import {
   validateResearchDocsInMeetings,
 } from '../research-documents/hooks'
 import { getCollectionDoc, getIdOfRelationField } from '@/utils/utils'
+import { calculatPercentageHolding } from '@/utils/dataUtils'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
+  updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
 } from '@/collections/meetings/hooks/adminHooks'
@@ -29,6 +31,7 @@ import { meetingStateOptions, meetingTypeOptions, stockTypeOptions } from '@/con
 import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/votesCountHooks'
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
+import { syncLabelsOnStockChange } from './hooks/syncLabelsOnStockChange'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -105,21 +108,21 @@ export const Meetings: CollectionConfig = {
         { name: 'proxyVotingDate' },
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
-        { name: '_status', width: '120px' },
+        { name: '_status', width: '130px' },
       ],
       [
-        { name: 'electronicVotingEnabled', width: '100px' },
-        { name: 'hasVoteRecommendation', width: '100px' },
-        { name: 'hasResearchDoc', width: '100px' },
-        { name: 'votesStatus', width: '120px' },
-        { name: 'votesReportStatus', width: '120px' },
-        { name: 'resultsConfirmationStatus', width: '100px' },
+        { name: 'electronicVotingEnabled', width: '130px' },
+        { name: 'hasVoteRecommendation', width: '130px' },
+        { name: 'hasResearchDoc', width: '130px' },
+        { name: 'votesStatus', width: '130px' },
+        { name: 'votesReportStatus', width: '130px' },
+        { name: 'resultsConfirmationStatus', width: '130px' },
       ],
       [
-        { name: 'stockType', width: '200px' },
-        { name: 'stockOrigin', width: '120px' },
-        { name: 'isFinancialStock', width: '100px' },
-        { name: 'isDualStock', width: '100px' },
+        { name: 'stock.type', width: '200px' },
+        { name: 'stock.origin', width: '130px' },
+        { name: 'stock.isFinancial', width: '130px' },
+        { name: 'stock.isDual', width: '130px' },
       ],
     ],
   },
@@ -142,6 +145,7 @@ export const Meetings: CollectionConfig = {
       'holdingsLimit',
       'proxyVotingDate',
       'activity',
+      'totalHoldings',
       'electronicVotingEnabled',
       'invitationLink',
     ],
@@ -292,6 +296,50 @@ export const Meetings: CollectionConfig = {
               },
             },
             {
+              name: 'totalHoldings',
+              label: 'סך החזקות (%)',
+              type: 'number',
+              virtual: true,
+              admin: {
+                hidden: true,
+                components: {
+                  Cell: {
+                    path: '/admincomponents/cell/FormattedNumber',
+                    clientProps: { decimals: 4, suffix: '%' },
+                  },
+                },
+              },
+              hooks: {
+                afterRead: [
+                  async ({ data, req }) => {
+                    if (
+                      !data?.fundsWithHolding ||
+                      !Array.isArray(data.fundsWithHolding) ||
+                      data.fundsWithHolding.length === 0
+                    ) {
+                      return 0
+                    }
+
+                    // Sum up all quantities first, then calculate percentage on the total
+                    const totalQuantity = data.fundsWithHolding.reduce(
+                      (sum: number, holding: any) => {
+                        return sum + (holding.ownedQuantity || holding.quantity || 0)
+                      },
+                      0,
+                    )
+
+                    // Calculate holding values using the imported function on the total sum
+                    const percentageHolding = calculatPercentageHolding(
+                      totalQuantity,
+                      data.stockRegisteredValue,
+                    )
+
+                    return percentageHolding // Already rounded to 4 decimal places by calculateHoldingValues
+                  },
+                ],
+              },
+            },
+            {
               name: 'activity',
               label: 'פעילות',
               type: 'text',
@@ -363,6 +411,7 @@ export const Meetings: CollectionConfig = {
               maxDepth: 1,
               admin: {
                 allowCreate: false,
+                disableListColumn: true,
                 defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
@@ -678,6 +727,15 @@ export const Meetings: CollectionConfig = {
                     width: '50%',
                   },
                 },
+                {
+                  name: 'migrationComments',
+                  label: 'הערות מיגרציה',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    readOnly: true,
+                  },
+                },
               ],
             },
             {
@@ -711,6 +769,25 @@ export const Meetings: CollectionConfig = {
                   label: 'מע׳ אלק׳?',
                   type: 'checkbox',
                   admin: { width: 'auto', disableListFilter: true },
+                },
+              ],
+            },
+            {
+              name: 'labels',
+              type: 'array',
+              admin: {
+                hidden: true,
+              },
+              fields: [
+                {
+                  name: 'label',
+                  label: 'שם התגית',
+                  type: 'text',
+                },
+                {
+                  name: 'color',
+                  label: 'צבע התגית',
+                  type: 'text',
                 },
               ],
             },
@@ -833,6 +910,9 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
+                          },
+                          hooks: {
+                            afterChange: [syncLabelsOnStockChange],
                           },
                         },
                       ],
@@ -959,6 +1039,11 @@ export const Meetings: CollectionConfig = {
                       type: 'number',
                     },
                     {
+                      name: 'verifiedHoldings',
+                      type: 'checkbox',
+                      label: 'אימות החזקות',
+                    },
+                    {
                       name: 'original',
                       label: 'מניה מקורית חול',
                       type: 'array',
@@ -977,12 +1062,17 @@ export const Meetings: CollectionConfig = {
                         { name: 'stockId', label: 'מניה', type: 'text' },
                         { name: 'accountNum', label: 'מספר חשבון', type: 'number' },
                         { name: 'quantity', label: 'כמות', type: 'number' },
+                        {
+                          name: 'verifiedHoldings',
+                          type: 'checkbox',
+                          label: 'אימות החזקות',
+                        },
+                        {
+                          name: 'ownedQuantity',
+                          label: 'כמות בבעלות',
+                          type: 'number',
+                        },
                       ],
-                    },
-                    {
-                      name: 'verifiedHoldings',
-                      type: 'checkbox',
-                      label: 'אימות החזקות',
                     },
                   ],
                 },
@@ -998,6 +1088,14 @@ export const Meetings: CollectionConfig = {
                 disableListColumn: true,
               },
               maxDepth: 1,
+            },
+            {
+              name: 'stockRegisteredValue',
+              type: 'number',
+              admin: {
+                hidden: false,
+                disableListColumn: true,
+              },
             },
             {
               name: 'stockMarketValue',
@@ -1102,6 +1200,7 @@ export const Meetings: CollectionConfig = {
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
+      updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
     ],
   },
   endpoints: [

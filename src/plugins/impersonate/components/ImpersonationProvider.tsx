@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
 
 interface ImpersonationData {
   isImpersonating: boolean
@@ -23,18 +23,19 @@ const ImpersonationContext = createContext<ImpersonationContextType | null>(null
 
 interface ImpersonationProviderProps {
   children: ReactNode
-  checkInterval?: number // in milliseconds, default 30000 (30 seconds)
+  checkInterval?: number // in milliseconds, default 300000 (5 minutes)
   authCollection?: string // collection slug for auth, default 'users'
 }
 
 export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   children,
-  checkInterval = 30000,
+  checkInterval = 300000,
   authCollection = 'users',
 }) => {
   const [impersonationData, setImpersonationData] = useState<ImpersonationData>({
     isImpersonating: false,
   })
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const checkImpersonation = async () => {
     try {
@@ -54,12 +55,37 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
     }
   }
 
+  // Initial one-time check on mount or when authCollection changes
   useEffect(() => {
     checkImpersonation()
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [authCollection])
 
-    const interval = setInterval(checkImpersonation, checkInterval)
-    return () => clearInterval(interval)
-  }, [checkInterval])
+  // Poll only when currently impersonating
+  useEffect(() => {
+    if (impersonationData.isImpersonating) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      intervalRef.current = setInterval(checkImpersonation, checkInterval)
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [impersonationData.isImpersonating, checkInterval])
 
   const contextValue: ImpersonationContextType = {
     ...impersonationData,

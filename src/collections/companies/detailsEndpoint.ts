@@ -28,6 +28,7 @@ export const detailsEndpoint = async (req: PayloadRequest) => {
         parentCompany: true,
         subCompanies: true,
         passiveFund: true,
+        labels: true,
       },
       hidden: true,
       depth: 0,

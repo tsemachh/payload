@@ -259,6 +259,25 @@ export const isAdminFieldLevel: FieldAccess<{ id: string }, User> = ({ req: { us
 }
 
 /**
+ * Field-level: allow admin or the user themselves
+ */
+export const isAdminOrSelfFieldLevel: FieldAccess<{ id: string }, User> = ({
+  req,
+  id,
+  data,
+  siblingData,
+}) => {
+  const user = req?.user as User | undefined
+  if (!user) return false
+  if (user.isAdmin) return true
+
+  // Determine the document ID being accessed
+  const docId = (typeof id === 'string' && id) || (data as any)?.id || (siblingData as any)?.id
+
+  return !!docId && String(docId) === String(user.id)
+}
+
+/**
  * Check if the user is an admin or accessing their own record
  */
 export const isAdminOrSelf: Access = ({ req: { user } }) => {

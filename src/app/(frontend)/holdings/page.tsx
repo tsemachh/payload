@@ -139,7 +139,7 @@ export default function HoldingsFeedView() {
       setSilencedRecords(feedResults.silencedRecords)
     } catch (error) {
       handleAndNotifyError(error, 'שגיאה בהעלאת הקובץ')
-      setEditForm(true) 
+      setEditForm(true)
     } finally {
       setIsValidating(false)
     }
@@ -207,7 +207,7 @@ export default function HoldingsFeedView() {
       router.push(`/holdings/view?date=${format(date, 'yyyy-MM-dd')}`)
     } catch (error) {
       setSaveError(true)
-      setEditForm(true) 
+      setEditForm(true)
       handleAndNotifyError(error, 'שגיאה בשמירת הקובץ')
     } finally {
       setIsUploading(false)
@@ -253,6 +253,7 @@ export default function HoldingsFeedView() {
                 )}
                 showFunds={true}
                 showBorder={true}
+                checkActive={true}
               />
             </div>
 

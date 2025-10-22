@@ -18,6 +18,7 @@ interface CompanyTreeSelectorProps {
   allCompaniesIds?: string[]
   showFunds?: boolean
   showBorder?: boolean
+  checkActive?: boolean
 }
 
 export function CompanyTreeSelector({
@@ -29,6 +30,7 @@ export function CompanyTreeSelector({
   allCompaniesIds = [],
   showFunds = true,
   showBorder = false,
+  checkActive = false,
 }: CompanyTreeSelectorProps) {
   const [companies, setCompanies] = useState<TreeCompanyType[]>([])
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
@@ -130,7 +132,11 @@ export function CompanyTreeSelector({
       return internalSelectedCompanies.includes(node.id) ? 'checked' : 'unchecked'
     }
 
-    const childStates = node.subCompanies.map((child) => {
+    const relevantChildren = checkActive
+      ? node.subCompanies.filter((child) => child.active)
+      : node.subCompanies
+
+    const childStates = relevantChildren.map((child) => {
       return {
         id: child.id,
         state: getNodeSelectionState(child),
@@ -247,17 +253,28 @@ export function CompanyTreeSelector({
         newSelection.push(childId)
       }
       if (parent && parent.subCompanies) {
-        const allSiblingsSelected = parent.subCompanies.every(
+        const relevantSiblings = checkActive
+          ? parent.subCompanies.filter((sibling) => sibling.active)
+          : parent.subCompanies
+        const allRelevantSiblingsSelected = relevantSiblings.every(
           (sibling) => sibling.id === childId || newSelection.includes(sibling.id),
         )
-        if (allSiblingsSelected && !newSelection.includes(parent.id)) {
+        if (allRelevantSiblingsSelected && !newSelection.includes(parent.id)) {
           newSelection.push(parent.id)
         }
       }
     } else {
       newSelection = newSelection.filter((id) => id !== childId)
       if (parent && newSelection.includes(parent.id)) {
-        newSelection = newSelection.filter((id) => id !== parent.id)
+        const relevantChildren = checkActive
+          ? parent?.subCompanies?.filter((child) => child.active)
+          : parent.subCompanies
+        const anyRelevantChildSelected = relevantChildren?.some((child) =>
+          newSelection.includes(child.id),
+        )
+        if (!anyRelevantChildSelected) {
+          newSelection = newSelection.filter((id) => id !== parent.id)
+        }
       }
     }
 
@@ -352,18 +369,24 @@ export function CompanyTreeSelector({
       const isNodeLeaf = !showFunds || isLeafNode(node)
       const hasSubsidiaries = showFunds && node.subCompanies && node.subCompanies.length > 0
       const shouldshowFunds = showFunds && hasSubsidiaries
-
       return (
         <div key={`${node.id}-${index}-${level}`} className="w-full">
           <div
-            className="flex items-center justify-between w-full px-2 py-1.5 hover:bg-muted rounded-sm cursor-pointer"
-            onClick={() =>
-              isNodeLeaf
-                ? handleChildSelect(node.id, selectionState !== 'checked')
-                : handleSelect(node.id)
-            }
+            className={cn(
+              'flex items-center justify-between w-full px-2 py-1.5 hover:bg-muted rounded-sm cursor-pointer',
+              !node.active && 'cursor-not-allowed', // add not-allowed cursor if inactive
+            )}
             style={{
               paddingRight: level > 0 ? `${level * 16 + 16}px` : undefined,
+            }}
+            title={!node.active ? 'חברה לא פעילה' : ''}
+            onClick={() => {
+              if (checkActive && !node.active) return // prevent clicks for inactive nodes
+              if (isNodeLeaf) {
+                handleChildSelect(node.id, selectionState !== 'checked')
+              } else {
+                handleSelect(node.id)
+              }
             }}
           >
             <div className="flex items-center min-w-0">
@@ -381,6 +404,7 @@ export function CompanyTreeSelector({
 
               <div className="relative mr-3 h-3.5 w-3.5">
                 <Checkbox
+                  title={!node.active ? 'חברה לא פעילה' : ''}
                   id={`checkbox-${node.id}`}
                   checked={selectionState === 'checked'}
                   data-state={selectionState}
@@ -396,9 +420,11 @@ export function CompanyTreeSelector({
                     showFunds &&
                       selectionState === 'indeterminate' &&
                       'data-[state=indeterminate]:bg-gray-400',
+                    !node.active && 'bg-gray-200 border-gray-300',
                   )}
                   aria-label={`Select ${node.name}`}
                   onClick={(e) => e.stopPropagation()}
+                  disabled={checkActive && !node.active}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -407,7 +433,14 @@ export function CompanyTreeSelector({
                 />
               </div>
               <div className="flex-1 overflow-hidden">
-                <span className="truncate mr-1 block">{node.name}</span>
+                <span
+                  className={cn(
+                    'truncate mr-1 block',
+                    !node.active && 'text-gray-400 select-none', // grey + not selectable if inactive
+                  )}
+                >
+                  {node.name}
+                </span>
               </div>
             </div>
           </div>

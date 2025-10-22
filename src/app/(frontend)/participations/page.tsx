@@ -72,6 +72,7 @@ export default function Participations() {
   const [deselectedIds, setDeselectedIds] = useState<Set<string>>(new Set())
   const [isExporting, setIsExporting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [showAdvisorColumn, setShowAdvisorColumn] = useState(false)
 
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -85,6 +86,8 @@ export default function Participations() {
   }, [appliedFilters.selectedFundIds, funds])
 
   const companiesWithFunds: CompanyWithFunds[] = useMemo(() => {
+    if (!companies.length || !funds.length) return []
+
     const companyMap = new Map<string, CompanyWithFunds>(
       companies.map((company) => [company.id, { ...company, funds: [] }]),
     )
@@ -194,7 +197,15 @@ export default function Participations() {
 
   // The data comes processed from the server
   const participationData: ParticipationTableDataType[] = useMemo(() => {
-    return votesResponse?.data || []
+    if (!votesResponse?.data) return []
+
+    const hasAdvisorColumn = votesResponse.data.some(
+      (meeting: { displayVotingRecommendation: boolean }) =>
+        meeting.displayVotingRecommendation === true,
+    )
+
+    setShowAdvisorColumn(hasAdvisorColumn)
+    return votesResponse.data
   }, [votesResponse])
 
   const totalItems = votesResponse?.totalItems || 0
@@ -216,7 +227,7 @@ export default function Participations() {
       deselectedIds,
       setDeselectedIds,
     )
-  }, [allSelected, participationData, deselectedIds, selectedCompaniesCount])
+  }, [selectedCompaniesCount, allSelected, participationData, deselectedIds])
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
@@ -286,6 +297,7 @@ export default function Participations() {
 
   const handleExportFile = async (format: ExportFormat) => {
     const errors: string[] = []
+
     if (!reportName.trim()) {
       errors.push('reportName')
     }
@@ -295,6 +307,13 @@ export default function Participations() {
     if (selectedFundIds.length === 0) {
       errors.push('companies')
     }
+
+    // Check if there's data to export
+    if (participationData.length === 0 && !votesLoading) {
+      handleAndNotifyError(new Error('אין נתונים לייצוא'), 'אין נתונים לייצוא')
+      return
+    }
+
     if (errors.length > 0) {
       setValidationErrors(errors)
       return
@@ -428,6 +447,7 @@ export default function Participations() {
                   showSearch={false}
                   allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
                   showFunds={false}
+                  checkActive={false}
                 />
               </SelectContent>
             </Select>
@@ -462,9 +482,9 @@ export default function Participations() {
         </div>
 
         {/* Export Button */}
-        <div className="w-[300px]">
+        <div className="w-[230px]">
           <div className="relative pb-5">
-            <label className="text-sm text-right whitespace-nowrap invisible">ייצוא</label>
+            <label className="text-sm text-right whitespace-nowrap">ייצוא</label>
             <ExportDropdownButton
               onExportAction={handleExportFile}
               isExporting={isExporting}
@@ -489,20 +509,22 @@ export default function Participations() {
           <div style={{ marginTop: '5px' }}>
             <div className="flex justify-end pr-10 mb-[-25px]">
               <div className="flex gap-6 items-center pl-10">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="vote-against-recommendation"
-                    checked={voteAgainstRecommendation}
-                    onCheckedChange={handleVoteAgainstRecommendationChange}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  />
-                  <Label
-                    htmlFor="vote-against-recommendation"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-                  >
-                    הצבעה בניגוד להמלצה
-                  </Label>
-                </div>
+                {showAdvisorColumn && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="vote-against-recommendation"
+                      checked={voteAgainstRecommendation}
+                      onCheckedChange={handleVoteAgainstRecommendationChange}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                    />
+                    <Label
+                      htmlFor="vote-against-recommendation"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                    >
+                      הצבעה בניגוד להמלצה
+                    </Label>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="vote-different-from-result"

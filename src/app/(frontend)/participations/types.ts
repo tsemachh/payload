@@ -28,15 +28,15 @@ export interface ParticipationTableDataType {
   holdingValueInMillions: number // Assuming this is a number after parsing
   meetingDate: string
   meetingType: string
-  // Removed from here: meetingResults, simpleMajority, specialMajority, policyCompliance, conflictOfInterest, relatedParty, personalInterest
   agendas: ParticipationAgendaType[]
-  // Other fields from your API response
+
+  // Meeting details
   meetingIdPayload: string // The actual unique ID from the API
   meetingId: string // The meeting ID from the API
   companyName: string
   comments: string
   committeeInitiated: boolean
-  companies: { id: string; name: string }[] // Assuming this structure
+  companies: Array<{ id: string; name: string }>
   defaultVotingRecommendation: boolean
   displayVotingRecommendation: boolean
   electronicVotingEnabled: boolean
@@ -47,12 +47,19 @@ export interface ParticipationTableDataType {
   reference: string
   researchDocuments: any[] // Adjust type if known
   resultsConfirmationStatus: boolean
+
+  // Stock details
   stockOrigin: string
   stockSymbol: string
   stockTradable: boolean
   stockType: string
-  fundName: string | null // Assuming this is a string or null
+
+  // Company and voting details
+  fundName: string | null
   votingPercentage: number | null
-  currentCompany: any
-  votes: any
+  currentCompany: {
+    id: string
+    name: string
+  }
+  votes: any[] // Consider creating a more specific type
 }
