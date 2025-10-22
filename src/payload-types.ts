@@ -14,12 +14,9 @@ export type AdminNotificationType =
   | (
       | 'newVoteAfterHoldingLimit'
       | 'predictaFeed'
-      | 'usersUpdated'
       | 'companyNotReportedHoldings'
       | 'companyNotVotedMeetingNextDay'
-      | 'userImpersonation'
       | 'meetingToPublish'
-      | 'unauthorizedIPAccess'
     )
   | null;
 /**

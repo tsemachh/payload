@@ -113,7 +113,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
           route = '/holdings'
           break
         case 'user-impersonation':
-          route = '/admin/collections/users'
+          route = '/'
           break
         case 'meeting-updated':
           route = '/'

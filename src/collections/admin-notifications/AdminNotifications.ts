@@ -60,12 +60,8 @@ export const AdminNotifications: CollectionConfig = {
               value: 'newVoteAfterHoldingLimit',
             },
             {
-              label: 'הזנת מערכת נ״ע ואסיפות',
+              label: 'העדר הזנת מערכת נ״ע ואסיפות',
               value: 'predictaFeed',
-            },
-            {
-              label: 'עדכון משתמשים',
-              value: 'usersUpdated',
             },
             {
               label: 'העדר דווח החזקות',
@@ -76,16 +72,8 @@ export const AdminNotifications: CollectionConfig = {
               value: 'companyNotVotedMeetingNextDay',
             },
             {
-              label: 'התחזות למשתמש',
-              value: 'userImpersonation',
-            },
-            {
               label: 'אסיפה לפירסום',
               value: 'meetingToPublish',
-            },
-            {
-              label: 'גישה לא מורשית מכתובת IP',
-              value: 'unauthorizedIPAccess',
             },
           ],
           admin: {
