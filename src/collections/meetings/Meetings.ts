@@ -305,7 +305,7 @@ export const Meetings: CollectionConfig = {
                 components: {
                   Cell: {
                     path: '/admincomponents/cell/FormattedNumber',
-                    clientProps: { decimals: 4, suffix: '%' },
+                    clientProps: { decimals: 0, suffix: '%' },
                   },
                 },
               },
