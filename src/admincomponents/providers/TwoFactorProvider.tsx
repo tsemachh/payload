@@ -74,8 +74,8 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
       if (lastUserId) {
         console.log('TwoFactorProvider: User logged out, clearing 2FA session')
         // Clear both old and new verification keys
-        sessionStorage.removeItem('admin-2fa-verified')
-        sessionStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
+        localStorage.removeItem('admin-2fa-verified')
+        localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
       }
 
       // Reset all state when user logs out
@@ -94,8 +94,8 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
     if (lastUserId && lastUserId !== String(user.id)) {
       console.log('TwoFactorProvider: Different user detected, clearing previous user 2FA session')
       // Clear both old and new verification keys for previous user
-      sessionStorage.removeItem('admin-2fa-verified')
-      sessionStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
+      localStorage.removeItem('admin-2fa-verified')
+      localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
 
       // Reset verification states for new user
       setShowSetup(false)
@@ -131,12 +131,12 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
     } else if (has2FASetup) {
       // User has fully enabled and verified 2FA - check if verification needed for this session
       const verificationKey = `admin-2fa-verified-${user.id}`
-      const alreadyVerified = sessionStorage.getItem(verificationKey) === 'true'
+      const alreadyVerified = localStorage.getItem(verificationKey) === 'true'
 
       console.log('TwoFactorProvider: 2FA verification check', {
         verificationKey,
         alreadyVerified,
-        sessionStorageValue: sessionStorage.getItem(verificationKey),
+        localStorageValue: localStorage.getItem(verificationKey),
       })
 
       if (!alreadyVerified) {
@@ -176,7 +176,7 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
         console.log('Admin 2FA verification successful')
         // Store verification with user ID to make it user-specific
         const verificationKey = `admin-2fa-verified-${user?.id}`
-        sessionStorage.setItem(verificationKey, 'true')
+        localStorage.setItem(verificationKey, 'true')
         setVerificationSuccess(true)
         setVerificationError('')
 
