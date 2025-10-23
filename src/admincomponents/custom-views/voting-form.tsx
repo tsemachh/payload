@@ -179,7 +179,6 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
         field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) || 0 : booleanValue
       updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
     }
-    console.log('updatedFunds', updatedFunds)
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
