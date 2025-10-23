@@ -111,8 +111,13 @@ export default buildConfig({
     },
   },
   onInit: async (payload) => {
-    // Schedule daily tasks when payload initializes
-    await scheduleDailyTasks(payload)
+    if (process.env.JOB_LEADER === 'true') {
+      await scheduleDailyTasks(payload)
+    } else {
+      payload.logger.info(
+        'Non-leader instance: task-level schedules disabled here to avoid duplicates',
+      )
+    }
   },
   jobs: {
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
@@ -178,36 +183,37 @@ export default buildConfig({
       },
     ],
     // autoRun can optionally be a function that receives payload as an argument
-    autoRun: process.env.NOJOBS
-      ? []
-      : [
-          {
-            cron: '00 19 * * *', // every day at 19:00
-            limit: 10, // limit jobs to process each run
-            queue: 'daily07pm', // name of the queue
-          },
-          {
-            cron: '00 22 * * *', // every day at 22:00
-            limit: 10, // limit jobs to process each run
-            queue: 'daily10pm', // name of the queue
-          },
-          {
-            cron: '00 08 * * *', // every day at 08:00
-            limit: 10, // limit jobs to process each run
-            queue: 'daily08am', // name of the queue
-          },
-          {
-            cron: '*/01 * * * *', // every 30 minutes
-            limit: 100, // limit jobs to process each run
-            queue: 'holdings', // name of the queue
-          },
-          {
-            cron: '*/02 * * * *', // every 1 minutes
-            limit: 100, // limit jobs to process each run
-            queue: 'now', // name of the queue
-          },
-          // add as many cron jobs as you want
-        ],
+    autoRun:
+      process.env.JOB_LEADER != 'true'
+        ? []
+        : [
+            {
+              cron: '00 19 * * *', // every day at 19:00
+              limit: 10, // limit jobs to process each run
+              queue: 'daily07pm', // name of the queue
+            },
+            {
+              cron: '00 22 * * *', // every day at 22:00
+              limit: 10, // limit jobs to process each run
+              queue: 'daily10pm', // name of the queue
+            },
+            {
+              cron: '00 08 * * *', // every day at 08:00
+              limit: 10, // limit jobs to process each run
+              queue: 'daily08am', // name of the queue
+            },
+            {
+              cron: '*/01 * * * *', // every 30 minutes
+              limit: 100, // limit jobs to process each run
+              queue: 'holdings', // name of the queue
+            },
+            {
+              cron: '*/02 * * * *', // every 1 minutes
+              limit: 100, // limit jobs to process each run
+              queue: 'now', // name of the queue
+            },
+            // add as many cron jobs as you want
+          ],
   },
   admin: {
     dateFormat: 'HH:mm dd/MM/yyyy',
