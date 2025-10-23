@@ -162,21 +162,24 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
       // Handle nested original fields
       const originalField = field.replace('original.', '')
       const currentOriginal = updatedFunds[index].original || ({} as any)
+      const numericValue =
+        originalField === 'ownedQuantity'
+          ? Number.parseFloat(value.replace(/,/g, '')) || 0
+          : booleanValue
       updatedFunds[index] = {
         ...updatedFunds[index],
         original: {
           ...currentOriginal,
-          [originalField]: originalField === 'ownedQuantity' ? value : booleanValue,
+          [originalField]: numericValue,
         },
       }
     } else {
       // Handle regular fields
-      updatedFunds[index] =
-        field === 'ownedQuantity'
-          ? { ...updatedFunds[index], [field]: value }
-          : { ...updatedFunds[index], [field]: booleanValue }
+      const numericValue =
+        field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) || 0 : booleanValue
+      updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
     }
-
+    console.log('updatedFunds', updatedFunds)
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
