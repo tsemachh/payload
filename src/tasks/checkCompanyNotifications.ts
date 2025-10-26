@@ -239,6 +239,17 @@ async function checkMeetingNotifications(
         meetingDetail.notificationsCreated.beforeVotingEnd++
       }
 
+      // Cleanup: delete any existing notification with the same message/type for this meeting+company
+      await payload.delete({
+        collection: 'company-meeting-notifications',
+        where: {
+          message: { equals: message },
+          notificationType: { equals: notificationType },
+          meeting: { equals: meeting.id },
+          company: { equals: company.id },
+        },
+      })
+
       await payload.create({
         collection: 'company-meeting-notifications',
         data: {

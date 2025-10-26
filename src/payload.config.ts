@@ -112,6 +112,7 @@ export default buildConfig({
   },
   onInit: async (payload) => {
     if (process.env.JOB_LEADER === 'true') {
+      payload.logger.info('leader instance scheduling daily tasks')
       await scheduleDailyTasks(payload)
     } else {
       payload.logger.info(
