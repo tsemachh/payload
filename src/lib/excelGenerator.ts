@@ -47,6 +47,29 @@ export async function generateParticipationsExcel(
     const headers = [...baseHeaders, ...agendaHeaders]
     const agendaTextIndex = headers.indexOf(SHARED_COLUMNS.SUBJECT) + 1
 
+    // First, create the title rows directly (not using addRow)
+    // Row 1: Title
+    worksheet.getCell(1, 1).value = 'דו"ח השתתפות באסיפות'
+    worksheet.mergeCells(1, 1, 1, headers.length)
+    worksheet.getRow(1).font = { name: 'Arial', size: 20, bold: true }
+    worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+
+    // Row 2: Report name
+    worksheet.getCell(2, 1).value = options.reportName
+    worksheet.mergeCells(2, 1, 2, headers.length)
+    worksheet.getRow(2).font = { name: 'Arial', size: 16, bold: true }
+    worksheet.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' }
+
+    // Row 3: Date range
+    const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
+    worksheet.getCell(3, 1).value = dateRangeText
+    worksheet.mergeCells(3, 1, 3, headers.length)
+    worksheet.getRow(3).font = { name: 'Arial', size: 14, bold: true }
+    worksheet.getRow(3).alignment = { horizontal: 'center', vertical: 'middle' }
+
+    // Row 4: Empty row
+    worksheet.addRow([])
+    // Now add the logo - it will overlay on top but won't push the text
     try {
       const logoPath = path.join(process.cwd(), 'public', 'emda_logo.png')
       if (fs.existsSync(logoPath)) {
@@ -64,32 +87,8 @@ export async function generateParticipationsExcel(
       logger.error('Could not add logo to Excel:', logoError)
     }
 
-    // Title section (first three rows)
-    const titleRow = worksheet.addRow(['דו"ח השתתפות באסיפות'])
-    titleRow.font = { bold: true, size: 16, name: 'Arial' }
-    titleRow.alignment = { horizontal: 'center' }
-    worksheet.mergeCells(1, 1, 1, headers.length)
-    titleRow.getCell(1).style.font = { name: 'Arial', size: 20, bold: true }
-
-    const reportNameRow = worksheet.addRow([options.reportName])
-    reportNameRow.font = { bold: true, size: 14, name: 'Arial' }
-    reportNameRow.alignment = { horizontal: 'center' }
-    worksheet.mergeCells(2, 1, 2, headers.length)
-    reportNameRow.getCell(1).style.font = { name: 'Arial', size: 16 }
-
-    const dateRangeText = `${formatNormalDate(options.dateRange.startDate)} - ${formatNormalDate(options.dateRange.endDate)}`
-    const dateRow = worksheet.addRow([dateRangeText])
-    dateRow.font = { bold: true, size: 14, name: 'Arial' }
-    dateRow.alignment = { horizontal: 'center' }
-    worksheet.mergeCells(3, 1, 3, headers.length)
-    dateRow.getCell(1).style.font = { name: 'Arial', size: 14 }
-
-    // Add empty row after title section
-    worksheet.mergeCells(4, 1, 4, headers.length)
-    worksheet.addRow([''])
-
     // Define header row offset
-    const headerRowOffset = 5
+    const headerRowOffset = 4
 
     worksheet.views = [{ state: 'frozen', ySplit: headerRowOffset, rightToLeft: true }]
 
@@ -312,20 +311,6 @@ export async function generateParticipationsExcel(
         }) || [],
     })
 
-    // Apply header styling to table header row
-    const headerRow = worksheet.getRow(headerRowOffset)
-    headerRow.eachCell((cell, colNumber) => {
-      if (colNumber <= headers.length) {
-        cell.font = { bold: true, size: 10, color: { argb: 'FF000000' }, name: 'Arial' }
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'EDEDED' },
-        }
-        cell.alignment = { horizontal: 'center', vertical: 'middle' }
-      }
-    })
-
     // Reapply data row formatting to preserve background colors and font colors
     rowFormats.forEach(({ rowIndex, fillColor, cellStyles }) => {
       const row = worksheet.getRow(rowIndex)
@@ -344,48 +329,62 @@ export async function generateParticipationsExcel(
       })
     })
 
+    // Apply header styling to table header row - MUST BE AFTER reapplying data row formatting
+    const headerRow = worksheet.getRow(headerRowOffset)
+    headerRow.eachCell((cell, colNumber) => {
+      if (colNumber <= headers.length) {
+        cell.font = { bold: true, size: 10, color: { argb: 'FF000000' }, name: 'Arial' }
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'EDEDED' },
+        }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+    })
+
     // Define fixed column widths with comments indicating corresponding columns
     const columnWidths = showAdvisorColumn
       ? [
-          10, // Column 1: מספר נייר ערך (Stock Number)
-          20, // Column 2: שם תאגיד (Corporate Name)
-          20, // Column 3: שם החברה (Company Name)
-          15, // Column 4: שם נייר ערך (Stock Name)
-          10, // Column 5: שווי שוק (Market Value)
-          10, // Column 6: אחוז החזקה (Percentage Holding)
-          10, // Column 7: שווי החזקה (Holding Value)
-          10, // Column 8: תאריך אסיפה (Meeting Date)
-          10, // Column 9: סוג אסיפה (Meeting Type)
-          70, // Column 10: נושא (Subject)
-          10, // Column 11: המלצת יועץ (Advisor Recommendation)
-          10, // Column 12: הצבעה (Vote)
-          10, // Column 13: תוצאות האסיפה (Meeting Results)
-          10, // Column 14: רוב רגיל (Regular Majority)
-          10, // Column 15: רוב מיוחד (%) (Special Majority)
-          10, // Column 16: בהתאם למדיניות (Policy Compliance)
-          10, // Column 17: ניגוד עניינים (Conflict of Interest)
-          10, // Column 18: קשר (Related Party)
-          10, // Column 19: אישי (Personal Interest)
+          12, // Column 1: מספר נייר ערך (Stock Number)
+          22, // Column 2: שם תאגיד (Corporate Name)
+          22, // Column 3: שם החברה (Company Name)
+          17, // Column 4: שם נייר ערך (Stock Name)
+          12, // Column 5: שווי שוק (Market Value)
+          12, // Column 6: אחוז החזקה (Percentage Holding)
+          14, // Column 7: שווי החזקה (Holding Value)
+          12, // Column 8: תאריך אסיפה (Meeting Date)
+          12, // Column 9: סוג אסיפה (Meeting Type)
+          72, // Column 10: נושא (Subject)
+          12, // Column 11: המלצת יועץ (Advisor Recommendation)
+          12, // Column 12: הצבעה (Vote)
+          12, // Column 13: תוצאות האסיפה (Meeting Results)
+          12, // Column 14: רוב רגיל (Regular Majority)
+          12, // Column 15: רוב מיוחד (%) (Special Majority)
+          33, // Column 16: בהתאם למדיניות (Policy Compliance)
+          12, // Column 17: ניגוד עניינים (Conflict of Interest)
+          12, // Column 18: קשר (Related Party)
+          12, // Column 19: אישי (Personal Interest)
         ]
       : [
-          10, // Column 1: מספר נייר ערך (Stock Number)
-          20, // Column 2: שם תאגיד (Corporate Name)
-          20, // Column 3: שם החברה (Company Name)
-          15, // Column 4: שם נייר ערך (Stock Name)
-          10, // Column 5: שווי שוק (Market Value)
-          10, // Column 6: אחוז החזקה (Percentage Holding)
-          10, // Column 7: שווי החזקה (Holding Value)
-          10, // Column 8: תאריך אסיפה (Meeting Date)
-          10, // Column 9: סוג אסיפה (Meeting Type)
-          70, // Column 10: נושא (Subject)
-          11, // Column 11: הצבעה (Vote) +1
-          11, // Column 12: תוצאות האסיפה (Meeting Results) +1
-          11, // Column 13: רוב רגיל (Regular Majority) +1
-          11, // Column 14: רוב מיוחד (%) (Special Majority) +1
-          12, // Column 15: בהתאם למדיניות (Policy Compliance) +2
-          11, // Column 16: ניגוד עניינים (Conflict of Interest) +1
-          11, // Column 17: קשר (Related Party) +1
-          11, // Column 18: אישי (Personal Interest) +1
+          12, // Column 1: מספר נייר ערך (Stock Number)
+          22, // Column 2: שם תאגיד (Corporate Name)
+          22, // Column 3: שם החברה (Company Name)
+          17, // Column 4: שם נייר ערך (Stock Name)
+          12, // Column 5: שווי שוק (Market Value)
+          12, // Column 6: אחוז החזקה (Percentage Holding)
+          14, // Column 7: שווי החזקה (Holding Value)
+          12, // Column 8: תאריך אסיפה (Meeting Date)
+          12, // Column 9: סוג אסיפה (Meeting Type)
+          72, // Column 10: נושא (Subject)
+          13, // Column 11: הצבעה (Vote) +1
+          13, // Column 12: תוצאות האסיפה (Meeting Results) +1
+          13, // Column 13: רוב רגיל (Regular Majority) +1
+          13, // Column 14: רוב מיוחד (%) (Special Majority) +1
+          33, // Column 15: בהתאם למדיניות (Policy Compliance) +2
+          13, // Column 16: ניגוד עניינים (Conflict of Interest) +1
+          13, // Column 17: קשר (Related Party) +1
+          13, // Column 18: אישי (Personal Interest) +1
         ]
 
     // Apply fixed column widths
@@ -436,7 +435,7 @@ export async function generateParticipationsExcel(
       workbook.definedNames.add(`'${worksheet.name}'!$${cell.address}`, `EndOfCol_${col}`)
     }
 
-    worksheet.getColumn(lastCol + 1).width = endRowMessage.length + 5
+    worksheet.getColumn(lastCol + 1).width = endRowMessage.length + headerRowOffset
 
     const buffer = await workbook.xlsx.writeBuffer()
     return Buffer.from(buffer)
