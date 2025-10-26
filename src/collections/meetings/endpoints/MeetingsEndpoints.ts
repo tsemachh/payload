@@ -581,7 +581,10 @@ function createMeetingDataObject(
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
     agendas,
-    labels: meeting.labels || [],
+    labels: (meeting.labels || []).filter(
+      (label): label is { id: string; label: string; color: string } =>
+        !!label?.id && !!label?.label && !!label?.color,
+    ),
     votingPercentage: null, // mean have no data yet.
     displayVotingRecommendation,
     defaultVotingRecommendation,

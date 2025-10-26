@@ -4,6 +4,7 @@ import { UserNotificationType } from '@/payload-types'
 import { scheduleCheckCompanyNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { format } from 'date-fns'
 import {
+  getWorkingDateAfter,
   getWorkingDateBefore,
   isWorkingDay,
 } from '@/collections/meetings/hooks/calculateHoldingDate'
@@ -59,10 +60,9 @@ export const checkCompanyNotifications = async (req: any) => {
   // Set up midnight timestamps for date ranges
   const todayMidnight = setToMidnight(today)
   const yesterdayMidnight = setToMidnight(addDays(today, -1))
-  const tomorrowMidnight = setToMidnight(addDays(today, 1))
 
   // 1. Check for meeting notifications
-  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight, tomorrowMidnight)
+  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
@@ -112,8 +112,12 @@ async function checkMeetingNotifications(
   results: any,
   todayMidnight: Date,
   yesterdayMidnight: Date,
-  tomorrowMidnight: Date,
 ) {
+  const now = new Date()
+  const nextWorkingDay = getWorkingDateAfter(now, 1, 0)
+  const nextWorkingDayMidNight = setToMidnight(nextWorkingDay)
+  const nextWorkingDayEnd = new Date(nextWorkingDay)
+  nextWorkingDayEnd.setHours(23, 59, 59, 999)
   const payload = req.payload
   const query = {
     and: [
@@ -130,7 +134,7 @@ async function checkMeetingNotifications(
             // Condition 2: proxyVotingDate between today midnight and tomorrow midnight
             proxyVotingDate: {
               greater_than: todayMidnight.toISOString(),
-              less_than: tomorrowMidnight.toISOString(),
+              less_than: nextWorkingDayEnd.toISOString(),
             },
           },
         ],
@@ -160,13 +164,16 @@ async function checkMeetingNotifications(
     const isAfterHoldingLimit =
       holdingLimitDate && holdingLimitDate > yesterdayMidnight && holdingLimitDate < todayMidnight
 
-    const isAfterVotingEnd =
-      proxyVotingDate && proxyVotingDate > todayMidnight && proxyVotingDate < tomorrowMidnight
+    const isWorkingDayBeforeProxyVotingDate =
+      proxyVotingDate &&
+      nextWorkingDay &&
+      proxyVotingDate.getTime() >= nextWorkingDayMidNight.getTime() &&
+      proxyVotingDate.getTime() <= nextWorkingDayEnd.getTime()
 
     console.log(
-      `Meeting:${meeting.id} isAfterHoldingLimit:${isAfterHoldingLimit} isAfterVotingEnd:${isAfterVotingEnd}`,
+      `Meeting:${meeting.id} isAfterHoldingLimit:${isAfterHoldingLimit} isAfterVotingEnd:${isWorkingDayBeforeProxyVotingDate} isWorkingDayBeforeProxyVotingDate:${isWorkingDayBeforeProxyVotingDate}`,
     )
-    if (!isAfterHoldingLimit && !isAfterVotingEnd) {
+    if (!isAfterHoldingLimit && !isWorkingDayBeforeProxyVotingDate) {
       continue
     }
 
@@ -231,7 +238,7 @@ async function checkMeetingNotifications(
         message = `יש להצביע ב${meeting.fullName},מועד הקובע חלף ב${formattedDate}`
         results.notificationsCreated.afterHoldingLimit++
         meetingDetail.notificationsCreated.afterHoldingLimit++
-      } else if (isAfterVotingEnd && proxyVotingDate) {
+      } else if (isWorkingDayBeforeProxyVotingDate && proxyVotingDate) {
         notificationType = 'before-voting-end'
         const formattedDate = format(proxyVotingDate, 'dd/MM/yyyy')
         message = `יש להצביע ב${meeting.fullName},חברה ${company.name} הוזמנה לאסיפה ואין הצבעה יום לפני מועד מסירת ההצבעות  ב${formattedDate}`
