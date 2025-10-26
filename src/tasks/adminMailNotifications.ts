@@ -4,6 +4,11 @@ import { sanitizeRequest } from './utils'
 import { scheduleAdminMailNotificationsTask } from '@/tasks/scheduleDailyTasks'
 import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sendMailFromRequest } from '@/utils/sendMail'
+import {
+  ADMIN_NOTIFICATION_KNOWN_TYPES,
+  adminNotificationTypeOptions,
+} from '@/collections/admin-notifications/typeOptions'
+import type { AdminNotificationType } from '@/payload-types'
 
 /**
  * Core function to send admin mail notifications
@@ -23,12 +28,13 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
       }
     }
 
-    // Calculate date 24 hours ago
-    const twentyFourHoursAgo = new Date()
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
-    const twentyFourHoursAgoISO = twentyFourHoursAgo.toISOString()
+    // Compute last working day window [start, end)
+    const { getLastWorkingDayWindow } = await import('@/utils/workingDayWindow')
+    const { start, end } = getLastWorkingDayWindow(new Date())
+    const startISO = start.toISOString()
+    const endISO = end.toISOString()
 
-    // Find all unread admin notifications created in the last 24 hours
+    // Find all unread admin notifications created during the last working day window
     const { docs: unreadNotifications } = await req.payload.find({
       collection: 'admin-notifications',
       where: {
@@ -36,7 +42,8 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
           equals: false,
         },
         createdAt: {
-          greater_than_equal: twentyFourHoursAgoISO,
+          greater_than_equal: startISO,
+          less_than: endISO,
         },
       },
       limit: 0,
@@ -68,28 +75,24 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
       }
     }
 
-    // Group notifications by type
-    const holdingsNotifications = unreadNotifications.filter((notification) =>
-      notification.message.includes('לא דיווחה על החזקות'),
-    )
+    // Group notifications by type using shared options and labels
+    const otherNotifications: any[] = []
 
-    const meetingsNotifications = unreadNotifications.filter((notification) =>
-      notification.message.includes('לא הצביעה באסיפה'),
-    )
+    // Render each known type section in the order defined by options
+    const groupedByKnownType = adminNotificationTypeOptions.map((opt) => {
+      const items = unreadNotifications.filter((n: any) => n.type === opt.value)
+      return { opt, items }
+    })
 
-    const feedNotifications = unreadNotifications.filter((notification) =>
-      notification.message.includes('לא התקבל פיד'),
-    )
-
-    const otherNotifications = unreadNotifications.filter(
-      (notification) =>
-        !notification.message.includes('לא דיווחה על החזקות') &&
-        !notification.message.includes('לא הצביעה באסיפה') &&
-        !notification.message.includes('לא התקבל פיד'),
-    )
+    // Collect unknown types
+    unreadNotifications.forEach((n: any) => {
+      if (!ADMIN_NOTIFICATION_KNOWN_TYPES.has(n.type as NonNullable<AdminNotificationType>)) {
+        otherNotifications.push(n)
+      }
+    })
 
     // Create email content
-    const emailSubject = `עמדה - התראות מערכת ב-24 השעות האחרונות (${unreadNotifications.length})`
+    const emailSubject = `עמדה - התראות מערכת שלא טופלו אתמול : ${unreadNotifications.length} התראות חדשות `
     let emailContent = `<!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
@@ -107,28 +110,14 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 </head>
 <body>
   <h1>התראות מערכת</h1>
-  <p>להלן רשימת ההתראות שנוצרו ב-24 השעות האחרונות וטרם נקראו במערכת:</p>
+  <p>להלן רשימת ההתראות שנוצרו ב-יום העבודה האחרון וטרם נקראו במערכת:</p>
 `
 
-    if (holdingsNotifications.length > 0) {
-      emailContent += `<h2>התראות החזקות (${holdingsNotifications.length})</h2><ul>`
-      holdingsNotifications.forEach((notification) => {
-        emailContent += `<li><a href="${req.payload.config.serverURL}/admin/collections/admin-notifications/${notification.id}">${notification.message}</a></li>`
-      })
-      emailContent += `</ul>`
-    }
-
-    if (meetingsNotifications.length > 0) {
-      emailContent += `<h2>התראות אסיפות (${meetingsNotifications.length})</h2><ul>`
-      meetingsNotifications.forEach((notification) => {
-        emailContent += `<li><a href="${req.payload.config.serverURL}/admin/collections/admin-notifications/${notification.id}">${notification.message}</a></li>`
-      })
-      emailContent += `</ul>`
-    }
-
-    if (feedNotifications.length > 0) {
-      emailContent += `<h2>התראות פידים (${feedNotifications.length})</h2><ul>`
-      feedNotifications.forEach((notification) => {
+    // Render each known type section
+    for (const { opt, items } of groupedByKnownType) {
+      if (items.length === 0) continue
+      emailContent += `<h2>${opt.label} (${items.length})</h2><ul>`
+      items.forEach((notification: any) => {
         emailContent += `<li><a href="${req.payload.config.serverURL}/admin/collections/admin-notifications/${notification.id}">${notification.message}</a></li>`
       })
       emailContent += `</ul>`
@@ -136,7 +125,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 
     if (otherNotifications.length > 0) {
       emailContent += `<h2>התראות אחרות (${otherNotifications.length})</h2><ul>`
-      otherNotifications.forEach((notification) => {
+      otherNotifications.forEach((notification: any) => {
         emailContent += `<li><a href="${req.payload.config.serverURL}/admin/collections/admin-notifications/${notification.id}">${notification.message}</a></li>`
       })
       emailContent += `</ul>`

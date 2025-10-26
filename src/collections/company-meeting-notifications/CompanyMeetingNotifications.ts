@@ -5,6 +5,7 @@ import UserNotificationsEndpoint from './endpoints/UserNotificationsEndpoint'
 import SendCompanyMeetingNotificationsEndpoint from './endpoints/SendCompanyMeetingNotificationsEndpoint'
 import { CheckCompanyNotificationsEndpoint } from './endpoints/CheckCompanyNotificationsEndpoint'
 import { isAdmin, isUserCompanyNotification } from '@/utils/authUtils'
+import { companyNotificationTypeOptions } from './typeOptions'
 
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
@@ -43,14 +44,7 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       label: 'סוג התראה',
       type: 'select',
       interfaceName: 'UserNotificationType',
-      options: [
-        { label: 'הצבעה נדרשת', value: 'after-holding-limit' },
-        { label: 'הצבעה תנעל בקרוב', value: 'before-voting-end' },
-        { label: 'העדר הזנת החזקות', value: 'holdings-not-fed' },
-        { label: 'כניסה לחשבון שלך', value: 'user-impersonation' },
-        { label: 'עדכון באסיפה ', value: 'meeting-updated' },
-        { label: 'פערי החזקות', value: 'holdings-gap' },
-      ],
+      options: companyNotificationTypeOptions as any,
       required: true,
     },
     {

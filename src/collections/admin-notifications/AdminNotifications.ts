@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import CheckAdminNotificationsEndPoint from './endpoints/CheckAdminNotificationsEndPoint'
 import SendAdminMailNotificationsEndpoint from './endpoints/SendAdminMailNotificationsEndpoint'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
+import { adminNotificationTypeOptions } from './typeOptions'
 
 const NotificationLinkProps: IconLinkProps = {
   urlTemplate: '${value}',
@@ -54,28 +55,7 @@ export const AdminNotifications: CollectionConfig = {
           label: 'סוג התראה',
           type: 'select',
           interfaceName: 'AdminNotificationType',
-          options: [
-            {
-              label: 'הצבעה לטיפול',
-              value: 'newVoteAfterHoldingLimit',
-            },
-            {
-              label: 'העדר הזנת מערכת נ״ע ואסיפות',
-              value: 'predictaFeed',
-            },
-            {
-              label: 'העדר דווח החזקות',
-              value: 'companyNotReportedHoldings',
-            },
-            {
-              label: 'העדר הצבעה',
-              value: 'companyNotVotedMeetingNextDay',
-            },
-            {
-              label: 'אסיפה לפירסום',
-              value: 'meetingToPublish',
-            },
-          ],
+          options: adminNotificationTypeOptions as any,
           admin: {
             width: '200px',
           },
