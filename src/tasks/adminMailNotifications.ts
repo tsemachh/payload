@@ -110,7 +110,7 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 </head>
 <body>
   <h1>התראות מערכת</h1>
-  <p>להלן רשימת ההתראות שנוצרו ב-24 השעות האחרונות וטרם נקראו במערכת:</p>
+  <p>להלן רשימת ההתראות שנוצרו ב-יום העבודה האחרון וטרם נקראו במערכת:</p>
 `
 
     // Render each known type section
