@@ -5,7 +5,7 @@ import { scheduleCheckCompanyNotificationsTask } from '@/tasks/scheduleDailyTask
 import { format } from 'date-fns'
 import {
   getWorkingDateBefore,
-  isHolidayOrShabbat,
+  isWorkingDay,
 } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 
@@ -49,7 +49,7 @@ export const checkCompanyNotifications = async (req: any) => {
     meetingDetails: [] as MeetingDetail[],
   }
 
-  if (isHolidayOrShabbat(today)) {
+  if (!isWorkingDay(today)) {
     return {
       success: true,
       message: 'non working day',
@@ -61,16 +61,14 @@ export const checkCompanyNotifications = async (req: any) => {
   const yesterdayMidnight = setToMidnight(addDays(today, -1))
   const tomorrowMidnight = setToMidnight(addDays(today, 1))
 
-  
-
   // 1. Check for meeting notifications
   await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight, tomorrowMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
   await checkMeetingUpdates(req, results)
-   console.log('Company notifications check completed')
-   console.log('Summary:', JSON.stringify(results, null, 2))
+  console.log('Company notifications check completed')
+  console.log('Summary:', JSON.stringify(results, null, 2))
 
   return {
     success: true,
@@ -241,6 +239,17 @@ async function checkMeetingNotifications(
         meetingDetail.notificationsCreated.beforeVotingEnd++
       }
 
+      // Cleanup: delete any existing notification with the same message/type for this meeting+company
+      await payload.delete({
+        collection: 'company-meeting-notifications',
+        where: {
+          message: { equals: message },
+          notificationType: { equals: notificationType },
+          meeting: { equals: meeting.id },
+          company: { equals: company.id },
+        },
+      })
+
       await payload.create({
         collection: 'company-meeting-notifications',
         data: {
@@ -397,7 +406,6 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
     limit: 0,
     depth: 0,
   })
-
 
   for (const meeting of meetings) {
     const companies = meeting.companies as string[]

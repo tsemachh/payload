@@ -92,7 +92,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
     const notificationTypeLabels: Record<string, string> = {
       'after-holding-limit': 'מועד קובע',
       'before-voting-end': 'הצבעה תנעל בקרוב',
-      'holdings-not-fed': 'דיווח החזקה',
+      'holdings-not-fed': 'העדר דיווח החזקה',
       'user-impersonation': 'התחזות למשתמש',
       'meeting-updated': 'עודכנה אסיפה ',
       'holdings-gap': 'פערי החזקות',
@@ -113,7 +113,7 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
           route = '/holdings'
           break
         case 'user-impersonation':
-          route = '/admin/collections/users'
+          route = '/'
           break
         case 'meeting-updated':
           route = '/'

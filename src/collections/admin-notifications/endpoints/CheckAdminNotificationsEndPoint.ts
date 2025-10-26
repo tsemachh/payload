@@ -1,5 +1,6 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { checkAdminNotifications } from '@/tasks/checkAdminNotifications'
+import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 
 /**
  * Endpoint to check for various conditions and create notifications
@@ -17,6 +18,22 @@ const CheckAdminNotificationsEndPoint = async (req: PayloadRequest) => {
     if (!req.user.isAdmin) {
       return Response.json({ error: 'Unauthorized: only admin is authorized' }, { status: 401 })
     }
+
+    // Check if it's a working day
+    if (!isWorkingDay(new Date())) {
+      return Response.json({
+        success: true,
+        message: 'Notifications are suppressed during non working days',
+        notifications: {
+          holdingsNotFed: 0,
+          meetingsNotVoted: 0,
+          noFeedFromPredictae: false,
+          votesAfterHoldingDate: 0,
+          meetingToPublish: 0,
+        },
+      })
+    }
+
     // Call the core function
     const result = await checkAdminNotifications(req)
 

@@ -98,6 +98,8 @@ export interface Column<T> {
   sortKey?: keyof T // Allow sorting by a different key than displayed
   options?: { label: string; value: string }[]
   isAlwaysVisible?: boolean
+  // Optional custom search value producer for this column
+  getSearchValue?: (row: T) => string
 }
 
 // Structure for faceted filters

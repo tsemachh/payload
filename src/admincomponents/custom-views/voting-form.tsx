@@ -89,13 +89,16 @@ interface VotingFormProps {
 
 export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps) {
   const [formData, setFormData] = useState<VoteData>()
+  const [initialFormData, setInitialFormData] = useState<VoteData>()
+  const [hasChanges, setHasChanges] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     if (!voteData) return
-    setFormData(voteData)
+    setFormData(JSON.parse(JSON.stringify(voteData)))
+    setInitialFormData(JSON.parse(JSON.stringify(voteData))) // Deep copy for comparison
   }, [voteData])
 
   useEffect(() => {
@@ -107,6 +110,24 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     // Check initial theme
     checkTheme()
   }, [])
+
+  // Function to check if form has changes
+  const checkForChanges = (currentData: VoteData, originalData: VoteData) => {
+    if (!currentData || !originalData) return false
+
+    // Compare reported status
+    if (currentData.reported !== originalData.reported) return true
+
+    // Compare funds data using JSON.stringify
+    return JSON.stringify(currentData.fundsData) !== JSON.stringify(originalData.fundsData)
+  }
+
+  // Update hasChanges whenever formData changes
+  useEffect(() => {
+    if (formData && initialFormData) {
+      setHasChanges(checkForChanges(formData, initialFormData))
+    }
+  }, [formData, initialFormData])
 
   const handleSave = async () => {
     const fundsWithHolding = formData?.fundsData.map((fund) => {
@@ -155,28 +176,30 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
 
   const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
-    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : undefined
+    const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
 
     if (field.startsWith('original.')) {
       // Handle nested original fields
       const originalField = field.replace('original.', '')
       const currentOriginal = updatedFunds[index].original || ({} as any)
+      const numericValue =
+        originalField === 'ownedQuantity'
+          ? Number.parseFloat(value.replace(/,/g, '')) || 0
+          : booleanValue
       updatedFunds[index] = {
         ...updatedFunds[index],
         original: {
           ...currentOriginal,
-          [originalField]: originalField === 'ownedQuantity' ? value : booleanValue,
+          [originalField]: numericValue,
         },
       }
     } else {
       // Handle regular fields
-      updatedFunds[index] =
-        field === 'ownedQuantity'
-          ? { ...updatedFunds[index], [field]: value }
-          : { ...updatedFunds[index], [field]: booleanValue }
+      const numericValue =
+        field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) || 0 : booleanValue
+      updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
     }
-
     setFormData({ ...formData, fundsData: updatedFunds })
   }
 
@@ -347,7 +370,8 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                         style={{
                           visibility:
                             displayData?.verifiedHoldings ||
-                            displayData?.verifiedHoldings === undefined
+                            displayData?.verifiedHoldings === undefined ||
+                            displayData?.verifiedHoldings === null
                               ? 'hidden'
                               : 'visible',
                         }}
@@ -568,7 +592,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
       </Card>
 
       <div className="flex justify-start pt-2">
-        <Button onClick={handleSave} disabled={isLoading} className="px-6">
+        <Button onClick={handleSave} disabled={isLoading || !hasChanges} className="px-6">
           {isLoading ? 'שומר...' : 'שמור'}
         </Button>
       </div>

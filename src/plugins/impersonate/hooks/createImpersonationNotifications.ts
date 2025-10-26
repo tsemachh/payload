@@ -1,5 +1,4 @@
 import { PayloadRequest } from 'payload'
-import { createAdminNotification } from '@/utils/utils'
 
 interface CreateImpersonationNotificationsParams {
   req: PayloadRequest
@@ -12,20 +11,14 @@ export const createImpersonationNotifications = async ({
   req,
   originalUser,
   targetUser,
-  impersonateUserId,
 }: CreateImpersonationNotificationsParams) => {
   try {
-    const message = `מנהל ${originalUser?.email || originalUser?.name || 'לא ידוע'} התחזה למשתמש ${targetUser?.email || targetUser?.name || 'לא ידוע'}`
+    // Use bidi control characters to ensure correct RTL rendering with LTR emails/names
+    const RLE = '\u202B' // Right-to-Left Embedding
 
-    // Create admin notification
-    await createAdminNotification(
-      req,
-      message,
-      'userImpersonation',
-      `/admin/collections/users/${impersonateUserId}`,
-      undefined,
-      impersonateUserId as string,
-    )
+    const originalLabel = originalUser?.email || originalUser?.name || 'לא ידוע'
+    const targetLabel = targetUser?.email || targetUser?.name || 'לא ידוע'
+    const message = `${RLE}מנהל ${originalLabel} התחזה למשתמש ${targetLabel}`
 
     // Create company-meeting-notifications for all target user's companies
     if (targetUser?.companies && Array.isArray(targetUser.companies)) {

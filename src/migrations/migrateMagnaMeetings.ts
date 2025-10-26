@@ -21,13 +21,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
-    // Calculate date a month ago
+    // Calculate date 3 days ago
     const today = new Date()
-    const monthAgo = new Date(today)
-    monthAgo.setMonth(today.getMonth() - 1)
+    const threeDaysAgo = new Date(today)
+    threeDaysAgo.setDate(today.getDate() - 30)
 
     // Format date as YYYY-MM-DD (e.g., '2025-06-06')
-    const reportDate = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth() + 1).padStart(2, '0')}-${String(monthAgo.getDate()).padStart(2, '0')}`
+    const reportDate = `${threeDaysAgo.getFullYear()}-${String(threeDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(threeDaysAgo.getDate()).padStart(2, '0')}`
     console.log(`Using report date: ${reportDate}`)
 
     // Call the stored procedure to get Magna meetings

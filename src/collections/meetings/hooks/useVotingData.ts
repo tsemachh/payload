@@ -64,8 +64,30 @@ export const useVotingData = () => {
         const companiesData = await companiesResponse.json()
         const companies = companiesData.docs || []
 
-        // Get votes data
-        const votesData = data.votes.docs
+        // Fetch votes directly by meeting id (robust, independent of join field state)
+        let votesDetails: any[] = []
+        try {
+          const meetingId = data?.id
+          if (meetingId) {
+            const votesQuery = stringify(
+              {
+                where: {
+                  meeting: { equals: meetingId },
+                },
+                depth: 1,
+                limit: 0,
+              },
+              { addQueryPrefix: true },
+            )
+            const votesResponse = await fetch(`/api/votes${votesQuery}`)
+            if (votesResponse.ok) {
+              const votesResponseData = await votesResponse.json()
+              votesDetails = votesResponseData.docs || []
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching votes:', e)
+        }
 
         // Fetch stock value data if we have a stock value ID
         let stockValueData = null
@@ -80,33 +102,6 @@ export const useVotingData = () => {
           }
         } else if (typeof data.stockValue === 'object') {
           stockValueData = data.stockValue
-        }
-
-        // If we have votes, fetch them efficiently
-        let votesDetails = []
-        if (votesData.length > 0) {
-          const voteIds = votesData
-            .map((vote: any) => (typeof vote === 'string' ? vote : vote.id))
-            .filter(Boolean)
-
-          if (voteIds.length > 0) {
-            const votesQuery = {
-              where: {
-                id: {
-                  in: voteIds,
-                },
-              },
-              depth: 1,
-              limit: 0,
-            }
-
-            const votesStringifiedQuery = stringify(votesQuery, { addQueryPrefix: true })
-            const votesResponse = await fetch(`/api/votes${votesStringifiedQuery}`)
-            if (votesResponse.ok) {
-              const votesResponseData = await votesResponse.json()
-              votesDetails = votesResponseData.docs || []
-            }
-          }
         }
 
         // Map companies with voting status and calculate holding values

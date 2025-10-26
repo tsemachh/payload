@@ -219,7 +219,7 @@ export const publishVotes = async (req: PayloadRequest) => {
         if (new Date() > dayAfterHoldings) {
           const meetingName = meeting?.fullName
           const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
-          const url = `/admin/collections/meetings/${meetingId}`
+          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesIds}`
 
           // Delete any existing notifications with the same message
           try {

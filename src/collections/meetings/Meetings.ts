@@ -305,7 +305,7 @@ export const Meetings: CollectionConfig = {
                 components: {
                   Cell: {
                     path: '/admincomponents/cell/FormattedNumber',
-                    clientProps: { decimals: 4, suffix: '%' },
+                    clientProps: { decimals: 0, suffix: '%' },
                   },
                 },
               },
@@ -727,6 +727,15 @@ export const Meetings: CollectionConfig = {
                     width: '50%',
                   },
                 },
+                {
+                  name: 'migrationComments',
+                  label: 'הערות מיגרציה',
+                  type: 'textarea',
+                  admin: {
+                    width: '50%',
+                    readOnly: true,
+                  },
+                },
               ],
             },
             {
@@ -901,9 +910,6 @@ export const Meetings: CollectionConfig = {
                           admin: {
                             width: '800px',
                             condition: (_, siblingData) => siblingData?.showExceptional === true,
-                          },
-                          hooks: {
-                            afterChange: [syncLabelsOnStockChange],
                           },
                         },
                       ],
@@ -1192,6 +1198,7 @@ export const Meetings: CollectionConfig = {
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
       updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
+      syncLabelsOnStockChange,
     ],
   },
   endpoints: [

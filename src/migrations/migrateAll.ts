@@ -79,11 +79,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await migrateFullMeetings({ payload, req })
     console.log('=== Meetings Migration Completed ===\n')
 
-    // 2.1 Migrate Magna Meetings
-    console.log('\n=== Starting Magna Meetings Migration ===')
-    await migrateMagnaMeetings({ payload, req })
-    console.log('=== Magna Meetings Migration Completed ===\n')
-
     // 3. Migrate Firms
     console.log('\n=== Starting Firms Migration ===')
     await migrateFullFirms({ payload, req })
@@ -132,6 +127,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Vote Counts Migration ===')
     await migrateVoteCounts({ payload, req })
     console.log('=== Vote Counts Migration Completed ===\n')
+
+    // 2.1 Migrate Magna Meetings
+    console.log('\n=== Starting Magna Meetings Migration ===')
+    await migrateMagnaMeetings({ payload, req })
+    console.log('=== Magna Meetings Migration Completed ===\n')
 
     console.log('migrateAll process completed successfully!')
   } catch (error) {

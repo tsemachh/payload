@@ -290,6 +290,7 @@ export const Users: CollectionConfig = {
                       required: true,
                       admin: {
                         sortOptions: 'name',
+                        allowCreate: false,
                       },
                       filterOptions: ({ data, siblingData, req }) => {
                         if (req.context?.from == 'migration' || req.context?.from == 'process')
