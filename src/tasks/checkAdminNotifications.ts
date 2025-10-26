@@ -295,7 +295,7 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
 
     // If no feeds found in any collection, create a notification
     if (stocksFeeds.length === 0 || meetingsFeeds.length === 0) {
-      let message = `לא התקבל פיד מ-Predictae ביום העבודה האחרון: `
+      let message = `לא התקבלה הזנה מ-Predictae ביום העבודה האחרון: `
 
       if (stocksFeeds.length === 0 && meetingsFeeds.length === 0) {
         message += `מניות ואסיפות`

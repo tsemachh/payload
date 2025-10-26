@@ -21,6 +21,7 @@ export const safeScheduleTask = async (
     where: {
       taskSlug: { in: [task] },
       totalTried: { equals: 0 },
+      processing: { equals: false },
     },
   })
 

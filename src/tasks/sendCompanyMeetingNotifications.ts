@@ -4,17 +4,14 @@ import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDai
 import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 import { sendMail } from '@/utils/sendMail'
+import { companyNotificationTypeOptions, getCompanyNotificationTypeLabel, COMPANY_NOTIFICATION_KNOWN_TYPES } from '@/collections/company-meeting-notifications/typeOptions'
 
 // Define interface for company detail
 interface CompanyDetail {
   companyId: string
   companyName: string
   recipientEmails: string[]
-  notificationsSent: {
-    total: number
-    afterHoldingLimit: number
-    beforeVotingEnd: number
-  }
+  notificationsSent: Record<string, number> & { total: number }
   emailStatus: string
 }
 
@@ -28,15 +25,18 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   console.log('Starting company meeting notifications email sending...')
 
   // Create a detailed results object
+  const typeValues = companyNotificationTypeOptions
+    .map((o) => o.value)
+    .filter(Boolean) as string[]
+  const zeroedByType: Record<string, number> = {}
+  for (const t of typeValues) zeroedByType[t] = 0
+
   const results = {
     notificationsFound: 0,
     companiesProcessed: 0,
     emailsSent: 0,
     emailErrors: 0,
-    notificationsByType: {
-      afterHoldingLimit: 0,
-      beforeVotingEnd: 0,
-    },
+    notificationsByType: { ...zeroedByType } as Record<string, number>,
     companyDetails: [] as CompanyDetail[],
   }
   if (!isWorkingDay(new Date())) {
@@ -45,17 +45,19 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       message: 'non working day',
     }
   }
-  // Calculate date 24 hours ago
-  const twentyFourHoursAgo = new Date()
-  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
-  const twentyFourHoursAgoISO = twentyFourHoursAgo.toISOString()
+  // Use last working day window
+  const { getLastWorkingDayWindow } = await import('@/utils/workingDayWindow')
+  const { start, end } = getLastWorkingDayWindow(new Date())
+  const startISO = start.toISOString()
+  const endISO = end.toISOString()
 
-  // Get all notifications that haven't been emailed yet
+  // Get all notifications in the last working day window
   const notifications = await payload.find({
     collection: 'company-meeting-notifications',
     where: {
       createdAt: {
-        greater_than_equal: twentyFourHoursAgoISO,
+        greater_than_equal: startISO,
+        less_than: endISO,
       },
     },
     depth: 2, // Load related data
@@ -120,53 +122,54 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       companyId,
       companyName: '',
       recipientEmails: usersMails,
-      notificationsSent: {
-        total: companyNotifications.length,
-        afterHoldingLimit: 0,
-        beforeVotingEnd: 0,
-      },
+      notificationsSent: { total: companyNotifications.length } as Record<string, number> & { total: number },
       emailStatus: 'pending',
     }
 
-    // Group notifications by type
-    const afterHoldingLimit = companyNotifications.filter(
-      (n: CompanyMeetingNotification) => n.notificationType === 'after-holding-limit',
-    )
-    const beforeVotingEnd = companyNotifications.filter(
-      (n: CompanyMeetingNotification) => n.notificationType === 'before-voting-end',
-    )
+    // Group notifications by type using centralized options
+    const orderedGroups = companyNotificationTypeOptions.map((opt) => ({
+      opt,
+      items: companyNotifications.filter(
+        (n: CompanyMeetingNotification) => n.notificationType === opt.value,
+      ),
+    }))
 
-    // Count notifications by type
-    companyDetail.notificationsSent.afterHoldingLimit = afterHoldingLimit.length
-    companyDetail.notificationsSent.beforeVotingEnd = beforeVotingEnd.length
-    results.notificationsByType.afterHoldingLimit += afterHoldingLimit.length
-    results.notificationsByType.beforeVotingEnd += beforeVotingEnd.length
-    if (afterHoldingLimit.length === 0 && beforeVotingEnd.length === 0) {
-      companyDetail.emailStatus = 'skipped'
-      results.companyDetails.push(companyDetail)
-      continue
+    const otherNotifications: CompanyMeetingNotification[] = []
+    for (const n of companyNotifications) {
+      if (!COMPANY_NOTIFICATION_KNOWN_TYPES.has(n.notificationType as any)) {
+        otherNotifications.push(n)
+      }
     }
+
+    // Update counters dynamically
+    for (const { opt, items } of orderedGroups) {
+      companyDetail.notificationsSent[opt.value as string] = items.length
+      results.notificationsByType[opt.value as string] =
+        (results.notificationsByType[opt.value as string] || 0) + items.length
+    }
+
     const companyName = (companyNotifications[0].company as Company).name
     // Create email content
     const subject = `סיכום התראות חברה - ${companyName}`
     companyDetail.companyName = companyName
-    let html = `<div dir="rtl"><h1>שלום ${companyName},</h1>`
+    let html = `<div dir=\"rtl\"><h1>שלום ${companyName},</h1>`
     html += '<h2>להלן סיכום התראות אסיפות חברה:</h2>'
 
-    // Add after holding limit notifications
-    if (afterHoldingLimit.length > 0) {
-      html += '<h3>התראות יום אחרי מועד קובע:</h3><ul>'
-      for (const notification of afterHoldingLimit) {
+    // Render sections dynamically using centralized labels
+    for (const { opt, items } of orderedGroups) {
+      if (items.length === 0) continue
+      html += `<h3>${opt.label}:</h3><ul>`
+      for (const notification of items) {
         html += `<li>${notification.message}</li>`
       }
       html += '</ul>'
     }
 
-    // Add before voting end notifications
-    if (beforeVotingEnd.length > 0) {
-      html += '<h3>התראות יום לפני מועד מסירת הצבעות:</h3><ul>'
-      for (const notification of beforeVotingEnd) {
-        html += `<li>${notification.message}</li>`
+    if (otherNotifications.length > 0) {
+      html += `<h3>התראות אחרות:</h3><ul>`
+      for (const notification of otherNotifications) {
+        const label = getCompanyNotificationTypeLabel(notification.notificationType as any)
+        html += `<li>[${label}] ${notification.message}</li>`
       }
       html += '</ul>'
     }
