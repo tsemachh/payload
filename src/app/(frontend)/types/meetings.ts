@@ -37,7 +37,7 @@ export type MeetingTableDataType = {
   votes: any
   displayMode?: string
   selectedCompanyIds?: string[]
-  labels: any
+  labels: { id: string; label: string; color: string }[]
 }
 
 export type DateFilterOption = {
@@ -87,7 +87,7 @@ export interface Column<T> {
   key: string
   header: string
   noHeader?: boolean
-  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum' | 'other'
+  type: 'string' | 'number' | 'datetime' | 'boolean' | 'enum' | 'label' | 'other'
   filterable?: boolean
   positionCenter?: boolean
   render?: (row: T) => React.ReactNode
@@ -108,6 +108,7 @@ export interface FacetedFilterItem {
   count: number
   icon?: React.ReactNode
   translate?: string
+  label?: React.ReactNode
 }
 // Structure for faceted filters
 export interface FacetedFilterItemServer {
@@ -159,6 +160,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   searchOption?: boolean
   selectAll?: string
   removeAll?: string
+  noLabel?: string
   displayMode?: 'companies' | 'agenda' // New prop for display mode
   selectedCompanyIds?: string[]
   createColumnsWithExpand?: (

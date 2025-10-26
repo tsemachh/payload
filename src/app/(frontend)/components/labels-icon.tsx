@@ -52,7 +52,7 @@ export function LabelsIcon({ row }: LabelsIconProps) {
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
               <div className="space-y-1">
-                <div className="text-xs font-medium mb-2">כל התגיות׃</div>
+                <div className="text-xs font-medium mb-2">:כל התגיות</div>
                 <div className="flex flex-wrap gap-1">
                   {row.labels.map((label) => (
                     <div
