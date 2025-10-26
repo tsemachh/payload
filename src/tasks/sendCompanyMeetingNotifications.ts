@@ -1,7 +1,7 @@
 import { type TaskHandler } from 'payload'
 import { Company, CompanyMeetingNotification, User } from '@/payload-types'
 import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { isWorkingDay } from '../collections/meetings/hooks/calculateHoldingDate'
+import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 import { sendMail } from '@/utils/sendMail'
 
@@ -148,7 +148,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
     }
     const companyName = (companyNotifications[0].company as Company).name
     // Create email content
-    const subject = `סיכום התראות אסיפות חברה - ${companyName}`
+    const subject = `סיכום התראות חברה - ${companyName}`
     companyDetail.companyName = companyName
     let html = `<div dir="rtl"><h1>שלום ${companyName},</h1>`
     html += '<h2>להלן סיכום התראות אסיפות חברה:</h2>'
