@@ -205,9 +205,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     createColumnsWithExpand,
     data,
     initialColumns,
-    displayMode,
-    // Removed companiesExpandedRows and agendasExpandedRows from dependencies
-    // to prevent columns from re-creating when rows expand/collapse
+    displayMode,ד
   ])
 
   useEffect(() => {
