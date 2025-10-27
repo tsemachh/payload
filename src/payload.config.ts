@@ -127,6 +127,7 @@ export default buildConfig({
       }
       defaultJobsCollection.admin.hidden = false
       defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'queue', 'updatedAt', 'taskStatus']
+      defaultJobsCollection.admin.listSearchableFields = ['taskSlug', 'queue', 'taskStatus']
       defaultJobsCollection.custom = {
         filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
       }
@@ -135,6 +136,7 @@ export default buildConfig({
         plural: 'תהליכי מערכת',
         singular: 'תהליך מערכת',
       }
+
       return defaultJobsCollection
     },
     deleteJobOnComplete: false,
@@ -291,7 +293,6 @@ export default buildConfig({
     // Hidden collections
     StockValues,
   ],
-
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
