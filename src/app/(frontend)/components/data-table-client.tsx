@@ -203,11 +203,9 @@ export function DataTableStatic<T extends Record<string, any>>({
     return initialColumns
   }, [
     createColumnsWithExpand,
-    companiesExpandedRows,
-    agendasExpandedRows,
     data,
     initialColumns,
-    displayMode,
+    displayMode,ד
   ])
 
   useEffect(() => {
@@ -533,11 +531,11 @@ export function DataTableStatic<T extends Record<string, any>>({
             }
           }
           // Handle labels filters
-          if (columns.find((col) => col.key === key)?.type === 'label') {
+          else if (columns.find((col) => col.key === key)?.type === 'label') {
             const itemLabels = item[key as keyof T]
             if (!Array.isArray(itemLabels) || itemLabels.length === 0) {
               if (Array.isArray(value) && value.includes(noLabel)) {
-                return true
+                continue
               } else {
                 return false
               }
