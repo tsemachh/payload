@@ -205,7 +205,7 @@ export function DataTableStatic<T extends Record<string, any>>({
     createColumnsWithExpand,
     data,
     initialColumns,
-    displayMode,ד
+    displayMode,
   ])
 
   useEffect(() => {
