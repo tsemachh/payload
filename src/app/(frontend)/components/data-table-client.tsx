@@ -751,6 +751,11 @@ export function DataTableStatic<T extends Record<string, any>>({
     ],
   )
 
+  // Reset to page 1 when filtered data length changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filteredAndSortedData.length])
+
   // Handle sort
   const handleSort = useCallback((key: keyof T) => {
     setSortConfig((current) => {

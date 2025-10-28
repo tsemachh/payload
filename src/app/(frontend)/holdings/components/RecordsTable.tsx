@@ -211,7 +211,7 @@ export const RecordsTable: React.FC<{
           columnsOption={false}
           tableHeightOffset={400}
           pagination={{
-            pageSize: 50,
+            pageSize: 100,
             currentPage: currentPage,
             onPageChange: handlePageChange,
           }}

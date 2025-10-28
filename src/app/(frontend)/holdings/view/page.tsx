@@ -215,7 +215,7 @@ export default function HoldingsView() {
                 columnsOption={false}
                 tableHeightOffset={280}
                 pagination={{
-                  pageSize: 50,
+                  pageSize: 100,
                   currentPage: currentPage,
                   onPageChange: handlePageChange,
                 }}
