@@ -8,10 +8,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const result = await payload.find({
       collection: 'meetings',
       where: {
-        or: [
-          { fundsWithHolding: { exists: false } },
-          { 'fundsWithHolding.0': { exists: false } },
-        ],
+        or: [{ fundsWithHolding: { exists: false } }],
       },
       limit: 0,
       depth: 0,
