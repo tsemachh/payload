@@ -201,12 +201,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       )
     }
     return initialColumns
-  }, [
-    createColumnsWithExpand,
-    data,
-    initialColumns,
-    displayMode,
-  ])
+  }, [createColumnsWithExpand, data, initialColumns, displayMode])
 
   useEffect(() => {
     setInputSearchTerm(searchTerm)
@@ -688,7 +683,9 @@ export function DataTableStatic<T extends Record<string, any>>({
               return value.includes(noLabel)
             }
             // Build item label keys
-            const itemLabelKeys = itemLabels.map((lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`)
+            const itemLabelKeys = itemLabels.map(
+              (lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`,
+            )
             // At least one selected label must match
             return value.some((v: string) => itemLabelKeys.includes(v))
           })
@@ -990,8 +987,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       )
 
       return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
-    }
-    else {
+    } else {
       const allPossibleValues = Array.from(
         new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
       )
@@ -1767,7 +1763,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         {row.agendas.map((agenda: unknown, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
-                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                           >
                             {/* Empty cell for companies column */}
                             <TableCell className="py-2 px-3"></TableCell>
