@@ -92,7 +92,8 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
     })
 
     // Create email content
-    const emailSubject = `עמדה - התראות מערכת שלא טופלו אתמול : ${unreadNotifications.length} התראות חדשות `
+    const envSuffix = process.env.ENV ? ` (${process.env.ENV})` : ''
+    const emailSubject = `עמדה - התראות מערכת שלא טופלו אתמול : ${unreadNotifications.length} התראות חדשות${envSuffix}`
     let emailContent = `<!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
