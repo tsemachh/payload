@@ -326,7 +326,7 @@ export const createMeetingColumns = (
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} showX={false} />,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
     minWidth: 80,
   },
   {
