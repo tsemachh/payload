@@ -22,6 +22,7 @@ export default function HoldingsView() {
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const searchParams = useSearchParams()
   const dateFormUrl = searchParams.get('date')
@@ -41,6 +42,10 @@ export default function HoldingsView() {
     const combined = [...new Set([...recent, ...full])]
     return combined.map((d) => new Date(d))
   }, [recentData, fullData])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
   // Fetch initial data when component mounts
   useEffect(() => {
@@ -209,6 +214,11 @@ export default function HoldingsView() {
                 tableId="holdings-view-table"
                 columnsOption={false}
                 tableHeightOffset={280}
+                pagination={{
+                  pageSize: 50,
+                  currentPage: currentPage,
+                  onPageChange: handlePageChange,
+                }}
               />
               <div className="flex justify-center mt-4">
                 {processedHoldings.length > 0 && (
