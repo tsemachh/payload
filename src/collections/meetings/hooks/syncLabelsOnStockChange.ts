@@ -5,15 +5,13 @@ export const syncLabelsOnStockChange: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
-  const meetingId = (req.routeParams?.id as string) || (data?.id as string) || null
-
   const newCompanies = data?.companies || []
   const oldCompanies = originalDoc?.companies || []
 
   const addedCompanies = newCompanies.filter((c: string) => !oldCompanies.includes(c))
 
   if (addedCompanies.length === 0) {
-    console.log('⚠️ No new companies added — skipping update.')
+    //console.log('⚠️ No new companies added — skipping update.')
     return
   }
 
@@ -56,9 +54,9 @@ export const syncLabelsOnStockChange: CollectionBeforeChangeHook = async ({
     new Map(updatedCompaniesLabels.map((lbl) => [lbl.label + '|' + lbl.color, lbl])).values(),
   )
 
-  console.log('🧩 Final updatedLabels to save in meeting:', uniqueUpdatedLabels)
+  //console.log('🧩 Final updatedLabels to save in meeting:', uniqueUpdatedLabels)
 
   data.labels = [...(data.labels || []), ...uniqueUpdatedLabels]
 
-  console.log('✅ data.labels set for saving:', data.labels)
+  //console.log('✅ data.labels set for saving:', data.labels)
 }
