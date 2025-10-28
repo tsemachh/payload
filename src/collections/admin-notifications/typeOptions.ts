@@ -6,18 +6,23 @@ export const adminNotificationTypeOptions: ReadonlyArray<{
   value: AdminNotificationType
   label: string
 }> = [
-  { value: 'newVoteAfterHoldingLimit', label: 'הצבעה לטיפול' },
+  { value: 'newVoteAfterHoldingLimit', label: 'הצבעה לטיפול לאחר המועד הקובע' },
   { value: 'predictaFeed', label: 'העדר הזנת מערכת נ״ע ואסיפות' },
   { value: 'companyNotReportedHoldings', label: 'העדר דווח החזקות' },
-  { value: 'companyNotVotedMeetingNextDay', label: 'העדר הצבעה' },
+  { value: 'companyNotVotedMeetingNextDay', label: 'העדר הצבעה יום לפני מועד האסיפה' },
   { value: 'meetingToPublish', label: 'אסיפה לפירסום' },
 ] as const
 
-export const ADMIN_NOTIFICATION_KNOWN_TYPES: ReadonlySet<NonNullable<AdminNotificationType>> = new Set(
-  adminNotificationTypeOptions.map((o) => o.value).filter(Boolean) as NonNullable<AdminNotificationType>[],
-)
+export const ADMIN_NOTIFICATION_KNOWN_TYPES: ReadonlySet<NonNullable<AdminNotificationType>> =
+  new Set(
+    adminNotificationTypeOptions
+      .map((o) => o.value)
+      .filter(Boolean) as NonNullable<AdminNotificationType>[],
+  )
 
-export function getAdminNotificationTypeLabel(type: AdminNotificationType | undefined | null): string {
+export function getAdminNotificationTypeLabel(
+  type: AdminNotificationType | undefined | null,
+): string {
   const opt = adminNotificationTypeOptions.find((o) => o.value === type)
   return opt?.label ?? 'אחר'
 }

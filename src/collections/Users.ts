@@ -110,6 +110,7 @@ export const Users: CollectionConfig = {
     plural: 'משתמשים',
     singular: 'משתמש',
   },
+  versions: true,
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'email',
