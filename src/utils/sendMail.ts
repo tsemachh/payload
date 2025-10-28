@@ -72,7 +72,8 @@ export const sendMail = async (
 
   // Add ENV suffix to subject if it exists
   const envSuffix = process.env.ENV ? ` (${process.env.ENV})` : ''
-  const subjectWithEnv = `${emailData.subject}${envSuffix}`
+  const subjectWithEnv = `${emailData.subject} - ${envSuffix}`
+
 
   // Create new email data with filtered recipients and updated subject
   const filteredEmailData = {
