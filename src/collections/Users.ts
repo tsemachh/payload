@@ -257,6 +257,13 @@ export const Users: CollectionConfig = {
                 singular: 'חברה',
               },
               type: 'array',
+              admin: {
+                components: {
+                  RowLabel: {
+                    path: '/admincomponents/components/UserRowLabel',
+                  },
+                },
+              },
               validate: (value) => {
                 if (!Array.isArray(value)) {
                   return true // No companies selected, so valid
