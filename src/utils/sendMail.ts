@@ -66,18 +66,24 @@ export const sendMail = async (
   const allowedDomains = getAllowedDomains();
   
   // Filter recipients by domain
-  const filteredTo = filterEmailsByDomain(emailData.to, allowedDomains);
-  const filteredCc = filterEmailsByDomain(emailData.cc, allowedDomains);
-  const filteredBcc = filterEmailsByDomain(emailData.bcc, allowedDomains);
-  
-  // Create new email data with filtered recipients
+  const filteredTo = filterEmailsByDomain(emailData.to, allowedDomains)
+  const filteredCc = filterEmailsByDomain(emailData.cc, allowedDomains)
+  const filteredBcc = filterEmailsByDomain(emailData.bcc, allowedDomains)
+
+  // Add ENV suffix to subject if it exists
+  const envSuffix = process.env.ENV ? ` (${process.env.ENV})` : ''
+  const subjectWithEnv = `${emailData.subject} - ${envSuffix}`
+
+
+  // Create new email data with filtered recipients and updated subject
   const filteredEmailData = {
     ...emailData,
     to: filteredTo.length > 0 ? filteredTo : undefined,
     cc: filteredCc.length > 0 ? filteredCc : undefined,
     bcc: filteredBcc.length > 0 ? filteredBcc : undefined,
-  };
-  
+    subject: subjectWithEnv,
+  }
+
   // Log filtering results if there's a difference
   const originalCount = {
     to: Array.isArray(emailData.to) ? emailData.to.length : (emailData.to ? 1 : 0),
@@ -106,10 +112,10 @@ export const sendMail = async (
   // If no recipients left after filtering, log and return
   if (!filteredEmailData.to && !filteredEmailData.cc && !filteredEmailData.bcc) {
     payload.logger.warn('No valid recipients left after domain filtering', {
-      subject: emailData.subject,
+      subject: subjectWithEnv,
       allowedDomains,
-    });
-    return { success: false, message: 'No valid recipients after domain filtering' };
+    })
+    return { success: false, message: 'No valid recipients after domain filtering' }
   }
   
   // Send email with filtered recipients
