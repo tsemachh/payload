@@ -304,9 +304,16 @@ export default buildConfig({
   email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({
-      collections: ['stocks', 'meetings'],
+      collections: [
+        'stocks',
+        'meetings',
+        'holdings',
+        'companies',
+        'users',
+        'stock-migration-mapping',
+      ],
       overrideExportCollection: (collection) => {
-        collection.admin.group = 'תחזוק'
+        collection.admin.group = 'תחזוקה'
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
         collection.upload.staticDir = path.resolve(dirname, 'uploads')
         return collection
