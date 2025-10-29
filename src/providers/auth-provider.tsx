@@ -1,7 +1,6 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-//import type { Permissions } from 'payload/auth'
 import type { User } from '@/payload-types'
 import type {
   AuthContext,
@@ -15,14 +14,13 @@ import type {
   Setup2FA,
   Verify2FA,
 } from './auth/types'
-import { notifyError } from '@/app/(frontend)/helpers/error-handler'
+import { isUserFacingError, notifyError } from '@/app/(frontend)/helpers/error-handler'
 import { getWithErrorHandling, postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 
 const Context = createContext({} as AuthContext)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<null | User>()
-  //  const [permissions, setPermissions] = useState<null | Permissions>(null)
 
   const login = useCallback<Login>(async (args) => {
     try {
@@ -56,10 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Handle actual errors
       const errorMessage = result.errors?.[0]?.message || result.error || 'שגיאה בהתחברות למערכת'
-      notifyError({ message: errorMessage })
+      // notifyError({ message: errorMessage })
 
       const loginError = new Error(errorMessage) as any
-      loginError.details = result
+      loginError.details = { ...result, status: response.status }
       throw loginError
     } catch (error: any) {
       // If it's our 2FA required "error", don't show notification - just rethrow
@@ -71,8 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error.details) {
         notifyError({ message: 'שגיאה בהתחברות למערכת' })
       }
-
-      throw error
+      const isUserFacing: boolean = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
@@ -92,8 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       setUser(null)
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה בהתנתקות מהמערכת' })
-      throw error
+      const isUserFacing: boolean = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
@@ -128,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return true
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה בשליחת בקשה לאיפוס סיסמה' })
       throw error
     }
   }, [])
@@ -139,12 +140,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         errorMessage: 'שגיאה באיפוס סיסמה',
         notifyOnError: false, // We'll handle notification ourselves
       })
-
       setUser(user)
       return user
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה באיפוס סיסמה' })
-      throw error
+      const isUserFacing = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
@@ -191,7 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       throw new Error('שגיאה בהתחברות')
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה בהתחברות למערכת' })
       throw error
     }
   }, [])
@@ -214,8 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return result.success
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה באימות דו-שלבי' })
-      throw error
+      const isUserFacing = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
@@ -236,8 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         manualEntryKey: result.manualEntryKey,
         backupCodes: result.backupCodes,
       }
-    } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה בהגדרת אימות דו-שלבי' })
+    } catch (error: any) {
       throw error
     }
   }, [])
@@ -260,8 +262,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return result.success
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה בביטול אימות דו-שלבי' })
-      throw error
+      const isUserFacing = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
@@ -279,8 +283,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return result.backupCodes
     } catch (error) {
-      notifyError({ message: (error as any)?.message || 'שגיאה ביצירת קודי גיבוי חדשים' })
-      throw error
+      const isUserFacing = isUserFacingError(error)
+      if (isUserFacing) {
+        throw error
+      }
     }
   }, [])
 
