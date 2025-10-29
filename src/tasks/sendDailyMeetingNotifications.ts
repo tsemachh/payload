@@ -82,7 +82,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
       where: {
         updatedAt: {
           greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: new Date().toISOString(),
+          less_than_equal: yesterdayEnd.toISOString(),
         },
         _status: { equals: 'published' },
         publishDate: {
