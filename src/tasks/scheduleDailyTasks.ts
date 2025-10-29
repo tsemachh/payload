@@ -35,10 +35,10 @@ export const scheduleSendDailyMeetingNotificationsTask = async (
   }
   await safeScheduleTask(payload, 'sendDailyMeetingNotifications', 'daily08am', input)
   // Log the scheduling with agenda update information (input is ignored for safety)
-  payload.logger.info('Scheduled daily meeting notifications task (safe)', {
+  payload.logger.info({
     agendaUpdatesCount: agendaUpdatedMeetingIds?.length || 0,
     agendaUpdatedMeetingIds: agendaUpdatedMeetingIds || [],
-  })
+  }, 'Scheduled daily meeting notifications task (safe)')
 }
 
 export const scheduleDailyTasks = async (payload: Payload): Promise<void> => {

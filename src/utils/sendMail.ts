@@ -102,19 +102,19 @@ export const sendMail = async (
     originalCount.cc !== filteredCount.cc ||
     originalCount.bcc !== filteredCount.bcc
   ) {
-    payload.logger.info('Email recipients filtered by domain', {
+    payload.logger.info({
       original: originalCount,
       filtered: filteredCount,
       allowedDomains,
-    });
+    }, 'Email recipients filtered by domain');
   }
   
   // If no recipients left after filtering, log and return
   if (!filteredEmailData.to && !filteredEmailData.cc && !filteredEmailData.bcc) {
-    payload.logger.warn('No valid recipients left after domain filtering', {
+    payload.logger.warn({
       subject: subjectWithEnv,
       allowedDomains,
-    })
+    }, 'No valid recipients left after domain filtering')
     return { success: false, message: 'No valid recipients after domain filtering' }
   }
   

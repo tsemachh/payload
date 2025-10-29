@@ -60,7 +60,7 @@ const TwoFactorVerifyEndpoint = async (req: PayloadRequest) => {
         isValid = verifyTOTPToken(token, decryptedSecret)
       }
     } catch (error) {
-      req.payload.logger.error('2FA verification error:', error)
+      req.payload.logger.error({ error }, '2FA verification error:')
       return Response.json({ error: 'שגיאה באימות הקוד' }, { status: 500 })
     }
 
@@ -119,7 +119,7 @@ const TwoFactorVerifyEndpoint = async (req: PayloadRequest) => {
     }
 
   } catch (error) {
-    req.payload.logger.error('2FA verification error:', error)
+    req.payload.logger.error({ error }, '2FA verification error:')
     return Response.json(
       { error: 'שגיאה באימות דו-שלבי' }, 
       { status: 500 }

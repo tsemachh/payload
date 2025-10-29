@@ -61,7 +61,7 @@ const TwoFactorSetupEndpoint = async (req: PayloadRequest) => {
     })
 
   } catch (error) {
-    req.payload.logger.error('2FA setup error:', error)
+    req.payload.logger.error({ error }, '2FA setup error:')
     return Response.json(
       { error: 'שגיאה בהגדרת אימות דו-שלבי' }, 
       { status: 500 }

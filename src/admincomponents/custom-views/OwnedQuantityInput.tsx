@@ -6,14 +6,14 @@ import { Input } from '@/components/ui/input'
 interface OwnedQuantityInputProps {
   value: number | undefined
   verifiedHoldings: boolean | undefined | null
-  onChange: (value: string) => void
+  onChangeAction: (value: string) => void
   isVisible: boolean
 }
 
 export function OwnedQuantityInput({
   value,
   verifiedHoldings,
-  onChange,
+  onChangeAction,
   isVisible,
 }: OwnedQuantityInputProps) {
   const [error, setError] = useState<string>('')
@@ -32,7 +32,7 @@ export function OwnedQuantityInput({
   }, [value, verifiedHoldings])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value)
+    onChangeAction(e.target.value)
   }
 
   return (

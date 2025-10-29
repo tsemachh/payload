@@ -252,6 +252,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
           })
         } else {
+          userData.password = userData.email as string
           // Create new userAuth
           newUser = await payload.create({
             collection: 'users',
@@ -259,11 +260,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
-            // @ts-ignore
-            data: {
-              ...userData,
-              password: userData.email as string, // Default password only for new users
-            },
+            data: userData as User,
           })
         }
 

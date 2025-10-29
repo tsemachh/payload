@@ -23,8 +23,8 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
     await recalculateMeetingVoteCounts(req, meetingId) // Decrement the vote count since a published vote was deleted
   } catch (error) {
     req.payload.logger.error(
-      `Error updating meeting vote counts after deletion for meeting ${meetingId}:`,
-      error,
+      { error },
+      `Error updating meeting vote counts after deletion for meeting ${meetingId}:`
     )
   }
 }
@@ -122,8 +122,8 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
       await recalculateMeetingVoteCounts(req, doc.meeting as string)
     } catch (error) {
       req.payload.logger.error(
-        `Error recalculating meeting vote counts for meeting ${doc.meeting}:`,
-        error,
+        { error },
+        `Error recalculating meeting vote counts for meeting ${doc.meeting}:`
       )
     }
   }

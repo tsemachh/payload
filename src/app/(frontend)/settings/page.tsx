@@ -1,5 +1,5 @@
 'use client'
-import { Trash, Loader2 } from 'lucide-react'
+import { Loader2, Palette, Plus, Trash } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Label } from '@/components/ui/label'
-import { X, Plus, Palette } from 'lucide-react'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { useCompaniesContext } from '../context/companiesContext'
 import type { CompanyWithFunds, Fund } from '../participations/page'
@@ -416,7 +415,7 @@ export default function SettingsPage() {
                       <StockSelector
                         stocks={stocks}
                         selectedStocks={currentTag.stocks || []}
-                        onSelectionChange={(newSelection) =>
+                        onSelectionChangeAction={(newSelection) =>
                           setCurrentTag({ ...currentTag, stocks: newSelection })
                         }
                         className="w-full"
