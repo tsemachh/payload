@@ -126,6 +126,14 @@ export interface PaginationProps {
   onPageSizeChange?: (pageSize: number) => void
   pageSizeOptions?: number[]
 }
+
+export interface ClientPaginationProps {
+  pageSize: number
+  currentPage?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  pageSizeOptions?: number[]
+}
 // Data table props with generic type
 export interface DataTableProps<T extends Record<string, any>> {
   data: T[]
@@ -144,7 +152,6 @@ export interface DataTableProps<T extends Record<string, any>> {
   columnsLabel?: string
   defaultVisibleColumns?: string[]
   onlyFuture?: boolean
-  pagination?: PaginationProps
   isLoading?: boolean
   onServerSort?: (field: string) => void
   onServerSearch?: (term: string) => void
@@ -182,6 +189,14 @@ export interface DataTableProps<T extends Record<string, any>> {
   showViewModeToggle?: boolean
   viewMode?: 'companies' | 'agenda'
   onViewModeChange?: (mode: 'companies' | 'agenda') => void
+}
+
+export interface ServerDataTableProps<T extends Record<string, any>> extends DataTableProps<T> {
+  pagination?: PaginationProps
+}
+
+export interface ClientDataTableProps<T extends Record<string, any>> extends DataTableProps<T> {
+  pagination?: ClientPaginationProps
 }
 
 export interface UrlFilenameMap {

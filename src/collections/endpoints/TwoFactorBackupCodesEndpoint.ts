@@ -17,19 +17,20 @@ const TwoFactorBackupCodesEndpoint = async (req: PayloadRequest) => {
     // GET request - return 2FA status
     if (req.method === 'GET') {
       if (!req.user.twoFactorAuth?.enabled) {
-        return Response.json({ 
+        return Response.json({
           twoFactorEnabled: false,
-          remainingCodes: 0
+          remainingCodes: 0,
         })
       }
 
-      const remainingCodes = req.user.twoFactorAuth.backupCodes?.filter((code: any) => !code.used).length || 0
+      const remainingCodes =
+        req.user.twoFactorAuth.backupCodes?.filter((code: any) => !code.used).length || 0
 
       return Response.json({
         twoFactorEnabled: true,
         verified: req.user.twoFactorAuth.verified,
         remainingCodes,
-        lastUsed: req.user.twoFactorAuth.lastUsed
+        lastUsed: req.user.twoFactorAuth.lastUsed,
       })
     }
 
@@ -42,7 +43,7 @@ const TwoFactorBackupCodesEndpoint = async (req: PayloadRequest) => {
 
       // Generate new backup codes
       const newBackupCodes = generateBackupCodes(10)
-      
+
       // Update user with new backup codes
       await req.payload.update({
         collection: 'users',
@@ -57,19 +58,15 @@ const TwoFactorBackupCodesEndpoint = async (req: PayloadRequest) => {
 
       return Response.json({
         success: true,
-        backupCodes: newBackupCodes.map(code => code.code),
-        message: 'קודי גיבוי חדשים נוצרו בהצלחה'
+        backupCodes: newBackupCodes.map((code) => code.code),
+        message: 'קודי גיבוי חדשים נוצרו בהצלחה',
       })
     }
 
     return Response.json({ error: 'שיטה לא נתמכת' }, { status: 405 })
-
-  } catch (error) {
+  } catch (error: any) {
     req.payload.logger.error('2FA backup codes error:', error)
-    return Response.json(
-      { error: 'שגיאה בטיפול בקודי גיבוי' }, 
-      { status: 500 }
-    )
+    return Response.json({ error: 'שגיאה בטיפול בקודי גיבוי' }, { status: 500 })
   }
 }
 

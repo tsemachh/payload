@@ -78,8 +78,8 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
         ...baseData,
         original: {
           stockId: o.stockId,
-          quantity: o.quantity || 0,
-          ownedQuantity: o.ownedQuantity || 0,
+          quantity: o.quantity,
+          ownedQuantity: o.ownedQuantity,
           verifiedHoldings: o.verifiedHoldings,
         },
       }))
@@ -87,8 +87,8 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     // Return single row with regular data
     return {
       ...baseData,
-      quantity: fundHold.quantity || 0,
-      ownedQuantity: fundHold.ownedQuantity || 0,
+      quantity: fundHold.quantity,
+      ownedQuantity: fundHold.ownedQuantity,
       verifiedHoldings: fundHold.verifiedHoldings,
     }
   })

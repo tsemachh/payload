@@ -292,7 +292,6 @@ export default buildConfig({
     // Hidden collections
     StockValues,
   ],
-
   globals: [],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

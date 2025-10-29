@@ -129,7 +129,7 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
         const decryptedSecret = decryptTOTPSecret(user.twoFactorAuth.secret)
         isValid = verifyTOTPToken(totpCode, decryptedSecret)
       }
-    } catch (error) {
+    } catch (error: any) {
       req.payload.logger.error('2FA verification error during login:', error)
       return Response.json({ error: 'שגיאה באימות הקוד' }, { status: 500 })
     }
@@ -149,13 +149,15 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
         },
       })
 
-      req.payload.logger.info('2FA verification successful, attempting login for user:', user.email)
-      
+      req.payload.logger.info(
+        `2FA verification successful, attempting login for user: ${user.email}`,
+      )
+
       // Now perform login with context flag to bypass 2FA check
       // Set a context flag that the beforeLogin hook can check
       req.context = { ...req.context, '2fa-verified': true }
-      
-      req.payload.logger.info('Context set for 2FA bypass:', req.context)
+
+      req.payload.logger.info(`Context set for 2FA bypass: ${JSON.stringify(req.context)}`)
 
       try {
         const loginResult = await req.payload.login({
@@ -164,8 +166,8 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
           req // Pass the original request so cookies are set properly
         })
 
-        req.payload.logger.info('Login successful, user authenticated:', loginResult.user.email)
-        req.payload.logger.info('Login result token:', loginResult.token ? 'Present' : 'Missing')
+        req.payload.logger.info(`Login successful, user authenticated: ${loginResult.user.email}`)
+        req.payload.logger.info(`Login result token: ${loginResult.token ? 'Present' : 'Missing'}`)
 
         // Return exactly the same format as the working non-2FA case
         return new Response(JSON.stringify({
@@ -183,7 +185,7 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
           }
         })
       } catch (loginError) {
-        req.payload.logger.error('Login failed after 2FA verification:', loginError)
+        req.payload.logger.error(`Login failed after 2FA verification: ${loginError}`)
         return Response.json({ error: 'שגיאה בהתחברות אחרי אימות דו-שלבי' }, { status: 500 })
       }
 
@@ -208,8 +210,7 @@ const LoginWith2FAEndpoint = async (req: PayloadRequest) => {
         attemptsRemaining: Math.max(0, 5 - newFailureCount)
       }, { status: 401 })
     }
-
-  } catch (error) {
+  } catch (error: any) {
     req.payload.logger.error('Login with 2FA error:', error)
     return Response.json(
       { error: 'שגיאה בהתחברות למערכת' }, 

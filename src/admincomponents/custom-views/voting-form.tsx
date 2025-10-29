@@ -18,6 +18,7 @@ import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { ReportApprovalUpload } from './uploadApproval'
+import { OwnedQuantityInput } from './OwnedQuantityInput'
 
 export interface VoteData {
   fundsData: Array<{
@@ -91,6 +92,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
   const [formData, setFormData] = useState<VoteData>()
   const [initialFormData, setInitialFormData] = useState<VoteData>()
   const [hasChanges, setHasChanges] = useState(false)
+  const [hasErrors, setHasErrors] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const router = useRouter()
@@ -122,14 +124,35 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     return JSON.stringify(currentData.fundsData) !== JSON.stringify(originalData.fundsData)
   }
 
+  const checkInvalidData = (formData: VoteData) => {
+    const hasInvalidData = formData.fundsData.some((fund) => {
+      const hasOriginal = fund.original
+      const displayData = hasOriginal ? fund.original : fund
+
+      if (displayData?.verifiedHoldings === false) {
+        return !displayData?.ownedQuantity || displayData.ownedQuantity <= 0
+      }
+      return false
+    })
+    return hasInvalidData
+  }
+
   // Update hasChanges whenever formData changes
   useEffect(() => {
     if (formData && initialFormData) {
       setHasChanges(checkForChanges(formData, initialFormData))
+      setHasErrors(checkInvalidData(formData))
     }
   }, [formData, initialFormData])
 
   const handleSave = async () => {
+    // Validate funds data before saving
+    if (!formData) return
+
+    if (hasErrors) {
+      return
+    }
+
     const fundsWithHolding = formData?.fundsData.map((fund) => {
       return {
         company: fund.company.id,
@@ -185,7 +208,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
       const currentOriginal = updatedFunds[index].original || ({} as any)
       const numericValue =
         originalField === 'ownedQuantity'
-          ? Number.parseFloat(value.replace(/,/g, '')) || 0
+          ? Number.parseFloat(value.replace(/,/g, ''))
           : booleanValue
       updatedFunds[index] = {
         ...updatedFunds[index],
@@ -197,7 +220,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     } else {
       // Handle regular fields
       const numericValue =
-        field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) || 0 : booleanValue
+        field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) : booleanValue
       updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
     }
     setFormData({ ...formData, fundsData: updatedFunds })
@@ -333,7 +356,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     )}
                     <TableCell>
                       <span className="text-right text-gray-600 dark:text-gray-300 text-base">
-                        {formatNumberWithLocale(displayData?.quantity || 0)}
+                        {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -357,24 +380,23 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Input
-                        value={displayData?.ownedQuantity?.toLocaleString()}
-                        onChange={(e) =>
+                      <OwnedQuantityInput
+                        value={displayData?.ownedQuantity}
+                        verifiedHoldings={displayData?.verifiedHoldings}
+                        onChange={(value) =>
                           updateFundData(
                             index,
                             hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',
-                            e.target.value,
+                            value,
                           )
                         }
-                        className="text-right h-8 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white max-w-[100px]"
-                        style={{
-                          visibility:
+                        isVisible={
+                          !(
                             displayData?.verifiedHoldings ||
                             displayData?.verifiedHoldings === undefined ||
                             displayData?.verifiedHoldings === null
-                              ? 'hidden'
-                              : 'visible',
-                        }}
+                          )
+                        }
                       />
                     </TableCell>
                   </TableRow>
@@ -592,7 +614,11 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
       </Card>
 
       <div className="flex justify-start pt-2">
-        <Button onClick={handleSave} disabled={isLoading || !hasChanges} className="px-6">
+        <Button
+          onClick={handleSave}
+          disabled={isLoading || !hasChanges || hasErrors}
+          className="px-6"
+        >
           {isLoading ? 'שומר...' : 'שמור'}
         </Button>
       </div>

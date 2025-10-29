@@ -11,8 +11,9 @@ import { up as migrateVotes } from './migrateVotes'
 import { up as migrateRecommendationReasons } from './migrateRecommendationReasons'
 import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
 import { up as migrateMeetingStockValues } from './migrateMeetingStockValues'
-import { up as unifyMeetings } from './UnifyMeetings'
 import { up as migrateVoteCounts } from './migrateVoteCounts'
+import { up as unifyMeetings } from './UnifyMeetings'
+import { up as postUnifyProcessCompaniesMeetings } from './postUnifyProcessCompaniesMeetings'
 
 /**
  * Migrates all collections in the following order:
@@ -119,9 +120,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await unifyMeetings({ payload, req })
     console.log('=== Unify Meetings Migration Completed ===\n')
 
-    // 19. Skipping processCompaniesMeetings here to preserve MSSQL meeting holdings as source of truth.
-    console.log('\n=== Skipping processCompaniesMeetings (preserve MSSQL meeting holdings) ===')
-    //void processCompaniesMeetings
+    // 17. Post-Unify processCompaniesMeetings for meetings still missing holdings
+    console.log('\n=== Starting Post-Unify processCompaniesMeetings (only missing holdings) ===')
+    await postUnifyProcessCompaniesMeetings({ payload, req })
+    console.log('=== Post-Unify processCompaniesMeetings Completed ===\n')
 
     // 20. Migrate Vote Counts
     console.log('\n=== Starting Vote Counts Migration ===')
