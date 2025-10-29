@@ -180,7 +180,7 @@ export const Companies: CollectionConfig = {
                   label: 'חברת אם',
                   collection: 'companies',
                   on: 'subCompanies',
-                  defaultLimit: 1,
+                  defaultLimit: 100,
                   maxDepth: 2,
                   admin: {
                     custom: {

@@ -136,14 +136,14 @@ export const createMeetingColumns = (
     type: 'label',
     filterable: true,
     render: (row) => <LabelsIcon row={row} />,
-    minWidth: 60,
+    minWidth: 90,
   },
   {
     key: 'stockNumber',
     header: 'מס׳ נייר',
     type: 'string',
     sortKey: 'stockNumber',
-    minWidth: 70,
+    minWidth: 100,
   },
   {
     key: 'stockType',
