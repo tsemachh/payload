@@ -143,7 +143,7 @@ export const createMeetingColumns = (
     header: 'מס׳ נייר',
     type: 'string',
     sortKey: 'stockNumber',
-    minWidth: 70,
+    minWidth: 100,
   },
   {
     key: 'stockType',
