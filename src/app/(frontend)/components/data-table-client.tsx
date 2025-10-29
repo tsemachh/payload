@@ -1768,7 +1768,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         {row.agendas.map((agenda: unknown, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
-                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                           >
                             {/* Empty cell for companies column */}
                             <TableCell className="py-2 px-3"></TableCell>
