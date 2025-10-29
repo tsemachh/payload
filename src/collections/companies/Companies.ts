@@ -5,6 +5,7 @@ import { isAdmin, isUserCompany } from '@/utils/authUtils'
 import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
+
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
     if (!data.companyId) {
@@ -370,12 +371,13 @@ export const Companies: CollectionConfig = {
           ],
         },
         {
-          label: 'פגישות',
+          label: 'אסיפות',
           admin: {
             condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
+              label: 'אסיפות אליהן זומנה החברה',
               type: 'join',
               collection: 'meetings',
               on: 'companies',
