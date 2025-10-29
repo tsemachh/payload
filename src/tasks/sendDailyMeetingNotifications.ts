@@ -3,6 +3,7 @@ import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from './utils'
 import { Meeting, User } from '@/payload-types'
 import { sendMailFromRequest } from '@/utils/sendMail'
+import { scheduleSendDailyMeetingNotificationsTask } from './scheduleDailyTasks'
 
 // Define a global logger variable that will be set in each function with req.payload.logger
 let logger: any
@@ -81,7 +82,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
       where: {
         updatedAt: {
           greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          less_than_equal: new Date().toISOString(),
         },
         _status: { equals: 'published' },
         publishDate: {
@@ -1010,6 +1011,7 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
       req.payload.logger.info('Daily meeting notifications task completed successfully', {
         summary: result.summary,
       })
+      await scheduleSendDailyMeetingNotificationsTask(req.payload)
     } else {
       logger.error('Daily meeting notifications task handler completed with errors', {
         operation: 'sendDailyMeetingNotificationsHandler',
