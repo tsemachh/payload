@@ -116,7 +116,7 @@ export const processStocksFeedCsv = async (
           req.payload.logger.info(progressMsg)
         }
       } catch (rowError) {
-        req.payload.logger.error(`Error processing row ${i}: ${JSON.stringify(rowError)}`, rowError)
+        req.payload.logger.error({ rowError }, `Error processing row ${i}: ${JSON.stringify(rowError)}`)
         // Continue with the next row
       }
     }

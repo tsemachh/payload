@@ -60,7 +60,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
   const sinceISO = since.toISOString()
 
   // Log query start with detailed parameters
-  logger.info('Starting query for new  meetings', {
+  logger.info({
     operation: 'getNewMeetings',
     since: sinceISO,
     queryParameters: {
@@ -68,7 +68,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
       createdAtFilter: sinceISO,
       statusFilter: '',
     },
-  })
+  }, 'Starting query for new  meetings')
 
   try {
     const result = await req.payload.find({
@@ -96,7 +96,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
     const queryDuration = Date.now() - startTime
     const meetingsFound = result.docs.length
     // Log successful query with performance metrics
-    logger.info('Successfully queried new  meetings', {
+    logger.info({
       operation: 'getNewMeetings',
       meetingsFound,
       queryDuration,
@@ -105,14 +105,14 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
         executionTimeMs: queryDuration,
         resultsReturned: meetingsFound,
       },
-    })
+    }, 'Successfully queried new  meetings')
     return result.docs as Meeting[]
   } catch (error) {
     const queryDuration = Date.now() - startTime
     const errorMessage = error instanceof Error ? error.message : String(error)
 
     // Enhanced error logging with context and performance data
-    logger.error('Failed to query new  meetings', {
+    logger.error({
       operation: 'getNewMeetings',
       error: errorMessage,
       errorType: error instanceof Error ? error.constructor.name : 'Unknown',
@@ -124,7 +124,7 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
         statusFilter: '',
       },
       stack: error instanceof Error ? error.stack : undefined,
-    })
+    }, 'Failed to query new  meetings')
 
     throw new Error(`Failed to query new  meetings: ${errorMessage}`)
   }
@@ -142,7 +142,7 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
   const startTime = Date.now()
 
   // Log query start with detailed parameters
-  logger.info('Starting query for active users with companies', {
+  logger.info({
     operation: 'getActiveUsersWithCompanies',
     queryParameters: {
       collection: 'users',
@@ -151,7 +151,7 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
       companiesExistsFilter: true,
       depth: 1,
     },
-  })
+  }, 'Starting query for active users with companies')
 
   try {
     const result = await req.payload.find({
@@ -191,7 +191,7 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
       .filter((email) => email && typeof email === 'string')
 
     // Log successful query with performance metrics and filtering details
-    logger.info('Successfully queried active users with companies', {
+    logger.info({
       operation: 'getActiveUsersWithCompanies',
       totalUsersFound,
       validUsersCount,
@@ -209,14 +209,14 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
         usersFilteredOut: filteredOutCount,
         validEmails: validEmails.length,
       },
-    })
+    }, 'Successfully queried active users with companies')
     return usersWithCompanies
   } catch (error) {
     const queryDuration = Date.now() - startTime
     const errorMessage = error instanceof Error ? error.message : String(error)
 
     // Enhanced error logging with context and performance data
-    logger.error('Failed to query active users with companies', {
+    logger.error({
       operation: 'getActiveUsersWithCompanies',
       error: errorMessage,
       errorType: error instanceof Error ? error.constructor.name : 'Unknown',
@@ -229,7 +229,7 @@ export const getActiveUsersWithCompanies = async (req: PayloadRequest): Promise<
         depth: 1,
       },
       stack: error instanceof Error ? error.stack : undefined,
-    })
+    }, 'Failed to query active users with companies')
 
     throw new Error(`Failed to query active users with companies: ${errorMessage}`)
   }
@@ -380,7 +380,7 @@ export const generateEmailContent = (
   )
 
   // Log email content generation summary
-  logger.info('Email content generated with validation', {
+  logger.info({
     operation: 'generateEmailContent',
     originalRecipients: recipients.length,
     validatedRecipients: validatedRecipients.length,
@@ -390,7 +390,7 @@ export const generateEmailContent = (
     validatedAgendaUpdatedMeetings: validatedAgendaUpdatedMeetings.length,
     newMeetingsCount: validatedNewCount,
     agendaUpdatesCount: validatedAgendaCount,
-  })
+  }, 'Email content generated with validation')
 
   return {
     subject,
@@ -418,7 +418,7 @@ export const sendDailyMeetingNotifications = async (
   const validatedInput: DailyMeetingNotificationInput | undefined = input
 
   // Log task execution start with comprehensive context
-  logger.info('Starting daily meeting notifications task execution', {
+  logger.info({
     operation: 'sendDailyMeetingNotifications',
     executionStart: currentDate.toISOString(),
     input: {
@@ -431,7 +431,7 @@ export const sendDailyMeetingNotifications = async (
       currentDate: currentDate.toISOString(),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
-  })
+  }, 'Starting daily meeting notifications task execution')
 
   // Initialize results object
   const results: DailyMeetingNotificationResult = {
@@ -455,14 +455,14 @@ export const sendDailyMeetingNotifications = async (
 
     if (isNonWorkingDay) {
       // Log non-working day skip with detailed information
-      logger.info('Skipping daily meeting notifications - non-working day', {
+      logger.info({
         operation: 'sendDailyMeetingNotifications',
         result: 'skipped_non_working_day',
         currentDate: currentDate.toISOString(),
         dayOfWeek: currentDate.getDay(),
         isHoliday: true,
         executionDuration: Date.now() - taskStartTime,
-      })
+      }, 'Skipping daily meeting notifications - non-working day')
       return {
         success: true,
         summary: {
@@ -483,7 +483,7 @@ export const sendDailyMeetingNotifications = async (
     const validatedLookbackDate = twentyFourHoursAgo
 
     // Log data query phase start
-    logger.info('Starting data query phase', {
+    logger.info({
       operation: 'sendDailyMeetingNotifications',
       phase: 'data_queries',
       lookbackPeriod: validatedLookbackDate.toISOString(),
@@ -494,7 +494,7 @@ export const sendDailyMeetingNotifications = async (
         ),
         usersQuery: true,
       },
-    })
+    }, 'Starting data query phase')
 
     // Query for new  meetings
     let newMeetings: Meeting[] = []
@@ -505,18 +505,18 @@ export const sendDailyMeetingNotifications = async (
       results.summary.newMeetingsCount = newMeetings.length
 
       // Log successful new meetings query
-      logger.info('New  meetings query completed successfully', {
+      logger.info({
         operation: 'sendDailyMeetingNotifications',
         queryType: 'new__meetings',
         rawMeetingsFound: rawNewMeetings.length,
         validatedMeetingsFound: newMeetings.length,
         since: validatedLookbackDate.toISOString(),
-      })
+      }, 'New  meetings query completed successfully')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
 
       // Enhanced error logging for new meetings query failure
-      logger.error('New  meetings query failed', {
+      logger.error({
         operation: 'sendDailyMeetingNotifications',
         queryType: 'new__meetings',
         error: errorMessage,
@@ -524,7 +524,7 @@ export const sendDailyMeetingNotifications = async (
         since: validatedLookbackDate.toISOString(),
         impact: 'continuing_with_partial_data',
         stack: error instanceof Error ? error.stack : undefined,
-      })
+      }, 'New  meetings query failed')
 
       results.details?.errors.push(`Failed to query new  meetings: ${errorMessage}`)
       // Continue processing even if this query fails
@@ -539,24 +539,24 @@ export const sendDailyMeetingNotifications = async (
       results.summary.usersNotified = activeUsers.length
 
       // Log successful users query
-      logger.info('Active users with companies query completed successfully', {
+      logger.info({
         operation: 'sendDailyMeetingNotifications',
         queryType: 'active_users_with_companies',
         rawUsersFound: rawActiveUsers.length,
         validatedUsersFound: activeUsers.length,
-      })
+      }, 'Active users with companies query completed successfully')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
 
       // Enhanced error logging for users query failure
-      logger.error('Active users with companies query failed', {
+      logger.error({
         operation: 'sendDailyMeetingNotifications',
         queryType: 'active_users_with_companies',
         error: errorMessage,
         errorType: error instanceof Error ? error.constructor.name : 'Unknown',
         impact: 'continuing_with_partial_data',
         stack: error instanceof Error ? error.stack : undefined,
-      })
+      }, 'Active users with companies query failed')
 
       results.details?.errors.push(`Failed to query active users: ${errorMessage}`)
       // Continue processing even if this query fails
@@ -827,7 +827,7 @@ export const sendDailyMeetingNotifications = async (
       results.summary.emailErrors = emailContent.to.length - successCount
 
       // Enhanced success logging with comprehensive details
-      logger.info('Daily meeting notification emails sending completed', {
+      logger.info({
         operation: 'sendDailyMeetingNotifications',
         phase: 'email_sending',
         result: successCount > 0 ? 'success' : 'failure',
@@ -848,16 +848,16 @@ export const sendDailyMeetingNotifications = async (
           batchSize: BATCH_SIZE,
           batchCount: batches.length,
         },
-      })
+      }, 'Daily meeting notification emails sending completed')
 
       // Also log to payload logger for backward compatibility
-      req.payload.logger.info('Daily meeting notification emails sending completed', {
+      req.payload.logger.info({
         recipientCount: userEmails.length,
         successCount,
         errorCount: emailContent.to.length - successCount,
         newMeetingsCount: results.summary.newMeetingsCount,
         agendaUpdatesCount: results.summary.agendaUpdatesCount,
-      })
+      }, 'Daily meeting notification emails sending completed')
     } catch (error) {
       const emailSendingDuration = Date.now() - emailSendingStartTime
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -894,7 +894,7 @@ export const sendDailyMeetingNotifications = async (
     // Log task completion summary
     const totalExecutionDuration = Date.now() - taskStartTime
 
-    logger.info('Daily meeting notifications task execution completed', {
+    logger.info({
       operation: 'sendDailyMeetingNotifications',
       phase: 'task_complete',
       result: results.success ? 'success' : 'partial_failure',
@@ -917,7 +917,7 @@ export const sendDailyMeetingNotifications = async (
         hasErrors: (results.details?.errors.length || 0) > 0,
         emailDeliverySuccess: results.summary.emailsSent > 0 && results.summary.emailErrors === 0,
       },
-    })
+    }, 'Daily meeting notifications task execution completed')
 
     return results
   } catch (error) {
@@ -930,7 +930,7 @@ export const sendDailyMeetingNotifications = async (
     })
 
     // Enhanced error logging for unexpected task failures
-    logger.error('Daily meeting notifications task failed with unexpected error', {
+    logger.error({
       operation: 'sendDailyMeetingNotifications',
       phase: 'task_failure',
       error: errorMessage,
@@ -944,7 +944,7 @@ export const sendDailyMeetingNotifications = async (
         emailErrors: results.summary.emailErrors,
       },
       stack: error instanceof Error ? error.stack : undefined,
-    })
+    }, 'Daily meeting notifications task failed with unexpected error')
 
     results.success = false
     results.details?.errors.push(errorMessage)
@@ -968,7 +968,7 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
   const validatedInput: DailyMeetingNotificationInput | undefined = input
 
   // Log task handler start with comprehensive context
-  logger.info('Daily meeting notifications task handler started', {
+  logger.info({
     operation: 'sendDailyMeetingNotificationsHandler',
     handlerStart: new Date().toISOString(),
     input: {
@@ -979,7 +979,7 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
       taskType: 'sendDailyMeetingNotifications',
       executionEnvironment: process.env.NODE_ENV || 'unknown',
     },
-  })
+  }, 'Daily meeting notifications task handler started')
 
   try {
     console.log('sendDailyMeetingNotificationsHandler started')
@@ -991,7 +991,7 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
 
     // Enhanced task completion logging
     if (result.success) {
-      logger.info('Daily meeting notifications task handler completed successfully', {
+      logger.info({
         operation: 'sendDailyMeetingNotificationsHandler',
         result: 'success',
         handlerExecutionDuration,
@@ -1004,14 +1004,14 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
           emailDeliverySuccess: result.summary.emailsSent > 0 && result.summary.emailErrors === 0,
           hasErrors: (result.details?.errors.length || 0) > 0,
         },
-      })
+      }, 'Daily meeting notifications task handler completed successfully')
 
       // Also log to payload logger for backward compatibility
-      req.payload.logger.info('Daily meeting notifications task completed successfully', {
+      req.payload.logger.info({
         summary: result.summary,
-      })
+      }, 'Daily meeting notifications task completed successfully')
     } else {
-      logger.error('Daily meeting notifications task handler completed with errors', {
+      logger.error({
         operation: 'sendDailyMeetingNotificationsHandler',
         result: 'failure',
         handlerExecutionDuration,
@@ -1026,13 +1026,13 @@ export const sendDailyMeetingNotificationsHandler: TaskHandler<
           emailDeliverySuccess: false,
           hasErrors: true,
         },
-      })
+      }, 'Daily meeting notifications task handler completed with errors')
 
       // Also log to payload logger for backward compatibility
-      req.payload.logger.error('Daily meeting notifications task completed with errors', {
+      req.payload.logger.error({
         summary: result.summary,
         errors: result.details?.errors,
-      })
+      }, 'Daily meeting notifications task completed with errors')
     }
 
     return {

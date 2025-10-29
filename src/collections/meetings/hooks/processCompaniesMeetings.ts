@@ -253,8 +253,8 @@ export const processCompaniesMeetings = async (
           })
           .catch((error) => {
             req.payload.logger.error(
-              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              error,
+              { error },
+              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
             )
             // Don't rethrow the error to allow other meetings to be processed
           })
@@ -269,8 +269,8 @@ export const processCompaniesMeetings = async (
     req.payload.logger.info('End of process: All meetings have been processed')
   } catch (error: unknown) {
     req.payload.logger.error(
-      `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      error,
+      { error },
+      `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`
     )
     throw error
   }

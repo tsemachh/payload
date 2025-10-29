@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
@@ -305,8 +304,8 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
             </label>
             <ReportApprovalUpload
               formData={formData}
-              setFormData={setFormData}
-              saveDraftData={saveDraftData}
+              setFormDataAction={setFormData}
+              saveDraftDataAction={saveDraftData}
             />
           </div>
           <Table>
@@ -383,7 +382,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                       <OwnedQuantityInput
                         value={displayData?.ownedQuantity}
                         verifiedHoldings={displayData?.verifiedHoldings}
-                        onChange={(value) =>
+                        onChangeAction={(value) =>
                           updateFundData(
                             index,
                             hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',

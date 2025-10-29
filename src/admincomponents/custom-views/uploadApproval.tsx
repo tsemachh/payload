@@ -1,16 +1,19 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
 
 interface ReportApprovalUploadProps {
   formData: any
-  setFormData: (data: any) => void
-  saveDraftData: (label: string, data: any) => void
+  setFormDataAction: (data: any) => void
+  saveDraftDataAction: (label: string, data: any) => void
 }
 
-export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: ReportApprovalUploadProps) {
+export function ReportApprovalUpload({
+  formData,
+  setFormDataAction,
+  saveDraftDataAction,
+}: ReportApprovalUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadedDoc, setUploadedDoc] = useState<any>(null)
 
@@ -36,8 +39,8 @@ export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: R
 
       setUploadedDoc(doc)
       const updatedForm = { ...formData, reportApproval: doc }
-      setFormData(updatedForm)
-      saveDraftData('reportApproval', updatedForm)
+      setFormDataAction(updatedForm)
+      saveDraftDataAction('reportApproval', updatedForm)
     } catch (err) {
       console.error('שגיאה בהעלאת קובץ:', err)
     } finally {
@@ -48,8 +51,8 @@ export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: R
   const removeFile = () => {
     setUploadedDoc(null)
     const updatedForm = { ...formData, reportApproval: null }
-    setFormData(updatedForm)
-    saveDraftData('reportApproval', updatedForm)
+    setFormDataAction(updatedForm)
+    saveDraftDataAction('reportApproval', updatedForm)
   }
 
   return (
@@ -65,10 +68,7 @@ export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: R
       />
 
       {/* Upload button */}
-      <Button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={!formData.reported}
-      >
+      <Button onClick={() => fileInputRef.current?.click()} disabled={!formData.reported}>
         העלה אישור הצבעה בפועל
       </Button>
 
@@ -79,7 +79,7 @@ export function ReportApprovalUpload({ formData, setFormData, saveDraftData }: R
             {uploadedDoc.filename}
           </span>
           <Button size="sm" variant="ghost" onClick={removeFile}>
-          X 
+            X
           </Button>
         </div>
       )}

@@ -73,9 +73,10 @@ export const processMeetingsAgendaFeedCsv = async (
       rowsByMagnaId.get(magnaId)?.push(row)
     })
 
+    fileLength = rowsByMagnaId.size
     req.payload.logger.info(
-      `Processing ${rowsByMagnaId.size} unique meetings from CSV file: ${file.name}`,
-      (fileLength = rowsByMagnaId.size),
+      { fileLength },
+      `Processing ${rowsByMagnaId.size} unique meetings from CSV file: ${file.name}`
     )
     const magnaIds = Array.from(rowsByMagnaId.keys())
     const existingMeetings = await req.payload.find({
@@ -109,13 +110,13 @@ export const processMeetingsAgendaFeedCsv = async (
 
     // Log agenda update processing start
     req.payload.logger.info(
-      `Starting agenda update processing for ${rowsByMagnaId.size} meetings`,
       {
         fileName: file.name,
         totalMeetings: rowsByMagnaId.size,
         existingMeetings: existingMeetings.docs.length,
         nonExistingMeetings: nonExistingMagnaIds.length,
       },
+      `Starting agenda update processing for ${rowsByMagnaId.size} meetings`
     )
 
     for (const [magnaId, agendaRows] of Array.from(rowsByMagnaId.entries())) {
@@ -163,14 +164,14 @@ export const processMeetingsAgendaFeedCsv = async (
     }
 
     // Log agenda update processing completion
-    req.payload.logger.info(`Finished processing agenda updates`, {
+    req.payload.logger.info({
       fileName: file.name,
       totalProcessed: processedRows,
       successfulUpdates: successCount,
       agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
       agendaUpdatesCount: agendaUpdatedMeetingIds.length,
       errors: errors.length,
-    })
+    }, `Finished processing agenda updates`)
 
     // Schedule daily notification task with agenda update data
     try {
@@ -188,15 +189,15 @@ export const processMeetingsAgendaFeedCsv = async (
       })
       await scheduleSendDailyMeetingNotificationsTask(req.payload, agendaUpdatedMeetingIds)
 
-      req.payload.logger.info(`Scheduled daily meeting notifications task with agenda updates`, {
+      req.payload.logger.info({
         agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
         agendaUpdatesCount: agendaUpdatedMeetingIds.length,
-      })
+      }, `Scheduled daily meeting notifications task with agenda updates`)
     } catch (schedulingError: any) {
-      req.payload.logger.error(`Failed to schedule daily meeting notifications task`, {
+      req.payload.logger.error({
         error: schedulingError.message,
         agendaUpdatedMeetingIds: agendaUpdatedMeetingIds,
-      })
+      }, `Failed to schedule daily meeting notifications task`)
       // Don't add to errors array as this is not a critical failure for the agenda processing
     }
 

@@ -293,6 +293,7 @@ export const Companies: CollectionConfig = {
               name: 'mainAccount',
               label: 'חשבון ראשי',
               type: 'array',
+              maxRows: 1,
               fields: [
                 {
                   name: 'accountNumber',
