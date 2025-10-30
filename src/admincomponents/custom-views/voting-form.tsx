@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
@@ -12,6 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
@@ -403,6 +403,48 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                 )
               })}
             </TableBody>
+            <TableFooter>
+              <TableRow className="bg-muted/50 dark:bg-gray-800/70 font-bold">
+                <TableCell
+                  className="text-right text-base text-gray-900 dark:text-white"
+                  colSpan={isOriginal ? 3 : 2}
+                >
+                  סה״כ
+                </TableCell>
+                <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                  {formatNumberWithLocale(
+                    formData.fundsData.reduce((sum, fund) => {
+                      const displayData = fund.original || fund
+                      return sum + (displayData?.quantity || 0)
+                    }, 0),
+                  )}
+                </TableCell>
+                <TableCell />
+                <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                  {(() => {
+                    const hasNullVerification = formData.fundsData.some((fund) => {
+                      const displayData = fund.original || fund
+                      return (
+                        displayData?.verifiedHoldings === null ||
+                        displayData?.verifiedHoldings === undefined
+                      )
+                    })
+
+                    if (hasNullVerification) {
+                      return '-'
+                    }
+
+                    return formatNumberWithLocale(
+                      formData.fundsData.reduce((sum, fund) => {
+                        const displayData = fund.original || fund
+                        const ownedQty = displayData?.ownedQuantity
+                        return sum + (ownedQty != null && ownedQty !== 0 ? ownedQty : 0)
+                      }, 0),
+                    )
+                  })()}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         </CardContent>
       </Card>
