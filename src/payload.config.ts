@@ -241,6 +241,8 @@ export default buildConfig({
         },
         dashboard: {
           Component: '@shefing/quickfilter/Dashboard',
+          path: '/',
+          exact: true,
         },
       },
     },

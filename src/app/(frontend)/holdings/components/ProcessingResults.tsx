@@ -26,7 +26,7 @@ interface ProcessingResultsProps {
   fatals: FeedFatalError[]
   companies: string[]
   className?: string
-  onRefresh?: (records: HoldingFeedLine[]) => void
+  onRefreshAction?: (records: HoldingFeedLine[]) => void
   onConfirmAction?: () => Promise<void> | void
   onContinueAction?: () => Promise<void> | void
   onCancelAction?: () => Promise<void> | void
@@ -46,7 +46,7 @@ export function ProcessingResults({
   className,
   onConfirmAction,
   onCancelAction,
-  onRefresh,
+  onRefreshAction,
   isValidating = false,
 }: ProcessingResultsProps) {
   const [activeTab, setActiveTab] = useState<'valid' | 'invalid' | 'silenced'>('valid')
@@ -236,7 +236,7 @@ export function ProcessingResults({
               records={recordErrors}
               invalid={true}
               companies={companies}
-              onRefresh={onRefresh}
+              onRefreshAction={onRefreshAction}
               valid={validRecords}
               silenced={silencedRecords}
             />

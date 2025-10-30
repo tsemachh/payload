@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import '../../app/styles/global.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Notifications } from '@/components/notifications'
@@ -11,7 +10,6 @@ import { ImpersonationProvider } from '@/plugins/impersonate/components'
 import { NavigationGuardProvider } from 'next-navigation-guard'
 import { RouteTracker } from './components/route-tracker'
 
-const inter = Inter({ subsets: ['latin'] })
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="app-version" content={appVersion} />
       </head>
-      <body className={`useTw ${inter.className}`} suppressHydrationWarning>
+      <body className={`useTw`} suppressHydrationWarning>
         <AuthProvider>
           <ImpersonationProvider checkInterval={600000}>
             <CompaniesProvider>
