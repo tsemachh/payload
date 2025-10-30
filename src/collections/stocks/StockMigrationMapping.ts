@@ -9,11 +9,10 @@ const StockMigrationMapping: CollectionConfig = {
       defaultLimit: 100,
       limits: [10, 20, 50, 100, 200, 500],
     },
+    listSearchableFields: ['stockId', 'type', 'isin'],
   },
   custom: {
-    filterList: [
-      [{ name:'type'}]
-    ],
+    filterList: [[{ name: 'type' }]],
   },
   labels: {
     plural: 'מיפויי ניירות ערך',

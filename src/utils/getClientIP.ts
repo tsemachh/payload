@@ -1,5 +1,4 @@
 import type { PayloadRequest } from 'payload'
-import { logAllHeaders } from '@/utils/debugHeaders'
 
 function normalizeIP(raw: string): string {
   if (!raw) return 'unknown'
@@ -88,7 +87,7 @@ function pickFromXFFChain(xff: string): string | undefined {
 // and Express Request (with req.get and plain headers object)
 export function getClientIP(req: PayloadRequest | any): string {
   const headers: any = req?.headers
-  logAllHeaders(req)
+  //logAllHeaders(req)
 
   let forwarded: string | undefined
   let realIP: string | undefined
