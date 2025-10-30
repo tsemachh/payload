@@ -176,10 +176,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             row.type = getStockType(row.type)
 
-            // Determine origin with clear priority
+            // Determine origin with clear priority (self)
             let origin: StockOrigin = 'TASE'
             if (stockStatuses.isPrivateShaked) origin = 'Private'
             else if (stockStatuses.isForeign) origin = 'Foreign'
+
+            // If this stock has a related parent, inherit the parent's origin regardless of current
+            if (relatedStock) {
+              if (privateStocksShaked.has(relatedStock)) origin = 'Private'
+              else if (foreignStocksShaked.has(relatedStock)) origin = 'Foreign'
+              else origin = 'TASE'
+            }
 
             // Determine tradable status:
             // - Predicta stocks are tradable
