@@ -244,7 +244,7 @@ export const RecordsTable: React.FC<{
           allRecords={allRecords}
           onRefreshAction={handleRefreshAfterSilence}
           open={silenceDialogOpen}
-          onClose={handleDialogClose}
+          onCloseAction={handleDialogClose}
         />
       )}
     </div>

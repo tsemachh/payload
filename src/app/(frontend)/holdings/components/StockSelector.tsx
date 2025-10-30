@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +13,7 @@ interface Stock {
 interface StockSelectorProps {
   stocks: Stock[]
   selectedStocks: string[]
-  onSelectionChange: (selected: string[]) => void
+  onSelectionChangeAction: (selected: string[]) => void
   className?: string
   isLoading?: boolean
   resetTrigger?: number
@@ -61,7 +61,7 @@ function fuzzyMatch(text: string, query: string): { matches: boolean; score: num
 export function StockSelector({
   stocks,
   selectedStocks,
-  onSelectionChange,
+  onSelectionChangeAction,
   className,
   isLoading = false,
   resetTrigger,
@@ -121,7 +121,7 @@ export function StockSelector({
     } else {
       newSelection = [...selectedStocks, stockId]
     }
-    onSelectionChange(newSelection)
+    onSelectionChangeAction(newSelection)
   }
 
   return (

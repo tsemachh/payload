@@ -54,7 +54,7 @@ const TwoFactorDisableEndpoint = async (req: PayloadRequest) => {
     })
 
   } catch (error) {
-    req.payload.logger.error('2FA disable error:', error)
+    req.payload.logger.error({ error }, '2FA disable error:')
     return Response.json(
       { error: 'שגיאה בביטול אימות דו-שלבי' }, 
       { status: 500 }

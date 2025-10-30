@@ -183,8 +183,8 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
       await updateMeetingVoteStatuses(data as Meeting, source as string)
     } catch (error) {
       req.payload.logger.error(
-        `Error updating vote statuses after companies change for meeting ${data.id}:`,
-        error,
+        { error },
+        `Error updating vote statuses after companies change for meeting ${data.id}:`
       )
       // Don't throw error to avoid breaking the meeting save operation
     }

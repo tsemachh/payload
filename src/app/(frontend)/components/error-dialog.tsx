@@ -16,12 +16,17 @@ import { ErrorDetails } from '../helpers/error-handler'
 
 export interface ErrorDialogProps {
   isOpen: boolean
-  onClose: () => void
+  onCloseAction: () => void
   error: ErrorDetails | null
   showDetails?: boolean
 }
 
-export function ErrorDialog({ isOpen, onClose, error, showDetails = false }: ErrorDialogProps) {
+export function ErrorDialog({
+  isOpen,
+  onCloseAction,
+  error,
+  showDetails = false,
+}: ErrorDialogProps) {
   if (!error) return null
 
   const copyErrorDetails = () => {
@@ -39,7 +44,7 @@ URL: ${typeof window !== 'undefined' ? window.location.href : 'לא זמין'}
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onCloseAction}>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh]" dir="rtl">
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-right justify-end flex-row-reverse">
@@ -99,7 +104,7 @@ URL: ${typeof window !== 'undefined' ? window.location.href : 'לא זמין'}
             <Copy className="h-4 w-4" />
             העתק פרטים
           </Button>
-          <Button onClick={onClose} size="sm" className="gap-2">
+          <Button onClick={onCloseAction} size="sm" className="gap-2">
             <X className="h-4 w-4" />
             סגור
           </Button>

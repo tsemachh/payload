@@ -1,18 +1,18 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 
 interface VoteReasonProps {
   voteReason?: string
   topicIndex: number
-  onVoteReasonChange: (topicIndex: number, voteReason: string) => void
+  onVoteReasonChangeAction: (topicIndex: number, voteReason: string) => void
   isReadOnly?: boolean
 }
 
 export default function VoteReason({
   voteReason,
   topicIndex,
-  onVoteReasonChange,
+  onVoteReasonChangeAction,
   isReadOnly = false,
 }: VoteReasonProps) {
   const [isInputOpen, setIsInputOpen] = useState(false)
@@ -33,9 +33,9 @@ export default function VoteReason({
   }
 
   const handleBlur = () => {
-    // Only call onVoteReasonChange if the value has actually changed
+    // Only call onVoteReasonChangeAction if the value has actually changed
     if (localValue !== voteReason) {
-      onVoteReasonChange(topicIndex, localValue)
+      onVoteReasonChangeAction(topicIndex, localValue)
     }
   }
 

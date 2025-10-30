@@ -108,43 +108,38 @@ export default function VotingForm() {
     },
   )
 
- const { isImpersonating } = useImpersonation();
- 
-useEffect(() => {
-  if (meetingData) {
-    let isReadOnlyDueToDate = false;
-    if (meetingData.proxyVotingDate) {
-      const proxyVotingDate = new Date(meetingData.proxyVotingDate);
-      const now = new Date();
-      if (proxyVotingDate < now && !isImpersonating) {
-        isReadOnlyDueToDate = true;
+  const { isImpersonating } = useImpersonation()
+
+  useEffect(() => {
+    if (meetingData) {
+      let isReadOnlyDueToDate = false
+      if (meetingData.proxyVotingDate) {
+        const proxyVotingDate = new Date(meetingData.proxyVotingDate)
+        const now = new Date()
+        if (proxyVotingDate < now && !isImpersonating) {
+          isReadOnlyDueToDate = true
+        }
       }
-    }
 
-    let isReadOnlyDueToPermission = false;
-    if (user && meetingData?.companies.length > 0) {
-      const hasWritePermission = hasCompanyPermission(
-        user,
-        meetingData?.companies[0].id,
-        'write'
-      );
-      if (!hasWritePermission) {
-        isReadOnlyDueToPermission = true;
+      let isReadOnlyDueToPermission = false
+      if (user && meetingData?.companies.length > 0) {
+        const hasWritePermission = hasCompanyPermission(user, meetingData?.companies[0].id, 'write')
+        if (!hasWritePermission) {
+          isReadOnlyDueToPermission = true
+        }
       }
+
+      if (isReadOnlyDueToPermission) {
+        setReadOnlyReason('permission')
+      } else if (isReadOnlyDueToDate) {
+        setReadOnlyReason('date')
+      } else {
+        setReadOnlyReason(null)
+      }
+
+      setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission)
     }
-
-    if (isReadOnlyDueToPermission) {
-      setReadOnlyReason('permission');
-    } else if (isReadOnlyDueToDate) {
-      setReadOnlyReason('date');
-    } else {
-      setReadOnlyReason(null);
-    }
-
-    setIsReadOnly(isReadOnlyDueToDate || isReadOnlyDueToPermission);
-  }
-}, [meetingData, user, isImpersonating]);
-
+  }, [meetingData, user, isImpersonating])
 
   useEffect(() => {
     if (meetingDataError) {
@@ -575,7 +570,7 @@ useEffect(() => {
   const saveDraftData = useCallback(
     async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
       if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
-        console.warn('Missing data for saveDraftData. Aborting save.')
+        console.warn('Missing data for saveDraftDataAction. Aborting save.')
 
         setTimeout(() => {
           toast({
@@ -1041,7 +1036,7 @@ useEffect(() => {
                               <VoteReason
                                 voteReason={userVote?.voteReason}
                                 topicIndex={item.topicIndex}
-                                onVoteReasonChange={handleVoteReasonChange}
+                                onVoteReasonChangeAction={handleVoteReasonChange}
                                 isReadOnly={isReadOnly}
                               />
                             </div>
