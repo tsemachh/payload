@@ -353,11 +353,6 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
       // Find all published votes for this meeting
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
-        select: {
-          company: true,
-          creator: true,
-          checksum: true,
-        },
         where: {
           meeting: {
             equals: meeting.id,
@@ -371,39 +366,83 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
           },
         },
         limit: 0,
-        depth: 0,
+        depth: 1,
       })
 
       if (votes.length > 0) {
-        // Group votes by user
-        const votesByUser = new Map<string, { voteIds: string[]; companies: Set<string> }>()
+        // Get unique company IDs from votes
+        const companyIds = [
+          ...new Set(votes.map((vote: any) => getIdOfRelationField(vote.company) as string)),
+        ]
+
+        // Fetch all companies with their parent company data
+        const { docs: companies } = await req.payload.find({
+          collection: 'companies',
+          select: {
+            id: true,
+            name: true,
+            parentCompany: true,
+          },
+          where: {
+            id: {
+              in: companyIds,
+            },
+          },
+          limit: 0,
+          depth: 1,
+        })
+
+        // Create a map of company ID to parent company ID
+        const companyToParentMap = new Map<string, string>()
+        companies.forEach((company: any) => {
+          let parentCompanyId = company.id // Default to company itself if no parent
+          if (
+            company?.parentCompany?.docs &&
+            Array.isArray(company.parentCompany.docs) &&
+            company.parentCompany.docs.length > 0
+          ) {
+            const parentCompany = company.parentCompany.docs[0]
+            parentCompanyId =
+              typeof parentCompany === 'string' ? parentCompany : parentCompany?.id || company.id
+          }
+          companyToParentMap.set(company.id, parentCompanyId)
+        })
+
+        // Group votes by mother company + checksum
+        const votesByMotherAndChecksum = new Map<
+          string,
+          { voteIds: string[]; companies: Set<string> }
+        >()
 
         votes.forEach((vote: any) => {
-          const userId = vote.creator
+          const checksum = vote.checksum
           const companyId = getIdOfRelationField(vote.company) as string
+          const parentCompanyId = companyToParentMap.get(companyId) || companyId
 
-          if (userId && companyId) {
-            if (!votesByUser.has(userId)) {
-              votesByUser.set(userId, { voteIds: [], companies: new Set() })
+          const groupKey = `${parentCompanyId}|${checksum}`
+
+          if (checksum && companyId && parentCompanyId) {
+            if (!votesByMotherAndChecksum.has(groupKey)) {
+              votesByMotherAndChecksum.set(groupKey, { voteIds: [], companies: new Set() })
             }
-            votesByUser.get(userId)?.voteIds.push(vote.id)
-            votesByUser.get(userId)?.companies.add(companyId)
+            votesByMotherAndChecksum.get(groupKey)?.voteIds.push(vote.id)
+            votesByMotherAndChecksum.get(groupKey)?.companies.add(companyId)
           }
         })
 
-        // Create notification for each user
-        for (const [userId, { voteIds, companies }] of votesByUser.entries()) {
+        // Create notification for each group
+        for (const [groupKey, { companies }] of votesByMotherAndChecksum.entries()) {
           const meetingName = meeting?.fullName
-          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
           const companiesArray = Array.from(companies)
-          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesArray}`
+          const companiesStr = companiesArray.sort().join(',')
+          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName} (${companiesStr})`
+          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesArray.join(',')}`
 
-          // Delete any existing notifications with the same message for this user
+          // Delete any existing notifications with the same message and companies
           try {
             await req.payload.delete({
               collection: 'admin-notifications',
               where: {
-                /*                relatedUser: { equals: userId },*/
                 message: { equals: message },
                 meeting: { equals: meeting.id },
               },
