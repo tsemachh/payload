@@ -328,7 +328,7 @@ export default function HoldingsFeedView() {
             className="mt-16"
             onConfirmAction={handleSaveConfirmedAction}
             onCancelAction={handleCancelAction}
-            onRefresh={handleRefreshAction}
+            onRefreshAction={handleRefreshAction}
             isValidating={isValidating}
             isUploading={isUploading}
           />

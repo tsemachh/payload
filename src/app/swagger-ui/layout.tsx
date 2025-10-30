@@ -1,4 +1,6 @@
-export const metadata = {
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
   title: 'API Documentation',
   description: 'Swagger UI API Documentation',
 }
