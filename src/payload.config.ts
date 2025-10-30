@@ -8,9 +8,8 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
-//Logging
 import { gcsStorage } from '@payloadcms/storage-gcs'
-import { CollectionQuickFilterPlugin } from '@shefing/quickfilter'
+import CollectionQuickFilterPlugin, { addQuickFilterToCollection } from '@shefing/quickfilter'
 import { Users } from './collections/Users'
 import { Documents } from './collections/Documents'
 import { RecommendationReasons } from './collections/meetings/RecommendationReasons'
@@ -127,15 +126,15 @@ export default buildConfig({
       }
       defaultJobsCollection.admin.hidden = false
       defaultJobsCollection.admin.defaultColumns = ['taskSlug', 'queue', 'updatedAt', 'taskStatus']
-      defaultJobsCollection.admin.listSearchableFields = ['taskSlug', 'queue', 'taskStatus']
-      defaultJobsCollection.custom = {
-        filterList: [['updatedAt', 'createdAt', 'taskSlug', 'taskStatus']],
-      }
       defaultJobsCollection.admin.group = 'תחזוקה'
       defaultJobsCollection.labels = {
         plural: 'תהליכי מערכת',
         singular: 'תהליך מערכת',
       }
+      defaultJobsCollection.custom = {
+        filterList: [['updatedAt', 'createdAt', 'taskSlug']],
+      }
+      addQuickFilterToCollection(defaultJobsCollection)
 
       return defaultJobsCollection
     },
