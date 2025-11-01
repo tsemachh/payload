@@ -103,7 +103,7 @@ function SignInContent() {
       })
 
       // Check if user has incomplete 2FA setup after successful login
-      if (user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
+      if (user && user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
         console.log('User has incomplete 2FA setup, showing setup interface')
         setRequiresSetup(true)
         setError('')
