@@ -56,7 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorMessage = result.errors?.[0]?.message || result.error || 'שגיאה בהתחברות למערכת'
 
       const loginError = new Error(errorMessage) as any
-      loginError.details = result
+      // Include HTTP status so isUserFacingError can detect user-facing statuses (e.g., 403)
+      loginError.details = { ...result, status: response.status }
       throw loginError
     } catch (error: any) {
       // If it's our 2FA required "error", don't show notification - just rethrow
