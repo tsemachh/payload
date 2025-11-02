@@ -343,7 +343,13 @@ export const Stocks: CollectionConfig = {
                   _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: ['valueDate', 'registeredValue', 'closingRate', 'marketValue'],
+                    defaultColumns: [
+                      'id',
+                      'valueDate',
+                      'registeredValue',
+                      'closingRate',
+                      'marketValue',
+                    ],
                     disableListColumn: true,
                   },
                 },

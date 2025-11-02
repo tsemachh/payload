@@ -167,7 +167,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             )
           }
         }
-
+        if (!userProfile?.UserName?.includes('@') && userProfile?.UserName) {
+          userProfile.UserName = userProfile?.UserName + '@noMail.com'
+        }
         // Check if userAuth already exists
         const existingUser = await payload.find({
           collection: 'users',
@@ -236,9 +238,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         let newUser
-        if (!userData?.email?.includes('@') && userData?.email) {
-          userData.email = userData?.email + '@noMail.com'
-        }
 
         if (existingUser.docs.length > 0) {
           // Update existing userAuth
