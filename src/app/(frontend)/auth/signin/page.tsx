@@ -48,6 +48,14 @@ function SignInContent() {
   const turnstileRef = useRef<TurnstileCaptchaRef>(null)
   const { login, setUser } = useAuth()
 
+  // Helper function to reset Turnstile after errors
+  const resetTurnstile = () => {
+    setTurnstileStatus('required')
+    setTurnstileToken(null)
+    setIdempotencyKey(uuidv4())
+    setTurnstileKey((prev) => prev + 1)
+  }
+
   const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token)
     setTurnstileStatus('success')
@@ -94,11 +102,7 @@ function SignInContent() {
 
         if (!verifyResult.success) {
           setError('אימות האבטחה נכשל. אנא נסה שוב.')
-          setTurnstileStatus('required')
-          setTurnstileToken(null)
-          setIdempotencyKey(uuidv4())
-          // Force remount of Turnstile component to reset it
-          setTurnstileKey((prev) => prev + 1)
+          resetTurnstile()
           setIsLoading(false)
           return
         }
@@ -138,11 +142,7 @@ function SignInContent() {
         setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
         // Reset Turnstile on login errors so user can try again without refreshing page
         if (!requiresTwoFactor) {
-          setTurnstileStatus('required')
-          setTurnstileToken(null)
-          setIdempotencyKey(uuidv4())
-          // Force remount of Turnstile component to reset it
-          setTurnstileKey((prev) => prev + 1)
+          resetTurnstile()
         }
       }
     } finally {
