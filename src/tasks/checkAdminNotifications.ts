@@ -9,6 +9,7 @@ import {
 import { Vote } from '@/payload-types'
 import { sanitizeRequest } from './utils'
 import { scheduleCheckAdminNotificationsTask } from '@/tasks/scheduleDailyTasks'
+import { groupVotesByParentAndChecksum, createCompanyToParentMap } from '@/utils/voteGrouping'
 
 /**
  * Core function to check admin notifications
@@ -318,17 +319,14 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
  */
 async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: any) {
   try {
-    // Get current date
+        // Get current date
     const now = new Date()
 
     // Find meetings where the holding limit date was yesterday
     // We want to find meetings where the day after the holding limit is today
-    const yesterday = new Date(now)
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStart = new Date(yesterday)
-    yesterdayStart.setHours(0, 0, 0, 0)
-    const yesterdayEnd = new Date(yesterday)
-    yesterdayEnd.setHours(23, 59, 59, 999)
+    const lastWorkingDate = getWorkingDateBefore(now, 1, 0)
+    const lastWorkingDateEnd = new Date(lastWorkingDate)
+    lastWorkingDateEnd.setHours(23, 59, 59, 999)
 
     // Find meetings where the holding limit date was yesterday
     const { docs: meetings } = await req.payload.find({
@@ -340,8 +338,8 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
       },
       where: {
         holdingsLimit: {
-          greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          greater_than_equal: lastWorkingDate.toISOString(),
+          less_than_equal: lastWorkingDateEnd.toISOString(),
         },
       },
       limit: 0,
@@ -359,10 +357,6 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
           },
           _status: {
             equals: 'published',
-          },
-          updatedAt: {
-            greater_than_equal: yesterdayStart.toISOString(),
-            less_than_equal: now,
           },
         },
         limit: 0,
@@ -393,42 +387,10 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
         })
 
         // Create a map of company ID to parent company ID
-        const companyToParentMap = new Map<string, string>()
-        companies.forEach((company: any) => {
-          let parentCompanyId = company.id // Default to company itself if no parent
-          if (
-            company?.parentCompany?.docs &&
-            Array.isArray(company.parentCompany.docs) &&
-            company.parentCompany.docs.length > 0
-          ) {
-            const parentCompany = company.parentCompany.docs[0]
-            parentCompanyId =
-              typeof parentCompany === 'string' ? parentCompany : parentCompany?.id || company.id
-          }
-          companyToParentMap.set(company.id, parentCompanyId)
-        })
+        const companyToParentMap = createCompanyToParentMap(companies)
 
         // Group votes by mother company + checksum
-        const votesByMotherAndChecksum = new Map<
-          string,
-          { voteIds: string[]; companies: Set<string> }
-        >()
-
-        votes.forEach((vote: any) => {
-          const checksum = vote.checksum
-          const companyId = getIdOfRelationField(vote.company) as string
-          const parentCompanyId = companyToParentMap.get(companyId) || companyId
-
-          const groupKey = `${parentCompanyId}|${checksum}`
-
-          if (checksum && companyId && parentCompanyId) {
-            if (!votesByMotherAndChecksum.has(groupKey)) {
-              votesByMotherAndChecksum.set(groupKey, { voteIds: [], companies: new Set() })
-            }
-            votesByMotherAndChecksum.get(groupKey)?.voteIds.push(vote.id)
-            votesByMotherAndChecksum.get(groupKey)?.companies.add(companyId)
-          }
-        })
+        const votesByMotherAndChecksum = groupVotesByParentAndChecksum(votes, companyToParentMap)
 
         // Create notification for each group
         for (const [groupKey, { companies }] of votesByMotherAndChecksum.entries()) {
