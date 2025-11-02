@@ -3,6 +3,7 @@ import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
 import { createErrorFaultComment, logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import sql, { IResult } from 'mssql'
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
+import { getHoldingsRetroDays } from '@/migrations/utils/dateUtils'
 
 interface HoldingRow {
   stockNum: string
@@ -73,7 +74,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
     console.log('Starting holding days migration process...')
     pool = await createMSSqlPool()
-    console.log('Importing holdings from the last 3 months for all active companies')
+    const holdingsDaysRetro = getHoldingsRetroDays()
+    console.log(`Importing holdings from the last ${holdingsDaysRetro} days for all active companies`)
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
@@ -362,14 +364,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               `Processing company ${company.name} (ID: ${company.firm}) with latest date ${company.latest_date1}`,
             )
 
-            // Get all distinct holding dates for this company in the last 3 months (inclusive)
-            const dates = await getHoldingDatesInLast3Months(
+            // Get all distinct holding dates for this company in the last N days (inclusive)
+            const dates = await getHoldingDatesInLastNDays(
               pool,
               company.firm,
               company.latest_date1,
+              holdingsDaysRetro,
             )
             console.log(
-              `Found ${dates.length} holding date(s) in the last 3 months for company ${company.name} (ID: ${company.firm})`,
+              `Found ${dates.length} holding date(s) in the last ${holdingsDaysRetro} days for company ${company.name} (ID: ${company.firm})`,
             )
 
             // Process each date sequentially to keep per-company load reasonable
@@ -399,19 +402,20 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   }
 }
 
-// Returns all distinct holding dates for the given firm in the last 3 months (inclusive),
+// Returns all distinct holding dates for the given firm in the last N days (inclusive),
 // relative to the provided latestDate. Dates are returned as strings in MM-DD-YYYY format.
-async function getHoldingDatesInLast3Months(
+async function getHoldingDatesInLastNDays(
   pool: sql.ConnectionPool,
   firm: string,
   latestDate: string,
+  days: number,
 ): Promise<string[]> {
   const formattedLatest = formatDateForSQL(latestDate)
   const result = await pool.request().query(`
       SELECT DISTINCT CONVERT(VARCHAR(10), [date1], 110) AS [date1]
       FROM [${sqlConfig.database}].[dbo].[holdings]
       WHERE [firm] = '${firm}'
-        AND [date1] BETWEEN DATEADD(month, -3, '${formattedLatest}') AND '${formattedLatest}'
+        AND [date1] BETWEEN DATEADD(day, -${days}, '${formattedLatest}') AND '${formattedLatest}'
       ORDER BY [date1]
   `)
   return result.recordset.map((row: any) => row.date1 as string)

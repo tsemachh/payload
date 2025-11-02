@@ -6,6 +6,7 @@ import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import dotenv from 'dotenv'
+import { getMeetingsCutoff } from '@/migrations/utils/dateUtils'
 
 // Load environment variables
 dotenv.config()
@@ -40,8 +41,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Get all meetings from MSSQL
     console.log('Executing SQL query for meetings.')
-    const dateCutoff = process.env.MIGRATION_VOTES_DATE_CUTOFF || '2018-01-01'
-    console.log(`Using date cutoff: ${dateCutoff}`)
+    const { days, dateString } = getMeetingsCutoff()
+    const dateCutoff = dateString
+    console.log(`Using meetings_days_retro=${days} days; date cutoff: ${dateCutoff}`)
     const request = pool.request()
     request.input('dateCutoff', sql.VarChar, dateCutoff)
     const meetingsResult = await request.query(`

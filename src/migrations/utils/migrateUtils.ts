@@ -4,6 +4,7 @@ import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
+import { getMeetingsCutoff, getStockValuesRetroDays } from '@/migrations/utils/dateUtils'
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
@@ -20,11 +21,13 @@ export async function getStocks(pool: sql.ConnectionPool) {
 }
 
 export async function getStockValues(pool: sql.ConnectionPool) {
-  // Query the last days of data based on environment variable
-  const days = process.env.MIGRATION_STOCK_VALUES_DAYS || '90'
-  console.log(`Executing SQL query for last ${days} days of stock data...`)
+  // Query the last days of data based on environment variable (prefer uppercase var)
+  const days = getStockValuesRetroDays()
+  console.log(
+    `Executing SQL query for last ${days} days of stock data (STOCK_VALUE_DAYS_RETRO)...`,
+  )
   const request = pool.request()
-  request.input('days', sql.Int, parseInt(days, 10))
+  request.input('days', sql.Int, days)
   const resultStockValues = await request.query(`
       SELECT stockID,
              name,
@@ -236,9 +239,9 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
-  const historyDate = process.env.MIGRATION_MEETINGS_HISTORY_DATE_CUTOFF || '2018-01-01'
+  const { dateString } = getMeetingsCutoff()
   const request = pool.request()
-  request.input('historyDate', sql.VarChar, historyDate)
+  request.input('historyDate', sql.VarChar, dateString)
   const res = await request.query(`
       SELECT distinct [stockID]
       FROM [dbEmda].[dbo].[meetings] WHERE mdate > @historyDate`)
@@ -250,9 +253,9 @@ export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInLatestMeetings(pool: sql.ConnectionPool) {
-  const cutoffDate = process.env.MIGRATION_MEETINGS_DATE_CUTOFF || '2024-01-01'
+  const { dateString } = getMeetingsCutoff()
   const request = pool.request()
-  request.input('cutoffDate', sql.VarChar, cutoffDate)
+  request.input('cutoffDate', sql.VarChar, dateString)
   const res = await request.query(`
       SELECT distinct [stockID]
       FROM [dbEmda].[dbo].[meetings] WHERE mdate >= @cutoffDate`)
