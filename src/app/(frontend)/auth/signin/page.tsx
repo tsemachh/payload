@@ -19,7 +19,10 @@ import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { useAuth } from '@/providers/auth-provider'
-import TurnstileCaptcha, { TurnstileStatus } from '@/components/TurnstileCaptcha'
+import TurnstileCaptcha, {
+  TurnstileStatus,
+  TurnstileCaptchaRef,
+} from '@/components/TurnstileCaptcha'
 import { v4 as uuidv4 } from 'uuid'
 import { getWithErrorHandling, postWithErrorHandling } from '@/app/(frontend)/helpers/fetch-helpers'
 import { TwoFactorSetup } from '@/components/TwoFactorSetup'
@@ -40,7 +43,9 @@ function SignInContent() {
   const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('required')
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
   const [requiresSetup, setRequiresSetup] = useState(false)
-  const idempotencyKey = useRef(uuidv4()).current
+  const [turnstileKey, setTurnstileKey] = useState(0)
+  const [idempotencyKey, setIdempotencyKey] = useState(uuidv4())
+  const turnstileRef = useRef<TurnstileCaptchaRef>(null)
   const { login, setUser } = useAuth()
 
   const handleTurnstileVerify = (token: string) => {
@@ -90,6 +95,10 @@ function SignInContent() {
         if (!verifyResult.success) {
           setError('אימות האבטחה נכשל. אנא נסה שוב.')
           setTurnstileStatus('required')
+          setTurnstileToken(null)
+          setIdempotencyKey(uuidv4())
+          // Force remount of Turnstile component to reset it
+          setTurnstileKey((prev) => prev + 1)
           setIsLoading(false)
           return
         }
@@ -101,6 +110,11 @@ function SignInContent() {
         password: formData.password,
         totpCode: requiresTwoFactor ? formData.totpCode : undefined,
       })
+
+      // Verify user object was returned
+      if (!user) {
+        throw new Error('פרטי ההתחברות שגויים')
+      }
 
       // Check if user has incomplete 2FA setup after successful login
       if (user && user.twoFactorAuth?.enabled && !user.twoFactorAuth?.verified) {
@@ -122,6 +136,14 @@ function SignInContent() {
       } else {
         console.log('Actual login error:', error)
         setError(error instanceof Error ? error.message : 'שגיאה בכניסה למערכת')
+        // Reset Turnstile on login errors so user can try again without refreshing page
+        if (!requiresTwoFactor) {
+          setTurnstileStatus('required')
+          setTurnstileToken(null)
+          setIdempotencyKey(uuidv4())
+          // Force remount of Turnstile component to reset it
+          setTurnstileKey((prev) => prev + 1)
+        }
       }
     } finally {
       setIsLoading(false)
@@ -162,7 +184,7 @@ function SignInContent() {
                 setRequiresSetup(false)
                 router.push(callbackUrl)
                 router.refresh()
-              } catch (error) {
+              } catch (_error) {
                 // If fetching updated user fails, still proceed with redirect
                 setRequiresSetup(false)
                 router.push(callbackUrl)
@@ -258,6 +280,8 @@ function SignInContent() {
               <div className="space-y-2 mb-4">
                 <Label htmlFor="turnstile">אימות אבטחה</Label>
                 <TurnstileCaptcha
+                  key={turnstileKey}
+                  ref={turnstileRef}
                   onVerify={handleTurnstileVerify}
                   onError={handleTurnstileError}
                   onExpire={handleTurnstileExpire}
