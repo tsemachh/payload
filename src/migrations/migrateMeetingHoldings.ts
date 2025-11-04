@@ -159,13 +159,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               const fundId = fundMap.get(key)
 
               if (fundId) {
+                const verifiedHoldings =
+                  holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
+
                 fundsWithHolding.push({
                   company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
-                  ownedQuantity: holding.ownedQty,
-                  verifiedHoldings:
-                    holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null,
+                  // Reset ownedQuantity when verifiedHoldings is true or null
+                  ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
+                  verifiedHoldings,
                   feedStockNum: (meeting.stock as Stock).stockId || '', // Take stockNum from the meeting
                 })
               }
