@@ -388,7 +388,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                       <OwnedQuantityInput
                         value={displayData?.ownedQuantity}
                         verifiedHoldings={displayData?.verifiedHoldings}
-                        onChange={(value) =>
+                        onChangeAction={(value) =>
                           updateFundData(
                             index,
                             hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',
