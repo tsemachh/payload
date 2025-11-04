@@ -7,6 +7,7 @@ import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import dotenv from 'dotenv'
+import { getMeetingsCutoff } from '@/migrations/utils/dateUtils'
 
 // Load environment variables
 dotenv.config()
@@ -80,8 +81,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Get meetings data
     console.log('Executing SQL query for meetings.')
-    const dateCutoff = process.env.MIGRATION_VOTES_DATE_CUTOFF || '2018-01-01'
-    console.log(`Using date cutoff: ${dateCutoff}`)
+    const { days, dateString } = getMeetingsCutoff()
+    const dateCutoff = dateString
+    console.log(`Using meetings_days_retro=${days} days; date cutoff: ${dateCutoff}`)
     const meetingsQuery = `
         SELECT  [id]
              ,[proofId]
@@ -96,7 +98,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              ,[ResultConfirm]
              ,[ElectronicVoting]
              ,[CommiteeRequest]
-        FROM [dbEmda].[dbo].[meetings] WHERE mdate > '${dateCutoff}';
+        FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${dateCutoff}';
     `
     const meetingsResult = await pool.request().query(meetingsQuery)
     console.log(`Retrieved ${meetingsResult?.recordset?.length} meeting records from SQL Server`)

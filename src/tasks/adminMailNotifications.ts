@@ -97,16 +97,29 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
 <html dir="rtl" lang="he">
 <head>
   <meta charset="UTF-8">
-  <style>
-    body {
-      direction: rtl;
-      text-align: right;
-      font-family: Arial, sans-serif;
-    }
-    h1, h2, p, ul, li {
-      text-align: right;
-    }
-  </style>
+    <style>
+      body {
+        direction: rtl;
+        text-align: right;
+        font-family: Arial, sans-serif;
+        unicode-bidi: bidi-override;
+      }
+      h1, h2, p, ul, li {
+        text-align: right;
+        direction: rtl;
+        unicode-bidi: bidi-override;
+      }
+      ul {
+        direction: rtl;
+        list-style-position: inside;
+        padding-right: 0;
+      }
+      li {
+        direction: rtl;
+        unicode-bidi: embed;
+        text-align: right;
+      }
+    </style>
 </head>
 <body>
   <h1>התראות מערכת</h1>
