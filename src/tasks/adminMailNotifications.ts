@@ -102,9 +102,12 @@ export const adminMailNotifications = async (req: PayloadRequest) => {
         direction: rtl;
         text-align: right;
         font-family: Arial, sans-serif;
+        unicode-bidi: bidi-override;
       }
       h1, h2, p, ul, li {
         text-align: right;
+        direction: rtl;
+        unicode-bidi: bidi-override;
       }
       ul {
         direction: rtl;
