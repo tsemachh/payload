@@ -747,6 +747,8 @@ export interface Vote {
   id: string;
   meeting: string | Meeting;
   company: string | Company;
+  companyName?: string | null;
+  parentCompany?: string | null;
   title?: string | null;
   checksum?: string | null;
   publishedchecksum?: string | null;
@@ -1854,6 +1856,8 @@ export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
 export interface VotesSelect<T extends boolean = true> {
   meeting?: T;
   company?: T;
+  companyName?: T;
+  parentCompany?: T;
   title?: T;
   checksum?: T;
   publishedchecksum?: T;

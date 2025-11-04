@@ -1,5 +1,6 @@
 import { Company } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
+import { getParentCompanyId } from '@/utils/voteGrouping'
 
 export async function getVoteData(req: any, meetingId: string, companyIds: string) {
   const companiesIdsArray = (companyIds as string).split(',')
@@ -30,6 +31,33 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     limit: 1,
   })
 
+  // Validate that all votes have the same parentCompany and checksum
+  if (voteData.docs.length > 0) {
+    const firstVote = voteData.docs[0]
+    const expectedParentCompanyId = getParentCompanyId(firstVote.parentCompany)
+    const expectedChecksum = firstVote.checksum
+
+    for (const vote of voteData.docs) {
+      const voteChecksum = vote.checksum || vote.publishedchecksum
+      const currentParentCompanyId = getParentCompanyId(vote.parentCompany)
+      const voteIdentifier = `Vote ID: ${vote.id}, Company: ${vote.companyName || vote.company}`
+
+      // Compare parent company IDs, not object references
+      if (currentParentCompanyId !== expectedParentCompanyId) {
+        throw new Error(
+          `Vote grouping validation failed: ${voteIdentifier} has different parentCompany ID: ${currentParentCompanyId || 'null'} (expected: ${expectedParentCompanyId || 'null'})`,
+        )
+      }
+
+      if (voteChecksum !== expectedChecksum) {
+        throw new Error(
+          `Vote grouping validation failed: ${voteIdentifier} has different checksum: ${voteChecksum || 'null'} (expected: ${expectedChecksum || 'null'})`,
+        )
+      }
+    }
+  }
+
+  // Fetch company data for additional info needed for the page
   const companyData = await req.payload.find({
     collection: 'companies',
     where: {
@@ -47,7 +75,6 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
   const companyIdToNameMap: Map<string, string> = new Map()
   const fundIdToNameMap: Map<string, string> = new Map()
   companyData.docs.forEach((doc: Company) => {
-    // Add company to companyIdToNameMap
     if (doc.id && doc.name) {
       companyIdToNameMap.set(doc.id as string, doc.name as string)
     }
@@ -55,7 +82,6 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     doc?.subCompanies?.forEach((subCompany) => {
       if (subCompany) {
         const id: string = getIdOfRelationField(subCompany) as string
-        // Add fund to fundIdToNameMap
         if (id && typeof subCompany === 'object' && subCompany.name) {
           fundIdToNameMap.set(id, subCompany.name as string)
         }

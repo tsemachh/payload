@@ -140,6 +140,26 @@ export const Votes: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'companyName',
+                  label: 'שם חברה',
+                  type: 'text',
+                  virtual: 'company.name',
+                  admin: {
+                    hidden: true,
+                    disableListColumn: true,
+                  },
+                },
+                {
+                  name: 'parentCompany',
+                  label: 'חברת אם',
+                  type: 'text',
+                  virtual: 'company.parentCompany',
+                  admin: {
+                    hidden: true,
+                    disableListColumn: true,
+                  },
+                },
+                {
                   name: 'title',
                   label: 'כותרת',
                   type: 'text',
@@ -192,7 +212,7 @@ export const Votes: CollectionConfig = {
                 {
                   name: 'publishedchecksum',
                   type: 'text',
-                  defaultValue:'',
+                  defaultValue: '',
                   admin: {
                     hidden: true,
                   },
@@ -452,5 +472,3 @@ export const Votes: CollectionConfig = {
     },
   ],
 }
-
-

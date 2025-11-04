@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -25,46 +24,27 @@ import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
-import { groupCompaniesByParent, groupCompaniesByChecksum } from '@/utils/voteGrouping'
-interface Company {
-  id: string
-  name: string
-  parentCompany?: string
-  nominalValue: number
-  percentageHolding: number
-  hasVoted?: boolean
-  hasActualVote?: boolean
-  vote?: {
-    decision: 'בעד' | 'נגד' | 'נמנע'
-    voter: string
-    votedAt: string
-    notes?: string
-    isReported?: boolean
-    checksum?: string
-  }
-}
 
 export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
-  const { companies, loading, exportToCSV } = useVotingData()
-
-  // Grouping states
-  const [groupByNotVoted, setGroupByNotVoted] = useState(true)
-  const [groupByVoted, setGroupByVoted] = useState(true)
-  const [collapsedNotVotedGroups, setCollapsedNotVotedGroups] = useState<Set<string>>(new Set())
-  const [collapsedVotedGroups, setCollapsedVotedGroups] = useState<Set<string>>(new Set())
-  const [collapsedChecksumGroups, setCollapsedChecksumGroups] = useState<Set<string>>(new Set())
-
-  // Sorting states
-  const [notVotedSort, setNotVotedSort] = useState<{
-    field: 'nominalValue' | 'percentageHolding' | null
-    direction: 'asc' | 'desc'
-  }>({ field: null, direction: 'asc' })
-
-  const [votedSort, setVotedSort] = useState<{
-    field: 'nominalValue' | 'percentageHolding' | 'voteTime' | null
-    direction: 'asc' | 'desc'
-  }>({ field: null, direction: 'asc' })
+  const {
+    notVotedCompanies,
+    votedCompanies,
+    processedNotVotedData,
+    processedVotedData,
+    loading,
+    exportToCSV,
+    groupByNotVoted,
+    setGroupByNotVoted,
+    groupByVoted,
+    setGroupByVoted,
+    toggleNotVotedGroup,
+    toggleVotedGroup,
+    notVotedSort,
+    votedSort,
+    handleNotVotedSort,
+    handleVotedSort,
+  } = useVotingData()
 
   // Generate grouped vote URL for href
   const getGroupedVoteUrl = (item: any) => {
@@ -77,246 +57,6 @@ export const VotingTablesField = () => {
     const companyIds = groupedCompanies.map((c) => c.id).join(',')
     return `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
   }
-
-  // Sorting functions
-  const handleNotVotedSort = (field: 'nominalValue' | 'percentageHolding') => {
-    // Automatically disable grouping when sorting is applied (like clicking ungroup)
-    setGroupByNotVoted(false)
-    // Clear any existing collapsed groups when sorting is applied
-    setCollapsedNotVotedGroups(new Set())
-    setNotVotedSort((prev) => ({
-      field,
-      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
-    }))
-  }
-
-  const handleVotedSort = (field: 'nominalValue' | 'percentageHolding' | 'voteTime') => {
-    // Automatically disable grouping when sorting is applied (like clicking ungroup)
-    setGroupByVoted(false)
-    // Clear any existing collapsed groups when sorting is applied
-    setCollapsedVotedGroups(new Set())
-    setCollapsedChecksumGroups(new Set())
-    setVotedSort((prev) => ({
-      field,
-      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
-    }))
-  }
-
-  // Separate companies by voting status
-  const notVotedCompanies = useMemo(() => companies.filter((c) => !c.hasVoted), [companies])
-  const votedCompanies = useMemo(() => companies.filter((c) => c.hasVoted), [companies])
-
-  // Group toggle functions
-  const toggleNotVotedGroup = (groupId: string) => {
-    setCollapsedNotVotedGroups((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId)
-      } else {
-        newSet.add(groupId)
-      }
-      return newSet
-    })
-  }
-
-  const toggleVotedGroup = (groupId: string) => {
-    setCollapsedVotedGroups((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId)
-      } else {
-        newSet.add(groupId)
-      }
-      return newSet
-    })
-  }
-
-  // Process data for grouping (not voted companies)
-  const processedNotVotedData = useMemo(() => {
-    let processedCompanies = [...notVotedCompanies]
-
-    // Apply sorting if not grouped
-    if (!groupByNotVoted && notVotedSort.field) {
-      processedCompanies.sort((a, b) => {
-        let aValue = a[notVotedSort.field!]
-        let bValue = b[notVotedSort.field!]
-
-        if (notVotedSort.direction === 'asc') {
-          return aValue - bValue
-        } else {
-          return bValue - aValue
-        }
-      })
-    }
-
-    if (!groupByNotVoted) {
-      return processedCompanies.map((company) => ({
-        ...company,
-        isGroupHeader: false,
-        isGroupItem: false,
-      }))
-    }
-
-    const grouped = groupCompaniesByParent(processedCompanies)
-
-    const result: any[] = []
-    Array.from(grouped.entries()).forEach(([parentCompany, subsidiaries]) => {
-      const groupId = `group-${parentCompany}`
-
-      // Sort subsidiaries if sorting is applied
-      if (notVotedSort.field) {
-        subsidiaries.sort((a, b) => {
-          let aValue = a[notVotedSort.field!]
-          let bValue = b[notVotedSort.field!]
-
-          if (notVotedSort.direction === 'asc') {
-            return aValue - bValue
-          } else {
-            return bValue - aValue
-          }
-        })
-      }
-
-      // Add group header
-      result.push({
-        id: groupId,
-        name: parentCompany,
-        parentCompany,
-        nominalValue: subsidiaries.reduce((sum, s) => sum + s.nominalValue, 0),
-        percentageHolding: subsidiaries.reduce((sum, s) => sum + s.percentageHolding, 0),
-        isGroupHeader: true,
-        isGroupItem: false,
-        subsidiaryCount: subsidiaries.length,
-        companies: subsidiaries,
-        isCollapsed: collapsedNotVotedGroups.has(groupId),
-      })
-
-      // Add subsidiary companies only if group is not collapsed
-      if (!collapsedNotVotedGroups.has(groupId)) {
-        subsidiaries.forEach((company) => {
-          result.push({
-            ...company,
-            isGroupHeader: false,
-            isGroupItem: true,
-          })
-        })
-      }
-    })
-
-    return result
-  }, [notVotedCompanies, groupByNotVoted, collapsedNotVotedGroups, notVotedSort])
-
-  // Process data for grouping (voted companies)
-  const processedVotedData = useMemo(() => {
-    let processedCompanies = [...votedCompanies]
-
-    // Apply sorting if not grouped
-    if (!groupByVoted && votedSort.field) {
-      processedCompanies.sort((a, b) => {
-        let aValue: any
-        let bValue: any
-
-        if (votedSort.field === 'voteTime') {
-          aValue = a.vote?.votedAt ? new Date(a.vote.votedAt).getTime() : 0
-          bValue = b.vote?.votedAt ? new Date(b.vote.votedAt).getTime() : 0
-        } else {
-          aValue = a[votedSort.field!]
-          bValue = b[votedSort.field!]
-        }
-
-        if (votedSort.direction === 'asc') {
-          return aValue - bValue
-        } else {
-          return bValue - aValue
-        }
-      })
-    }
-
-    if (!groupByVoted) {
-      return processedCompanies.map((company) => ({
-        ...company,
-        isGroupHeader: false,
-        isGroupItem: false,
-      }))
-    }
-
-    const result: any[] = []
-
-    // Two-level grouping: first by mother company, then by checksum
-    const parentCompanyGroups = groupCompaniesByParent(processedCompanies)
-
-    // Color palette for checksum groups - moved outside to continue across mother companies
-    const colorPalette = ['#F7CFD8', '#A6D6D6', '#8E7DBE', '#A3DC9A']
-    let checksumGroupIndex = 0 // Start from 0 and continue incrementally
-
-    Array.from(parentCompanyGroups.entries()).forEach(([parentCompany, companies]) => {
-      const motherGroupId = `mother-${parentCompany}`
-
-      // Add mother company group header (first level)
-      result.push({
-        id: motherGroupId,
-        name: parentCompany,
-        parentCompany,
-        nominalValue: companies.reduce((sum, s) => sum + s.nominalValue, 0),
-        percentageHolding: companies.reduce((sum, s) => sum + s.percentageHolding, 0),
-        vote: companies[0]?.vote,
-        isGroupHeader: true,
-        isGroupItem: false,
-        isMotherGroup: true,
-        subsidiaryCount: companies.length,
-        companies: companies,
-        isCollapsed: collapsedVotedGroups.has(motherGroupId),
-      })
-
-      // Add checksum subgroups only if mother company group is not collapsed
-      if (!collapsedVotedGroups.has(motherGroupId)) {
-        const checksumGroups = groupCompaniesByChecksum(companies)
-
-        Array.from(checksumGroups.entries()).forEach(([checksum, checksumCompanies]) => {
-          const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
-          checksumGroupIndex++
-
-          // Sort checksum companies if sorting is applied
-          if (votedSort.field) {
-            checksumCompanies.sort((a, b) => {
-              let aValue: any
-              let bValue: any
-
-              if (votedSort.field === 'voteTime') {
-                aValue = a.vote?.votedAt ? new Date(a.vote.votedAt).getTime() : 0
-                bValue = b.vote?.votedAt ? new Date(b.vote.votedAt).getTime() : 0
-              } else {
-                aValue = a[votedSort.field!]
-                bValue = b[votedSort.field!]
-              }
-
-              if (votedSort.direction === 'asc') {
-                return aValue - bValue
-              } else {
-                return bValue - aValue
-              }
-            })
-          }
-
-          // Don't add checksum group header - just show companies with background colors
-          checksumCompanies.forEach((company, index) => {
-            result.push({
-              ...company,
-              isGroupHeader: false,
-              isGroupItem: true,
-              isCompanyItem: true,
-              isLastInChecksumGroup: index === checksumCompanies.length - 1,
-              isFirstInChecksumGroup: index === 0,
-              checksumGroupSize: checksumCompanies.length,
-              groupColor: groupColor,
-            })
-          })
-        })
-      }
-    })
-
-    return result
-  }, [votedCompanies, groupByVoted, collapsedVotedGroups, collapsedChecksumGroups, votedSort])
 
   const notVotedColumns = {
     company: true,
@@ -374,10 +114,6 @@ export const VotingTablesField = () => {
                   )}
                   onClick={() => {
                     setGroupByNotVoted(!groupByNotVoted)
-                    // Cancel sorting when enabling grouping
-                    if (!groupByNotVoted) {
-                      setNotVotedSort({ field: null, direction: 'asc' })
-                    }
                   }}
                 >
                   {groupByNotVoted ? (
@@ -520,10 +256,6 @@ export const VotingTablesField = () => {
                 )}
                 onClick={() => {
                   setGroupByVoted(!groupByVoted)
-                  // Cancel sorting when enabling grouping
-                  if (!groupByVoted) {
-                    setVotedSort({ field: null, direction: 'asc' })
-                  }
                 }}
               >
                 {groupByVoted ? (
@@ -618,7 +350,7 @@ export const VotingTablesField = () => {
                   <TableRow
                     key={item.id}
                     className={cn(
-                      item.isGroupHeader && item.isMotherGroup && 'bg-muted/50 font-semibold',
+                      item.isGroupHeader && item.isParentGroup && 'bg-muted/50 font-semibold',
                     )}
                     style={{
                       backgroundColor: item.groupColor ? `${item.groupColor}40` : undefined,
@@ -696,7 +428,7 @@ export const VotingTablesField = () => {
 
                     <TableCell>
                       {!item.isGroupHeader && (
-                        <span className="text-lg">{item.vote?.isReported ? '✅' : '❌'}</span>
+                        <span className="text-lg">{item.vote?.reported ? '✅' : '❌'}</span>
                       )}
                     </TableCell>
                   </TableRow>

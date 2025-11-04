@@ -58,7 +58,7 @@ export interface VoteData {
   }>
   votes: Array<{
     topicIndex: number
-    voteDecision: string
+    voteDecision?: string
     voteReason?: string
     hasConflictOfInterest: boolean
     isRelatedParty: boolean
@@ -482,9 +482,9 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                           </div>
                         )}
                       <div
-                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision)}`}
+                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision || '')}`}
                       >
-                        {voteItem.voteDecision || '----'}
+                        {voteItem?.voteDecision || '----'}
                       </div>
                     </div>
                     {voteItem.voteReason && (

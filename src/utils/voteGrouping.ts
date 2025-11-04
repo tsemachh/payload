@@ -1,5 +1,18 @@
 import { getIdOfRelationField } from '@/utils/utils'
 
+// Helper to extract parent company ID from join object or string
+export const getParentCompanyId = (parentCompany: any): string | null => {
+  if (!parentCompany) return null
+  // Handle join object format: {docs: ["id"], hasNextPage: false}
+  if (parentCompany?.docs && Array.isArray(parentCompany.docs) && parentCompany.docs.length > 0) {
+    return typeof parentCompany.docs[0] === 'string' ? parentCompany.docs[0] : null
+  }
+  // Handle string ID
+  if (typeof parentCompany === 'string') return parentCompany
+  // Handle object with id property
+  if (parentCompany?.id) return parentCompany.id
+  return null
+}
 /**
  * Groups votes by parent company and checksum
  * @param votes - Array of vote objects with company and checksum fields
@@ -10,25 +23,30 @@ export function groupVotesByParentAndChecksum(
   votes: any[],
   companyToParentMap: Map<string, string>,
 ): Map<string, { voteIds: string[]; companies: Set<string> }> {
-  const votesByMotherAndChecksum = new Map<string, { voteIds: string[]; companies: Set<string> }>()
-
-  votes.forEach((vote: any) => {
-    const checksum = vote.checksum
-    const companyId = getIdOfRelationField(vote.company) as string
-    const parentCompanyId = companyToParentMap.get(companyId) || companyId
-
-    const groupKey = `${parentCompanyId}|${checksum}`
-
-    if (checksum && companyId && parentCompanyId) {
-      if (!votesByMotherAndChecksum.has(groupKey)) {
-        votesByMotherAndChecksum.set(groupKey, { voteIds: [], companies: new Set() })
-      }
-      votesByMotherAndChecksum.get(groupKey)?.voteIds.push(vote.id)
-      votesByMotherAndChecksum.get(groupKey)?.companies.add(companyId)
-    }
+  // Use the unified grouping function
+  const nestedGroups = groupByParentAndChecksum(votes, {
+    getParentKey: (vote) => {
+      const companyId = getIdOfRelationField(vote.company) as string
+      return companyToParentMap.get(companyId) || companyId
+    },
+    getChecksum: (vote) => vote.checksum || '',
   })
 
-  return votesByMotherAndChecksum
+  // Convert nested structure to flat structure for backward compatibility
+  const result = new Map<string, { voteIds: string[]; companies: Set<string> }>()
+
+  nestedGroups.forEach((checksumMap, parentCompanyId) => {
+    checksumMap.forEach((votes, checksum) => {
+      if (checksum && votes.length > 0) {
+        const groupKey = `${parentCompanyId}|${checksum}`
+        const voteIds = votes.map((vote) => vote.id)
+        const companies = new Set(votes.map((vote) => getIdOfRelationField(vote.company) as string))
+        result.set(groupKey, { voteIds, companies })
+      }
+    })
+  })
+
+  return result
 }
 
 /**
@@ -55,17 +73,6 @@ export function createCompanyToParentMap(companies: any[]): Map<string, string> 
 
   return companyToParentMap
 }
-/**
- * Extracts parent company name from company object (for frontend use)
- * @param company - Company object with parentCompany field
- * @returns Parent company name or null
- */
-export function getParentCompanyName(company: any): string | null {
-  return (
-    company.parentCompany?.docs?.[0]?.name ||
-    (typeof company.parentCompany === 'string' ? company.parentCompany : null)
-  )
-}
 
 /**
  * Groups companies by parent company name (first level grouping)
@@ -76,11 +83,11 @@ export function groupCompaniesByParent(companies: any[]): Map<string, any[]> {
   const parentCompanyGroups = new Map<string, any[]>()
 
   companies.forEach((company) => {
-    const motherKey = company.parentCompany || company.name
-    if (!parentCompanyGroups.has(motherKey)) {
-      parentCompanyGroups.set(motherKey, [])
+    const parentKey = company.parentCompany || company.name
+    if (!parentCompanyGroups.has(parentKey)) {
+      parentCompanyGroups.set(parentKey, [])
     }
-    parentCompanyGroups.get(motherKey)!.push(company)
+    parentCompanyGroups.get(parentKey)!.push(company)
   })
 
   return parentCompanyGroups
@@ -106,6 +113,41 @@ export function groupCompaniesByChecksum(companies: any[]): Map<string, any[]> {
 }
 
 /**
+ * Unified grouping function that works with both votes and companies
+ * Groups items by parent company and checksum (two-level grouping)
+ * @param items - Array of items (votes or companies with vote data)
+ * @param options - Configuration for how to extract parent and checksum
+ * @returns Map of parent key to Map of checksum to items
+ */
+export function groupByParentAndChecksum<T = any>(
+  items: T[],
+  options: {
+    getParentKey: (item: T) => string
+    getChecksum: (item: T) => string
+  },
+): Map<string, Map<string, T[]>> {
+  const result = new Map<string, Map<string, T[]>>()
+
+  items.forEach((item) => {
+    const parentKey = options.getParentKey(item)
+    const checksumKey = options.getChecksum(item)
+
+    if (!result.has(parentKey)) {
+      result.set(parentKey, new Map())
+    }
+
+    const checksumMap = result.get(parentKey)!
+    if (!checksumMap.has(checksumKey)) {
+      checksumMap.set(checksumKey, [])
+    }
+
+    checksumMap.get(checksumKey)!.push(item)
+  })
+
+  return result
+}
+
+/**
  * Groups companies by parent company name and checksum (two-level grouping)
  * @param companies - Array of company objects with parentCompany and vote.checksum
  * @returns Map of parent company name to Map of checksum to companies
@@ -113,14 +155,8 @@ export function groupCompaniesByChecksum(companies: any[]): Map<string, any[]> {
 export function groupCompaniesByParentAndChecksum(
   companies: any[],
 ): Map<string, Map<string, any[]>> {
-  const parentCompanyGroups = groupCompaniesByParent(companies)
-
-  // Then group each mother company's subsidiaries by checksum
-  const result = new Map<string, Map<string, any[]>>()
-  parentCompanyGroups.forEach((companies, parentCompany) => {
-    const checksumGroups = groupCompaniesByChecksum(companies)
-    result.set(parentCompany, checksumGroups)
+  return groupByParentAndChecksum(companies, {
+    getParentKey: (company) => company.parentCompany || company.name,
+    getChecksum: (company) => company.vote?.checksum || 'ללא checksum',
   })
-
-  return result
 }

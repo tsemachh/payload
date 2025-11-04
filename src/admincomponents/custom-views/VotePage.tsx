@@ -45,6 +45,11 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
   const meetingId = (searchParams?.meetingId || '') as string
   const companyIds = (searchParams?.companyIds || '') as string
 
+  // Validate required parameters
+  if (!meetingId) {
+    throw new Error('אסיפה לא קימת במערכת')
+  }
+
   // Get meeting name for header
   const meetingData = await payload.findByID({
     collection: 'meetings',

@@ -1,6 +1,7 @@
 import { BasePayload, CollectionSlug, PayloadRequest, TypeWithID } from 'payload'
 import type { AdminNotificationType, Stock } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
+import { stringify } from 'qs-esm'
 
 export async function getStockIds(stock: Stock) {
   const stockIds: string[] = []
@@ -201,6 +202,49 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 
 export const getIdOfRelationField = (item: TypeWithID | string) => {
   return typeof item == 'string' ? item : typeof item == 'object' ? item?.id : null
+}
+
+/**
+ * Fetches parent company names by their IDs
+ * @param parentCompanyIds - Array of parent company IDs
+ * @returns Map of parent company ID to parent company name
+ */
+export const getParentCompanyNamesByIds = async (
+  parentCompanyIds: string[],
+): Promise<Map<string, string>> => {
+  const result = new Map<string, string>()
+
+  if (parentCompanyIds.length === 0) {
+    return result
+  }
+
+  try {
+    const companiesQuery = stringify(
+      {
+        where: {
+          id: { in: parentCompanyIds },
+        },
+        select: {
+          name: true,
+        },
+        depth: 0,
+        limit: 0,
+      },
+      { addQueryPrefix: true },
+    )
+    const response = await fetch(`/api/companies/${companiesQuery}`)
+
+    if (response.ok) {
+      const data = await response.json()
+      data.docs.forEach((company: { id: string; name: string }) => {
+        result.set(company.id, company.name)
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching parent company names:', error)
+  }
+
+  return result
 }
 
 /**
