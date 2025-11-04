@@ -136,14 +136,14 @@ export const createMeetingColumns = (
     type: 'label',
     filterable: true,
     render: (row) => <LabelsIcon row={row} />,
-    minWidth: 60,
+    minWidth: 90,
   },
   {
     key: 'stockNumber',
     header: 'מס׳ נייר',
     type: 'string',
     sortKey: 'stockNumber',
-    minWidth: 70,
+    minWidth: 100,
   },
   {
     key: 'stockType',
@@ -326,7 +326,7 @@ export const createMeetingColumns = (
     type: 'boolean',
     filterable: true,
     positionCenter: true,
-    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} showX={false} />,
+    render: (row) => <BooleanIcon iconType={row.electronicVotingEnabled} />,
     minWidth: 80,
   },
   {

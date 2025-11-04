@@ -25,10 +25,11 @@ import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
+import { groupCompaniesByParent, groupCompaniesByChecksum } from '@/utils/voteGrouping'
 interface Company {
   id: string
   name: string
-  motherCompany?: string
+  parentCompany?: string
   nominalValue: number
   percentageHolding: number
   hasVoted?: boolean
@@ -67,11 +68,11 @@ export const VotingTablesField = () => {
 
   // Generate grouped vote URL for href
   const getGroupedVoteUrl = (item: any) => {
-    const motherCompany = item.motherCompany || item.name
+    const parentCompany = item.parentCompany || item.name
     const checksum = item.vote?.checksum
     const groupedCompanies = votedCompanies.filter((company) => {
-      const companyMotherCompany = company.motherCompany || company.name
-      return companyMotherCompany === motherCompany && company.vote?.checksum === checksum
+      const companyParentCompany = company.parentCompany || company.name
+      return companyParentCompany === parentCompany && company.vote?.checksum === checksum
     })
     const companyIds = groupedCompanies.map((c) => c.id).join(',')
     return `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
@@ -156,18 +157,11 @@ export const VotingTablesField = () => {
       }))
     }
 
-    const grouped = new Map<string, Company[]>()
-    processedCompanies.forEach((company) => {
-      const key = company.motherCompany || company.name
-      if (!grouped.has(key)) {
-        grouped.set(key, [])
-      }
-      grouped.get(key)!.push(company)
-    })
+    const grouped = groupCompaniesByParent(processedCompanies)
 
     const result: any[] = []
-    Array.from(grouped.entries()).forEach(([motherCompany, subsidiaries]) => {
-      const groupId = `group-${motherCompany}`
+    Array.from(grouped.entries()).forEach(([parentCompany, subsidiaries]) => {
+      const groupId = `group-${parentCompany}`
 
       // Sort subsidiaries if sorting is applied
       if (notVotedSort.field) {
@@ -186,8 +180,8 @@ export const VotingTablesField = () => {
       // Add group header
       result.push({
         id: groupId,
-        name: motherCompany,
-        motherCompany,
+        name: parentCompany,
+        parentCompany,
         nominalValue: subsidiaries.reduce((sum, s) => sum + s.nominalValue, 0),
         percentageHolding: subsidiaries.reduce((sum, s) => sum + s.percentageHolding, 0),
         isGroupHeader: true,
@@ -249,27 +243,20 @@ export const VotingTablesField = () => {
     const result: any[] = []
 
     // Two-level grouping: first by mother company, then by checksum
-    const motherCompanyGroups = new Map<string, Company[]>()
-    processedCompanies.forEach((company) => {
-      const motherKey = company.motherCompany || company.name
-      if (!motherCompanyGroups.has(motherKey)) {
-        motherCompanyGroups.set(motherKey, [])
-      }
-      motherCompanyGroups.get(motherKey)!.push(company)
-    })
+    const parentCompanyGroups = groupCompaniesByParent(processedCompanies)
 
     // Color palette for checksum groups - moved outside to continue across mother companies
     const colorPalette = ['#F7CFD8', '#A6D6D6', '#8E7DBE', '#A3DC9A']
     let checksumGroupIndex = 0 // Start from 0 and continue incrementally
 
-    Array.from(motherCompanyGroups.entries()).forEach(([motherCompany, companies]) => {
-      const motherGroupId = `mother-${motherCompany}`
+    Array.from(parentCompanyGroups.entries()).forEach(([parentCompany, companies]) => {
+      const motherGroupId = `mother-${parentCompany}`
 
       // Add mother company group header (first level)
       result.push({
         id: motherGroupId,
-        name: motherCompany,
-        motherCompany,
+        name: parentCompany,
+        parentCompany,
         nominalValue: companies.reduce((sum, s) => sum + s.nominalValue, 0),
         percentageHolding: companies.reduce((sum, s) => sum + s.percentageHolding, 0),
         vote: companies[0]?.vote,
@@ -283,14 +270,7 @@ export const VotingTablesField = () => {
 
       // Add checksum subgroups only if mother company group is not collapsed
       if (!collapsedVotedGroups.has(motherGroupId)) {
-        const checksumGroups = new Map<string, Company[]>()
-        companies.forEach((company) => {
-          const checksumKey = company.vote?.checksum || 'ללא checksum'
-          if (!checksumGroups.has(checksumKey)) {
-            checksumGroups.set(checksumKey, [])
-          }
-          checksumGroups.get(checksumKey)!.push(company)
-        })
+        const checksumGroups = groupCompaniesByChecksum(companies)
 
         Array.from(checksumGroups.entries()).forEach(([checksum, checksumCompanies]) => {
           const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]

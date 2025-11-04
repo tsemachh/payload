@@ -66,7 +66,7 @@ const holdingColumns: Column<RecordType>[] = [
 const getInvalidColumnsAdditional = (
   companies: string[],
   allRecords: HoldingFeedLine[],
-  onRefresh: (records: any[]) => void,
+  onRefreshAction: (records: any[]) => void,
   selectedStockIds: Set<string | number>,
   onStockSelection: (stockId: string | number) => void,
 ): Column<RecordType>[] => [
@@ -102,7 +102,7 @@ const getInvalidColumnsAdditional = (
               accountId={row.accountId}
               companies={companies}
               allRecords={allRecords}
-              onRefreshAction={onRefresh}
+              onRefreshAction={onRefreshAction}
             />
           )}
         </div>
@@ -115,10 +115,10 @@ export const RecordsTable: React.FC<{
   records: HoldingFeedLineWithName[]
   invalid?: boolean
   companies: string[]
-  onRefresh?: (records: HoldingFeedLine[]) => void
+  onRefreshAction?: (records: HoldingFeedLine[]) => void
   valid?: HoldingFeedLine[]
   silenced?: HoldingFeedLine[]
-}> = ({ records, invalid, companies, onRefresh, valid, silenced }) => {
+}> = ({ records, invalid, companies, onRefreshAction, valid, silenced }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedStockIds, setSelectedStockIds] = useState<Set<string | number>>(new Set())
   const [silenceDialogOpen, setSilenceDialogOpen] = useState(false)
@@ -149,8 +149,8 @@ export const RecordsTable: React.FC<{
   // Handle refresh after silencing
   const handleRefreshAfterSilence = (records: HoldingFeedLine[]) => {
     setSelectedStockIds(new Set()) // Clear selection
-    if (onRefresh) {
-      onRefresh(records)
+    if (onRefreshAction) {
+      onRefreshAction(records)
     }
   }
 
@@ -173,13 +173,13 @@ export const RecordsTable: React.FC<{
 
   const allRecords = [...records, ...(valid ?? []), ...(silenced ?? [])]
   const columns =
-    invalid && onRefresh
+    invalid && onRefreshAction
       ? [
           ...holdingColumns,
           ...getInvalidColumnsAdditional(
             companies,
             allRecords,
-            onRefresh,
+            onRefreshAction,
             selectedStockIds,
             handleStockSelection,
           ),
@@ -211,9 +211,7 @@ export const RecordsTable: React.FC<{
           columnsOption={false}
           tableHeightOffset={400}
           pagination={{
-            pageSize: 50,
-            totalItems: dataWithIds.length,
-            totalPages: Math.ceil(dataWithIds.length / 50),
+            pageSize: 100,
             currentPage: currentPage,
             onPageChange: handlePageChange,
           }}
@@ -239,14 +237,14 @@ export const RecordsTable: React.FC<{
       )}
 
       {/* Silence Dialog */}
-      {invalid && onRefresh && (
+      {invalid && onRefreshAction && (
         <SilenceDialog
           stockIds={Array.from(selectedStockIds)}
           companies={companies}
           allRecords={allRecords}
           onRefreshAction={handleRefreshAfterSilence}
           open={silenceDialogOpen}
-          onClose={handleDialogClose}
+          onCloseAction={handleDialogClose}
         />
       )}
     </div>

@@ -5,6 +5,7 @@ import { isAdmin, isUserCompany } from '@/utils/authUtils'
 import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
+
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
     if (!data.companyId) {
@@ -179,7 +180,7 @@ export const Companies: CollectionConfig = {
                   label: 'חברת אם',
                   collection: 'companies',
                   on: 'subCompanies',
-                  defaultLimit: 1,
+                  defaultLimit: 100,
                   maxDepth: 2,
                   admin: {
                     custom: {
@@ -292,6 +293,7 @@ export const Companies: CollectionConfig = {
               name: 'mainAccount',
               label: 'חשבון ראשי',
               type: 'array',
+              maxRows: 1,
               fields: [
                 {
                   name: 'accountNumber',
@@ -370,12 +372,13 @@ export const Companies: CollectionConfig = {
           ],
         },
         {
-          label: 'פגישות',
+          label: 'אסיפות',
           admin: {
             condition: (data) => data?.type == 'regular',
           },
           fields: [
             {
+              label: 'אסיפות אליהן זומנה החברה',
               type: 'join',
               collection: 'meetings',
               on: 'companies',

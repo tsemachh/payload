@@ -47,6 +47,7 @@ import type {
   FacetedFilterItemServer,
   DateFilterType,
   CustomDate,
+  ServerDataTableProps,
 } from '../types/meetings'
 import LoadingSpinnerDiamond from './ui/loading-spinner-diamond'
 import { unSortAbleColumnsOnServer } from '../meetings/meetingTableConstants'
@@ -108,7 +109,7 @@ export function DataTableServer<T extends Record<string, any>>({
   showViewModeToggle = false,
   viewMode,
   onViewModeChange,
-}: DataTableProps<T>) {
+}: ServerDataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
   const [pageSize, setPageSize] = useState(pagination?.pageSize || 50)

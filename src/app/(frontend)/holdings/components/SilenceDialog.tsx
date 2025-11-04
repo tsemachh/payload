@@ -19,7 +19,7 @@ interface SilenceDialogProps {
   allRecords: HoldingFeedLine[]
   onRefreshAction: (records: HoldingFeedLine[]) => void
   open: boolean
-  onClose: () => void
+  onCloseAction: () => void
 }
 
 export const SilenceDialog: React.FC<SilenceDialogProps> = ({
@@ -28,7 +28,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
   allRecords,
   onRefreshAction,
   open,
-  onClose,
+  onCloseAction,
 }: SilenceDialogProps) => {
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
@@ -55,12 +55,12 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
     } catch (error) {
       handleAndNotifyError(error, 'השתקת השגיאות נכשלה.')
       setResultMessage(null)
-      onClose()
+      onCloseAction()
     } finally {
       setLoading(false)
       setTimeout(() => {
         setResultMessage(null)
-        onClose()
+        onCloseAction()
       }, 2000)
     }
   }
@@ -72,7 +72,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
       open={open}
       onOpenChange={() => {
         setResultMessage(null)
-        onClose()
+        onCloseAction()
       }}
     >
       <DialogContent className="bg-background text-foreground border border-border shadow-lg rounded-lg">
@@ -93,7 +93,7 @@ export const SilenceDialog: React.FC<SilenceDialogProps> = ({
               className="bg-transparent text-inherit border border-inherit hover:bg-muted transition-colors"
               onClick={() => {
                 setResultMessage(null)
-                onClose()
+                onCloseAction()
               }}
             >
               ביטול

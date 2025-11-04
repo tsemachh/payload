@@ -25,7 +25,7 @@ export interface VoteData {
     company: { id: string; name: string }
     fund: { id: string; name: string }
     quantity: number
-    ownedQuantity: number
+    ownedQuantity?: number
     verifiedHoldings: boolean
     original?: {
       stockId: string
@@ -201,11 +201,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     if (!formData) return
     const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
-
+    if (booleanValue) {
+      updatedFunds[index].ownedQuantity = undefined
+    }
     if (field.startsWith('original.')) {
       // Handle nested original fields
       const originalField = field.replace('original.', '')
       const currentOriginal = updatedFunds[index].original || ({} as any)
+      if (booleanValue) {
+        currentOriginal.ownedQuantity = undefined
+      }
       const numericValue =
         originalField === 'ownedQuantity'
           ? Number.parseFloat(value.replace(/,/g, ''))
@@ -305,8 +310,8 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
             </label>
             <ReportApprovalUpload
               formData={formData}
-              setFormData={setFormData}
-              saveDraftData={saveDraftData}
+              setFormDataAction={setFormData}
+              saveDraftDataAction={saveDraftData}
             />
           </div>
           <Table>

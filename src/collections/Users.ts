@@ -110,6 +110,7 @@ export const Users: CollectionConfig = {
     plural: 'משתמשים',
     singular: 'משתמש',
   },
+  versions: true,
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'email',
@@ -714,7 +715,7 @@ export const Users: CollectionConfig = {
                 },
               })
             } catch (error) {
-              req.payload.logger.error('2FA verification error:', error)
+              req.payload.logger.error({ error }, '2FA verification error:')
               throw new APIError('שגיאה באימות הקוד', 500)
             }
           }
@@ -737,7 +738,7 @@ export const Users: CollectionConfig = {
             },
           })
         } catch (e) {
-          req.payload.logger.warn('Failed to update last login info', e)
+          req.payload.logger.warn({ e }, 'Failed to update last login info')
         }
         req.payload.logger.info(`Successful login from IP ${clientIP} for ${user.email}`)
         await logEvent({

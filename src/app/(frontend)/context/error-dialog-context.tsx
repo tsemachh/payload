@@ -49,14 +49,14 @@ export function ErrorDialogProvider({ children }: ErrorDialogProviderProps) {
     const cleanup = useErrorEventListener((errorDetails, showDetailedInfo) => {
       showError(errorDetails, showDetailedInfo)
     })
-    
+
     return cleanup
   }, [])
 
   const value: ErrorDialogContextType = {
     showError,
     hideError,
-    isVisible
+    isVisible,
   }
 
   return (
@@ -64,7 +64,7 @@ export function ErrorDialogProvider({ children }: ErrorDialogProviderProps) {
       {children}
       <ErrorDialog
         isOpen={isVisible}
-        onClose={hideError}
+        onCloseAction={hideError}
         error={error}
         showDetails={showDetails}
       />

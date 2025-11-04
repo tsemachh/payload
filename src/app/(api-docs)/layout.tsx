@@ -1,6 +1,7 @@
 import '../styles/global.css'
+import { Metadata } from 'next'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'API Documentation',
   description: 'API documentation for the Emda system',
 }

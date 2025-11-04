@@ -119,6 +119,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               context: { ...req.context, from: 'migration', process: 'migrateForeign' },
             },
           })
+          // Update all stock values to point to the new stock
+          req.payload.update({
+            collection: 'stock-values',
+            data: {
+              stockId: newStockSequence,
+            },
+            where: {
+              stockId: {
+                equals: originalStock.id,
+              },
+            },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateForeign' },
+            },
+          })
           console.log(`Successfully processed stock ${originalStock.stockId} with ISIN ${isin}`)
         }
       } catch (error) {

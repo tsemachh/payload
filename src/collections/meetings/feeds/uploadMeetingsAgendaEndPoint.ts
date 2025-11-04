@@ -129,7 +129,7 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
       agendaUpdatedMeetingIds,
     })
   } catch (error) {
-    req.payload.logger.error('Error uploading CSV file:', error)
+    req.payload.logger.error({ error }, 'Error uploading CSV file:')
     return Response.json({ error: 'Error uploading CSV file' }, { status: 500 })
   }
 }

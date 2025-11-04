@@ -3,25 +3,37 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Shield, AlertCircle, KeyRound } from 'lucide-react'
+import { AlertCircle, KeyRound, Shield } from 'lucide-react'
 
 interface TwoFactorVerificationProps {
   email: string
   password: string
-  onVerified: (user: any) => void
-  onCancel: () => void
-  onLoginWithCredentials: (args: { email: string; password: string; totpCode?: string; backupCode?: string }) => Promise<any>
+  onVerifiedAction: (user: any) => void
+  onCancelAction: () => void
+  onLoginWithCredentialsAction: (args: {
+    email: string
+    password: string
+    totpCode?: string
+    backupCode?: string
+  }) => Promise<any>
 }
 
-export function TwoFactorVerification({ 
-  email, 
-  password, 
-  onVerified, 
-  onCancel,
-  onLoginWithCredentials 
+export function TwoFactorVerification({
+  email,
+  password,
+  onVerifiedAction,
+  onCancelAction,
+  onLoginWithCredentialsAction,
 }: TwoFactorVerificationProps) {
   const [code, setCode] = useState('')
   const [isBackupCode, setIsBackupCode] = useState(false)
@@ -47,22 +59,21 @@ export function TwoFactorVerification({
       const loginArgs = {
         email,
         password,
-        ...(isBackupCode 
+        ...(isBackupCode
           ? { backupCode: code.replace(/\s/g, '').toUpperCase() }
-          : { totpCode: code.replace(/\s/g, '') }
-        )
+          : { totpCode: code.replace(/\s/g, '') }),
       }
 
-      const result = await onLoginWithCredentials(loginArgs)
+      const result = await onLoginWithCredentialsAction(loginArgs)
 
       if (result.user) {
-        onVerified(result.user)
+        onVerifiedAction(result.user)
       } else {
         setError('אימות נכשל')
       }
     } catch (err: any) {
       setError(err.message || 'שגיאה באימות')
-      
+
       // Handle rate limiting or attempts remaining
       if (err.attemptsRemaining !== undefined) {
         setAttemptsRemaining(err.attemptsRemaining)
@@ -85,9 +96,7 @@ export function TwoFactorVerification({
           <Shield className="h-6 w-6 text-blue-600" />
         </div>
         <CardTitle>אימות דו-שלבי</CardTitle>
-        <CardDescription>
-          הזן את קוד האימות מהאפליקציה שלך
-        </CardDescription>
+        <CardDescription>הזן את קוד האימות מהאפליקציה שלך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
@@ -96,9 +105,7 @@ export function TwoFactorVerification({
             <AlertDescription>
               {error}
               {attemptsRemaining !== null && attemptsRemaining >= 0 && (
-                <div className="mt-1 text-xs">
-                  נותרו {attemptsRemaining} ניסיונות
-                </div>
+                <div className="mt-1 text-xs">נותרו {attemptsRemaining} ניסיונות</div>
               )}
             </AlertDescription>
           </Alert>
@@ -122,7 +129,7 @@ export function TwoFactorVerification({
             }}
             onKeyPress={handleKeyPress}
             maxLength={isBackupCode ? 8 : 6}
-            placeholder={isBackupCode ? "AB12CD34" : "123456"}
+            placeholder={isBackupCode ? 'AB12CD34' : '123456'}
             className="text-center font-mono text-lg"
             dir="ltr"
             disabled={isLoading}
@@ -156,17 +163,19 @@ export function TwoFactorVerification({
         {isBackupCode && (
           <div className="text-xs text-muted-foreground text-center">
             <p>הזן אחד מקודי הגיבוי שקיבלת בעת הגדרת האימות הדו-שלבי</p>
-            <p className="text-yellow-600 font-medium">שים לב: כל קוד גיבוי ניתן לשימוש פעם אחת בלבד</p>
+            <p className="text-yellow-600 font-medium">
+              שים לב: כל קוד גיבוי ניתן לשימוש פעם אחת בלבד
+            </p>
           </div>
         )}
       </CardContent>
       <CardFooter className="flex gap-2">
-        <Button variant="outline" onClick={onCancel} className="flex-1" disabled={isLoading}>
+        <Button variant="outline" onClick={onCancelAction} className="flex-1" disabled={isLoading}>
           ביטול
         </Button>
-        <Button 
-          onClick={handleVerify} 
-          disabled={isLoading || !code.trim() || (!isBackupCode && code.length !== 6)} 
+        <Button
+          onClick={handleVerify}
+          disabled={isLoading || !code.trim() || (!isBackupCode && code.length !== 6)}
           className="flex-1"
         >
           {isLoading ? 'מאמת...' : 'אמת'}

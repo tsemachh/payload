@@ -236,6 +236,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
 
         let newUser
+        if (!userData?.email?.includes('@') && userData?.email) {
+          userData.email = userData?.email + '@noMail.com'
+        }
+
         if (existingUser.docs.length > 0) {
           // Update existing userAuth
           newUser = await payload.update({
@@ -248,21 +252,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             },
           })
         } else {
+          userData.password = userData.email as string
           // Create new userAuth
-          if (!userData?.email?.includes('@') && userData?.email) {
-            userData.email = userData?.email + '@noMail.com'
-          }
           newUser = await payload.create({
             collection: 'users',
             req: {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateUsers' },
             },
-            // @ts-ignore
-            data: {
-              ...userData,
-              password: userData.email as string, // Default password only for new users
-            },
+            data: userData as User,
           })
         }
 
@@ -408,8 +406,10 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
     console.log(`Found ${testUsers.length} users in test.users.json`)
     const companies = new Map<string, string[]>([
       ['tsemachh@shefing.com', ['15', '22', '49', '25', '17']],
-      ['efrats@shefing.com', ['17', '22', '49', '25']],
-      /*      ['shaked@emdaresearch.co.il', ['17', '22', '49', '25']],*/
+      ['rachelb@shefing.com', ['17', '22', '49', '25']],
+      ['michalk@shefing.com', ['17', '22', '49', '25']],
+      ['dvorac@shefing.com', ['17', '22', '49', '25']],
+      ['shaked@emdaresearch.co.il', ['17', '110', '132']],
       ['philc@shefing.com', ['1167', '1168', '15', '17']],
     ])
     let createdCount = 0

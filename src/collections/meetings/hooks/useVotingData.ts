@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { stringify } from 'qs-esm'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { calculateHoldingValues } from '@/utils/dataUtils'
+import { getParentCompanyName } from '@/utils/voteGrouping'
 
 interface Company {
   id: string
   name: string
-  motherCompany?: string
+  parentCompany?: string
   nominalValue: number
   percentageHolding: number
   hasVoted?: boolean
@@ -139,10 +140,7 @@ export const useVotingData = () => {
           return {
             id: company.id,
             name: company.name || company.fullName || `Company ${company.id}`,
-            motherCompany:
-              company.parentCompany?.docs?.[0]?.name ||
-              company.parentCompany?.docs?.[0]?.fullName ||
-              (typeof company.parentCompany === 'string' ? company.parentCompany : null),
+            parentCompany: getParentCompanyName(company),
             nominalValue: calculatedValues.nominalValue,
             percentageHolding: calculatedValues.percentageHolding,
             hasVoted: !!companyVote,
@@ -180,7 +178,7 @@ export const useVotingData = () => {
 
     const columnMapping: any = {
       company: { header: 'חברה', field: 'name' },
-      motherCompany: { header: 'חברת אם', field: 'motherCompany' },
+      parentCompany: { header: 'חברת אם', field: 'parentCompany' },
       nominalValue: { header: 'ערך נקוב', field: 'nominalValue' },
       percentageHolding: { header: 'אחוזים', field: 'percentageHolding' },
       voter: { header: 'מצביע', field: 'vote.voter' },

@@ -45,7 +45,7 @@ import type { MeetingState, StockOrigin } from '@/payload-types'
 import { meetingStateMap, stockOriginMap } from '../helpers/maps'
 import type {
   Column,
-  DataTableProps,
+  ClientDataTableProps,
   FacetedFilterItem,
   CompanyTableDate,
   FundType,
@@ -101,7 +101,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   showViewModeToggle = false,
   viewMode,
   onViewModeChange,
-}: DataTableProps<T>) {
+}: ClientDataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T
     direction: 'asc' | 'desc'
@@ -131,7 +131,7 @@ export function DataTableStatic<T extends Record<string, any>>({
   const [dateFilters, setDateFilters] = useState<{
     [key: string]: { past: string; future: string; empty: boolean }
   }>({})
-  const [currentPage, setCurrentPage] = useState<number>(pagination?.currentPage || 1)
+  const [currentPage, setCurrentPage] = useState<number>(1)
   const emptyDateOption = { value: 'empty', label: 'ללא תאריך' }
 
   // Simple scroll preservation function
@@ -201,12 +201,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       )
     }
     return initialColumns
-  }, [
-    createColumnsWithExpand,
-    data,
-    initialColumns,
-    displayMode,
-  ])
+  }, [createColumnsWithExpand, data, initialColumns, displayMode])
 
   useEffect(() => {
     setInputSearchTerm(searchTerm)
@@ -688,7 +683,9 @@ export function DataTableStatic<T extends Record<string, any>>({
               return value.includes(noLabel)
             }
             // Build item label keys
-            const itemLabelKeys = itemLabels.map((lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`)
+            const itemLabelKeys = itemLabels.map(
+              (lbl: { label: string; color: string }) => `${lbl.label}__${lbl.color}`,
+            )
             // At least one selected label must match
             return value.some((v: string) => itemLabelKeys.includes(v))
           })
@@ -753,6 +750,11 @@ export function DataTableStatic<T extends Record<string, any>>({
       emptyDateOption.value,
     ],
   )
+
+  // Reset to page 1 when filtered data length changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filteredAndSortedData.length])
 
   // Handle sort
   const handleSort = useCallback((key: keyof T) => {
@@ -990,8 +992,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       )
 
       return allSelected ? <ChevronDown className="h-4 w-4 " /> : <Filter className="h-4 w-4 " />
-    }
-    else {
+    } else {
       const allPossibleValues = Array.from(
         new Set(data.map((item) => String(item[columnKey as keyof MeetingTableDataType]))),
       )
@@ -1767,7 +1768,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                         {row.agendas.map((agenda: unknown, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
-                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                           >
                             {/* Empty cell for companies column */}
                             <TableCell className="py-2 px-3"></TableCell>
@@ -1819,9 +1820,7 @@ export function DataTableStatic<T extends Record<string, any>>({
 
             <span className="mx-2">
               עמוד {currentPage} מתוך{' '}
-              {pagination.totalPages ||
-                Math.ceil(filteredAndSortedData.length / pagination.pageSize) ||
-                1}
+              {Math.ceil(filteredAndSortedData.length / pagination.pageSize) || 1}
             </span>
 
             <Button
@@ -1829,9 +1828,8 @@ export function DataTableStatic<T extends Record<string, any>>({
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={
-                currentPage ===
-                  (pagination.totalPages ||
-                    Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading
+                currentPage === Math.ceil(filteredAndSortedData.length / pagination.pageSize) ||
+                isLoading
               }
             >
               הבא
@@ -1840,15 +1838,11 @@ export function DataTableStatic<T extends Record<string, any>>({
               variant="outline"
               size="sm"
               onClick={() =>
-                handlePageChange(
-                  pagination.totalPages ||
-                    Math.ceil(filteredAndSortedData.length / pagination.pageSize),
-                )
+                handlePageChange(Math.ceil(filteredAndSortedData.length / pagination.pageSize))
               }
               disabled={
-                currentPage ===
-                  (pagination.totalPages ||
-                    Math.ceil(filteredAndSortedData.length / pagination.pageSize)) || isLoading
+                currentPage === Math.ceil(filteredAndSortedData.length / pagination.pageSize) ||
+                isLoading
               }
             >
               אחרון
