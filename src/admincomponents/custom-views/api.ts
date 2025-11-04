@@ -1,6 +1,7 @@
 import { Company } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 import { getParentCompanyId } from '@/utils/voteGrouping'
+import { TypeWithID } from 'payload'
 
 export async function getVoteData(req: any, meetingId: string, companyIds: string) {
   const companiesIdsArray = (companyIds as string).split(',')
@@ -28,32 +29,57 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
       ],
     },
     depth: 1,
-    limit: 1,
+    limit: 0,
   })
 
   // Validate that all votes have the same parentCompany and checksum
+  const validationErrors: string[] = []
+
   if (voteData.docs.length > 0) {
     const firstVote = voteData.docs[0]
     const expectedParentCompanyId = getParentCompanyId(firstVote.parentCompany)
     const expectedChecksum = firstVote.checksum
 
     for (const vote of voteData.docs) {
-      const voteChecksum = vote.checksum || vote.publishedchecksum
+      const voteChecksum = vote.checksum
       const currentParentCompanyId = getParentCompanyId(vote.parentCompany)
-      const voteIdentifier = `Vote ID: ${vote.id}, Company: ${vote.companyName || vote.company}`
+      const voteCompanyIdentifier = `${vote.companyName || vote.company}`
 
       // Compare parent company IDs, not object references
       if (currentParentCompanyId !== expectedParentCompanyId) {
-        throw new Error(
-          `Vote grouping validation failed: ${voteIdentifier} has different parentCompany ID: ${currentParentCompanyId || 'null'} (expected: ${expectedParentCompanyId || 'null'})`,
+        validationErrors.push(
+          `לחברת ${voteCompanyIdentifier} יש חברת אם שונה: ${currentParentCompanyId || 'null'} (expected: ${expectedParentCompanyId || 'null'})`,
         )
       }
 
       if (voteChecksum !== expectedChecksum) {
-        throw new Error(
-          `Vote grouping validation failed: ${voteIdentifier} has different checksum: ${voteChecksum || 'null'} (expected: ${expectedChecksum || 'null'})`,
+        validationErrors.push(
+          `לחברת ${voteCompanyIdentifier} יש מזהה הצבעה שונה: ${voteChecksum || 'null'} (expected: ${expectedChecksum || 'null'})`,
         )
       }
+    }
+  }
+
+  // Validate that we found votes for ALL requested companies
+  if (voteData.docs.length !== companiesIdsArray.length) {
+    const foundCompanyIds = new Set(
+      voteData.docs.map((vote: { company: string | TypeWithID }) =>
+        getIdOfRelationField(vote.company),
+      ),
+    )
+    const missingCompanyIds = companiesIdsArray.filter((id) => !foundCompanyIds.has(id))
+
+    if (missingCompanyIds.length > 0) {
+      validationErrors.push(`לא נמצאו הצבעות לאסיפות הבאות: ${missingCompanyIds.join(', ')}.`)
+    }
+  }
+
+  // Return error if validation failed
+  if (validationErrors.length > 0) {
+    return {
+      error: true,
+      message: 'שגיאה בקיבוץ ההצבעות',
+      errors: validationErrors,
     }
   }
 
