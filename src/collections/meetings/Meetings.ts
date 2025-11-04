@@ -806,7 +806,7 @@ export const Meetings: CollectionConfig = {
                 plural: 'נושאים',
               },
               admin: {
-                initCollapsed: true,
+                initCollapsed: false,
                 components: {
                   RowLabel: '/collections/meetings/components/RowLabel#SubjectLabel',
                   Label: '/collections/meetings/components/RowLabel#ArrayLabel',
