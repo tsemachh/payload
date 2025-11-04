@@ -1120,6 +1120,7 @@ export const Meetings: CollectionConfig = {
         // Track changes for changeDetails field
         const changeDate = new Date().toISOString()
         const changeSource = req.context?.from || 'user'
+        let meetingAlreadyProcessed = false
 
         // Handle dual stock creation
         if (
@@ -1149,7 +1150,10 @@ export const Meetings: CollectionConfig = {
                 req,
               })
 
+              // Process both the dual meeting and the original meeting
               await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
+              await updateCompaniesMeetingsOnMeetingChange(req, doc)
+              meetingAlreadyProcessed = true
 
               // Only update the original meeting with the relation
               await req.payload.update({
@@ -1175,7 +1179,7 @@ export const Meetings: CollectionConfig = {
         const firstPublish =
           previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
 
-        if (holdingsLimitChanged || stockChanged || firstPublish) {
+        if ((holdingsLimitChanged || stockChanged || firstPublish) && !meetingAlreadyProcessed) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
