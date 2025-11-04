@@ -11,6 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
@@ -24,7 +25,7 @@ export interface VoteData {
     company: { id: string; name: string }
     fund: { id: string; name: string }
     quantity: number
-    ownedQuantity: number
+    ownedQuantity?: number
     verifiedHoldings: boolean
     original?: {
       stockId: string
@@ -200,11 +201,16 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     if (!formData) return
     const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
-
+    if (booleanValue) {
+      updatedFunds[index].ownedQuantity = undefined
+    }
     if (field.startsWith('original.')) {
       // Handle nested original fields
       const originalField = field.replace('original.', '')
       const currentOriginal = updatedFunds[index].original || ({} as any)
+      if (booleanValue) {
+        currentOriginal.ownedQuantity = undefined
+      }
       const numericValue =
         originalField === 'ownedQuantity'
           ? Number.parseFloat(value.replace(/,/g, ''))
@@ -402,6 +408,48 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                 )
               })}
             </TableBody>
+            <TableFooter>
+              <TableRow className="bg-muted/50 dark:bg-gray-800/70 font-bold">
+                <TableCell
+                  className="text-right text-base text-gray-900 dark:text-white"
+                  colSpan={isOriginal ? 3 : 2}
+                >
+                  סה״כ
+                </TableCell>
+                <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                  {formatNumberWithLocale(
+                    formData.fundsData.reduce((sum, fund) => {
+                      const displayData = fund.original || fund
+                      return sum + (displayData?.quantity || 0)
+                    }, 0),
+                  )}
+                </TableCell>
+                <TableCell />
+                <TableCell className="text-right text-base text-gray-900 dark:text-white">
+                  {(() => {
+                    const hasNullVerification = formData.fundsData.some((fund) => {
+                      const displayData = fund.original || fund
+                      return (
+                        displayData?.verifiedHoldings === null ||
+                        displayData?.verifiedHoldings === undefined
+                      )
+                    })
+
+                    if (hasNullVerification) {
+                      return '-'
+                    }
+
+                    return formatNumberWithLocale(
+                      formData.fundsData.reduce((sum, fund) => {
+                        const displayData = fund.original || fund
+                        const ownedQty = displayData?.ownedQuantity
+                        return sum + (ownedQty != null && ownedQty !== 0 ? ownedQty : 0)
+                      }, 0),
+                    )
+                  })()}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         </CardContent>
       </Card>
