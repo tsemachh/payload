@@ -33,10 +33,11 @@ export const validateMeetingState: SelectFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
 ) => {
-  if (!value) return true
-
-  if (options.req.context.from == 'migration' || options.req.context.from == 'process') {
-    return true
+  if (
+    !value &&
+    !(options.req.context.from == 'migration' || options.req.context.from == 'process')
+  ) {
+    return 'יש לבחור מצב אסיפה'
   }
 
   const { siblingData } = options

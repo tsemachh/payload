@@ -633,6 +633,7 @@ export const Meetings: CollectionConfig = {
                   interfaceName: 'MeetingState',
                   validate: validateMeetingState,
                   options: meetingStateOptions,
+                  defaultValue: meetingStateOptions.find((opt) => opt.value === 'scheduled')?.value,
                   admin: {
                     width: '150px',
                   },
@@ -693,7 +694,7 @@ export const Meetings: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'meetings',
                   hasMany: false,
-                  label: 'אסיפה דואלית',
+                  label: ' אסיפה דואלית קשורה',
                   admin: {
                     readOnly: true,
                     width: '50%',
@@ -1178,8 +1179,13 @@ export const Meetings: CollectionConfig = {
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
           previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
+        const isPublish = doc?._status === 'published'
 
-        if ((holdingsLimitChanged || stockChanged || firstPublish) && !meetingAlreadyProcessed) {
+        if (
+          isPublish &&
+          (holdingsLimitChanged || stockChanged || firstPublish) &&
+          !meetingAlreadyProcessed
+        ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
