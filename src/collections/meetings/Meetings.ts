@@ -298,7 +298,7 @@ export const Meetings: CollectionConfig = {
             },
             {
               name: 'totalHoldings',
-              label: 'סך החזקות (%)',
+              label: 'החזקות(%)',
               type: 'number',
               virtual: true,
               admin: {
