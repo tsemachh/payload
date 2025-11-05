@@ -47,7 +47,9 @@ export const Companies: CollectionConfig = {
     delete: isAdmin,
   },
   custom: {
-    filterList: [['type', 'active', 'passiveFund']],
+    filterList: [
+      ['type', 'active', 'passiveFund','researchDocuments.displayVotingRecommendation','researchDocuments.defaultVotingRecommendation'],
+    ['researchDocuments.showResearch','researchDocuments.showResearchPrivate','researchDocuments.howResearchTrusteeship','researchDocuments.showResearchBond']],
     defaultFilter: { active: { equals: 'true' } },
   },
   versions: {},
