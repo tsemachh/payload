@@ -285,6 +285,14 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.isDual,
                     width: '400px',
                   },
+                  filterOptions: ({ req }) => {
+                    if (req.context?.from == 'migration' || req.context?.from == 'process') {
+                      return true
+                    }
+                    return {
+                      hasDual: { equals: true },
+                    }
+                  },
                 },
                 {
                   name: 'hasDual',
@@ -303,6 +311,12 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     condition: (siblingData) => siblingData.hasDual,
                     width: '400px',
+                  },
+                  validate: (value: any, { data }: any) => {
+                    if (data?.hasDual && !value) {
+                      return 'יש לבחור נייר ערך דואלי כאשר המניה מכילה דואלי'
+                    }
+                    return true
                   },
                   filterOptions: ({ req }) => {
                     if (req.context?.from == 'migration' || req.context?.from == 'process') {
@@ -416,6 +430,73 @@ export const Stocks: CollectionConfig = {
       ],
     },
   ],
+  hooks: {
+    afterChange: [
+      async ({ req, doc, operation, previousDoc }) => {
+        // Skip if from migration or process context
+        if (req.context?.from === 'migration' || req.context?.from === 'process') {
+          return
+        }
+
+        const isCreate = operation === 'create'
+
+        // For create, previousState will be undefined
+        const hasDualChanged = isCreate ? false : previousDoc?.hasDual !== doc.hasDual
+        const dualStockChanged = isCreate ? false : previousDoc?.dualStock !== doc.dualStock
+
+        // Check if we need to update dual stock relationships
+        if (isCreate || hasDualChanged || dualStockChanged) {
+          const currentDualStockId = doc.dualStock
+          const previousDualStockId = previousDoc?.dualStock
+
+          // If there's a current dual stock and hasDual is true, update it
+          if (currentDualStockId && doc.hasDual) {
+            try {
+              await req.payload.update({
+                collection: 'stocks',
+                id: currentDualStockId,
+                data: {
+                  isDual: true,
+                  mainStockForDualStock: doc.id,
+                },
+                context: { from: 'process' },
+              })
+            } catch (_error) {}
+          }
+
+          // If previous dual stock exists and is different from current, clear its fields
+          if (previousDualStockId && previousDualStockId !== currentDualStockId) {
+            try {
+              await req.payload.update({
+                collection: 'stocks',
+                id: previousDualStockId,
+                data: {
+                  isDual: false,
+                  mainStockForDualStock: null,
+                },
+                context: { from: 'process' },
+              })
+            } catch (_error) {}
+          }
+
+          // If hasDual is now false, clear the current dual stock's fields
+          if (!doc.hasDual && currentDualStockId) {
+            try {
+              await req.payload.update({
+                collection: 'stocks',
+                id: currentDualStockId,
+                data: {
+                  isDual: false,
+                  mainStockForDualStock: null,
+                },
+                context: { from: 'process' },
+              })
+            } catch (_error) {}
+          }
+        }
+      },
+    ],
+  },
   endpoints: [
     {
       path: '/import-stocks',
