@@ -259,19 +259,41 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.type == 'מניות',
                   },
                 },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
                 {
                   name: 'isDual',
                   label: 'דואלית',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
-                    width: '100px',
+                    readOnly: true,
+                    width: '150px',
                     condition: (siblingData) =>
                       siblingData.tradable &&
                       siblingData.origin == 'Foreign' &&
                       !siblingData.hasDual,
                   },
                 },
+                {
+                  name: 'mainStockForDualStock',
+                  label: 'נייר ערך מכיל דואלי',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  admin: {
+                    readOnly: true,
+                    condition: (siblingData) => siblingData.isDual,
+                    width: '400px',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
                 {
                   name: 'hasDual',
                   label: 'מכילה דואלית',
@@ -292,7 +314,7 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.hasDual,
                     width: '400px',
                   },
-                  filterOptions: ({ req }: any) => {
+                  filterOptions: ({ req }) => {
                     if (req.context?.from == 'migration' || req.context?.from == 'process') {
                       return true
                     }

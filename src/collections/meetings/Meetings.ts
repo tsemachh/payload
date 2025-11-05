@@ -119,9 +119,10 @@ export const Meetings: CollectionConfig = {
         { name: 'resultsConfirmationStatus', width: '130px' },
       ],
       [
-        { name: 'stock.type', width: '200px' },
+        { name: 'stock.type', width: '130px' },
         { name: 'stock.origin', width: '130px' },
         { name: 'stock.isFinancial', width: '130px' },
+        { name: 'stock.hasDual', width: '130px' },
         { name: 'stock.isDual', width: '130px' },
       ],
     ],
@@ -451,23 +452,37 @@ export const Meetings: CollectionConfig = {
                     if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
                       return true
                     }
-                    if (!siblingData?.meetingDate)
+
+                    const baseFilter = {
+                      or: [
+                        { isDual: { exists: false } },
+                        { isDual: { equals: false } },
+                      ],
+                    }
+
+                    if (!siblingData?.meetingDate) {
                       return {
-                        active: {
-                          equals: true,
-                        },
+                        and: [
+                          { active: { equals: true } },
+                          baseFilter,
+                        ],
                       }
+                    }
+
                     const meetingDate = new Date(siblingData.meetingDate)
                     const currentDate = new Date()
                     const isFutureDate = meetingDate > currentDate
+
                     if (isFutureDate) {
                       return {
-                        active: {
-                          equals: true,
-                        },
+                        and: [
+                          { active: { equals: true } },
+                          baseFilter,
+                        ],
                       }
                     }
-                    return true
+
+                    return baseFilter
                   },
                   index: true,
                   required: true,
@@ -480,15 +495,6 @@ export const Meetings: CollectionConfig = {
                   label: 'תאגיד פיננסי',
                   type: 'checkbox',
                   virtual: 'stock.isFinancial',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'isDualStock',
-                  label: 'אסיפה דואלית',
-                  type: 'checkbox',
-                  virtual: 'stock.isDual',
                   admin: {
                     hidden: true,
                   },
@@ -690,15 +696,49 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'isDualStock',
+                  label: 'אסיפה דואלית',
+                  type: 'checkbox',
+                  virtual: 'stock.isDual',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    condition: (data) => Boolean(data?.id),
+                  },
+                },
+                {
+                  name: 'hasDualStock',
+                  label: 'מכילה אסיפה דואלית',
+                  type: 'checkbox',
+                  virtual: 'stock.hasDual',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    condition: (data) => Boolean(data?.id),
+                  },
+                },
+                {
+                  name: 'mainMeetingForDualMeeting',
+                  type: 'relationship',
+                  relationTo: 'meetings',
+                  hasMany: false,
+                  label: 'אסיפה מכילה דואלית ',
+                  admin: {
+                    readOnly: true,
+                    width: '400px',
+                    condition: (data) => Boolean(data?.id) && Boolean(data?.isDualStock),
+                  },
+                },
+                {
                   name: 'dualMeeting',
                   type: 'relationship',
                   relationTo: 'meetings',
                   hasMany: false,
-                  label: ' אסיפה דואלית קשורה',
+                  label: ' אסיפה דואלית מוכלת',
                   admin: {
                     readOnly: true,
-                    width: '50%',
-                    condition: (data) => Boolean(data?.dualMeeting),
+                    width: '400px',
+                    condition: (data) => Boolean(data?.id) && Boolean(data?.hasDualStock),
                   },
                 },
               ],
@@ -1049,7 +1089,7 @@ export const Meetings: CollectionConfig = {
                         components: {
                           Field: '/admincomponents/fields/arrayTable',
                         },
-                        condition: (data, siblingData) => {
+                        condition: (_, siblingData) => {
                           return (
                             Array.isArray(siblingData.original) && siblingData.original.length > 0
                           )
