@@ -25,6 +25,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // 1. Migrate Firms
     await migrateFirms({ payload, req })
 
+    // 1.1 Set showResearchPrivate based on PdfInsuranceFundList (respecting active)
+    await migrateShowResearchPrivate({ payload, req })
+
     // 2. Migrate Accounts
     await migrateAccounts({ payload, req })
 
@@ -60,12 +63,12 @@ interface FirmRow {
   name: string
   order: number
   active: boolean
-  showResearch: boolean
-  setResearchAsDefault: boolean
-  showResearchBond: boolean
-  setResearchAsDefaultBond: boolean
-  showResearchTrusteeship: boolean
-  setResearchAsDefaultTrusteeship: boolean
+  showResearch: number
+  setResearchAsDefault: number
+  showResearchBond: number
+  setResearchAsDefaultBond: number
+  showResearchTrusteeship: number
+  setResearchAsDefaultTrusteeship: number
 }
 
 async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>> {
@@ -100,6 +103,13 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const row of resultFirms.recordset) {
       try {
+        const displayVotingRecommendation: boolean = [
+          row.setResearchAsDefault,
+          row.setResearchAsDefaultBond,
+          row.setResearchAsDefaultTrusteeship,
+        ].some((v) => v === 1)
+
+        const defaultVotingRecommendation: boolean = displayVotingRecommendation
         // Transform the data to match Payload CMS format
         const companyData: Partial<Company> = {
           companyId: row.firmId,
@@ -111,6 +121,8 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
             showResearch: !!row.showResearch,
             showResearchBond: !!row.showResearchBond,
             showResearchTrusteeship: !!row.showResearchTrusteeship,
+            defaultVotingRecommendation,
+            displayVotingRecommendation,
           },
         }
 
@@ -1279,5 +1291,85 @@ export async function migrateSilencedStocksCompanies(payload: any, req: any): Pr
   } catch (error) {
     console.error('Critical error during silenced stocks migration:', error)
     throw error // Re-throw to ensure migration is marked as failed
+  }
+}
+
+
+// ==================== X. MIGRATE PRIVATE RESEARCH FLAG ====================
+interface FirmsWithPrivateRow {
+  firmId: number
+  active?: boolean
+}
+
+async function migrateShowResearchPrivate({ payload, req }: MigrateUpArgs): Promise<void> {
+  let pool: sql.ConnectionPool | null = null
+
+  try {
+    console.log('\n=== Starting ShowResearchPrivate Migration ===')
+    pool = await createMSSqlPool()
+
+    // 1) Load mapping from MSSQL for ACTIVE firms only (respect active)
+    const rs = await pool.request().query(`
+      SELECT DISTINCT f.id AS firmId
+      FROM [dbEmda].[dbo].[firms] f
+      INNER JOIN [dbEmda].[dbo].[PdfInsuranceFundList] p ON p.FundId = f.id
+      WHERE f.firm_active = 1
+      ORDER BY f.id
+    `)
+
+    const firmsWithPrivate = new Set<number>()
+    for (const r of rs.recordset as FirmsWithPrivateRow[]) {
+      firmsWithPrivate.add(Number(r.firmId))
+    }
+    console.log(`Collected ${firmsWithPrivate.size} active firms with private research mapping`)
+
+    // 2) Iterate companies in Mongo and set researchDocuments.showResearchPrivate (no paging; limit: 0)
+    let totalProcessed = 0
+    let totalUpdated = 0
+
+    const res = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      where: {
+        type: { equals: 'regular' },
+        companyId: { exists: true },
+      },
+      req,
+    })
+
+    for (const doc of res.docs as Company[]) {
+      const firmId = Number(doc.companyId)
+      const willBe = firmsWithPrivate.has(firmId)
+      const was = Boolean(doc.researchDocuments?.showResearchPrivate)
+
+      if (was !== willBe) {
+        await payload.update({
+          collection: 'companies',
+          id: doc.id,
+          data: {
+            researchDocuments: {
+              ...(doc.researchDocuments ?? {}),
+              showResearchPrivate: willBe,
+            },
+          },
+          req: { ...req, context: { ...req?.context, from: 'migration', process: 'migrateFullFirms' } },
+        })
+        totalUpdated++
+      }
+
+      totalProcessed++
+    }
+
+    console.log(`ShowResearchPrivate migration completed. Processed: ${totalProcessed}, Updated: ${totalUpdated}`)
+    console.log('=== ShowResearchPrivate Migration Completed ===\n')
+  } catch (error) {
+    console.error('Migration failed (ShowResearchPrivate):', error)
+    throw error
+  } finally {
+    if (pool) {
+      await pool.close()
+      console.log('SQL connection closed (ShowResearchPrivate)')
+    }
   }
 }

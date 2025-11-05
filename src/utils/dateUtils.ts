@@ -27,16 +27,25 @@ export function parseDateString(dateStr: string): Date {
   }
 
   try {
-    // First try to parse as a standard JavaScript Date
-    const jsDate = new Date(dateStr)
+    const trimmed = dateStr.trim()
 
-    // Check if the date is valid
-    if (!isNaN(jsDate.getTime())) {
-      return jsDate
+    // If the string uses slashes, assume day-first format (dd/MM/yyyy ...)
+    if (trimmed.includes('/')) {
+      // Try with time (HH:mm:ss) and without time
+      const withSeconds = parse(trimmed, 'dd/MM/yyyy HH:mm:ss', new Date())
+      if (!isNaN(withSeconds.getTime())) return withSeconds
+
+      const withoutTime = parse(trimmed, 'dd/MM/yyyy', new Date())
+      if (!isNaN(withoutTime.getTime())) return withoutTime
     }
 
-    // If that fails, use date-fns to parse the string in dd/MM/yyyy HH:mm:ss format
-    return parse(dateStr, 'dd/MM/yyyy HH:mm:ss', new Date())
+    // Otherwise, rely on native Date for ISO/RFC-compliant strings
+    const jsDate = new Date(trimmed)
+    if (!isNaN(jsDate.getTime())) return jsDate
+
+    // Last resort: try day-first with seconds
+    const fallback = parse(trimmed, 'dd/MM/yyyy HH:mm:ss', new Date())
+    return fallback
   } catch (error) {
     throw new Error(`Failed to parse date string: ${dateStr}`)
   }

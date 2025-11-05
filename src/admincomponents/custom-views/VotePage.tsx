@@ -1,12 +1,31 @@
 import React, { Suspense } from 'react'
 import { DefaultTemplate } from '@payloadcms/next/templates'
 import type { AdminViewServerProps } from 'payload'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { VotingForm } from './voting-form'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { SetStepNav } from '@payloadcms/ui'
 import { getVoteData } from './api'
+
+function ErrorDisplay({ message, errors }: { message: string; errors?: string[] }) {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="max-w-2xl w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-4">{message}</h2>
+        {errors && errors.length > 0 && (
+          <ul className="space-y-2">
+            {errors.map((error, i) => (
+              <li key={i} className="text-red-700 dark:text-red-300">
+                {error}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
 
 async function VoteDataLoader({
   req,
@@ -18,6 +37,11 @@ async function VoteDataLoader({
   companyIds: string
 }) {
   const voteData = await getVoteData(req, meetingId, companyIds)
+
+  if (voteData.error) {
+    return <ErrorDisplay message={voteData.message} errors={voteData.errors} />
+  }
+
   return <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
 }
 
@@ -47,7 +71,7 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
 
   // Validate required parameters
   if (!meetingId) {
-    throw new Error('אסיפה לא קימת במערכת')
+    notFound()
   }
 
   // Get meeting name for header
