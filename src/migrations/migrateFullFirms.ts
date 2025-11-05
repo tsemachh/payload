@@ -63,12 +63,12 @@ interface FirmRow {
   name: string
   order: number
   active: boolean
-  showResearch: boolean
-  setResearchAsDefault: boolean
-  showResearchBond: boolean
-  setResearchAsDefaultBond: boolean
-  showResearchTrusteeship: boolean
-  setResearchAsDefaultTrusteeship: boolean
+  showResearch: number
+  setResearchAsDefault: number
+  showResearchBond: number
+  setResearchAsDefaultBond: number
+  showResearchTrusteeship: number
+  setResearchAsDefaultTrusteeship: number
 }
 
 async function getFirms(pool: sql.ConnectionPool): Promise<sql.IResult<FirmRow>> {
@@ -103,6 +103,13 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const row of resultFirms.recordset) {
       try {
+        const displayVotingRecommendation: boolean = [
+          row.setResearchAsDefault,
+          row.setResearchAsDefaultBond,
+          row.setResearchAsDefaultTrusteeship,
+        ].some((v) => v === 1)
+
+        const defaultVotingRecommendation: boolean = displayVotingRecommendation
         // Transform the data to match Payload CMS format
         const companyData: Partial<Company> = {
           companyId: row.firmId,
@@ -114,6 +121,8 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
             showResearch: !!row.showResearch,
             showResearchBond: !!row.showResearchBond,
             showResearchTrusteeship: !!row.showResearchTrusteeship,
+            defaultVotingRecommendation,
+            displayVotingRecommendation,
           },
         }
 
