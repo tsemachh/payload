@@ -180,6 +180,9 @@ async function processMeeting(
       where: {
         meeting: { equals: meeting.id },
       },
+      select: {
+        company: true,
+      },
       depth: 0,
       limit: 0,
     })

@@ -192,7 +192,7 @@ export const Votes: CollectionConfig = {
                 {
                   name: 'publishedchecksum',
                   type: 'text',
-                  defaultValue:'',
+                  defaultValue: '',
                   admin: {
                     hidden: true,
                   },
@@ -259,6 +259,9 @@ export const Votes: CollectionConfig = {
                   label: 'הצבעה בפועל',
                   type: 'checkbox',
                   defaultValue: false,
+                  admin: {
+                    width: 'auto', 
+                  },
                 },
                 {
                   name: 'reportApproval',
@@ -266,7 +269,7 @@ export const Votes: CollectionConfig = {
                   type: 'upload',
                   relationTo: 'documents',
                   admin: {
-                    width: '220px',
+                    width: 'auto',
                   },
                 },
               ],
