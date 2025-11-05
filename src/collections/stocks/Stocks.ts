@@ -272,6 +272,7 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     readOnly: true,
                     width: '150px',
+                    condition: (data) => Boolean(data?.id),
                   },
                 },
                 {

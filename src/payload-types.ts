@@ -707,8 +707,8 @@ export interface Meeting {
   proxyVotingDate?: string | null;
   meetingDate: string;
   isDualStock?: boolean | null;
-  hasDualStock?: boolean | null;
   mainMeetingForDualMeeting?: (string | null) | Meeting;
+  hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
@@ -1461,8 +1461,8 @@ export interface MeetingsSelect<T extends boolean = true> {
   proxyVotingDate?: T;
   meetingDate?: T;
   isDualStock?: T;
-  hasDualStock?: T;
   mainMeetingForDualMeeting?: T;
+  hasDualStock?: T;
   dualMeeting?: T;
   location?: T;
   comments?: T;
