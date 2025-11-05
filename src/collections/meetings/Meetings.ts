@@ -1173,6 +1173,7 @@ export const Meetings: CollectionConfig = {
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
             dualMeeting._status = 'published'
+            dualMeeting.mainMeetingForDualMeeting = doc.id
 
             try {
               const createdDualMeeting = await req.payload.create({
