@@ -266,21 +266,17 @@ export const Stocks: CollectionConfig = {
               fields: [
                 {
                   name: 'isDual',
-                  label: 'דואלית',
+                  label: 'דואלי',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
                     readOnly: true,
                     width: '150px',
-                    condition: (siblingData) =>
-                      siblingData.tradable &&
-                      siblingData.origin == 'Foreign' &&
-                      !siblingData.hasDual,
                   },
                 },
                 {
                   name: 'mainStockForDualStock',
-                  label: 'נייר ערך מכיל דואלי',
+                  label: 'קישור לנייר הערך המכיל',
                   type: 'relationship',
                   relationTo: 'stocks',
                   admin: {
@@ -289,25 +285,18 @@ export const Stocks: CollectionConfig = {
                     width: '400px',
                   },
                 },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
                 {
                   name: 'hasDual',
-                  label: 'מכילה דואלית',
+                  label: 'מכיל דואלי',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
                     width: '150px',
-                    condition: (siblingData) =>
-                      siblingData.tradable && siblingData.origin == 'TASE' && !siblingData.isDual,
                   },
                 },
                 {
                   name: 'dualStock',
-                  label: 'נייר ערך דואלי',
+                  label: 'קישור לנייר הערך הדואלי',
                   type: 'relationship',
                   relationTo: 'stocks',
                   admin: {

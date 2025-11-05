@@ -454,18 +454,12 @@ export const Meetings: CollectionConfig = {
                     }
 
                     const baseFilter = {
-                      or: [
-                        { isDual: { exists: false } },
-                        { isDual: { equals: false } },
-                      ],
+                      or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
                     }
 
                     if (!siblingData?.meetingDate) {
                       return {
-                        and: [
-                          { active: { equals: true } },
-                          baseFilter,
-                        ],
+                        and: [{ active: { equals: true } }, baseFilter],
                       }
                     }
 
@@ -475,10 +469,7 @@ export const Meetings: CollectionConfig = {
 
                     if (isFutureDate) {
                       return {
-                        and: [
-                          { active: { equals: true } },
-                          baseFilter,
-                        ],
+                        and: [{ active: { equals: true } }, baseFilter],
                       }
                     }
 
@@ -707,6 +698,18 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'mainMeetingForDualMeeting',
+                  type: 'relationship',
+                  relationTo: 'meetings',
+                  hasMany: false,
+                  label: 'קישור לאסיפה מכילה',
+                  admin: {
+                    readOnly: true,
+                    width: '400px',
+                    condition: (data) => Boolean(data?.id) && Boolean(data?.isDualStock),
+                  },
+                },
+                {
                   name: 'hasDualStock',
                   label: 'מכילה אסיפה דואלית',
                   type: 'checkbox',
@@ -718,23 +721,11 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'mainMeetingForDualMeeting',
-                  type: 'relationship',
-                  relationTo: 'meetings',
-                  hasMany: false,
-                  label: 'אסיפה מכילה דואלית ',
-                  admin: {
-                    readOnly: true,
-                    width: '400px',
-                    condition: (data) => Boolean(data?.id) && Boolean(data?.isDualStock),
-                  },
-                },
-                {
                   name: 'dualMeeting',
                   type: 'relationship',
                   relationTo: 'meetings',
                   hasMany: false,
-                  label: ' אסיפה דואלית מוכלת',
+                  label: ' קישור לאסיפה  דואלית',
                   admin: {
                     readOnly: true,
                     width: '400px',
