@@ -662,6 +662,7 @@ export const Meetings: CollectionConfig = {
                       timeFormat: 'HH:mm',
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       pickerAppearance: 'dayAndTime',
+                      timeIntervals: 15,
                     },
                   },
                   hooks: {
@@ -680,6 +681,7 @@ export const Meetings: CollectionConfig = {
                       displayFormat: 'HH:mm dd/MM/yyyy',
                       timeFormat: 'HH:mm',
                       pickerAppearance: 'dayAndTime',
+                      timeIntervals: 15,
                     },
                   },
                 },
