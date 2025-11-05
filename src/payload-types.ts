@@ -609,6 +609,7 @@ export interface Stock {
   active?: boolean | null;
   isFinancial?: boolean | null;
   isDual?: boolean | null;
+  mainStockForDualStock?: (string | null) | Stock;
   hasDual?: boolean | null;
   dualStock?: (string | null) | Stock;
   symbol?: string | null;
@@ -677,7 +678,6 @@ export interface Meeting {
   };
   stock: string | Stock;
   isFinancialStock?: boolean | null;
-  isDualStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   stockType?:
     | (
@@ -706,6 +706,9 @@ export interface Meeting {
   holdingsLimit: string;
   proxyVotingDate?: string | null;
   meetingDate: string;
+  isDualStock?: boolean | null;
+  mainMeetingForDualMeeting?: (string | null) | Meeting;
+  hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
   comments?: string | null;
@@ -1445,7 +1448,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   votes?: T;
   stock?: T;
   isFinancialStock?: T;
-  isDualStock?: T;
   stockOrigin?: T;
   stockType?: T;
   type?: T;
@@ -1458,6 +1460,9 @@ export interface MeetingsSelect<T extends boolean = true> {
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
+  isDualStock?: T;
+  mainMeetingForDualMeeting?: T;
+  hasDualStock?: T;
   dualMeeting?: T;
   location?: T;
   comments?: T;
@@ -1554,6 +1559,7 @@ export interface StocksSelect<T extends boolean = true> {
   active?: T;
   isFinancial?: T;
   isDual?: T;
+  mainStockForDualStock?: T;
   hasDual?: T;
   dualStock?: T;
   symbol?: T;

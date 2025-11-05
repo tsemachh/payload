@@ -259,40 +259,52 @@ export const Stocks: CollectionConfig = {
                     condition: (siblingData) => siblingData.type == 'מניות',
                   },
                 },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
                 {
                   name: 'isDual',
-                  label: 'דואלית',
+                  label: 'דואלי',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
-                    width: '100px',
-                    condition: (siblingData) =>
-                      siblingData.tradable &&
-                      siblingData.origin == 'Foreign' &&
-                      !siblingData.hasDual,
+                    readOnly: true,
+                    width: '150px',
+                    condition: (data) => Boolean(data?.id),
+                  },
+                },
+                {
+                  name: 'mainStockForDualStock',
+                  label: 'קישור לנייר הערך המכיל',
+                  type: 'relationship',
+                  relationTo: 'stocks',
+                  admin: {
+                    readOnly: true,
+                    condition: (siblingData) => siblingData.isDual,
+                    width: '400px',
                   },
                 },
                 {
                   name: 'hasDual',
-                  label: 'מכילה דואלית',
+                  label: 'מכיל דואלי',
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
                     width: '150px',
-                    condition: (siblingData) =>
-                      siblingData.tradable && siblingData.origin == 'TASE' && !siblingData.isDual,
                   },
                 },
                 {
                   name: 'dualStock',
-                  label: 'נייר ערך דואלי',
+                  label: 'קישור לנייר הערך הדואלי',
                   type: 'relationship',
                   relationTo: 'stocks',
                   admin: {
                     condition: (siblingData) => siblingData.hasDual,
                     width: '400px',
                   },
-                  filterOptions: ({ req }: any) => {
+                  filterOptions: ({ req }) => {
                     if (req.context?.from == 'migration' || req.context?.from == 'process') {
                       return true
                     }
