@@ -727,7 +727,7 @@ export const Meetings: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'meetings',
                   hasMany: false,
-                  label: ' קישור לאסיפה  הדואלית',
+                  label: 'קישור לאסיפה  הדואלית',
                   admin: {
                     readOnly: true,
                     width: '400px',
