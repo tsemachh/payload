@@ -1,3 +1,4 @@
+import { updateCompaniesMeetingsOnMeetingChange } from '@/collections/meetings/hooks/updateCompaniesMeetings'
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
@@ -41,11 +42,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           equals: true,
         },
       },
-      select: {
-        meetingDate: true,
-        dualMeeting: true,
-        stock: true,
-      },
       limit: 0,
       depth: 1,
     })
@@ -56,11 +52,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     for (const mainMeeting of mainMeetingsResult.docs) {
       try {
-        // Skip if already connected
-        // if (mainMeeting.dualMeeting) {
-        //   continue
-        // }
-
         // Get the dual stock ID from the main meeting's stock
         const dualStockId =
           typeof mainMeeting.stock === 'object' && mainMeeting.stock !== null
@@ -137,6 +128,55 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             console.log(
               `Connected main meeting ${mainMeeting.id} with dual meeting ${dualMeeting.id}`,
             )
+          }
+        } else if (mainMeetingDate.getTime() >= new Date().getTime()) {
+          //create dual meeting
+          const dualMeeting = JSON.parse(JSON.stringify(mainMeeting))
+          delete dualMeeting.id
+          delete dualMeeting.meetingId
+          delete dualMeeting.dualMeeting
+          delete dualMeeting.votes
+          delete dualMeeting.votesCount
+          delete dualMeeting.VotesStatus
+          delete dualMeeting.reportVotesCount
+          delete dualMeeting.votesReportStatus
+          delete dualMeeting.companies
+          delete dualMeeting.funds
+          delete dualMeeting.fundsWithHolding
+          delete dualMeeting.exceptionalRecommendation
+          const genericResearchDocs = mainMeeting.researchDocuments?.filter((doc: any) => {
+            return !doc.companies || doc.companies.length === 0
+          })
+          dualMeeting.researchDocuments = genericResearchDocs
+          dualMeeting.stock = dualStockId
+          dualMeeting._status = 'published'
+          dualMeeting.mainMeetingForDualMeeting = mainMeeting.id
+
+          try {
+            const createdDualMeeting = await req.payload.create({
+              collection: 'meetings',
+              data: dualMeeting,
+              context: { from: 'process' },
+              req,
+            })
+
+            // Process both the dual meeting and the original meeting
+            await updateCompaniesMeetingsOnMeetingChange(req, createdDualMeeting)
+            const changeDate = new Date().toISOString()
+            const changeSource = req.context?.from || 'user'
+            // Only update the original meeting with the relation
+            await req.payload.update({
+              collection: 'meetings',
+              id: mainMeeting.id,
+              data: {
+                dualMeeting: createdDualMeeting.id,
+                changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${dualStockId}`,
+              },
+              context: { from: 'process' },
+              req,
+            })
+          } catch (error) {
+            console.error('Error creating dual meeting:', error)
           }
         }
       } catch (error) {
