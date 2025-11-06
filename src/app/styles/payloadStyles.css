@@ -80,3 +80,14 @@
     }
 }
 */
+
+[dir="rtl"] .react-datepicker__navigation--next {
+  transform: rotate(180deg);
+    right: 35px;
+    color:rgb(44, 42, 165);
+}
+[dir="rtl"] .react-datepicker__navigation--previous {
+  transform: rotate(180deg);
+    right: 20px;
+    color:rgb(54, 165, 42);
+}
