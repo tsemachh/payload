@@ -104,13 +104,11 @@ async function processMeeting(
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
-        original: originalForeignDataArray
-          .filter(Boolean)
-          .map((item: any) => ({
-            stockId: item.stockId,
-            accountNum: item.accountNum,
-            quantity: item.quantity,
-          })),
+        original: originalForeignDataArray.filter(Boolean).map((item: any) => ({
+          stockId: item.stockId,
+          accountNum: item.accountNum,
+          quantity: item.quantity,
+        })),
       }
       const prev = prevByFund.get(fundId) || {}
       return { ...prev, ...base }
@@ -176,6 +174,30 @@ async function processMeeting(
         changeDetails,
       },
     })
+    const validCompanyIds = new Set(compIds.filter(Boolean))
+    const { docs: votes } = await req.payload.find({
+      collection: 'votes',
+      where: {
+        meeting: { equals: meeting.id },
+      },
+      select: {
+        company: true,
+      },
+      depth: 0,
+      limit: 0,
+    })
+    for (const vote of votes) {
+      const companyId = String(vote.company)
+      if (!validCompanyIds.has(companyId)) {
+        await req.payload.delete({
+          collection: 'votes',
+          id: vote.id,
+        })
+        req.payload.logger.info(
+          `Deleted obsolete vote ${vote.id} for company ${companyId} (meeting ${meeting.id})`,
+        )
+      }
+    }
   }
 }
 
@@ -254,7 +276,7 @@ export const processCompaniesMeetings = async (
           .catch((error) => {
             req.payload.logger.error(
               { error },
-              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+              `Error processing meeting ${meeting.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
             )
             // Don't rethrow the error to allow other meetings to be processed
           })
@@ -270,7 +292,7 @@ export const processCompaniesMeetings = async (
   } catch (error: unknown) {
     req.payload.logger.error(
       { error },
-      `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
     )
     throw error
   }

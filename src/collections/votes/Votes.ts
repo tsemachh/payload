@@ -279,6 +279,9 @@ export const Votes: CollectionConfig = {
                   label: 'הצבעה בפועל',
                   type: 'checkbox',
                   defaultValue: false,
+                  admin: {
+                    width: 'auto', 
+                  },
                 },
                 {
                   name: 'reportApproval',
@@ -286,7 +289,7 @@ export const Votes: CollectionConfig = {
                   type: 'upload',
                   relationTo: 'documents',
                   admin: {
-                    width: '220px',
+                    width: 'auto',
                   },
                 },
               ],
