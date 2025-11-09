@@ -449,13 +449,17 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
-                  filterOptions: ({ siblingData, req }: any) => {
+                  filterOptions: ({ siblingData, req, data, id }: any) => {
                     if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
                       return true
                     }
 
-                    const baseFilter = {
+                    const baseFilter: Record<string, any> = {
                       or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
+                    }
+
+                    if (id && data?.stock) {
+                      baseFilter.or.push({ id: { equals: data.stock } })
                     }
 
                     if (!siblingData?.meetingDate) {
