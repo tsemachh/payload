@@ -11,6 +11,8 @@ import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
+import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
+import removeCompanyEndpoint from './endpoints/RemoveCompanyEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -1291,6 +1293,16 @@ export const Meetings: CollectionConfig = {
       path: '/voting-report',
       method: 'get',
       handler: meetingForVotingEndPoint,
+    },
+    {
+      path: '/add-company',
+      method: 'post',
+      handler: addCompanyEndpoint,
+    },
+    {
+      path: '/remove-company',
+      method: 'post',
+      handler: removeCompanyEndpoint,
     },
   ],
 }
