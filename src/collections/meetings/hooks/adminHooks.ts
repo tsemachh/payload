@@ -104,3 +104,42 @@ export const updateStockRegisteredValue: CollectionBeforeChangeHook = async ({
   }
   return data
 }
+
+export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) => {
+  // Skip if context is from migration or process
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
+    return data
+  }
+
+  // Only check if meeting is in 'completed' state
+  if (data.state !== 'completed') {
+    return data
+  }
+
+  // Check if agenda exists and has items
+  if (!data.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
+    return data
+  }
+
+  // Filter agenda items that require a decision and are not removed
+  const decisionItems = data.agenda.filter(
+    (item: any) => item.topicType === 'decision' && !item.isRemovedFromAgenda,
+  )
+
+  // If there are no decision items, don't change state
+  if (decisionItems.length === 0) {
+    return data
+  }
+
+  // Check if all decision items have results
+  const allHaveResults = decisionItems.every((item: any) => {
+    return item.result && item.result !== '0'
+  })
+
+  // If all decision items have results, set finalized to true
+  if (allHaveResults) {
+    data.finalized = true
+  }
+
+  return data
+}

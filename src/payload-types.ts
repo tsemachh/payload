@@ -723,6 +723,7 @@ export interface Meeting {
         id?: string | null;
       }[]
     | null;
+  finalized?: boolean | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -1477,6 +1478,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         color?: T;
         id?: T;
       };
+  finalized?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;

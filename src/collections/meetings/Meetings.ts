@@ -23,6 +23,7 @@ import { calculatPercentageHolding } from '@/utils/dataUtils'
 import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
+  handleResult,
   updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
@@ -830,6 +831,12 @@ export const Meetings: CollectionConfig = {
           label: 'סדר יום',
           fields: [
             {
+              name: 'finalized',
+              label: 'הסתיימה',
+              type: 'checkbox',
+              admin: { disableListColumn: true, hidden: true },
+            },
+            {
               name: 'agenda',
               label: 'נושאים',
               type: 'array',
@@ -959,7 +966,6 @@ export const Meetings: CollectionConfig = {
                       type: 'select',
                       admin: {
                         width: '30%',
-
                         condition: (value, siblingData) =>
                           siblingData.topicType === 'decision' && value?.state === 'completed',
                       },
@@ -1242,6 +1248,7 @@ export const Meetings: CollectionConfig = {
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
       updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
       syncLabelsOnStockChange,
+      handleResult, // Automatically update state to 'ended' when all results are filled
     ],
   },
   endpoints: [

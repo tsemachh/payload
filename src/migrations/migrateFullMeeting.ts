@@ -247,6 +247,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const currentNewState = newState
       const currentAgendaItems = [...agendaItems]
 
+      // Check if all results are filled and set finalized to true if needed
+      let finalized = false
+      if (currentNewState === 'completed' && currentAgendaItems.length > 0) {
+        const decisionItems = currentAgendaItems.filter(
+          (item) => item.topicType === 'decision' && !item.isRemovedFromAgenda,
+        )
+
+        if (decisionItems.length > 0) {
+          const allHaveResults = decisionItems.every((item) => {
+            return item.result && item.result !== '0'
+          })
+
+          if (allHaveResults) {
+            finalized = true
+          }
+        }
+      }
       promises.push(
         promisePool.add(async () => {
           try {
@@ -264,6 +281,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: currentRow.comments,
               resultsConfirmationStatus: !!currentRow.ResultConfirm,
               electronicVotingEnabled: !!currentRow.ElectronicVoting,
+              finalized: finalized,
               _status: 'published' as const,
               agenda: currentAgendaItems.map((item) => ({
                 text: item.text,
