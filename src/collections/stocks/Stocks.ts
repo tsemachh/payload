@@ -401,7 +401,7 @@ export const Stocks: CollectionConfig = {
               on: 'relatedStock',
               //              _sanitized: true,
               admin: {
-                defaultColumns: ['stockId', 'type', 'symbol', 'name', 'longName'],
+                defaultColumns: ['id', 'stockId', 'type', 'symbol', 'name', 'longName'],
                 disableListColumn: true,
               },
             },
