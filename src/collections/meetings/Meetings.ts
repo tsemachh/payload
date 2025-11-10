@@ -403,7 +403,6 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-
             {
               name: 'votes',
               label: 'הצבעות',

@@ -40,7 +40,7 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json(
         {
           success: false,
-          message: 'Meeting not found',
+          message: 'Meeting not found for meetingId: ' + meetingId,
         },
         { status: 404 },
       )
@@ -52,28 +52,13 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       id: companyId,
       depth: 0,
     })
-
-    // Find all votes for this company in this meeting
-    const votes = await req.payload.find({
+    // Delete all votes for that company in this meeting
+    const voteDeleted = await req.payload.delete({
       collection: 'votes',
       where: {
         and: [{ meeting: { equals: meetingId } }, { company: { equals: companyId } }],
       },
-      limit: 0,
     })
-
-    // Delete all votes for this company
-    if (votes.docs.length > 0) {
-      await Promise.all(
-        votes.docs.map((vote) =>
-          req.payload.delete({
-            collection: 'votes',
-            id: vote.id,
-            req,
-          }),
-        ),
-      )
-    }
 
     // Find all funds related to this company
     const fundsForCompany = await req.payload.find({
@@ -108,8 +93,8 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       collection: 'meetings',
       id: meetingId,
       data: {
-        companies: updatedCompanies as any,
-        funds: updatedFunds as any,
+        companies: updatedCompanies as string[],
+        funds: updatedFunds as string[],
         fundsWithHolding: updatedFundsWithHolding as any,
         changeDetails: `${new Date().toISOString()} - [user] הוסרה חברה: ${company?.name || companyId}`,
       },
@@ -120,7 +105,7 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
     return Response.json({
       success: true,
       message: `Company ${company?.name || companyId} removed successfully`,
-      deletedVotes: votes.docs.length,
+      deletedVotes: voteDeleted.docs.length,
     })
   } catch (error) {
     req.payload.logger.error(`Error removing company from meeting: ${error}`)

@@ -45,6 +45,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/app/(frontend)/components/ui/command'
+import { toast } from 'sonner'
 
 export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
@@ -121,7 +122,11 @@ export const VotingTablesField = () => {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meetingId: id, companyId: selectedAddId }),
+        body: JSON.stringify({
+          meetingId: id,
+          companyId: selectedAddId,
+          stockId: meetingData.stock,
+        }),
       })
       const result = await res.json()
       if (result.success) {
@@ -153,16 +158,16 @@ export const VotingTablesField = () => {
       })
       const result = await res.json()
       if (result.success) {
-        alert('החברה הוסרה בהצלחה')
+        toast.success('החברה הוסרה בהצלחה')
         setShowRemoveModal(false)
         setSelectedRemoveId('')
-        window.location.reload()
+        fetchMeetingData()
       } else {
         alert(`שגיאה: ${result.message}`)
       }
     } catch (err) {
       console.error('Error removing company:', err)
-      alert('שגיאה בהסרת חברה')
+      toast.error('שגיאה בהסרת חברה')
     } finally {
       setIsProcessing(false)
     }
@@ -262,7 +267,7 @@ export const VotingTablesField = () => {
                 style={{
                   direction: 'rtl',
                   backgroundColor: 'white',
-                  zIndex: 9999
+                  zIndex: 9999,
                 }}
                 align="end"
                 sideOffset={5}
@@ -272,10 +277,12 @@ export const VotingTablesField = () => {
                   <CommandList>
                     <CommandGroup
                       className="max-h-60 overflow-auto"
-                      style={{
-                        minHeight: '1px',
-                        backgroundColor: 'white'
-                      } as React.CSSProperties}
+                      style={
+                        {
+                          minHeight: '1px',
+                          backgroundColor: 'white',
+                        } as React.CSSProperties
+                      }
                     >
                       {availableCompanies.map((company) => (
                         <CommandItem
@@ -363,7 +370,7 @@ export const VotingTablesField = () => {
                 style={{
                   direction: 'rtl',
                   backgroundColor: 'white',
-                  zIndex: 9999
+                  zIndex: 9999,
                 }}
                 align="end"
                 sideOffset={5}
@@ -373,10 +380,12 @@ export const VotingTablesField = () => {
                   <CommandList>
                     <CommandGroup
                       className="max-h-60 overflow-auto"
-                      style={{
-                        minHeight: '1px',
-                        backgroundColor: 'white'
-                      } as React.CSSProperties}
+                      style={
+                        {
+                          minHeight: '1px',
+                          backgroundColor: 'white',
+                        } as React.CSSProperties
+                      }
                     >
                       {currentCompanies.map((company) => {
                         const cid = typeof company === 'string' ? company : company.id
@@ -411,8 +420,9 @@ export const VotingTablesField = () => {
 
           {selectedRemoveId && (
             <DialogDescription className="text-sm text-red-600 font-semibold">
-              שים לב: אתה עומד להסיר את החברה <strong>{getRemoveName()}</strong>. אם יש הצבעות – הן
-              יימחקו.
+              שים לב: אתה עומד להסיר את החברה <strong>{getRemoveName()}</strong>
+              <br />
+              אם לחברה יש הצבעות – הן יימחקו.
             </DialogDescription>
           )}
 
