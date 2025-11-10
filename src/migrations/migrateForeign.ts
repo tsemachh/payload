@@ -528,6 +528,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             id: foreignStock.id,
             data: {
               isDual: true,
+              mainStockForDualStock:taseStock
             },
             req: {
               ...req,
