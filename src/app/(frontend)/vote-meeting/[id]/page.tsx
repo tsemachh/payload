@@ -1014,6 +1014,12 @@ export default function VotingForm() {
                                     נמנע
                                   </SelectItem>
                                   <SelectItem
+                                    value="דיון"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    דיון
+                                  </SelectItem>
+                                  <SelectItem
                                     value="אין חובת השתתפות"
                                     className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                                   >
