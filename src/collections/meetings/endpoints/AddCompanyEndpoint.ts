@@ -16,60 +16,18 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
 
-    const data = req.data as { meetingId?: string; companyId?: string } | undefined
-    const { meetingId, companyId } = data || {}
+    const data = req.data as
+      | { meetingId?: string; companyId?: string; stockId?: string; holdingLimit?: string }
+      | undefined
+    const { meetingId, companyId, stockId, holdingLimit } = data || {}
 
-    if (!meetingId || !companyId) {
+    if (!meetingId || !companyId || !stockId || !holdingLimit) {
       return Response.json(
         {
           success: false,
-          message: 'Missing required fields: meetingId and companyId',
+          message: 'Missing required fields: meetingId, companyId, stockId, and holdingLimit',
         },
         { status: 400 },
-      )
-    }
-
-    // Get the meeting
-    const meeting = await req.payload.findByID({
-      collection: 'meetings',
-      id: meetingId,
-      depth: 0,
-    })
-
-    if (!meeting) {
-      return Response.json(
-        {
-          success: false,
-          message: 'Meeting not found',
-        },
-        { status: 404 },
-      )
-    }
-
-    if (!meeting.stock || !meeting.holdingsLimit) {
-      return Response.json(
-        {
-          success: false,
-          message: 'Meeting must have a stock and holdingsLimit',
-        },
-        { status: 400 },
-      )
-    }
-
-    // Get the company
-    const company = await req.payload.findByID({
-      collection: 'companies',
-      id: companyId,
-      depth: 0,
-    })
-
-    if (!company) {
-      return Response.json(
-        {
-          success: false,
-          message: 'Company not found',
-        },
-        { status: 404 },
       )
     }
 
@@ -77,7 +35,7 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     const fundsForCompany = await req.payload.find({
       collection: 'companies',
       where: {
-        and: [{ type: { equals: 'fund' } }, { parentCompany: { equals: companyId } }],
+        and: [{ type: { equals: 'fund' } }, { parentCompany: { equals: companyId } }], //TODO RACHEL: chang to funds that the cusomer sent!!!!
       },
       limit: 0,
       depth: 0,
@@ -87,17 +45,16 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json(
         {
           success: false,
-          message: 'No funds found for this company',
+          message: 'No funds found for this company. companyId: ' + companyId,
         },
         { status: 400 },
       )
     }
 
-    const stockId = getIdOfRelationField(meeting.stock)
-    const holdingsLimit = new Date(meeting.holdingsLimit)
+    const holdingLimitDate = new Date(holdingLimit)
+    const holdingLimitISO = holdingLimitDate.toISOString()
 
     // For each fund, find or create holdings
-    const newFundsWithHolding = []
     const addedFunds = []
 
     for (const fund of fundsForCompany.docs) {
@@ -107,13 +64,13 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       const { docs: existingHoldings } = await req.payload.find({
         collection: 'holdings',
         where: {
-          and: [{ fund: { equals: fundId } }, { valueDate: { equals: holdingsLimit } }],
+          and: [{ fund: { equals: fundId } }, { valueDate: { equals: holdingLimitDate } }],
         },
         limit: 1,
         depth: 0,
       })
 
-      let targetDate = holdingsLimit
+      let targetDate = holdingLimitDate
       let holdingDoc = existingHoldings[0]
 
       // If no holdings exist on record date, find latest holdings
@@ -123,7 +80,7 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
           where: {
             and: [
               { fund: { equals: fundId } },
-              { valueDate: { less_than_equal: holdingsLimit } },
+              { valueDate: { less_than_equal: holdingLimitISO } },
             ],
           },
           sort: '-valueDate',
@@ -144,49 +101,14 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
 
       if (existingStockHolding) {
         // Stock already exists, just update the quantity by adding 1
-        const updatedHoldings = (holdingDoc.holdings || [])
-          .filter((h) => h && h.stock)
-          .map((h) => {
-            const hStock = getIdOfRelationField(h.stock)
-            if (hStock === stockId) {
-              return {
-                stock: hStock,
-                quantity: (h.quantity || 0) + 1,
-                ...(h.originalForeignData && { originalForeignData: h.originalForeignData }),
-              }
-            }
-            return {
-              stock: hStock,
-              quantity: h.quantity || 0,
-              ...(h.originalForeignData && { originalForeignData: h.originalForeignData }),
-            }
-          })
-
-        await req.payload.update({
-          collection: 'holdings',
-          id: holdingDoc.id,
-          data: {
-            holdings: updatedHoldings as any,
-          },
-          context: { from: 'process' },
-          req,
-        })
+        // להוציא שגיאה או לא שגיאה אבל לעדכן את הלקוח בפופאפ שההחזקה כבר קיימת
       } else if (holdingDoc) {
-        // Holdings doc exists but doesn't have this stock, add it
-        const existingHoldings = (holdingDoc.holdings || [])
-          .filter((h) => h && h.stock)
-          .map((h) => ({
-            stock: getIdOfRelationField(h.stock) as string,
-            quantity: h.quantity || 0,
-            ...(h.originalForeignData && { originalForeignData: h.originalForeignData }),
-          }))
-
         await req.payload.update({
           collection: 'holdings',
           id: holdingDoc.id,
           data: {
             holdings: [
-              ...existingHoldings,
+              ...holdingDoc.holdings,
               {
                 stock: stockId,
                 quantity: 1,
@@ -216,56 +138,14 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
         holdingDoc = newHoldingDoc
       }
 
-      // Add to fundsWithHolding
-      newFundsWithHolding.push({
-        fund: fundId,
-        company: companyId,
-        quantity: 1,
-        ownedQuantity: 1,
-        verifiedHoldings: false,
-        original: [],
-      })
       addedFunds.push(fundId)
     }
 
-    // Update meeting
-    const existingCompanies = (meeting.companies || [])
-      .map(getIdOfRelationField)
-      .filter((id): id is string => typeof id === 'string')
-    const existingFunds = (meeting.funds || [])
-      .map(getIdOfRelationField)
-      .filter((id): id is string => typeof id === 'string')
-    const existingFundsWithHolding = meeting.fundsWithHolding || []
-
-    // Add company if not already present
-    const updatedCompanies = existingCompanies.includes(companyId)
-      ? existingCompanies
-      : [...existingCompanies, companyId]
-
-    // Add funds if not already present
-    const updatedFunds = [...new Set([...existingFunds, ...addedFunds])]
-
-    // Merge fundsWithHolding
-    const updatedFundsWithHolding = [...existingFundsWithHolding, ...newFundsWithHolding]
-
-    await req.payload.update({
-      collection: 'meetings',
-      id: meetingId,
-      data: {
-        companies: updatedCompanies as any,
-        funds: updatedFunds as any,
-        fundsWithHolding: updatedFundsWithHolding as any,
-        changeDetails: `${new Date().toISOString()} - [user] נוספה חברה: ${company.name || companyId}`,
-      },
-      context: { from: 'process' },
-      req,
-    })
-
     return Response.json({
       success: true,
-      message: `Company ${company.name || companyId} added successfully`,
+      message: "9090",//`Company ${company.name || companyId} added successfully`,
       addedFunds: addedFunds.length,
-      targetDate: holdingsLimit.toISOString(),
+      targetDate:"j", //targetDate.toISOString(),
     })
   } catch (error) {
     req.payload.logger.error(`Error adding company to meeting: ${error}`)

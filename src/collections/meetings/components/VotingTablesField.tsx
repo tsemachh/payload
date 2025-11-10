@@ -28,6 +28,7 @@ import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ import { toast } from 'sonner'
 
 export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
+  const router = useRouter()
   const {
     notVotedCompanies,
     votedCompanies,
@@ -130,16 +132,19 @@ export const VotingTablesField = () => {
       })
       const result = await res.json()
       if (result.success) {
-        alert('החברה נוספה בהצלחה')
+        toast.success('החברה נוספה בהצלחה')
         setShowAddModal(false)
         setSelectedAddId('')
-        window.location.reload()
+        // Refresh the page to update Payload's document state
+        const currentPath = window.location.pathname
+        router.push(currentPath)
+        router.refresh()
       } else {
-        alert(`שגיאה: ${result.message}`)
+        toast.error(`שגיאה: ${result.message}`)
       }
     } catch (err) {
       console.error('Error adding company:', err)
-      alert('שגיאה בהוספת חברה')
+      toast.error('שגיאה בהוספת חברה')
     } finally {
       setIsProcessing(false)
     }
@@ -161,9 +166,12 @@ export const VotingTablesField = () => {
         toast.success('החברה הוסרה בהצלחה')
         setShowRemoveModal(false)
         setSelectedRemoveId('')
-        fetchMeetingData()
+        // Refresh the page to update Payload's document state
+        const currentPath = window.location.pathname
+        router.push(currentPath)
+        router.refresh()
       } else {
-        alert(`שגיאה: ${result.message}`)
+        toast.error(result.message)
       }
     } catch (err) {
       console.error('Error removing company:', err)
