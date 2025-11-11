@@ -1,19 +1,12 @@
-
-import {
-  getVotingRecommendationColor,
-  isRTL,
-} from '../helpers/utils-data-table'
+import { getVotingRecommendationColor, isRTL } from '../helpers/utils-data-table'
 import { AgendasType, MeetingTableDataType } from '../types/meetings'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus'
 
 export function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
-  const router = useRouter()
-
   const handleIconClick = () => {
-    router.push(`/vote-meeting/${row.meetingIdPayload}`)
+    window.open(`/vote-meeting/${row.meetingIdPayload}`, '_blank', 'noopener,noreferrer')
   }
   if (row.companies.length === 0) return null
   return (
