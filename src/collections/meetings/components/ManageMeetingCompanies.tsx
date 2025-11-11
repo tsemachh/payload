@@ -2,7 +2,6 @@
 import { Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
-import { useVotingData } from '../hooks/useVotingData'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -27,7 +26,6 @@ import { toast } from 'sonner'
 export const ManageMeetingCompanies = () => {
   const { id } = useDocumentInfo()
   const router = useRouter()
-  const { votedCompanies, loading } = useVotingData()
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -38,6 +36,11 @@ export const ManageMeetingCompanies = () => {
   const [currentCompanies, setCurrentCompanies] = useState<any[]>([])
   const [meetingData, setMeetingData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Fund selection state
+  const [availableFunds, setAvailableFunds] = useState<any[]>([])
+  const [selectedFunds, setSelectedFunds] = useState<string[]>([])
+  const [showFundSelection, setShowFundSelection] = useState(false)
 
   // Popover state
   const [openAdd, setOpenAdd] = useState(false)
@@ -74,9 +77,38 @@ export const ManageMeetingCompanies = () => {
     }
   }
 
-  // Add company
+  // Fetch funds for selected company
+  const fetchFundsForCompany = async (companyId: string) => {
+    try {
+      const res = await fetch(
+        `/api/companies?where[type][equals]=fund&where[parentCompany][equals]=${companyId}&limit=0&depth=0`,
+        {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
+      const data = await res.json()
+      setAvailableFunds(data.docs || [])
+      setShowFundSelection(true)
+    } catch (err) {
+      console.error('Error fetching funds:', err)
+      toast.error('שגיאה בטעינת תיקים')
+    }
+  }
+
+  // Handle company selection - show fund selection
+  const handleCompanySelect = (companyId: string) => {
+    setSelectedAddId(companyId)
+    setOpenAdd(false)
+    fetchFundsForCompany(companyId)
+  }
+
+  // Add company with selected funds
   const handleAdd = async () => {
-    if (!selectedAddId || !id) return
+    if (!selectedAddId || !id || selectedFunds.length === 0) {
+      toast.error('יש לבחור חברה ולפחות תיק אחד')
+      return
+    }
     setIsProcessing(true)
     try {
       const res = await fetch('/api/meetings/add-company', {
@@ -87,19 +119,37 @@ export const ManageMeetingCompanies = () => {
           meetingId: id,
           companyId: selectedAddId,
           stockId: meetingData.stock,
+          holdingLimit: meetingData.holdingsLimit,
+          fundsIds: selectedFunds,
         }),
       })
       const result = await res.json()
       if (result.success) {
-        toast.success('החברה נוספה בהצלחה')
+        // Show detailed message
+        let message = result.message
+        if (result.existingFunds && result.existingFunds.length > 0) {
+          message += `\n\nתיקים שנוספו: ${result.addedFunds.join(', ')}`
+          message += `\n\nתיקים שכבר היו קיימים: ${result.existingFunds.join(', ')}`
+          toast.warning(message, { duration: 6000 })
+        } else {
+          toast.success(message)
+        }
         setShowAddModal(false)
         setSelectedAddId('')
+        setSelectedFunds([])
+        setShowFundSelection(false)
+        setAvailableFunds([])
         // Refresh the page to update Payload's document state
         const currentPath = window.location.pathname
         router.push(currentPath)
         router.refresh()
       } else {
-        toast.error(`שגיאה: ${result.message}`)
+        // Show error with details
+        let errorMessage = result.message
+        if (result.existingFunds && result.existingFunds.length > 0) {
+          errorMessage += `\n\nתיקים קיימים: ${result.existingFunds.join(', ')}`
+        }
+        toast.error(errorMessage, { duration: 6000 })
       }
     } catch (err) {
       console.error('Error adding company:', err)
@@ -107,6 +157,23 @@ export const ManageMeetingCompanies = () => {
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  // Toggle fund selection
+  const toggleFund = (fundId: string) => {
+    setSelectedFunds((prev) =>
+      prev.includes(fundId) ? prev.filter((id) => id !== fundId) : [...prev, fundId],
+    )
+  }
+
+  // Select all funds
+  const selectAllFunds = () => {
+    setSelectedFunds(availableFunds.map((p) => p.id))
+  }
+
+  // Deselect all funds
+  const deselectAllFunds = () => {
+    setSelectedFunds([])
   }
 
   // Remove company
@@ -155,40 +222,10 @@ export const ManageMeetingCompanies = () => {
     return typeof company === 'string' ? company : company?.name || selectedRemoveId
   }
 
-  // Grouped vote URL
-  const getGroupedVoteUrl = (item: any) => {
-    const parent = item.parentCompany || item.name
-    const checksum = item.vote?.checksum
-    const grouped = votedCompanies.filter((c) => {
-      const cp = c.parentCompany || c.name
-      return cp === parent && c.vote?.checksum === checksum
-    })
-    const ids = grouped.map((c) => c.id).join(',')
-    return `/admin/grouped-votes/?meetingId=${id}&companyIds=${ids}`
-  }
-
-  const notVotedColumns = { company: true, nominalValue: true, percentageHolding: true }
-  const votedColumns = {
-    company: true,
-    nominalValue: true,
-    percentageHolding: true,
-    voter: true,
-    voteTime: true,
-    actualVoteAction: true,
-  }
-
-  if (loading) {
-    return (
-      <div className="p-4 text-center">
-        <div className="animate-pulse">טוען נתוני הצבעות...</div>
-      </div>
-    )
-  }
-
   if (!id) {
     return (
       <div className="p-4 text-center text-gray-500">
-        יש לשמור את האסיפה תחילה כדי לראות את ממשק ההצבעות
+        יש לשמור את האסיפה תחילה כדי לנהל את החברות המזומנות.
       </div>
     )
   }
@@ -206,87 +243,183 @@ export const ManageMeetingCompanies = () => {
       </div>
 
       {/* Add Modal */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="useTw" dir="rtl">
+      <Dialog
+        open={showAddModal}
+        onOpenChange={(open) => {
+          setShowAddModal(open)
+          if (!open) {
+            setSelectedAddId('')
+            setSelectedFunds([])
+            setShowFundSelection(false)
+            setAvailableFunds([])
+            setOpenAdd(false)
+          }
+        }}
+      >
+        <DialogContent className="useTw max-w-2xl" dir="rtl">
           <DialogHeader style={{ textAlign: 'right' }}>
             <DialogTitle>הוסף חברה לאסיפה</DialogTitle>
             <DialogDescription>
-              בחר חברה להוסיף לאסיפה. החברה תתווסף עם החזקה של 1 יחידה.
+              {!showFundSelection
+                ? 'בחר חברה להוסיף לאסיפה.'
+                : 'בחר את התיקים שבהם תתווסף החזקה של 1 יחידה.'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4">
-            <Popover open={openAdd} onOpenChange={setOpenAdd} modal={true}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openAdd}
-                  className="w-full justify-between text-left font-normal"
-                  style={{ direction: 'rtl' }}
+          {!showFundSelection ? (
+            <div className="py-4">
+              <Popover open={openAdd} onOpenChange={setOpenAdd} modal={true}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openAdd}
+                    className="w-full justify-between text-left font-normal"
+                    style={{ direction: 'rtl' }}
+                  >
+                    {selectedAddId ? getAddName() : 'בחר חברה...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popper-anchor-width)] p-0"
+                  style={{
+                    direction: 'rtl',
+                    backgroundColor: 'white',
+                    zIndex: 9999,
+                  }}
+                  align="end"
+                  sideOffset={5}
                 >
-                  {selectedAddId ? getAddName() : 'בחר חברה...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Command className="bg-white">
+                    <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
+                    <CommandList>
+                      <CommandGroup
+                        className="max-h-60 overflow-auto"
+                        style={
+                          {
+                            minHeight: '1px',
+                            backgroundColor: 'white',
+                          } as React.CSSProperties
+                        }
+                      >
+                        {availableCompanies.map((company) => (
+                          <CommandItem
+                            key={company.id}
+                            value={company.id}
+                            keywords={[company.name]}
+                            onSelect={() => handleCompanySelect(company.id)}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
+                              )}
+                            />
+                            {company.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-medium">
+                  חברה נבחרה: <strong>{getAddName()}</strong>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowFundSelection(false)
+                    setSelectedAddId('')
+                    setSelectedFunds([])
+                    setAvailableFunds([])
+                  }}
+                >
+                  שנה חברה
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-[var(--radix-popper-anchor-width)] p-0"
-                style={{
-                  direction: 'rtl',
-                  backgroundColor: 'white',
-                  zIndex: 9999,
-                }}
-                align="end"
-                sideOffset={5}
-              >
-                <Command className="bg-white">
-                  <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
-                  <CommandList>
-                    <CommandGroup
-                      className="max-h-60 overflow-auto"
-                      style={
-                        {
-                          minHeight: '1px',
-                          backgroundColor: 'white',
-                        } as React.CSSProperties
-                      }
-                    >
-                      {availableCompanies.map((company) => (
-                        <CommandItem
-                          key={company.id}
-                          value={company.id}
-                          keywords={[company.name]}
-                          onSelect={() => {
-                            setSelectedAddId(company.id)
-                            setOpenAdd(false)
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
-                            )}
-                          />
-                          {company.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+              </div>
 
-          {selectedAddId && meetingData && (
-            <DialogDescription className="text-sm">
-              לחיצה על אישור תוסיף לחברה <strong className="font-bold">{getAddName()}</strong> החזקה
-              לתאריך{' '}
-              <strong className="font-bold">
-                {new Date(meetingData.holdingsLimit).toLocaleDateString('he-IL')}
-              </strong>
-              .
-            </DialogDescription>
+              {availableFunds.length === 0 ? (
+                <div className="text-center text-red-600 py-4">
+                  לא נמצאו תיקים (קרנות) עבור חברה זו
+                </div>
+              ) : (
+                <>
+                  {availableFunds.length > 1 && (
+                    <div className="flex gap-2 mb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllFunds}
+                        disabled={selectedFunds.length === availableFunds.length}
+                      >
+                        בחר הכל
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={deselectAllFunds}
+                        disabled={selectedFunds.length === 0}
+                      >
+                        בטל הכל
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="border rounded-md max-h-60 overflow-y-auto">
+                    {availableFunds.map((fund) => (
+                      <label
+                        key={fund.id}
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedFunds.includes(fund.id)}
+                          onChange={() => toggleFund(fund.id)}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+                        <span className="flex-1">{fund.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {availableFunds.length > 1 && (
+                    <div className="text-sm text-gray-600">
+                      נבחרו {selectedFunds.length} מתוך {availableFunds.length} תיקים
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {showFundSelection && meetingData && (
+            <div className="min-h-[60px]">
+              {selectedFunds.length > 0 ? (
+                <DialogDescription className="text-sm">
+                  לחיצה על אישור תוסיף לחברה <strong className="font-bold">{getAddName()}</strong>{' '}
+                  החזקה עם ערך של 1 עבור{' '}
+                  {selectedFunds.length === 1
+                    ? 'תיק' + ' ' + selectedFunds.length
+                    : selectedFunds.length + ' ' + 'תיקים'}{' '}
+                  לתאריך{' '}
+                  <strong className="font-bold">
+                    {new Date(meetingData.holdingsLimit).toLocaleDateString('he-IL')}
+                  </strong>
+                  .
+                </DialogDescription>
+              ) : (
+                <DialogDescription className="text-sm text-gray-400">
+                  יש לבחור לפחות תיק אחד כדי להמשיך
+                </DialogDescription>
+              )}
+            </div>
           )}
 
           <DialogFooter>
@@ -296,12 +429,19 @@ export const ManageMeetingCompanies = () => {
               onClick={() => {
                 setShowAddModal(false)
                 setSelectedAddId('')
+                setSelectedFunds([])
+                setShowFundSelection(false)
+                setAvailableFunds([])
                 setOpenAdd(false)
               }}
             >
               ביטול
             </Button>
-            <Button className="mx-1" onClick={handleAdd} disabled={!selectedAddId || isProcessing}>
+            <Button
+              className="mx-1"
+              onClick={handleAdd}
+              disabled={!showFundSelection || selectedFunds.length === 0 || isProcessing}
+            >
               {isProcessing ? 'מעבד...' : 'אישור'}
             </Button>
           </DialogFooter>

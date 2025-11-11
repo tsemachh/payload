@@ -17,9 +17,15 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     }
 
     const data = req.data as
-      | { meetingId?: string; companyId?: string; stockId?: string; holdingLimit?: string }
+      | {
+          meetingId?: string
+          companyId?: string
+          stockId?: string
+          holdingLimit?: string
+          fundsIds?: string[]
+        }
       | undefined
-    const { meetingId, companyId, stockId, holdingLimit } = data || {}
+    const { meetingId, companyId, stockId, holdingLimit, fundsIds } = data || {}
 
     if (!meetingId || !companyId || !stockId || !holdingLimit) {
       return Response.json(
@@ -31,11 +37,21 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       )
     }
 
-    // Find all funds for this company
+    if (!fundsIds || fundsIds.length === 0) {
+      return Response.json(
+        {
+          success: false,
+          message: 'No fundsIds selected. Please select at least one fundsIds.',
+        },
+        { status: 400 },
+      )
+    }
+
+    // Use the selected portfolios instead of finding all funds
     const fundsForCompany = await req.payload.find({
       collection: 'companies',
       where: {
-        and: [{ type: { equals: 'fund' } }, { parentCompany: { equals: companyId } }], //TODO RACHEL: chang to funds that the cusomer sent!!!!
+        and: [{ type: { equals: 'fund' } }, { id: { in: fundsIds } }],
       },
       limit: 0,
       depth: 0,
@@ -45,7 +61,11 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json(
         {
           success: false,
-          message: 'No funds found for this company. companyId: ' + companyId,
+          message:
+            'No valid portfolios founds. companyId: ' +
+            companyId +
+            ' fundsIds: ' +
+            fundsIds.join(', '),
         },
         { status: 400 },
       )
@@ -55,43 +75,28 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     const holdingLimitISO = holdingLimitDate.toISOString()
 
     // For each fund, find or create holdings
-    const addedFunds = []
+    const addedFunds: Array<{ id: string; name: string }> = []
+    const existingFunds: Array<{ id: string; name: string }> = []
 
     for (const fund of fundsForCompany.docs) {
       const fundId = fund.id
+      const fundName = fund.name
+      let targetDate = holdingLimitDate
+      let holdingDoc: any = null
 
-      // Check if holdings exist for this fund on the record date
-      const { docs: existingHoldings } = await req.payload.find({
+      const { docs: lessThanEqualHolding } = await req.payload.find({
         collection: 'holdings',
         where: {
-          and: [{ fund: { equals: fundId } }, { valueDate: { equals: holdingLimitDate } }],
+          and: [{ fund: { equals: fundId } }, { valueDate: { less_than_equal: holdingLimitISO } }],
         },
+        sort: '-valueDate',
         limit: 1,
         depth: 0,
       })
 
-      let targetDate = holdingLimitDate
-      let holdingDoc = existingHoldings[0]
-
-      // If no holdings exist on record date, find latest holdings
-      if (!holdingDoc) {
-        const { docs: latestHoldings } = await req.payload.find({
-          collection: 'holdings',
-          where: {
-            and: [
-              { fund: { equals: fundId } },
-              { valueDate: { less_than_equal: holdingLimitISO } },
-            ],
-          },
-          sort: '-valueDate',
-          limit: 1,
-          depth: 0,
-        })
-
-        if (latestHoldings.length > 0) {
-          holdingDoc = latestHoldings[0]
-          targetDate = new Date(holdingDoc.valueDate)
-        }
+      if (lessThanEqualHolding.length > 0) {
+        holdingDoc = lessThanEqualHolding[0]
+        targetDate = new Date(holdingDoc.valueDate)
       }
 
       // Check if holding already has the stock
@@ -100,53 +105,74 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       )
 
       if (existingStockHolding) {
-        // Stock already exists, just update the quantity by adding 1
-        // להוציא שגיאה או לא שגיאה אבל לעדכן את הלקוח בפופאפ שההחזקה כבר קיימת
-      } else if (holdingDoc) {
-        await req.payload.update({
-          collection: 'holdings',
-          id: holdingDoc.id,
-          data: {
-            holdings: [
-              ...holdingDoc.holdings,
-              {
-                stock: stockId,
-                quantity: 1,
-              },
-            ] as any,
-          },
-          context: { from: 'process' },
-          req,
-        })
+        // Stock already exists
+        existingFunds.push({ id: fundId, name: fundName })
       } else {
-        // No holdings doc exists, create one
-        const newHoldingDoc = await req.payload.create({
-          collection: 'holdings',
-          data: {
-            fund: fundId,
-            valueDate: targetDate.toISOString(),
-            holdings: [
-              {
-                stock: stockId,
-                quantity: 1,
-              },
-            ] as any,
-          },
-          context: { from: 'process' },
-          req,
-        })
-        holdingDoc = newHoldingDoc
+        if (holdingDoc) {
+          await req.payload.update({
+            collection: 'holdings',
+            id: holdingDoc.id,
+            data: {
+              holdings: [
+                ...holdingDoc.holdings,
+                {
+                  stock: stockId,
+                  quantity: 1,
+                },
+              ] as any,
+            },
+            context: { from: 'process' },
+            req,
+          })
+        } else {
+          // No holdings document exists (e.g., for a new fund) — create one
+          const newHoldingDoc = await req.payload.create({
+            collection: 'holdings',
+            data: {
+              fund: fundId,
+              valueDate: targetDate.toISOString(),
+              holdings: [
+                {
+                  stock: stockId,
+                  quantity: 1,
+                },
+              ] as any,
+            },
+            context: { from: 'process' },
+            req,
+          })
+          holdingDoc = newHoldingDoc
+        }
+        addedFunds.push({ id: fundId, name: fundName })
       }
-
-      addedFunds.push(fundId)
     }
 
-    return Response.json({
-      success: true,
-      message: "9090",//`Company ${company.name || companyId} added successfully`,
-      addedFunds: addedFunds.length,
-      targetDate:"j", //targetDate.toISOString(),
-    })
+    // Build response message based on results
+    if (existingFunds.length === fundsForCompany.docs.length) {
+      // All funds already exist
+      return Response.json({
+        success: false,
+        message: 'כל התיקים שנבחרו כבר קיימים באסיפה',
+        existingFunds: existingFunds.map((f) => f.name),
+        addedFunds: [],
+      })
+    } else if (existingFunds.length > 0) {
+      // Some funds exist, some were added
+      return Response.json({
+        success: true,
+        message: `נוספו ${addedFunds.length} תיקים. ${existingFunds.length} תיקים כבר היו קיימים.`,
+        addedFunds: addedFunds.map((f) => f.name),
+        existingFunds: existingFunds.map((f) => f.name),
+      })
+    } else {
+      // All funds were added successfully
+      return Response.json({
+        success: true,
+        message: `נוספו ${addedFunds.length} תיקים בהצלחה`,
+        addedFunds: addedFunds.map((f) => f.name),
+        existingFunds: [],
+      })
+    }
   } catch (error) {
     req.payload.logger.error(`Error adding company to meeting: ${error}`)
     return Response.json(
