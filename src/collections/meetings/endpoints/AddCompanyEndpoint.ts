@@ -72,7 +72,6 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     }
 
     const holdingLimitDate = new Date(holdingLimit)
-    const holdingLimitISO = holdingLimitDate.toISOString()
 
     // For each fund, find or create holdings
     const addedFunds: Array<{ id: string; name: string }> = []
@@ -87,7 +86,7 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
       const { docs: lessThanEqualHolding } = await req.payload.find({
         collection: 'holdings',
         where: {
-          and: [{ fund: { equals: fundId } }, { valueDate: { less_than_equal: holdingLimitISO } }],
+          and: [{ fund: { equals: fundId } }, { valueDate: { less_than_equal: holdingLimitDate } }],
         },
         sort: '-valueDate',
         limit: 1,
