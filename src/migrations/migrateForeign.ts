@@ -206,7 +206,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'אלארום',
         englishName: 'Alarum',
         taseISIN: '1083856',
-        foreignISIN: 'US78643B5003',
+        foreignISIN: 'IL0010838568',
       },
       {
         hebrewName: 'אלביט מערכות',
@@ -266,13 +266,13 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'ביוליין',
         englishName: 'BioLineRx',
         taseISIN: '1101518',
-        foreignISIN: 'US09071M3043',
+        foreignISIN: 'IL0011015182',
       },
       {
         hebrewName: 'בריינסוויי',
         englishName: 'Brainsway',
         taseISIN: '1100718',
-        foreignISIN: 'US10501L1061',
+        foreignISIN: 'IL0011007189',
       },
       {
         hebrewName: 'גילת',
@@ -302,7 +302,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'טבע',
         englishName: 'Teva Pharmaceutical Industries',
         taseISIN: '629014',
-        foreignISIN: 'US8816242098',
+        foreignISIN: 'IL0006290147',
       },
       {
         hebrewName: "יו.אמ.איץ'",
@@ -314,7 +314,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'כן פייט ביופרמה',
         englishName: 'Can-Fite BioPharma',
         taseISIN: '1094473',
-        foreignISIN: 'US13471N3008',
+        foreignISIN: 'IL0010944739',
       },
       {
         hebrewName: 'לייבפרסון',
@@ -350,7 +350,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'נייס',
         englishName: 'NICE Ltd.',
         taseISIN: '273011',
-        foreignISIN: 'US6536561086',
+        foreignISIN: 'IL0002730112',
       },
       {
         hebrewName: 'סאפיינס',
@@ -380,13 +380,13 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'פורמולה מערכות',
         englishName: 'Formula Systems',
         taseISIN: '256016',
-        foreignISIN: 'US3464141056',
+        foreignISIN: 'IL0002560162',
       },
       {
         hebrewName: 'פורסייט',
         englishName: 'Foresight Autonomous Holdings',
         taseISIN: '199018',
-        foreignISIN: 'US3455232039',
+        foreignISIN: 'IL0001990188',
       },
       {
         hebrewName: 'פלאזה סנטר -ס',
@@ -410,7 +410,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         hebrewName: 'פרפל ביוטק',
         englishName: 'Purple Biotech',
         taseISIN: '765016',
-        foreignISIN: 'US74638P2083',
+        foreignISIN: 'IL0007650166',
       },
       {
         hebrewName: 'קומפיוגן',
