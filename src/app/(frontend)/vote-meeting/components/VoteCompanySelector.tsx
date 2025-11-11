@@ -188,15 +188,12 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 {company.originalStockIds?.length ? (
                   <div className="flex flex-col">
-                    <div className="flex w-[160px] justify-between">
+                    <div className="flex justify-between">
                       <div>נייר מקורי</div>
                       <div>ע׳ נקוב</div>
                     </div>
                     {company.originalStockIds.map((stock: any, index: number) => (
-                      <div
-                        className="flex w-[160px] justify-between"
-                        key={`${index}-${stock.stockId}`}
-                      >
+                      <div className="flex justify-between gap-4" key={`${index}-${stock.stockId}`}>
                         <div>{stock.stockId}</div>
                         <div>{stock.quantity.toLocaleString()}</div>
                       </div>

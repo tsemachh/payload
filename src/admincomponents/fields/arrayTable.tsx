@@ -34,7 +34,7 @@ const ArrayTableField: React.FC<ArrayTabelProps> = ({ path }) => {
             '-apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         }}
       >
-        נייר ערך מקורית חו״ל
+        נייר ערך מקורי
       </h3>
 
       <div className="overflow-x-auto">

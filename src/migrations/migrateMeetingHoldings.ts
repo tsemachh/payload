@@ -166,6 +166,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
+                  // fromRelatedStock: holding.originalDataArray.some(
+                  //   (o) => o.stockId != meeting.stockId,
+                  // ),
                   // Reset ownedQuantity when verifiedHoldings is true or null
                   ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
                   verifiedHoldings,
@@ -214,7 +217,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Wait for all promises to complete
     await promisePool.waitForAll()
-
 
     console.log('\nMigration Summary:')
     console.log(`Total meetings processed: ${meetings.docs.length}`)

@@ -92,8 +92,8 @@ async function processMeeting(
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
 
     const fundsWithHolding = flattenedHoldings.map((h) => {
-      const rawOriginal = h.holdings[0]?.originalForeignData
-      const originalForeignDataArray = rawOriginal
+      const rawOriginal = h.holdings[0]?.originalData
+      const originalDataArray = rawOriginal
         ? Array.isArray(rawOriginal)
           ? rawOriginal
           : [rawOriginal]
@@ -104,7 +104,8 @@ async function processMeeting(
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
-        original: originalForeignDataArray.filter(Boolean).map((item: any) => ({
+        fromRelatedStock: originalDataArray.some((o) => o.stockId != meeting.stockId),
+        original: originalDataArray.filter(Boolean).map((item: any) => ({
           stockId: item.stockId,
           accountNum: item.accountNum,
           quantity: item.quantity,

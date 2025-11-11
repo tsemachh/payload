@@ -487,6 +487,15 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'stockId',
+                  label: 'מספר נייר',
+                  type: 'text',
+                  virtual: 'stock.stockId',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'isFinancialStock',
                   label: 'תאגיד פיננסי',
                   type: 'checkbox',
@@ -1084,8 +1093,15 @@ export const Meetings: CollectionConfig = {
                       label: 'אימות החזקות',
                     },
                     {
+                      name: 'fromRelatedStock',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      label: 'החזקה בנייר עוקב',
+                    },
+
+                    {
                       name: 'original',
-                      label: 'מניה מקורית חול',
+                      label: 'מניה מקורית',
                       type: 'array',
                       admin: {
                         initCollapsed: true,

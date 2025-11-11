@@ -6,7 +6,7 @@ export type AggregatedRecord = {
   company: string
   stock: string
   quantity: number
-  originalForeignData?: NonNullable<HoldingsPerDay[number]['originalForeignData']>
+  originalData?: NonNullable<HoldingsPerDay[number]['originalData']>
 }
 
 export async function getPreviousHoldings(
@@ -264,40 +264,30 @@ export const createHoldings = async (
 
       const existingRecord = aggregatedRecords.get(key)
 
-      // Check if stock is foreign based on its origin property
-      const isForeignStock = stockInfo?.origin === 'Foreign'
-
       if (existingRecord) {
-        if (isForeignStock) {
-          existingRecord.originalForeignData = existingRecord.originalForeignData || []
-          existingRecord.originalForeignData.push({
-            stockId: record.stockId as string,
-            accountNum: parseInt(record.accountId as string),
-            quantity: record.quantity ?? 0,
-          })
+        if (!existingRecord.originalData) {
+          existingRecord.originalData = []
         }
+        existingRecord.originalData.push({
+          stockId: record.stockId as string,
+          accountNum: parseInt(record.accountId as string),
+          quantity: record.quantity ?? 0,
+        })
+
         existingRecord.quantity += record.quantity ?? 0
       } else {
-        if (isForeignStock) {
-          aggregatedRecords.set(key, {
-            company,
-            stock,
-            quantity: record.quantity ?? 0,
-            originalForeignData: [
-              {
-                stockId: record.stockId as string,
-                accountNum: parseInt(record.accountId as string),
-                quantity: record.quantity ?? 0,
-              },
-            ],
-          })
-        } else {
-          aggregatedRecords.set(key, {
-            company,
-            stock,
-            quantity: record.quantity ?? 0,
-          })
-        }
+        aggregatedRecords.set(key, {
+          company,
+          stock,
+          quantity: record.quantity ?? 0,
+          originalData: [
+            {
+              stockId: record.stockId as string,
+              accountNum: parseInt(record.accountId as string),
+              quantity: record.quantity ?? 0,
+            },
+          ],
+        })
       }
     }
   }
@@ -312,11 +302,11 @@ export const createHoldings = async (
 
     const holdingsArray = companyRecordsMap.get(record.company)!
 
-    if (record.originalForeignData) {
+    if (record.originalData) {
       holdingsArray.push({
         stock: record.stock,
         quantity: record.quantity,
-        originalForeignData: record.originalForeignData,
+        originalData: record.originalData,
       })
     } else {
       holdingsArray.push({
@@ -342,7 +332,6 @@ export const createHoldings = async (
     const companyAccountIds = new Set<string>()
     companyRecords.forEach((record) => {
       if (record.accountId) {
-        companyAccountIds.add(record.accountId.toString())
       }
     })
 

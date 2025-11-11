@@ -75,7 +75,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Starting holding days migration process...')
     pool = await createMSSqlPool()
     const holdingsDaysRetro = getHoldingsRetroDays()
-    console.log(`Importing holdings from the last ${holdingsDaysRetro} days for all active companies`)
+    console.log(
+      `Importing holdings from the last ${holdingsDaysRetro} days for all active companies`,
+    )
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
@@ -98,7 +100,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
     console.log('Silent Stock Set size is:' + silentStockSet.size)
 
-    // Prefetch foreign stocks (by origin === 'Foreign') to know when to attach originalForeignData
+    // Prefetch foreign stocks (by origin === 'Foreign') to know when to attach originalData
     const foreignStocks = await payload.find({
       collection: 'stocks',
       select: { name: true },
@@ -228,7 +230,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               feedStockNum: holdingData.feedStockNum,
             }
             if (isForeign) {
-              item.originalForeignData = holdingData.originals
+              item.originalData = holdingData.originals
             }
             rawHoldingsArray.push(item)
           }
@@ -239,11 +241,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const existing = consolidatedByStock.get(item.stock)
             if (existing) {
               existing.quantity += item.quantity
-              if (Array.isArray(item.originalForeignData)) {
-                existing.originalForeignData = [
-                  ...(existing.originalForeignData || []),
-                  ...item.originalForeignData,
-                ]
+              if (Array.isArray(item.originalData)) {
+                existing.originalData = [...(existing.originalData || []), ...item.originalData]
               }
             } else {
               consolidatedByStock.set(item.stock, { ...item })

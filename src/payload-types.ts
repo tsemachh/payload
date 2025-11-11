@@ -138,6 +138,7 @@ export type FundWithHolding =
       quantity?: number | null;
       ownedQuantity?: number | null;
       verifiedHoldings?: boolean | null;
+      fromRelatedStock?: boolean | null;
       original?:
         | {
             stockId?: string | null;
@@ -158,7 +159,7 @@ export type FundWithHolding =
 export type HoldingsPerDay = {
   stock: string | Stock;
   quantity: number;
-  originalForeignData?:
+  originalData?:
     | {
         stockId?: string | null;
         accountNum?: number | null;
@@ -677,6 +678,7 @@ export interface Meeting {
     totalDocs?: number;
   };
   stock: string | Stock;
+  stockId?: string | null;
   isFinancialStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   stockType?:
@@ -1448,6 +1450,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   hasVoteRecommendation?: T;
   votes?: T;
   stock?: T;
+  stockId?: T;
   isFinancialStock?: T;
   stockOrigin?: T;
   stockType?: T;
@@ -1534,6 +1537,7 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   quantity?: T;
   ownedQuantity?: T;
   verifiedHoldings?: T;
+  fromRelatedStock?: T;
   original?:
     | T
     | {
@@ -1604,7 +1608,7 @@ export interface HoldingsSelect<T extends boolean = true> {
 export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
   quantity?: T;
-  originalForeignData?:
+  originalData?:
     | T
     | {
         stockId?: T;
