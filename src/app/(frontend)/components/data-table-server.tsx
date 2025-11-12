@@ -1190,7 +1190,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                       {company.funds.map((fund: FundType) => (
                                         <TableRow
                                           key={`fund-${uuidv4()}`}
-                                          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+                                          className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
                                         >
                                           <TableCell className="py-2 px-6"></TableCell>
 
