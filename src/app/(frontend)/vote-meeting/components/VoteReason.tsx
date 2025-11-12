@@ -47,7 +47,7 @@ export default function VoteReason({
         }`}
         onClick={toggleInput}
       >
-        נימוק המלצה
+        נימוק הצבעה
       </span>
       {voteReason && !isInputOpen && (
         <div className="mt-1 p-2 bg-muted/30 rounded-md text-sm text-foreground w-[200px] whitespace-pre-wrap break-words">

@@ -68,7 +68,7 @@ export const useVotingData = () => {
             const votesQuery = stringify(
               {
                 where: {
-                  meeting: { equals: meetingId },
+                  and: [{ meeting: { equals: meetingId } }, { _status: { equals: 'published' } }],
                 },
                 depth: 0,
                 limit: 0,
