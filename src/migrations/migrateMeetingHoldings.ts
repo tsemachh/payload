@@ -30,6 +30,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       select: {
         meetingId: true,
         stock: true,
+        stockId: true,
       },
       limit: 0,
       depth: 1,
@@ -166,9 +167,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
-                  // fromRelatedStock: holding.originalDataArray.some(
-                  //   (o) => o.stockId != meeting.stockId,
-                  // ),
+                  fromRelatedStock: holding.originalDataArray.some(
+                    (o: any) => o.stockId != meeting.stockId,
+                  ),
                   // Reset ownedQuantity when verifiedHoldings is true or null
                   ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
                   verifiedHoldings,
