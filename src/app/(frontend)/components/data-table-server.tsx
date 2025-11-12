@@ -1114,7 +1114,7 @@ export function DataTableServer<T extends Record<string, any>>({
                               <React.Fragment key={row.meetingId + uuidv4()}>
                                 <TableRow
                                   key={`company-${uuidv4()}`}
-                                  className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                                  className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                                 >
                                   <TableCell className="py-2 px-3"></TableCell>
 
@@ -1256,7 +1256,7 @@ export function DataTableServer<T extends Record<string, any>>({
                         {row.agendas?.map((agenda: any, index: number) => (
                           <TableRow
                             key={`agenda-${row.meetingId}-${index}`}
-                            className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                            className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                           >
                             <TableCell className="py-2 px-3"></TableCell>
                             {visibleColumns.slice(1).map((column, columnIndex) => (
