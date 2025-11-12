@@ -65,16 +65,13 @@ export const useVotingData = () => {
         try {
           const meetingId = data?.id
           if (meetingId) {
-            const votesQuery = stringify(
-              {
-                where: {
-                  and: [{ meeting: { equals: meetingId } }, { _status: { equals: 'published' } }],
-                },
-                depth: 0,
-                limit: 0,
+            const votesQuery = stringify({
+              where: {
+                meeting: { equals: meetingId },
               },
-              { addQueryPrefix: true },
-            )
+              depth: 0,
+              limit: 0,
+            })
             const votesResponse = await fetch(`/api/votes${votesQuery}`)
             if (votesResponse.ok) {
               const votesResponseData = await votesResponse.json()
