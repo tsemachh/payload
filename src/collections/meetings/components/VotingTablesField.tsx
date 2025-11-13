@@ -92,7 +92,6 @@ export const VotingTablesField = () => {
 
   return (
     <div className="useTw space-y-6 p-6 text-base" dir="rtl">
-      <ManageMeetingCompanies />
       {/* Companies that haven't voted */}
       {processedNotVotedData.length ? (
         <Card style={{ width: '40%' }}>
@@ -440,6 +439,7 @@ export const VotingTablesField = () => {
           </Table>
         </CardContent>
       </Card>
+      <ManageMeetingCompanies />
     </div>
   )
 }

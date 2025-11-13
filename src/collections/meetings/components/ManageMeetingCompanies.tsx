@@ -42,6 +42,12 @@ export const ManageMeetingCompanies = () => {
   const [selectedFunds, setSelectedFunds] = useState<string[]>([])
   const [showFundSelection, setShowFundSelection] = useState(false)
 
+  // Stock selection state (for foreign stocks)
+  const [availableStocks, setAvailableStocks] = useState<any[]>([])
+  const [selectedStockId, setSelectedStockId] = useState<string>('')
+  const [showStockSelection, setShowStockSelection] = useState(false)
+  const [isForeignStock, setIsForeignStock] = useState(false)
+
   // Popover state
   const [openAdd, setOpenAdd] = useState(false)
   const [openRemove, setOpenRemove] = useState(false)
@@ -70,10 +76,53 @@ export const ManageMeetingCompanies = () => {
       const allData = await allRes.json()
 
       const inMeetingIds = companiesInMeeting.map((c: any) => (typeof c === 'string' ? c : c.id))
-      const available = allData.docs.filter((c: any) => !inMeetingIds.includes(c.id))
+      const available = allData.docs.filter((c: unknown) => !inMeetingIds.includes(c.id))
       setAvailableCompanies(available)
     } catch (err) {
       console.error('Error fetching meeting data:', err)
+    }
+  }
+
+  // Fetch stock details and check if foreign
+  const fetchStockDetails = async () => {
+    try {
+      const stockId =
+        typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
+      const res = await fetch(`/api/stocks/${stockId}?depth=1`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const stockData = await res.json()
+
+      // Check if stock is foreign (origin is not TASE)
+      const isForeign = stockData.origin !== 'TASE'
+      setIsForeignStock(isForeign)
+
+      if (isForeign) {
+        // Build available stocks list: main stock + related stocks
+        const stocks = [
+          { id: stockData.id, name: `${stockData.name} (ראשי)`, stockId: stockData.stockId },
+        ]
+
+        if (stockData.relations?.docs && stockData.relations.docs.length > 0) {
+          stockData.relations.docs.forEach((relatedStock: unknown) => {
+            stocks.push({
+              id: relatedStock.id,
+              name: `${relatedStock.name} (עוקב)`,
+              stockId: relatedStock.stockId,
+            })
+          })
+        }
+
+        setAvailableStocks(stocks)
+        setSelectedStockId(stockData.id) // Default to main stock
+      }
+
+      return isForeign
+    } catch (err) {
+      console.error('Error fetching stock details:', err)
+      toast.error('שגיאה בטעינת פרטי נייר ערך')
+      return false
     }
   }
 
@@ -96,11 +145,37 @@ export const ManageMeetingCompanies = () => {
     }
   }
 
+  // Check stock and show selection if needed
+  const handleAddClick = async () => {
+    const isForeign = await fetchStockDetails()
+    if (isForeign) {
+      setShowStockSelection(true)
+    }
+    setShowAddModal(true)
+  }
+
   // Handle company selection - show fund selection
   const handleCompanySelect = (companyId: string) => {
     setSelectedAddId(companyId)
     setOpenAdd(false)
-    fetchFundsForCompany(companyId)
+
+    // If foreign stock, move to fund selection directly
+    if (isForeignStock) {
+      fetchFundsForCompany(companyId)
+    } else {
+      // For non-foreign stocks, fetch funds directly
+      fetchFundsForCompany(companyId)
+    }
+  }
+
+  // Move from stock selection to company selection
+  const handleStockSelected = () => {
+    if (!selectedStockId) {
+      toast.error('יש לבחור נייר ערך')
+      return
+    }
+    setShowStockSelection(false)
+    // Now show company selection
   }
 
   // Add company with selected funds
@@ -111,6 +186,9 @@ export const ManageMeetingCompanies = () => {
     }
     setIsProcessing(true)
     try {
+      // Use selected stock if foreign, otherwise use meeting stock
+      const stockToUse = isForeignStock && selectedStockId ? selectedStockId : meetingData.stock
+
       const res = await fetch('/api/meetings/add-company', {
         method: 'POST',
         credentials: 'include',
@@ -118,7 +196,7 @@ export const ManageMeetingCompanies = () => {
         body: JSON.stringify({
           meetingId: id,
           companyId: selectedAddId,
-          stockId: meetingData.stock,
+          stockId: stockToUse,
           holdingLimit: meetingData.holdingsLimit,
           fundsIds: selectedFunds,
         }),
@@ -139,6 +217,10 @@ export const ManageMeetingCompanies = () => {
         setSelectedFunds([])
         setShowFundSelection(false)
         setAvailableFunds([])
+        setSelectedStockId('')
+        setShowStockSelection(false)
+        setAvailableStocks([])
+        setIsForeignStock(false)
         // Refresh the page to update Payload's document state
         const currentPath = window.location.pathname
         router.push(currentPath)
@@ -222,6 +304,12 @@ export const ManageMeetingCompanies = () => {
     return typeof company === 'string' ? company : company?.name || selectedRemoveId
   }
 
+  // Helper: get selected stock name
+  const getSelectedStockName = () => {
+    const stock = availableStocks.find((s) => s.id === selectedStockId)
+    return stock?.name || ''
+  }
+
   if (!id) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -234,7 +322,7 @@ export const ManageMeetingCompanies = () => {
     <div className="useTw space-y-6 p-6 text-base" dir="rtl">
       {/* Buttons */}
       <div className="flex gap-2 mb-4">
-        <Button onClick={() => setShowAddModal(true)} variant="default" className="gap-2">
+        <Button onClick={handleAddClick} variant="default" className="gap-2">
           <Plus className="h-4 w-4" /> הוסף חברה
         </Button>
         <Button onClick={() => setShowRemoveModal(true)} variant="destructive" className="gap-2">
@@ -252,6 +340,10 @@ export const ManageMeetingCompanies = () => {
             setSelectedFunds([])
             setShowFundSelection(false)
             setAvailableFunds([])
+            setSelectedStockId('')
+            setShowStockSelection(false)
+            setAvailableStocks([])
+            setIsForeignStock(false)
             setOpenAdd(false)
           }
         }}
@@ -260,13 +352,44 @@ export const ManageMeetingCompanies = () => {
           <DialogHeader style={{ textAlign: 'right' }}>
             <DialogTitle>הוסף חברה לאסיפה</DialogTitle>
             <DialogDescription>
-              {!showFundSelection
-                ? 'בחר חברה להוסיף לאסיפה.'
-                : 'בחר את התיקים שבהם תתווסף החזקה של 1 יחידה.'}
+              {showStockSelection && !selectedAddId
+                ? 'בחר את נייר הערך שעבורו תתווסף ההחזקה'
+                : !selectedAddId
+                  ? 'בחירת חברה להוספה'
+                  : 'בחר את התיקים שבהם תתווסף החזקה של 1 יחידה.'}
             </DialogDescription>
           </DialogHeader>
 
-          {!showFundSelection ? (
+          {showStockSelection && !selectedAddId ? (
+            <div className="py-4 space-y-4">
+              <div className="text-sm text-gray-600 mb-2">
+                בחר את נייר הערך שעבורו תתווסף ההחזקה:
+              </div>
+
+              <div className="border rounded-md">
+                {availableStocks.map((stock) => (
+                  <label
+                    key={stock.id}
+                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                  >
+                    <input
+                      type="radio"
+                      name="stock-selection"
+                      checked={selectedStockId === stock.id}
+                      onChange={() => setSelectedStockId(stock.id)}
+                      className="h-4 w-4 cursor-pointer"
+                    />
+                    <span className="flex-1">{stock.name}</span>
+                    <span className="text-sm text-gray-500">{stock.stockId}</span>
+                  </label>
+                ))}
+              </div>
+
+              <Button onClick={handleStockSelected} className="w-full">
+                המשך לבחירת חברה
+              </Button>
+            </div>
+          ) : !selectedAddId ? (
             <div className="py-4">
               <Popover open={openAdd} onOpenChange={setOpenAdd} modal={true}>
                 <PopoverTrigger asChild>
@@ -330,6 +453,11 @@ export const ManageMeetingCompanies = () => {
             <div className="py-4 space-y-4">
               <div className="flex justify-between items-center">
                 <div className="text-sm font-medium">
+                  {isForeignStock && (
+                    <div className="mb-2 text-xs text-gray-500">
+                      נייר ערך: <strong>{getSelectedStockName()}</strong>
+                    </div>
+                  )}
                   חברה נבחרה: <strong>{getAddName()}</strong>
                 </div>
                 <Button
@@ -404,7 +532,8 @@ export const ManageMeetingCompanies = () => {
               {selectedFunds.length > 0 ? (
                 <DialogDescription className="text-sm">
                   לחיצה על אישור תוסיף לחברה <strong className="font-bold">{getAddName()}</strong>{' '}
-                  החזקה עם ערך של 1 עבור{' '}
+                  החזקה עם ערך של 1{isForeignStock && ` עבור נייר ערך ${getSelectedStockName()}`}{' '}
+                  עבור{' '}
                   {selectedFunds.length === 1
                     ? 'תיק' + ' ' + selectedFunds.length
                     : selectedFunds.length + ' ' + 'תיקים'}{' '}
@@ -432,6 +561,10 @@ export const ManageMeetingCompanies = () => {
                 setSelectedFunds([])
                 setShowFundSelection(false)
                 setAvailableFunds([])
+                setSelectedStockId('')
+                setShowStockSelection(false)
+                setAvailableStocks([])
+                setIsForeignStock(false)
                 setOpenAdd(false)
               }}
             >
@@ -453,9 +586,7 @@ export const ManageMeetingCompanies = () => {
         <DialogContent className="useTw" dir="rtl">
           <DialogHeader style={{ textAlign: 'right' }}>
             <DialogTitle>הסר חברה מהאסיפה</DialogTitle>
-            <DialogDescription>
-              בחר חברה להסיר מהאסיפה. כל ההצבעות של החברה יימחקו.
-            </DialogDescription>
+            <DialogDescription>בחירת חברה להסרה</DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
