@@ -510,6 +510,25 @@ export async function generateParticipationsPDF(
 
       // Add vote reason rows
       if (voteReasons.length > 0) {
+        // Add title row
+        const titleText = voteReasons.length === 1 ? 'הערת הצבעה' : 'הערות הצבעה'
+        body.push([
+          {
+            content: prepareText(titleText),
+            colSpan: showAdvisorColumn ? 19 : 18,
+            styles: {
+              font: 'Ariel',
+              fontStyle: 'bold',
+              fontSize: FONT_SIZE_DATA + 1,
+              cellPadding: PADDING,
+              textColor: [51, 51, 51],
+              halign: 'right',
+              minCellHeight: VOTE_REASON_ROW_HEIGHT,
+              fillColor: [255, 255, 255],
+            },
+          },
+        ])
+
         voteReasons.forEach(({ index, reason }) => {
           const isEnglish = /^[A-Za-z]/.test(reason?.trim?.() || '')
           const reasonText = isEnglish

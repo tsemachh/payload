@@ -251,6 +251,33 @@ export async function generateParticipationsExcel(
         )
         // Add vote reasons as merged rows with white background
         if (voteReasons.length > 0) {
+          // Add title row
+          const titleText = voteReasons.length === 1 ? 'הערת הצבעה' : 'הערות הצבעה'
+          const titleRow = worksheet.addRow([titleText, ...Array(headers.length - 1).fill('')])
+          worksheet.mergeCells(titleRow.number, 1, titleRow.number, headers.length)
+          titleRow.eachCell((cell, colNumber) => {
+            if (colNumber <= headers.length) {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFFFFF' },
+              }
+              cell.font = { name: 'Arial', size: 11, bold: true }
+              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+            }
+          })
+          const titleCellStyles: { col: number; font: any }[] = []
+          titleRow.eachCell((cell, colNumber) => {
+            if (colNumber <= headers.length) {
+              titleCellStyles.push({ col: colNumber, font: cell.font })
+            }
+          })
+          rowFormats.push({
+            rowIndex: titleRow.number,
+            fillColor: 'FFFFFFFF',
+            cellStyles: titleCellStyles,
+          })
+
           voteReasons.forEach(({ index, reason }) => {
             const isEnglishReason = /^[A-Za-z]/.test(reason?.trim?.() || '')
             const reasonText = isEnglishReason ? `${reason} .${index}` : `${index}. ${reason}`
