@@ -18,6 +18,8 @@ export async function recalculateMeetingVoteCounts(
         reportVotesCount: number
         votesStatus: VotesStatus
         votesReportStatus: VotesReportStatus
+        companiesCount: number
+        votesExceedCompanies: boolean
       }
     }
   | undefined
@@ -27,10 +29,13 @@ export async function recalculateMeetingVoteCounts(
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       select: {
+        changeDetails: true,
         votes: true,
         companies: true,
         votesCount: true,
         reportVotesCount: true,
+        votesStatus: true,
+        votesReportStatus: true,
       },
       id: meetingId,
       depth: 1,
@@ -53,24 +58,30 @@ export async function recalculateMeetingVoteCounts(
       newReportVotesCount,
       companiesCount,
     )
-    if (newReportVotesCount != meeting.reportVotesCount || newVotesCount != meeting.votesCount) {
+    const votesExceedCompanies = newVotesCount > companiesCount
+    const data = {
+      votesCount: newVotesCount,
+      reportVotesCount: newReportVotesCount,
+      votesStatus,
+      votesReportStatus,
+      companiesCount,
+      votesExceedCompanies,
+    }
+    // Trigger update if counts changed OR computed statuses differ from stored ones
+    const countsChanged =
+      newReportVotesCount != meeting.reportVotesCount || newVotesCount != meeting.votesCount
+    const statusesChanged =
+      meeting.votesStatus !== votesStatus || meeting.votesReportStatus !== votesReportStatus
+
+    if (countsChanged || statusesChanged) {
       // Get current meeting to access its changeDetails
-      const currentMeeting = await req.payload.findByID({
-        collection: 'meetings',
-        id: meetingId,
-        select: { changeDetails: true, votesCount: true, reportVotesCount: true },
-        depth: 0,
-      })
-      const data = {
-        votesCount: newVotesCount,
-        reportVotesCount: newReportVotesCount,
-        votesStatus,
-        votesReportStatus,
-      }
+      const currentMeeting = meeting
 
       if (
         newVotesCount != currentMeeting.votesCount ||
-        newReportVotesCount != currentMeeting.reportVotesCount
+        newReportVotesCount != currentMeeting.reportVotesCount ||
+        currentMeeting.votesStatus !== votesStatus ||
+        currentMeeting.votesReportStatus !== votesReportStatus
       ) {
         // Prepare change details
         const changeDate = new Date().toISOString()
@@ -108,6 +119,13 @@ export async function recalculateMeetingVoteCounts(
           data,
         }
       }
+    }
+
+    // If counts are already up-to-date, still return a result with computed data
+    return {
+      success: true,
+      message: `Counts up-to-date for meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
+      data,
     }
   } catch (error: any) {
     console.error(`Error recalculating vote counts for meeting ${meetingId}:`, error)
