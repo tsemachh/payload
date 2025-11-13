@@ -1,5 +1,8 @@
 import { type PayloadRequest, type TaskHandler } from 'payload'
-import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
+import {
+  getWorkingDateBefore,
+  isWorkingDay,
+} from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from './utils'
 import { Meeting, User } from '@/payload-types'
 import { sendMailFromRequest } from '@/utils/sendMail'
@@ -49,14 +52,13 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
   logger = req.payload.logger
   const now = new Date()
 
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
+  const lastWorkingDate = getWorkingDateBefore(now, 1, 0)
 
-  const yesterdayStart = new Date(yesterday)
-  yesterdayStart.setHours(0, 0, 0, 0)
+  const lastWorkingDateStart = new Date(lastWorkingDate)
+  lastWorkingDateStart.setHours(0, 0, 0, 0)
 
-  const yesterdayEnd = new Date(yesterday)
-  yesterdayEnd.setHours(23, 59, 59, 999)
+  const lastWorkingDateEnd = new Date(lastWorkingDate)
+  lastWorkingDateEnd.setHours(23, 59, 59, 999)
   const startTime = Date.now()
   const sinceISO = since.toISOString()
 
@@ -84,13 +86,13 @@ export const getNewMeetings = async (req: PayloadRequest, since: Date): Promise<
       },
       where: {
         updatedAt: {
-          greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          greater_than_equal: lastWorkingDateStart.toISOString(),
+          less_than_equal: lastWorkingDateEnd.toISOString(),
         },
         _status: { equals: 'published' },
         publishDate: {
-          greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          greater_than_equal: lastWorkingDateStart.toISOString(),
+          less_than_equal: lastWorkingDateEnd.toISOString(),
         },
       },
       limit: 0, // Get all results
