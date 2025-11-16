@@ -1498,7 +1498,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                         handleFilter(String(column.key), newFilters)
                                       } else {
                                         const newFilters = checked
-                                           ? [...currentSelectedFilters, value]
+                                          ? [...currentSelectedFilters, value]
                                           : currentSelectedFilters.filter(
                                               (v: string) => v !== value,
                                             )
@@ -1741,7 +1741,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                         }}
                                                       >
                                                         {`${fund.holdingsCompanyName} `}
-                                                        {fund.passiveFund && <b>אין חובת הצבעה </b>}
+                                                        {fund.passiveFund && <b>קרן מחקה </b>}
                                                       </span>
                                                     </div>
                                                   )}
