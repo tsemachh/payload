@@ -119,6 +119,7 @@ export async function seedStockMigrationMapping() {
     const HEB_NON_TRADABLE = 'לא סחיר'
 
     let createdCount = 0
+    const createdIds = new Set<number>()
 
     for (const cols of rows) {
       const stockIdStr = cols[stockIdIdx]?.trim()
@@ -132,6 +133,7 @@ export async function seedStockMigrationMapping() {
           data: { stockId, type: 'Private' },
         })
         createdCount++
+        createdIds.add(stockId)
         continue
       }
 
@@ -141,6 +143,7 @@ export async function seedStockMigrationMapping() {
           data: { stockId, type: 'NotActive' },
         })
         createdCount++
+        createdIds.add(stockId)
         continue
       }
 
@@ -150,6 +153,7 @@ export async function seedStockMigrationMapping() {
           data: { stockId, type: 'NonTradable' },
         })
         createdCount++
+        createdIds.add(stockId)
         continue
       }
 
@@ -164,6 +168,24 @@ export async function seedStockMigrationMapping() {
         },
       })
       createdCount++
+      createdIds.add(stockId)
+    }
+
+    // Add additional hard-coded values requested (only if not already created from CSV)
+    const extraMappings: Array<{ stockId: number; type: 'Foreign'; isin: string }> = [
+      { stockId: 1082650, type: 'Foreign', isin: 'IL0010826506' },
+      { stockId: 1084003, type: 'Foreign', isin: 'IL0012007329' },
+    ]
+
+    for (const extra of extraMappings) {
+      if (!createdIds.has(extra.stockId)) {
+        await payload.create({
+          collection: 'stock-migration-mapping',
+          data: extra,
+        })
+        createdCount++
+        createdIds.add(extra.stockId)
+      }
     }
 
     console.log(`Successfully seeded stock-migration-mapping collection from CSV. Inserted ${createdCount} docs.`)
