@@ -150,6 +150,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     }
 
+    // 4. Migrate Dual-Listed Stocks
+    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
+    await migrateDual({ payload, req })
+    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
+
+
     console.log('Foreign stocks migration completed successfully')
   } catch (error) {
     console.error('Error during foreign stocks migration:', error)
@@ -456,6 +462,12 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
     // Process each dual-listed stock
     for (const dualStock of dualStocksMapping) {
       try {
+        console.log('[migrateDual] Processing', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          taseISIN: dualStock.taseISIN,
+          foreignISIN: dualStock.foreignISIN,
+        })
         // Find the TASE stock
         let taseStock = null
 
@@ -463,11 +475,13 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         if (dualStock.taseISIN) {
           // Remove 'IL' and leading zeros to get the stockId
           const stockId = dualStock.taseISIN
+          console.log('[migrateDual] Looking up TASE by stockId', stockId)
           taseStock = await getStockByStockId(payload, stockId, 1)
         }
 
         // If not found by ISIN or ISIN doesn't start with IL, find by name
         if (!taseStock) {
+          console.log('[migrateDual] TASE not found by stockId, trying by name', dualStock.hebrewName)
           const stocksByName = await payload.find({
             collection: 'stocks',
             where: {
@@ -484,10 +498,20 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
           if (stocksByName.docs.length > 0) {
             taseStock = stocksByName.docs[0]
+            console.log('[migrateDual] Found TASE by name', {
+              id: (taseStock as any).id,
+              name: taseStock.name,
+              symbol: taseStock.symbol,
+              type: taseStock.type,
+            })
           }
         }
 
         if (!taseStock) {
+          console.warn('[migrateDual] Could not find TASE stock', {
+            hebrewName: dualStock.hebrewName,
+            taseISIN: dualStock.taseISIN,
+          })
           await logMigrationFault({
             payload,
             type: 'stock',
@@ -498,10 +522,17 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         }
 
         // Create the Foreign Stock with the Foreign Exchange ISIN
+        console.log('[migrateDual] Looking up foreign stock', dualStock.foreignISIN)
         let foreignStock = await getStockByStockId(payload, dualStock.foreignISIN)
 
         if (!foreignStock) {
           // Create a new Foreign Stock
+          console.log('[migrateDual] Foreign stock not found. Creating…', {
+            stockID: dualStock.foreignISIN,
+            name: dualStock.englishName,
+            symbol: taseStock.symbol,
+            type: taseStock.type,
+          })
           const foreignStockId = (await upsertStockFromImport(
             null,
             {
@@ -511,6 +542,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
               type: taseStock.type as StockType,
               longName: dualStock.englishName,
               isDual: true,
+              mainStockForDualStock:taseStock.id,
             } as ImportStock,
             req,
             true, // tradable
@@ -520,12 +552,16 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           )) as string
 
           if (foreignStockId) {
+            // Fetch created foreign stock
+            console.log('[migrateDual] Created foreign stock', foreignStockId)
             foreignStock = await payload.findByID({
               collection: 'stocks',
               id: foreignStockId,
             })
           }
         } else {
+          console.log('[migrateDual] foreign stock exists we just need to update mainStockForDualStock', dualStock.foreignISIN)
+
           await payload.update({
             collection: 'stocks',
             id: foreignStock.id,
@@ -541,6 +577,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         }
 
         if (!foreignStock) {
+          console.error('[migrateDual] Foreign stock still missing after create/update', dualStock.foreignISIN)
           await logMigrationFault({
             payload,
             type: 'stock',
@@ -551,6 +588,10 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         }
 
         // Mark the TASE stock as having a dual listing and point to the Foreign Stock
+        console.log('[migrateDual] Updating TASE stock dual linkage', {
+          taseId: (taseStock as any).id,
+          foreignId: (foreignStock as any).id,
+        })
         await payload.update({
           collection: 'stocks',
           id: taseStock.id,
@@ -566,6 +607,10 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
         // Process related stocks with English names
         if (taseStock.relations && taseStock.relations.docs) {
+          console.log('[migrateDual] Processing related stocks for TASE', {
+            taseId: (taseStock as any).id,
+            relatedCount: taseStock.relations.docs.length,
+          })
           for (const relatedStock of taseStock.relations.docs) {
             // Check if the related stock's name is in English
             // This is a simple check - if the name matches the pattern of English characters
@@ -573,6 +618,12 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             if (stockName && /^[A-Za-z0-9\s\-]+$/.test(stockName)) {
               const relatedStockId = getIdOfRelationField(relatedStock)
               // Update the related stock to point to the Foreign Stock
+              if (relatedStockId)
+                console.log('[migrateDual] Updating related English-name stock linkage', {
+                  relatedStockId,
+                  stockName,
+                  foreignId: (foreignStock as any).id,
+                })
               if (relatedStockId)
                 await payload.update({
                   collection: 'stocks',
@@ -589,10 +640,18 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           }
         }
 
-        console.log(
-          `Successfully processed dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
-        )
+        console.log('[migrateDual] Done', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          taseId: (taseStock as any).id,
+          foreignId: (foreignStock as any).id,
+        })
       } catch (error) {
+        console.error('[migrateDual] Error while processing item', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          error,
+        })
         await logMigrationFault({
           payload,
           type: 'stock',

@@ -69,12 +69,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Foreign Stocks Migration ===')
     await migrateForeign({ payload, req })
     console.log('=== Foreign Stocks Migration Completed ===\n')
-
-    // 4. Migrate Dual-Listed Stocks
-    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
-    await migrateDual({ payload, req })
-    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
-
     // 2. Migrate Meetings
     console.log('\n=== Starting Meetings Migration ===')
     await migrateFullMeetings({ payload, req })
