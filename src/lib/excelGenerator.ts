@@ -138,13 +138,20 @@ export async function generateParticipationsExcel(
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
         const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
         const fillColor = 'FFD2E4FF'
+
+        // First pass: set fill color for ALL cells in the row
+        for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
+          const cell = excelRow.getCell(colNumber)
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: fillColor },
+          }
+        }
+
+        // Second pass: set styling
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: fillColor },
-            }
             cell.font = { name: 'Arial', size: 10 }
             cell.alignment = { horizontal: 'right', vertical: 'middle' }
           }
@@ -232,21 +239,25 @@ export async function generateParticipationsExcel(
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
             const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
 
+            // First pass: set fill color for ALL cells in the row
+            for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
+              const cell = excelRow.getCell(colNumber)
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: fillColor },
+              }
+            }
+
+            // Second pass: set content and styling
             excelRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
-                cell.fill = {
-                  type: 'pattern',
-                  pattern: 'solid',
-                  fgColor: { argb: fillColor },
-                }
                 const isVIcon = cell.value === '\u2713'
                 const textColor = isRemoved ? 'FF808080' : isVIcon ? 'FF008000' : undefined
 
                 // Special handling for agenda text cell when removed
                 if (isRemoved && colNumber === agendaTextIndex) {
-                  const removedNotice = isEnglish
-                    ? ' (Removed from agenda)'
-                    : ' (הוסר מסדר היום)'
+                  const removedNotice = isEnglish ? ' (Removed from agenda)' : ' (הוסר מסדר היום)'
                   // Use rich text to apply strikethrough only to agenda text
                   cell.value = {
                     richText: [
