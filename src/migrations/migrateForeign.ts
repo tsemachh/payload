@@ -4,9 +4,12 @@ import { upsertStockFromImport } from '@/migrations/utils/migrateUtils'
 import { getIdOfRelationField, getSequenceStockId, getStockByStockId } from '@/utils/utils'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
+import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
+    await seedStockMigrationMapping()
+
     console.log('Starting foreign stocks migration process...')
     // Create a map of stockId -> isin
     const stockToIsinMap = new Map<string, string>()

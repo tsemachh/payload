@@ -413,7 +413,6 @@ export const Meetings: CollectionConfig = {
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
-                defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
