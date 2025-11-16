@@ -127,7 +127,6 @@ export default function Participations() {
       updatedFilters.selectedFundIds = [...selectedFundIds]
     }
 
-    // עדכון רק אם יש שינויים
     setAppliedFilters(updatedFilters)
     setCurrentPage(1)
   }, [selectedFundIds, startDate, endDate, rangeType])
