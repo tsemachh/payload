@@ -283,7 +283,7 @@ export const Stocks: CollectionConfig = {
                   admin: {
                     readOnly: true,
                     condition: (siblingData) => siblingData.isDual,
-                    width: '400px',
+                    width: '600px',
                   },
                   filterOptions: ({ req }) => {
                     if (req.context?.from == 'migration' || req.context?.from == 'process') {
@@ -369,13 +369,6 @@ export const Stocks: CollectionConfig = {
                   _sanitized: true,
                   admin: {
                     condition: (siblingData) => siblingData.tradable,
-                    defaultColumns: [
-                      'id',
-                      'valueDate',
-                      'registeredValue',
-                      'closingRate',
-                      'marketValue',
-                    ],
                     disableListColumn: true,
                   },
                 },
@@ -401,7 +394,6 @@ export const Stocks: CollectionConfig = {
               on: 'relatedStock',
               //              _sanitized: true,
               admin: {
-                defaultColumns: ['id', 'stockId', 'type', 'symbol', 'name', 'longName'],
                 disableListColumn: true,
               },
             },
@@ -421,7 +413,7 @@ export const Stocks: CollectionConfig = {
               on: 'stock',
               _sanitized: true,
               admin: {
-                defaultColumns: ['meetingId', 'meetingDate', 'meetingType'],
+                // defaultColumns: ['id','meetingId', 'meetingDate', 'meetingType'],
                 disableListColumn: true,
               },
             },

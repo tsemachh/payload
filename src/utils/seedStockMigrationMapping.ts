@@ -185,6 +185,14 @@ export async function seedStockMigrationMapping() {
         })
         createdCount++
         createdIds.add(extra.stockId)
+      }else{
+        await payload.update({
+          collection: 'stock-migration-mapping',
+          data: extra,
+          where:{
+            stockId: {equals : extra.stockId}
+          }
+        })
       }
     }
 

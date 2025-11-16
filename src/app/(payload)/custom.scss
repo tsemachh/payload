@@ -109,18 +109,6 @@ form[action*="/api/research-documents"] .file-field__filename {
   --nav-width: 180px;
 }
 
-//votes in meeting   
-.field-type.join .table.table--appearance-condensed th:nth-child(1),
-.field-type.join .table.table--appearance-condensed td:nth-child(1) {
-  display: none;
-}
-
-.field-type.join .field-label[for="field-votes"] {
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin: 0;
-  padding: 0;
-}
 
 .agenda-style-wrapper {
 
