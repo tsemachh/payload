@@ -319,6 +319,7 @@ export async function upsertStockFromImport(
     isFinancial: isFinancial,
     // Pass-through flags from the import row
     isDual: row.isDual ?? undefined,
+    mainStockForDualStock: row.mainStockForDualStock ?? null,
   }
 
   try {
@@ -362,6 +363,7 @@ export async function upsertStockFromImport(
             symbol: stockData.symbol,
             type: stockData.type,
             fromMagna: stockData.fromMagna,
+            mainStockForDualStock: stockData.mainStockForDualStock,
             // Only set isDual if caller provided it
             ...(stockData.isDual !== undefined ? { isDual: stockData.isDual } : {}),
           },
