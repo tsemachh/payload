@@ -196,7 +196,6 @@ export async function generateParticipationsPDF(
 
     // Determine if any meeting has displayVotingRecommendation: true
     const showAdvisorColumn = data.some((meeting) => meeting.displayVotingRecommendation === true)
-    //TODORachelBra: isOneCompany variable
     // Define column styles based on whether the advisor column is included
     const columnStyles: { [key: string]: Partial<import('jspdf-autotable').Styles> } =
       showAdvisorColumn
@@ -431,51 +430,76 @@ export async function generateParticipationsPDF(
       // Add agenda rows
       meeting.agendas.forEach((agenda: any, i: number) => {
         const rowBg = i % 2 === 0 ? [245, 250, 255] : [230, 237, 255]
-        const defaultTextColor = [51, 51, 51]
+        const isRemoved = agenda.isRemoved === true
+        const defaultTextColor = isRemoved ? [128, 128, 128] : [51, 51, 51]
+
         // Language detection for agenda text
         const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
         const alignment = isEnglish ? 'left' : 'right'
-        // Prepare agenda text with line breaks and reverse only if not English
+
+        // Store the ORIGINAL text before any processing
+        const originalAgendaText = agenda.text || ''
+
+        // Prepare agenda text for display
+        const baseAgendaText = agenda.text || ''
         const preparedAgendaText = isEnglish
-          ? (agenda.text || '').replace(/[\r\n]+/g, ' ').trim()
-          : prepareTextWithLineBreaks(agenda.text || '', doc, 950) // Reverse for non-English
-        // Check if voteReason exists and is not empty
-        let voteContent = agenda.vote || ''
-        if (agenda.voteReason && agenda.voteReason.trim() !== '') {
+          ? baseAgendaText.replace(/[\r\n]+/g, ' ').trim()
+          : prepareTextWithLineBreaks(baseAgendaText, doc, 950)
+
+        // For removed items, add the notice on a separate line
+        let fullTextForDisplay = preparedAgendaText
+        if (isRemoved) {
+          const removedNotice = isEnglish
+            ? '(Removed from agenda)'
+            : prepareText('(הוסר מסדר היום)')
+          fullTextForDisplay = preparedAgendaText + '\n' + removedNotice
+        }
+
+        let voteContent = !isRemoved ? agenda.vote || '' : ''
+        if (!isRemoved && agenda.voteReason && agenda.voteReason.trim() !== '') {
           voteContent = `${voteContent} ]${voteReasonCounter}[`
           voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
           voteReasonCounter++
         }
+
         // Organize agenda data for columns 0-7 (or 0-6 if no advisor column)
-        const agendaData = [
-          booleanToIcon(agenda.personalInterest), // Column 0
-          booleanToIcon(agenda.relatedParty), // Column 1
-          booleanToIcon(agenda.conflictOfInterest), // Column 2
-          booleanToIcon(agenda.policyCompliance), // Column 3
-          agenda.privilegedMajority && agenda.percentResult
-            ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            : booleanToIcon(agenda.privilegedMajority), // Column 4
-          agenda.simpleMajority && agenda.percentResult
-            ? `${formatNumberWithLocale(agenda.percentResult)}%`
-            : booleanToIcon(agenda.simpleMajority), // Column 5
-          agenda.result
-            ? resultMapping[agenda.result] || agenda.result
-            : agenda.meetingResults || '', // Column 6
-          voteContent, // Column 7
-          ...(showAdvisorColumn
-            ? [
-                meeting.displayVotingRecommendation
-                  ? agenda.recommendation?.votingRecommendation || ''
-                  : '',
-              ] // Column 8
-            : []),
-        ]
+        // If removed, show empty strings for voting details
+        const agendaData = isRemoved
+          ? ['', '', '', '', '', '', '', '']
+          : [
+              booleanToIcon(agenda.personalInterest), // Column 0
+              booleanToIcon(agenda.relatedParty), // Column 1
+              booleanToIcon(agenda.conflictOfInterest), // Column 2
+              booleanToIcon(agenda.policyCompliance), // Column 3
+              agenda.privilegedMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                : booleanToIcon(agenda.privilegedMajority), // Column 4
+              agenda.simpleMajority && agenda.percentResult
+                ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                : booleanToIcon(agenda.simpleMajority), // Column 5
+              agenda.result
+                ? resultMapping[agenda.result] || agenda.result
+                : agenda.meetingResults || '', // Column 6
+              voteContent, // Column 7
+            ]
+
+        // Add advisor column if needed
+        if (showAdvisorColumn) {
+          agendaData.push(
+            isRemoved
+              ? ''
+              : meeting.displayVotingRecommendation
+                ? agenda.recommendation?.votingRecommendation || ''
+                : '',
+          )
+        }
+
         const row = [
           ...agendaData.map((content) => {
             let thisTextColor = defaultTextColor
             let fontToUse = 'Ariel'
             if (content === '✓') {
-              thisTextColor = [0, 153, 0]
+              thisTextColor = isRemoved ? [128, 128, 128] : [0, 153, 0]
               fontToUse = 'DejaVuSans'
             }
             return {
@@ -488,16 +512,19 @@ export async function generateParticipationsPDF(
               },
             }
           }),
-          // Agenda text column with adjusted colSpan
           {
-            content: preparedAgendaText,
-            colSpan: showAdvisorColumn ? 9 : 10, // Columns 9-17 or 8-16
+            content: fullTextForDisplay,
+            colSpan: showAdvisorColumn ? 9 : 10,
             styles: {
               fillColor: rowBg,
               textColor: defaultTextColor,
               halign: alignment,
               valign: 'top',
             },
+            // Store metadata for custom strikethrough drawing
+            __isRemoved: isRemoved,
+            __isEnglish: isEnglish,
+            __originalAgendaText: originalAgendaText,
           },
           // Agenda Number column
           {
@@ -510,6 +537,25 @@ export async function generateParticipationsPDF(
 
       // Add vote reason rows
       if (voteReasons.length > 0) {
+        // Add title row
+        const titleText = voteReasons.length === 1 ? 'הערת הצבעה' : 'הערות הצבעה'
+        body.push([
+          {
+            content: prepareText(titleText),
+            colSpan: showAdvisorColumn ? 19 : 18,
+            styles: {
+              font: 'Ariel',
+              fontStyle: 'bold',
+              fontSize: FONT_SIZE_DATA + 1,
+              cellPadding: PADDING,
+              textColor: [51, 51, 51],
+              halign: 'right',
+              minCellHeight: VOTE_REASON_ROW_HEIGHT,
+              fillColor: [255, 255, 255],
+            },
+          },
+        ])
+
         voteReasons.forEach(({ index, reason }) => {
           const isEnglish = /^[A-Za-z]/.test(reason?.trim?.() || '')
           const reasonText = isEnglish
@@ -573,6 +619,77 @@ export async function generateParticipationsPDF(
       },
       didDrawPage: () => {
         addHeader(doc, options, logoBase64, logoWidth, logoHeight)
+      },
+      didDrawCell: (data: any) => {
+        // Check if this is an agenda text cell that needs custom strikethrough
+        const cell = data.cell
+        const cellData = cell.raw
+
+        if (cellData && cellData.__isRemoved && cellData.__originalAgendaText) {
+          doc.setFont('Ariel', 'normal')
+          doc.setFontSize(FONT_SIZE_DATA)
+          doc.setDrawColor(128, 128, 128)
+          doc.setLineWidth(0.3)
+
+          const cellX = cell.x
+          const cellY = cell.y
+          const cellWidth = cell.width
+          const padding = PADDING
+
+          // Get the column width from columnStyles to match what jsPDF-autotable uses
+          let totalColWidth = 0
+
+          // Calculate the actual width available for text (sum of all spanned columns)
+          if (showAdvisorColumn) {
+            // Columns 9-17 for showAdvisorColumn
+            for (let i = 9; i <= 17; i++) {
+              const w = columnStyles[i.toString()]?.cellWidth
+              const num = typeof w === 'number' ? w : Number(w) || 0
+              totalColWidth += num
+            }
+          } else {
+            // Columns 8-17 for no advisor column
+            for (let i = 8; i <= 17; i++) {
+              const w = columnStyles[i.toString()]?.cellWidth
+              const num = typeof w === 'number' ? w : Number(w) || 0
+              totalColWidth += num
+            }
+          }
+
+          // Split the ORIGINAL text to get proper line count
+          const maxWidth = totalColWidth - 2 * padding
+          const originalLines = doc.splitTextToSize(cellData.__originalAgendaText, maxWidth)
+
+          // Calculate line height - add 1 for the removed notice line
+          const totalLines = originalLines.length + 1
+          const lineHeight = (cell.height - 2 * padding) / totalLines
+
+          // Draw strikethrough on each agenda line (not on the last line which is the notice)
+          for (let i = 0; i < originalLines.length; i++) {
+            const lineY = cellY + padding + (i + 0.5) * lineHeight
+            const currentLine = originalLines[i]
+
+            // Calculate the actual width of the text in this line
+            const textWidth = doc.getTextWidth(currentLine)
+
+            // Determine alignment and calculate start position
+            const isEnglish = cellData.__isEnglish
+            let startX, endX
+
+            if (isEnglish) {
+              // Left-aligned text
+              startX = cellX + padding
+              endX = startX + textWidth
+            } else {
+              // Right-aligned text (Hebrew)
+              endX = cellX + cellWidth - padding
+              startX = endX - textWidth
+            }
+
+            // Draw line only across the text width
+            doc.line(startX, lineY, endX, lineY)
+          }
+        }
       },
     })
 
