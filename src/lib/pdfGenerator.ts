@@ -455,6 +455,9 @@ export async function generateParticipationsPDF(
           fullTextForDisplay = preparedAgendaText + '\n' + removedNotice
         }
 
+        // Store the prepared text for strikethrough calculation
+        const preparedAgendaTextForStrikethrough = preparedAgendaText
+
         let voteContent = !isRemoved ? agenda.vote || '' : ''
         if (!isRemoved && agenda.voteReason && agenda.voteReason.trim() !== '') {
           voteContent = `${voteContent} ]${voteReasonCounter}[`
@@ -525,6 +528,7 @@ export async function generateParticipationsPDF(
             __isRemoved: isRemoved,
             __isEnglish: isEnglish,
             __originalAgendaText: originalAgendaText,
+            __preparedAgendaText: preparedAgendaTextForStrikethrough,
           },
           // Agenda Number column
           {
@@ -625,55 +629,63 @@ export async function generateParticipationsPDF(
         const cell = data.cell
         const cellData = cell.raw
 
-        if (cellData && cellData.__isRemoved && cellData.__originalAgendaText) {
+        if (cellData && cellData.__isRemoved && cellData.__preparedAgendaText) {
           doc.setFont('Ariel', 'normal')
           doc.setFontSize(FONT_SIZE_DATA)
           doc.setDrawColor(128, 128, 128)
-          doc.setLineWidth(0.3)
+          doc.setLineWidth(0.7)
 
           const cellX = cell.x
           const cellY = cell.y
           const cellWidth = cell.width
           const padding = PADDING
 
-          // Get the column width from columnStyles to match what jsPDF-autotable uses
-          let totalColWidth = 0
+          const isEnglish = cellData.__isEnglish
 
-          // Calculate the actual width available for text (sum of all spanned columns)
-          if (showAdvisorColumn) {
-            // Columns 9-17 for showAdvisorColumn
-            for (let i = 9; i <= 17; i++) {
-              const w = columnStyles[i.toString()]?.cellWidth
-              const num = typeof w === 'number' ? w : Number(w) || 0
-              totalColWidth += num
+          // Use the PREPARED text (already processed) instead of original
+          const preparedText = cellData.__preparedAgendaText
+
+          // For English text, we need to split it again because it was joined into one line
+          // For Hebrew text, it's already split with \n
+          let displayedLines
+          if (isEnglish) {
+            // Get the column width to split properly
+            let totalColWidth = 0
+            if (showAdvisorColumn) {
+              for (let i = 9; i <= 17; i++) {
+                const w = columnStyles[i.toString()]?.cellWidth
+                const num = typeof w === 'number' ? w : Number(w) || 0
+                totalColWidth += num
+              }
+            } else {
+              for (let i = 8; i <= 17; i++) {
+                const w = columnStyles[i.toString()]?.cellWidth
+                const num = typeof w === 'number' ? w : Number(w) || 0
+                totalColWidth += num
+              }
             }
+            const maxWidth = totalColWidth - 2 * padding
+            displayedLines = doc.splitTextToSize(preparedText, maxWidth)
           } else {
-            // Columns 8-17 for no advisor column
-            for (let i = 8; i <= 17; i++) {
-              const w = columnStyles[i.toString()]?.cellWidth
-              const num = typeof w === 'number' ? w : Number(w) || 0
-              totalColWidth += num
-            }
+            // Hebrew text is already split with \n
+            displayedLines = preparedText.split('\n')
           }
 
-          // Split the ORIGINAL text to get proper line count
-          const maxWidth = totalColWidth - 2 * padding
-          const originalLines = doc.splitTextToSize(cellData.__originalAgendaText, maxWidth)
-
-          // Calculate line height - add 1 for the removed notice line
-          const totalLines = originalLines.length + 1
+          // Calculate line height based on actual cell height and number of lines (+1 for removed notice)
+          const totalLines = displayedLines.length + 1
           const lineHeight = (cell.height - 2 * padding) / totalLines
 
-          // Draw strikethrough on each agenda line (not on the last line which is the notice)
-          for (let i = 0; i < originalLines.length; i++) {
+          // Draw strikethrough on each line
+          for (let i = 0; i < displayedLines.length; i++) {
             const lineY = cellY + padding + (i + 0.5) * lineHeight
-            const currentLine = originalLines[i]
+            const currentLine = displayedLines[i]
+
+            if (!currentLine || currentLine.trim() === '') continue
 
             // Calculate the actual width of the text in this line
             const textWidth = doc.getTextWidth(currentLine)
 
             // Determine alignment and calculate start position
-            const isEnglish = cellData.__isEnglish
             let startX, endX
 
             if (isEnglish) {
@@ -681,7 +693,7 @@ export async function generateParticipationsPDF(
               startX = cellX + padding
               endX = startX + textWidth
             } else {
-              // Right-aligned text (Hebrew)
+              // Right-aligned text (Hebrew) - the text is already reversed in preparedText
               endX = cellX + cellWidth - padding
               startX = endX - textWidth
             }
