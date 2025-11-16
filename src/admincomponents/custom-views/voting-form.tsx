@@ -58,7 +58,6 @@ export interface VoteData {
     url: string
   }>
   votes: Array<{
-    topicIndex: number
     voteDecision?: string
     voteReason?: string
     hasConflictOfInterest: boolean
@@ -535,13 +534,17 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                         {voteItem?.voteDecision || '----'}
                       </div>
                     </div>
-                    {voteItem.voteReason && (
-                      <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                        {voteItem.voteReason}
-                      </span>
-                    )}
                   </div>
                 </div>
+                {voteItem.voteReason && (
+                  <span
+                    dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
+                    title={voteItem.voteReason}
+                    className="text-gray-700 dark:text-gray-300 text-sm mt-1 block overflow-hidden text-ellipsis whitespace-nowrap"
+                  >
+                    נימוק הצבעה: {voteItem.voteReason}
+                  </span>
+                )}
                 <div
                   className={`flex justify-${item.majorityType === 'privileged' ? 'between' : 'end'} mt-2 w-full`}
                 >
