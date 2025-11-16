@@ -140,6 +140,7 @@ async function processVotesData(
             agendaItem.majorityType === 'privileged' || voteItem.majorityType === 'privileged'
           ),
           percentResult: agendaItem.percentResult || null,
+          isRemoved: agendaItem.isRemovedFromAgenda || false,
         }
       }),
     }

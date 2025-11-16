@@ -115,16 +115,21 @@ export default function Participations() {
   }, [appliedFilters.selectedFundIds, funds])
 
   useEffect(() => {
-    if (rangeType && selectedFundIds.length > 0) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        selectedFundIds: [...selectedFundIds],
-        startDate,
-        endDate,
-        rangeType,
-      }))
-      setCurrentPage(1)
+    const updatedFilters: typeof appliedFilters = { ...appliedFilters }
+
+    if (rangeType) {
+      updatedFilters.startDate = startDate
+      updatedFilters.endDate = endDate
+      updatedFilters.rangeType = rangeType
     }
+
+    if (selectedFundIds.length > 0) {
+      updatedFilters.selectedFundIds = [...selectedFundIds]
+    }
+
+    // עדכון רק אם יש שינויים
+    setAppliedFilters(updatedFilters)
+    setCurrentPage(1)
   }, [selectedFundIds, startDate, endDate, rangeType])
 
   // Build the API query with all server-side parameters
@@ -308,16 +313,17 @@ export default function Participations() {
       errors.push('companies')
     }
 
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+
     // Check if there's data to export
     if (participationData.length === 0 && !votesLoading) {
       handleAndNotifyError(new Error('אין נתונים לייצוא'), 'אין נתונים לייצוא')
       return
     }
 
-    if (errors.length > 0) {
-      setValidationErrors(errors)
-      return
-    }
     setValidationErrors([])
 
     setIsExporting(true)
