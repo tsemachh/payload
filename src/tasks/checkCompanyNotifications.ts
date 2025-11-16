@@ -59,10 +59,10 @@ export const checkCompanyNotifications = async (req: any) => {
 
   // Set up midnight timestamps for date ranges
   const todayMidnight = setToMidnight(today)
-  const yesterdayMidnight = setToMidnight(addDays(today, -1))
+  const lastWorkingDateMidnight = setToMidnight(addDays(today, -1))
 
   // 1. Check for meeting notifications
-  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight)
+  await checkMeetingNotifications(req, results, todayMidnight, lastWorkingDateMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
@@ -111,7 +111,7 @@ async function checkMeetingNotifications(
   req: any,
   results: any,
   todayMidnight: Date,
-  yesterdayMidnight: Date,
+  lastWorkingDateMidnight: Date,
 ) {
   const now = new Date()
   const nextWorkingDay = getWorkingDateAfter(now, 1, 0)
@@ -126,7 +126,7 @@ async function checkMeetingNotifications(
           {
             // Condition 1: holdingLimit between yesterday midnight and today midnight
             holdingsLimit: {
-              greater_than: yesterdayMidnight.toISOString(),
+              greater_than: lastWorkingDateMidnight.toISOString(),
               less_than: todayMidnight.toISOString(),
             },
           },
@@ -162,7 +162,7 @@ async function checkMeetingNotifications(
     const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
 
     const isAfterHoldingLimit =
-      holdingLimitDate && holdingLimitDate > yesterdayMidnight && holdingLimitDate < todayMidnight
+      holdingLimitDate && holdingLimitDate > lastWorkingDateMidnight && holdingLimitDate < todayMidnight
 
     const isWorkingDayBeforeProxyVotingDate =
       proxyVotingDate &&
@@ -382,13 +382,12 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 async function checkMeetingUpdates(req: any, results: any, userId?: string) {
   const payload = req.payload
   const today = new Date()
-  const yesterday = new Date(today)
-  const formattedYesterday = yesterday.toLocaleDateString('he-IL')
-  yesterday.setDate(today.getDate() - 1)
-  const yesterdayStart = new Date(yesterday)
-  yesterdayStart.setHours(0, 0, 0, 0)
-  const yesterdayEnd = new Date(yesterday)
-  yesterdayEnd.setHours(23, 59, 59, 999)
+  const lastWorkingDate = getWorkingDateBefore(today, 1, 0)
+  const formattedLastWorkingDate = lastWorkingDate.toLocaleDateString('he-IL')
+  const lastWorkingDateEnd = new Date(lastWorkingDate)
+  lastWorkingDateEnd.setHours(23, 59, 59, 999)
+  const todayEnd = new Date(today)
+  todayEnd.setHours(23, 59, 59, 999)
 
   const { docs: meetings } = await payload.find({
     collection: 'meetings',
@@ -396,15 +395,13 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
       companies: true,
       id: true,
       fullName: true,
+      changeDetails: true,
     },
     where: {
       _status: { equals: 'published' },
-      publishDate: {
-        less_than_equal: yesterdayStart.toISOString(),
-      },
       updatedAt: {
-        greater_than_equal: yesterdayStart.toISOString(),
-        less_than_equal: today,
+        greater_than_equal: lastWorkingDateEnd.toISOString(),
+        less_than_equal: todayEnd.toISOString(),
       },
       changeDetails: {
         not_equals: null,
@@ -417,9 +414,8 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
   for (const meeting of meetings) {
     const companies = meeting.companies as string[]
     if (!companies || companies.length === 0) continue
-
+    const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedLastWorkingDate}), .יש לשים לב לשינויים \nהערות: ${meeting.changeDetails}`
     for (const companyId of companies) {
-      const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedYesterday}), יש לשים לב לשינויים`
       await payload.delete({
         collection: 'company-meeting-notifications',
         where: {

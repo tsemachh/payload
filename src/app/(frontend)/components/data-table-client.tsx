@@ -1498,7 +1498,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                         handleFilter(String(column.key), newFilters)
                                       } else {
                                         const newFilters = checked
-                                          ? [...currentSelectedFilters, value]
+                                           ? [...currentSelectedFilters, value]
                                           : currentSelectedFilters.filter(
                                               (v: string) => v !== value,
                                             )
@@ -1621,7 +1621,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                               <React.Fragment key={row.meetingId + uuidv4()}>
                                 <TableRow
                                   key={`company-${uuidv4()}`}
-                                  className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                                  className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                                 >
                                   {/* Empty cell for companies column */}
                                   <TableCell className="py-2 px-3"></TableCell>
@@ -1698,7 +1698,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       {company.funds.map((fund: FundType) => (
                                         <TableRow
                                           key={`fund-${uuidv4()}`}
-                                          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+                                          className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
                                         >
                                           {/* Empty cell for companies column */}
                                           <TableCell className="py-2 px-6"></TableCell>

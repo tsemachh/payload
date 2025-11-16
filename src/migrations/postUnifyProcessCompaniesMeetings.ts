@@ -8,8 +8,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Find meetings with no fundsWithHolding (missing or empty)
     const result = await payload.find({
       collection: 'meetings',
+      select:{
+        fullName: true
+      },
       where: {
-        or: [{ fundsWithHolding: { exists: false } }],
+        or: [{ fundsWithHolding: { exists: false } },{'fundsWithHolding.id':{exists:false}}],
       },
       limit: 0,
       depth: 0,

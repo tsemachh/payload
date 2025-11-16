@@ -2,21 +2,18 @@ import { getVotingRecommendationColor, isRTL } from '../helpers/utils-data-table
 import { AgendasType, MeetingTableDataType } from '../types/meetings'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
+import Link from 'next/link'
 import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus'
 
 export function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
-  const handleIconClick = () => {
-    window.open(`/vote-meeting/${row.meetingIdPayload}`, '_blank', 'noopener,noreferrer')
-  }
   if (row.companies.length === 0) return null
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info
-            className="w-4 h-4 text-blue-700 hover:text-blue-800 cursor-pointer"
-            onClick={handleIconClick}
-          />
+          <Link href={`/vote-meeting/${row.meetingIdPayload}`}>
+            <Info className="w-4 h-4 text-blue-700 hover:text-blue-800 cursor-pointer" />
+          </Link>
         </TooltipTrigger>
         <TooltipContent
           className="rounded-md shadow-md border border-gray-200"

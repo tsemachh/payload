@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation'
 import { HoldingsNav } from '../holdings/sub-nav-holdings'
 import { MeetingsNav } from '../meetings/sub-nav-meetings'
 import { ImpersonationBanner } from '@/plugins/impersonate/components'
+import Link from 'next/link'
+import Image from 'next/image'
 
 export function HeaderWithNav() {
   const auth = useAuth()
@@ -24,7 +26,16 @@ export function HeaderWithNav() {
     return (
       <header className="border-b">
         <div className="flex h-16 items-center justify-between px-4">
-          <div></div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/emda_logo.png"
+              alt="Logo"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
+          </Link>
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
             <UserNav />
           </div>
@@ -37,7 +48,19 @@ export function HeaderWithNav() {
   return (
     <header className="border-b">
       <div className="flex h-16 items-center justify-between px-4">
-        <MainNav />
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/emda_logo.png"
+              alt="Logo"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
+          </Link>
+          <MainNav />
+        </div>
         <div className="flex items-center space-x-4 rtl:space-x-reverse">
           <UserNav />
         </div>

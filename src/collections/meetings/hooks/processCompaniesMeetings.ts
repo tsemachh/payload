@@ -175,30 +175,8 @@ async function processMeeting(
         changeDetails,
       },
     })
-    const validCompanyIds = new Set(compIds.filter(Boolean))
-    const { docs: votes } = await req.payload.find({
-      collection: 'votes',
-      where: {
-        meeting: { equals: meeting.id },
-      },
-      select: {
-        company: true,
-      },
-      depth: 0,
-      limit: 0,
-    })
-    for (const vote of votes) {
-      const companyId = String(vote.company)
-      if (!validCompanyIds.has(companyId)) {
-        await req.payload.delete({
-          collection: 'votes',
-          id: vote.id,
-        })
-        req.payload.logger.info(
-          `Deleted obsolete vote ${vote.id} for company ${companyId} (meeting ${meeting.id})`,
-        )
-      }
-    }
+    // Use the new cleanup API to remove invalid votes for this meeting
+    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)])
   }
 }
 
@@ -296,5 +274,62 @@ export const processCompaniesMeetings = async (
       `Error processing companies-meetings: ${error instanceof Error ? error.message : 'Unknown error'}`,
     )
     throw error
+  }
+}
+
+/**
+ * Cleanup helper: delete votes that belong to companies not listed on the meeting
+ * This is extracted from processMeeting (lines 177-201) and adapted to work independently
+ * of the holdings enrichment. It uses the meeting's current `companies` field as the
+ * source of truth for valid companies.
+ */
+export const cleanupInvalidVotesForMeetings = async (
+  req: PayloadRequest,
+  meetingIds: string[],
+): Promise<void> => {
+  const total = meetingIds.length
+  for (let idx = 0; idx < meetingIds.length; idx++) {
+    const meetingId = meetingIds[idx]
+    try {
+      // Load meeting companies only
+      const meeting = await req.payload.findByID({
+        collection: 'meetings',
+        id: meetingId,
+        select: { companies: true },
+        depth: 0,
+      })
+
+      const companies: string[] = Array.isArray((meeting as any).companies)
+        ? ((meeting as any).companies as string[])
+        : []
+
+      const validCompanyIds = companies.filter(Boolean).map(String)
+
+      // Single bulk delete: remove votes for this meeting whose company is not in the valid list
+      // If the valid list is empty, this will delete all votes for the meeting (expected behavior)
+      await req.payload.delete({
+        collection: 'votes',
+        where: {
+          and: [
+            { meeting: { equals: meetingId } },
+            { company: { not_in: validCompanyIds.length > 0 ? validCompanyIds : ['__NONE__'] } },
+          ],
+        },
+        req,
+      } as any)
+      req.payload.logger.info(
+        `meeting ${meetingId}: cleanup completed (${idx + 1} of ${total}) - removed votes for companies not in [${validCompanyIds.join(
+          ', ',
+        )}]`,
+      )
+    } catch (error) {
+      req.payload.logger.error(
+        { error },
+        `Error during cleanupInvalidVotesForMeetings for meeting ${meetingId}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      )
+      // Continue with next meeting
+    }
   }
 }

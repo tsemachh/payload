@@ -319,7 +319,7 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
  */
 async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: any) {
   try {
-        // Get current date
+    // Get current date
     const now = new Date()
 
     // Find meetings where the holding limit date was yesterday
@@ -438,14 +438,11 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
     const now = new Date()
 
     // אתמול
-    const yesterday = new Date(now)
-    yesterday.setDate(yesterday.getDate() - 1)
-
-    const yesterdayStart = new Date(yesterday)
-    yesterdayStart.setHours(0, 0, 0, 0)
-
-    const yesterdayEnd = new Date(yesterday)
-    yesterdayEnd.setHours(23, 59, 59, 999)
+    const lastWorkingDate = getWorkingDateBefore(now, 1, 0)
+    const lastWorkingDateEnd = new Date(lastWorkingDate)
+    lastWorkingDateEnd.setHours(23, 59, 59, 999)
+    const todayEnd = new Date(now)
+    todayEnd.setHours(23, 59, 59, 999)
 
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
@@ -456,8 +453,8 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
       },
       where: {
         updatedAt: {
-          greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          greater_than_equal: lastWorkingDateEnd.toISOString(),
+          less_than_equal: todayEnd.toISOString(),
         },
         _status: {
           equals: 'draft',

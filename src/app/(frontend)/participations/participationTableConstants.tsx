@@ -229,7 +229,7 @@ export const renderAgendaRows = (
       {row.agendas.map((agenda: ParticipationAgendaType, agendaIndex: number) => (
         <TableRow
           key={`participation-${uuidv4()}`}
-          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+          className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
         >
           {/* Empty cell for companies column */}
           <TableCell className="py-2 px-6"></TableCell>
