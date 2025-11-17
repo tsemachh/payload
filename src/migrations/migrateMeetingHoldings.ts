@@ -154,22 +154,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             // Create fundsWithHolding array
             const fundsWithHolding = []
+            let fromRelatedStock = false
 
             for (const holding of filteredHoldings) {
               const key = `${holding.firmid}_${holding.accountNum}`
               const fundId = fundMap.get(key)
-
               if (fundId) {
                 const verifiedHoldings =
                   holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
-
+                fromRelatedStock = holding.originalDataArray.some(
+                  (o: any) => o.stockId != meeting.stockId,
+                )
                 fundsWithHolding.push({
                   company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
-                  fromRelatedStock: holding.originalDataArray.some(
-                    (o: any) => o.stockId != meeting.stockId,
-                  ),
+                  fromRelatedStock,
                   // Reset ownedQuantity when verifiedHoldings is true or null
                   ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
                   verifiedHoldings,
@@ -180,6 +180,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             // Update the meeting with companies, funds, and fundsWithHolding
             const updatedMeeting = {
+              hasRelatedStocks: fromRelatedStock,
               funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
               companies: Array.from(new Set(fundsWithHolding.map((item) => item.company))),
               fundsWithHolding: fundsWithHolding,

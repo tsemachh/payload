@@ -763,6 +763,15 @@ export const Meetings: CollectionConfig = {
               ],
             },
             {
+              name: 'hasRelatedStocks',
+              type: 'checkbox',
+              defaultValue: false,
+              label: 'ניירות עוקבים',
+              admin: {
+                hidden: true,
+              },
+            },
+            {
               type: 'row',
               fields: [
                 {
@@ -1097,7 +1106,6 @@ export const Meetings: CollectionConfig = {
                       defaultValue: false,
                       label: 'החזקה בנייר עוקב',
                     },
-
                     {
                       name: 'original',
                       label: 'מניה מקורית',

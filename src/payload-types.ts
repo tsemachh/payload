@@ -715,6 +715,7 @@ export interface Meeting {
   hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
   location?: string | null;
+  hasRelatedStocks?: boolean | null;
   comments?: string | null;
   migrationComments?: string | null;
   changeDetails?: string | null;
@@ -1484,6 +1485,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   hasDualStock?: T;
   dualMeeting?: T;
   location?: T;
+  hasRelatedStocks?: T;
   comments?: T;
   migrationComments?: T;
   changeDetails?: T;
