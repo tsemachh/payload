@@ -198,7 +198,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               // stockStatuses.isRootStock ||
               (stockStatuses.hasActiveMeeting && !stockStatuses.hasRelation) ||
               stockStatuses.isNonTradableShaked ||
-              stockStatuses.isForeign
+              stockStatuses.isForeign || stockStatuses.hasForeignRelation
 
             stockStatuses.isTradable = isTradable
             let comments = JSON.stringify(stockStatuses)
