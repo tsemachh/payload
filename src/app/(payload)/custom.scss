@@ -251,9 +251,10 @@ form[action*="/api/research-documents"] .file-field__filename {
     .search-bar{
       z-index: 3;
     }
-    .payload__modal-container--appear, .payload__modal-container--appearDone, .payload__modal-container--enter, .payload__modal-container--enterDone, .payload__modal-container--exit{
+    .payload__modal-container.payload__modal-container--enterDone ,.payload__modal-container--appear, .payload__modal-container--appearDone, .payload__modal-container--enter, .payload__modal-container--enterDone, .payload__modal-container--exit{
       z-index: 0;
     }
+
   }
 
   .collection-list.collection-list--admin-notifications {
