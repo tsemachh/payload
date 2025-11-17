@@ -8,13 +8,20 @@ import { getMeetingsCutoff, getStockValuesRetroDays } from '@/migrations/utils/d
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
-      SELECT DISTINCT [stockID]
-                    , [name]
-                    , [symbol]
-                    , [type]
-                    , [longName]
-      FROM [dbEmda].[dbo].[stocks]
-      ORDER BY stockID
+      SELECT stockID, name, symbol, type, longName, ValueDate
+      FROM (
+               SELECT
+                   stockID,
+                   name,
+                   symbol,
+                   type,
+                   longName,
+                   ValueDate,
+                   ROW_NUMBER() OVER (PARTITION BY stockID ORDER BY ValueDate DESC) AS rn
+               FROM [dbEmda].[dbo].[stocks]
+           ) ranked
+      WHERE rn = 1
+      ORDER BY stockID DESC;
   `)
   console.log(`getStocks - Retrieved ${resultStocks.recordset.length} records from SQL Server`)
   return resultStocks
