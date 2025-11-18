@@ -389,29 +389,35 @@ export function DataTableStatic<T extends Record<string, any>>({
           {/* Text content with proper direction */}
           <div
             dir={direction}
-            className={cn('relative order-2', alignment)}
-            style={{ maxWidth: 'calc(100vw - 200px)' }} // Adjust based on your layout
+            className={cn('relative order-2 flex items-center gap-1', alignment)} // added flex & items-center & gap
+            style={{ maxWidth: 'calc(100vw - 200px)' }}
           >
             <span
               className={cn(
-                'block',
-                isEnglish ? 'truncate' : 'text-ellipsis overflow-hidden whitespace-nowrap',
+                'truncate', // always truncate if English
+                !isEnglish && 'text-ellipsis overflow-hidden whitespace-nowrap',
               )}
-              style={
-                !isEnglish
-                  ? {
-                      direction: 'rtl',
-                      textOverflow: 'ellipsis',
-                      unicodeBidi: 'plaintext',
-                      maxWidth: 'calc(100vw - 200px)',
-                    }
-                  : {
-                      maxWidth: 'calc(100vw - 200px)',
-                    }
-              }
+              style={{
+                maxWidth: 'calc(100vw - 200px)',
+                ...(!isEnglish && {
+                  direction: 'rtl',
+                  textOverflow: 'ellipsis',
+                  unicodeBidi: 'plaintext',
+                }),
+                ...(agenda.isRemovedFromAgenda && {
+                  textDecoration: 'line-through',
+                  color: 'gray',
+                }),
+              }}
             >
               {agenda.text}
             </span>
+
+            {agenda.isRemovedFromAgenda && (
+              <span style={{ textDecoration: 'none', color: 'gray' }}>
+                {isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) '}
+              </span>
+            )}
           </div>
         </div>
 
