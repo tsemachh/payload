@@ -90,18 +90,31 @@ export function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType
                                 wordBreak: 'break-word',
                                 whiteSpace: 'pre-wrap',
                                 overflowWrap: 'break-word',
-                                fontSize: '0.80rem',
+                                fontSize: '0.8rem',
+                                ...(item.isRemovedFromAgenda && {
+                                  textDecoration: 'line-through',
+                                  color: 'gray',
+                                }),
                               }}
                             >
                               {item.text}
                             </div>
+                            {item.isRemovedFromAgenda && (
+                              <div style={{ textDecoration: 'none', color: 'gray' }}>
+                                {!isRTL(item.text)
+                                  ? ' (Removed from agenda) '
+                                  : ' (הוסר מסדר היום) '}
+                              </div>
+                            )}
                           </td>
                           {row.displayVotingRecommendation && (
                             <td
                               className={`py-1 px-2 border-t text-right font-medium ${getVotingRecommendationColor(item.recommendation.votingRecommendation)}`}
                               style={{ width: '100px', minWidth: '100px' }}
                             >
-                              {item.recommendation.votingRecommendation}
+                              {item.isRemovedFromAgenda
+                                ? ''
+                                : item.recommendation.votingRecommendation}
                             </td>
                           )}
                         </tr>

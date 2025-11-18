@@ -4,36 +4,48 @@ import { useEffect, useState } from 'react'
 import type { ArrayFieldLabelClientComponent } from 'payload'
 
 export const SubjectLabel: React.FC = () => {
-  const { data, rowNumber } = useRowLabel<{ text: string }>()
-  const [label, setLabel] = useState(`${rowNumber} נושא`)
+  const { data, rowNumber } = useRowLabel<{ text: string; isRemovedFromAgenda: boolean }>()
+  const [label, setLabel] = useState('')
+  const [isRemoved, setIsRemoved] = useState(false)
   const [originalText, setOriginalText] = useState('')
 
   useEffect(() => {
     if (data?.text) {
-      // Store original text for tooltip and convert to uppercase for display
       setOriginalText(data.text)
-      setLabel(`${(rowNumber as number) + 1}. ${data.text}`)
+      setLabel(data.text)
+      setIsRemoved(!!data.isRemovedFromAgenda)
     } else {
-      // Default label if header is not present
       setOriginalText('')
-      setLabel(`${rowNumber}נושא `)
+      setLabel('נושא')
+      setIsRemoved(false)
     }
-  }, [data, rowNumber])
+  }, [data])
 
   return (
-    <div>
+    <div style={{ display: 'flex', alignItems: 'center', maxWidth: '100%' }}>
+      <span style={{ marginRight: 4, marginLeft: 4 }}>
+        {'נושא ' + ((rowNumber as number) + 1)}:
+      </span>
+
       <span
         title={originalText}
         style={{
+          flex: 1,
           display: 'block',
-          maxWidth: '100%',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
+          ...(isRemoved && { textDecoration: 'line-through', color: 'gray' }),
         }}
       >
         {label}
       </span>
+
+      {isRemoved && (
+        <span style={{ color: 'gray', marginRight: 4, flexShrink: 0, whiteSpace: 'nowrap' }}>
+          (הוסר מסדר היום)
+        </span>
+      )}
     </div>
   )
 }
