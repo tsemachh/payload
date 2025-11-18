@@ -173,7 +173,7 @@ export const Meetings: CollectionConfig = {
         {
           label: 'הצבעות',
           admin: {
-            condition: (data) => data?._status === 'published',
+            condition: (data) => data.publishDate != null,
           },
           fields: [
             {
@@ -416,23 +416,6 @@ export const Meetings: CollectionConfig = {
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
-              },
-              where: {
-                or: [
-                  {
-                    _status: {
-                      equals: 'published',
-                    },
-                  },
-                  {
-                    _status: {
-                      equals: 'draft',
-                    },
-                    publishDate: {
-                      not_equals: null,
-                    },
-                  },
-                ],
               },
             },
           ],
