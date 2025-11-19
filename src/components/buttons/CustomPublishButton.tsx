@@ -54,6 +54,11 @@ export const CustomPublishButton: React.FC = () => {
       handlePublish()
       return
     }
+    // If the document has never been published before, skip the modal and publish immediately
+    if (!hasPublishedDoc) {
+      handlePublish()
+      return
+    }
 
     // If this is a meeting collection with existing data
     if (data) {
