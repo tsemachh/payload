@@ -1079,10 +1079,9 @@ export default function VotingForm() {
                           )}
                         </div>
 
-                        {!item.isRemovedFromAgenda &&
-                          item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
-                            <div className="mt-4 mb-2 border-b border-border" />
-                          )}
+                        {item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
+                          <div className="mt-4 mb-2 border-b border-border" />
+                        )}
                       </div>
                     )
                   })}
