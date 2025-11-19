@@ -75,9 +75,15 @@ export function ReportApprovalUpload({
       {/* Show uploaded file with remove option */}
       {uploadedDoc && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
+          <a
+            href={uploadedDoc.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[200px] underline"
+          >
             {uploadedDoc.filename}
-          </span>
+          </a>
+
           <Button size="sm" variant="ghost" onClick={removeFile}>
             X
           </Button>
