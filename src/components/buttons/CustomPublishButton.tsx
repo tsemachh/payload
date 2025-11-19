@@ -96,7 +96,7 @@ export const CustomPublishButton: React.FC = () => {
     <React.Fragment>
       <FormSubmit
         buttonId="action-save"
-        disabled={(modified === false && hasPublishedDoc === true) || uploadStatus === 'uploading'}
+        disabled={uploadStatus === 'uploading'}
         onClick={openConfirmModal}
         size="medium"
         type="button"
