@@ -12,8 +12,18 @@ import {
 } from '@payloadcms/ui' // Import the original PublishButton // Use Payload's useModal wrapper
 
 export const CustomPublishButton: React.FC = () => {
-  const { hasPublishPermission, setHasPublishedDoc, uploadStatus, collectionSlug, data, hasPublishedDoc, id } =
-    useDocumentInfo()
+  const {
+    hasPublishPermission,
+    setHasPublishedDoc,
+    uploadStatus,
+    collectionSlug,
+    data,
+    hasPublishedDoc,
+    id,
+    unpublishedVersionCount,
+    setUnpublishedVersionCount,
+    setMostRecentVersionIsAutosaved,
+  } = useDocumentInfo()
   // Use data from useDocumentInfo instead of useField to avoid marking form as modified
   const meetingDate = data?.meetingDate ? new Date(data.meetingDate) : null
 
@@ -27,7 +37,7 @@ export const CustomPublishButton: React.FC = () => {
   const significantChangeModalSlug = 'significant-change-modal'
 
   // Simple publish function
-  const handlePublish = useCallback(() => {
+  const handlePublish = useCallback(async () => {
     if (uploadStatus === 'uploading') {
       return
     }
@@ -37,20 +47,28 @@ export const CustomPublishButton: React.FC = () => {
       console.log('Significant change detected in meeting. Participants should be notified.')
     }
 
-    submit({
+    const result = await submit({
       overrides: {
         _status: 'published',
         changeDetails: changeDetails || null,
       },
     })
-
-    setHasPublishedDoc(true)
-  }, [submit, uploadStatus, setHasPublishedDoc, isSignificantChange, changeDetails])
+    if (result) {
+      setUnpublishedVersionCount(0)
+      setMostRecentVersionIsAutosaved(false)
+      setHasPublishedDoc(true)
+    }
+  }, [uploadStatus, isSignificantChange, submit, changeDetails, setUnpublishedVersionCount, setMostRecentVersionIsAutosaved, setHasPublishedDoc])
 
   // Open confirmation modal
   const openConfirmModal = useCallback(() => {
     // If this is not a meeting collection or it's a new document, publish directly
     if (collectionSlug !== 'meetings' || !id) {
+      handlePublish()
+      return
+    }
+    // If the document has never been published before, skip the modal and publish immediately
+    if (!hasPublishedDoc) {
       handlePublish()
       return
     }
@@ -86,12 +104,17 @@ export const CustomPublishButton: React.FC = () => {
   if (!hasPublishPermission) {
     return null
   }
+  const hasNewerVersions = unpublishedVersionCount > 0
 
   return (
     <React.Fragment>
       <FormSubmit
         buttonId="action-save"
-        disabled={(modified === false && hasPublishedDoc === true) || uploadStatus === 'uploading'}
+        disabled={
+          hasPublishPermission &&
+          (modified || hasNewerVersions || !hasPublishedDoc) &&
+          uploadStatus === 'uploading'
+        }
         onClick={openConfirmModal}
         size="medium"
         type="button"

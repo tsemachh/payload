@@ -78,6 +78,7 @@ export interface VoteData {
       votingRecommendation: string | null
       reasonText: string | null
     }
+    isRemovedFromAgenda?: boolean
   }>
 }
 
@@ -509,12 +510,36 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
                     {index + 1}.
                   </span>
                   <div
-                    className="flex-1 text-right text-base text-gray-900 dark:text-white mx-3 truncate min-w-0"
+                    className={`flex-1 flex items-center text-base text-gray-900 dark:text-white mx-3 min-w-0 ${
+                      /[\u0590-\u05FF]/.test(item.text) ? 'text-right' : 'text-left'
+                    }`}
+                    style={item.isRemovedFromAgenda ? { color: 'gray' } : {}}
                     title={item.text}
                     dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                   >
-                    {item.text}
+                    <span
+                      className="truncate"
+                      style={item.isRemovedFromAgenda ? { textDecoration: 'line-through' } : {}}
+                    >
+                      {item.text}
+                    </span>
+                    {item.isRemovedFromAgenda && (
+                      <span
+                        style={{
+                          textDecoration: 'none',
+                          color: 'gray',
+                          marginLeft: '4px',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {/[\u0590-\u05FF]/.test(item.text)
+                          ? '(הוסר מסדר היום)'
+                          : '(Removed from agenda)'}
+                      </span>
+                    )}
                   </div>
+
                   <div className="flex flex-col items-end">
                     <div className="flex items-center gap-6 flex-shrink-0">
                       {formData.displayVotingRecommendation &&
