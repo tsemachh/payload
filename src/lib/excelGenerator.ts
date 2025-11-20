@@ -313,7 +313,7 @@ export async function generateParticipationsExcel(
         // Add vote reasons as merged rows with white background
         if (voteReasons.length > 0) {
           // Add title row
-          const titleText = voteReasons.length === 1 ? 'הערת הצבעה' : 'הערות הצבעה'
+          const titleText = voteReasons.length === 1 ? 'נימוק הצבעה' : 'נימוקי הצבעה'
           const titleRow = worksheet.addRow([titleText, ...Array(headers.length - 1).fill('')])
           worksheet.mergeCells(titleRow.number, 1, titleRow.number, headers.length)
           titleRow.eachCell((cell, colNumber) => {
