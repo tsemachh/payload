@@ -4,7 +4,46 @@ import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
-import { getMeetingsCutoff, getStockValuesRetroDays } from '@/migrations/utils/dateUtils'
+import {getMeetingsCutoff, getMeetingsHistoryCutoff, getStockValuesRetroDays} from '@/migrations/utils/dateUtils'
+
+// --- Instrumentation helpers (Step 1) ---
+function nowMs() {
+  return Date.now()
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => {
+      const err = new Error(`Timeout in ${label} after ${ms}ms`)
+      ;(err as any)._timeout = true
+      reject(err)
+    }, ms)
+    promise
+      .then((v) => {
+        clearTimeout(t)
+        resolve(v)
+      })
+      .catch((e) => {
+        clearTimeout(t)
+        reject(e)
+      })
+  })
+}
+
+async function timed<T>(label: string, fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
+  const start = nowMs()
+  try {
+    const result = await fn()
+    const ms = nowMs() - start
+    if (ms > 5000) console.warn(`[WARN] ${label} took ${ms}ms`)
+    else if (ms > 1000) console.log(`[INFO] ${label} took ${ms}ms`)
+    return { result, ms }
+  } catch (e) {
+    const ms = nowMs() - start
+    console.error(`[ERROR] ${label} failed after ${ms}ms`, e)
+    throw e
+  }
+}
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
@@ -246,7 +285,7 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
-  const { dateString } = getMeetingsCutoff()
+  const { dateString } = getMeetingsHistoryCutoff()
   const request = pool.request()
   request.input('historyDate', sql.VarChar, dateString)
   const res = await request.query(`
@@ -310,6 +349,7 @@ export async function upsertStockFromImport(
   comments: string = '',
   fromMagna: boolean = false,
   isFinancial: boolean = false,
+  fromMigration: boolean = false,
 ) {
   // Collect all fields we intend to persist
   const stockData: Partial<Stock> = {
@@ -340,6 +380,10 @@ export async function upsertStockFromImport(
       })
       return newStock.id
     } else {
+      // If called from migration and we prefer insert-only semantics, skip update checks
+      if (fromMigration) {
+        return stock.id
+      }
       // Determine if anything relevant changed
       const needsUpdate =
         stock.active !== stockData.active ||
@@ -403,28 +447,64 @@ export async function upsertStockValueFromImport(
     registeredValue: row.registeredValue || null,
   }
 
-  let valueId = null
+  let valueId: string | null = null
   if (!newStockValue)
-    valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
+    valueId = await withTimeout(
+      timed('getSequenceStockValueId', () =>
+        getSequenceStockValueId(req.payload, stockSequence, row.valueDate),
+      ).then((r) => r.result),
+      30_000,
+      'getSequenceStockValueId',
+    )
   if (valueId) {
     // Update Payload CMS
-    await req.payload.update({
-      collection: 'stock-values',
-      id: valueId,
-      data: stockValue as StockValue,
-      req,
-    })
+    await withTimeout(
+      timed('payload.update stock-values', () =>
+        req.payload.update({
+          collection: 'stock-values',
+          id: valueId as any,
+          data: stockValue as StockValue,
+            req: {
+                ...req,
+                context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
+            },
+        }),
+      ).then((r) => r.result),
+      30_000,
+      'payload.update stock-values',
+    )
   } else {
-    // Insert into Payload CMS
-    const newStockValue = await req.payload.create({
-      collection: 'stock-values',
-      data: stockValue as StockValue,
-      req: {
-        ...req,
-        context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
-      },
-    })
-    valueId = newStockValue?.id
+    // Insert into Payload CMS (with detailed logging on timeout)
+    try {
+      const newStockValue = await withTimeout(
+        timed('payload.create stock-values', () =>
+          req.payload.create({
+            collection: 'stock-values',
+            data: stockValue as StockValue,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
+            },
+          }),
+        ).then((r) => r.result),
+        30_000,
+        'payload.create stock-values',
+      )
+      valueId = newStockValue?.id
+    } catch (e: any) {
+      if (e && e._timeout) {
+        // Log the exact document we attempted to insert to aid debugging
+        try {
+          console.error('[DEBUG] payload.create stock-values timeout. Attempted data:', {
+            stockValue,
+            stockSequence,
+            valueDate: row?.valueDate,
+            stockID: row?.stockID,
+          })
+        } catch {}
+      }
+      throw e
+    }
   }
   return valueId
 }

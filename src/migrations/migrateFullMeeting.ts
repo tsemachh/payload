@@ -170,11 +170,24 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
+    let timeoutCount = 0
+
+    // Helper to timeout long operations (e.g., Payload create/update) and keep data for retry
+    const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
+      return await Promise.race<T>([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`operation timeout after ${ms}ms`)), ms),
+        ),
+      ])
+    }
 
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
     const stockMap = await getStockIdToSequenceMap(req)
+
+    // No retry queue: on timeout we will log a migration fault and skip
 
     // Process each meeting in parallel using the promise pool
     for (const row of meetingsResult.recordset) {
@@ -299,28 +312,56 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               meetingData.invitationLink = currentRow.link2
             }
 
-            const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
-            if (id) {
-              // Update Payload CMS
-              await payload.update({
-                collection: 'meetings',
-                id: id,
-                data: meetingData,
-                req: {
-                  ...req,
-                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
-                },
-              })
-            } else {
-              // Insert into Payload CMS
-              await payload.create({
-                collection: 'meetings',
-                data: meetingData as Meeting,
-                req: {
-                  ...req,
-                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
-                },
-              })
+            // use a per-call request to minimize shared-state contention
+            const perCallReq: any = {
+              ...req,
+              id:
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                  ? crypto.randomUUID()
+                  : `${Date.now()}-${Math.random()}`,
+              context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
+            }
+
+            // Wrap ID fetch + create/update in a timeout; on timeout collect for retry later
+            const op = (async () => {
+              const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
+              if (id) {
+                // Update Payload CMS
+                await payload.update({
+                  collection: 'meetings',
+                  id: id,
+                  data: meetingData,
+                  req: perCallReq,
+                })
+              } else {
+                // Insert into Payload CMS
+                await payload.create({
+                  collection: 'meetings',
+                  data: meetingData as Meeting,
+                  req: perCallReq,
+                })
+              }
+            })()
+
+            try {
+              // 60s timeout for the main pass
+              await withTimeout(op, 60_000)
+            } catch (e) {
+              if (e instanceof Error && e.message.startsWith('operation timeout')) {
+                timeoutCount++
+                console.warn(`⏳ Timeout on Meeting ${currentRow.id}; logging fault and skipping.`)
+                await logMigrationFault({
+                  payload,
+                  type: 'meeting',
+                  typeId: `${currentRow.id}`,
+                  comments: `operation timeout while insert/update meeting after 60000ms`,
+                  row: currentRow,
+                })
+                errorCount++
+                return
+              }
+              // Re-throw non-timeout errors to be handled by outer catch
+              throw e
             }
 
             successCount++
@@ -346,10 +387,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Wait for all promises to complete
     await promisePool.waitForAll()
 
+    // No retry pass for timed-out items – faults were already logged above
+
     console.log('\nMeetings Migration Summary:')
     console.log(`Total meetings processed: ${meetingsResult.recordset.length}`)
     console.log(`Successfully inserted/updated: ${successCount}`)
     console.log(`Failed insertions/updates: ${errorCount}`)
+    console.log(`Timed-out (queued for retry): ${timeoutCount}`)
     console.log(`Skipped meetings: ${skippedCount}`)
     console.log('Meetings migration completed successfully.')
   } catch (error) {

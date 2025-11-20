@@ -78,6 +78,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let errorCount = 0
     const stockIdTOSequence: Map<string, string> = await getStockIdToSequenceMap(payload)
 
+    // Helper to timeout long operations (stocks phase)
+    const withTimeoutStocks = async <T>(p: Promise<T>, ms: number) => {
+      return await Promise.race<T>([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`operation timeout after ${ms}ms`)), ms),
+        ),
+      ])
+    }
+
     // Get stock status from migration mapping
     console.log('Fetching stock statuses from migration mapping...')
     const [
@@ -105,8 +115,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     console.log(`Grouped stocks into ${stockIdToStockRecord.size} unique stockIDs`)
 
-    // Create a promise pool with concurrency of 20 for processing different stockIDs concurrently
-    const stocksPool = new PromisePool(20)
+    // Create a promise pool with moderate concurrency for processing different stockIDs concurrently
+    // Lowered to reduce pressure on Mongo/Payload on machines with smaller default pools
+    const stocksPool = new PromisePool(10)
 
     // Process each stockID sequentially, but process different stockIDs concurrently
     Array.from(stockIdToStockRecord.entries()).map(([stockID, row]) => {
@@ -168,10 +179,29 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             let stockSequence: string | null | undefined = stockIdTOSequence.get(stockID)
             let stock: Stock | null
 
-            if (!stockSequence) {
-              stock = await getStockByStockId(payload, stockID)
-            } else {
-              stock = await getCollectionDoc(req, 'stocks', stockSequence)
+            try {
+              if (!stockSequence) {
+                stock = await withTimeoutStocks(getStockByStockId(payload, stockID), 60_000)
+              } else {
+                stock = await withTimeoutStocks(
+                  getCollectionDoc(req, 'stocks', stockSequence),
+                  60_000,
+                )
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message.startsWith('operation timeout')) {
+                errorCount++
+                console.warn(`⏳ Timeout while fetching stock ${stockID}; logging fault and skipping.`)
+                await logMigrationFault({
+                  payload,
+                  type: 'stock',
+                  typeId: stockID,
+                  comments: `operation timeout while fetching stock (getStockByStockId/getCollectionDoc) after 60000ms`,
+                  row,
+                })
+                return
+              }
+              throw e
             }
 
             row.type = getStockType(row.type)
@@ -231,17 +261,37 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               }
             }
 
-            stockSequence = await upsertStockFromImport(
-              stock,
-              row,
-              req,
-              isTradable,
-              origin,
-              isActive,
-              comments,
-              stockStatuses.isPredictaStock,
-              stockStatuses.isFinancial,
-            )
+            try {
+              stockSequence = await withTimeoutStocks(
+                upsertStockFromImport(
+                  stock,
+                  row,
+                  req,
+                  isTradable,
+                  origin,
+                  isActive,
+                  comments,
+                  stockStatuses.isPredictaStock,
+                  stockStatuses.isFinancial,
+                  true, // fromMigration: insert-only semantics for existing stocks
+                ),
+                60_000,
+              )
+            } catch (e) {
+              if (e instanceof Error && e.message.startsWith('operation timeout')) {
+                errorCount++
+                console.warn(`⏳ Timeout while upserting stock ${stockID}; logging fault and skipping.`)
+                await logMigrationFault({
+                  payload,
+                  type: 'stock',
+                  typeId: stockID,
+                  comments: `operation timeout while upsertStockFromImport after 60000ms`,
+                  row,
+                })
+                return
+              }
+              throw e
+            }
 
             if (stockSequence) {
               stockIdTOSequence.set(stockID, stockSequence as string)
@@ -297,8 +347,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     errorCount = 0
     const relationStocksLength = relationStocks.size
 
-    // Create a promise pool for stock relations with concurrency of 20
-    const relationsPool = new PromisePool(20)
+    // Create a promise pool for stock relations (keep sequential)
+    const relationsPool = new PromisePool(1)
 
     Array.from(relationStocks.entries()).map(([id1, id2]) => {
       return relationsPool.add(async () => {
@@ -365,8 +415,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     successCount = 0
     errorCount = 0
 
-    // Create a promise pool with concurrency of 20 for processing stock values
+    // Helper to timeout long operations and log migration faults on timeout
+    const withTimeout = async <T>(p: Promise<T>, ms: number) => {
+      return await Promise.race<T>([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`operation timeout after ${ms}ms`)), ms),
+        ),
+      ])
+    }
+
+    // Create a promise pool with lower concurrency for processing stock values
+    // This avoids saturating Mongo connection pool and Payload internals on some environments
     const stockValuesPool = new PromisePool(20)
+    // Track skipped stocks to avoid repeated logging/processing on missing/irrelevant ones
+    const skippedStockIds = new Set<string>()
+
 
     // Process each stock value individually
     resultStockValues.recordset.map((row) => {
@@ -379,9 +443,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const isPredictaStock = predictaStocks.has(stockID)
         const isRootForeignStock = rootRelatedStocks.has(stockID) && !isPredictaStock
         const isEmdaStock = emdaStocks.has(stockID)
+        const stockInMeeting=stocksInMeeting.has(stockID)
+
 
         // Skip processing if stock doesn't meet criteria
-        if (!stockSequence || (!isPredictaStock && !isEmdaStock && !isRootForeignStock)) {
+        if (!stockSequence || (!isPredictaStock && !stockInMeeting)) {
+          if (skippedStockIds.has(stockID)) return
+          // Only log first time we encounter a skipped stockID
           await logMigrationFault({
             payload,
             type: 'stock-value',
@@ -389,20 +457,51 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
             row,
           })
+          skippedStockIds.add(stockID)
           return
         }
 
         try {
-          await upsertStockValueFromImport(stockSequence, row, {
+          // Use an isolated per-call request to avoid shared caches/state contention
+          const perCallReq: any = {
             ...req,
+            id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
             context: { ...req.context, from: 'migration', process: 'migrateStocks' },
-          })
+          }
+          try {
+            await withTimeout(
+              upsertStockValueFromImport(stockSequence, row, perCallReq),
+              60_000,
+            )
+          } catch (e) {
+            if (e instanceof Error && e.message.startsWith('operation timeout')) {
+              errorCount++
+              console.warn(
+                `⏳ Timeout while upserting stock value for stock ${stockID}; logging fault and skipping.`,
+              )
+              await logMigrationFault({
+                payload,
+                type: 'stock-value',
+                typeId: stockID,
+                comments: `operation timeout while upsertStockValueFromImport after 60000ms`,
+                row,
+              })
+              return
+            }
+            throw e
+          }
 
           successCount++
           if (successCount % 1000 === 0 || successCount === resultStockValues.recordset.length) {
             console.log(
               `✓ Inserted stock value: (${successCount}/${resultStockValues.recordset.length})`,
             )
+          }
+          if (successCount % 2000 === 0) {
+            const mu = process.memoryUsage()
+            const rss = (mu.rss / 1e6).toFixed(1)
+            const heap = (mu.heapUsed / 1e6).toFixed(1)
+            console.log(`[stats] processed=${successCount} rss=${rss}MB heapUsed=${heap}MB`)
           }
         } catch (error) {
           errorCount++

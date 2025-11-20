@@ -116,7 +116,12 @@ export const StockValues: CollectionConfig = {
       ],
     },
   ],
-
+indexes: [
+    {
+        fields: ['stockId', 'valueDate'],
+        unique: true,
+    },
+],
   hooks: {
     afterChange: [
       async ({ doc, req }) => {

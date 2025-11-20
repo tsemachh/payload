@@ -46,6 +46,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let errorCount = 0
     let skippedCount = 0
 
+      // Helper to timeout long operations (e.g., Payload update) and fail fast
+      const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
+        return await Promise.race<T>([
+          promise,
+          new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error(`operation timeout after ${ms}ms`)), ms),
+          ),
+        ])
+      }
+
     for (const meeting of meetings.docs) {
       promises.push(
         promisePool.add(async () => {
@@ -181,14 +191,39 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               fundsWithHolding: fundsWithHolding,
             } as Partial<Meeting>
 
-            // Update the meeting in MongoDB
-            const updateResult = await payload.update({
-              collection: 'meetings',
-              id: meetingId,
-              data: updatedMeeting,
-              req,
-              context: { ...req.context, from: 'migration', process: 'migrateMeetingHoldings' },
-            })
+            // Update the meeting in MongoDB with a 30s timeout
+            try {
+              await withTimeout(
+                payload.update({
+                  collection: 'meetings',
+                  id: meetingId,
+                  data: updatedMeeting,
+                  req,
+                  context: { ...req.context, from: 'migration', process: 'migrateMeetingHoldings' },
+                }),
+                30_000,
+              )
+            } catch (e) {
+              if (e instanceof Error && e.message.startsWith('operation timeout')) {
+                errorCount++
+                console.warn(
+                  `⏳ Timeout while updating holdings for Meeting ${meetingSeq}; logging fault and skipping.`,
+                )
+                await logMigrationFault({
+                  payload,
+                  type: 'meeting-holdings',
+                  typeId: `${meetingSeq}`,
+                  comments: `operation timeout while update meeting holdings after 30000ms`,
+                  row: JSON.stringify({
+                    meetingId: meetingSeq,
+                    fundsCount: updatedMeeting?.funds?.length ?? 0,
+                    fundsWithHoldingCount: fundsWithHolding.length,
+                  }),
+                })
+                return
+              }
+              throw e
+            }
 
             successCount++
             console.log(
