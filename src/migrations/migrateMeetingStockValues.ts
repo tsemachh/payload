@@ -27,6 +27,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         holdingsLimit: true,
         type: true,
       },
+        where:{
+            stockValue :{exists:false}
+        },
       limit: 0,
       depth: 1,
     })
@@ -154,7 +157,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, sqlStockId)
+              request.input('stockId', sql.Int, sqlStockId)
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null
@@ -175,7 +178,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValue' },
             },
-            true,
           )
           const stockName = `${stockData?.name} - ${stockData?.stockID}`
           const fullName = `${stockName}-${meeting?.type ? meeting.type : 'נדחתה/בוטלה'}`

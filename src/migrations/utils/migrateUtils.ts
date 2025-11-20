@@ -350,7 +350,6 @@ export async function upsertStockFromImport(
   comments: string = '',
   fromMagna: boolean = false,
   isFinancial: boolean = false,
-  fromMigration: boolean = false,
 ) {
   // Collect all fields we intend to persist
   const stockData: Partial<Stock> = {
@@ -381,10 +380,6 @@ export async function upsertStockFromImport(
       })
       return newStock.id
     } else {
-      // If called from migration and we prefer insert-only semantics, skip update checks
-      if (fromMigration) {
-        return stock.id
-      }
       // Determine if anything relevant changed
       const needsUpdate =
         stock.active !== stockData.active ||
@@ -438,7 +433,6 @@ export async function upsertStockValueFromImport(
   stockSequence: string,
   row: ImportStock,
   req: PayloadRequest,
-  newStockValue: boolean = false,
 ) {
   const stockValue: Partial<StockValue> | null = {
     stockId: stockSequence as string,
@@ -448,64 +442,28 @@ export async function upsertStockValueFromImport(
     registeredValue: row.registeredValue || null,
   }
 
-  let valueId: string | null = null
-  if (!newStockValue)
-    valueId = await withTimeout(
-      timed('getSequenceStockValueId', () =>
-        getSequenceStockValueId(req.payload, stockSequence, row.valueDate),
-      ).then((r) => r.result),
-      30_000,
-      'getSequenceStockValueId',
-    )
+  let valueId = null
+//  if (!newStockValue)
+  valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
-    await withTimeout(
-      timed('payload.update stock-values', () =>
-        req.payload.update({
-          collection: 'stock-values',
-          id: valueId as any,
-          data: stockValue as StockValue,
-            req: {
-                ...req,
-                context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
-            },
-        }),
-      ).then((r) => r.result),
-      30_000,
-      'payload.update stock-values',
-    )
+    await req.payload.update({
+      collection: 'stock-values',
+      id: valueId,
+      data: stockValue as StockValue,
+      req,
+    })
   } else {
-    // Insert into Payload CMS (with detailed logging on timeout)
-    try {
-      const newStockValue = await withTimeout(
-        timed('payload.create stock-values', () =>
-          req.payload.create({
-            collection: 'stock-values',
-            data: stockValue as StockValue,
-            req: {
-              ...req,
-              context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
-            },
-          }),
-        ).then((r) => r.result),
-        30_000,
-        'payload.create stock-values',
-      )
-      valueId = newStockValue?.id
-    } catch (e: any) {
-      if (e && e._timeout) {
-        // Log the exact document we attempted to insert to aid debugging
-        try {
-          console.error('[DEBUG] payload.create stock-values timeout. Attempted data:', {
-            stockValue,
-            stockSequence,
-            valueDate: row?.valueDate,
-            stockID: row?.stockID,
-          })
-        } catch {}
-      }
-      throw e
-    }
+    // Insert into Payload CMS
+    const newStockValue = await req.payload.create({
+      collection: 'stock-values',
+      data: stockValue as StockValue,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
+      },
+    })
+    valueId = newStockValue?.id
   }
   return valueId
 }
