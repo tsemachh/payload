@@ -102,7 +102,14 @@ export default function Participations() {
 
     return Array.from(companyMap.values())
   }, [companies, funds])
-
+  useEffect(() => {
+    if (companiesWithFunds.length > 0) {
+      const allFundIds = companiesWithFunds.flatMap((company) =>
+        company.funds.map((fund) => fund.id),
+      )
+      setSelectedFundIds(allFundIds)
+    }
+  }, [companiesWithFunds])
   const selectedCompaniesCount = useMemo(() => {
     const selectedCompanyIds = new Set<string>()
     appliedFilters.selectedFundIds.forEach((fundId) => {
@@ -235,11 +242,7 @@ export default function Participations() {
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
-    const matchedCompanies = companiesWithFunds.filter((company) => selected.includes(company.id))
-    const fundsIds = matchedCompanies.flatMap((company) => company.funds).map((fund) => fund.id)
-
-    setSelectedFundIds(fundsIds)
-    setSelectedComdIds(selected)
+    setSelectedFundIds(selected)
     setValidationErrors((prev) => prev.filter((err) => err !== 'companies'))
   }
 
@@ -387,19 +390,21 @@ export default function Participations() {
   }
 
   const getCompanySelectSummary = () => {
-    if (selectedComIds.length === 0) {
+    if (selectedFundIds.length === 0) {
       return 'בחר חברה'
     }
-    const totalCompaniesIds = companiesWithFunds.map((company) => company?.id)
+    const totalFundIds = companiesWithFunds.flatMap((company) =>
+      company.funds.map((fund) => fund.id),
+    )
     const allSelected =
-      selectedComIds.length === totalCompaniesIds.length &&
-      selectedComIds.every((id) => totalCompaniesIds.includes(id))
+      selectedFundIds.length === totalFundIds.length &&
+      selectedFundIds.every((id) => totalFundIds.includes(id))
 
     if (allSelected) {
       return 'נבחרו כל החברות'
     }
 
-    return `נבחרו ${selectedComIds.length} חברות`
+    return `נבחרו ${selectedFundIds.length} תיקים`
   }
 
   const renderAgendaRowsCallback = useCallback(
@@ -446,12 +451,14 @@ export default function Participations() {
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
-                  selectedCompanies={selectedComIds}
+                  selectedCompanies={selectedFundIds}
                   onSelectionChangeAction={handleFundsSelectionChange}
                   className="w-full"
                   showSearch={false}
-                  allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
-                  showFunds={false}
+                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
+                    company.funds.map((fund) => fund.id),
+                  )}
+                  showFunds={true}
                   checkActive={false}
                 />
               </SelectContent>
