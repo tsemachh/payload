@@ -4,7 +4,46 @@ import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
-import { getMeetingsCutoff, getStockValuesRetroDays } from '@/migrations/utils/dateUtils'
+import {getMeetingsCutoff, getMeetingsHistoryCutoff, getStockValuesRetroDays} from '@/migrations/utils/dateUtils'
+
+// --- Instrumentation helpers (Step 1) ---
+function nowMs() {
+  return Date.now()
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => {
+      const err = new Error(`Timeout in ${label} after ${ms}ms`)
+      ;(err as any)._timeout = true
+      reject(err)
+    }, ms)
+    promise
+      .then((v) => {
+        clearTimeout(t)
+        resolve(v)
+      })
+      .catch((e) => {
+        clearTimeout(t)
+        reject(e)
+      })
+  })
+}
+
+async function timed<T>(label: string, fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
+  const start = nowMs()
+  try {
+    const result = await fn()
+    const ms = nowMs() - start
+    if (ms > 5000) console.warn(`[WARN] ${label} took ${ms}ms`)
+    else if (ms > 1000) console.log(`[INFO] ${label} took ${ms}ms`)
+    return { result, ms }
+  } catch (e) {
+    const ms = nowMs() - start
+    console.error(`[ERROR] ${label} failed after ${ms}ms`, e)
+    throw e
+  }
+}
 
 export async function getStocks(pool: sql.ConnectionPool) {
   const resultStocks = await pool.request().query(`
@@ -160,6 +199,7 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
   const stockRelationResult = await pool.request().query(`
       SELECT [Id1], [Id2]
       FROM [dbEmda].[dbo].[tblSecurityIdConnections]
+      WHERE [Id1] != [Id2]
   `)
 
   console.log(`Retrieved ${stockRelationResult.recordset.length} resultStockIds from SQL Server`)
@@ -246,7 +286,7 @@ export async function getAllStockPredictaLogId(pool: sql.ConnectionPool) {
 }
 
 export async function getAllStocksInMeetings(pool: sql.ConnectionPool) {
-  const { dateString } = getMeetingsCutoff()
+  const { dateString } = getMeetingsHistoryCutoff()
   const request = pool.request()
   request.input('historyDate', sql.VarChar, dateString)
   const res = await request.query(`
@@ -393,7 +433,6 @@ export async function upsertStockValueFromImport(
   stockSequence: string,
   row: ImportStock,
   req: PayloadRequest,
-  newStockValue: boolean = false,
 ) {
   const stockValue: Partial<StockValue> | null = {
     stockId: stockSequence as string,
@@ -404,8 +443,8 @@ export async function upsertStockValueFromImport(
   }
 
   let valueId = null
-  if (!newStockValue)
-    valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
+//  if (!newStockValue)
+  valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS
     await req.payload.update({

@@ -367,6 +367,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Create a promise pool with concurrency of 20 for processing stock values
     const stockValuesPool = new PromisePool(20)
+    // Track skipped stocks to avoid repeated logging/processing on missing/irrelevant ones
+    const skippedStockIds = new Set<string>()
+
 
     // Process each stock value individually
     resultStockValues.recordset.map((row) => {
@@ -379,9 +382,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const isPredictaStock = predictaStocks.has(stockID)
         const isRootForeignStock = rootRelatedStocks.has(stockID) && !isPredictaStock
         const isEmdaStock = emdaStocks.has(stockID)
+        const stockInMeeting=stocksInMeeting.has(stockID)
+
 
         // Skip processing if stock doesn't meet criteria
-        if (!stockSequence || (!isPredictaStock && !isEmdaStock && !isRootForeignStock)) {
+        if (!stockSequence || (!isPredictaStock && !stockInMeeting)) {
+          if (skippedStockIds.has(stockID)) return
+          // Only log first time we encounter a skipped stockID
           await logMigrationFault({
             payload,
             type: 'stock-value',
@@ -389,6 +396,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
             row,
           })
+          skippedStockIds.add(stockID)
           return
         }
 

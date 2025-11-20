@@ -192,11 +192,13 @@ export type MigrationType =
       | 'stock-value'
       | 'stock-relation'
       | 'meeting'
+      | 'meeting-holdings'
       | 'meetingAgenda'
       | 'vote'
       | 'silenced-stock'
       | 'company'
       | 'meeting-unification'
+      | 'migration'
     )
   | null;
 /**
