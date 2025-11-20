@@ -199,6 +199,7 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
   const stockRelationResult = await pool.request().query(`
       SELECT [Id1], [Id2]
       FROM [dbEmda].[dbo].[tblSecurityIdConnections]
+      WHERE [Id1] != [Id2]
   `)
 
   console.log(`Retrieved ${stockRelationResult.recordset.length} resultStockIds from SQL Server`)
