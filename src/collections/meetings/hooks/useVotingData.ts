@@ -310,7 +310,7 @@ export const useVotingData = () => {
       result.push({
         id: groupId,
         name: parentCompany,
-        parentCompany,
+        parentCompanyId: subsidiaries[0]?.parentCompanyId || '',
         nominalValue: subsidiaries.reduce((sum, s) => sum + s.nominalValue, 0),
         percentageHolding: subsidiaries.reduce((sum, s) => sum + s.percentageHolding, 0),
         isGroupHeader: true,

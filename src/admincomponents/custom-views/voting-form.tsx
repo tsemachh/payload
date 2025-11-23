@@ -35,6 +35,7 @@ export interface VoteData {
     }
   }>
   companies?: string[]
+  companyIds?: string[]
   id: string
   title: string
   company: string
@@ -85,10 +86,9 @@ export interface VoteData {
 interface VotingFormProps {
   voteData: VoteData
   meetingId: string
-  companyIds: string
 }
 
-export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps) {
+export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [formData, setFormData] = useState<VoteData>()
   const [initialFormData, setInitialFormData] = useState<VoteData>()
   const [hasChanges, setHasChanges] = useState(false)
@@ -167,7 +167,7 @@ export function VotingForm({ voteData, meetingId, companyIds }: VotingFormProps)
     const reqBody = {
       meetingId,
       meetingName: voteData.meeting,
-      companyIds: companyIds.split(','),
+      companyIds: voteData.companyIds || [],
       votesData: {
         reported: formData?.reported,
         reportApproval: formData?.reportApproval,

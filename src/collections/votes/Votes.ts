@@ -208,10 +208,19 @@ export const Votes: CollectionConfig = {
                     hidden: true,
                   },
                   hooks: {
-                    afterRead: [
+                    beforeChange: [
                       async ({ data }) => {
                         if (!data) return null
                         return calculateCheckSum(data as Vote)
+                      },
+                    ],
+                    afterRead: [
+                      async ({ data }) => {
+                        // Fallback: calculate checksum if not stored (for old votes)
+                        if (!data?.checksum && data) {
+                          return calculateCheckSum(data as Vote)
+                        }
+                        return data?.checksum
                       },
                     ],
                   },
