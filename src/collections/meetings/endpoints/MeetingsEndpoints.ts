@@ -856,7 +856,7 @@ async function processMeetingsData(
             case 'אג"ח כהונת נאמן':
               return researchPermissions.showResearchTrusteeship
             default:
-              return hasCompanies ? userHasAccessToDocCompanies : researchPermissions.showResearch
+              return true
           }
         })
         .map((doc) => ({
