@@ -200,6 +200,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             logMigrationFault({
               payload,
               type: 'meeting',
+              severity: 'error',
               typeId: `${meeting.meetingId}`,
               comments: `Failed to update Meeting ${meeting.meetingId} with holdings: ${updateError.message}`,
               row: JSON.stringify({
@@ -214,7 +215,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Wait for all promises to complete
     await promisePool.waitForAll()
-
 
     console.log('\nMigration Summary:')
     console.log(`Total meetings processed: ${meetings.docs.length}`)

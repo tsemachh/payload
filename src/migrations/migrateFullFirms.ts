@@ -61,7 +61,7 @@ export async function down({ payload }: MigrateUpArgs): Promise<void> {
 interface FirmRow {
   firmId: number
   name: string
-  order: number
+  idOrder: number
   active: boolean
   showResearch: number
   setResearchAsDefault: number
@@ -114,7 +114,7 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
         const companyData: Partial<Company> = {
           companyId: row.firmId,
           name: row.name,
-          order: row.order,
+          _order: String(row.idOrder),
           type: 'regular',
           active: !!row.active,
           researchDocuments: {
@@ -240,24 +240,25 @@ async function migrateAccounts({ payload, req }: MigrateUpArgs): Promise<void> {
         })
 
         if (companyResult.docs.length === 0) {
-          console.error(`No firm found for firmId: ${firmId}`)
-          // Report to migration faults for all accounts of this firm
-          for (const account of accounts) {
-            await payload.create({
-              collection: 'migration-faults',
-              data: {
-                type: 'account',
-                comments: `No firm found for firmId: ${firmId}`,
-                row: JSON.stringify(account),
-                typeId: `${account.accountNumber}`,
-              },
-              req: {
-                ...req,
-                context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
-              },
-            })
-            errorCount++
-          }
+          const accNums = accounts.map((a) => a.accountNumber).join(', ')
+          const comments = `Firm not found (firmId=${firmId}). Accounts affected: ${accNums}`
+          console.error(comments)
+          // Single aggregated migration fault per missing firm with list of accounts
+          await payload.create({
+            collection: 'migration-faults',
+            data: {
+              type: 'account',
+              comments,
+              row: JSON.stringify({ firmId, accounts: accounts.map((a) => a.accountNumber) }),
+              typeId: String(firmId),
+            },
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateFullFirms' },
+            },
+          })
+          // Preserve error accounting per affected account
+          errorCount += accounts.length
           continue
         }
 
@@ -703,6 +704,12 @@ async function processCompany(
         updateData.parentCompany = parentId
       }
 
+      // Ensure `_order` has a default value if missing/empty
+      const existingOrder = (existingCompany.docs[0] as any)?._order
+      if (!existingOrder || existingOrder === '') {
+        updateData._order = '0'
+      }
+
       await payload.update({
         collection: 'companies',
         id: companyId,
@@ -716,6 +723,7 @@ async function processCompany(
         name: company.name,
         active: true,
         type: 'parent',
+        _order: '0',
       }
 
       // Set companyId if provided
@@ -970,6 +978,7 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
               legacyCompanyId: company.companyId,
               name: companyName,
               active: company.active,
+              _order: '0',
               type: 'fund',
               passiveFund: companyName.includes('מחקות') || companyName.includes('פסיביות'),
               // Set the account number in the appropriate field using the new structure
@@ -1274,6 +1283,7 @@ export async function migrateSilencedStocksCompanies(payload: any, req: any): Pr
           type: 'company',
           row: JSON.stringify({ companyId }),
           typeId: companyId,
+          severity: 'fatal',
           comments: createErrorFaultComment({
             id: companyId,
             operation: 'Update company silenced stocks',
@@ -1293,7 +1303,6 @@ export async function migrateSilencedStocksCompanies(payload: any, req: any): Pr
     throw error // Re-throw to ensure migration is marked as failed
   }
 }
-
 
 // ==================== X. MIGRATE PRIVATE RESEARCH FLAG ====================
 interface FirmsWithPrivateRow {
@@ -1353,7 +1362,10 @@ async function migrateShowResearchPrivate({ payload, req }: MigrateUpArgs): Prom
               showResearchPrivate: willBe,
             },
           },
-          req: { ...req, context: { ...req?.context, from: 'migration', process: 'migrateFullFirms' } },
+          req: {
+            ...req,
+            context: { ...req?.context, from: 'migration', process: 'migrateFullFirms' },
+          },
         })
         totalUpdated++
       }
@@ -1361,7 +1373,9 @@ async function migrateShowResearchPrivate({ payload, req }: MigrateUpArgs): Prom
       totalProcessed++
     }
 
-    console.log(`ShowResearchPrivate migration completed. Processed: ${totalProcessed}, Updated: ${totalUpdated}`)
+    console.log(
+      `ShowResearchPrivate migration completed. Processed: ${totalProcessed}, Updated: ${totalUpdated}`,
+    )
     console.log('=== ShowResearchPrivate Migration Completed ===\n')
   } catch (error) {
     console.error('Migration failed (ShowResearchPrivate):', error)

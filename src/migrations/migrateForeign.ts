@@ -50,6 +50,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'stock',
             typeId: `${originalStock.stockId}`,
             comments: `No ISIN found for foreign stock ${originalStock.stockId}`,
+            severity: 'warning',
           })
           continue
         }
@@ -146,6 +147,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           type: 'stock',
           comments: `Failed to process foreign stock ${originalStock.stockId}: ${JSON.stringify(error)}`,
           typeId: originalStock.stockId,
+          severity: 'fatal',
         })
       }
     }
@@ -154,7 +156,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Dual-Listed Stocks Migration ===')
     await migrateDual({ payload, req })
     console.log('=== Dual-Listed Stocks Migration Completed ===\n')
-
 
     console.log('Foreign stocks migration completed successfully')
   } catch (error) {
@@ -481,7 +482,10 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
         // If not found by ISIN or ISIN doesn't start with IL, find by name
         if (!taseStock) {
-          console.log('[migrateDual] TASE not found by stockId, trying by name', dualStock.hebrewName)
+          console.log(
+            '[migrateDual] TASE not found by stockId, trying by name',
+            dualStock.hebrewName,
+          )
           const stocksByName = await payload.find({
             collection: 'stocks',
             where: {
@@ -516,6 +520,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             payload,
             type: 'stock',
             typeId: dualStock.taseISIN,
+            severity: 'error',
             comments: `Could not find TASE stock for dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
           })
           continue
@@ -542,7 +547,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
               type: taseStock.type as StockType,
               longName: dualStock.englishName,
               isDual: true,
-              mainStockForDualStock:taseStock.id,
+              mainStockForDualStock: taseStock.id,
             } as ImportStock,
             req,
             true, // tradable
@@ -560,14 +565,17 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             })
           }
         } else {
-          console.log('[migrateDual] foreign stock exists we just need to update mainStockForDualStock', dualStock.foreignISIN)
+          console.log(
+            '[migrateDual] foreign stock exists we just need to update mainStockForDualStock',
+            dualStock.foreignISIN,
+          )
 
           await payload.update({
             collection: 'stocks',
             id: foreignStock.id,
             data: {
               isDual: true,
-              mainStockForDualStock:taseStock
+              mainStockForDualStock: taseStock,
             },
             req: {
               ...req,
@@ -577,11 +585,15 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         }
 
         if (!foreignStock) {
-          console.error('[migrateDual] Foreign stock still missing after create/update', dualStock.foreignISIN)
+          console.error(
+            '[migrateDual] Foreign stock still missing after create/update',
+            dualStock.foreignISIN,
+          )
           await logMigrationFault({
             payload,
             type: 'stock',
             typeId: dualStock.foreignISIN,
+            severity: 'fatal',
             comments: `Failed to create Foreign Stock for dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
           })
           continue
@@ -655,6 +667,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         await logMigrationFault({
           payload,
           type: 'stock',
+          severity: 'fatal',
           comments: `Failed to process dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName}): ${JSON.stringify(error)}`,
           typeId: dualStock.taseISIN,
         })
