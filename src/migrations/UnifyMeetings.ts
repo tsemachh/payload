@@ -171,9 +171,11 @@ async function processMeetingGroup(
               } else {
                 keptItem.exceptionalRecommendation.votingRecommendation = srcBaseRec
                 keptItem.exceptionalRecommendation.reasonRef =
-                  item?.exceptionalRecommendation?.reasonRef || keptItem.exceptionalRecommendation.reasonRef
+                  item?.exceptionalRecommendation?.reasonRef ||
+                  keptItem.exceptionalRecommendation.reasonRef
                 keptItem.exceptionalRecommendation.reasonText =
-                  item?.exceptionalRecommendation?.reasonText || keptItem.exceptionalRecommendation.reasonText
+                  item?.exceptionalRecommendation?.reasonText ||
+                  keptItem.exceptionalRecommendation.reasonText
               }
 
               if (meetingToRemove.companies && meetingToRemove.companies.length > 0) {
@@ -190,10 +192,10 @@ async function processMeetingGroup(
               item.exceptionalRecommendation.companies?.length > 0
             ) {
               // Recommendations equal; merge exceptional companies from source item
-              keptItem.exceptionalRecommendation =
-                keptItem.exceptionalRecommendation?.showExceptional
-                  ? keptItem.exceptionalRecommendation
-                  : { showExceptional: true, companies: [] }
+              keptItem.exceptionalRecommendation = keptItem.exceptionalRecommendation
+                ?.showExceptional
+                ? keptItem.exceptionalRecommendation
+                : { showExceptional: true, companies: [] }
 
               keptItem.exceptionalRecommendation.companies = Array.from(
                 new Set([
@@ -242,7 +244,16 @@ async function processMeetingGroup(
       const fundsSummary = `- Funds merged total: ${finalFunds.length} (+${fundsAddedFromRemoved} from removed)`
       const fundsWithHoldingSummary = `- FundsWithHolding rows merged total: ${finalFundsWithHolding.length} (+${fundsWithHoldingAddedFromRemoved} from removed)`
 
-      const finalSummary = [summaryHeader, removedSummary, votesSummary, companiesSummary, agendaSummary, fundsSummary, fundsWithHoldingSummary, ...summaryLines].join('\n')
+      const finalSummary = [
+        summaryHeader,
+        removedSummary,
+        votesSummary,
+        companiesSummary,
+        agendaSummary,
+        fundsSummary,
+        fundsWithHoldingSummary,
+        ...summaryLines,
+      ].join('\n')
 
       const newMigrationComments = existingMigrationComments
         ? `${existingMigrationComments}\n\n${finalSummary}`
@@ -278,6 +289,7 @@ async function processMeetingGroup(
       payload,
       type: 'meeting-unification',
       typeId: groupKey,
+      severity: 'fatal',
       comments: `Failed to unify meetings with key ${groupKey}: ${error.message}`,
     })
 
@@ -403,6 +415,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
               await logMigrationFault({
                 payload,
+                severity: 'fatal',
                 type: 'meeting-unification',
                 typeId: groupKey,
                 comments: `Failed to unify meetings with key ${groupKey}: ${error.message}`,

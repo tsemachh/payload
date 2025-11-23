@@ -4,7 +4,11 @@ import { Stock, StockOrigin, StockValue } from '@/payload-types'
 import { getSequenceStockValueId } from '@/utils/utils'
 import { Payload, PayloadRequest } from 'payload'
 import { logMigrationFault } from './migrationFaultUtils'
-import {getMeetingsCutoff, getMeetingsHistoryCutoff, getStockValuesRetroDays} from '@/migrations/utils/dateUtils'
+import {
+  getMeetingsCutoff,
+  getMeetingsHistoryCutoff,
+  getStockValuesRetroDays,
+} from '@/migrations/utils/dateUtils'
 
 // --- Instrumentation helpers (Step 1) ---
 function nowMs() {
@@ -69,9 +73,7 @@ export async function getStocks(pool: sql.ConnectionPool) {
 export async function getStockValues(pool: sql.ConnectionPool) {
   // Query the last days of data based on environment variable (prefer uppercase var)
   const days = getStockValuesRetroDays()
-  console.log(
-    `Executing SQL query for last ${days} days of stock data (STOCK_VALUE_DAYS_RETRO)...`,
-  )
+  console.log(`Executing SQL query for last ${days} days of stock data (STOCK_VALUE_DAYS_RETRO)...`)
   const request = pool.request()
   request.input('days', sql.Int, days)
   const resultStockValues = await request.query(`
@@ -214,6 +216,7 @@ export async function getStockRelations(pool: sql.ConnectionPool, payload: Paylo
         payload,
         type: 'stock-relation',
         typeId: id2,
+        severity: 'error',
         row: JSON.stringify(row, null, 2),
         comments: `Multiple relation: ${id2} has already relation to ${stocks.get(id2)}, so ${id2}->${id1} will not be inserted`,
       })
@@ -443,7 +446,7 @@ export async function upsertStockValueFromImport(
   }
 
   let valueId = null
-//  if (!newStockValue)
+  //  if (!newStockValue)
   valueId = await getSequenceStockValueId(req.payload, stockSequence, row.valueDate)
   if (valueId) {
     // Update Payload CMS

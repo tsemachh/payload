@@ -2,21 +2,21 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 export function getMeetingsHistoryRetroDays(): number {
-    const DEFAULT = 1825 //5 years
-    const rawUpper = process.env.MEETINGS_HISTORY_DAYS_RETRO
-    const raw = rawUpper ?? String(DEFAULT)
-    const parsed = parseInt(raw, 10)
-    if (Number.isNaN(parsed) || parsed <= 0) {
-        console.warn(
-            `MEETINGS_DAYS_RETRO/meettngs_days_retro is invalid ('${rawUpper}'), falling back to default ${DEFAULT} days`,
-        )
-        return DEFAULT
-    }
-    // Warn if using deprecated lowercase var
-    if (!rawUpper) {
-        console.warn('meetings_days_retro is deprecated; please use MEETINGS_DAYS_RETRO in your .env')
-    }
-    return parsed
+  const DEFAULT = 1825 //5 years
+  const rawUpper = process.env.MEETINGS_HISTORY_DAYS_RETRO
+  const raw = rawUpper ?? String(DEFAULT)
+  const parsed = parseInt(raw, 10)
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    console.warn(
+      `MEETINGS_DAYS_RETRO/meettngs_days_retro is invalid ('${rawUpper}'), falling back to default ${DEFAULT} days`,
+    )
+    return DEFAULT
+  }
+  // Warn if using deprecated lowercase var
+  if (!rawUpper) {
+    console.warn('meetings_days_retro is deprecated; please use MEETINGS_DAYS_RETRO in your .env')
+  }
+  return parsed
 }
 export function getMeetingsRetroDays(): number {
   const DEFAULT = 730
@@ -25,7 +25,7 @@ export function getMeetingsRetroDays(): number {
   const parsed = parseInt(raw, 10)
   if (Number.isNaN(parsed) || parsed <= 0) {
     console.warn(
-      `MEETINGS_DAYS_RETRO/meettngs_days_retro is invalid ('${rawUpper}'), falling back to default ${DEFAULT} days`,
+      `MEETINGS_DAYS_RETRO/meetings_days_retro is invalid ('${rawUpper}'), falling back to default ${DEFAULT} days`,
     )
     return DEFAULT
   }
@@ -49,15 +49,15 @@ export function getMeetingsCutoff(): {
 }
 
 export function getMeetingsHistoryCutoff(): {
-    days: number
-    cutoffDate: Date
-    dateString: string
+  days: number
+  cutoffDate: Date
+  dateString: string
 } {
-    const days = getMeetingsHistoryRetroDays()
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - days)
-    const dateString = cutoffDate.toISOString().slice(0, 10)
-    return { days, cutoffDate, dateString }
+  const days = getMeetingsHistoryRetroDays()
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - days)
+  const dateString = cutoffDate.toISOString().slice(0, 10)
+  return { days, cutoffDate, dateString }
 }
 
 export function getStockValuesRetroDays(): number {

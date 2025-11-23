@@ -75,7 +75,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('Starting holding days migration process...')
     pool = await createMSSqlPool()
     const holdingsDaysRetro = getHoldingsRetroDays()
-    console.log(`Importing holdings from the last ${holdingsDaysRetro} days for all active companies`)
+    console.log(
+      `Importing holdings from the last ${holdingsDaysRetro} days for all active companies`,
+    )
 
     // Initialize on-demand caches
     const accountCache = new Map<string, string>()
@@ -138,6 +140,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'holding',
             row: JSON.stringify(holding),
             typeId: accountKey,
+            severity: 'warning',
             comments: createErrorFaultComment({
               id: accountKey,
               operation: 'Holdings - Company ID lookup',
@@ -298,6 +301,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'holding',
             row: '',
             typeId: '',
+            severity: 'fatal',
             comments: createErrorFaultComment({
               id: companyId,
               operation: 'Holdings',

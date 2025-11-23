@@ -82,6 +82,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 typeId: `meeting-${meeting.id}`,
                 comments: `Meeting with ID ${meeting.id} not found in MongoDB and votes cannot be migrated`,
                 row: meeting,
+                severity: 'warning',
               })
               return
             }
@@ -129,6 +130,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     typeId: `meeting-${meeting.id}-company-${company.firmid}`,
                     comments: `Company with ID ${company.firmid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
                     row: company,
+                    severity: 'warning',
                   })
                   continue
                 }
@@ -175,7 +177,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                       umm.MeetingId = @meetingId
                       AND utf.firmID = @firmId
                 `)
-                const topLevelClientComment = userMeetingMessageResult?.recordset?.[0]?.Message || ''
+                const topLevelClientComment =
+                  userMeetingMessageResult?.recordset?.[0]?.Message || ''
 
                 // Create votes array for MongoDB
                 // First, create a map of agenda item IDs to their positions in the agenda
@@ -199,7 +202,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     voteDecision,
                     noParticipantDuty,
                     // Map per-topic client comment to schema field 'voteReason'
-                    voteReason: vote.ccomment || '',
+                    voteReason: vote.ccomment?.trim() || undefined,
                     // Rename booleans to match Votes collection schema
                     isInvestmentCommittee: vote.committee === 1,
                     hasConflictOfInterest: vote.conflict === 1,
@@ -235,6 +238,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   await logMigrationFault({
                     payload,
                     type: 'vote',
+                    severity: 'error',
                     typeId: `meeting-${meeting.id}`,
                     comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
                     row: JSON.stringify(voteData),
@@ -254,6 +258,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             await logMigrationFault({
               payload,
               type: 'vote',
+              severity: 'fatal',
               typeId: `meeting-${meeting.id}`,
               comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
               row: meeting,

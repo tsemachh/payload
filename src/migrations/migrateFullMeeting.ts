@@ -191,6 +191,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           typeId: `${row.id}`,
           comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
           row,
+          severity: 'warning',
         })
         skippedCount++
         continue // Use continue instead of return to skip this iteration
@@ -227,6 +228,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           typeId: `${row.id}`,
           comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
           row,
+          severity: 'warning',
         })
         skippedCount++
         continue // Use continue instead of return to skip this iteration
@@ -335,6 +337,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               payload,
               type: 'meeting',
               typeId: `${currentRow.id}`,
+              severity: 'fatal',
               comments: `Failed to insert/update Meeting ${currentRow.id}: ${insertError}`,
               row: currentRow,
             })

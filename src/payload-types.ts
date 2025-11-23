@@ -471,6 +471,7 @@ export interface User {
  */
 export interface Company {
   id: string;
+  _order?: string | null;
   name: string;
   active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
@@ -1054,6 +1055,10 @@ export interface MigrationFault {
   id: string;
   type?: MigrationType;
   typeId?: string | null;
+  /**
+   * Fault severity classification
+   */
+  severity?: ('info' | 'warning' | 'error' | 'fatal') | null;
   row?: string | null;
   comments?: string | null;
   creator?: string | null;
@@ -1638,6 +1643,7 @@ export interface HoldingsPerDaySelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  _order?: T;
   name?: T;
   active?: T;
   type?: T;
@@ -2045,6 +2051,7 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
 export interface MigrationFaultsSelect<T extends boolean = true> {
   type?: T;
   typeId?: T;
+  severity?: T;
   row?: T;
   comments?: T;
   creator?: T;
