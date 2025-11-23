@@ -862,6 +862,7 @@ async function processMeetingsData(
         .map((doc) => ({
           url: doc.url as string,
           filename: doc.filename as string,
+          companies: doc.companies as string[],
         }))
 
       const displayVotingRecommendation = user?.companies.some(
