@@ -211,7 +211,7 @@ export const Companies: CollectionConfig = {
                   fields: [
                     {
                       name: 'showResearchTrusteeship',
-                      label: 'אג"ח נאמנות',
+                      label: 'קובץ המלצה אג"ח נאמנות ',
                       type: 'checkbox',
                       defaultValue: true,
                       admin: {
@@ -220,7 +220,7 @@ export const Companies: CollectionConfig = {
                     },
                     {
                       name: 'showResearchBond',
-                      label: 'אג"ח',
+                      label: 'קובץ המלצה אג"ח',
                       type: 'checkbox',
                       admin: {
                         width: '200px',
@@ -228,7 +228,15 @@ export const Companies: CollectionConfig = {
                     },
                     {
                       name: 'showResearch',
-                      label: 'כללי',
+                      label: 'קובץ המלצה כללי',
+                      type: 'checkbox',
+                      admin: {
+                        width: '200px',
+                      },
+                    },
+                    {
+                      name: 'showResearchPrivate',
+                      label: 'קובץ מסמך מחקר פרטי',
                       type: 'checkbox',
                       admin: {
                         width: '200px',
@@ -240,14 +248,6 @@ export const Companies: CollectionConfig = {
                   type: 'row',
                   fields: [
                     {
-                      name: 'showResearchPrivate',
-                      label: 'מקבל מסמכי מחקר פרטנים',
-                      type: 'checkbox',
-                      admin: {
-                        width: '200px',
-                      },
-                    },
-                    {
                       name: 'displayVotingRecommendation',
                       label: 'הצגת המלצת הצבעה',
                       type: 'checkbox',
@@ -257,7 +257,7 @@ export const Companies: CollectionConfig = {
                     },
                     {
                       name: 'defaultVotingRecommendation',
-                      label: 'המלצת הצבעה כברירת מחדל',
+                      label: 'עדכון ההמלצה בגלגלת ללקוח',
                       type: 'checkbox',
                       admin: {
                         width: '200px',
