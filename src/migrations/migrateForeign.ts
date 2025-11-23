@@ -32,10 +32,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     const foreignStocks = await payload.find({
       collection: 'stocks',
+      // מביא רק ניירות זרים שאין להם relatedStock (לא עוקבים אחרי מניה אחרת)
       where: {
-        origin: {
-          equals: 'Foreign',
-        },
+        and: [
+          {
+            origin: { equals: 'Foreign' },
+          },
+          {
+            or: [
+              { relatedStock: { exists: false } },
+              { relatedStock: { equals: null } },
+            ],
+          },
+        ],
       },
       limit: 0,
     })
