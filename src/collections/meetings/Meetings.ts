@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -738,14 +738,17 @@ export const Meetings: CollectionConfig = {
                     disableListColumn: true,
                   },
                   filterOptions: ({ data, req }) => {
-                    return {
+                    const where: Where = {
                       stockId: {
                         equals: data?.stock,
                       },
-                      valueDate: {
-                        greater_than_equal: new Date(data?.holdingsLimit).toISOString(),
-                      },
                     }
+                    if (data?.holdingsLimit) {
+                      where.valueDate = {
+                        less_than_equal: new Date(data?.holdingsLimit).toISOString(),
+                      }
+                    }
+                    return where
                   },
                   maxDepth: 1,
                 },
