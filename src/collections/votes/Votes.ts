@@ -214,15 +214,6 @@ export const Votes: CollectionConfig = {
                         return calculateCheckSum(data as Vote)
                       },
                     ],
-                    afterRead: [
-                      async ({ data }) => {
-                        // Fallback: calculate checksum if not stored (for old votes)
-                        if (!data?.checksum && data) {
-                          return calculateCheckSum(data as Vote)
-                        }
-                        return data?.checksum
-                      },
-                    ],
                   },
                 },
                 {

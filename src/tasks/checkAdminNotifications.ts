@@ -355,6 +355,12 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
       // Find all published votes for this meeting with parentCompany virtual field
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
+        select: {
+          id: true,
+          company: true,
+          checksum: true,
+          parentCompany: true,
+        },
         where: {
           meeting: {
             equals: meeting.id,
