@@ -1148,6 +1148,56 @@ export const Meetings: CollectionConfig = {
         const changeSource = req.context?.from || 'user'
         let meetingAlreadyProcessed = false
 
+        // Create notifications for significant changes (when changeDetails is added)
+        if (
+          operation === 'update' &&
+          doc.changeDetails &&
+          doc.changeDetails !== previousDoc?.changeDetails &&
+          req.context?.from !== 'process' &&
+          req.context?.from !== 'migration'
+        ) {
+          const companies = (doc.companies || []) as string[]
+          if (companies.length === 0) return
+
+          const today = new Date()
+          const formattedDate = today.toLocaleDateString('he-IL')
+
+          const meetingName = doc.fullName || 'אסיפה'
+          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), .יש לשים לב לשינויים \nהערות: ${doc.changeDetails}`
+
+          for (const companyId of companies) {
+            try {
+              // Delete existing notifications to avoid duplicates
+              await req.payload.delete({
+                collection: 'company-meeting-notifications',
+                where: {
+                  company: { equals: companyId },
+                  meeting: { equals: doc.id },
+                  notificationType: { equals: 'meeting-updated' },
+                  message: { equals: message },
+                },
+              })
+
+              // Create new notification
+              await req.payload.create({
+                collection: 'company-meeting-notifications',
+                data: {
+                  message,
+                  notificationType: 'meeting-updated',
+                  meeting: doc.id,
+                  company: companyId,
+                  readStatus: false,
+                },
+              })
+            } catch (error) {
+              console.error(
+                `Error creating notification for company ${companyId} (meeting ${doc.id}):`,
+                error,
+              )
+            }
+          }
+        }
+
         // Handle dual stock creation
         if (
           operation === 'create' &&
