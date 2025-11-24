@@ -963,6 +963,7 @@ export interface CompanyMeetingNotification {
   id: string;
   message: string;
   notificationType: UserNotificationType;
+  url?: string | null;
   readStatus?: boolean | null;
   meeting?: (string | null) | Meeting;
   company: string | Company;
@@ -1865,6 +1866,7 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
   message?: T;
   notificationType?: T;
+  url?: T;
   readStatus?: T;
   meeting?: T;
   company?: T;

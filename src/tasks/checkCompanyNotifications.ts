@@ -414,6 +414,7 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
   for (const meeting of meetings) {
     const companies = meeting.companies as string[]
     if (!companies || companies.length === 0) continue
+    const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
     const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedLastWorkingDate}), .יש לשים לב לשינויים \nהערות: ${meeting.changeDetails}`
     for (const companyId of companies) {
       await payload.delete({
@@ -423,6 +424,7 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
           message: { equals: message },
           notificationType: { equals: 'meeting-updated' },
           meeting: { equals: meeting.id },
+          url: { equals: url },
         },
       })
       await payload.create({
@@ -432,6 +434,7 @@ async function checkMeetingUpdates(req: any, results: any, userId?: string) {
           notificationType: 'meeting-updated',
           meeting: meeting.id,
           company: companyId,
+          url: url,
         },
       })
 

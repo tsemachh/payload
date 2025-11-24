@@ -122,7 +122,9 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       companyId,
       companyName: '',
       recipientEmails: usersMails,
-      notificationsSent: { total: companyNotifications.length } as Record<string, number> & { total: number },
+      notificationsSent: { total: companyNotifications.length } as Record<string, number> & {
+        total: number
+      },
       emailStatus: 'pending',
     }
 
@@ -160,7 +162,12 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       if (items.length === 0) continue
       html += `<h3>${opt.label}:</h3><ul>`
       for (const notification of items) {
-        html += `<li>${notification.message}</li>`
+        html += `<li>`
+        html += `${notification.message}`
+        if (notification.url && typeof notification.url === 'string') {
+          html += ` - <a href="${notification.url}" target="_blank">קישור לאסיפה</a>`
+        }
+        html += `</li>`
       }
       html += '</ul>'
     }
