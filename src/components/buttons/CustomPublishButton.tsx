@@ -111,6 +111,9 @@ export const CustomPublishButton: React.FC = () => {
       if (isSignificant && !details.trim()) {
         setHasError(true)
         toast.error('יש למלא תיאור השינויים כאשר מדובר בשינוי מהותי')
+        setTimeout(() => {
+          toggleModal(significantChangeModalSlug)
+        }, 0)
         return
       }
 
