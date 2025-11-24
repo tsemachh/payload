@@ -734,6 +734,7 @@ export const Meetings: CollectionConfig = {
                   hasMany: false,
                   required: true,
                   admin: {
+                    width: '300px',
                     disableListColumn: true,
                   },
                   filterOptions: ({ data, req }) => {
@@ -751,6 +752,7 @@ export const Meetings: CollectionConfig = {
                   label: 'שער סגירה',
                   type: 'number',
                   admin: {
+                    width: '200px',
                     readOnly: true,
                     components: {
                       Cell: {
@@ -765,6 +767,7 @@ export const Meetings: CollectionConfig = {
                   label: 'הון רשום',
                   type: 'number',
                   admin: {
+                    width: '200px',
                     readOnly: true,
                     hidden: false,
                     disableListColumn: true,
@@ -777,6 +780,7 @@ export const Meetings: CollectionConfig = {
                   type: 'number',
                   admin: {
                     readOnly: true,
+                    width: '200px',
                     components: {
                       Cell: {
                         path: '/admincomponents/cell/FormattedNumber',
