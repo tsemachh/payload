@@ -742,6 +742,9 @@ export const Meetings: CollectionConfig = {
                       stockId: {
                         equals: data?.stock,
                       },
+                      valueDate: {
+                        greater_than_equal: new Date(data?.holdingsLimit).toISOString(),
+                      },
                     }
                   },
                   maxDepth: 1,
