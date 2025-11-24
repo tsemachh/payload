@@ -727,6 +727,70 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'stockValue',
+                  type: 'relationship',
+                  relationTo: 'stock-values',
+                  label: 'ערך נייר מתאריך',
+                  hasMany: false,
+                  required: true,
+                  admin: {
+                    disableListColumn: true,
+                  },
+                  filterOptions: ({ data, req }) => {
+                    return {
+                      stockId: {
+                        equals: data?.stock,
+                      },
+                    }
+                  },
+                  maxDepth: 1,
+                },
+                {
+                  name: 'stockClosingRate',
+                  virtual: 'stockValue.closingRate',
+                  label: 'שער סגירה',
+                  type: 'number',
+                  admin: {
+                    readOnly: true,
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 1 },
+                      },
+                    },
+                  },
+                },
+                {
+                  name: 'stockRegisteredValue',
+                  label: 'הון רשום',
+                  type: 'number',
+                  admin: {
+                    readOnly: true,
+                    hidden: false,
+                    disableListColumn: true,
+                  },
+                },
+                {
+                  name: 'stockMarketValue',
+                  virtual: 'stockValue.marketValue',
+                  label: 'שווי שוק',
+                  type: 'number',
+                  admin: {
+                    readOnly: true,
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 0 },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
                   name: 'location',
                   label: 'כתובת',
                   type: 'text',
@@ -1099,40 +1163,6 @@ export const Meetings: CollectionConfig = {
                   ],
                 },
               ],
-            },
-            {
-              name: 'stockValue',
-              type: 'relationship',
-              relationTo: 'stock-values',
-              hasMany: false,
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-              maxDepth: 1,
-            },
-            {
-              name: 'stockRegisteredValue',
-              type: 'number',
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-            },
-            {
-              name: 'stockMarketValue',
-              virtual: 'stockValue.marketValue',
-              label: 'שווי שוק',
-              type: 'number',
-              admin: {
-                readOnly: true,
-                components: {
-                  Cell: {
-                    path: '/admincomponents/cell/FormattedNumber',
-                    clientProps: { decimals: 0 },
-                  },
-                },
-              },
             },
           ],
         },

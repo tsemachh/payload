@@ -716,6 +716,10 @@ export interface Meeting {
   mainMeetingForDualMeeting?: (string | null) | Meeting;
   hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
+  stockValue: string | StockValue;
+  stockClosingRate?: number | null;
+  stockRegisteredValue?: number | null;
+  stockMarketValue?: number | null;
   location?: string | null;
   comments?: string | null;
   migrationComments?: string | null;
@@ -737,9 +741,6 @@ export interface Meeting {
   researchDocuments?: (string | ResearchDocument)[] | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
-  stockValue?: (string | null) | StockValue;
-  stockRegisteredValue?: number | null;
-  stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -1488,6 +1489,10 @@ export interface MeetingsSelect<T extends boolean = true> {
   mainMeetingForDualMeeting?: T;
   hasDualStock?: T;
   dualMeeting?: T;
+  stockValue?: T;
+  stockClosingRate?: T;
+  stockRegisteredValue?: T;
+  stockMarketValue?: T;
   location?: T;
   comments?: T;
   migrationComments?: T;
@@ -1506,9 +1511,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   researchDocuments?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
-  stockValue?: T;
-  stockRegisteredValue?: T;
-  stockMarketValue?: T;
   creator?: T;
   updator?: T;
   process?: T;
