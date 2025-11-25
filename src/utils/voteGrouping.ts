@@ -50,25 +50,20 @@ export function groupVotesByParentAndChecksum(
 }
 
 /**
- * Creates a map of company ID to parent company ID
- * @param companies - Array of company objects with parentCompany field
+ * Creates a map of company ID to parent company ID from votes with parentCompany virtual field
+ * @param votes - Array of vote objects with company and parentCompany fields
  * @returns Map of company ID to parent company ID
  */
-export function createCompanyToParentMap(companies: any[]): Map<string, string> {
+export function createCompanyToParentMapFromVotes(votes: any[]): Map<string, string> {
   const companyToParentMap = new Map<string, string>()
 
-  companies.forEach((company: any) => {
-    let parentCompanyId = company.id // Default to company itself if no parent
-    if (
-      company?.parentCompany?.docs &&
-      Array.isArray(company.parentCompany.docs) &&
-      company.parentCompany.docs.length > 0
-    ) {
-      const parentCompany = company.parentCompany.docs[0]
-      parentCompanyId =
-        typeof parentCompany === 'string' ? parentCompany : parentCompany?.id || company.id
-    }
-    companyToParentMap.set(company.id, parentCompanyId)
+  votes.forEach((vote: any) => {
+    const companyId = getIdOfRelationField(vote.company)
+    if (!companyId) return
+
+    // Use getParentCompanyId helper to handle join object format
+    const parentCompanyId = getParentCompanyId(vote.parentCompany) || String(companyId)
+    companyToParentMap.set(String(companyId), parentCompanyId)
   })
 
   return companyToParentMap
@@ -91,25 +86,6 @@ export function groupCompaniesByParent(companies: any[]): Map<string, any[]> {
   })
 
   return parentCompanyGroups
-}
-
-/**
- * Groups companies by checksum (second level grouping)
- * @param companies - Array of company objects with vote.checksum field
- * @returns Map of checksum to array of companies
- */
-export function groupCompaniesByChecksum(companies: any[]): Map<string, any[]> {
-  const checksumGroups = new Map<string, any[]>()
-
-  companies.forEach((company) => {
-    const checksumKey = company.vote?.checksum || 'ללא checksum'
-    if (!checksumGroups.has(checksumKey)) {
-      checksumGroups.set(checksumKey, [])
-    }
-    checksumGroups.get(checksumKey)!.push(company)
-  })
-
-  return checksumGroups
 }
 
 /**
@@ -159,4 +135,12 @@ export function groupCompaniesByParentAndChecksum(
     getParentKey: (company) => company.parentCompany || company.name,
     getChecksum: (company) => company.vote?.checksum || 'ללא checksum',
   })
+}
+
+export function getGroupedVotesUrl(
+  meetingId: string | number,
+  parentCompanyId: string,
+  checksum: string,
+): string {
+  return `/admin/grouped-votes/?meetingId=${meetingId}&parentCompanyId=${parentCompanyId}&checksum=${checksum}`
 }

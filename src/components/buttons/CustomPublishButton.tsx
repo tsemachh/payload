@@ -58,7 +58,15 @@ export const CustomPublishButton: React.FC = () => {
       setMostRecentVersionIsAutosaved(false)
       setHasPublishedDoc(true)
     }
-  }, [uploadStatus, isSignificantChange, submit, changeDetails, setUnpublishedVersionCount, setMostRecentVersionIsAutosaved, setHasPublishedDoc])
+  }, [
+    uploadStatus,
+    isSignificantChange,
+    submit,
+    changeDetails,
+    setUnpublishedVersionCount,
+    setMostRecentVersionIsAutosaved,
+    setHasPublishedDoc,
+  ])
 
   // Open confirmation modal
   const openConfirmModal = useCallback(() => {
@@ -106,15 +114,16 @@ export const CustomPublishButton: React.FC = () => {
   }
   const hasNewerVersions = unpublishedVersionCount > 0
 
+  const canPublish =
+    hasPublishPermission &&
+    uploadStatus !== 'uploading' &&
+    (modified || hasNewerVersions || !hasPublishedDoc)
+
   return (
     <React.Fragment>
       <FormSubmit
         buttonId="action-save"
-        disabled={
-          hasPublishPermission &&
-          (modified || hasNewerVersions || !hasPublishedDoc) &&
-          uploadStatus === 'uploading'
-        }
+        disabled={!canPublish}
         onClick={openConfirmModal}
         size="medium"
         type="button"

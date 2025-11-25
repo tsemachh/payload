@@ -29,6 +29,7 @@ export const Companies: CollectionConfig = {
     plural: 'חברות',
     singular: 'חברה',
   },
+  orderable: true,
   enableQueryPresets: true,
   admin: {
     useAsTitle: 'name',
@@ -48,8 +49,20 @@ export const Companies: CollectionConfig = {
   },
   custom: {
     filterList: [
-      ['type', 'active', 'passiveFund','researchDocuments.displayVotingRecommendation','researchDocuments.defaultVotingRecommendation'],
-    ['researchDocuments.showResearch','researchDocuments.showResearchPrivate','researchDocuments.howResearchTrusteeship','researchDocuments.showResearchBond']],
+      [
+        'type',
+        'active',
+        'passiveFund',
+        'researchDocuments.displayVotingRecommendation',
+        'researchDocuments.defaultVotingRecommendation',
+      ],
+      [
+        'researchDocuments.showResearch',
+        'researchDocuments.showResearchPrivate',
+        'researchDocuments.howResearchTrusteeship',
+        'researchDocuments.showResearchBond',
+      ],
+    ],
     defaultFilter: { active: { equals: 'true' } },
   },
   versions: {},

@@ -192,11 +192,13 @@ export type MigrationType =
       | 'stock-value'
       | 'stock-relation'
       | 'meeting'
+      | 'meeting-holdings'
       | 'meetingAgenda'
       | 'vote'
       | 'silenced-stock'
       | 'company'
       | 'meeting-unification'
+      | 'migration'
     )
   | null;
 /**
@@ -469,6 +471,7 @@ export interface User {
  */
 export interface Company {
   id: string;
+  _order?: string | null;
   name: string;
   active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
@@ -713,6 +716,10 @@ export interface Meeting {
   mainMeetingForDualMeeting?: (string | null) | Meeting;
   hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
+  stockValue: string | StockValue;
+  stockClosingRate?: number | null;
+  stockRegisteredValue?: number | null;
+  stockMarketValue?: number | null;
   location?: string | null;
   comments?: string | null;
   migrationComments?: string | null;
@@ -734,9 +741,6 @@ export interface Meeting {
   researchDocuments?: (string | ResearchDocument)[] | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
-  stockValue?: (string | null) | StockValue;
-  stockRegisteredValue?: number | null;
-  stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -1053,6 +1057,10 @@ export interface MigrationFault {
   id: string;
   type?: MigrationType;
   typeId?: string | null;
+  /**
+   * Fault severity classification
+   */
+  severity?: ('info' | 'warning' | 'error' | 'fatal') | null;
   row?: string | null;
   comments?: string | null;
   creator?: string | null;
@@ -1482,6 +1490,10 @@ export interface MeetingsSelect<T extends boolean = true> {
   mainMeetingForDualMeeting?: T;
   hasDualStock?: T;
   dualMeeting?: T;
+  stockValue?: T;
+  stockClosingRate?: T;
+  stockRegisteredValue?: T;
+  stockMarketValue?: T;
   location?: T;
   comments?: T;
   migrationComments?: T;
@@ -1500,9 +1512,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   researchDocuments?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
-  stockValue?: T;
-  stockRegisteredValue?: T;
-  stockMarketValue?: T;
   creator?: T;
   updator?: T;
   process?: T;
@@ -1637,6 +1646,7 @@ export interface HoldingsPerDaySelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  _order?: T;
   name?: T;
   active?: T;
   type?: T;
@@ -2045,6 +2055,7 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
 export interface MigrationFaultsSelect<T extends boolean = true> {
   type?: T;
   typeId?: T;
+  severity?: T;
   row?: T;
   comments?: T;
   creator?: T;

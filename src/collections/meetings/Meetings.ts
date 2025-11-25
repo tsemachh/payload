@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -727,6 +727,80 @@ export const Meetings: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'stockValue',
+                  type: 'relationship',
+                  relationTo: 'stock-values',
+                  label: 'ערך נייר מתאריך',
+                  hasMany: false,
+                  required: true,
+                  admin: {
+                    width: '300px',
+                    disableListColumn: true,
+                  },
+                  filterOptions: ({ data, req }) => {
+                    const where: Where = {
+                      stockId: {
+                        equals: data?.stock,
+                      },
+                    }
+                    if (data?.holdingsLimit) {
+                      where.valueDate = {
+                        less_than_equal: new Date(data?.holdingsLimit).toISOString(),
+                      }
+                    }
+                    return where
+                  },
+                  maxDepth: 1,
+                },
+                {
+                  name: 'stockClosingRate',
+                  virtual: 'stockValue.closingRate',
+                  label: 'שער סגירה',
+                  type: 'number',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 1 },
+                      },
+                    },
+                  },
+                },
+                {
+                  name: 'stockRegisteredValue',
+                  label: 'הון רשום',
+                  type: 'number',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    hidden: false,
+                    disableListColumn: true,
+                  },
+                },
+                {
+                  name: 'stockMarketValue',
+                  virtual: 'stockValue.marketValue',
+                  label: 'שווי שוק',
+                  type: 'number',
+                  admin: {
+                    readOnly: true,
+                    width: '200px',
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 0 },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
                   name: 'location',
                   label: 'כתובת',
                   type: 'text',
@@ -1099,40 +1173,6 @@ export const Meetings: CollectionConfig = {
                   ],
                 },
               ],
-            },
-            {
-              name: 'stockValue',
-              type: 'relationship',
-              relationTo: 'stock-values',
-              hasMany: false,
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-              maxDepth: 1,
-            },
-            {
-              name: 'stockRegisteredValue',
-              type: 'number',
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-            },
-            {
-              name: 'stockMarketValue',
-              virtual: 'stockValue.marketValue',
-              label: 'שווי שוק',
-              type: 'number',
-              admin: {
-                readOnly: true,
-                components: {
-                  Cell: {
-                    path: '/admincomponents/cell/FormattedNumber',
-                    clientProps: { decimals: 0 },
-                  },
-                },
-              },
             },
           ],
         },

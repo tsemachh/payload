@@ -542,7 +542,7 @@ export async function generateParticipationsPDF(
       // Add vote reason rows
       if (voteReasons.length > 0) {
         // Add title row
-        const titleText = voteReasons.length === 1 ? 'הערת הצבעה' : 'הערות הצבעה'
+        const titleText = voteReasons.length === 1 ? 'נימוק הצבעה' : 'נימוקי הצבעה'
         body.push([
           {
             content: prepareText(titleText),

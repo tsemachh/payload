@@ -6,6 +6,11 @@ import { Meeting } from '@/payload-types'
 
 import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
 import { getUserCompanyIds } from '@/utils/authUtils'
+import {
+  getGroupedVotesUrl,
+  groupVotesByParentAndChecksum,
+  createCompanyToParentMapFromVotes,
+} from '@/utils/voteGrouping'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
@@ -162,6 +167,12 @@ export const publishVotes = async (req: PayloadRequest) => {
 
     const votesToPublish = await req.payload.find({
       collection: 'votes',
+      select: {
+        id: true,
+        company: true,
+        checksum: true,
+        parentCompany: true,
+      },
       where: {
         and: [
           { meeting: { equals: meetingId } },
@@ -218,35 +229,55 @@ export const publishVotes = async (req: PayloadRequest) => {
 
         if (new Date() > dayAfterHoldings) {
           const meetingName = meeting?.fullName
-          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
-          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesIds}`
 
-          // Delete any existing notifications with the same message
-          try {
-            await req.payload.delete({
-              collection: 'admin-notifications',
-              where: {
-                companies: { contains: companiesIds },
-                message: { equals: message },
-                meeting: { equals: meetingId },
-                url: { equals: url },
-                relatedUser: { equals: req?.user?.id },
-              },
-            })
-          } catch (error) {
-            req.payload.logger.error(`Error deleting admin notification: ${JSON.stringify(error)}`)
-          }
+          // Create company to parent map from votes' parentCompany virtual field
+          const companyToParentMap = createCompanyToParentMapFromVotes(votesToPublish.docs)
 
-          // Create one notification with all companies and meeting ID
-          await createAdminNotification(
-            req,
-            message,
-            'newVoteAfterHoldingLimit',
-            url,
-            companiesIds,
-            req?.user?.id,
-            meetingId,
+          // Group votes by parent company and checksum
+          const groupedVotes = groupVotesByParentAndChecksum(
+            votesToPublish.docs,
+            companyToParentMap,
           )
+
+          // Create a notification for each group
+          for (const [groupKey, groupData] of groupedVotes) {
+            const [parentCompanyId, checksum] = groupKey.split('|')
+            const groupCompaniesIds = Array.from(groupData.companies)
+
+            const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
+            const url = getGroupedVotesUrl(meeting.id, parentCompanyId, checksum)
+
+            // Delete any existing notifications with the same parameters
+            try {
+              await req.payload.delete({
+                collection: 'admin-notifications',
+                where: {
+                  and: [
+                    { message: { equals: message } },
+                    { meeting: { equals: meetingId } },
+                    { url: { equals: url } },
+                    { relatedUser: { equals: req?.user?.id } },
+                    { companies: { in: groupCompaniesIds } },
+                  ],
+                },
+              })
+            } catch (error) {
+              req.payload.logger.error(
+                `Error deleting admin notification: ${JSON.stringify(error)}`,
+              )
+            }
+
+            // Create notification for this group
+            await createAdminNotification(
+              req,
+              message,
+              'newVoteAfterHoldingLimit',
+              url,
+              groupCompaniesIds,
+              req?.user?.id,
+              meetingId,
+            )
+          }
         }
       }
     } catch (error) {

@@ -198,7 +198,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               // stockStatuses.isRootStock ||
               (stockStatuses.hasActiveMeeting && !stockStatuses.hasRelation) ||
               stockStatuses.isNonTradableShaked ||
-              stockStatuses.isForeign || stockStatuses.hasForeignRelation
+              stockStatuses.isForeign ||
+              stockStatuses.hasForeignRelation
 
             stockStatuses.isTradable = isTradable
             let comments = JSON.stringify(stockStatuses)
@@ -250,6 +251,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               errorCount++
               await logMigrationFault({
                 payload,
+                severity: 'warning',
                 type: 'stock',
                 typeId: stockID,
                 comments: 'Stock Migration Error:' + JSON.stringify(stockStatuses),
@@ -270,6 +272,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 error: error instanceof Error ? error : new Error(String(error)),
               }),
               row,
+              severity: 'fatal',
             })
             console.error(`Error processing stock ${stockID}:`, error)
             // Don't throw the error, continue processing other stocks
@@ -286,6 +289,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stockHasMeeting: stockStatuses.hasActiveMeeting as boolean,
             }),
             row,
+            severity: 'info',
           })
         }
       })
@@ -337,6 +341,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 stockId1: `${id1}-${theStockToUpdate}`,
                 stockId2: `${id2}-${relatedStock}`,
               }),
+              severity: 'warning',
             })
             errorCount++
             console.log(
@@ -354,6 +359,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               id: `${id1}->${id2}`,
               error: error instanceof Error ? error : new Error(String(error)),
             }),
+            severity: 'fatal',
           })
           throw error
         }
@@ -367,6 +373,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Create a promise pool with concurrency of 20 for processing stock values
     const stockValuesPool = new PromisePool(20)
+    // Track skipped stocks to avoid repeated logging/processing on missing/irrelevant ones
+    const skippedStockIds = new Set<string>()
 
     // Process each stock value individually
     resultStockValues.recordset.map((row) => {
@@ -379,16 +387,21 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const isPredictaStock = predictaStocks.has(stockID)
         const isRootForeignStock = rootRelatedStocks.has(stockID) && !isPredictaStock
         const isEmdaStock = emdaStocks.has(stockID)
+        const stockInMeeting = stocksInMeeting.has(stockID)
 
         // Skip processing if stock doesn't meet criteria
-        if (!stockSequence || (!isPredictaStock && !isEmdaStock && !isRootForeignStock)) {
+        if (!stockSequence || (!isPredictaStock && !stockInMeeting)) {
+          if (skippedStockIds.has(stockID)) return
+          // Only log first time we encounter a skipped stockID
           await logMigrationFault({
             payload,
             type: 'stock-value',
             typeId: stockID,
             comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
             row,
+            severity: 'info',
           })
+          skippedStockIds.add(stockID)
           return
         }
 
@@ -415,6 +428,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               error: error instanceof Error ? error : new Error(String(error)),
             }),
             row,
+            severity: 'fatal',
           })
           console.error(`Error processing stock value for ${stockID}:`, error)
         }

@@ -142,7 +142,7 @@ export async function getStockIdToSequenceMap(req: PayloadRequest) {
       relatedStock: true,
     },
     req,
-    depth: 1,
+    depth: 0,
   })
   for (const stock of stockIdToSequenceMap.docs) {
     if (stock.relatedStock && typeof stock.relatedStock === 'object' && 'id' in stock.relatedStock)

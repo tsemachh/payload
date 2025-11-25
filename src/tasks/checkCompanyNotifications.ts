@@ -162,7 +162,9 @@ async function checkMeetingNotifications(
     const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
 
     const isAfterHoldingLimit =
-      holdingLimitDate && holdingLimitDate > lastWorkingDateMidnight && holdingLimitDate < todayMidnight
+      holdingLimitDate &&
+      holdingLimitDate > lastWorkingDateMidnight &&
+      holdingLimitDate < todayMidnight
 
     const isWorkingDayBeforeProxyVotingDate =
       proxyVotingDate &&
@@ -229,9 +231,12 @@ async function checkMeetingNotifications(
 
     // For each company, check if there's already a vote
     for (const company of companyWithoutVotes) {
+      console.log('company', company)
       // Determine notification type
       let notificationType: UserNotificationType = 'after-holding-limit'
       let message = ''
+      const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
+      console.log('!!!!!!!!!!!!!!!!urlurl', url)
       if (isAfterHoldingLimit && holdingLimitDate) {
         notificationType = 'after-holding-limit'
         const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
@@ -254,6 +259,7 @@ async function checkMeetingNotifications(
           notificationType: { equals: notificationType },
           meeting: { equals: meeting.id },
           company: { equals: company.id },
+          url: { equls: url },
         },
       })
 
@@ -264,6 +270,7 @@ async function checkMeetingNotifications(
           notificationType,
           meeting: meeting.id,
           company: company.id,
+          url: url,
         },
       })
 

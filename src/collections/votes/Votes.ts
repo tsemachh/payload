@@ -208,7 +208,7 @@ export const Votes: CollectionConfig = {
                     hidden: true,
                   },
                   hooks: {
-                    afterRead: [
+                    beforeChange: [
                       async ({ data }) => {
                         if (!data) return null
                         return calculateCheckSum(data as Vote)

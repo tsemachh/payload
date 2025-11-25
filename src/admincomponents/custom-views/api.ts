@@ -1,11 +1,13 @@
 import { Company } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 import { getParentCompanyId } from '@/utils/voteGrouping'
-import { TypeWithID } from 'payload'
 
-export async function getVoteData(req: any, meetingId: string, companyIds: string) {
-  const companiesIdsArray = (companyIds as string).split(',')
-
+export async function getVoteData(
+  req: any,
+  meetingId: string,
+  parentCompanyId: string,
+  checksum: string,
+) {
   const meetingData = await req.payload.findByID({
     collection: 'meetings',
     id: meetingId,
@@ -19,12 +21,31 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     depth: 0,
     limit: 0,
   })
-  const voteData = await req.payload.find({
+
+  // First, find all companies that have this parent company
+  const companiesWithParent = await req.payload.find({
+    collection: 'companies',
+    where: {
+      or: [
+        { id: { equals: parentCompanyId } }, // Include the parent company itself
+        { parentCompany: { equals: parentCompanyId } }, // Include child companies
+      ],
+    },
+    select: {
+      id: true,
+    },
+    depth: 0,
+    limit: 0,
+  })
+  const companiesWithParentArray = companiesWithParent.docs.map((c: any) => c.id as string)
+
+  // Fetch all votes for those companies (checksum is calculated in afterRead hook, so we can't query it)
+  const allVotes = await req.payload.find({
     collection: 'votes',
     where: {
       and: [
         { meeting: { equals: meetingId } },
-        { company: { in: companiesIdsArray } },
+        { company: { in: companiesWithParentArray } },
         { _status: { equals: 'published' } },
       ],
     },
@@ -32,8 +53,27 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
     limit: 0,
   })
 
+  // Filter by checksum in memory (since checksum is calculated in afterRead hook)
+  const voteData = {
+    ...allVotes,
+    docs: allVotes.docs.filter((vote: any) => vote.checksum === checksum),
+  }
+
+  // Update companiesIdsArray to only include companies that have votes with matching checksum
+  const companiesIdsArray = voteData.docs.map((vote: any) =>
+    getIdOfRelationField(vote.company),
+  ) as string[]
+
   // Validate that all votes have the same parentCompany and checksum
   const validationErrors: string[] = []
+  if (!allVotes.docs.length) {
+    validationErrors.push(`לא נמצאו הצבעות לחברות תחת חברת אם: ${parentCompanyId}`)
+  }
+  if (!voteData.docs.length && allVotes.docs.length) {
+    validationErrors.push(
+      `לא נמצאו הצבעות עם מזהה ההצבעה: ${checksum} נא להכנס שוב מדף ההצבעות באסיפה`,
+    )
+  }
 
   if (voteData.docs.length > 0) {
     const firstVote = voteData.docs[0]
@@ -57,20 +97,6 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
           `לחברת ${voteCompanyIdentifier} יש מזהה הצבעה שונה: ${voteChecksum || 'null'} (expected: ${expectedChecksum || 'null'})`,
         )
       }
-    }
-  }
-
-  // Validate that we found votes for ALL requested companies
-  if (voteData.docs.length !== companiesIdsArray.length) {
-    const foundCompanyIds = new Set(
-      voteData.docs.map((vote: { company: string | TypeWithID }) =>
-        getIdOfRelationField(vote.company),
-      ),
-    )
-    const missingCompanyIds = companiesIdsArray.filter((id) => !foundCompanyIds.has(id))
-
-    if (missingCompanyIds.length > 0) {
-      validationErrors.push(`לא נמצאו הצבעות לאסיפות הבאות: ${missingCompanyIds.join(', ')}.`)
     }
   }
 
@@ -148,6 +174,7 @@ export async function getVoteData(req: any, meetingId: string, companyIds: strin
   return {
     ...voteData.docs[0],
     companies: companyData.docs.map((c: any) => c.name),
+    companyIds: companiesIdsArray,
     displayVotingRecommendation: companyData.docs.some(
       (c: any) => c.researchDocuments?.displayVotingRecommendation === true,
     ),
