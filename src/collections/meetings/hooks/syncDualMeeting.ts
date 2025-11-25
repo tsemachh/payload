@@ -90,7 +90,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
     }
 
     // Create change details for the dual meeting
-    let changeDetails = ''
+    let migrationComments = ''
 
     // Add new change details entry with specific changes
     const changeDate = new Date().toISOString()
@@ -135,7 +135,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
         ? `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id}): ${changesDescription.join(', ')}`
         : `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id})`
 
-    changeDetails = `${changeDate} - [sync] ${changeDescription}`
+    migrationComments = `${changeDate} - [sync] ${changeDescription}`
 
     // Update the dual meeting directly using its ID
     await payload.update({
@@ -145,7 +145,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
         ...generalFields,
         agenda: updatedAgenda,
         ...(researchDocsChanged && { researchDocuments: genericResearchDocs }),
-        changeDetails: changeDetails,
+        migrationComments: migrationComments,
       },
       context: { from: 'process' },
     })

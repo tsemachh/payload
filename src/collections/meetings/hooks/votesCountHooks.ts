@@ -29,7 +29,7 @@ export async function recalculateMeetingVoteCounts(
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       select: {
-        changeDetails: true,
+        migrationComments: true,
         votes: true,
         companies: true,
         votesCount: true,
@@ -87,8 +87,8 @@ export async function recalculateMeetingVoteCounts(
         const changeDate = new Date().toISOString()
         const changeSource = req.context?.from || 'system'
         const changeDescription = `עדכון מספר הצבעות: ${newVotesCount}, הצבעות מדווחות: ${newReportVotesCount}`
-        const existingChangeDetails = currentMeeting?.changeDetails || ''
-        const changeDetails = `${changeDate} - [${changeSource}] ${changeDescription}\n${existingChangeDetails}`
+        const existingChangeDetails = currentMeeting?.migrationComments || ''
+        const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}\n${existingChangeDetails}`
 
         // Update the meeting with calculated values
         await req.payload.update({
@@ -99,7 +99,7 @@ export async function recalculateMeetingVoteCounts(
             reportVotesCount: newReportVotesCount,
             votesStatus,
             votesReportStatus,
-            changeDetails,
+            migrationComments,
           },
           req: {
             ...req,
@@ -245,6 +245,6 @@ async function updateMeetingVoteStatuses(
     // Update changeDetails field with status change information
     const changeDate = new Date().toISOString()
     const changeDescription = `עדכון סטטוס הצבעות: ${votesStatus}, סטטוס הצבעות מדווחות: ${votesReportStatus}`
-    meeting.changeDetails = `${changeDate} - [${source}] ${changeDescription}`
+    meeting.migrationComments = `${changeDate} - [${source}] ${changeDescription}`
   }
 }

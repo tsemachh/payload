@@ -4,7 +4,11 @@ import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDai
 import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 import { sendMail } from '@/utils/sendMail'
-import { companyNotificationTypeOptions, getCompanyNotificationTypeLabel, COMPANY_NOTIFICATION_KNOWN_TYPES } from '@/collections/company-meeting-notifications/typeOptions'
+import {
+  companyNotificationTypeOptions,
+  getCompanyNotificationTypeLabel,
+  COMPANY_NOTIFICATION_KNOWN_TYPES,
+} from '@/collections/company-meeting-notifications/typeOptions'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -25,9 +29,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   console.log('Starting company meeting notifications email sending...')
 
   // Create a detailed results object
-  const typeValues = companyNotificationTypeOptions
-    .map((o) => o.value)
-    .filter(Boolean) as string[]
+  const typeValues = companyNotificationTypeOptions.map((o) => o.value).filter(Boolean) as string[]
   const zeroedByType: Record<string, number> = {}
   for (const t of typeValues) zeroedByType[t] = 0
 
@@ -50,14 +52,14 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   const { start, end } = getLastWorkingDayWindow(new Date())
   const startISO = start.toISOString()
   const endISO = end.toISOString()
-
+  const now = new Date()
   // Get all notifications in the last working day window
   const notifications = await payload.find({
     collection: 'company-meeting-notifications',
     where: {
       createdAt: {
         greater_than_equal: startISO,
-        less_than: endISO,
+        less_than: now,
       },
     },
     depth: 2, // Load related data
@@ -165,7 +167,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
         html += `<li>`
         html += `${notification.message}`
         if (notification.url && typeof notification.url === 'string') {
-          html += ` - <a href="${notification.url}" target="_blank">קישור לאסיפה</a>`
+          html += ` - <a href="${notification.url}" target="_blank">קישור </a>`
         }
         html += `</li>`
       }
