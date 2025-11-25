@@ -52,14 +52,13 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   const { start, end } = getLastWorkingDayWindow(new Date())
   const startISO = start.toISOString()
   const endISO = end.toISOString()
-  const now = new Date()
   // Get all notifications in the last working day window
   const notifications = await payload.find({
     collection: 'company-meeting-notifications',
     where: {
       createdAt: {
         greater_than_equal: startISO,
-        less_than: now,
+        less_than: endISO,
       },
     },
     depth: 2, // Load related data
