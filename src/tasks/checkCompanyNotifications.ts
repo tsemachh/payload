@@ -231,12 +231,10 @@ async function checkMeetingNotifications(
 
     // For each company, check if there's already a vote
     for (const company of companyWithoutVotes) {
-      console.log('company', company)
       // Determine notification type
       let notificationType: UserNotificationType = 'after-holding-limit'
       let message = ''
       const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
-      console.log('!!!!!!!!!!!!!!!!urlurl', url)
       if (isAfterHoldingLimit && holdingLimitDate) {
         notificationType = 'after-holding-limit'
         const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
@@ -353,6 +351,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
       // If no holdings feed found, create a notification
       if (!hasHoldings) {
+        const url = `${req.payload.config.serverURL}//holdings/`
         const message = `חברה ${company.name} לא דיווחה על החזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         // Delete any existing notifications for this company and type
@@ -362,6 +361,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             company: { equals: company.id },
             message: { equals: message },
             notificationType: { equals: 'holdings-not-fed' },
+            url: { equals: url },
           },
         })
 
@@ -372,6 +372,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             message,
             notificationType: 'holdings-not-fed',
             company: company.id,
+            url: url,
           },
         })
 
