@@ -6,7 +6,13 @@ import SendCompanyMeetingNotificationsEndpoint from './endpoints/SendCompanyMeet
 import { CheckCompanyNotificationsEndpoint } from './endpoints/CheckCompanyNotificationsEndpoint'
 import { isAdmin, isUserCompanyNotification } from '@/utils/authUtils'
 import { companyNotificationTypeOptions } from './typeOptions'
-
+import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
+const NotificationLinkProps: IconLinkProps = {
+  urlTemplate: '${value}',
+  iconUrl: '/link.ico',
+  iconAltText: 'קישור',
+  iconOnly: true,
+}
 export const CompanyMeetingNotifications: CollectionConfig = {
   slug: 'company-meeting-notifications',
   labels: {
@@ -46,6 +52,23 @@ export const CompanyMeetingNotifications: CollectionConfig = {
       interfaceName: 'UserNotificationType',
       options: companyNotificationTypeOptions as any,
       required: true,
+    },
+    {
+      name: 'url',
+      label: 'קישור',
+      type: 'text',
+      admin: {
+        components: {
+          Cell: {
+            path: '/admincomponents/link/TableLinkCell',
+            clientProps: NotificationLinkProps,
+          },
+          Field: {
+            path: '/admincomponents/link/IconLinkTextField',
+            clientProps: NotificationLinkProps,
+          },
+        },
+      },
     },
     {
       name: 'readStatus',

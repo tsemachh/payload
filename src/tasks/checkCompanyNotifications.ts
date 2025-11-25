@@ -161,7 +161,9 @@ async function checkMeetingNotifications(
     const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
 
     const isAfterHoldingLimit =
-      holdingLimitDate && holdingLimitDate > lastWorkingDateMidnight && holdingLimitDate < todayMidnight
+      holdingLimitDate &&
+      holdingLimitDate > lastWorkingDateMidnight &&
+      holdingLimitDate < todayMidnight
 
     const isWorkingDayBeforeProxyVotingDate =
       proxyVotingDate &&
@@ -231,6 +233,7 @@ async function checkMeetingNotifications(
       // Determine notification type
       let notificationType: UserNotificationType = 'after-holding-limit'
       let message = ''
+      const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
       if (isAfterHoldingLimit && holdingLimitDate) {
         notificationType = 'after-holding-limit'
         const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
@@ -253,6 +256,7 @@ async function checkMeetingNotifications(
           notificationType: { equals: notificationType },
           meeting: { equals: meeting.id },
           company: { equals: company.id },
+          url: { equls: url },
         },
       })
 
@@ -263,6 +267,7 @@ async function checkMeetingNotifications(
           notificationType,
           meeting: meeting.id,
           company: company.id,
+          url: url,
         },
       })
 
@@ -345,6 +350,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
       // If no holdings feed found, create a notification
       if (!hasHoldings) {
+        const url = `${req.payload.config.serverURL}//holdings/`
         const message = `חברה ${company.name} לא דיווחה על החזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         // Delete any existing notifications for this company and type
@@ -354,6 +360,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             company: { equals: company.id },
             message: { equals: message },
             notificationType: { equals: 'holdings-not-fed' },
+            url: { equals: url },
           },
         })
 
@@ -364,6 +371,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             message,
             notificationType: 'holdings-not-fed',
             company: company.id,
+            url: url,
           },
         })
 

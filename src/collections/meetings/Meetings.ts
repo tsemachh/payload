@@ -1203,6 +1203,7 @@ export const Meetings: CollectionConfig = {
           const formattedDate = today.toLocaleDateString('he-IL')
 
           const meetingName = doc.fullName || 'אסיפה'
+          const url = `${req.payload.config.serverURL}//vote-meeting/${doc.id}`
           const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), .יש לשים לב לשינויים \nהערות: ${doc.changeDetails}`
 
           for (const companyId of companies) {
@@ -1215,6 +1216,7 @@ export const Meetings: CollectionConfig = {
                   meeting: { equals: doc.id },
                   notificationType: { equals: 'meeting-updated' },
                   message: { equals: message },
+                  url: { equals: url },
                 },
               })
 
@@ -1227,6 +1229,7 @@ export const Meetings: CollectionConfig = {
                   meeting: doc.id,
                   company: companyId,
                   readStatus: false,
+                  url: url,
                 },
               })
             } catch (error) {
