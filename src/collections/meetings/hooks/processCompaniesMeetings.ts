@@ -157,12 +157,12 @@ async function processMeeting(
     const fundsCount = newFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
 
-    const changeDetails = `${changeDate} - [${changeSource}] ${changeDescription}`
+    const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
     const data: Partial<Meeting> = {
       companies: Array.from(new Set(compIds)) as string[],
       funds: [...newFunds],
       fundsWithHolding,
-      changeDetails,
+      migrationComments,
     }
     if (stockValue) data.stockValue = stockValue
     await req.payload.update({

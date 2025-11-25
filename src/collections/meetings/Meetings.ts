@@ -1281,7 +1281,7 @@ export const Meetings: CollectionConfig = {
                 id: doc.id,
                 data: {
                   dualMeeting: createdDualMeeting.id,
-                  changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
+                  migrationComments: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
                 req,
