@@ -173,30 +173,37 @@
       "level": 1,
       "children": [
         {
+          "id": "level2_2",
+          "name": "איילון חברה לביטוח בע\"מ",
+          "level": 2,
+          "children": [
+            {
+              "id": "level3_19",
+              "name": "איילון חברה לביטוח - עמיתים",
+              "level": 3,
+              "companyId": 116,
+              "privateRegistrationNumbers": [
+                520030677
+              ]
+            },
+            {
+              "id": "level3_20",
+              "name": "איילון חברה לביטוח - נוסטרו",
+              "level": 3,
+              "companyId": 96,
+              "privateRegistrationNumbers": [
+                520030677
+              ]
+            }
+          ]
+        },
+        {
           "id": "level3_18",
           "name": "איילון קרנות נאמנות",
           "level": 3,
           "companyId": 114,
           "privateRegistrationNumbers": [
             513011445
-          ]
-        },
-        {
-          "id": "level3_19",
-          "name": "איילון חברה לביטוח בע\"מ",
-          "level": 3,
-          "companyId": 116,
-          "privateRegistrationNumbers": [
-            520030677
-          ]
-        },
-        {
-          "id": "level3_20",
-          "name": "איילון חברה לביטוח בע\"מ",
-          "level": 3,
-          "companyId": 96,
-          "privateRegistrationNumbers": [
-            520030677
           ]
         }
       ]
@@ -207,7 +214,7 @@
       "level": 1,
       "children": [
         {
-          "id": "level2_2",
+          "id": "level2_3",
           "name": "אינפינטי - מפעליות",
           "level": 2,
           "children": [
@@ -402,7 +409,7 @@
       "level": 1,
       "children": [
         {
-          "id": "level2_3",
+          "id": "level2_4",
           "name": "מפעליות ילין",
           "level": 2,
           "children": [
@@ -504,7 +511,7 @@
       "level": 1,
       "children": [
         {
-          "id": "level2_4",
+          "id": "level2_5",
           "name": "מפעליות מיטב",
           "level": 2,
           "children": [
@@ -694,7 +701,7 @@
       "level": 1,
       "children": [
         {
-          "id": "level2_5",
+          "id": "level2_6",
           "name": "אקסלנס מפעליות",
           "level": 2,
           "children": [
