@@ -1204,7 +1204,7 @@ export const Meetings: CollectionConfig = {
 
           const meetingName = doc.fullName || 'אסיפה'
           const url = `${req.payload.config.serverURL}//vote-meeting/${doc.id}`
-          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), .יש לשים לב לשינויים \nהערות: ${doc.changeDetails}`
+          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), לשינויים \nהערות: ${doc.changeDetails}.`
 
           for (const companyId of companies) {
             try {
