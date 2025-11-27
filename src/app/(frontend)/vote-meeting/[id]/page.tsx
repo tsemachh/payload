@@ -142,6 +142,20 @@ export default function VotingForm() {
   }, [meetingData, user, isImpersonating])
 
   useEffect(() => {
+    if (!user) {
+      router.push('/auth/signin')
+      return
+    }
+    if (!meetingDataError) return
+
+    const errorCode = (meetingDataError as any)?.code
+    const errorMessage = (meetingDataError as any)?.message
+
+    if (errorCode === 401 || errorMessage === 'Unauthorized') {
+      setIsDraftSaved(true)
+      router.push('/auth/signin')
+      return
+    }
     if (meetingDataError) {
       console.error('Error fetching meeting data:', meetingDataError)
       toast({
@@ -406,7 +420,7 @@ export default function VotingForm() {
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
-    enabled: (isDirty || isDraftSaved) && !isReadOnly,
+    enabled: (isDirty || isDraftSaved) && !isReadOnly && !isDraftSaved,
   })
 
   const validateForm = useCallback((): ValidationError[] => {
@@ -839,8 +853,8 @@ export default function VotingForm() {
 
   return (
     <>
-      {/* Navigation Guard Dialog */}
-      <Dialog open={navGuard.active}>
+      {/* Navigation Guard Dialog - Only show if not redirecting to signin */}
+      <Dialog open={navGuard.active && !isDraftSaved}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-amber-500 flex-shrink-0" />

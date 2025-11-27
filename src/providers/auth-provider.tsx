@@ -75,7 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   }, [])
-
+  useEffect(() => {
+    // @ts-ignore
+    globalThis.__setAuthUser = setUser
+  }, [setUser])
   const logout = useCallback<Logout>(async () => {
     try {
       await postWithErrorHandling(
