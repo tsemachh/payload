@@ -438,6 +438,125 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Wait for all stock value processing to complete
     await stockValuesPool.waitForAll()
 
+    // ==============================================
+    // Backfill: Latest values for main stocks (no parent) from last 5 years
+    // If latest value is older than STOCK_VALUE_DAYS_RETRO, insert it (keep original valueDate)
+    // ==============================================
+    try {
+      const daysRetro = parseInt(process.env.STOCK_VALUE_DAYS_RETRO || '30', 10)
+      const cutoffDate = new Date(Date.now() - daysRetro * 24 * 60 * 60 * 1000)
+
+      if (!pool) throw new Error('SQL pool not available for backfill query')
+
+      const latest5YearsQuery = `
+        WITH RankedStocks AS (
+            SELECT  stockID,
+                    [name],
+                    [symbol],
+                    [type],
+                    [closingRate],
+                    [marketValue],
+                    [registeredValue],
+                    [valueDate],
+                    [logUpdateID],
+                    [longName],
+                    ROW_NUMBER() OVER (
+                        PARTITION BY stockID
+                        ORDER BY valueDate DESC, logUpdateID DESC
+                    ) AS rn
+            FROM [dbEmda].[dbo].[stocks]
+            WHERE valueDate >= DATEADD(YEAR, -5, GETDATE())
+        )
+        SELECT  stockID,
+                [name],
+                [symbol],
+                [type],
+                [closingRate],
+                [marketValue],
+                [registeredValue],
+                [valueDate],
+                [logUpdateID],
+                [longName]
+        FROM RankedStocks
+        WHERE rn = 1;`
+
+      console.log('Running latest-5-years backfill query for main stocks...')
+      const latestResult = await pool.request().query(latest5YearsQuery)
+
+      let backfillCount = 0
+      let backfillSkipped = 0
+      let backfillErrors = 0
+
+      const backfillPool = new PromisePool(20)
+      latestResult.recordset.map((row: any) => {
+        return backfillPool.add(async () => {
+          try {
+            row.stockID = `${row.stockID}`
+            const stockID = row.stockID
+
+            // Only main stocks (no related parent)
+            const hasParent = !!relationStocks.get(stockID)
+            if (hasParent) {
+              backfillSkipped++
+              return
+            }
+
+            const stockSequence = stockIdTOSequence.get(stockID)
+            if (!stockSequence) {
+              backfillSkipped++
+              return
+            }
+
+            const valueDate = new Date(row.valueDate)
+            if (isNaN(valueDate.getTime())) {
+              backfillErrors++
+              await logMigrationFault({
+                payload,
+                type: 'stock-value',
+                typeId: stockID,
+                comments: 'Invalid valueDate in latest-5-years backfill',
+                row,
+                severity: 'warning',
+              })
+              return
+            }
+
+            // Only insert when latest value is older than the retro window
+            if (valueDate >= cutoffDate) {
+              backfillSkipped++
+              return
+            }
+
+            await upsertStockValueFromImport(stockSequence, row, {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateStocks:backfill' },
+            })
+            backfillCount++
+          } catch (error) {
+            backfillErrors++
+            await logMigrationFault({
+              payload,
+              type: 'stock-value',
+              typeId: (row && row.stockID) || 'unknown',
+              comments: createStockValueFaultComment({
+                stockId: (row && row.symbol) || 'unknown',
+                error: error instanceof Error ? error : new Error(String(error)),
+              }),
+              row,
+              severity: 'fatal',
+            })
+          }
+        })
+      })
+
+      await backfillPool.waitForAll()
+      console.log(
+        `Backfill summary: inserted ${backfillCount}, skipped ${backfillSkipped}, errors ${backfillErrors}`,
+      )
+    } catch (e) {
+      console.error('Error during latest-5-years backfill step', e)
+    }
+
     console.log('\nMigration Summary:')
     console.log(`Total records processed: ${resultStockValues.recordset.length}`)
     console.log(`Successfully inserted: ${successCount}`)
