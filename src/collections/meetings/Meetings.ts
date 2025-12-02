@@ -101,6 +101,7 @@ export const Meetings: CollectionConfig = {
   custom: {
     defaultFilter: {
       meetingDate: 'todayAndFuture',
+      _status: { equals: 'published' },
     },
     filterList: [
       [
