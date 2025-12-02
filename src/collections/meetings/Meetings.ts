@@ -101,6 +101,7 @@ export const Meetings: CollectionConfig = {
   custom: {
     defaultFilter: {
       meetingDate: 'todayAndFuture',
+      _status: { equals: 'published' },
     },
     filterList: [
       [
@@ -135,7 +136,7 @@ export const Meetings: CollectionConfig = {
     delete: isAdmin,
   },
   enableQueryPresets: true,
-  defaultSort: 'meetingDate',
+ //defaultSort: 'meetingDate',
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
