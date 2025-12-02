@@ -478,7 +478,6 @@ export interface Company {
   passiveFund?: boolean | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
-  order?: number | null;
   privateRegistrationNumber?: number[] | null;
   subCompanies?: (string | Company)[] | null;
   /**
@@ -716,7 +715,7 @@ export interface Meeting {
   mainMeetingForDualMeeting?: (string | null) | Meeting;
   hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
-  stockValue: string | StockValue;
+  stockValue?: (string | null) | StockValue;
   stockClosingRate?: number | null;
   stockRegisteredValue?: number | null;
   stockMarketValue?: number | null;
@@ -1653,7 +1652,6 @@ export interface CompaniesSelect<T extends boolean = true> {
   passiveFund?: T;
   companyId?: T;
   legacyCompanyId?: T;
-  order?: T;
   privateRegistrationNumber?: T;
   subCompanies?: T;
   parentCompany?: T;

@@ -1,4 +1,5 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
+import { generateKeyBetween } from 'fractional-indexing'
 import sql from 'mssql'
 import path from 'path'
 import fs from 'fs'
@@ -7,6 +8,7 @@ import { createMSSqlPool } from '@/migrations/utils/utils'
 import { getCompanyIdToChildCompanies, getCompanyIdToSequenceMap } from '@/utils/utils'
 import { createErrorFaultComment, logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 
+let runningIndex = 1000
 /**
  * Migrates firms and related data in the following order:
  * 1. migrateFirms - Migrates basic firm data
@@ -44,6 +46,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Silenced Stocks Companies Migration ===')
     await migrateSilencedStocksCompanies(payload, req)
     console.log('=== Silenced Stocks Companies Migration Completed ===\n')
+    // Final step per request: recalculate numeric string _order values to fractional keys globally
+    console.log('\n=== Starting Companies _order Recalculation (fractional-indexing) ===')
+    await recalcCompaniesFractionalOrder(payload, req)
+    console.log('=== Companies _order Recalculation Completed ===\n')
     console.log('migrateFullFirms process completed successfully!')
   } catch (error) {
     console.error('Error during migrateFullFirms process:', error)
@@ -61,7 +67,7 @@ export async function down({ payload }: MigrateUpArgs): Promise<void> {
 interface FirmRow {
   firmId: number
   name: string
-  idOrder: number
+  order: number
   active: boolean
   showResearch: number
   setResearchAsDefault: number
@@ -114,7 +120,7 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
         const companyData: Partial<Company> = {
           companyId: row.firmId,
           name: row.name,
-          _order: String(row.idOrder),
+          _order: String(row.order),
           type: 'regular',
           active: !!row.active,
           researchDocuments: {
@@ -125,7 +131,10 @@ async function migrateFirms({ payload, req }: MigrateUpArgs): Promise<void> {
             displayVotingRecommendation,
           },
         }
-
+        if (!companyData._order) {
+          runningIndex++
+          companyData._order = String(runningIndex)
+        }
         // Check if firm already exists
         const existingCompany = await payload.find({
           collection: 'companies',
@@ -707,7 +716,8 @@ async function processCompany(
       // Ensure `_order` has a default value if missing/empty
       const existingOrder = (existingCompany.docs[0] as any)?._order
       if (!existingOrder || existingOrder === '') {
-        updateData._order = '0'
+        runningIndex++
+        updateData._order = String(runningIndex)
       }
 
       await payload.update({
@@ -718,12 +728,13 @@ async function processCompany(
 
       console.log(`Updated company: ${company.name}`)
     } else {
+      runningIndex++
       // Create new company
       const createData: Partial<Company> = {
         name: company.name,
         active: true,
         type: 'parent',
-        _order: '0',
+        _order: String(runningIndex),
       }
 
       // Set companyId if provided
@@ -774,13 +785,15 @@ async function processCompany(
       }
 
       // Only update if there are changes
-      if (newSubCompanies.length !== existingSubCompanies.length) {
+      if (newSubCompanies.length !== existingSubCompanies.length || !parentCompany._order) {
+        runningIndex++
         await payload.update({
           collection: 'companies',
           id: companyId,
           data: {
             type: 'parent',
             subCompanies: newSubCompanies,
+            _order: String(runningIndex),
           },
         })
 
@@ -973,12 +986,13 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
 
             let newCompany
 
+            runningIndex++
             // Create a new company with the account name
             const newCompanyData: Partial<Company> = {
               legacyCompanyId: company.companyId,
               name: companyName,
               active: company.active,
-              _order: '0',
+              _order: String(runningIndex),
               type: 'fund',
               passiveFund: companyName.includes('מחקות') || companyName.includes('פסיביות'),
               // Set the account number in the appropriate field using the new structure
@@ -990,7 +1004,6 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
                 },
               ],
             }
-
             if (existingCompanyResult.docs.length > 0) {
               // Update existing company
               console.log(`Company already exists: ${companyName}, updating instead of creating`)
@@ -1308,6 +1321,78 @@ export async function migrateSilencedStocksCompanies(payload: any, req: any): Pr
 interface FirmsWithPrivateRow {
   firmId: number
   active?: boolean
+}
+
+// ==================== Y. RECALCULATE _order USING FRACTIONAL INDEXING (GLOBAL) ====================
+type MinimalOrderCompany = {
+  id: string
+  name?: string
+  _order?: string | null
+}
+
+async function recalcCompaniesFractionalOrder(payload: any, req: any): Promise<void> {
+  const DRY_RUN = process.env.MIGRATION_DRY_RUN === 'true'
+
+  // 1) Fetch all companies with only required fields
+  const res = await payload.find({
+    collection: 'companies',
+    limit: 0,
+    depth: 0,
+    select: { id: true, name: true, _order: true },
+    req,
+  })
+
+  const all: MinimalOrderCompany[] = (res.docs ?? []) as MinimalOrderCompany[]
+  // 2) Keep only numeric-string `_order` (e.g., '0', '12', '1003')
+  const isNumericStr = (v?: string | null) => typeof v === 'string' && /^\d+$/.test(v)
+  const numeric = all.filter((d) => isNumericStr(d._order))
+
+  if (numeric.length === 0) {
+    console.log('Recalc _order: nothing to do — no numeric-string keys found')
+    return
+  }
+
+  // 3) Sort by numeric value asc to preserve the legacy order
+  numeric.sort((a, b) => Number(a._order) - Number(b._order))
+
+  // 4) Generate fresh fractional keys in strictly increasing order
+  const updates: { id: string; _order: string }[] = []
+  let prevKey: string | null = null
+  for (const doc of numeric) {
+    const nextKey = generateKeyBetween(prevKey, null)
+    updates.push({ id: doc.id, _order: nextKey })
+    prevKey = nextKey
+  }
+
+  console.log(
+    `Recalc _order: prepared ${updates.length} updates (first='${updates[0]._order}', last='${updates[updates.length - 1]._order}')`,
+  )
+
+  if (DRY_RUN) {
+    console.log('Recalc _order: DRY_RUN=true — not writing updates')
+    return
+  }
+
+  // 5) Apply updates in batches
+  const BATCH = 200
+  let applied = 0
+  for (let i = 0; i < updates.length; i += BATCH) {
+    const batch = updates.slice(i, i + BATCH)
+    await Promise.all(
+      batch.map(({ id, _order }) =>
+        payload.update({
+          collection: 'companies',
+          id,
+          data: { _order },
+          req: { ...req, context: { ...req?.context, from: 'migration', process: 'recalcCompaniesFractionalOrder' } },
+        }),
+      ),
+    )
+    applied += batch.length
+    console.log(`Recalc _order: applied ${applied}/${updates.length}`)
+  }
+
+  console.log('Recalc _order: completed successfully')
 }
 
 async function migrateShowResearchPrivate({ payload, req }: MigrateUpArgs): Promise<void> {
