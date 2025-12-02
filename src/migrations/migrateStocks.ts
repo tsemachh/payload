@@ -390,7 +390,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const stockInMeeting = stocksInMeeting.has(stockID)
 
         // Skip processing if stock doesn't meet criteria
-        if (!stockSequence || (!isPredictaStock && !stockInMeeting)) {
+        if (
+          !stockSequence ||
+          (!isPredictaStock && !stockInMeeting) ||
+          !!relationStocks.get(stockID)
+        ) {
           if (skippedStockIds.has(stockID)) return
           // Only log first time we encounter a skipped stockID
           await logMigrationFault({

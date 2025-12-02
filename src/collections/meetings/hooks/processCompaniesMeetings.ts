@@ -113,7 +113,7 @@ async function processMeeting(
       const prev = prevByFund.get(fundId) || {}
       return { ...prev, ...base }
     })
-    let stockValue: string | StockValue | null = meeting.stockValue
+    let stockValue: string | StockValue | null = meeting.stockValue as string
     if (!stockValue) {
       const { docs: stockValueDocs } = await req.payload.find({
         collection: 'stock-values',
