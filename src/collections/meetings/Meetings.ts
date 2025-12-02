@@ -136,7 +136,7 @@ export const Meetings: CollectionConfig = {
     delete: isAdmin,
   },
   enableQueryPresets: true,
- //defaultSort: 'meetingDate',
+  defaultSort: 'meetingDate',
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
