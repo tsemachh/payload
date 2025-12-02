@@ -733,7 +733,7 @@ export const Meetings: CollectionConfig = {
                   relationTo: 'stock-values',
                   label: 'ערך נייר מתאריך',
                   hasMany: false,
-                  required: true,
+                  required: false,
                   admin: {
                     width: '300px',
                     disableListColumn: true,
