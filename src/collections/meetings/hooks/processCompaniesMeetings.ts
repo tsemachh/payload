@@ -148,22 +148,53 @@ async function processMeeting(
       }
     })
 
+    // Filter out removed companies
+    // removedCompanies is an array of company IDs (strings) or company objects
+    const removedCompanyIds = (meeting.removedCompanies || [])
+      .map((item) => (typeof item === 'string' ? item : item?.id))
+      .filter((id): id is string => typeof id === 'string')
+
+    const filteredCompIds = compIds.filter((compId) => {
+      if (!compId) return false
+      const compIdStr = typeof compId === 'string' ? compId : compId.id
+      return compIdStr && !removedCompanyIds.includes(compIdStr)
+    })
+
+    // Filter out funds that belong to removed companies
+    const filteredFunds = newFunds.filter((fundId) => {
+      const companyId = getCompanyIdFromFundId(fundId)
+      return companyId && !removedCompanyIds.includes(companyId)
+    })
+
+    // Filter out fundsWithHolding that belong to removed companies
+    const filteredFundsWithHolding = fundsWithHolding.filter((fwh: any) => {
+      const companyId = getIdOfRelationField(fwh.company)
+      if (!companyId) return false
+      const companyIdStr = String(companyId)
+      return !removedCompanyIds.includes(companyIdStr)
+    })
+
     // Prepare change details
     const changeDate = new Date().toISOString()
     const changeSource = req.context?.from || 'process'
 
     // Create a detailed description of what was changed
-    const companiesCount = Array.from(new Set(compIds)).length
-    const fundsCount = newFunds.length
+    const companiesCount = Array.from(new Set(filteredCompIds)).length
+    const fundsCount = filteredFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
+    console.log('-----------------')
 
     const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
     const data: Partial<Meeting> = {
-      companies: Array.from(new Set(compIds)) as string[],
-      funds: [...newFunds],
-      fundsWithHolding,
+      companies: Array.from(new Set(filteredCompIds)) as string[],
+      funds: [...filteredFunds],
+      fundsWithHolding: filteredFundsWithHolding,
       migrationComments,
     }
+    console.log('-----------------data.companies', data.companies)
+    console.log('-----------------data.funds', data.funds)
+    console.log('-----------------data.fundsWithHolding', data.fundsWithHolding)
+
     if (stockValue) data.stockValue = stockValue
     await req.payload.update({
       collection: 'meetings',

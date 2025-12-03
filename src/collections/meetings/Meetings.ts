@@ -12,7 +12,7 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
-import removeCompanyEndpoint from './endpoints/RemoveCompanyEndpoint'
+import removeCompanyEndpoint, { restoreCompanyEndpoint } from './endpoints/RemoveCompanyEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -258,6 +258,19 @@ export const Meetings: CollectionConfig = {
                   },
                 }
               },
+              admin: {
+                hidden: true,
+                readOnly: true,
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'removedCompanies',
+              label: 'חברות שהוסרו',
+              index: true,
+              maxDepth: 1,
               admin: {
                 hidden: true,
                 readOnly: true,
@@ -1296,6 +1309,21 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
+        const currentIds = (doc?.removedCompanies || []).map((item: any) =>
+          typeof item === 'string' ? item : item.id,
+        )
+
+        const previousIds = (previousDoc?.removedCompanies || []).map((item: any) =>
+          typeof item === 'string' ? item : item.id,
+        )
+        const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
+        console.log('***********holdingsRemovedCompanies', holdingsRemovedCompanies)
+        console.log('***********currentIds.toString()', currentIds.toString())
+        console.log('***********previousIds.toString()', previousIds.toString())
+        console.log('***************isPublish', doc?._status === 'published')
+        console.log('************!meetingAlreadyProcessed', !meetingAlreadyProcessed)
+        console.log('*************req.context?.from', req.context?.from)
+
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
@@ -1304,10 +1332,13 @@ export const Meetings: CollectionConfig = {
 
         if (
           isPublish &&
-          (holdingsLimitChanged || stockChanged || firstPublish) &&
+          (holdingsLimitChanged || stockChanged || firstPublish || holdingsRemovedCompanies) &&
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
+            console.log(
+              '******************************************************************.    enter    .******************************************************************',
+            )
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
@@ -1382,6 +1413,11 @@ export const Meetings: CollectionConfig = {
       path: '/remove-company',
       method: 'post',
       handler: removeCompanyEndpoint,
+    },
+    {
+      path: '/restore-company',
+      method: 'post',
+      handler: restoreCompanyEndpoint,
     },
   ],
 }

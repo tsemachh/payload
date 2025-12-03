@@ -1,5 +1,5 @@
 'use client'
-import { Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react'
+import { Plus, Trash2, ChevronsUpDown, Check, ArchiveRestore } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useState, useEffect } from 'react'
@@ -30,10 +30,13 @@ export const ManageMeetingCompanies = () => {
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
   const [showRemoveModal, setShowRemoveModal] = useState(false)
+  const [showRestoreModal, setShowRestoreModal] = useState(false)
   const [selectedAddId, setSelectedAddId] = useState('')
   const [selectedRemoveId, setSelectedRemoveId] = useState('')
+  const [selectedRestoreId, setSelectedRestoreId] = useState('')
   const [availableCompanies, setAvailableCompanies] = useState<any[]>([])
   const [currentCompanies, setCurrentCompanies] = useState<any[]>([])
+  const [removedCompanies, setRemovedCompanies] = useState<any[]>([])
   const [meetingData, setMeetingData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -51,6 +54,7 @@ export const ManageMeetingCompanies = () => {
   // Popover state
   const [openAdd, setOpenAdd] = useState(false)
   const [openRemove, setOpenRemove] = useState(false)
+  const [openRestore, setOpenRestore] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -69,6 +73,9 @@ export const ManageMeetingCompanies = () => {
       const companiesInMeeting = data.companies || []
       setCurrentCompanies(companiesInMeeting)
 
+      const removedCompaniesList = data.removedCompanies || []
+      setRemovedCompanies(removedCompaniesList)
+
       const allRes = await fetch(`/api/companies?where[type][equals]=regular&limit=0&depth=0`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -76,7 +83,10 @@ export const ManageMeetingCompanies = () => {
       const allData = await allRes.json()
 
       const inMeetingIds = companiesInMeeting.map((c: any) => (typeof c === 'string' ? c : c.id))
-      const available = allData.docs.filter((c: unknown) => !inMeetingIds.includes(c.id))
+      const removedIds = removedCompaniesList.map((c: any) => (typeof c === 'string' ? c : c.id))
+      const available = allData.docs.filter((c: any) => {
+        return !inMeetingIds.includes(c.id) && !removedIds.includes(c.id)
+      })
       setAvailableCompanies(available)
     } catch (err) {
       console.error('Error fetching meeting data:', err)
@@ -105,10 +115,10 @@ export const ManageMeetingCompanies = () => {
         ]
 
         if (stockData.relations?.docs && stockData.relations.docs.length > 0) {
-          stockData.relations.docs.forEach((relatedStock: unknown) => {
+          stockData.relations.docs.forEach((relatedStock: any) => {
             stocks.push({
               id: relatedStock.id,
-              name: `${relatedStock.name} (עוקב)`,
+              name: `${relatedStock.name} (עוקב) `,
               stockId: relatedStock.stockId,
             })
           })
@@ -289,6 +299,37 @@ export const ManageMeetingCompanies = () => {
     }
   }
 
+  // Restore company
+  const handleRestore = async () => {
+    if (!selectedRestoreId || !id) return
+    setIsProcessing(true)
+    try {
+      const res = await fetch('/api/meetings/restore-company', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meetingId: id, companyId: selectedRestoreId }),
+      })
+      const result = await res.json()
+      if (result.success) {
+        toast.success('החברה הוחזרה בהצלחה')
+        setShowRestoreModal(false)
+        setSelectedRestoreId('')
+        // Refresh the page to update Payload's document state
+        const currentPath = window.location.pathname
+        router.push(currentPath)
+        router.refresh()
+      } else {
+        toast.error(result.message)
+      }
+    } catch (err) {
+      console.error('Error restoring company:', err)
+      toast.error('שגיאה בהחזרת חברה')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   // Helper: get name for add
   const getAddName = () => {
     const company = availableCompanies.find((c) => c.id === selectedAddId)
@@ -302,6 +343,15 @@ export const ManageMeetingCompanies = () => {
       return cid === selectedRemoveId
     })
     return typeof company === 'string' ? company : company?.name || selectedRemoveId
+  }
+
+  // Helper: get name for restore
+  const getRestoreName = () => {
+    const company = removedCompanies.find((c) => {
+      const cid = typeof c === 'string' ? c : c.id
+      return cid === selectedRestoreId
+    })
+    return typeof company === 'string' ? company : company?.name || selectedRestoreId
   }
 
   // Helper: get selected stock name
@@ -325,9 +375,22 @@ export const ManageMeetingCompanies = () => {
         <Button onClick={handleAddClick} variant="default" className="gap-2">
           <Plus className="h-4 w-4" /> הוסף חברה
         </Button>
-        <Button onClick={() => setShowRemoveModal(true)} variant="destructive" className="gap-2">
+        <Button
+          onClick={() => setShowRemoveModal(true)}
+          variant="outline"
+          className="gap-2 border-red-600 text-red-600 hover:bg-red-50"
+        >
           <Trash2 className="h-4 w-4" /> הסר חברה
         </Button>
+        {removedCompanies.length > 0 && (
+          <Button
+            onClick={() => setShowRestoreModal(true)}
+            variant="outline"
+            className="gap-2 border-green-600 text-green-600 hover:bg-green-50"
+          >
+            <ArchiveRestore className="h-4 w-4" /> החזר חברה שהוסרה
+          </Button>
+        )}
       </div>
 
       {/* Add Modal */}
@@ -405,24 +468,22 @@ export const ManageMeetingCompanies = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-[var(--radix-popper-anchor-width)] p-0"
+                  className="useTw w-[var(--radix-popper-anchor-width)] p-0"
                   style={{
                     direction: 'rtl',
-                    backgroundColor: 'white',
                     zIndex: 9999,
                   }}
                   align="end"
                   sideOffset={5}
                 >
-                  <Command className="bg-white">
+                  <Command className="useTw opacity-100">
                     <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
                     <CommandList>
                       <CommandGroup
-                        className="max-h-60 overflow-auto"
+                        className="useTw max-h-60 overflow-auto"
                         style={
                           {
                             minHeight: '1px',
-                            backgroundColor: 'white',
                           } as React.CSSProperties
                         }
                       >
@@ -604,16 +665,15 @@ export const ManageMeetingCompanies = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-[var(--radix-popper-anchor-width)] p-0"
+                className="useTw w-[var(--radix-popper-anchor-width)] p-0"
                 style={{
                   direction: 'rtl',
-                  backgroundColor: 'white',
                   zIndex: 9999,
                 }}
                 align="end"
                 sideOffset={5}
               >
-                <Command className="bg-white">
+                <Command className="useTw opacity-100">
                   <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
                   <CommandList>
                     <CommandGroup
@@ -621,7 +681,6 @@ export const ManageMeetingCompanies = () => {
                       style={
                         {
                           minHeight: '1px',
-                          backgroundColor: 'white',
                         } as React.CSSProperties
                       }
                     >
@@ -681,6 +740,109 @@ export const ManageMeetingCompanies = () => {
               onClick={handleRemove}
               disabled={!selectedRemoveId || isProcessing}
               variant="destructive"
+            >
+              {isProcessing ? 'מעבד...' : 'אישור'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Modal */}
+      <Dialog open={showRestoreModal} onOpenChange={setShowRestoreModal}>
+        <DialogContent className="useTw" dir="rtl">
+          <DialogHeader style={{ textAlign: 'right' }}>
+            <DialogTitle>החזר חברה לאסיפה</DialogTitle>
+            <DialogDescription>בחירת חברה להחזרה</DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Popover open={openRestore} onOpenChange={setOpenRestore} modal={true}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openRestore}
+                  className="w-full justify-between text-left font-normal"
+                  style={{ direction: 'rtl' }}
+                >
+                  {selectedRestoreId ? getRestoreName() : 'בחר חברה...'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="useTw w-[var(--radix-popper-anchor-width)] p-0"
+                style={{
+                  direction: 'rtl',
+                  zIndex: 9999,
+                }}
+                align="end"
+                sideOffset={5}
+              >
+                <Command className="useTw bg-white dark:bg-black">
+                  <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
+                  <CommandList>
+                    <CommandGroup
+                      className="max-h-60 overflow-auto"
+                      style={
+                        {
+                          minHeight: '1px',
+                        } as React.CSSProperties
+                      }
+                    >
+                      {removedCompanies.map((company) => {
+                        const cid = typeof company === 'string' ? company : company.id
+                        const cname = typeof company === 'string' ? company : company.name
+                        return (
+                          <CommandItem
+                            key={cid}
+                            value={cid}
+                            keywords={[cname]}
+                            onSelect={() => {
+                              setSelectedRestoreId(cid)
+                              setOpenRestore(false)
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                selectedRestoreId === cid ? 'opacity-100' : 'opacity-0',
+                              )}
+                            />
+                            {cname}
+                          </CommandItem>
+                        )
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {selectedRestoreId && (
+            <DialogDescription className="text-sm text-green-600 font-semibold">
+              החברה <strong>{getRestoreName()}</strong> תוחזר לאסיפה ותופיע שוב בהתאם להחזקות
+              הקיימות.
+            </DialogDescription>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="mx-1"
+              onClick={() => {
+                setShowRestoreModal(false)
+                setSelectedRestoreId('')
+                setOpenRestore(false)
+              }}
+            >
+              ביטול
+            </Button>
+            <Button
+              className="mx-1"
+              onClick={handleRestore}
+              disabled={!selectedRestoreId || isProcessing}
             >
               {isProcessing ? 'מעבד...' : 'אישור'}
             </Button>
