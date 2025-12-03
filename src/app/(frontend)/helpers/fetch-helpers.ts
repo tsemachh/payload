@@ -75,26 +75,6 @@ export async function fetchWithErrorHandling<T = any>(
 
     const errorDetails = handleApiError(error, errorMessage)
 
-    // Check if this is an authentication error (401 Unauthorized or 403 Forbidden)
-    const errorStatus = (error as any)?.status
-    const isAuthError = errorStatus === 401 || errorStatus === 403
-
-    if (isAuthError && typeof window !== 'undefined') {
-      if ((globalThis as any).__setAuthUser) {
-        ;(globalThis as any).__setAuthUser(null)
-      }
-
-      const isLoginEndpoint = url.includes('/api/users/login') || url.includes('/api/users/me')
-      const isLoginPage = window.location.pathname.includes('/auth/signin')
-
-      if (!isLoginEndpoint && !isLoginPage) {
-        const callbackUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        window.location.href = `/auth/signin?callbackUrl=${callbackUrl}`
-      }
-
-      throw errorDetails
-    }
-
     if (notifyOnError) {
       notifyError(errorDetails)
     }

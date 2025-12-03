@@ -13,11 +13,6 @@ export const fetcherVote = async (url: string) => {
 
 export const fetchMeetingData = async (url: string): Promise<MeetingTableDataType> => {
   const response = await fetch(url)
-  if (response.status === 401) {
-    const err = new Error('Unauthorized')
-    ;(err as any).code = 401
-    throw err
-  }
   if (!response.ok) {
     throw new Error('Failed to fetch meeting data')
   }
