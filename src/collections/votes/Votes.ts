@@ -17,6 +17,7 @@ import {
 } from './hooks/voteHooks'
 import { getVotesByCompanies } from './participationEndPoint'
 import { isUserCompanyVote, isUserCompanyVoteWrite } from '@/utils/authUtils'
+import { handleReportApproval } from './hooks/voteActualReport'
 
 function calculateCheckSum(data: Vote) {
   // Create a string representation of the fields to compute checksum
@@ -297,6 +298,9 @@ export const Votes: CollectionConfig = {
                   relationTo: 'documents',
                   admin: {
                     width: 'auto',
+                  },
+                  hooks: {
+                    afterChange: [handleReportApproval],
                   },
                 },
               ],
