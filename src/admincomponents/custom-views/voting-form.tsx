@@ -118,7 +118,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     if (!currentData || !originalData) return false
 
     // Compare reported status
-    if (currentData.reported !== originalData.reported) return true
+    if (
+      currentData.reported !== originalData.reported ||
+      (currentData.reportApproval as any)?.id !== (originalData.reportApproval as any)?.id
+    )
+      return true
 
     // Compare funds data using JSON.stringify
     return JSON.stringify(currentData.fundsData) !== JSON.stringify(originalData.fundsData)
