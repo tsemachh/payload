@@ -1,0 +1,783 @@
+[
+  {
+    "stockId": 45609,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 45898,
+    "type": "Foreign",
+    "isin": "IL0010827181"
+  },
+  {
+    "stockId": 48561,
+    "type": "Foreign",
+    "isin": "IL0010826688"
+  },
+  {
+    "stockId": 49577,
+    "type": "Foreign",
+    "isin": "IL0010834765"
+  },
+  {
+    "stockId": 56085,
+    "type": "Private"
+  },
+  {
+    "stockId": 100560,
+    "type": "Foreign",
+    "isin": "IL0010824113"
+  },
+  {
+    "stockId": 135790,
+    "type": "Foreign",
+    "isin": "CA83013Q8891"
+  },
+  {
+    "stockId": 295634,
+    "type": "Foreign",
+    "isin": "IL0011407140"
+  },
+  {
+    "stockId": 395632,
+    "type": "Foreign",
+    "isin": "IL0011259137"
+  },
+  {
+    "stockId": 415067,
+    "type": "Foreign",
+    "isin": "IL0011301780"
+  },
+  {
+    "stockId": 496497,
+    "type": "Foreign",
+    "isin": "US63008G2030"
+  },
+  {
+    "stockId": 532307,
+    "type": "Foreign",
+    "isin": "IL0011334468"
+  },
+  {
+    "stockId": 551406,
+    "type": "Foreign",
+    "isin": "IL0011417206"
+  },
+  {
+    "stockId": 581791,
+    "type": "Foreign",
+    "isin": "IL0011681371"
+  },
+  {
+    "stockId": 595304,
+    "type": "Foreign",
+    "isin": "IL0011595993"
+  },
+  {
+    "stockId": 601762,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 614594,
+    "type": "Foreign",
+    "isin": "IL0011786493"
+  },
+  {
+    "stockId": 620026,
+    "type": "Foreign",
+    "isin": "IL0011796625"
+  },
+  {
+    "stockId": 625872,
+    "type": "Foreign",
+    "isin": "US4576791085"
+  },
+  {
+    "stockId": 1082650,
+    "type": "Foreign",
+    "isin": "IL0010826506"
+  },
+  {
+    "stockId": 1084003,
+    "type": "Foreign",
+    "isin": "IL0012007329"
+  },
+  {
+    "stockId": 1095025,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1095942,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1098300,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1099944,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1099951,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1099969,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1100833,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1101567,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1102458,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1102482,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1102854,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1104355,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1104845,
+    "type": "Foreign",
+    "isin": "IL0012008152"
+  },
+  {
+    "stockId": 1107531,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1109180,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1110378,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1110980,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1112911,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1113398,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1113562,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1116755,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1118496,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1120609,
+    "type": "Foreign",
+    "isin": "US74365A3095"
+  },
+  {
+    "stockId": 1120740,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1120880,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1124346,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1124650,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1125624,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1127679,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1128347,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1128396,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1131184,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1131614,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1134394,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1137041,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1138999,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1139179,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1139575,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1139781,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1140136,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1141118,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1141274,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1141712,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1142009,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1142512,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1143270,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1143304,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1145598,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1151141,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1159037,
+    "type": "Private"
+  },
+  {
+    "stockId": 1160829,
+    "type": "Foreign",
+    "isin": "US73931J1097"
+  },
+  {
+    "stockId": 1162205,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1167212,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1169614,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1170901,
+    "type": "Foreign",
+    "isin": "US0412421085"
+  },
+  {
+    "stockId": 1175868,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1178813,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1179225,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1181734,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1182583,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 1182963,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1320118,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1790054,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 1790062,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3180361,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3390044,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3520046,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3570025,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3720075,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3720109,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3720117,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3730504,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 3780038,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3780079,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3780087,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 3980018,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 4150090,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 4150124,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 4220349,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 4550042,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 5050240,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 5050265,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 5740022,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 5760244,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 6110365,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 6110431,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 6110480,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 6380083,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 7509938,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 7653211,
+    "type": "Foreign",
+    "isin": "IL0010951403"
+  },
+  {
+    "stockId": 7980154,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 7980337,
+    "type": "NonTradable"
+  },
+  {
+    "stockId": 8230252,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 11571556,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 32075814,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 32079436,
+    "type": "Foreign",
+    "isin": "IL0011582033"
+  },
+  {
+    "stockId": 70100173,
+    "type": "Foreign",
+    "isin": "IL0011741688"
+  },
+  {
+    "stockId": 70102583,
+    "type": "Foreign",
+    "isin": "IL0011762130"
+  },
+  {
+    "stockId": 70105160,
+    "type": "Foreign",
+    "isin": "US81730H1095"
+  },
+  {
+    "stockId": 70105475,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 70110254,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 70115449,
+    "type": "Foreign",
+    "isin": "US5738741041"
+  },
+  {
+    "stockId": 70121637,
+    "type": "Foreign",
+    "isin": "US5771281012"
+  },
+  {
+    "stockId": 70128129,
+    "type": "Foreign",
+    "isin": "IL0011974909"
+  },
+  {
+    "stockId": 70166004,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 70182514,
+    "type": "Foreign",
+    "isin": "US23725P2092"
+  },
+  {
+    "stockId": 70199989,
+    "type": "Foreign",
+    "isin": "US6974351057"
+  },
+  {
+    "stockId": 70215199,
+    "type": "Foreign",
+    "isin": "US92343X1000"
+  },
+  {
+    "stockId": 70237995,
+    "type": "Foreign",
+    "isin": "US83417M1045"
+  },
+  {
+    "stockId": 70240049,
+    "type": "Foreign",
+    "isin": "US24665A1034"
+  },
+  {
+    "stockId": 70242383,
+    "type": "Foreign",
+    "isin": "IL0065100930"
+  },
+  {
+    "stockId": 70268123,
+    "type": "Foreign",
+    "isin": "US03044L2043"
+  },
+  {
+    "stockId": 70393681,
+    "type": "Foreign",
+    "isin": "IL0010818685"
+  },
+  {
+    "stockId": 70404645,
+    "type": "Foreign",
+    "isin": "IL0010826928"
+  },
+  {
+    "stockId": 70457460,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 70486147,
+    "type": "Foreign",
+    "isin": "US4595061015"
+  },
+  {
+    "stockId": 70504378,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 70523568,
+    "type": "Foreign",
+    "isin": "IL0010855885"
+  },
+  {
+    "stockId": 70592613,
+    "type": "Foreign",
+    "isin": "IL0011326795"
+  },
+  {
+    "stockId": 70596317,
+    "type": "Foreign",
+    "isin": "US1572101053"
+  },
+  {
+    "stockId": 70679923,
+    "type": "Foreign",
+    "isin": "GI000A0F6407"
+  },
+  {
+    "stockId": 70696034,
+    "type": "Foreign",
+    "isin": "US72815L1070"
+  },
+  {
+    "stockId": 70822143,
+    "type": "Foreign",
+    "isin": "IL0011316309"
+  },
+  {
+    "stockId": 70830054,
+    "type": "Foreign",
+    "isin": "GG00B1Z5FH87"
+  },
+  {
+    "stockId": 70875653,
+    "type": "Foreign",
+    "isin": "US86771W1053"
+  },
+  {
+    "stockId": 71408660,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 72896020,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 74708702,
+    "type": "Foreign",
+    "isin": "IL0011267213"
+  },
+  {
+    "stockId": 74753625,
+    "type": "Foreign",
+    "isin": "US7574683014"
+  },
+  {
+    "stockId": 74963778,
+    "type": "Foreign",
+    "isin": "US9222801022"
+  },
+  {
+    "stockId": 75178756,
+    "type": "Foreign",
+    "isin": "IL0011216723"
+  },
+  {
+    "stockId": 75461160,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 75486521,
+    "type": "Foreign",
+    "isin": "IL0011794802"
+  },
+  {
+    "stockId": 75550034,
+    "type": "Foreign",
+    "isin": "IL0011754137"
+  },
+  {
+    "stockId": 75550037,
+    "type": "Foreign",
+    "isin": "US4335392027"
+  },
+  {
+    "stockId": 77177210,
+    "type": "Foreign",
+    "isin": "US52567D1072"
+  },
+  {
+    "stockId": 77553329,
+    "type": "Foreign",
+    "isin": "US0412421085"
+  },
+  {
+    "stockId": 77841211,
+    "type": "Foreign",
+    "isin": "IL0011751653"
+  },
+  {
+    "stockId": 77905396,
+    "type": "Foreign",
+    "isin": "US70451X1046"
+  },
+  {
+    "stockId": 77944569,
+    "type": "Foreign",
+    "isin": "US69002R1032"
+  },
+  {
+    "stockId": 78325479,
+    "type": "Foreign",
+    "isin": "IL0011786154"
+  },
+  {
+    "stockId": 78543634,
+    "type": "Foreign",
+    "isin": "IL0011858912"
+  },
+  {
+    "stockId": 555001706,
+    "type": "Foreign",
+    "isin": "US02156U2006"
+  },
+  {
+    "stockId": 555001845,
+    "type": "Foreign",
+    "isin": "IL0011796880"
+  },
+  {
+    "stockId": 706341910,
+    "type": "Foreign",
+    "isin": "IL0011745804"
+  },
+  {
+    "stockId": 791233323,
+    "type": "Foreign",
+    "isin": "IL0011691438"
+  },
+  {
+    "stockId": 791233340,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 791233423,
+    "type": "Foreign",
+    "isin": "US52661A1088"
+  },
+  {
+    "stockId": 892134503,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 983134727,
+    "type": "NotActive"
+  },
+  {
+    "stockId": 66661438,
+    "type": "Foreign",
+    "isin": "US16385C1045"
+  },
+  {
+    "stockId": 70383153,
+    "type": "Foreign",
+    "isin": "IL0010827264"
+  },
+  {
+    "stockId": 70420302,
+    "type": "Foreign",
+    "isin": "IL0010828411"
+  },
+  {
+    "stockId": 70789706,
+    "type": "Foreign",
+    "isin": "US1255255275"
+  },
+  {
+    "stockId": 32048639,
+    "type": "Foreign",
+    "isin": "US5834353006"
+  },
+  {
+    "stockId": 70327168,
+    "type": "Foreign",
+    "isin": "US70806A1060"
+  }
+]

@@ -2,12 +2,16 @@ import payload from 'payload'
 import fs from 'fs'
 import path from 'path'
 
-// We align the seed according to the CSV rules:
-// 1. Private: שיוך === "חברה פרטית"
-// 2. NotActive: שיוך === "לא רלוונטי יותר"
-// 3. NonTradable: שיוך === "לא סחיר"
-// 4. Foreign: שיוך is anything else (including ISIN codes, "סחיר", empty, etc.)
-//    - If שיוך looks like an ISIN (12 characters, CC prefix), we store it in the "isin" field.
+// New behavior (2025-11-29):
+// - Read input exclusively from src/utils/stockMapping.json (array of { stockId, type, isin? })
+// - Insert one document per JSON item into 'stock-migration-mapping'
+//   * Always include stockId and type as-is from JSON
+//   * If type === 'Foreign', require a valid ISIN (shape check). If missing/invalid → skip
+//   * For non-Foreign, omit isin even if provided
+// - De-duplication:
+//   * First occurrence of a stockId wins (skip subsequent duplicates)
+//   * For Foreign, also skip if the ISIN already appeared earlier
+// - Preserve the two hard-coded extras (1082650, 1084003): insert if missing, otherwise update to enforce given ISINs
 
 function looksLikeISIN(value?: string): boolean {
   if (!value) return false
@@ -16,55 +20,16 @@ function looksLikeISIN(value?: string): boolean {
   return /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(v)
 }
 
-function readCsvRows(): string[][] {
-  const csvPath = path.resolve(process.cwd(), 'src/utils/stockMigrationMapping.csv')
-  const content = fs.readFileSync(csvPath, 'utf8')
-  const lines = content.split(/\r?\n/).filter((l) => l.length > 0)
-  if (lines.length === 0) return []
+type MappingItem = { stockId: number; type: 'Foreign' | 'Private' | 'NotActive' | 'NonTradable'; isin?: string }
 
-  // Robust line parser that respects quotes
-  const parseLine = (line: string): string[] => {
-    const result: string[] = []
-    let current = ''
-    let inQuotes = false
-
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (ch === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          // Escaped quote
-          current += '"'
-          i++
-        } else {
-          inQuotes = !inQuotes
-        }
-      } else if (ch === ',' && !inQuotes) {
-        result.push(current)
-        current = ''
-      } else {
-        current += ch
-      }
-    }
-    result.push(current)
-    return result
-  }
-
-  const header = parseLine(lines[0])
-  const rows = lines.slice(1).map(parseLine)
-
-  // Find indices dynamically by header names
-  const stockIdIdx = header.findIndex((h) => h.trim() === 'stockId')
-  const assocIdx = header.findIndex((h) => h.trim() === 'שיוך')
-
-  if (stockIdIdx === -1 || assocIdx === -1) {
-    throw new Error('CSV is missing required columns: stockId and/or שיוך')
-  }
-
-  // Return rows filtered to those having a stockId
-  return rows.filter((cols) => {
-    const idStr = cols[stockIdIdx]?.trim()
-    return idStr && !Number.isNaN(Number(idStr))
-  }).map((cols) => cols)
+function readJsonMapping(): MappingItem[] {
+  const jsonPath = path.resolve(process.cwd(), 'src/utils/stockMapping.json')
+  const raw = fs.readFileSync(jsonPath, 'utf8')
+  const arr = JSON.parse(raw) as Array<any>
+  if (!Array.isArray(arr)) return []
+  return arr
+    .map((o) => ({ stockId: o?.stockId, type: o?.type, isin: o?.isin }))
+    .filter((o) => typeof o.stockId === 'number' && !!o.type)
 }
 
 export async function seedStockMigrationMapping() {
@@ -79,96 +44,72 @@ export async function seedStockMigrationMapping() {
     } catch (delErr) {
       console.warn('Warning: failed to bulk-delete existing stock-migration-mapping docs (continuing):', delErr)
     }
-    const rows = readCsvRows()
-
-    // Re-parse header to get indices
-    const csvPath = path.resolve(process.cwd(), 'src/utils/stockMigrationMapping.csv')
-    const content = fs.readFileSync(csvPath, 'utf8')
-    const lines = content.split(/\r?\n/).filter((l) => l.length > 0)
-
-    const parseLine = (line: string): string[] => {
-      const result: string[] = []
-      let current = ''
-      let inQuotes = false
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i]
-        if (ch === '"') {
-          if (inQuotes && line[i + 1] === '"') {
-            current += '"'
-            i++
-          } else {
-            inQuotes = !inQuotes
-          }
-        } else if (ch === ',' && !inQuotes) {
-          result.push(current)
-          current = ''
-        } else {
-          current += ch
-        }
-      }
-      result.push(current)
-      return result
-    }
-
-    const header = parseLine(lines[0])
-    const stockIdIdx = header.findIndex((h) => h.trim() === 'stockId')
-    const assocIdx = header.findIndex((h) => h.trim() === 'שיוך')
-
-    const HEB_PRIVATE = 'חברה פרטית'
-    const HEB_NOT_ACTIVE = 'לא רלוונטי יותר'
-    const HEB_NON_TRADABLE = 'לא סחיר'
+    const items = readJsonMapping()
 
     let createdCount = 0
+    const createdIds = new Set<number>()
 
-    for (const cols of rows) {
-      const stockIdStr = cols[stockIdIdx]?.trim()
-      const assocRaw = cols[assocIdx]?.trim()
-      const stockId = Number(stockIdStr)
-      if (!stockIdStr || Number.isNaN(stockId)) continue
+    const seenStockIds = new Set<number>()
+    const seenIsins = new Set<string>()
 
-      if (assocRaw === HEB_PRIVATE) {
+    for (const item of items) {
+      const stockId = item.stockId
+      const type = item.type
+      if (seenStockIds.has(stockId)) continue
+
+      if (type === 'Foreign') {
+        const isin = item.isin?.toString().trim().toUpperCase()
+        if (!looksLikeISIN(isin)) continue
+        if (seenIsins.has(isin!)) continue
+
         await payload.create({
           collection: 'stock-migration-mapping',
-          data: { stockId, type: 'Private' },
+          data: { stockId, type: 'Foreign', isin },
         })
-        createdCount++
+        seenIsins.add(isin!)
+      } else if (type === 'Private' || type === 'NotActive' || type === 'NonTradable') {
+        await payload.create({
+          collection: 'stock-migration-mapping',
+          data: { stockId, type },
+        })
+      } else {
+        // Unknown type -> skip
         continue
       }
 
-      if (assocRaw === HEB_NOT_ACTIVE) {
-        await payload.create({
-          collection: 'stock-migration-mapping',
-          data: { stockId, type: 'NotActive' },
-        })
-        createdCount++
-        continue
-      }
-
-      if (assocRaw === HEB_NON_TRADABLE) {
-        await payload.create({
-          collection: 'stock-migration-mapping',
-          data: { stockId, type: 'NonTradable' },
-        })
-        createdCount++
-        continue
-      }
-
-      // Otherwise treat as Foreign
-      const isin = looksLikeISIN(assocRaw) ? assocRaw.trim().toUpperCase() : undefined
-      await payload.create({
-        collection: 'stock-migration-mapping',
-        data: {
-          stockId,
-          type: 'Foreign',
-          ...(isin ? { isin } : {}),
-        },
-      })
       createdCount++
+      createdIds.add(stockId)
+      seenStockIds.add(stockId)
     }
 
-    console.log(`Successfully seeded stock-migration-mapping collection from CSV. Inserted ${createdCount} docs.`)
+    // Add additional hard-coded values requested (only if not already created from CSV)
+    const extraMappings: Array<{ stockId: number; type: 'Foreign'; isin: string }> = [
+      { stockId: 1082650, type: 'Foreign', isin: 'IL0010826506' },
+      { stockId: 1084003, type: 'Foreign', isin: 'IL0012007329' },
+    ]
+
+    for (const extra of extraMappings) {
+      if (!createdIds.has(extra.stockId)) {
+        await payload.create({
+          collection: 'stock-migration-mapping',
+          data: extra,
+        })
+        createdCount++
+        createdIds.add(extra.stockId)
+      }else{
+        await payload.update({
+          collection: 'stock-migration-mapping',
+          data: extra,
+          where:{
+            stockId: {equals : extra.stockId}
+          }
+        })
+      }
+    }
+
+    console.log(`Successfully seeded stock-migration-mapping collection from JSON. Inserted ${createdCount} docs.`)
   } catch (error) {
-    console.error('Error seeding stock-migration-mapping from CSV:', error)
+    console.error('Error seeding stock-migration-mapping from JSON:', error)
     throw error
   }
 }

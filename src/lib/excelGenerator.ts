@@ -138,13 +138,20 @@ export async function generateParticipationsExcel(
         const emptyAgendaData = Array(agendaHeaders.length).fill('')
         const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
         const fillColor = 'FFD2E4FF'
+
+        // First pass: set fill color for ALL cells in the row
+        for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
+          const cell = excelRow.getCell(colNumber)
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: fillColor },
+          }
+        }
+
+        // Second pass: set styling
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: fillColor },
-            }
             cell.font = { name: 'Arial', size: 10 }
             cell.alignment = { horizontal: 'right', vertical: 'middle' }
           }
@@ -173,63 +180,116 @@ export async function generateParticipationsExcel(
               relatedParty: any
               personalInterest: any
               voteReason?: string
+              isRemoved?: boolean
             },
             index: number,
           ) => {
             const isFirstAgenda = index === 0
+            const isRemoved = agenda.isRemoved === true
             const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
             const alignment = isEnglish ? 'left' : 'right'
-            const numberedAgendaText = agenda.text
-              ? isEnglish
-                ? `${index + 1}. ${agenda.text}`
-                : `\u200F${index + 1}. ${agenda.text}`
-              : ''
-            // Check if voteReason exists and is not empty
-            let voteContent = agenda.vote || ''
-            if (agenda.voteReason && agenda.voteReason.trim() !== '') {
+
+            // Prepare agenda text - will handle removed notice separately for rich text
+            const baseAgendaText = agenda.text || ''
+            const numberedPrefix = isEnglish ? `${index + 1}. ` : `\u200F${index + 1}. `
+            const numberedAgendaText = baseAgendaText ? numberedPrefix + baseAgendaText : ''
+
+            // Check if voteReason exists and is not empty (only if not removed)
+            let voteContent = !isRemoved ? agenda.vote || '' : ''
+            if (!isRemoved && agenda.voteReason && agenda.voteReason.trim() !== '') {
               voteContent = `${voteContent} [${voteReasonCounter}]`
               voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
               voteReasonCounter++
             }
+
+            // If removed, show empty strings for voting details
             const agendaData = [
               numberedAgendaText,
               ...(showAdvisorColumn
                 ? [
-                    meeting.displayVotingRecommendation
-                      ? agenda.recommendation?.votingRecommendation
-                      : '',
+                    isRemoved
+                      ? ''
+                      : meeting.displayVotingRecommendation
+                        ? agenda.recommendation?.votingRecommendation
+                        : '',
                   ]
                 : []),
               voteContent,
-              agenda.result
-                ? resultMapping[agenda.result] || agenda.result
-                : agenda.meetingResults || '',
-              agenda.simpleMajority && agenda.percentResult
-                ? `${formatNumberWithLocale(agenda.percentResult)}%`
-                : booleanToIcon(agenda.simpleMajority),
-              agenda.privilegedMajority && agenda.percentResult
-                ? `${formatNumberWithLocale(agenda.percentResult)}%`
-                : booleanToIcon(agenda.privilegedMajority),
-              booleanToIcon(agenda.policyCompliance),
-              booleanToIcon(agenda.conflictOfInterest),
-              booleanToIcon(agenda.relatedParty),
-              booleanToIcon(agenda.personalInterest),
+              isRemoved
+                ? ''
+                : agenda.result
+                  ? resultMapping[agenda.result] || agenda.result
+                  : agenda.meetingResults || '',
+              isRemoved
+                ? ''
+                : agenda.simpleMajority && agenda.percentResult
+                  ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                  : booleanToIcon(agenda.simpleMajority),
+              isRemoved
+                ? ''
+                : agenda.privilegedMajority && agenda.percentResult
+                  ? `${formatNumberWithLocale(agenda.percentResult)}%`
+                  : booleanToIcon(agenda.privilegedMajority),
+              isRemoved ? '' : booleanToIcon(agenda.policyCompliance),
+              isRemoved ? '' : booleanToIcon(agenda.conflictOfInterest),
+              isRemoved ? '' : booleanToIcon(agenda.relatedParty),
+              isRemoved ? '' : booleanToIcon(agenda.personalInterest),
             ]
+
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
             const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
+
+            // First pass: set fill color for ALL cells in the row
+            for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
+              const cell = excelRow.getCell(colNumber)
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: fillColor },
+              }
+            }
+
+            // Second pass: set content and styling
             excelRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
-                cell.fill = {
-                  type: 'pattern',
-                  pattern: 'solid',
-                  fgColor: { argb: fillColor },
-                }
                 const isVIcon = cell.value === '\u2713'
-                cell.font = {
-                  name: 'Arial',
-                  size: 10,
-                  ...(isVIcon && { color: { argb: 'FF008000' }, bold: true }),
+                const textColor = isRemoved ? 'FF808080' : isVIcon ? 'FF008000' : undefined
+
+                // Special handling for agenda text cell when removed
+                if (isRemoved && colNumber === agendaTextIndex) {
+                  const removedNotice = isEnglish ? ' (Removed from agenda)' : ' (הוסר מסדר היום)'
+                  // Use rich text to apply strikethrough only to agenda text
+                  cell.value = {
+                    richText: [
+                      {
+                        text: numberedAgendaText,
+                        font: {
+                          name: 'Arial',
+                          size: 10,
+                          color: { argb: textColor },
+                          strike: true,
+                        },
+                      },
+                      {
+                        text: removedNotice,
+                        font: {
+                          name: 'Arial',
+                          size: 10,
+                          color: { argb: textColor },
+                          strike: false,
+                        },
+                      },
+                    ],
+                  }
+                } else {
+                  cell.font = {
+                    name: 'Arial',
+                    size: 10,
+                    ...(textColor && { color: { argb: textColor } }),
+                    ...(isVIcon && { bold: true }),
+                  }
                 }
+
                 cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
                 if (colNumber === agendaTextIndex) {
                   cell.alignment = {
@@ -240,6 +300,7 @@ export async function generateParticipationsExcel(
                 }
               }
             })
+
             const cellStyles: { col: number; font: any }[] = []
             excelRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
@@ -251,6 +312,33 @@ export async function generateParticipationsExcel(
         )
         // Add vote reasons as merged rows with white background
         if (voteReasons.length > 0) {
+          // Add title row
+          const titleText = voteReasons.length === 1 ? 'נימוק הצבעה' : 'נימוקי הצבעה'
+          const titleRow = worksheet.addRow([titleText, ...Array(headers.length - 1).fill('')])
+          worksheet.mergeCells(titleRow.number, 1, titleRow.number, headers.length)
+          titleRow.eachCell((cell, colNumber) => {
+            if (colNumber <= headers.length) {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFFFFF' },
+              }
+              cell.font = { name: 'Arial', size: 11, bold: true }
+              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+            }
+          })
+          const titleCellStyles: { col: number; font: any }[] = []
+          titleRow.eachCell((cell, colNumber) => {
+            if (colNumber <= headers.length) {
+              titleCellStyles.push({ col: colNumber, font: cell.font })
+            }
+          })
+          rowFormats.push({
+            rowIndex: titleRow.number,
+            fillColor: 'FFFFFFFF',
+            cellStyles: titleCellStyles,
+          })
+
           voteReasons.forEach(({ index, reason }) => {
             const isEnglishReason = /^[A-Za-z]/.test(reason?.trim?.() || '')
             const reasonText = isEnglishReason ? `${reason} .${index}` : `${index}. ${reason}`

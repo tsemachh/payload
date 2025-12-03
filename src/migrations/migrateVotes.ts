@@ -82,6 +82,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 typeId: `meeting-${meeting.id}`,
                 comments: `Meeting with ID ${meeting.id} not found in MongoDB and votes cannot be migrated`,
                 row: meeting,
+                severity: 'warning',
               })
               return
             }
@@ -129,6 +130,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     typeId: `meeting-${meeting.id}-company-${company.firmid}`,
                     comments: `Company with ID ${company.firmid} not found in MongoDB and votes cannot be migrated for meeting ${meeting.id}`,
                     row: company,
+                    severity: 'warning',
                   })
                   continue
                 }
@@ -159,6 +161,25 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 // Extract votingOrdersMemo from meetingClients data
                 const votingOrdersMemo = meetingClientsData?.votingOrdersMemo
 
+                // Fetch top-level client comment from UserMeetingMessage joined with userstofirms
+                const messageRequest = pool?.request()
+                messageRequest?.input('meetingId', sql.Int, meeting.id)
+                messageRequest?.input('firmId', sql.Int, company.firmid)
+                const userMeetingMessageResult = await messageRequest?.query(`
+                  SELECT
+                      umm.Message
+                  FROM
+                      [dbEmda].[dbo].[UserMeetingMessage] umm
+                  INNER JOIN
+                      [dbEmda].[dbo].[userstofirms] utf
+                      ON umm.userId = utf.userID
+                  WHERE
+                      umm.MeetingId = @meetingId
+                      AND utf.firmID = @firmId
+                `)
+                const topLevelClientComment =
+                  userMeetingMessageResult?.recordset?.[0]?.Message || ''
+
                 // Create votes array for MongoDB
                 // First, create a map of agenda item IDs to their positions in the agenda
                 const agendaItemPositions = new Map()
@@ -180,13 +201,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     topicIndex,
                     voteDecision,
                     noParticipantDuty,
-                    comment: vote.comment || '',
-                    clientComment: vote.ccomment || '',
-                    committee: vote.committee === 1,
-                    conflict: vote.conflict === 1,
-                    relatedParty: vote.relatedParty === 1,
-                    personalInterest: vote.pInterest === 1,
-                    professionalFactor: vote.profFactor || '',
+                    // Map per-topic client comment to schema field 'voteReason'
+                    voteReason: vote.ccomment?.trim() || undefined,
+                    // Rename booleans to match Votes collection schema
+                    isInvestmentCommittee: vote.committee === 1,
+                    hasConflictOfInterest: vote.conflict === 1,
+                    isRelatedParty: vote.relatedParty === 1,
+                    hasPersonalInterest: vote.pInterest === 1,
                   }
                 })
 
@@ -195,6 +216,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   meeting: mongoMeetingId,
                   company: mongoCompanyId,
                   reported: !!votingOrdersMemo, // Add the votingOrdersMemo field
+                  clientComment: topLevelClientComment,
                   votes,
                   _status: 'published',
                 } as Partial<Vote>
@@ -216,6 +238,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   await logMigrationFault({
                     payload,
                     type: 'vote',
+                    severity: 'error',
                     typeId: `meeting-${meeting.id}`,
                     comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
                     row: JSON.stringify(voteData),
@@ -235,6 +258,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             await logMigrationFault({
               payload,
               type: 'vote',
+              severity: 'fatal',
               typeId: `meeting-${meeting.id}`,
               comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
               row: meeting,

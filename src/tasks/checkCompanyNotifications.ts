@@ -59,14 +59,13 @@ export const checkCompanyNotifications = async (req: any) => {
 
   // Set up midnight timestamps for date ranges
   const todayMidnight = setToMidnight(today)
-  const yesterdayMidnight = setToMidnight(addDays(today, -1))
+  const lastWorkingDateMidnight = setToMidnight(addDays(today, -1))
 
   // 1. Check for meeting notifications
-  await checkMeetingNotifications(req, results, todayMidnight, yesterdayMidnight)
+  await checkMeetingNotifications(req, results, todayMidnight, lastWorkingDateMidnight)
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
-  await checkMeetingUpdates(req, results)
   console.log('Company notifications check completed')
   console.log('Summary:', JSON.stringify(results, null, 2))
 
@@ -111,7 +110,7 @@ async function checkMeetingNotifications(
   req: any,
   results: any,
   todayMidnight: Date,
-  yesterdayMidnight: Date,
+  lastWorkingDateMidnight: Date,
 ) {
   const now = new Date()
   const nextWorkingDay = getWorkingDateAfter(now, 1, 0)
@@ -126,7 +125,7 @@ async function checkMeetingNotifications(
           {
             // Condition 1: holdingLimit between yesterday midnight and today midnight
             holdingsLimit: {
-              greater_than: yesterdayMidnight.toISOString(),
+              greater_than: lastWorkingDateMidnight.toISOString(),
               less_than: todayMidnight.toISOString(),
             },
           },
@@ -162,7 +161,9 @@ async function checkMeetingNotifications(
     const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
 
     const isAfterHoldingLimit =
-      holdingLimitDate && holdingLimitDate > yesterdayMidnight && holdingLimitDate < todayMidnight
+      holdingLimitDate &&
+      holdingLimitDate > lastWorkingDateMidnight &&
+      holdingLimitDate < todayMidnight
 
     const isWorkingDayBeforeProxyVotingDate =
       proxyVotingDate &&
@@ -232,6 +233,7 @@ async function checkMeetingNotifications(
       // Determine notification type
       let notificationType: UserNotificationType = 'after-holding-limit'
       let message = ''
+      const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
       if (isAfterHoldingLimit && holdingLimitDate) {
         notificationType = 'after-holding-limit'
         const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
@@ -254,6 +256,7 @@ async function checkMeetingNotifications(
           notificationType: { equals: notificationType },
           meeting: { equals: meeting.id },
           company: { equals: company.id },
+          url: { equls: url },
         },
       })
 
@@ -264,6 +267,7 @@ async function checkMeetingNotifications(
           notificationType,
           meeting: meeting.id,
           company: company.id,
+          url: url,
         },
       })
 
@@ -346,6 +350,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
       // If no holdings feed found, create a notification
       if (!hasHoldings) {
+        const url = `${req.payload.config.serverURL}//holdings/`
         const message = `חברה ${company.name} לא דיווחה על החזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         // Delete any existing notifications for this company and type
@@ -355,6 +360,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             company: { equals: company.id },
             message: { equals: message },
             notificationType: { equals: 'holdings-not-fed' },
+            url: { equals: url },
           },
         })
 
@@ -365,6 +371,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             message,
             notificationType: 'holdings-not-fed',
             company: company.id,
+            url: url,
           },
         })
 
@@ -379,69 +386,4 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
     console.error(`Error checking holdings feeds: ${JSON.stringify(error)}`)
   }
 }
-async function checkMeetingUpdates(req: any, results: any, userId?: string) {
-  const payload = req.payload
-  const today = new Date()
-  const yesterday = new Date(today)
-  const formattedYesterday = yesterday.toLocaleDateString('he-IL')
-  yesterday.setDate(today.getDate() - 1)
-  const yesterdayStart = new Date(yesterday)
-  yesterdayStart.setHours(0, 0, 0, 0)
-  const yesterdayEnd = new Date(yesterday)
-  yesterdayEnd.setHours(23, 59, 59, 999)
 
-  const { docs: meetings } = await payload.find({
-    collection: 'meetings',
-    select: {
-      companies: true,
-      id: true,
-      fullName: true,
-    },
-    where: {
-      _status: { equals: 'published' },
-      publishDate: {
-        less_than_equal: yesterdayStart.toISOString(),
-      },
-      updatedAt: {
-        greater_than_equal: yesterdayStart.toISOString(),
-        less_than_equal: today,
-      },
-      changeDetails: {
-        not_equals: null,
-      },
-    },
-    limit: 0,
-    depth: 0,
-  })
-
-  for (const meeting of meetings) {
-    const companies = meeting.companies as string[]
-    if (!companies || companies.length === 0) continue
-
-    for (const companyId of companies) {
-      const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedYesterday}), יש לשים לב לשינויים`
-      await payload.delete({
-        collection: 'company-meeting-notifications',
-        where: {
-          company: { equals: companyId },
-          message: { equals: message },
-          notificationType: { equals: 'meeting-updated' },
-          meeting: { equals: meeting.id },
-        },
-      })
-      await payload.create({
-        collection: 'company-meeting-notifications',
-        data: {
-          message,
-          notificationType: 'meeting-updated',
-          meeting: meeting.id,
-          company: companyId,
-        },
-      })
-
-      //(`Created update notification for company ${companyId} in meeting ${meeting.id}`)
-      results.notificationsCreated.meetingUpdates =
-        (results.notificationsCreated.meetingUpdates || 0) + 1
-    }
-  }
-}

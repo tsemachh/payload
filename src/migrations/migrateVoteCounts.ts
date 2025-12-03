@@ -15,6 +15,10 @@ import { PromisePool } from '@/utils/promisePool'
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting vote counts migration...')
 
+  req=  {
+    ...req,
+    context: { ...req.context, from: 'migration' , process: 'migrateVotesCount' },
+  }
   // Statistics tracking
   const stats = {
     total: 0,
@@ -39,16 +43,22 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Found ${meetings.length} meetings to process`)
 
     // Process meetings in parallel with a pool size of 20
-    const POOL_SIZE = 20
+    const POOL_SIZE = 1
     const pool = new PromisePool(POOL_SIZE)
     const results: Array<{ success: boolean; meetingId: string; result?: any; error?: any }> =
       new Array(meetings.length)
+
+    // Collect meetings where votes > companies
+    const meetingIdsNeedingCompaniesProcessing: string[] = []
 
     // Add all meetings to the pool
     const promises = meetings.map((meeting, index) => {
       return pool.add(async () => {
         try {
           const result = await recalculateMeetingVoteCounts(req, meeting.id)
+          if (result?.data?.votesExceedCompanies) {
+            meetingIdsNeedingCompaniesProcessing.push(meeting.id)
+          }
           results[index] = { success: true, meetingId: meeting.id, result }
         } catch (error) {
           console.error(`Error processing meeting ${meeting.id}:`, error)
@@ -67,6 +77,28 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Wait for all promises to complete
     await Promise.all(promises)
     await pool.waitForAll()
+
+    // Post-processing: clean up votes for meetings where votes > companies
+    if (meetingIdsNeedingCompaniesProcessing.length > 0) {
+      // Lazy import to avoid circular deps at module load time
+      const { cleanupInvalidVotesForMeetings } = await import(
+        '@/collections/meetings/hooks/processCompaniesMeetings'
+      )
+
+      await cleanupInvalidVotesForMeetings(
+        {
+          ...req,
+          context: { ...req.context, from: 'migration', process: 'migrateVotesCount' },
+        } as any,
+        meetingIdsNeedingCompaniesProcessing,
+      )
+      console.log(
+        'Completed cleanupInvalidVotesForMeetings for meetings with votes > companies. Count:',
+        meetingIdsNeedingCompaniesProcessing.length,
+      )
+    } else {
+      console.log('No meetings had votes > companies. Skipping cleanupInvalidVotesForMeetings call.')
+    }
 
     // Update final statistics
     stats.successful = results.filter((r) => r.success).length

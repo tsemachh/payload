@@ -192,11 +192,13 @@ export type MigrationType =
       | 'stock-value'
       | 'stock-relation'
       | 'meeting'
+      | 'meeting-holdings'
       | 'meetingAgenda'
       | 'vote'
       | 'silenced-stock'
       | 'company'
       | 'meeting-unification'
+      | 'migration'
     )
   | null;
 /**
@@ -282,6 +284,7 @@ export interface Config {
     'migration-faults': MigrationFault;
     'stock-values': StockValue;
     exports: Export;
+    'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -326,6 +329,7 @@ export interface Config {
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -467,13 +471,13 @@ export interface User {
  */
 export interface Company {
   id: string;
+  _order?: string | null;
   name: string;
   active?: boolean | null;
   type?: ('regular' | 'parent' | 'fund') | null;
   passiveFund?: boolean | null;
   companyId?: number | null;
   legacyCompanyId?: number | null;
-  order?: number | null;
   privateRegistrationNumber?: number[] | null;
   subCompanies?: (string | Company)[] | null;
   /**
@@ -605,6 +609,7 @@ export interface Stock {
   fromMagna?: boolean | null;
   origin: StockOrigin;
   tradable?: boolean | null;
+  relatedStockStockId?: string | null;
   relatedStock?: (string | null) | Stock;
   active?: boolean | null;
   isFinancial?: boolean | null;
@@ -710,6 +715,10 @@ export interface Meeting {
   mainMeetingForDualMeeting?: (string | null) | Meeting;
   hasDualStock?: boolean | null;
   dualMeeting?: (string | null) | Meeting;
+  stockValue?: (string | null) | StockValue;
+  stockClosingRate?: number | null;
+  stockRegisteredValue?: number | null;
+  stockMarketValue?: number | null;
   location?: string | null;
   comments?: string | null;
   migrationComments?: string | null;
@@ -731,9 +740,6 @@ export interface Meeting {
   researchDocuments?: (string | ResearchDocument)[] | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
-  stockValue?: (string | null) | StockValue;
-  stockRegisteredValue?: number | null;
-  stockMarketValue?: number | null;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -960,6 +966,7 @@ export interface CompanyMeetingNotification {
   id: string;
   message: string;
   notificationType: UserNotificationType;
+  url?: string | null;
   readStatus?: boolean | null;
   meeting?: (string | null) | Meeting;
   company: string | Company;
@@ -1049,6 +1056,10 @@ export interface MigrationFault {
   id: string;
   type?: MigrationType;
   typeId?: string | null;
+  /**
+   * Fault severity classification
+   */
+  severity?: ('info' | 'warning' | 'error' | 'fatal') | null;
   row?: string | null;
   comments?: string | null;
   creator?: string | null;
@@ -1096,6 +1107,23 @@ export interface Export {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1300,10 +1328,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'exports';
         value: string | Export;
-      } | null)
-    | ({
-        relationTo: 'payload-jobs';
-        value: string | PayloadJob;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1465,6 +1489,10 @@ export interface MeetingsSelect<T extends boolean = true> {
   mainMeetingForDualMeeting?: T;
   hasDualStock?: T;
   dualMeeting?: T;
+  stockValue?: T;
+  stockClosingRate?: T;
+  stockRegisteredValue?: T;
+  stockMarketValue?: T;
   location?: T;
   comments?: T;
   migrationComments?: T;
@@ -1483,9 +1511,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   researchDocuments?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
-  stockValue?: T;
-  stockRegisteredValue?: T;
-  stockMarketValue?: T;
   creator?: T;
   updator?: T;
   process?: T;
@@ -1557,6 +1582,7 @@ export interface StocksSelect<T extends boolean = true> {
   fromMagna?: T;
   origin?: T;
   tradable?: T;
+  relatedStockStockId?: T;
   relatedStock?: T;
   active?: T;
   isFinancial?: T;
@@ -1619,13 +1645,13 @@ export interface HoldingsPerDaySelect<T extends boolean = true> {
  * via the `definition` "companies_select".
  */
 export interface CompaniesSelect<T extends boolean = true> {
+  _order?: T;
   name?: T;
   active?: T;
   type?: T;
   passiveFund?: T;
   companyId?: T;
   legacyCompanyId?: T;
-  order?: T;
   privateRegistrationNumber?: T;
   subCompanies?: T;
   parentCompany?: T;
@@ -1848,6 +1874,7 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
   message?: T;
   notificationType?: T;
+  url?: T;
   readStatus?: T;
   meeting?: T;
   company?: T;
@@ -2026,6 +2053,7 @@ export interface StockMigrationMappingSelect<T extends boolean = true> {
 export interface MigrationFaultsSelect<T extends boolean = true> {
   type?: T;
   typeId?: T;
+  severity?: T;
   row?: T;
   comments?: T;
   creator?: T;
@@ -2081,6 +2109,14 @@ export interface ExportsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

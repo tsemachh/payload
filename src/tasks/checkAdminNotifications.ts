@@ -9,7 +9,11 @@ import {
 import { Vote } from '@/payload-types'
 import { sanitizeRequest } from './utils'
 import { scheduleCheckAdminNotificationsTask } from '@/tasks/scheduleDailyTasks'
-import { groupVotesByParentAndChecksum, createCompanyToParentMap } from '@/utils/voteGrouping'
+import {
+  groupVotesByParentAndChecksum,
+  createCompanyToParentMapFromVotes,
+  getGroupedVotesUrl,
+} from '@/utils/voteGrouping'
 
 /**
  * Core function to check admin notifications
@@ -319,7 +323,7 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
  */
 async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: any) {
   try {
-        // Get current date
+    // Get current date
     const now = new Date()
 
     // Find meetings where the holding limit date was yesterday
@@ -348,9 +352,15 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
 
     // For each meeting, check if there are any published votes
     for (const meeting of meetings) {
-      // Find all published votes for this meeting
+      // Find all published votes for this meeting with parentCompany virtual field
       const { docs: votes } = await req.payload.find({
         collection: 'votes',
+        select: {
+          id: true,
+          company: true,
+          checksum: true,
+          parentCompany: true,
+        },
         where: {
           meeting: {
             equals: meeting.id,
@@ -360,53 +370,37 @@ async function checkVotesAfterHoldingDate(req: PayloadRequest, notifications: an
           },
         },
         limit: 0,
-        depth: 1,
+        depth: 0,
       })
 
       if (votes.length > 0) {
-        // Get unique company IDs from votes
-        const companyIds = [
-          ...new Set(votes.map((vote: any) => getIdOfRelationField(vote.company) as string)),
-        ]
-
-        // Fetch all companies with their parent company data
-        const { docs: companies } = await req.payload.find({
-          collection: 'companies',
-          select: {
-            id: true,
-            name: true,
-            parentCompany: true,
-          },
-          where: {
-            id: {
-              in: companyIds,
-            },
-          },
-          limit: 0,
-          depth: 1,
-        })
-
-        // Create a map of company ID to parent company ID
-        const companyToParentMap = createCompanyToParentMap(companies)
+        // Create a map of company ID to parent company ID from votes
+        const companyToParentMap = createCompanyToParentMapFromVotes(votes)
 
         // Group votes by mother company + checksum
-        const votesByMotherAndChecksum = groupVotesByParentAndChecksum(votes, companyToParentMap)
+        const votesByParentCompanyAndChecksum = groupVotesByParentAndChecksum(
+          votes,
+          companyToParentMap,
+        )
 
         // Create notification for each group
-        for (const [groupKey, { companies }] of votesByMotherAndChecksum.entries()) {
+        for (const [groupKey, { companies }] of votesByParentCompanyAndChecksum.entries()) {
+          const [parentCompanyId, checksum] = groupKey.split('|')
           const meetingName = meeting?.fullName
           const companiesArray = Array.from(companies)
-          const companiesStr = companiesArray.sort().join(',')
-          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName} (${companiesStr})`
-          const url = `/admin/grouped-votes/?meetingId=${meeting.id}&companyIds=${companiesArray.join(',')}`
+          const message = `הצבעה חדשה פורסמה לאחר המועד הקובע עבור ${meetingName}`
+          const url = getGroupedVotesUrl(meeting.id, parentCompanyId, checksum)
 
-          // Delete any existing notifications with the same message and companies
+          // Delete any existing notifications with the same parameters
           try {
             await req.payload.delete({
               collection: 'admin-notifications',
               where: {
-                message: { equals: message },
-                meeting: { equals: meeting.id },
+                and: [
+                  { message: { equals: message } },
+                  { meeting: { equals: meeting.id } },
+                  { url: { equals: url } },
+                ],
               },
             })
           } catch (error) {
@@ -438,14 +432,11 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
     const now = new Date()
 
     // אתמול
-    const yesterday = new Date(now)
-    yesterday.setDate(yesterday.getDate() - 1)
-
-    const yesterdayStart = new Date(yesterday)
-    yesterdayStart.setHours(0, 0, 0, 0)
-
-    const yesterdayEnd = new Date(yesterday)
-    yesterdayEnd.setHours(23, 59, 59, 999)
+    const lastWorkingDate = getWorkingDateBefore(now, 1, 0)
+    const lastWorkingDateEnd = new Date(lastWorkingDate)
+    lastWorkingDateEnd.setHours(23, 59, 59, 999)
+    const todayEnd = new Date(now)
+    todayEnd.setHours(23, 59, 59, 999)
 
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
@@ -456,8 +447,8 @@ async function checkNewMeetingsCreated(req: PayloadRequest, notifications: any) 
       },
       where: {
         updatedAt: {
-          greater_than_equal: yesterdayStart.toISOString(),
-          less_than_equal: yesterdayEnd.toISOString(),
+          greater_than_equal: lastWorkingDateEnd.toISOString(),
+          less_than_equal: todayEnd.toISOString(),
         },
         _status: {
           equals: 'draft',

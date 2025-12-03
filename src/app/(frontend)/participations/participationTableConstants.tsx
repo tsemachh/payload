@@ -226,111 +226,151 @@ export const renderAgendaRows = (
 ) => {
   return (
     <>
-      {row.agendas.map((agenda: ParticipationAgendaType, agendaIndex: number) => (
-        <TableRow
-          key={`participation-${uuidv4()}`}
-          className="bg-muted/70 border-t-0 hover:bg-primary/20"
-        >
-          {/* Empty cell for companies column */}
-          <TableCell className="py-2 px-6"></TableCell>
+      {row.agendas.map((agenda: ParticipationAgendaType, agendaIndex: number) => {
+        const isRemoved = agenda.isRemoved === true
 
-          {/* Map through visible columns and show relevant fund data */}
-          {participationColumns.slice(1).map((column, columnIndex) => {
-            if (column.key in agenda) {
-              return (
-                <TableCell
-                  key={`fund-${uuidv4()}-${String(column.key)}`}
-                  className="py-2 px-3 whitespace-nowrap"
-                  style={{ textAlign: 'right' }}
-                >
-                  {(() => {
-                    let value = agenda[column.key as keyof ParticipationAgendaType]
-                    if (column.key === 'recommendation') {
-                      value = agenda.recommendation.votingRecommendation
-                    }
-                    if (column.key === 'privilegedMajority') {
-                      return agenda.privilegedMajority && agenda.percentResult ? (
-                        `${formatNumberWithLocale(agenda.percentResult)}%`
-                      ) : (
-                        <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
-                      )
-                    }
-                    if (column.key === 'simpleMajority') {
-                      return agenda.simpleMajority && agenda.percentResult ? (
-                        `${formatNumberWithLocale(agenda.percentResult)}%`
-                      ) : (
-                        <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
-                      )
-                    }
-                    if (column.key === 'meetingResults') {
-                      value = agenda.result
-                        ? resultMapping[agenda.result] || agenda.result
-                        : agenda.meetingResults || null
-                    }
-                    if (typeof value === 'number') {
-                      return new Intl.NumberFormat('he-IL').format(value)
-                    }
-                    if (typeof value === 'string') {
-                      return value
-                    }
-                    if (typeof value === 'boolean') {
-                      return <BooleanIcon iconType={value} showX={false} />
-                    }
-                  })()}
-                </TableCell>
-              )
-            } else {
-              return (
-                <TableCell
-                  key={`fund-${uuidv4()}-${String(column.key)}`}
-                  className="py-2 px-3  whitespace-nowrap"
-                >
-                  {columnIndex === 0 && (
-                    <div className="relative h-40px flex items-center gap-2 -mr-[100px]">
-                      <span className="text-muted-foreground font-medium">{agendaIndex + 1}.</span>
+        return (
+          <TableRow
+            key={`participation-${uuidv4()}`}
+            className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
+          >
+            {/* Empty cell for companies column */}
+            <TableCell className="py-2 px-6"></TableCell>
 
-                      {(() => {
-                        const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
-                        return (
-                          <div
-                            className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
-                            dir={isEnglish ? 'ltr' : 'rtl'}
-                          >
-                            <div
-                              className="truncate cursor-pointer hover:text-blue-600 inline-block flex-shrink-0"
-                              style={{ maxWidth: '800px' }}
-                            >
-                              {agenda.text}
-                            </div>
+            {/* Map through visible columns and show relevant fund data */}
+            {participationColumns.slice(1).map((column, columnIndex) => {
+              if (column.key in agenda) {
+                return (
+                  <TableCell
+                    key={`fund-${uuidv4()}-${String(column.key)}`}
+                    className="py-2 px-3 whitespace-nowrap"
+                    style={{ textAlign: 'right' }}
+                  >
+                    {(() => {
+                      // If removed from agenda, don't show voting details
+                      if (isRemoved && column.key !== 'text') {
+                        return null
+                      }
 
-                            {/* tooltip */}
-                            <div
-                              className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                              style={{
-                                [isEnglish ? 'left' : 'right']: 0,
-                              }}
-                            >
-                              {agenda.text}
-                              <div
-                                className={cn(
-                                  'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
-                                  isEnglish
-                                    ? 'left-4 border-b-gray-900'
-                                    : 'right-4 border-b-gray-900',
-                                )}
-                              />
-                            </div>
-                          </div>
+                      let value = agenda[column.key as keyof ParticipationAgendaType]
+                      if (column.key === 'recommendation') {
+                        value = agenda.recommendation.votingRecommendation
+                      }
+                      if (column.key === 'privilegedMajority') {
+                        return agenda.privilegedMajority && agenda.percentResult ? (
+                          `${formatNumberWithLocale(agenda.percentResult)}%`
+                        ) : (
+                          <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
                         )
-                      })()}
-                    </div>
-                  )}
-                </TableCell>
-              )
-            }
-          })}
-        </TableRow>
-      ))}
+                      }
+                      if (column.key === 'simpleMajority') {
+                        return agenda.simpleMajority && agenda.percentResult ? (
+                          `${formatNumberWithLocale(agenda.percentResult)}%`
+                        ) : (
+                          <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
+                        )
+                      }
+                      if (column.key === 'meetingResults') {
+                        value = agenda.result
+                          ? resultMapping[agenda.result] || agenda.result
+                          : agenda.meetingResults || null
+                      }
+                      if (typeof value === 'number') {
+                        return new Intl.NumberFormat('he-IL').format(value)
+                      }
+                      if (typeof value === 'string') {
+                        return value
+                      }
+                      if (typeof value === 'boolean') {
+                        return <BooleanIcon iconType={value} showX={false} />
+                      }
+                    })()}
+                  </TableCell>
+                )
+              } else {
+                return (
+                  <TableCell
+                    key={`fund-${uuidv4()}-${String(column.key)}`}
+                    className="py-2 px-3  whitespace-nowrap"
+                  >
+                    {columnIndex === 0 && (
+                      <div className="relative h-40px flex items-center gap-2 -mr-[100px]">
+                        <span
+                          className={cn(
+                            'font-medium',
+                            isRemoved ? 'text-gray-400' : 'text-muted-foreground',
+                          )}
+                        >
+                          {agendaIndex + 1}.
+                        </span>
+
+                        {(() => {
+                          const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
+                          return (
+                            <div
+                              className={cn(
+                                'relative group',
+                                isEnglish ? 'text-left' : 'text-right',
+                              )}
+                              dir={isEnglish ? 'ltr' : 'rtl'}
+                            >
+                              <div
+                                className="cursor-pointer flex items-center gap-1"
+                                style={{ maxWidth: '800px' }}
+                              >
+                                <span
+                                  className={cn(
+                                    'truncate',
+                                    isRemoved
+                                      ? 'text-gray-400 line-through decoration-gray-400'
+                                      : 'hover:text-blue-600',
+                                  )}
+                                  style={{ textDecorationThickness: '1px' }}
+                                >
+                                  {agenda.text}
+                                </span>
+
+                                {isRemoved && (
+                                  <span
+                                    className="text-gray-400 whitespace-nowrap"
+                                    style={{ textDecoration: 'none' }}
+                                  >
+                                    {isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) '}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* tooltip */}
+                              <div
+                                className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{
+                                  [isEnglish ? 'left' : 'right']: 0,
+                                }}
+                              >
+                                {agenda.text}
+                                {isRemoved &&
+                                  (isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) ')}
+                                <div
+                                  className={cn(
+                                    'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
+                                    isEnglish
+                                      ? 'left-4 border-b-gray-900'
+                                      : 'right-4 border-b-gray-900',
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )}
+                  </TableCell>
+                )
+              }
+            })}
+          </TableRow>
+        )
+      })}
     </>
   )
 }

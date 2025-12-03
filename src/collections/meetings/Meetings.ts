@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
@@ -103,6 +103,7 @@ export const Meetings: CollectionConfig = {
   custom: {
     defaultFilter: {
       meetingDate: 'todayAndFuture',
+      _status: { equals: 'published' },
     },
     filterList: [
       [
@@ -175,7 +176,7 @@ export const Meetings: CollectionConfig = {
         {
           label: 'הצבעות',
           admin: {
-            condition: (data) => data?._status === 'published',
+            condition: (data) => data.publishDate != null,
           },
           fields: [
             {
@@ -414,27 +415,9 @@ export const Meetings: CollectionConfig = {
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
-                defaultColumns: ['title', 'creator', 'updatedAt', 'reported', 'checksum'],
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
-              },
-              where: {
-                or: [
-                  {
-                    _status: {
-                      equals: 'published',
-                    },
-                  },
-                  {
-                    _status: {
-                      equals: 'draft',
-                    },
-                    publishDate: {
-                      not_equals: null,
-                    },
-                  },
-                ],
               },
             },
           ],
@@ -450,13 +433,17 @@ export const Meetings: CollectionConfig = {
                   label: 'נייר ערך',
                   type: 'relationship',
                   relationTo: 'stocks',
-                  filterOptions: ({ siblingData, req }: any) => {
+                  filterOptions: ({ siblingData, req, data, id }: any) => {
                     if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
                       return true
                     }
 
-                    const baseFilter = {
+                    const baseFilter: Record<string, any> = {
                       or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
+                    }
+
+                    if (id && data?.stock) {
+                      baseFilter.or.push({ id: { equals: data.stock } })
                     }
 
                     if (!siblingData?.meetingDate) {
@@ -734,6 +721,80 @@ export const Meetings: CollectionConfig = {
                     readOnly: true,
                     width: '400px',
                     condition: (data) => Boolean(data?.id) && Boolean(data?.hasDualStock),
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'stockValue',
+                  type: 'relationship',
+                  relationTo: 'stock-values',
+                  label: 'ערך נייר מתאריך',
+                  hasMany: false,
+                  required: false,
+                  admin: {
+                    width: '300px',
+                    disableListColumn: true,
+                  },
+                  filterOptions: ({ data, req }) => {
+                    const where: Where = {
+                      stockId: {
+                        equals: data?.stock,
+                      },
+                    }
+                    if (data?.holdingsLimit) {
+                      where.valueDate = {
+                        less_than_equal: new Date(data?.holdingsLimit).toISOString(),
+                      }
+                    }
+                    return where
+                  },
+                  maxDepth: 1,
+                },
+                {
+                  name: 'stockClosingRate',
+                  virtual: 'stockValue.closingRate',
+                  label: 'שער סגירה',
+                  type: 'number',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 1 },
+                      },
+                    },
+                  },
+                },
+                {
+                  name: 'stockRegisteredValue',
+                  label: 'הון רשום',
+                  type: 'number',
+                  admin: {
+                    width: '200px',
+                    readOnly: true,
+                    hidden: false,
+                    disableListColumn: true,
+                  },
+                },
+                {
+                  name: 'stockMarketValue',
+                  virtual: 'stockValue.marketValue',
+                  label: 'שווי שוק',
+                  type: 'number',
+                  admin: {
+                    readOnly: true,
+                    width: '200px',
+                    components: {
+                      Cell: {
+                        path: '/admincomponents/cell/FormattedNumber',
+                        clientProps: { decimals: 0 },
+                      },
+                    },
                   },
                 },
               ],
@@ -1115,40 +1176,6 @@ export const Meetings: CollectionConfig = {
                 },
               ],
             },
-            {
-              name: 'stockValue',
-              type: 'relationship',
-              relationTo: 'stock-values',
-              hasMany: false,
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-              maxDepth: 1,
-            },
-            {
-              name: 'stockRegisteredValue',
-              type: 'number',
-              admin: {
-                hidden: false,
-                disableListColumn: true,
-              },
-            },
-            {
-              name: 'stockMarketValue',
-              virtual: 'stockValue.marketValue',
-              label: 'שווי שוק',
-              type: 'number',
-              admin: {
-                readOnly: true,
-                components: {
-                  Cell: {
-                    path: '/admincomponents/cell/FormattedNumber',
-                    clientProps: { decimals: 0 },
-                  },
-                },
-              },
-            },
           ],
         },
       ],
@@ -1162,6 +1189,59 @@ export const Meetings: CollectionConfig = {
         const changeDate = new Date().toISOString()
         const changeSource = req.context?.from || 'user'
         let meetingAlreadyProcessed = false
+
+        // Create notifications for significant changes (when changeDetails is added)
+        if (
+          operation === 'update' &&
+          doc.changeDetails &&
+          doc.changeDetails !== previousDoc?.changeDetails &&
+          req.context?.from !== 'process' &&
+          req.context?.from !== 'migration'
+        ) {
+          const companies = (doc.companies || []) as string[]
+          if (companies.length === 0) return
+
+          const today = new Date()
+          const formattedDate = today.toLocaleDateString('he-IL')
+
+          const meetingName = doc.fullName || 'אסיפה'
+          const url = `${req.payload.config.serverURL}//vote-meeting/${doc.id}`
+          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), לשינויים \nהערות: ${doc.changeDetails}.`
+
+          for (const companyId of companies) {
+            try {
+              // Delete existing notifications to avoid duplicates
+              await req.payload.delete({
+                collection: 'company-meeting-notifications',
+                where: {
+                  company: { equals: companyId },
+                  meeting: { equals: doc.id },
+                  notificationType: { equals: 'meeting-updated' },
+                  message: { equals: message },
+                  url: { equals: url },
+                },
+              })
+
+              // Create new notification
+              await req.payload.create({
+                collection: 'company-meeting-notifications',
+                data: {
+                  message,
+                  notificationType: 'meeting-updated',
+                  meeting: doc.id,
+                  company: companyId,
+                  readStatus: false,
+                  url: url,
+                },
+              })
+            } catch (error) {
+              console.error(
+                `Error creating notification for company ${companyId} (meeting ${doc.id}):`,
+                error,
+              )
+            }
+          }
+        }
 
         // Handle dual stock creation
         if (
@@ -1203,7 +1283,7 @@ export const Meetings: CollectionConfig = {
                 id: doc.id,
                 data: {
                   dualMeeting: createdDualMeeting.id,
-                  changeDetails: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
+                  migrationComments: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
                 context: { from: 'process' },
                 req,

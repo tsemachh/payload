@@ -131,20 +131,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           permission?: ('read' | 'write') | null
           id?: string | null
         }[] = []
+        // Collect firms that do not exist to report once per user (instead of per firm)
+        const missingFirmIds: number[] = []
         for (const firm of userFirms) {
           try {
             // Find the firm in the new system
             const existingCompany = companyMap.get(firm.firmID.toString())
             if (!existingCompany) {
-              await logMigrationFault({
-                payload,
-                type: 'user',
-                typeId: userProfile.UserId.toString(),
-                comments: `Referenced firm with ID ${firm.firmID} not found`,
-              })
-              console.warn(
-                `⚠ Skipping firm ${firm.firmID} for user ${userProfile.UserName} - firm not found`,
-              )
+              // Defer reporting to a single aggregated message per user
+              missingFirmIds.push(firm.firmID)
               continue
             }
 
@@ -160,12 +155,26 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               type: 'user',
               typeId: userProfile.UserId.toString(),
               comments: `Error processing firm ${firm.firmID}: ${error.message}`,
+              severity: 'warning',
             })
             console.error(
               `✗ Error processing firm ${firm.firmID} for user ${userProfile.UserName}:`,
               error,
             )
           }
+        }
+        // After processing all firms for this user, report any missing firms in a single aggregated message
+        if (missingFirmIds.length > 0) {
+          await logMigrationFault({
+            payload,
+            type: 'user',
+            typeId: userProfile.UserId.toString(),
+            comments: `User ${userProfile.UserName} references firms not found: ${missingFirmIds.join(', ')}`,
+            severity: 'info',
+          })
+          console.warn(
+            `⚠ User ${userProfile.UserName} (${userProfile.UserId}) missing ${missingFirmIds.length} firm(s): ${missingFirmIds.join(', ')}`,
+          )
         }
         if (!userProfile?.UserName?.includes('@') && userProfile?.UserName) {
           userProfile.UserName = userProfile?.UserName + '@noMail.com'
@@ -232,6 +241,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             typeId: userProfile.UserId ? userProfile.UserId.toString() : 'unknown',
             comments: `Validation failed: ${validationIssues.join(', ')}`,
             row: JSON.stringify(userProfile, null, 2),
+            severity: 'warning',
           })
           console.warn(`⚠ Skipping user due to validation issues: ${validationIssues.join(', ')}`)
           continue
@@ -289,6 +299,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             null,
             2,
           ),
+          severity: 'fatal',
         })
         console.error(
           `✗ Failed to migrate user ${userProfile.UserName} (${userProfile.UserId}):`,
@@ -409,6 +420,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
       ['michalk@shefing.com', ['17', '22', '49', '25']],
       ['dvorac@shefing.com', ['17', '22', '49', '25']],
       ['shaked@emdaresearch.co.il', ['17', '110', '132']],
+      ['mayab@emdaresearch.co.il', ['17', '110', '132']],
       ['philc@shefing.com', ['1167', '1168', '15', '17']],
     ])
     let createdCount = 0
@@ -472,6 +484,7 @@ export async function createUsersFromTestJson({ payload, req }: MigrateUpArgs): 
         await logMigrationFault({
           payload,
           type: 'user',
+          severity: 'error',
           typeId: userData.email as string,
           comments: `Failed to create/update test user: ${error?.message as string}`,
           row: JSON.stringify(userData, null, 2),

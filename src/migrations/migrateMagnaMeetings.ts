@@ -56,8 +56,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           logMigrationFault({
             payload,
             type: 'meeting',
+            severity: 'fatal',
             typeId: `${data.proofID || data.ProofId || 'unknown'}`,
-            comments: `Failed to parse date string: ${e.message}`,
+            comments: `Magna meetings - Failed to parse date string: ${e.message}`,
             row: data,
           })
 
@@ -161,7 +162,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           payload,
           type: 'meeting',
           typeId: proofID,
-          comments: `Failed to process agenda items for meeting ${proofID}: ${error}`,
+          severity: 'fatal',
+          comments: `Magna Meetings - Failed to process agenda items for meeting ${proofID}: ${error}`,
           row: JSON.stringify({ proofID }),
         })
       }
@@ -190,8 +192,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         logMigrationFault({
           payload,
           type: 'meeting',
+          severity: 'error',
           typeId: `magna-error-${idx}`,
-          comments: `Failed to insert/update Meeting: ${err}`,
+          comments: `Magna Meetings - Failed to insert/update Meeting: ${err}`,
           row: JSON.stringify({ error: err }),
         })
       })
@@ -205,8 +208,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     await logMigrationFault({
       payload,
       type: 'meeting',
+      severity: 'error',
       typeId: `magna-migration`,
-      comments: `Failed to process Magna meetings: ${error}`,
+      comments: `Magna Meetings - Failed to process Magna meetings: ${error}`,
       row: JSON.stringify({ error }),
     })
 

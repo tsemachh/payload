@@ -503,7 +503,21 @@ export default function VotingForm() {
   )
 
   const savePublish = useCallback(
-    async (currentVotingData: VoteDataType) => {
+    async () => {
+      // Trigger blur on all textareas to ensure all changes are saved
+      const textareas = document.querySelectorAll('textarea')
+      textareas.forEach((textarea) => {
+        if (textarea === document.activeElement) {
+          textarea.blur()
+        }
+      })
+
+      // Wait for blur handlers to complete and state to update
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // Use the latest votingData from state (updated after blur)
+      const latestVotingData = votingData
+
       // Clear previous errors
       setValidationErrors([])
 
@@ -535,7 +549,7 @@ export default function VotingForm() {
           {
             meetingId: meetingIdPayload,
             companiesIds: companiesIDs,
-            votingData: currentVotingData,
+            votingData: latestVotingData,
           },
           {
             errorMessage: 'שגיאה בשליחת ההצבעה',
@@ -556,6 +570,7 @@ export default function VotingForm() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      votingData,
       validateForm,
       meetingIdPayload,
       companiesIDs,
@@ -726,8 +741,11 @@ export default function VotingForm() {
   }
 
   const handleVoteReasonChange = (topicIndex: number, voteReason: string) => {
+    // Convert empty string to undefined to match the checksum logic
+    const normalizedVoteReason = voteReason?.trim() === '' ? undefined : voteReason
+
     const newUserVotes = votingData.userVotes.map((vote) =>
-      vote.topicIndex === topicIndex ? { ...vote, voteReason } : vote,
+      vote.topicIndex === topicIndex ? { ...vote, voteReason: normalizedVoteReason } : vote,
     )
     const updatedVotingData = {
       ...votingData,
@@ -1014,6 +1032,12 @@ export default function VotingForm() {
                                     נמנע
                                   </SelectItem>
                                   <SelectItem
+                                    value="דיון"
+                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                                  >
+                                    דיון
+                                  </SelectItem>
+                                  <SelectItem
                                     value="אין חובת השתתפות"
                                     className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                                   >
@@ -1073,10 +1097,9 @@ export default function VotingForm() {
                           )}
                         </div>
 
-                        {!item.isRemovedFromAgenda &&
-                          item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
-                            <div className="mt-4 mb-2 border-b border-border" />
-                          )}
+                        {item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
+                          <div className="mt-4 mb-2 border-b border-border" />
+                        )}
                       </div>
                     )
                   })}
@@ -1168,7 +1191,7 @@ export default function VotingForm() {
                   <TooltipTrigger asChild>
                     <div>
                       <Button
-                        onClick={() => savePublish(votingData)}
+                        onClick={() => savePublish()}
                         disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
                         className="px-8"
                       >

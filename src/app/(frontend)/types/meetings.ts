@@ -202,6 +202,7 @@ export interface ClientDataTableProps<T extends Record<string, any>> extends Dat
 export interface UrlFilenameMap {
   url: string
   filename: string
+  companies: string[]
 }
 
 export type MeetingWithCompanies = {

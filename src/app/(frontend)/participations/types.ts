@@ -15,6 +15,7 @@ export interface ParticipationAgendaType {
   recommendation: any
   result: string
   percentResult: number
+  isRemoved?: boolean // Flag to indicate if agenda was removed
 }
 
 // Update ParticipationTableDataType - remove fields that are now in ParticipationAgendaType

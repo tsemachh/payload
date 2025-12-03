@@ -11,4 +11,5 @@ export default interface ImportStock {
   valueDate: string // ISO date string (e.g., "2021-11-10T00:00:00")
   longName?: string
   isDual?: boolean
+  mainStockForDualStock?: string
 }

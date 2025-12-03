@@ -5,6 +5,10 @@ import { PromisePool } from '@/utils/promisePool'
 import { upsertStockValueFromImport } from '@/migrations/utils/migrateUtils'
 import { getIdOfRelationField } from '@/utils/utils'
 import { Stock } from '@/payload-types'
+import {
+  createStockValueFaultComment,
+  logMigrationFault,
+} from '@/migrations/utils/migrationFaultUtils'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
@@ -26,6 +30,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         stock: true,
         holdingsLimit: true,
         type: true,
+      },
+      where: {
+        stockValue: { exists: false },
       },
       limit: 0,
       depth: 1,
@@ -154,7 +161,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, sqlStockId)
+              request.input('stockId', sql.Int, sqlStockId)
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null
@@ -166,17 +173,31 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             )
             return
           }
-
-          // Upsert stock value
-          const stockValueId = await upsertStockValueFromImport(
-            stockId as string,
-            stockData,
-            {
+          let stockValueId
+          try {
+            // Upsert stock value
+            stockValueId = await upsertStockValueFromImport(stockId as string, stockData, {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValue' },
-            },
-            true,
-          )
+            })
+          } catch (e) {
+            console.log(
+              'Error with upsertStockValueFromImport:' + stockId,
+              JSON.stringify(stockData),
+            )
+            // Also report to migrationFaults with type 'stock-value'
+            await logMigrationFault({
+              payload,
+              type: 'stock-value',
+              typeId: String(stockId),
+              comments: createStockValueFaultComment({
+                stockId: String(stockId),
+                error: e as Error,
+              }),
+              row: JSON.stringify(stockData),
+              severity: 'error',
+            })
+          }
           const stockName = `${stockData?.name} - ${stockData?.stockID}`
           const fullName = `${stockName}-${meeting?.type ? meeting.type : 'נדחתה/בוטלה'}`
 

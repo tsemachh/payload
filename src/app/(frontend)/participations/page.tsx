@@ -102,7 +102,14 @@ export default function Participations() {
 
     return Array.from(companyMap.values())
   }, [companies, funds])
-
+  useEffect(() => {
+    if (companiesWithFunds.length > 0) {
+      const allFundIds = companiesWithFunds.flatMap((company) =>
+        company.funds.map((fund) => fund.id),
+      )
+      setSelectedFundIds(allFundIds)
+    }
+  }, [companiesWithFunds])
   const selectedCompaniesCount = useMemo(() => {
     const selectedCompanyIds = new Set<string>()
     appliedFilters.selectedFundIds.forEach((fundId) => {
@@ -115,16 +122,20 @@ export default function Participations() {
   }, [appliedFilters.selectedFundIds, funds])
 
   useEffect(() => {
-    if (rangeType && selectedFundIds.length > 0) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        selectedFundIds: [...selectedFundIds],
-        startDate,
-        endDate,
-        rangeType,
-      }))
-      setCurrentPage(1)
+    const updatedFilters: typeof appliedFilters = { ...appliedFilters }
+
+    if (rangeType) {
+      updatedFilters.startDate = startDate
+      updatedFilters.endDate = endDate
+      updatedFilters.rangeType = rangeType
     }
+
+    if (selectedFundIds.length > 0) {
+      updatedFilters.selectedFundIds = [...selectedFundIds]
+    }
+
+    setAppliedFilters(updatedFilters)
+    setCurrentPage(1)
   }, [selectedFundIds, startDate, endDate, rangeType])
 
   // Build the API query with all server-side parameters
@@ -231,11 +242,7 @@ export default function Participations() {
 
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
-    const matchedCompanies = companiesWithFunds.filter((company) => selected.includes(company.id))
-    const fundsIds = matchedCompanies.flatMap((company) => company.funds).map((fund) => fund.id)
-
-    setSelectedFundIds(fundsIds)
-    setSelectedComdIds(selected)
+    setSelectedFundIds(selected)
     setValidationErrors((prev) => prev.filter((err) => err !== 'companies'))
   }
 
@@ -308,16 +315,17 @@ export default function Participations() {
       errors.push('companies')
     }
 
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+
     // Check if there's data to export
     if (participationData.length === 0 && !votesLoading) {
       handleAndNotifyError(new Error('אין נתונים לייצוא'), 'אין נתונים לייצוא')
       return
     }
 
-    if (errors.length > 0) {
-      setValidationErrors(errors)
-      return
-    }
     setValidationErrors([])
 
     setIsExporting(true)
@@ -382,19 +390,21 @@ export default function Participations() {
   }
 
   const getCompanySelectSummary = () => {
-    if (selectedComIds.length === 0) {
+    if (selectedFundIds.length === 0) {
       return 'בחר חברה'
     }
-    const totalCompaniesIds = companiesWithFunds.map((company) => company?.id)
+    const totalFundIds = companiesWithFunds.flatMap((company) =>
+      company.funds.map((fund) => fund.id),
+    )
     const allSelected =
-      selectedComIds.length === totalCompaniesIds.length &&
-      selectedComIds.every((id) => totalCompaniesIds.includes(id))
+      selectedFundIds.length === totalFundIds.length &&
+      selectedFundIds.every((id) => totalFundIds.includes(id))
 
     if (allSelected) {
       return 'נבחרו כל החברות'
     }
 
-    return `נבחרו ${selectedComIds.length} חברות`
+    return `נבחרו ${selectedFundIds.length} תיקים`
   }
 
   const renderAgendaRowsCallback = useCallback(
@@ -441,12 +451,14 @@ export default function Participations() {
               </SelectTrigger>
               <SelectContent align="end" dir="rtl" className="p-0">
                 <CompanyTreeSelector
-                  selectedCompanies={selectedComIds}
+                  selectedCompanies={selectedFundIds}
                   onSelectionChangeAction={handleFundsSelectionChange}
                   className="w-full"
                   showSearch={false}
-                  allCompaniesIds={companiesWithFunds.map((company) => company?.id)}
-                  showFunds={false}
+                  allCompaniesIds={companiesWithFunds.flatMap((company) =>
+                    company.funds.map((fund) => fund.id),
+                  )}
+                  showFunds={true}
                   checkActive={false}
                 />
               </SelectContent>

@@ -1,29 +1,19 @@
-
-import {
-  getVotingRecommendationColor,
-  isRTL,
-} from '../helpers/utils-data-table'
+import { getVotingRecommendationColor, isRTL } from '../helpers/utils-data-table'
 import { AgendasType, MeetingTableDataType } from '../types/meetings'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import VotedCountStatus from '@/collections/meetings/components/VotedCountStatus'
 
 export function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType }) {
-  const router = useRouter()
-
-  const handleIconClick = () => {
-    router.push(`/vote-meeting/${row.meetingIdPayload}`)
-  }
   if (row.companies.length === 0) return null
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info
-            className="w-4 h-4 text-blue-700 hover:text-blue-800 cursor-pointer"
-            onClick={handleIconClick}
-          />
+          <Link href={`/vote-meeting/${row.meetingIdPayload}`}>
+            <Info className="w-4 h-4 text-blue-700 hover:text-blue-800 cursor-pointer" />
+          </Link>
         </TooltipTrigger>
         <TooltipContent
           className="rounded-md shadow-md border border-gray-200"
@@ -100,18 +90,31 @@ export function AgendaTooltipWithNavigation({ row }: { row: MeetingTableDataType
                                 wordBreak: 'break-word',
                                 whiteSpace: 'pre-wrap',
                                 overflowWrap: 'break-word',
-                                fontSize: '0.80rem',
+                                fontSize: '0.8rem',
+                                ...(item.isRemovedFromAgenda && {
+                                  textDecoration: 'line-through',
+                                  color: 'gray',
+                                }),
                               }}
                             >
                               {item.text}
                             </div>
+                            {item.isRemovedFromAgenda && (
+                              <div style={{ textDecoration: 'none', color: 'gray' }}>
+                                {!isRTL(item.text)
+                                  ? ' (Removed from agenda) '
+                                  : ' (הוסר מסדר היום) '}
+                              </div>
+                            )}
                           </td>
                           {row.displayVotingRecommendation && (
                             <td
                               className={`py-1 px-2 border-t text-right font-medium ${getVotingRecommendationColor(item.recommendation.votingRecommendation)}`}
                               style={{ width: '100px', minWidth: '100px' }}
                             >
-                              {item.recommendation.votingRecommendation}
+                              {item.isRemovedFromAgenda
+                                ? ''
+                                : item.recommendation.votingRecommendation}
                             </td>
                           )}
                         </tr>

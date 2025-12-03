@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isWithinInterval } from 'date-fns'
-import { BooleanIcon } from './ui/icons'
+import { BooleanIcon, MultipleDocumentsIcon, SingleDocumentIcon } from './ui/icons'
 import {
   calculateColumnWidths,
   calculatePrecedingColumnsWidth,
@@ -65,6 +65,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/
 import { FaFileExcel } from 'react-icons/fa'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { LabelIcon } from './label-one-icon'
+import { AgendaItem } from '../meetings/AgendaRow'
 
 export function DataTableStatic<T extends Record<string, any>>({
   data,
@@ -340,100 +341,6 @@ export function DataTableStatic<T extends Record<string, any>>({
     return filteredColumns
   }, [columnsOption, columns, columnVisibility, displayMode])
 
-  // Component for individual agenda item with tooltip
-  const AgendaItem = ({ agenda, index }: { agenda: any; index: number }) => {
-    const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.())
-    const direction = isEnglish ? 'ltr' : 'rtl'
-    const alignment = isEnglish ? 'text-left' : 'text-right'
-
-    const [tooltipPosition, setTooltipPosition] = React.useState<{
-      x: number
-      y: number
-      visible: boolean
-    }>({ x: 0, y: 0, visible: false })
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-      const tooltipWidth = 400
-      const tooltipHeight = 100
-
-      let x = e.clientX + 10 // 10px to the right of cursor
-      let y = e.clientY - tooltipHeight - 10 // 10px above cursor
-
-      // Check if tooltip goes off screen horizontally
-      if (x + tooltipWidth > window.innerWidth) {
-        x = e.clientX - tooltipWidth - 10 // Show to the left instead
-      }
-
-      // Check if tooltip goes off screen vertically
-      if (y < 0) {
-        y = e.clientY + 10 // Show below cursor instead
-      }
-
-      setTooltipPosition({ x, y, visible: true })
-    }
-
-    const handleMouseLeave = () => {
-      setTooltipPosition((prev) => ({ ...prev, visible: false }))
-    }
-
-    return (
-      <div className="relative">
-        <div
-          className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 cursor-help"
-          style={{ maxWidth: 'calc(100vw - 150px)' }}
-          onMouseMove={agenda.text && agenda.text.length > 30 ? handleMouseMove : undefined}
-          onMouseLeave={handleMouseLeave}
-        >
-          {/* Index always on the right */}
-          <span className="shrink-0 order-1">{index + 1}.</span>
-          {/* Text content with proper direction */}
-          <div
-            dir={direction}
-            className={cn('relative order-2', alignment)}
-            style={{ maxWidth: 'calc(100vw - 200px)' }} // Adjust based on your layout
-          >
-            <span
-              className={cn(
-                'block',
-                isEnglish ? 'truncate' : 'text-ellipsis overflow-hidden whitespace-nowrap',
-              )}
-              style={
-                !isEnglish
-                  ? {
-                      direction: 'rtl',
-                      textOverflow: 'ellipsis',
-                      unicodeBidi: 'plaintext',
-                      maxWidth: 'calc(100vw - 200px)',
-                    }
-                  : {
-                      maxWidth: 'calc(100vw - 200px)',
-                    }
-              }
-            >
-              {agenda.text}
-            </span>
-          </div>
-        </div>
-
-        {/* Dynamic positioned tooltip */}
-        {agenda.text && agenda.text.length > 30 && tooltipPosition.visible && (
-          <div
-            className="fixed z-50 bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg whitespace-normal break-words pointer-events-none transition-opacity duration-200"
-            style={{
-              left: `${tooltipPosition.x}px`,
-              top: `${tooltipPosition.y}px`,
-              maxWidth: '400px',
-              wordWrap: 'break-word',
-              direction: direction,
-              textAlign: isEnglish ? 'left' : 'right',
-            }}
-          >
-            {agenda.text}
-          </div>
-        )}
-      </div>
-    )
-  }
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
     (key: string) => {
@@ -1621,7 +1528,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                               <React.Fragment key={row.meetingId + uuidv4()}>
                                 <TableRow
                                   key={`company-${uuidv4()}`}
-                                  className="bg-muted/40 border-t-0 hover:bg-primary/20"
+                                  className="bg-muted/40 border-t-0 hover:bg-primary/20 h-[40px]"
                                 >
                                   {/* Empty cell for companies column */}
                                   <TableCell className="py-2 px-3"></TableCell>
@@ -1641,6 +1548,46 @@ export function DataTableStatic<T extends Record<string, any>>({
                                             iconType={companyVote?.reported}
                                             showX={false}
                                           />
+                                        </TableCell>
+                                      )
+                                    }
+                                    if (column.key === 'researchDocuments') {
+                                      const companyDocs =
+                                        row.researchDocuments?.filter((doc: any) =>
+                                          doc.companies?.includes(company.id),
+                                        ) || []
+                                      return (
+                                        <TableCell
+                                          key={`company-${company.id}-researchDocuments`}
+                                          className="py-2 px-3 whitespace-nowrap text-center"
+                                        >
+                                          {companyDocs.length > 0 && (
+                                            <button
+                                              onClick={() => {
+                                                companyDocs.forEach((doc: any) => {
+                                                  const link = document.createElement('a')
+                                                  link.href = doc.url
+                                                  link.download = doc.filename
+                                                  link.style.display = 'none'
+                                                  document.body.appendChild(link)
+                                                  link.click()
+                                                  document.body.removeChild(link)
+                                                })
+                                              }}
+                                              title={
+                                                companyDocs.length === 1
+                                                  ? 'Download document'
+                                                  : 'Download all documents'
+                                              }
+                                              className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+                                            >
+                                              {companyDocs.length === 1 ? (
+                                                <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                                              ) : (
+                                                <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                                              )}
+                                            </button>
+                                          )}
                                         </TableCell>
                                       )
                                     }
@@ -1698,7 +1645,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                       {company.funds.map((fund: FundType) => (
                                         <TableRow
                                           key={`fund-${uuidv4()}`}
-                                          className="bg-muted/70 border-t-0 hover:bg-primary/20"
+                                          className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
                                         >
                                           {/* Empty cell for companies column */}
                                           <TableCell className="py-2 px-6"></TableCell>
@@ -1741,7 +1688,7 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                         }}
                                                       >
                                                         {`${fund.holdingsCompanyName} `}
-                                                        {fund.passiveFund && <b>אין חובת הצבעה </b>}
+                                                        {fund.passiveFund && <b>קרן מחקה </b>}
                                                       </span>
                                                     </div>
                                                   )}

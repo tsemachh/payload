@@ -4,9 +4,12 @@ import { upsertStockFromImport } from '@/migrations/utils/migrateUtils'
 import { getIdOfRelationField, getSequenceStockId, getStockByStockId } from '@/utils/utils'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import ImportStock from '@/collections/stocks/imports/ImportStock'
+import { seedStockMigrationMapping } from '@/utils/seedStockMigrationMapping'
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   try {
+    await seedStockMigrationMapping()
+
     console.log('Starting foreign stocks migration process...')
     // Create a map of stockId -> isin
     const stockToIsinMap = new Map<string, string>()
@@ -29,10 +32,19 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     const foreignStocks = await payload.find({
       collection: 'stocks',
+      // מביא רק ניירות זרים שאין להם relatedStock (לא עוקבים אחרי מניה אחרת)
       where: {
-        origin: {
-          equals: 'Foreign',
-        },
+        and: [
+          {
+            origin: { equals: 'Foreign' },
+          },
+          {
+            or: [
+              { relatedStock: { exists: false } },
+              { relatedStock: { equals: null } },
+            ],
+          },
+        ],
       },
       limit: 0,
     })
@@ -47,6 +59,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'stock',
             typeId: `${originalStock.stockId}`,
             comments: `No ISIN found for foreign stock ${originalStock.stockId}`,
+            severity: 'warning',
           })
           continue
         }
@@ -143,9 +156,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           type: 'stock',
           comments: `Failed to process foreign stock ${originalStock.stockId}: ${JSON.stringify(error)}`,
           typeId: originalStock.stockId,
+          severity: 'fatal',
         })
       }
     }
+
+    // 4. Migrate Dual-Listed Stocks
+    console.log('\n=== Starting Dual-Listed Stocks Migration ===')
+    await migrateDual({ payload, req })
+    console.log('=== Dual-Listed Stocks Migration Completed ===\n')
 
     console.log('Foreign stocks migration completed successfully')
   } catch (error) {
@@ -163,295 +182,289 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
       {
         hebrewName: "אבוג'ן",
         englishName: 'Abogen',
-        taseISIN: 'IL0011050551',
+        taseISIN: '1105055',
         foreignISIN: 'IL0011050551',
       },
       {
         hebrewName: 'אודיוקודס',
         englishName: 'Audiocodes',
-        taseISIN: 'IL0010829658',
+        taseISIN: '1082965',
         foreignISIN: 'IL0010829658',
       },
       {
         hebrewName: "אופקו הלת'",
         englishName: 'Opko Health',
-        taseISIN: 'US68375N1037',
+        taseISIN: '1129543',
         foreignISIN: 'US68375N1037',
       },
       {
         hebrewName: 'אורמד פארמ',
         englishName: 'Oramed Pharmaceuticals',
-        taseISIN: 'US68403P2039',
+        taseISIN: '1141324',
         foreignISIN: 'US68403P2039',
       },
       {
         hebrewName: 'אורמת טכנו',
         englishName: 'Ormat Technologies',
-        taseISIN: 'US6866881021',
+        taseISIN: '1134402',
         foreignISIN: 'US6866881021',
       },
       {
         hebrewName: 'איי.סי.אל',
         englishName: 'ICL',
-        taseISIN: 'IL0002810146',
+        taseISIN: '281014',
         foreignISIN: 'IL0002810146',
       },
       {
         hebrewName: 'אינטרקיור',
         englishName: 'Intercure',
-        taseISIN: 'IL0011063760',
+        taseISIN: '1106376',
         foreignISIN: 'IL0011063760',
       },
       {
         hebrewName: 'אלארום',
         englishName: 'Alarum',
-        taseISIN: 'IL0010838568',
-        foreignISIN: 'US78643B5003',
+        taseISIN: '1083856',
+        foreignISIN: 'IL0010838568',
       },
       {
         hebrewName: 'אלביט מערכות',
         englishName: 'Elbit Systems',
-        taseISIN: 'IL0010811243',
+        taseISIN: '1081124',
         foreignISIN: 'IL0010811243',
       },
       {
         hebrewName: 'אלוט',
         englishName: 'Allot',
-        taseISIN: 'IL0010996549',
+        taseISIN: '1099654',
         foreignISIN: 'IL0010996549',
       },
       {
         hebrewName: 'אלומיי',
         englishName: 'Alumay',
-        taseISIN: 'IL0010826357',
+        taseISIN: '1082635',
         foreignISIN: 'IL0010826357',
       },
       {
         hebrewName: 'אנלייבקס',
         englishName: 'Enlivex',
-        taseISIN: 'IL0011319527',
+        taseISIN: '1158997',
         foreignISIN: 'IL0011319527',
       },
       {
         hebrewName: 'אנלייט אנרגיה',
         englishName: 'Enlight Renewable Energy',
-        taseISIN: 'IL0007200111',
+        taseISIN: '720011',
         foreignISIN: 'IL0007200111',
       },
       {
         hebrewName: "אנרג'יאן",
         englishName: 'Energean',
-        taseISIN: 'GB00BG12Y042',
+        taseISIN: '1155290',
         foreignISIN: 'GB00BG12Y042',
       },
       {
         hebrewName: 'אקס טי אל',
         englishName: 'XTL',
-        taseISIN: 'IL0010854979',
+        taseISIN: '1085497',
         foreignISIN: 'IL0010854979',
       },
       {
         hebrewName: 'ארבה רובוטיקס',
         englishName: 'Arbe Robotics',
-        taseISIN: 'IL0011796625',
+        taseISIN: '1179662',
         foreignISIN: 'IL0011796625',
       },
       {
         hebrewName: 'באטמ',
         englishName: 'BATM',
-        taseISIN: 'IL0010849045',
+        taseISIN: '1158823',
         foreignISIN: 'IL0010849045',
       },
       {
         hebrewName: 'ביוליין',
         englishName: 'BioLineRx',
-        taseISIN: 'IL0011015182',
-        foreignISIN: 'US09071M3043',
+        taseISIN: '1101518',
+        foreignISIN: 'IL0011015182',
       },
       {
         hebrewName: 'בריינסוויי',
         englishName: 'Brainsway',
-        taseISIN: 'IL0011007189',
-        foreignISIN: 'US10501L1061',
+        taseISIN: '1100718',
+        foreignISIN: 'IL0011007189',
       },
       {
         hebrewName: 'גילת',
         englishName: 'Gilat Satellite Networks',
-        taseISIN: 'IL0010825102',
+        taseISIN: '1082510',
         foreignISIN: 'IL0010825102',
       },
       {
         hebrewName: 'ויליפוד אינטרנש',
         englishName: 'Willifood International',
-        taseISIN: 'IL0010828585',
+        taseISIN: '1082858',
         foreignISIN: 'IL0010828585',
       },
       {
-        hebrewName: 'זוז פאוור',
+        hebrewName: 'זוז אסטרטגיה',
         englishName: 'Zooz Power',
-        taseISIN: 'IL0011741845',
+        taseISIN: '1174184',
         foreignISIN: 'IL0011741845',
       },
       {
         hebrewName: 'טאואר',
         englishName: 'Tower Semiconductor',
-        taseISIN: 'IL0010823792',
+        taseISIN: '1082379',
         foreignISIN: 'IL0010823792',
       },
       {
         hebrewName: 'טבע',
         englishName: 'Teva Pharmaceutical Industries',
-        taseISIN: 'IL0006290147',
-        foreignISIN: 'US8816242098',
+        taseISIN: '629014',
+        foreignISIN: 'IL0006290147',
       },
       {
         hebrewName: "יו.אמ.איץ'",
         englishName: 'UMH Properties',
-        taseISIN: 'US9030021037',
+        taseISIN: '1184282',
         foreignISIN: 'US9030021037',
       },
       {
         hebrewName: 'כן פייט ביופרמה',
         englishName: 'Can-Fite BioPharma',
-        taseISIN: 'IL0010944739',
-        foreignISIN: 'US13471N3008',
+        taseISIN: '1094473',
+        foreignISIN: 'IL0010944739',
       },
       {
         hebrewName: 'לייבפרסון',
         englishName: 'LivePerson',
-        taseISIN: 'US5381461012',
+        taseISIN: '1123017',
         foreignISIN: 'US5381461012',
       },
       {
         hebrewName: 'ליניאג תרפיוטיק',
         englishName: 'Lineage Cell Therapeutics',
-        taseISIN: 'US53366P1093',
+        taseISIN: '1136365',
         foreignISIN: 'US53366P1093',
       },
       {
         hebrewName: "מג'יק",
         englishName: 'Magic Software Enterprises',
-        taseISIN: 'IL0010823123',
+        taseISIN: '1082312',
         foreignISIN: 'IL0010823123',
       },
       {
         hebrewName: 'נאייקס',
         englishName: 'Nayax',
-        taseISIN: 'IL0011751166',
+        taseISIN: '1175116',
         foreignISIN: 'IL0011751166',
       },
       {
         hebrewName: 'נובה',
         englishName: 'Nova Measuring Instruments',
-        taseISIN: 'IL0010845571',
+        taseISIN: '1084557',
         foreignISIN: 'IL0010845571',
       },
       {
         hebrewName: 'נייס',
         englishName: 'NICE Ltd.',
-        taseISIN: 'IL0002730112',
-        foreignISIN: 'US6536561086',
+        taseISIN: '273011',
+        foreignISIN: 'IL0002730112',
       },
       {
         hebrewName: 'סאפיינס',
         englishName: 'Sapiens International Corporation',
-        taseISIN: 'KYG7T16G1039',
+        taseISIN: '1087659',
         foreignISIN: 'KYG7T16G1039',
       },
       {
         hebrewName: 'סטרוברי אינק',
         englishName: 'Strawberry Inc.',
-        taseISIN: 'US8631821019',
+        taseISIN: '1205913',
         foreignISIN: 'US8631821019',
       },
       {
         hebrewName: 'סיאון',
         englishName: 'Sion',
-        taseISIN: 'US17259U2042',
+        taseISIN: '1194000',
         foreignISIN: 'US17259U2042',
       },
       {
         hebrewName: 'סייברוואן',
         englishName: 'CyberOne',
-        taseISIN: 'IL0011666935',
+        taseISIN: '1166693',
         foreignISIN: 'IL0011666935',
       },
       {
         hebrewName: 'פורמולה מערכות',
         englishName: 'Formula Systems',
-        taseISIN: 'IL0002560162',
-        foreignISIN: 'US3464141056',
+        taseISIN: '256016',
+        foreignISIN: 'IL0002560162',
       },
       {
         hebrewName: 'פורסייט',
         englishName: 'Foresight Autonomous Holdings',
-        taseISIN: 'IL0001990188',
-        foreignISIN: 'US3455232039',
+        taseISIN: '199018',
+        foreignISIN: 'IL0001990188',
       },
       {
         hebrewName: 'פלאזה סנטר -ס',
         englishName: 'Plaza Centers - S',
-        taseISIN: 'NL0011882741',
+        taseISIN: '1109917',
         foreignISIN: 'NL0011882741',
       },
       {
         hebrewName: 'פלורי',
         englishName: 'Flory',
-        taseISIN: 'US72942G2030',
+        taseISIN: '1121730',
         foreignISIN: 'US72942G2030',
       },
       {
         hebrewName: 'פריון נטוורק',
         englishName: 'Perion Network',
-        taseISIN: 'IL0010958192',
+        taseISIN: '1095819',
         foreignISIN: 'IL0010958192',
       },
       {
         hebrewName: 'פרפל ביוטק',
         englishName: 'Purple Biotech',
-        taseISIN: 'IL0007650166',
-        foreignISIN: 'US74638P2083',
+        taseISIN: '765016',
+        foreignISIN: 'IL0007650166',
       },
       {
         hebrewName: 'קומפיוגן',
         englishName: 'Compugen',
-        taseISIN: 'IL0010852080',
+        taseISIN: '1085208',
         foreignISIN: 'IL0010852080',
       },
       {
         hebrewName: 'קמהדע',
         englishName: 'Kamada',
-        taseISIN: 'IL0010941198',
+        taseISIN: '1094119',
         foreignISIN: 'IL0010941198',
       },
       {
         hebrewName: 'קמטק',
         englishName: 'Camtek',
-        taseISIN: 'IL0010952641',
+        taseISIN: '1095264',
         foreignISIN: 'IL0010952641',
       },
       {
         hebrewName: 'קנון',
         englishName: 'Kenon Holdings',
-        taseISIN: 'SG9999012629',
+        taseISIN: '1134139',
         foreignISIN: 'SG9999012629',
-      },
-      {
-        hebrewName: 'קריאטיב מדיא',
-        englishName: 'Creative Media',
-        taseISIN: 'US12564W1027',
-        foreignISIN: 'US12564W1027',
       },
       {
         hebrewName: 'שרין טכנו',
         englishName: 'Sharin Techno',
-        taseISIN: 'IL0010927254',
+        taseISIN: '1092725',
         foreignISIN: 'IL0010927254',
       },
       {
         hebrewName: 'תאת טכנו',
         englishName: 'TAT Technologies',
-        taseISIN: 'IL0010827264',
+        taseISIN: '1082726',
         foreignISIN: 'IL0010827264',
       },
     ]
@@ -459,18 +472,29 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
     // Process each dual-listed stock
     for (const dualStock of dualStocksMapping) {
       try {
+        console.log('[migrateDual] Processing', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          taseISIN: dualStock.taseISIN,
+          foreignISIN: dualStock.foreignISIN,
+        })
         // Find the TASE stock
         let taseStock = null
 
         // If the TASE ISIN starts with IL, find by stockId (removing IL and leading zeros)
-        if (dualStock.taseISIN.startsWith('IL')) {
+        if (dualStock.taseISIN) {
           // Remove 'IL' and leading zeros to get the stockId
-          const stockId = dualStock.taseISIN.substring(2).replace(/^0+/, '')
+          const stockId = dualStock.taseISIN
+          console.log('[migrateDual] Looking up TASE by stockId', stockId)
           taseStock = await getStockByStockId(payload, stockId, 1)
         }
 
         // If not found by ISIN or ISIN doesn't start with IL, find by name
         if (!taseStock) {
+          console.log(
+            '[migrateDual] TASE not found by stockId, trying by name',
+            dualStock.hebrewName,
+          )
           const stocksByName = await payload.find({
             collection: 'stocks',
             where: {
@@ -487,24 +511,42 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
           if (stocksByName.docs.length > 0) {
             taseStock = stocksByName.docs[0]
+            console.log('[migrateDual] Found TASE by name', {
+              id: (taseStock as any).id,
+              name: taseStock.name,
+              symbol: taseStock.symbol,
+              type: taseStock.type,
+            })
           }
         }
 
         if (!taseStock) {
+          console.warn('[migrateDual] Could not find TASE stock', {
+            hebrewName: dualStock.hebrewName,
+            taseISIN: dualStock.taseISIN,
+          })
           await logMigrationFault({
             payload,
             type: 'stock',
             typeId: dualStock.taseISIN,
+            severity: 'error',
             comments: `Could not find TASE stock for dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
           })
           continue
         }
 
         // Create the Foreign Stock with the Foreign Exchange ISIN
+        console.log('[migrateDual] Looking up foreign stock', dualStock.foreignISIN)
         let foreignStock = await getStockByStockId(payload, dualStock.foreignISIN)
 
         if (!foreignStock) {
           // Create a new Foreign Stock
+          console.log('[migrateDual] Foreign stock not found. Creating…', {
+            stockID: dualStock.foreignISIN,
+            name: dualStock.englishName,
+            symbol: taseStock.symbol,
+            type: taseStock.type,
+          })
           const foreignStockId = (await upsertStockFromImport(
             null,
             {
@@ -514,6 +556,7 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
               type: taseStock.type as StockType,
               longName: dualStock.englishName,
               isDual: true,
+              mainStockForDualStock: taseStock.id,
             } as ImportStock,
             req,
             true, // tradable
@@ -523,17 +566,25 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           )) as string
 
           if (foreignStockId) {
+            // Fetch created foreign stock
+            console.log('[migrateDual] Created foreign stock', foreignStockId)
             foreignStock = await payload.findByID({
               collection: 'stocks',
               id: foreignStockId,
             })
           }
         } else {
+          console.log(
+            '[migrateDual] foreign stock exists we just need to update mainStockForDualStock',
+            dualStock.foreignISIN,
+          )
+
           await payload.update({
             collection: 'stocks',
             id: foreignStock.id,
             data: {
               isDual: true,
+              mainStockForDualStock: taseStock,
             },
             req: {
               ...req,
@@ -543,16 +594,25 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
         }
 
         if (!foreignStock) {
+          console.error(
+            '[migrateDual] Foreign stock still missing after create/update',
+            dualStock.foreignISIN,
+          )
           await logMigrationFault({
             payload,
             type: 'stock',
             typeId: dualStock.foreignISIN,
+            severity: 'fatal',
             comments: `Failed to create Foreign Stock for dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
           })
           continue
         }
 
         // Mark the TASE stock as having a dual listing and point to the Foreign Stock
+        console.log('[migrateDual] Updating TASE stock dual linkage', {
+          taseId: (taseStock as any).id,
+          foreignId: (foreignStock as any).id,
+        })
         await payload.update({
           collection: 'stocks',
           id: taseStock.id,
@@ -568,6 +628,10 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
 
         // Process related stocks with English names
         if (taseStock.relations && taseStock.relations.docs) {
+          console.log('[migrateDual] Processing related stocks for TASE', {
+            taseId: (taseStock as any).id,
+            relatedCount: taseStock.relations.docs.length,
+          })
           for (const relatedStock of taseStock.relations.docs) {
             // Check if the related stock's name is in English
             // This is a simple check - if the name matches the pattern of English characters
@@ -575,6 +639,12 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
             if (stockName && /^[A-Za-z0-9\s\-]+$/.test(stockName)) {
               const relatedStockId = getIdOfRelationField(relatedStock)
               // Update the related stock to point to the Foreign Stock
+              if (relatedStockId)
+                console.log('[migrateDual] Updating related English-name stock linkage', {
+                  relatedStockId,
+                  stockName,
+                  foreignId: (foreignStock as any).id,
+                })
               if (relatedStockId)
                 await payload.update({
                   collection: 'stocks',
@@ -591,13 +661,22 @@ export async function migrateDual({ payload, req }: MigrateUpArgs): Promise<void
           }
         }
 
-        console.log(
-          `Successfully processed dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName})`,
-        )
+        console.log('[migrateDual] Done', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          taseId: (taseStock as any).id,
+          foreignId: (foreignStock as any).id,
+        })
       } catch (error) {
+        console.error('[migrateDual] Error while processing item', {
+          hebrewName: dualStock.hebrewName,
+          englishName: dualStock.englishName,
+          error,
+        })
         await logMigrationFault({
           payload,
           type: 'stock',
+          severity: 'fatal',
           comments: `Failed to process dual-listed stock ${dualStock.hebrewName} (${dualStock.englishName}): ${JSON.stringify(error)}`,
           typeId: dualStock.taseISIN,
         })

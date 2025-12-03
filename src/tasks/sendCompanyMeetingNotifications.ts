@@ -4,7 +4,11 @@ import { scheduleSendCompanyMeetingNotificationsTask } from '@/tasks/scheduleDai
 import { isWorkingDay } from '@/collections/meetings/hooks/calculateHoldingDate'
 import { sanitizeRequest } from '@/tasks/utils'
 import { sendMail } from '@/utils/sendMail'
-import { companyNotificationTypeOptions, getCompanyNotificationTypeLabel, COMPANY_NOTIFICATION_KNOWN_TYPES } from '@/collections/company-meeting-notifications/typeOptions'
+import {
+  companyNotificationTypeOptions,
+  getCompanyNotificationTypeLabel,
+  COMPANY_NOTIFICATION_KNOWN_TYPES,
+} from '@/collections/company-meeting-notifications/typeOptions'
 
 // Define interface for company detail
 interface CompanyDetail {
@@ -25,9 +29,7 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   console.log('Starting company meeting notifications email sending...')
 
   // Create a detailed results object
-  const typeValues = companyNotificationTypeOptions
-    .map((o) => o.value)
-    .filter(Boolean) as string[]
+  const typeValues = companyNotificationTypeOptions.map((o) => o.value).filter(Boolean) as string[]
   const zeroedByType: Record<string, number> = {}
   for (const t of typeValues) zeroedByType[t] = 0
 
@@ -50,7 +52,6 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
   const { start, end } = getLastWorkingDayWindow(new Date())
   const startISO = start.toISOString()
   const endISO = end.toISOString()
-
   // Get all notifications in the last working day window
   const notifications = await payload.find({
     collection: 'company-meeting-notifications',
@@ -122,7 +123,9 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       companyId,
       companyName: '',
       recipientEmails: usersMails,
-      notificationsSent: { total: companyNotifications.length } as Record<string, number> & { total: number },
+      notificationsSent: { total: companyNotifications.length } as Record<string, number> & {
+        total: number
+      },
       emailStatus: 'pending',
     }
 
@@ -160,7 +163,12 @@ export const sendCompanyMeetingNotifications = async (req: any) => {
       if (items.length === 0) continue
       html += `<h3>${opt.label}:</h3><ul>`
       for (const notification of items) {
-        html += `<li>${notification.message}</li>`
+        html += `<li>`
+        html += `${notification.message}`
+        if (notification.url && typeof notification.url === 'string') {
+          html += ` - <a href="${notification.url}" target="_blank">קישור </a>`
+        }
+        html += `</li>`
       }
       html += '</ul>'
     }
