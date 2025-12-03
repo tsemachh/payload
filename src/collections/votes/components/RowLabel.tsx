@@ -11,19 +11,14 @@ const RowLabel: React.FC = () => {
     path: `votes.${rowNumber}.topicIndex`,
   })
 
-  const [label, setLabel] = useState('')
+  const [labelText, setLabelText] = useState('')
+  const [isRemoved, setIsRemoved] = useState(false)
 
   const fetchAgendaText = async () => {
     try {
       const query = {
-        where: {
-          id: {
-            equals: meetingId,
-          },
-        },
-        select: {
-          agenda: true,
-        },
+        where: { id: { equals: meetingId } },
+        select: { agenda: true },
         depth: 0,
         limit: 1,
       }
@@ -34,27 +29,55 @@ const RowLabel: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+
       const data = await response.json()
       const agenda = data.docs[0]?.agenda || []
       const text = agenda[rowNumber as number]?.text || 'ללא תיאור'
-      setLabel(`נושא ${topicIndex}: ${text}`)
+      const isRemovedFromAgenda = agenda[rowNumber as number]?.isRemovedFromAgenda
+
+      setLabelText(text)
+      setIsRemoved(!!isRemovedFromAgenda)
     } catch (err) {
       console.error('Error fetching meeting:', err)
-      setLabel(`נושא ${topicIndex}: שגיאה בטעינת נתונים`)
+      setLabelText('שגיאה בטעינת נתונים')
     }
   }
 
   useEffect(() => {
     if (meetingId) {
       fetchAgendaText()
-    } else {
-      setLabel(`נושא ${rowNumber}: אין אסיפה מקושרת`)
     }
   }, [meetingId, rowNumber])
 
   return (
-    <div>
-      <span>{label}</span>
+    <div style={{ display: 'flex', alignItems: 'center', maxWidth: '100%' }}>
+      <span style={{ marginRight: 4 }}>{topicIndex}.</span>
+
+      <span
+        style={{
+          flex: 1,
+          marginRight: 4,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          ...(isRemoved && { textDecoration: 'line-through', color: 'gray' }),
+        }}
+      >
+        {labelText}
+      </span>
+
+      {isRemoved && (
+        <span
+          style={{
+            marginRight: 4,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            color: 'gray',
+          }}
+        >
+          {'(הוסר מסדר היום)'}
+        </span>
+      )}
     </div>
   )
 }

@@ -66,7 +66,6 @@ export const checkCompanyNotifications = async (req: any) => {
 
   // 2. Check for holdings feed notifications
   await checkCompanyHoldingsFeeds(req, results)
-  await checkMeetingUpdates(req, results)
   console.log('Company notifications check completed')
   console.log('Summary:', JSON.stringify(results, null, 2))
 
@@ -162,7 +161,9 @@ async function checkMeetingNotifications(
     const proxyVotingDate = meeting.proxyVotingDate ? new Date(meeting.proxyVotingDate) : null
 
     const isAfterHoldingLimit =
-      holdingLimitDate && holdingLimitDate > lastWorkingDateMidnight && holdingLimitDate < todayMidnight
+      holdingLimitDate &&
+      holdingLimitDate > lastWorkingDateMidnight &&
+      holdingLimitDate < todayMidnight
 
     const isWorkingDayBeforeProxyVotingDate =
       proxyVotingDate &&
@@ -232,6 +233,7 @@ async function checkMeetingNotifications(
       // Determine notification type
       let notificationType: UserNotificationType = 'after-holding-limit'
       let message = ''
+      const url = `${req.payload.config.serverURL}//vote-meeting/${meeting.id}`
       if (isAfterHoldingLimit && holdingLimitDate) {
         notificationType = 'after-holding-limit'
         const formattedDate = format(holdingLimitDate, 'dd/MM/yyyy')
@@ -254,6 +256,7 @@ async function checkMeetingNotifications(
           notificationType: { equals: notificationType },
           meeting: { equals: meeting.id },
           company: { equals: company.id },
+          url: { equls: url },
         },
       })
 
@@ -264,6 +267,7 @@ async function checkMeetingNotifications(
           notificationType,
           meeting: meeting.id,
           company: company.id,
+          url: url,
         },
       })
 
@@ -346,6 +350,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
 
       // If no holdings feed found, create a notification
       if (!hasHoldings) {
+        const url = `${req.payload.config.serverURL}//holdings/`
         const message = `חברה ${company.name} לא דיווחה על החזקות במשך יותר מ-${workingDaysToCheck} ימי עבודה`
 
         // Delete any existing notifications for this company and type
@@ -355,6 +360,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             company: { equals: company.id },
             message: { equals: message },
             notificationType: { equals: 'holdings-not-fed' },
+            url: { equals: url },
           },
         })
 
@@ -365,6 +371,7 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
             message,
             notificationType: 'holdings-not-fed',
             company: company.id,
+            url: url,
           },
         })
 
@@ -379,65 +386,4 @@ async function checkCompanyHoldingsFeeds(req: any, results: any) {
     console.error(`Error checking holdings feeds: ${JSON.stringify(error)}`)
   }
 }
-async function checkMeetingUpdates(req: any, results: any, userId?: string) {
-  const payload = req.payload
-  const today = new Date()
-  const lastWorkingDate = getWorkingDateBefore(today, 1, 0)
-  const formattedLastWorkingDate = lastWorkingDate.toLocaleDateString('he-IL')
-  const lastWorkingDateEnd = new Date(lastWorkingDate)
-  lastWorkingDateEnd.setHours(23, 59, 59, 999)
-  const todayEnd = new Date(today)
-  todayEnd.setHours(23, 59, 59, 999)
 
-  const { docs: meetings } = await payload.find({
-    collection: 'meetings',
-    select: {
-      companies: true,
-      id: true,
-      fullName: true,
-      changeDetails: true,
-    },
-    where: {
-      _status: { equals: 'published' },
-      updatedAt: {
-        greater_than_equal: lastWorkingDateEnd.toISOString(),
-        less_than_equal: todayEnd.toISOString(),
-      },
-      changeDetails: {
-        not_equals: null,
-      },
-    },
-    limit: 0,
-    depth: 0,
-  })
-
-  for (const meeting of meetings) {
-    const companies = meeting.companies as string[]
-    if (!companies || companies.length === 0) continue
-    const message = `אסיפה ${meeting.fullName} עודכנה בתאריך (${formattedLastWorkingDate}), .יש לשים לב לשינויים \nהערות: ${meeting.changeDetails}`
-    for (const companyId of companies) {
-      await payload.delete({
-        collection: 'company-meeting-notifications',
-        where: {
-          company: { equals: companyId },
-          message: { equals: message },
-          notificationType: { equals: 'meeting-updated' },
-          meeting: { equals: meeting.id },
-        },
-      })
-      await payload.create({
-        collection: 'company-meeting-notifications',
-        data: {
-          message,
-          notificationType: 'meeting-updated',
-          meeting: meeting.id,
-          company: companyId,
-        },
-      })
-
-      //(`Created update notification for company ${companyId} in meeting ${meeting.id}`)
-      results.notificationsCreated.meetingUpdates =
-        (results.notificationsCreated.meetingUpdates || 0) + 1
-    }
-  }
-}

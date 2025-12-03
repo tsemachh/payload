@@ -3,12 +3,15 @@ import { MigrationType } from '@/payload-types'
 
 export type MigrationFaultType = 'stock' | 'stock-relation' | 'stock-value'
 
+type Severity = 'info' | 'warning' | 'fatal' | 'error'
+
 interface LogMigrationFaultProps {
   payload: Payload
   type: MigrationType
   typeId: string
   comments: string
   row?: string
+  severity?: Severity
 }
 
 /**
@@ -22,6 +25,7 @@ export async function logMigrationFault({
   typeId,
   comments,
   row,
+  severity = 'warning',
 }: LogMigrationFaultProps): Promise<void> {
   try {
     payload.create({
@@ -29,6 +33,7 @@ export async function logMigrationFault({
       data: {
         type,
         typeId,
+        severity,
         row: row ? JSON.stringify(row, null, 2) : undefined,
         comments,
       },

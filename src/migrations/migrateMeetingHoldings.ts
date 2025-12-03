@@ -205,6 +205,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             logMigrationFault({
               payload,
               type: 'meeting',
+              severity: 'error',
               typeId: `${meeting.meetingId}`,
               comments: `Failed to update Meeting ${meeting.meetingId} with holdings: ${updateError.message}`,
               row: JSON.stringify({

@@ -191,6 +191,12 @@ export const Stocks: CollectionConfig = {
                   },
                 },
                 {
+                  name:'relatedStockStockId',
+                  label:'מספר נייר ראשי',
+                  type:'text',
+                  virtual: 'relatedStock.stockId'
+                },
+                {
                   name: 'relatedStock',
                   label: 'נייר ערך ראשי',
                   type: 'relationship',

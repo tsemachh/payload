@@ -77,3 +77,4 @@ continue.config.yaml
 /migrate.log
 /test-date.js
 /vercel.json
+/**/migrate*.log

@@ -856,12 +856,13 @@ async function processMeetingsData(
             case 'אג"ח כהונת נאמן':
               return researchPermissions.showResearchTrusteeship
             default:
-              return hasCompanies ? userHasAccessToDocCompanies : researchPermissions.showResearch
+              return true
           }
         })
         .map((doc) => ({
           url: doc.url as string,
           filename: doc.filename as string,
+          companies: doc.companies as string[],
         }))
 
       const displayVotingRecommendation = user?.companies.some(

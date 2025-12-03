@@ -81,8 +81,8 @@ export default function VoteCompanySelector({
         <>
           הצבעה עבור כל החברות
           {areAllCompaniesPassive() && (
-            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4">
-              אין חובת הצבעה
+            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4 shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
+              קרנות מחקות בלבד
             </span>
           )}
         </>
@@ -95,8 +95,8 @@ export default function VoteCompanySelector({
         <>
           הצבעה עבור חברת: <i>{`${companyName} `}</i>
           {isPassive && (
-            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4">
-              אין חובת הצבעה
+            <span className="inline-block bg-primary-light text-primary-dark text-xs px-2 py-1 rounded-full border border-primary-border mx-4 shadow-[0_3px_9px_rgba(0,0,0,0.15)]">
+              קרנות מחקות בלבד
             </span>
           )}
         </>
@@ -182,6 +182,9 @@ export default function VoteCompanySelector({
                       />
                     )}
                     {companiesMap.find((c) => c.id === company?.id)?.name || '-'}
+                    {isCompanyPassive(meetingCompanies.find((c) => c.id === company.id)) && (
+                      <span className="font-bold">&nbsp;קרנות מחקות בלבד&nbsp;</span>
+                    )}
                   </span>
                 </label>
               </TooltipTrigger>

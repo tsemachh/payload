@@ -4,6 +4,7 @@ import { createErrorFaultComment, logMigrationFault } from '@/migrations/utils/m
 import sql, { IResult } from 'mssql'
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { getHoldingsRetroDays } from '@/migrations/utils/dateUtils'
+import { stringify } from 'qs-esm'
 
 interface HoldingRow {
   stockNum: string
@@ -83,8 +84,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const accountCache = new Map<string, string>()
     const subAccountKeySet = new Set<string>()
     const stockCache = await getStockIdToSequenceMap(req)
+    console.log('[migrateHoldings.up] stockCache size:', stockCache.size)
     let successCount = 0
     let errorCount = 0
+    // Aggregate missing stockNums per company and per processed holding date
+    const missingByCompanyDate = new Map<string, Map<string, Set<string>>>()
 
     const silencedStocks = await payload.find({
       collection: 'silenced-stocks',
@@ -140,6 +144,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'holding',
             row: JSON.stringify(holding),
             typeId: accountKey,
+            severity: 'warning',
             comments: createErrorFaultComment({
               id: accountKey,
               operation: 'Holdings - Company ID lookup',
@@ -209,12 +214,20 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         }
       }
 
-      // Emit one consolidated warning per company for missing stock numbers on this holding date
+      // Defer logging: merge missing stock numbers into global aggregator by company and date
       for (const [companyId, set] of Array.from(notFoundByCompany.entries())) {
-        if (set && set.size > 0) {
-          const list = Array.from(set).join(',')
-          console.warn(`Stock IDs not found for company ${companyId} on ${holdingDate}: ${list}`)
+        if (!set || set.size === 0) continue
+        let byDate = missingByCompanyDate.get(companyId)
+        if (!byDate) {
+          byDate = new Map<string, Set<string>>()
+          missingByCompanyDate.set(companyId, byDate)
         }
+        let dateSet = byDate.get(holdingDate)
+        if (!dateSet) {
+          dateSet = new Set<string>()
+          byDate.set(holdingDate, dateSet)
+        }
+        for (const s of set) dateSet.add(s)
       }
 
       // Process each company's holdings for the day
@@ -297,6 +310,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             type: 'holding',
             row: '',
             typeId: '',
+            severity: 'fatal',
             comments: createErrorFaultComment({
               id: companyId,
               operation: 'Holdings',
@@ -341,6 +355,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
     })
     console.log(`Prefetched ${accountCache.size} accounts`)
+    console.log('[migrateHoldings.up] subAccountKeySet size:', subAccountKeySet.size)
 
     // Get active companies with their latest holdings date
     console.log('Fetching active companies with their latest holdings date...')
@@ -377,6 +392,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Process each date sequentially to keep per-company load reasonable
             for (const dateStr of dates) {
               const holdings = await getHoldingsPage(pool, company.firm, String(dateStr))
+              console.log(
+                '[migrateHoldings.up] getHoldingsPage rows:',
+                holdings.recordset?.length ?? 0,
+                'for firm:',
+                company.firm,
+                'date:',
+                String(dateStr),
+              )
               const formattedDate = formatDateForSQL(String(dateStr))
               await processHoldingsChunk(holdings, formattedDate)
             }
@@ -398,6 +421,406 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     if (pool) {
       await pool.close()
     }
+  }
+}
+
+// New API: Run discontinued-holdings backfill as a separate step to be called from migrateAll
+export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpArgs): Promise<void> {
+  let pool: sql.ConnectionPool | null = null
+  try {
+    console.log('Starting Discontinued Holdings backfill step...')
+    pool = await createMSSqlPool()
+
+    // Initialize on-demand caches (same logic as migrateHoldings.up)
+    const accountCache = new Map<string, string>()
+    const subAccountKeySet = new Set<string>()
+    const stockCache = await getStockIdToSequenceMap(req)
+    console.log('[backfillDiscontinuedHoldings] stockCache size:', stockCache.size)
+    // DEBUG: show accountCache/subAccount sizes after we build them (built below)
+
+    const silencedStocks = await payload.find({
+      collection: 'silenced-stocks',
+      select: { stockId: true },
+      limit: 0,
+      req,
+    })
+    const silentStockSet = new Set<string>(silencedStocks.docs.map((d: any) => String(d.stockId)))
+    console.log('[backfillDiscontinuedHoldings] silenced stock IDs size:', silentStockSet.size)
+
+    // Prefetch foreign stocks to attach originalForeignData when needed
+    const foreignStocks = await payload.find({
+      collection: 'stocks',
+      select: { name: true },
+      where: { origin: { equals: 'Foreign' } },
+      limit: 0,
+      req,
+      depth: 0,
+    })
+    const foreignStockIdSet = new Set<string>(foreignStocks.docs.map((s: any) => String(s.id)))
+    console.log('[backfillDiscontinuedHoldings] foreignStockIdSet size:', foreignStockIdSet.size)
+
+    // Aggregate missing stockNums per company and per processed holding date (deferred logging)
+    const missingByCompanyDate = new Map<string, Map<string, Set<string>>>()
+
+    // Local processor copied from migrateHoldings.up
+    // NOTE: Concurrency removed entirely per request — all processing is strictly sequential.
+
+    const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
+      console.log(
+        '[backfillDiscontinuedHoldings] processHoldingsChunk start:',
+        'date:',
+        holdingDate,
+        'rows:',
+        holdings.recordset?.length ?? 0,
+      )
+      const companyHoldings = new Map<
+        string,
+        Map<
+          string,
+          {
+            stockId: string
+            quantity: number
+            feedStockNum: string
+            originals: { accountNum: number; quantity: number; stockId: string }[]
+          }
+        >
+      >()
+      const notFoundByCompany = new Map<string, Set<string>>()
+      // DEBUG: counters for visibility
+      let skippedMissingCompany = 0
+      let skippedMissingStock = 0
+      const firstMissingCompanyKeys = new Set<string>()
+
+      for (const holding of holdings.recordset) {
+        const accountKey = `${holding.firm}-${holding.subAccountNum}`
+        const companyId = accountCache.get(accountKey)
+        if (!companyId) {
+          skippedMissingCompany++
+          if (firstMissingCompanyKeys.size < 10) firstMissingCompanyKeys.add(accountKey)
+          await logMigrationFault({
+            payload,
+            type: 'holding',
+            row: JSON.stringify(holding),
+            typeId: accountKey,
+            severity: 'warning',
+            comments: createErrorFaultComment({
+              id: accountKey,
+              operation: 'Holdings - Company ID lookup',
+              error: new Error(`Company ID not found for account key: ${accountKey}`),
+            }),
+          })
+          continue
+        }
+
+        if (subAccountKeySet.has(accountKey)) {
+          console.info(
+            `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`,
+          )
+        }
+
+        let stocksMap = companyHoldings.get(companyId)
+        if (!stocksMap) {
+          stocksMap = new Map<
+            string,
+            {
+              stockId: string
+              quantity: number
+              feedStockNum: string
+              originals: { accountNum: number; quantity: number; stockId: string }[]
+            }
+          >()
+          companyHoldings.set(companyId, stocksMap)
+        }
+
+        const stockId = stockCache.get(`${holding.stockNum}`)
+        if (!stockId) {
+          //console.log('missing stockId:' + holding.stockNum)
+          skippedMissingStock++
+          if (!silentStockSet.has(`${holding.stockNum}`)) {
+            let set = notFoundByCompany.get(companyId)
+            if (!set) {
+              set = new Set<string>()
+              notFoundByCompany.set(companyId, set)
+            }
+            set.add(String(holding.stockNum))
+          }
+          continue
+        }
+
+        const existingHolding = stocksMap.get(stockId)
+        if (existingHolding) {
+          existingHolding.quantity += holding.qty
+          existingHolding.originals.push({
+            stockId: String(holding.stockNum),
+            accountNum: Number(holding.subAccountNum),
+            quantity: holding.qty,
+          })
+        } else {
+          stocksMap.set(stockId, {
+            stockId,
+            quantity: holding.qty,
+            feedStockNum: holding.stockNum,
+            originals: [
+              {
+                stockId: String(holding.stockNum),
+                accountNum: Number(holding.subAccountNum),
+                quantity: holding.qty,
+              },
+            ],
+          })
+        }
+      }
+
+      // DEBUG summary for the chunk
+      if (skippedMissingCompany > 0 || skippedMissingStock > 0) {
+        console.warn(
+          '[backfillDiscontinuedHoldings] chunk skips summary:',
+          'date:',
+          holdingDate,
+          '| missingCompany:',
+          skippedMissingCompany,
+          '| missingStock:',
+          skippedMissingStock,
+        )
+        if (firstMissingCompanyKeys.size > 0) {
+          console.warn(
+            '[backfillDiscontinuedHoldings] first missing account keys (up to 10):',
+            Array.from(firstMissingCompanyKeys).join(', '),
+          )
+        }
+      }
+
+      // Defer logging: merge missing stock numbers into global aggregator by company and date
+      for (const [companyId, set] of Array.from(notFoundByCompany.entries())) {
+        if (!set || set.size === 0) continue
+        let byDate = missingByCompanyDate.get(companyId)
+        if (!byDate) {
+          byDate = new Map<string, Set<string>>()
+          missingByCompanyDate.set(companyId, byDate)
+        }
+        let dateSet = byDate.get(holdingDate)
+        if (!dateSet) {
+          dateSet = new Set<string>()
+          byDate.set(holdingDate, dateSet)
+        }
+        for (const s of set) dateSet.add(s)
+      }
+
+      for (const [companyId, stocksMap] of Array.from(companyHoldings.entries())) {
+        try {
+          const rawHoldingsArray: any[] = []
+          for (const [, holdingData] of Array.from(stocksMap.entries())) {
+            const isForeign = foreignStockIdSet.has(holdingData.stockId)
+            const item: any = {
+              stock: holdingData.stockId,
+              quantity: holdingData.quantity,
+              feedStockNum: holdingData.feedStockNum,
+            }
+            if (isForeign) item.originalForeignData = holdingData.originals
+            rawHoldingsArray.push(item)
+          }
+
+          const consolidatedByStock = new Map<string, any>()
+          for (const item of rawHoldingsArray) {
+            const existing = consolidatedByStock.get(item.stock)
+            if (existing) {
+              existing.quantity += item.quantity
+              if (Array.isArray(item.originalForeignData)) {
+                existing.originalForeignData = [
+                  ...(existing.originalForeignData || []),
+                  ...item.originalForeignData,
+                ]
+              }
+            } else {
+              consolidatedByStock.set(item.stock, { ...item })
+            }
+          }
+          const holdingsArray = Array.from(consolidatedByStock.values())
+          if (holdingsArray.length === 0) {
+            console.warn(
+              `[backfillDiscontinuedHoldings] No valid stocks found for company: ${companyId} (date ${holdingDate})`,
+            )
+            continue
+          }
+          // Create new holding day with all stocks
+          const holdingDayData = {
+            fund: companyId,
+            valueDate: holdingDate,
+            holdings: holdingsArray,
+          }
+          console.log(
+            '[backfillDiscontinuedHoldings] creating holdings for:',
+            companyId,
+            'date:',
+            holdingDate,
+            'items:',
+            holdingsArray.length,
+          )
+
+          await payload.create({
+            collection: 'holdings',
+            data: holdingDayData,
+            req: {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
+            },
+          })
+          console.log('[backfillDiscontinuedHoldings] created holdings for:', companyId)
+
+          const delayMs = Number(process.env.DISCONTINUED_UPSERT_DELAY_MS || '0')
+          if (delayMs > 0)
+            console.log('[backfillDiscontinuedHoldings] delay after upsert(ms):', delayMs)
+          if (delayMs > 0) await new Promise((r) => setTimeout(r, Math.min(delayMs, 200)))
+        } catch (error) {
+          console.error(`Error processing holdings for company ${companyId}:`, error)
+          await logMigrationFault({
+            payload,
+            type: 'holding',
+            row: '',
+            typeId: '',
+            severity: 'fatal',
+            comments: createErrorFaultComment({
+              id: companyId,
+              operation: 'Holdings',
+              error: error as Error,
+            }),
+          })
+        }
+      }
+    }
+
+    // Build account cache like in migrateHoldings.up (mirroring logic)
+    console.log('Prefetching companies with account information (backfill)...')
+    const allCompanies = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      where: { type: { equals: 'fund' } },
+      req,
+      depth: 0,
+    })
+    allCompanies.docs.forEach((company: any) => {
+      const parentCompanyId: string | null = (company.legacyCompanyId as string) || null
+      if (company.mainAccount && Array.isArray(company.mainAccount)) {
+        company.mainAccount.forEach((account: any) => {
+          if (parentCompanyId) {
+            const baseKey = `${parentCompanyId}-${String(account.accountNumber)}`
+            accountCache.set(baseKey, company.id)
+            const subs = Array.isArray(account.subAccounts)
+              ? account.subAccounts.map((s: any) => String(s))
+              : []
+            for (const sub of subs) {
+              const subKey = `${parentCompanyId}-${sub}`
+              accountCache.set(subKey, company.id)
+              subAccountKeySet.add(subKey)
+            }
+          }
+        })
+      }
+    })
+    console.log('[backfillDiscontinuedHoldings] accountCache size:', accountCache.size)
+    console.log('[backfillDiscontinuedHoldings] subAccountKeySet size:', subAccountKeySet.size)
+
+    console.log('Fetching latest firm/date pairs for discontinued stocks (last 5 years)...')
+    const discontinuedHoldingsQuery = `
+      WITH RankedStocks AS (
+          SELECT  stockID,
+                  [name],
+                  [symbol],
+                  [type],
+                  [closingRate],
+                  [marketValue],
+                  [registeredValue],
+                  [valueDate],
+                  [logUpdateID],
+                  [longName],
+                  ROW_NUMBER() OVER (
+                      PARTITION BY stockID
+                      ORDER BY valueDate DESC, logUpdateID DESC
+                  ) AS rn
+          FROM [${sqlConfig.database}].[dbo].[stocks]
+          WHERE valueDate >= DATEADD(YEAR, -5, GETDATE())
+      ),
+      StockNumList AS (
+          SELECT DISTINCT stockID AS stockNum
+          FROM RankedStocks
+          WHERE rn = 1
+      ),
+      HoldingStockList AS (
+          SELECT stockNum FROM StockNumList
+          UNION
+          SELECT c.Id2 AS stockNum
+          FROM [${sqlConfig.database}].[dbo].[tblSecurityIdConnections] c
+          JOIN StockNumList s ON c.Id1 = s.stockNum
+      ),
+      LastHoldingDates AS (
+          SELECT 
+              h.stockNum,
+              h.firm,
+              MAX(h.date1) AS LastHeldDate
+          FROM [${sqlConfig.database}].[dbo].[holdings] h
+          JOIN HoldingStockList hsl ON h.stockNum = hsl.stockNum
+          WHERE h.date1 >= DATEADD(YEAR, -5, GETDATE())
+          GROUP BY h.stockNum, h.firm
+      )
+      SELECT 
+          h.firm,
+          CONVERT(VARCHAR(10), h.date1, 110) AS date1,
+          SUM(h.qty) AS TotalQty,
+          COUNT(DISTINCT h.subAccountNum) AS SubAccountCount
+      FROM [${sqlConfig.database}].[dbo].[holdings] h
+      JOIN LastHoldingDates lhd 
+            ON  h.stockNum = lhd.stockNum
+            AND h.firm    = lhd.firm
+            AND h.date1   = lhd.LastHeldDate
+      WHERE h.date1 >= DATEADD(YEAR, -5, GETDATE())
+      GROUP BY h.firm, h.date1
+      ORDER BY h.firm, h.date1;`
+
+    const discontinuedPairs = await pool.request().query(discontinuedHoldingsQuery)
+    console.log(`Found ${discontinuedPairs.recordset.length} (firm, date1) pairs to backfill.`)
+
+    // Process strictly sequentially — no batching, no parallelism
+    let processed = 0
+    for (const row of discontinuedPairs.recordset as Array<{ firm: string; date1: string }>) {
+      try {
+        const firm = String(row.firm)
+        const dateStr = formatDateForSQL(String(row.date1))
+        const holdings = await getHoldingsPage(pool as sql.ConnectionPool, firm, dateStr)
+        console.log(
+          '[backfillDiscontinuedHoldings] fetched holdings rows:',
+          holdings.recordset?.length ?? 0,
+          'for firm:',
+          firm,
+          'date:',
+          dateStr,
+        )
+        await processHoldingsChunk(holdings, dateStr)
+      } catch (e) {
+        console.error('Error processing discontinued holding pair', row, e)
+      }
+      processed++
+      if (processed % 50 === 0 || processed === discontinuedPairs.recordset.length) {
+        console.log(`Progress: ${processed}/${discontinuedPairs.recordset.length} pairs processed`)
+      }
+      // Yield to event loop to avoid starving I/O
+      await new Promise((r) => setImmediate(r))
+    }
+
+    console.log('Discontinued holdings backfill completed')
+    // Emit consolidated warnings after all dates have been processed
+    for (const [companyId, datesMap] of Array.from(missingByCompanyDate.entries())) {
+      for (const [dateStr, set] of Array.from(datesMap.entries())) {
+        if (set && set.size > 0) {
+          const list = Array.from(set).join(',')
+          console.warn(`Stock IDs not found for company ${companyId} on ${dateStr}: ${list}`)
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Discontinued holdings backfill failed', e)
+    throw e
+  } finally {
+    if (pool) await pool.close()
   }
 }
 

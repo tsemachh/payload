@@ -198,7 +198,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               // stockStatuses.isRootStock ||
               (stockStatuses.hasActiveMeeting && !stockStatuses.hasRelation) ||
               stockStatuses.isNonTradableShaked ||
-              stockStatuses.isForeign
+              stockStatuses.isForeign ||
+              stockStatuses.hasForeignRelation
 
             stockStatuses.isTradable = isTradable
             let comments = JSON.stringify(stockStatuses)
@@ -250,6 +251,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               errorCount++
               await logMigrationFault({
                 payload,
+                severity: 'warning',
                 type: 'stock',
                 typeId: stockID,
                 comments: 'Stock Migration Error:' + JSON.stringify(stockStatuses),
@@ -270,6 +272,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 error: error instanceof Error ? error : new Error(String(error)),
               }),
               row,
+              severity: 'fatal',
             })
             console.error(`Error processing stock ${stockID}:`, error)
             // Don't throw the error, continue processing other stocks
@@ -286,6 +289,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               stockHasMeeting: stockStatuses.hasActiveMeeting as boolean,
             }),
             row,
+            severity: 'info',
           })
         }
       })
@@ -337,6 +341,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 stockId1: `${id1}-${theStockToUpdate}`,
                 stockId2: `${id2}-${relatedStock}`,
               }),
+              severity: 'warning',
             })
             errorCount++
             console.log(
@@ -354,6 +359,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               id: `${id1}->${id2}`,
               error: error instanceof Error ? error : new Error(String(error)),
             }),
+            severity: 'fatal',
           })
           throw error
         }
@@ -367,6 +373,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Create a promise pool with concurrency of 20 for processing stock values
     const stockValuesPool = new PromisePool(20)
+    // Track skipped stocks to avoid repeated logging/processing on missing/irrelevant ones
+    const skippedStockIds = new Set<string>()
 
     // Process each stock value individually
     resultStockValues.recordset.map((row) => {
@@ -379,16 +387,25 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         const isPredictaStock = predictaStocks.has(stockID)
         const isRootForeignStock = rootRelatedStocks.has(stockID) && !isPredictaStock
         const isEmdaStock = emdaStocks.has(stockID)
+        const stockInMeeting = stocksInMeeting.has(stockID)
 
         // Skip processing if stock doesn't meet criteria
-        if (!stockSequence || (!isPredictaStock && !isEmdaStock && !isRootForeignStock)) {
+        if (
+          !stockSequence ||
+          (!isPredictaStock && !stockInMeeting) ||
+          !!relationStocks.get(stockID)
+        ) {
+          if (skippedStockIds.has(stockID)) return
+          // Only log first time we encounter a skipped stockID
           await logMigrationFault({
             payload,
             type: 'stock-value',
             typeId: stockID,
             comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
             row,
+            severity: 'info',
           })
+          skippedStockIds.add(stockID)
           return
         }
 
@@ -415,6 +432,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               error: error instanceof Error ? error : new Error(String(error)),
             }),
             row,
+            severity: 'fatal',
           })
           console.error(`Error processing stock value for ${stockID}:`, error)
         }
@@ -423,6 +441,125 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Wait for all stock value processing to complete
     await stockValuesPool.waitForAll()
+
+    // ==============================================
+    // Backfill: Latest values for main stocks (no parent) from last 5 years
+    // If latest value is older than STOCK_VALUE_DAYS_RETRO, insert it (keep original valueDate)
+    // ==============================================
+    try {
+      const daysRetro = parseInt(process.env.STOCK_VALUE_DAYS_RETRO || '30', 10)
+      const cutoffDate = new Date(Date.now() - daysRetro * 24 * 60 * 60 * 1000)
+
+      if (!pool) throw new Error('SQL pool not available for backfill query')
+
+      const latest5YearsQuery = `
+        WITH RankedStocks AS (
+            SELECT  stockID,
+                    [name],
+                    [symbol],
+                    [type],
+                    [closingRate],
+                    [marketValue],
+                    [registeredValue],
+                    [valueDate],
+                    [logUpdateID],
+                    [longName],
+                    ROW_NUMBER() OVER (
+                        PARTITION BY stockID
+                        ORDER BY valueDate DESC, logUpdateID DESC
+                    ) AS rn
+            FROM [dbEmda].[dbo].[stocks]
+            WHERE valueDate >= DATEADD(YEAR, -5, GETDATE())
+        )
+        SELECT  stockID,
+                [name],
+                [symbol],
+                [type],
+                [closingRate],
+                [marketValue],
+                [registeredValue],
+                [valueDate],
+                [logUpdateID],
+                [longName]
+        FROM RankedStocks
+        WHERE rn = 1;`
+
+      console.log('Running latest-5-years backfill query for main stocks...')
+      const latestResult = await pool.request().query(latest5YearsQuery)
+
+      let backfillCount = 0
+      let backfillSkipped = 0
+      let backfillErrors = 0
+
+      const backfillPool = new PromisePool(20)
+      latestResult.recordset.map((row: any) => {
+        return backfillPool.add(async () => {
+          try {
+            row.stockID = `${row.stockID}`
+            const stockID = row.stockID
+
+            // Only main stocks (no related parent)
+            const hasParent = !!relationStocks.get(stockID)
+            if (hasParent) {
+              backfillSkipped++
+              return
+            }
+
+            const stockSequence = stockIdTOSequence.get(stockID)
+            if (!stockSequence) {
+              backfillSkipped++
+              return
+            }
+
+            const valueDate = new Date(row.valueDate)
+            if (isNaN(valueDate.getTime())) {
+              backfillErrors++
+              await logMigrationFault({
+                payload,
+                type: 'stock-value',
+                typeId: stockID,
+                comments: 'Invalid valueDate in latest-5-years backfill',
+                row,
+                severity: 'warning',
+              })
+              return
+            }
+
+            // Only insert when latest value is older than the retro window
+            if (valueDate >= cutoffDate) {
+              backfillSkipped++
+              return
+            }
+
+            await upsertStockValueFromImport(stockSequence, row, {
+              ...req,
+              context: { ...req.context, from: 'migration', process: 'migrateStocks:backfill' },
+            })
+            backfillCount++
+          } catch (error) {
+            backfillErrors++
+            await logMigrationFault({
+              payload,
+              type: 'stock-value',
+              typeId: (row && row.stockID) || 'unknown',
+              comments: createStockValueFaultComment({
+                stockId: (row && row.symbol) || 'unknown',
+                error: error instanceof Error ? error : new Error(String(error)),
+              }),
+              row,
+              severity: 'fatal',
+            })
+          }
+        })
+      })
+
+      await backfillPool.waitForAll()
+      console.log(
+        `Backfill summary: inserted ${backfillCount}, skipped ${backfillSkipped}, errors ${backfillErrors}`,
+      )
+    } catch (e) {
+      console.error('Error during latest-5-years backfill step', e)
+    }
 
     console.log('\nMigration Summary:')
     console.log(`Total records processed: ${resultStockValues.recordset.length}`)

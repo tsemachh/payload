@@ -201,10 +201,9 @@ export const useVotingData = () => {
         })
         setVotedCompanies(processedCompanies)
 
-        // Calculate not voted companies
-        const votedCompanyIds = new Set(processedCompanies.map((c) => c.id))
-        const notVoted = meetingCompanyIds
-          .filter((companyId) => !votedCompanyIds.has(companyId))
+        // Use companiesNotYetVoted from meeting data
+        const notVotedCompanyIds = (data.companiesNotYetVoted || []) as string[]
+        const notVoted = notVotedCompanyIds
           .map((companyId) => {
             const companyInfo = companyNamesMap.get(companyId)
             if (!companyInfo) return null
@@ -307,7 +306,7 @@ export const useVotingData = () => {
       result.push({
         id: groupId,
         name: parentCompany,
-        parentCompany,
+        parentCompanyId: subsidiaries[0]?.parentCompanyId || '',
         nominalValue: subsidiaries.reduce((sum, s) => sum + s.nominalValue, 0),
         percentageHolding: subsidiaries.reduce((sum, s) => sum + s.percentageHolding, 0),
         isGroupHeader: true,

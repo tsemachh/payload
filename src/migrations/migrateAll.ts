@@ -4,7 +4,7 @@ import { migrateDual, up as migrateForeign } from './migrateForeign'
 import { up as migrateFullMeetings } from './migrateFullMeeting'
 import { up as migrateMagnaMeetings } from './migrateMagnaMeetings'
 import { up as migrateUsers } from './migrateUsers'
-import { up as migrateHoldings } from './migrateHoldings'
+import { up as migrateHoldings, backfillDiscontinuedHoldings } from './migrateHoldings'
 import { up as migrateFullFirms } from './migrateFullFirms'
 
 import { up as migrateVotes } from './migrateVotes'
@@ -88,6 +88,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Holdings Migration ===')
     await migrateHoldings({ payload, req })
     console.log('=== Holdings Migration Completed ===\n')
+
+    // 11.1 Backfill Discontinued Holdings
+    console.log('\n=== Starting Discontinued Holdings Backfill ===')
+    await backfillDiscontinuedHoldings({ payload, req })
+    console.log('=== Discontinued Holdings Backfill Completed ===\n')
 
     // 18. Migrate Meeting Stock Values
     console.log('\n=== Starting Meeting Stock Values Migration ===')

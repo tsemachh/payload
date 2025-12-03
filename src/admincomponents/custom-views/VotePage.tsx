@@ -30,19 +30,21 @@ function ErrorDisplay({ message, errors }: { message: string; errors?: string[] 
 async function VoteDataLoader({
   req,
   meetingId,
-  companyIds,
+  parentCompanyId,
+  checksum,
 }: {
   req: any
   meetingId: string
-  companyIds: string
+  parentCompanyId: string
+  checksum: string
 }) {
-  const voteData = await getVoteData(req, meetingId, companyIds)
+  const voteData = await getVoteData(req, meetingId, parentCompanyId, checksum)
 
   if (voteData.error) {
     return <ErrorDisplay message={voteData.message} errors={voteData.errors} />
   }
 
-  return <VotingForm voteData={voteData} meetingId={meetingId} companyIds={companyIds} />
+  return <VotingForm voteData={voteData} meetingId={meetingId} />
 }
 
 const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminViewServerProps) => {
@@ -67,8 +69,8 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
   }
 
   const meetingId = (searchParams?.meetingId || '') as string
-  const companyIds = (searchParams?.companyIds || '') as string
-
+  const parentCompanyId = (searchParams?.parentCompanyId || '') as string
+  const checksum = (searchParams?.checksum || '') as string
   // Validate required parameters
   if (!meetingId) {
     notFound()
@@ -122,7 +124,12 @@ const GroupedVotesPage = async ({ initPageResult, params, searchParams }: AdminV
         ]}
       />
       <Suspense fallback={<LoadingFallback />}>
-        <VoteDataLoader req={req} meetingId={meetingId} companyIds={companyIds} />
+        <VoteDataLoader
+          req={req}
+          meetingId={meetingId}
+          parentCompanyId={parentCompanyId}
+          checksum={checksum}
+        />
       </Suspense>
     </DefaultTemplate>
   )

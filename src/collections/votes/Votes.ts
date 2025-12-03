@@ -39,7 +39,14 @@ function calculateCheckSum(data: Vote) {
       relatedPartyExplanation: vote.relatedPartyExplanation || null,
       conflictOfInterestExplanation: vote.conflictOfInterestExplanation || null,
       personalInterestExplanation: vote.personalInterestExplanation || null,
+      voteReason: vote.voteReason || null,
     })),
+
+    // Add attached documents and client comment for the meeting
+    voteDocuments: (data.voteDocuments || []).map((doc) =>
+      typeof doc === 'string' ? doc : doc.id,
+    ),
+    clientComment: data.clientComment || null,
   }
 
   // Convert to string and create a simple hash
@@ -201,7 +208,7 @@ export const Votes: CollectionConfig = {
                     hidden: true,
                   },
                   hooks: {
-                    afterRead: [
+                    beforeChange: [
                       async ({ data }) => {
                         if (!data) return null
                         return calculateCheckSum(data as Vote)
@@ -280,7 +287,7 @@ export const Votes: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: false,
                   admin: {
-                    width: 'auto', 
+                    width: 'auto',
                   },
                 },
                 {

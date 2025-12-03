@@ -21,7 +21,6 @@ export const sqlConfig: sql.config = {
 export async function createMSSqlPool() {
   let pool: sql.ConnectionPool | null = null
 
-  console.log('\n=== Starting Firms Migration ===')
   console.log('Attempting to connect to SQL Server:', sqlConfig.server)
 
   // Log whether we're using the environment variable for the password

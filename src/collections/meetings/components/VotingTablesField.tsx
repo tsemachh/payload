@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
+import { getGroupedVotesUrl } from '../../../utils/voteGrouping'
 
 export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
@@ -48,14 +49,14 @@ export const VotingTablesField = () => {
 
   // Generate grouped vote URL for href
   const getGroupedVoteUrl = (item: any) => {
-    const parentCompany = item.parentCompany || item.name
+    if (!id) {
+      console.error('meetingId is missing can not create votes url without meetingId')
+      return
+    }
+    // Use parentCompanyId if available, otherwise fall back to company's own ID
+    const parentCompanyId = item.parentCompanyId || item.id
     const checksum = item.vote?.checksum
-    const groupedCompanies = votedCompanies.filter((company) => {
-      const companyParentCompany = company.parentCompany || company.name
-      return companyParentCompany === parentCompany && company.vote?.checksum === checksum
-    })
-    const companyIds = groupedCompanies.map((c) => c.id).join(',')
-    return `/admin/grouped-votes/?meetingId=${id}&companyIds=${companyIds}`
+    return getGroupedVotesUrl(id, parentCompanyId, checksum)
   }
 
   const notVotedColumns = {

@@ -1,5 +1,5 @@
 import { PayloadRequest, Where } from 'payload'
-import type { Meeting } from '@/payload-types'
+import type { Meeting, StockValue } from '@/payload-types'
 import {
   getCompanyIdFromFundId,
   getIdOfRelationField,
@@ -115,7 +115,7 @@ async function processMeeting(
       const prev = prevByFund.get(fundId) || {}
       return { ...prev, ...base }
     })
-    let stockValue = meeting.stockValue
+    let stockValue: string | StockValue | null = meeting.stockValue as string
     if (!stockValue) {
       const { docs: stockValueDocs } = await req.payload.find({
         collection: 'stock-values',
@@ -158,9 +158,17 @@ async function processMeeting(
     const companiesCount = Array.from(new Set(compIds)).length
     const fundsCount = newFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
-
-    const changeDetails = `${changeDate} - [${changeSource}] ${changeDescription}`
     const hasRelatedStocks = fromRelatedStock
+
+    const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
+    const data: Partial<Meeting> = {
+      companies: Array.from(new Set(compIds)) as string[],
+      funds: [...newFunds],
+      fundsWithHolding,
+      migrationComments,
+      hasRelatedStocks,
+    }
+    if (stockValue) data.stockValue = stockValue
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -168,14 +176,7 @@ async function processMeeting(
         ...req,
         context: { ...req.context, from: 'process' },
       },
-      data: {
-        companies: Array.from(new Set(compIds)),
-        funds: [...newFunds],
-        fundsWithHolding,
-        stockValue,
-        hasRelatedStocks,
-        changeDetails,
-      },
+      data,
     })
     // Use the new cleanup API to remove invalid votes for this meeting
     await cleanupInvalidVotesForMeetings(req, [String(meeting.id)])

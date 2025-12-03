@@ -62,7 +62,7 @@ import { format } from 'date-fns'
 import { Checkbox } from './ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Calendar } from './ui/calendar'
-import { BooleanIcon } from './ui/icons'
+import { BooleanIcon, MultipleDocumentsIcon, SingleDocumentIcon } from './ui/icons'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FaFileExcel } from 'react-icons/fa'
 import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
@@ -1135,7 +1135,46 @@ export function DataTableServer<T extends Record<string, any>>({
                                         </TableCell>
                                       )
                                     }
-
+                                    if (column.key === 'researchDocuments') {
+                                      const companyDocs =
+                                        row.researchDocuments?.filter((doc: any) =>
+                                          doc.companies?.some((c: any) => c.id === company.id),
+                                        ) || []
+                                      return (
+                                        <TableCell
+                                          key={`company-${company.id}-researchDocuments`}
+                                          className="py-2 px-3 whitespace-nowrap text-center"
+                                        >
+                                          {companyDocs.length > 0 && (
+                                            <button
+                                              onClick={() => {
+                                                companyDocs.forEach((doc: any) => {
+                                                  const link = document.createElement('a')
+                                                  link.href = doc.url
+                                                  link.download = doc.filename
+                                                  link.style.display = 'none'
+                                                  document.body.appendChild(link)
+                                                  link.click()
+                                                  document.body.removeChild(link)
+                                                })
+                                              }}
+                                              title={
+                                                companyDocs.length === 1
+                                                  ? 'Download document'
+                                                  : 'Download all documents'
+                                              }
+                                              className="group transition-transform hover:scale-110 hover:brightness-110 cursor-pointer"
+                                            >
+                                              {companyDocs.length === 1 ? (
+                                                <SingleDocumentIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                                              ) : (
+                                                <MultipleDocumentsIcon className="w-6 h-6 text-gray-500 transition-colors duration-200 group-hover:text-blue-600" />
+                                              )}
+                                            </button>
+                                          )}
+                                        </TableCell>
+                                      )
+                                    }
                                     if (column.key in company) {
                                       return (
                                         <TableCell
