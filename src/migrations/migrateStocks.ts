@@ -384,27 +384,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
         // Get stock information for this stock value
         const stockSequence = stockIdTOSequence.get(stockID)
+        /*
         const isPredictaStock = predictaStocks.has(stockID)
         const isRootForeignStock = rootRelatedStocks.has(stockID) && !isPredictaStock
         const isEmdaStock = emdaStocks.has(stockID)
         const stockInMeeting = stocksInMeeting.has(stockID)
+*/
 
         // Skip processing if stock doesn't meet criteria
-        if (
-          !stockSequence ||
-          (!isPredictaStock && !stockInMeeting) ||
-          !!relationStocks.get(stockID)
-        ) {
+        if (!stockSequence || !!relationStocks.get(stockID)) {
           if (skippedStockIds.has(stockID)) return
-          // Only log first time we encounter a skipped stockID
-          await logMigrationFault({
-            payload,
-            type: 'stock-value',
-            typeId: stockID,
-            comments: `Stock value not migrated - isPredictaStock: ${isPredictaStock}, isRootForeignStock: ${isRootForeignStock} isEmdaStock: ${isEmdaStock}`,
-            row,
-            severity: 'info',
-          })
+          // Mark as skipped; we will log once after processing finishes.
+          // Note: typeId for these aggregated logs will be null as requested.
           skippedStockIds.add(stockID)
           return
         }
@@ -441,6 +432,20 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Wait for all stock value processing to complete
     await stockValuesPool.waitForAll()
+
+    // After the process ends, log all skipped stockIds in a single aggregated entry
+    if (skippedStockIds.size > 0) {
+      await logMigrationFault({
+        payload,
+        type: 'stock-value',
+        typeId: null as unknown as string, // typeId: null
+        // Include all skippedStockIds in the comments as requested
+        comments: `Stock values not migrated for ${skippedStockIds.size} stockIDs. skippedStockIds: ${Array.from(
+          skippedStockIds,
+        ).join(',')}`,
+        severity: 'info',
+      })
+    }
 
     // ==============================================
     // Backfill: Latest values for main stocks (no parent) from last 5 years
