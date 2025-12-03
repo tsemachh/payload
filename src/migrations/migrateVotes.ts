@@ -47,8 +47,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const request = pool.request()
     request.input('dateCutoff', sql.VarChar, dateCutoff)
     const meetingsResult = await request.query(`
-        SELECT id
-        FROM [dbEmda].[dbo].[meetings] WHERE mdate > @dateCutoff;
+      SELECT id
+      FROM [dbEmda].[dbo].[meetings]
+      WHERE mdate > @dateCutoff;
     `)
 
     const meetings = meetingsResult.recordset
@@ -59,7 +60,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
-
+    let skippedVotedCount = 0
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
@@ -91,9 +92,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const agendaRequest = pool?.request()
             agendaRequest?.input('meetingId', sql.Int, meeting.id)
             const agendaResult = await agendaRequest?.query(`
-                SELECT id
-                FROM [dbEmda].[dbo].[meetingagenda]
-                WHERE mid = @meetingId
+              SELECT id
+              FROM [dbEmda].[dbo].[meetingagenda]
+              WHERE mid = @meetingId
             `)
 
             const agendaItems = agendaResult?.recordset
@@ -134,7 +135,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                   continue
                 }
-
+                const vote = await payload.find({
+                  collection: 'votes',
+                  select: { meeting: true },
+                  where: {
+                    meeting: { equals: mongoMeetingId },
+                    company: { equals: mongoCompanyId },
+                  },
+                  limit: 0,
+                  depth: 0,
+                })
+                if (vote.docs.length > 0) {
+                  console.warn(
+                    `Vote for company${mongoCompanyId}  and ${mongoMeetingId} already exists`,
+                  )
+                  skippedVotedCount++
+                  continue
+                }
                 // Get voting data for this company and meeting using stored procedure
                 const votingResult = await pool
                   ?.request()
@@ -166,16 +183,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 messageRequest?.input('meetingId', sql.Int, meeting.id)
                 messageRequest?.input('firmId', sql.Int, company.firmid)
                 const userMeetingMessageResult = await messageRequest?.query(`
-                  SELECT
-                      umm.Message
+                  SELECT umm.Message
                   FROM
-                      [dbEmda].[dbo].[UserMeetingMessage] umm
-                  INNER JOIN
-                      [dbEmda].[dbo].[userstofirms] utf
-                      ON umm.userId = utf.userID
+                    [dbEmda].[dbo].[UserMeetingMessage] umm
+                    INNER JOIN
+                    [dbEmda].[dbo].[userstofirms] utf
+                  ON umm.userId = utf.userID
                   WHERE
-                      umm.MeetingId = @meetingId
-                      AND utf.firmID = @firmId
+                    umm.MeetingId = @meetingId
+                    AND utf.firmID = @firmId
                 `)
                 const topLevelClientComment =
                   userMeetingMessageResult?.recordset?.[0]?.Message || ''
@@ -276,6 +292,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Successfully processed: ${successCount}`)
     console.log(`Failed processing: ${errorCount}`)
     console.log(`Skipped (meeting not found): ${skippedCount}`)
+    console.log(`Skipped (Vote exists): ${skippedVotedCount}`)
     console.log('Votes migration completed successfully.')
   } catch (error) {
     console.error('Critical error during votes migration:', error)
