@@ -72,7 +72,7 @@ export const useVotingData = () => {
               depth: 0,
               limit: 0,
             })
-            const votesResponse = await fetch(`/api/votes${votesQuery}`)
+            const votesResponse = await fetch(`/api/votes?${votesQuery}`)
             if (votesResponse.ok) {
               const votesResponseData = await votesResponse.json()
               votesDetails = votesResponseData.docs || []
