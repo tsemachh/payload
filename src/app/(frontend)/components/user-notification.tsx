@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle, useMemo } from 'react'
 import { Bell, X, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,11 +33,13 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
     const [loading, setLoading] = useState(false)
     const [markingAllAsRead, setMarkingAllAsRead] = useState(false)
     const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+    const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const fetchInProgressRef = useRef(false)
     const router = useRouter()
 
-    // Group notifications by message on the client side
-    const groupNotificationsByMessage = (notifications: Notification[]): GroupedNotification[] => {
+    // Memoize grouped notifications to avoid recalculation on every render
+    const groupedNotifications = useMemo(() => {
       const groups = new Map<string, Notification[]>()
 
       notifications.forEach((notification) => {
@@ -66,13 +68,17 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
           }
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }
+    }, [notifications])
 
-    const groupedNotifications = groupNotificationsByMessage(notifications)
-    const unreadCount = groupedNotifications.filter((n) => !n.isRead).length
-    const filteredNotifications = showUnreadOnly
-      ? groupedNotifications.filter((n) => !n.isRead)
-      : groupedNotifications
+    const unreadCount = useMemo(
+      () => groupedNotifications.filter((n) => !n.isRead).length,
+      [groupedNotifications],
+    )
+
+    const filteredNotifications = useMemo(
+      () => (showUnreadOnly ? groupedNotifications.filter((n) => !n.isRead) : groupedNotifications),
+      [showUnreadOnly, groupedNotifications],
+    )
 
     useImperativeHandle(ref, () => ({
       openNotifications: () => {
@@ -102,18 +108,32 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
       }
     }, [isOpen])
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = async (silent = false) => {
+      // Prevent duplicate concurrent fetches
+      if (fetchInProgressRef.current) return
+
       try {
-        setLoading(true)
+        fetchInProgressRef.current = true
+        if (!silent) setLoading(true)
+
         const response = await fetch('/api/company-meeting-notifications/user-notifications')
         if (response.ok) {
           const data = await response.json()
           setNotifications(data.notifications)
+          setHasFetchedOnce(true)
         }
       } catch (error) {
         console.error('Failed to fetch notifications:', error)
       } finally {
-        setLoading(false)
+        if (!silent) setLoading(false)
+        fetchInProgressRef.current = false
+      }
+    }
+
+    // Prefetch notifications on hover for instant display
+    const handleMouseEnter = () => {
+      if (!hasFetchedOnce && !fetchInProgressRef.current) {
+        fetchNotifications(true)
       }
     }
 
@@ -195,6 +215,7 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                   size="icon"
                   className="relative"
                   onClick={() => setIsOpen(!isOpen)}
+                  onMouseEnter={handleMouseEnter}
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -257,7 +278,7 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                 </div>
 
                 <ScrollArea className="max-h-[70vh] overflow-y-auto">
-                  {loading ? (
+                  {loading && !hasFetchedOnce ? (
                     <div className="p-4 text-right text-muted-foreground">טוען התראות...</div>
                   ) : filteredNotifications.length === 0 ? (
                     <div className="p-8 text-right text-muted-foreground">
@@ -314,3 +335,5 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
     )
   },
 )
+
+UserNotificationComponent.displayName = 'UserNotificationComponent'

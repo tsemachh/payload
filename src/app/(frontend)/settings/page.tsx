@@ -159,6 +159,8 @@ export default function SettingsPage() {
     setSelectedStocksIds([])
     setEditingLabel('')
     setEditingColor('')
+    setSelectedLabel('')
+    setSelectedColor('')
   }
 
   const handleSaveEdit = async () => {

@@ -204,10 +204,9 @@ export const useVotingData = () => {
         })
         setVotedCompanies(processedCompanies)
 
-        // Calculate not voted companies
-        const votedCompanyIds = new Set(processedCompanies.map((c) => c.id))
-        const notVoted = meetingCompanyIds
-          .filter((companyId) => !votedCompanyIds.has(companyId))
+        // Use companiesNotYetVoted from meeting data
+        const notVotedCompanyIds = (data.companiesNotYetVoted || []) as string[]
+        const notVoted = notVotedCompanyIds
           .map((companyId) => {
             const companyInfo = companyNamesMap.get(companyId)
             if (!companyInfo) return null

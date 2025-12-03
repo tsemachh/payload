@@ -101,6 +101,7 @@ export const Meetings: CollectionConfig = {
   custom: {
     defaultFilter: {
       meetingDate: 'todayAndFuture',
+      _status: { equals: 'published' },
     },
     filterList: [
       [
@@ -732,7 +733,7 @@ export const Meetings: CollectionConfig = {
                   relationTo: 'stock-values',
                   label: 'ערך נייר מתאריך',
                   hasMany: false,
-                  required: true,
+                  required: false,
                   admin: {
                     width: '300px',
                     disableListColumn: true,
@@ -1204,7 +1205,7 @@ export const Meetings: CollectionConfig = {
 
           const meetingName = doc.fullName || 'אסיפה'
           const url = `${req.payload.config.serverURL}//vote-meeting/${doc.id}`
-          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), .יש לשים לב לשינויים \nהערות: ${doc.changeDetails}`
+          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), לשינויים \nהערות: ${doc.changeDetails}.`
 
           for (const companyId of companies) {
             try {

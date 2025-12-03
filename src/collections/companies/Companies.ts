@@ -143,15 +143,6 @@ export const Companies: CollectionConfig = {
                     width: '100px',
                   },
                 },
-                {
-                  name: 'order',
-                  type: 'number',
-                  index: true,
-                  admin: {
-                    hidden: false,
-                    width: '100px',
-                  },
-                },
               ],
             },
             {

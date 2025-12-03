@@ -31,7 +31,6 @@ import { TwoFactorSetup } from '@/components/TwoFactorSetup'
 function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -47,6 +46,16 @@ function SignInContent() {
   const [idempotencyKey, setIdempotencyKey] = useState(uuidv4())
   const turnstileRef = useRef<TurnstileCaptchaRef>(null)
   const { login, setUser } = useAuth()
+
+  // Helper function to get callback URL from current URL search params
+  // This ensures we always get the latest value, even after page refresh
+  const getCallbackUrl = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('callbackUrl') || '/'
+    }
+    return searchParams.get('callbackUrl') || '/'
+  }
 
   // Helper function to reset Turnstile after errors
   const resetTurnstile = () => {
@@ -129,8 +138,9 @@ function SignInContent() {
       }
 
       // Login successful - redirect to callback URL
-      router.push(callbackUrl)
-      router.refresh()
+      // Use window.location.href for reliable navigation after page refresh
+      const callbackUrl = getCallbackUrl()
+      window.location.href = callbackUrl
     } catch (error: any) {
       // Check if this is a 2FA required case (which is a legitimate flow, not an error)
       if (error.requires2FA) {
@@ -182,13 +192,11 @@ function SignInContent() {
 
                 // After successful setup, update state and redirect
                 setRequiresSetup(false)
-                router.push(callbackUrl)
-                router.refresh()
+                window.location.href = getCallbackUrl()
               } catch (_error) {
                 // If fetching updated user fails, still proceed with redirect
                 setRequiresSetup(false)
-                router.push(callbackUrl)
-                router.refresh()
+                window.location.href = getCallbackUrl()
               }
             }}
             onCancel={undefined} // No cancel option - setup is mandatory

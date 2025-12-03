@@ -503,7 +503,6 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
         data: { fundsWithHolding: merged },
         req,
       })
-      console.log('!updated', updatedfundsWithHolding)
 
       // Create company-meeting-notifications for companies with unverified holdings
       try {
