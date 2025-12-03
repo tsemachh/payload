@@ -406,7 +406,7 @@ export default function VotingForm() {
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
-      enabled: (isDirty || isDraftSaved) && !isReadOnly,
+    enabled: (isDirty || isDraftSaved) && !isReadOnly,
   })
 
   const validateForm = useCallback((): ValidationError[] => {
@@ -839,7 +839,7 @@ export default function VotingForm() {
 
   return (
     <>
-      {/* Navigation Guard Dialog - Only show if not redirecting to signin */}
+      {/* Navigation Guard Dialog */}
       <Dialog open={navGuard.active}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader className="flex flex-row items-center gap-3">
