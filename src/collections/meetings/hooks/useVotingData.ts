@@ -29,7 +29,7 @@ interface CompanyVoted extends Company {
 }
 
 export const useVotingData = () => {
-  const { data } = useDocumentInfo()
+  const { data } = useDocumentInfo() //meeting data
   const [votedCompanies, setVotedCompanies] = useState<CompanyVoted[]>([])
   const [notVotedCompanies, setNotVotedCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
