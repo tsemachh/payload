@@ -16,7 +16,7 @@ export const MeetingsVotesReportEndpoint = async (req: PayloadRequest) => {
       collection: 'meetings',
       select: {
         fullName: true,
-        meetingId: true,
+        primaryLegacyId: true,
         companies: true,
         votes: true,
       },
@@ -34,7 +34,7 @@ export const MeetingsVotesReportEndpoint = async (req: PayloadRequest) => {
     // Create report data
     const reportData = mismatchedMeetings.map((meeting) => ({
       meetingName: meeting.fullName || 'Unknown',
-      meetingId: meeting.meetingId || 'Unknown',
+      meetingId: meeting.primaryLegacyId || 'Unknown',
       companiesCount: meeting.companies?.length || 0,
       votesCount: meeting.votes?.docs?.length || 0,
     }))

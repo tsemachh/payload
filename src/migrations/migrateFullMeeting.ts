@@ -67,7 +67,10 @@ function getVotingRecommendation(
   return recommendationMap.has(rec) ? recommendationMap.get(rec) : rec
 }
 
-export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
+export async function up(
+  { payload, req }: MigrateUpArgs,
+  options?: { finalizedOnly?: boolean },
+): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
   try {
@@ -82,22 +85,47 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Get meetings data
     console.log('Executing SQL query for meetings.')
     const { days, dateString } = getMeetingsCutoff()
-    const dateCutoff = dateString
+    let dateCutoff = dateString
+
+    // Compute dynamic cutoff based on earliest non-finalized meeting in Mongo
+    try {
+      const nonFinalRes = await payload.find({
+        collection: 'meetings',
+        where: { resultsConfirmationStatus: { not_equals: true } },
+        sort: 'meetingDate',
+        limit: 1,
+        depth: 0,
+        req,
+      })
+      const nonFinalMin = nonFinalRes?.docs?.[0]?.meetingDate as string | undefined
+      if (nonFinalMin) {
+        const chosen = new Date(nonFinalMin) < new Date(dateCutoff) ? nonFinalMin : dateCutoff
+        dateCutoff = chosen
+        console.log(
+          `Dynamic cutoff enabled (non-finalized min): ${nonFinalMin}; effective cutoff: ${dateCutoff}`,
+        )
+      } else {
+        console.log(`No non-finalized meetings found in Mongo; using default cutoff: ${dateCutoff}`)
+      }
+    } catch (e) {
+      console.log('Could not compute dynamic non-finalized cutoff; using default. Error:', e)
+    }
+
     console.log(`Using meetings_days_retro=${days} days; date cutoff: ${dateCutoff}`)
     const meetingsQuery = `
         SELECT  [id]
-             ,[proofId]
-             ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
-             ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
-             ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
-             ,[stockID]
-             ,[location]
-             ,[mtype]
-             ,[link2]
-             ,[comments]
-             ,[ResultConfirm]
-             ,[ElectronicVoting]
-             ,[CommiteeRequest]
+                ,[proofId]
+                ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
+                ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
+                ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
+                ,[stockID]
+                ,[location]
+                ,[mtype]
+                ,[link2]
+                ,[comments]
+                ,[ResultConfirm]
+                ,[ElectronicVoting]
+                ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${dateCutoff}';
     `
     const meetingsResult = await pool.request().query(meetingsQuery)
@@ -117,7 +145,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              , a.[rec]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
-                 LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
+            LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
         ORDER by a.[mid], a.[id]
     `
     const agendaResult = await pool.request().query(agendaQuery)
@@ -178,6 +206,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Process each meeting in parallel using the promise pool
     for (const row of meetingsResult.recordset) {
+      // If finalizedOnly is requested, skip meetings that are not finalized per current predicate
+      if (options?.finalizedOnly) {
+        const resultsConfirmed = !!row.ResultConfirm
+        if (!resultsConfirmed) {
+          skippedCount++
+          console.log(
+            `↷ Skipping meeting ${row.id} because resultsConfirmationStatus is not true (finalizedOnly mode).`,
+          )
+          continue
+        }
+      }
       // Capture the meetingAgendaMap in closure to avoid race conditions
       const agendaMap = meetingAgendaMap
       row.stockID = `${row.stockID}`
@@ -191,7 +230,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           typeId: `${row.id}`,
           comments: `Meeting with ID ${row.id} has stockId ${row.stockID} that can't be found and will not be imported`,
           row,
-          severity: 'warning',
         })
         skippedCount++
         continue // Use continue instead of return to skip this iteration
@@ -228,7 +266,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           typeId: `${row.id}`,
           comments: `Meeting with ID ${row.id} has null mdate and will not be imported`,
           row,
-          severity: 'warning',
         })
         skippedCount++
         continue // Use continue instead of return to skip this iteration
@@ -249,29 +286,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       const currentNewState = newState
       const currentAgendaItems = [...agendaItems]
 
-      // Check if all results are filled and set finalized to true if needed
-      let finalized = false
-      if (currentNewState === 'completed' && currentAgendaItems.length > 0) {
-        const decisionItems = currentAgendaItems.filter(
-          (item) => item.topicType === 'decision' && !item.isRemovedFromAgenda,
-        )
-
-        if (decisionItems.length > 0) {
-          const allHaveResults = decisionItems.every((item) => {
-            return item.result && item.result !== '0'
-          })
-
-          if (allHaveResults) {
-            finalized = true
-          }
-        }
-      }
       promises.push(
         promisePool.add(async () => {
           try {
             // Prepare meeting data with agenda inside the promise to avoid shared reference issues
             const meetingData: Partial<Meeting> = {
-              meetingId: `${currentRow.id}`,
+              primaryLegacyId: `${currentRow.id}`,
+              legacyIds: [{ value: `${currentRow.id}` }],
               stock: currentStockId as string,
               magnaId: currentRow.proofId,
               meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
@@ -283,7 +304,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: currentRow.comments,
               resultsConfirmationStatus: !!currentRow.ResultConfirm,
               electronicVotingEnabled: !!currentRow.ElectronicVoting,
-              finalized: finalized,
               _status: 'published' as const,
               agenda: currentAgendaItems.map((item) => ({
                 text: item.text,
@@ -301,7 +321,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               meetingData.invitationLink = currentRow.link2
             }
 
-            const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
+            const id = await getSequenceMeetingId(payload, meetingData.primaryLegacyId as string)
             if (id) {
               // Update Payload CMS
               await payload.update({
@@ -337,7 +357,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               payload,
               type: 'meeting',
               typeId: `${currentRow.id}`,
-              severity: 'fatal',
               comments: `Failed to insert/update Meeting ${currentRow.id}: ${insertError}`,
               row: currentRow,
             })

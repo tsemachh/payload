@@ -702,7 +702,13 @@ export interface Meeting {
       )
     | null;
   type: MeetingType;
-  meetingId?: string | null;
+  primaryLegacyId?: string | null;
+  legacyIds?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
   magnaId?: string | null;
   invitationLink?: string | null;
   invitationDocument?: (string | null) | Document;
@@ -1476,7 +1482,13 @@ export interface MeetingsSelect<T extends boolean = true> {
   stockOrigin?: T;
   stockType?: T;
   type?: T;
-  meetingId?: T;
+  primaryLegacyId?: T;
+  legacyIds?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
   magnaId?: T;
   invitationLink?: T;
   invitationDocument?: T;

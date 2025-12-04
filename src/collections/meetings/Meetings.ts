@@ -140,7 +140,7 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'primaryLegacyId'],
     defaultColumns: [
       'fullName',
       'type',
@@ -514,11 +514,28 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'meetingId',
-                  label: 'מספר אסיפה',
+                  name: 'primaryLegacyId',
+                  label: 'מזהה לגאסי (ראשי)',
                   type: 'text',
                   index: true,
-                  admin: { width: '100px', hidden: true },
+                  admin: { width: '140px', hidden: true },
+                },
+                {
+                  name: 'legacyIds',
+                  label: 'מזהים בלגאסי (כללי)',
+                  type: 'array',
+                  index: true,
+                  labels: { singular: 'מזהה', plural: 'מזהים' },
+                  fields: [
+                    {
+                      name: 'value',
+                      label: 'מזהה',
+                      type: 'text',
+                      required: true,
+                      admin: { width: '140px' },
+                    },
+                  ],
+                  admin: { hidden: true },
                 },
                 {
                   name: 'magnaId',
@@ -895,7 +912,6 @@ export const Meetings: CollectionConfig = {
               name: 'finalized',
               label: 'הסתיימה',
               type: 'checkbox',
-              admin: { disableListColumn: true, hidden: true },
             },
             {
               name: 'agenda',
@@ -1257,7 +1273,7 @@ export const Meetings: CollectionConfig = {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
-            delete dualMeeting.meetingId
+            delete dualMeeting.primaryLegacyId
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
             dualMeeting._status = 'published'

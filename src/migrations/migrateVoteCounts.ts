@@ -15,9 +15,9 @@ import { PromisePool } from '@/utils/promisePool'
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting vote counts migration...')
 
-  req=  {
+  req = {
     ...req,
-    context: { ...req.context, from: 'migration' , process: 'migrateVotesCount' },
+    context: { ...req.context, from: 'migration', process: 'migrateVotesCount' },
   }
   // Statistics tracking
   const stats = {
@@ -34,7 +34,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Get all meetings
     const { docs: meetings } = await payload.find({
       collection: 'meetings',
-      select: { _status: true },
+      select: {
+        _status: true,
+        resultsConfirmationStatus: true,
+        votesCount: true,
+        reportVotesCount: true,
+      },
+      where: { resultsConfirmationStatus: { not_equals: true } },
       limit: 0,
       depth: 0,
     })
@@ -97,7 +103,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         meetingIdsNeedingCompaniesProcessing.length,
       )
     } else {
-      console.log('No meetings had votes > companies. Skipping cleanupInvalidVotesForMeetings call.')
+      console.log(
+        'No meetings had votes > companies. Skipping cleanupInvalidVotesForMeetings call.',
+      )
     }
 
     // Update final statistics

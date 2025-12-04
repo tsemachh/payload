@@ -58,7 +58,7 @@ async function processMeetingGroup(
     const meetingToKeep = sortedMeetings[0]
     const meetingsToRemove = sortedMeetings.slice(1)
 
-    const displayId = (m: any) => (m?.meetingId ? m.meetingId : m?.id)
+    const displayId = (m: any) => (m?.primaryLegacyId ? m.primaryLegacyId : m?.id)
     console.log(
       `Keeping meeting ${displayId(meetingToKeep)}, removing ${meetingsToRemove.length} duplicates for key ${groupKey}`,
     )
