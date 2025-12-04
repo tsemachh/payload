@@ -34,13 +34,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Get all meetings
     const { docs: meetings } = await payload.find({
       collection: 'meetings',
-      select: {
-        _status: true,
-        resultsConfirmationStatus: true,
-        votesCount: true,
-        reportVotesCount: true,
-      },
-      where: { resultsConfirmationStatus: { not_equals: true } },
+      select: { _status: true },
       limit: 0,
       depth: 0,
     })

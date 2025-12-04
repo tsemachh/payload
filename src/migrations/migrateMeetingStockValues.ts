@@ -49,26 +49,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     for (const meeting of meetings.docs) {
       promisePool.add(async () => {
         try {
-          // Finalized guard
-          try {
-            const mDoc = await payload.findByID({
-              collection: 'meetings',
-              id: meeting.id,
-              depth: 0,
-            })
-            const finalized =
-              !!(mDoc as any)?.resultsConfirmationStatus &&
-              (mDoc as any)?.votesCount === (mDoc as any)?.reportVotesCount
-            if (finalized) {
-              console.log(
-                `↷ Skipping stock values for meeting ${mDoc?.primaryLegacyId || meeting.id} (finalized)`,
-              )
-              return
-            }
-          } catch (e) {
-            // proceed
-          }
-
           const holdingsLimit = meeting.holdingsLimit
 
           let stockId = getIdOfRelationField(meeting.stock)

@@ -217,13 +217,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     topicIndex,
                     voteDecision,
                     noParticipantDuty,
-                    comment: vote.comment || '',
-                    clientComment: vote.ccomment || '',
-                    committee: vote.committee === 1,
-                    conflict: vote.conflict === 1,
-                    relatedParty: vote.relatedParty === 1,
-                    personalInterest: vote.pInterest === 1,
-                    professionalFactor: vote.profFactor || '',
+                    // Map per-topic client comment to schema field 'voteReason'
+                    voteReason: vote.ccomment?.trim() || undefined,
+                    // Rename booleans to match Votes collection schema
+                    isInvestmentCommittee: vote.committee === 1,
+                    hasConflictOfInterest: vote.conflict === 1,
+                    isRelatedParty: vote.relatedParty === 1,
+                    hasPersonalInterest: vote.pInterest === 1,
                   }
                 })
 
