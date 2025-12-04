@@ -294,7 +294,7 @@ async function fetchAndProcessVotesData(
     const fullMeetings = await req.payload.find({
       select: {
         id: true,
-        meetingId: true,
+        primaryLegacyId: true,
         agenda: true,
         companies: true,
         funds: true,
@@ -421,7 +421,7 @@ async function fetchAndProcessVotesData(
     const fullMeetings = await req.payload.find({
       select: {
         id: true,
-        meetingId: true,
+        primaryLegacyId: true,
         agenda: true,
         companies: true,
         funds: true,

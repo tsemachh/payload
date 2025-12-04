@@ -90,8 +90,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('=== Holdings Migration Completed ===\n')
 
     // 11.1 Backfill Discontinued Holdings
-    console.log('\n=== Starting Discontinued Holdings Backfill ===')
-    await backfillDiscontinuedHoldings({ payload, req })
+    // console.log('\n=== Starting Discontinued Holdings Backfill ===')
+    // await backfillDiscontinuedHoldings({ payload, req })
     console.log('=== Discontinued Holdings Backfill Completed ===\n')
 
     // 18. Migrate Meeting Stock Values

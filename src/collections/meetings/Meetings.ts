@@ -140,7 +140,13 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'primaryLegacyId'],
+    listSearchableFields: [
+      'fullName',
+      'magnaId',
+      'invitationLink',
+      'primaryLegacyId',
+      'legacyIds',
+    ],
     defaultColumns: [
       'fullName',
       'type',
