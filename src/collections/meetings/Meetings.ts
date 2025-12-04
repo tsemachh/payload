@@ -119,6 +119,7 @@ export const Meetings: CollectionConfig = {
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
+        { name: 'hasRelatedStocks', width: '130px' },
       ],
       [
         { name: 'stock.type', width: '130px' },

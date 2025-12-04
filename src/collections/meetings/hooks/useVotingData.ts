@@ -15,6 +15,7 @@ interface Company {
   parentCompany?: string
   nominalValue: number
   percentageHolding: number
+  hasRelatedStock?: boolean
 }
 interface CompanyVoted extends Company {
   vote: {
@@ -159,6 +160,7 @@ export const useVotingData = () => {
             holdingValueInMillions: 0,
           }
 
+          let hasRelatedStock = false
           if (Array.isArray(data.fundsWithHolding)) {
             // Filter fundsWithHolding by company id to get quantity
             const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
@@ -171,6 +173,10 @@ export const useVotingData = () => {
               }, 0)
               // Calculate holding values using the imported function
               calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
+              // Check if any holding has fromRelatedStock set to true
+              hasRelatedStock = companyHoldings.some(
+                (holding: any) => holding.fromRelatedStock === true,
+              )
             }
           }
 
@@ -186,6 +192,7 @@ export const useVotingData = () => {
             parentCompanyId: parentCompanyId,
             nominalValue: calculatedValues.nominalValue,
             percentageHolding: calculatedValues.percentageHolding,
+            hasRelatedStock,
             vote: {
               id: vote.id,
               voter:
@@ -215,6 +222,7 @@ export const useVotingData = () => {
               holdingValueInMillions: 0,
             }
 
+            let hasRelatedStock = false
             if (Array.isArray(data.fundsWithHolding)) {
               // Filter fundsWithHolding by company id to get quantity
               const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
@@ -227,6 +235,10 @@ export const useVotingData = () => {
                 }, 0)
                 // Calculate holding values using the imported function
                 calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
+                // Check if any holding has fromRelatedStock set to true
+                hasRelatedStock = companyHoldings.some(
+                  (holding: any) => holding.fromRelatedStock === true,
+                )
               }
             }
 
@@ -241,6 +253,7 @@ export const useVotingData = () => {
               parentCompanyId: companyInfo.parentCompanyId,
               nominalValue: calculatedValues.nominalValue,
               percentageHolding: calculatedValues.percentageHolding,
+              hasRelatedStock,
             }
           })
           .filter((company) => company !== null) as Company[]
@@ -456,6 +469,7 @@ export const useVotingData = () => {
       voter: { header: 'מצביע', field: 'vote.voter' },
       voteTime: { header: 'זמן הצבעה', field: 'vote.votedAt' },
       actualVoteAction: { header: 'הצבעה בפועל', field: 'vote.reported' },
+      hasRelatedStock: { header: 'ניירות עוקבים', field: 'hasRelatedStock' },
       checksum: { header: 'Checksum', field: 'vote.checksum' },
     }
 
@@ -484,6 +498,8 @@ export const useVotingData = () => {
             } else if (columnKey === 'voteTime' && value) {
               value = new Date(value).toLocaleString('he-IL')
             } else if (columnKey === 'actualVoteAction') {
+              value = value ? '✅' : '❌'
+            } else if (columnKey === 'hasRelatedStock') {
               value = value ? '✅' : '❌'
             }
             return value.toString().includes(',') ? `"${value}"` : value
