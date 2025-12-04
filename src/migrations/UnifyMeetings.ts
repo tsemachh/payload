@@ -92,6 +92,8 @@ async function processMeetingGroup(
         .map((li: any) => (typeof li === 'string' ? li : li?.value))
         .filter(Boolean),
     )
+    // Track finalized across unified meetings: only true if ALL source meetings are finalized=true
+    let allFinalized = !!(meetingToKeep as any)?.finalized
     const removedMeetingIds: string[] = []
     let totalVotesMoved = 0
     let agendaChangesCount = 0
@@ -122,6 +124,9 @@ async function processMeetingGroup(
       if (incomingCompanies.length > 0) {
         incomingCompanies.forEach((c: any) => companiesSet.add(c as any))
       }
+
+      // Update finalized aggregator
+      allFinalized = allFinalized && !!(meetingToRemove as any)?.finalized
 
       // Merge funds from the removed meeting (ids) into accumulator
       const incomingFunds = (meetingToRemove.funds as any[]) || []
@@ -286,6 +291,8 @@ async function processMeetingGroup(
           funds: finalFunds,
           fundsWithHolding: finalFundsWithHolding as any,
           legacyIds: finalLegacyIds as any,
+          // finalized is unified: true only if all merged meetings were finalized=true; false otherwise
+          finalized: allFinalized,
           migrationComments: newMigrationComments,
         },
         req: {
