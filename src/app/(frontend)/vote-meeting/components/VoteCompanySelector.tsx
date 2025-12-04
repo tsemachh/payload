@@ -191,7 +191,7 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 {company.originalStockIds?.length ? (
                   <div className="flex flex-col">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-4 font-bold">
                       <div>נייר מקורי</div>
                       <div>ע׳ נקוב</div>
                     </div>
@@ -205,7 +205,7 @@ export default function VoteCompanySelector({
                 ) : (
                   <></>
                 )}
-                <div className="text-sm">
+                <div className="text-sm font-bold">
                   <p>
                     {`${company.originalStockIds?.length ? 'סה״כ' : 'ע׳ נקוב'} `}
                     {company.nominalValue.toLocaleString()}
