@@ -1,7 +1,7 @@
 'use client'
 import { Plus, Trash2, ChevronsUpDown, Check, ArchiveRestore } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useDocumentInfo } from '@payloadcms/ui'
+import { useDocumentInfo, toast } from '@payloadcms/ui'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -21,7 +21,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/app/(frontend)/components/ui/command'
-import { toast } from 'sonner'
 
 export const ManageMeetingCompanies = () => {
   const { id } = useDocumentInfo()
@@ -218,7 +217,7 @@ export const ManageMeetingCompanies = () => {
         if (result.existingFunds && result.existingFunds.length > 0) {
           message += `\n\nתיקים שנוספו: ${result.addedFunds.join(', ')}`
           message += `\n\nתיקים שכבר היו קיימים: ${result.existingFunds.join(', ')}`
-          toast.warning(message, { duration: 6000 })
+          toast.warning(message)
         } else {
           toast.success(message)
         }
@@ -241,7 +240,7 @@ export const ManageMeetingCompanies = () => {
         if (result.existingFunds && result.existingFunds.length > 0) {
           errorMessage += `\n\nתיקים קיימים: ${result.existingFunds.join(', ')}`
         }
-        toast.error(errorMessage, { duration: 6000 })
+        toast.error(errorMessage)
       }
     } catch (err) {
       console.error('Error adding company:', err)

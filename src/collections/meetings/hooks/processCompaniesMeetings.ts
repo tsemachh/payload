@@ -64,7 +64,24 @@ async function processMeeting(
   const flattenedHoldings = holdings.flat()
 
   if (flattenedHoldings.length === 0) {
-    req.payload.logger.info(`No holdings found for meeting ${meeting.id}, skipping update`)
+    const stockDetails = await req.payload.findByID({
+      collection: 'stocks',
+      id: getIdOfRelationField(meeting.stock) || '',
+      depth: 0,
+    })
+    req.payload.logger.error(
+      {
+        meetingId: meeting.id,
+        stock: {
+          id: stockDetails.id,
+          name: stockDetails.name,
+          isTracking: stockDetails.tradable,
+        },
+        holdingsLimit: meeting.holdingsLimit,
+        totalFunds: funds.length,
+      },
+      `No holdings found for ANY fund in meeting ${meeting.id} — skipping update`,
+    )
     return
   }
 
@@ -182,7 +199,6 @@ async function processMeeting(
     const companiesCount = Array.from(new Set(filteredCompIds)).length
     const fundsCount = filteredFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
-    console.log('-----------------')
 
     const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
     const data: Partial<Meeting> = {
@@ -191,9 +207,6 @@ async function processMeeting(
       fundsWithHolding: filteredFundsWithHolding,
       migrationComments,
     }
-    console.log('-----------------data.companies', data.companies)
-    console.log('-----------------data.funds', data.funds)
-    console.log('-----------------data.fundsWithHolding', data.fundsWithHolding)
 
     if (stockValue) data.stockValue = stockValue
     await req.payload.update({
