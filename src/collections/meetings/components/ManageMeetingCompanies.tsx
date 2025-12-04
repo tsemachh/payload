@@ -158,6 +158,7 @@ export const ManageMeetingCompanies = () => {
   const handleAddClick = async () => {
     const isForeign = await fetchStockDetails()
     if (isForeign) {
+      //TODORachelBra update for all socks after dvora change
       setShowStockSelection(true)
     }
     setShowAddModal(true)
@@ -371,11 +372,21 @@ export const ManageMeetingCompanies = () => {
     <div className="useTw space-y-6 p-6 text-base" dir="rtl">
       {/* Buttons */}
       <div className="flex gap-2 mb-4">
-        <Button onClick={handleAddClick} variant="default" className="gap-2">
+        <Button
+          onClick={(e) => {
+            e.preventDefault()
+            handleAddClick()
+          }}
+          variant="default"
+          className="gap-2"
+        >
           <Plus className="h-4 w-4" /> הוסף חברה
         </Button>
         <Button
-          onClick={() => setShowRemoveModal(true)}
+          onClick={(e) => {
+            e.preventDefault()
+            setShowRemoveModal(true)
+          }}
           variant="outline"
           className="gap-2 border-red-600 text-red-600 hover:bg-red-50"
         >
@@ -383,7 +394,10 @@ export const ManageMeetingCompanies = () => {
         </Button>
         {removedCompanies.length > 0 && (
           <Button
-            onClick={() => setShowRestoreModal(true)}
+            onClick={(e) => {
+              e.preventDefault()
+              setShowRestoreModal(true)
+            }}
             variant="outline"
             className="gap-2 border-green-600 text-green-600 hover:bg-green-50"
           >
@@ -777,7 +791,7 @@ export const ManageMeetingCompanies = () => {
                 align="end"
                 sideOffset={5}
               >
-                <Command className="useTw bg-white dark:bg-black">
+                <Command className="useTw opacity-100">
                   <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
                   <CommandList>
                     <CommandGroup
