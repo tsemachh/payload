@@ -53,27 +53,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Get the meeting ID from the sequence map
             const meetingId = meeting.id
 
-            // Finalized guard
-            try {
-              const mDoc = await payload.findByID({
-                collection: 'meetings',
-                id: meetingId,
-                depth: 0,
-              })
-              const finalized =
-                !!(mDoc as any)?.resultsConfirmationStatus &&
-                (mDoc as any)?.votesCount === (mDoc as any)?.reportVotesCount
-              if (finalized) {
-                console.log(
-                  `↷ Skipping meeting holdings for meeting ${mDoc?.primaryLegacyId || meetingId} (finalized)`,
-                )
-                skippedCount++
-                return
-              }
-            } catch (e) {
-              // proceed if fetch fails
-            }
-
             const meetingSeq = meeting.primaryLegacyId
 
             if (!meetingSeq) {
