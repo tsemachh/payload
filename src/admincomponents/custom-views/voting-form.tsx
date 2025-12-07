@@ -42,6 +42,7 @@ export interface VoteData {
   displayVotingRecommendation: boolean
   meeting: string
   meetingDate: string
+  meetingStockId: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -329,7 +330,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 </TableHead>
                 {isOriginal && (
                   <TableHead className="text-right w-32 text-gray-900 dark:text-white">
-                    נייר מקורי
+                    נייר עוקב
                   </TableHead>
                 )}
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
@@ -360,7 +361,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     </TableCell>
                     {isOriginal && (
                       <TableCell className="text-right text-base text-gray-900 dark:text-white">
-                        {fund.original?.stockId || ''}
+                        {fund.original?.stockId != voteData.meetingStockId
+                          ? fund.original?.stockId
+                          : ''}
                       </TableCell>
                     )}
                     <TableCell>
