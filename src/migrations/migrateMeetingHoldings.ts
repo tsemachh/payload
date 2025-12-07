@@ -24,12 +24,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
-    // Get all meetings from MongoDB
+    // Get all NON-finalized meetings from MongoDB
     const meetings = await payload.find({
       collection: 'meetings',
       select: {
         primaryLegacyId: true,
         stock: true,
+      },
+      where: {
+        finalized: { not_equals: true },
       },
       limit: 0,
       depth: 1,

@@ -528,19 +528,10 @@ export const Meetings: CollectionConfig = {
                 {
                   name: 'legacyIds',
                   label: 'מזהים בלגאסי (כללי)',
-                  type: 'array',
+                  type: 'text',
+                  hasMany: true,
                   index: true,
-                  labels: { singular: 'מזהה', plural: 'מזהים' },
-                  fields: [
-                    {
-                      name: 'value',
-                      label: 'מזהה',
-                      type: 'text',
-                      required: true,
-                      admin: { width: '140px' },
-                    },
-                  ],
-                  admin: { hidden: true },
+                  admin: { width: '330px', hidden: true },
                 },
                 {
                   name: 'magnaId',

@@ -87,11 +87,7 @@ async function processMeetingGroup(
       ...(((meetingToKeep as any).fundsWithHolding as any[]) || []),
     ]
     // Accumulator for legacyIds to append primaryLegacyId of removed meetings
-    const legacyIdSet = new Set<string>(
-      ((meetingToKeep as any).legacyIds || [])
-        .map((li: any) => (typeof li === 'string' ? li : li?.value))
-        .filter(Boolean),
-    )
+    const legacyIdSet = new Set<string>(((meetingToKeep as any).legacyIds || []).filter(Boolean))
     // Track finalized across unified meetings: only true if ALL source meetings are finalized=true
     let allFinalized = !!(meetingToKeep as any)?.finalized
     const removedMeetingIds: string[] = []
@@ -252,7 +248,7 @@ async function processMeetingGroup(
       const updatedAgenda = agendaMapGlobal ? Array.from(agendaMapGlobal.values()) : undefined
       const finalFunds = Array.from(fundsSet)
       const finalFundsWithHolding = fundsWithHoldingAcc
-      const finalLegacyIds = Array.from(legacyIdSet).map((v) => ({ value: v }))
+      const finalLegacyIds = Array.from(legacyIdSet)
 
       const existingMigrationComments = (meetingToKeep as any)?.migrationComments || ''
       const summaryHeader = `UnifyMeetings migration summary for key ${groupKey} on ${new Date().toISOString()}`
@@ -368,10 +364,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const allMeetings = await processMeetingsInBatches(payload, req)
     console.log(`Retrieved ${allMeetings.length} meetings in total`)
 
+    // Process only NON-finalized meetings for unification
+    const nonFinalizedMeetings = allMeetings.filter((m: any) => m?.finalized !== true)
+    console.log(
+      `Filtered to ${nonFinalizedMeetings.length} non-finalized meetings for duplicate detection`,
+    )
+
     // Group meetings by composite key
     const meetingsByKey = new Map<string, Meeting[]>()
 
-    for (const meeting of allMeetings) {
+    for (const meeting of nonFinalizedMeetings) {
       const key = generateMeetingKey(meeting)
 
       if (!meetingsByKey.has(key)) {
