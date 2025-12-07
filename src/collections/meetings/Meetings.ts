@@ -434,10 +434,6 @@ export const Meetings: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'stocks',
                   filterOptions: ({ siblingData, req, data, id }: any) => {
-                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
-                      return true
-                    }
-
                     const baseFilter: Record<string, any> = {
                       or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
                     }
@@ -446,9 +442,15 @@ export const Meetings: CollectionConfig = {
                       baseFilter.or.push({ id: { equals: data.stock } })
                     }
 
+                    const tradableFilter = { tradable: { equals: true } }
+
+                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
+                      return tradableFilter
+                    }
+
                     if (!siblingData?.meetingDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
@@ -458,11 +460,13 @@ export const Meetings: CollectionConfig = {
 
                     if (isFutureDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
-                    return baseFilter
+                    return {
+                      and: [baseFilter, tradableFilter],
+                    }
                   },
                   index: true,
                   required: true,
