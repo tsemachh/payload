@@ -86,18 +86,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Using meetings_days_retro=${days} days; date cutoff: ${dateCutoff}`)
     const meetingsQuery = `
         SELECT  [id]
-             ,[proofId]
-             ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
-             ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
-             ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
-             ,[stockID]
-             ,[location]
-             ,[mtype]
-             ,[link2]
-             ,[comments]
-             ,[ResultConfirm]
-             ,[ElectronicVoting]
-             ,[CommiteeRequest]
+                ,[proofId]
+                ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
+                ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
+                ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
+                ,[stockID]
+                ,[location]
+                ,[mtype]
+                ,[link2]
+                ,[comments]
+                ,[ResultConfirm]
+                ,[ElectronicVoting]
+                ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${dateCutoff}';
     `
     const meetingsResult = await pool.request().query(meetingsQuery)
@@ -117,7 +117,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              , a.[rec]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
-                 LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
+            LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
         ORDER by a.[mid], a.[id]
     `
     const agendaResult = await pool.request().query(agendaQuery)
@@ -271,7 +271,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           try {
             // Prepare meeting data with agenda inside the promise to avoid shared reference issues
             const meetingData: Partial<Meeting> = {
-              meetingId: `${currentRow.id}`,
+              primaryLegacyId: `${currentRow.id}`,
+              legacyIds: [{ value: `${currentRow.id}` }],
               stock: currentStockId as string,
               magnaId: currentRow.proofId,
               meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
@@ -301,7 +302,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               meetingData.invitationLink = currentRow.link2
             }
 
-            const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
+            const id = await getSequenceMeetingId(payload, meetingData.primaryLegacyId as string)
             if (id) {
               // Update Payload CMS
               await payload.update({

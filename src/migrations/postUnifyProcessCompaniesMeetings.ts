@@ -136,7 +136,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           //create dual meeting
           const dualMeeting = JSON.parse(JSON.stringify(mainMeeting))
           delete dualMeeting.id
-          delete dualMeeting.meetingId
+          delete dualMeeting.primaryLegacyId
           delete dualMeeting.dualMeeting
           delete dualMeeting.votes
           delete dualMeeting.votesCount

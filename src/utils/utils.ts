@@ -77,12 +77,12 @@ export async function getMeetingIdToSequenceMap(payload: BasePayload) {
       limit: 0,
       depth: 0,
       select: {
-        meetingId: true,
+        primaryLegacyId: true,
         id: true,
       },
     })
     if (data.docs.length > 0) {
-      data.docs.forEach((doc) => seqMap.set(doc.meetingId as string, doc.id))
+      data.docs.forEach((doc) => seqMap.set(doc.primaryLegacyId as string, doc.id))
     }
   } catch (error) {
     console.error('Error in query', error)
@@ -179,7 +179,7 @@ export async function getSequenceMeetingId(payload: BasePayload, meetingId: stri
       limit: 1,
       depth: 0,
       where: {
-        meetingId: { equals: meetingId },
+        primaryLegacyId: { equals: meetingId },
       },
     })
     if (data.docs.length > 0) id = data.docs[0].id
