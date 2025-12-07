@@ -23,7 +23,8 @@ import {
 } from '@/app/(frontend)/components/ui/command'
 
 export const ManageMeetingCompanies = () => {
-  const { id } = useDocumentInfo()
+  const { id, data } = useDocumentInfo()
+
   const router = useRouter()
 
   // Modal state
@@ -57,8 +58,9 @@ export const ManageMeetingCompanies = () => {
 
   // Fetch data
   useEffect(() => {
+    console.log('Current document id:', id)
     if (id) fetchMeetingData()
-  }, [id])
+  }, [id, data?.companies])
 
   const fetchMeetingData = async () => {
     try {
