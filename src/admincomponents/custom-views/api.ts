@@ -149,6 +149,7 @@ export async function getVoteData(
     const baseData = {
       company: { id: fundHold.company, name: companyIdToNameMap.get(fundHold?.company) },
       fund: { id: fundHold.fund, name: fundIdToNameMap.get(fundHold?.fund) },
+      fromRelatedStock: fundHold.fromRelatedStock,
     }
 
     if (fundHold.original && fundHold.original.length > 0) {
