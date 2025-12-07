@@ -1,0 +1,68 @@
+/**
+ * Utility functions for sorting companies by their defined order (fractional indexing)
+ */
+/**
+ * Sorts group entries by parent company order
+ * @param groupEntries Array of [parentCompany, subsidiaries] entries
+ * @param orderMap Map of company ID to order string
+ * @returns Sorted group entries
+ */
+export function sortGroupsByParentOrder<T extends { parentCompanyId?: string }>(
+  groupEntries: Array<[string, T[]]>,
+  orderMap: Map<string, string>,
+): Array<[string, T[]]> {
+  return groupEntries.sort(([parentCompanyA, subsidiariesA], [parentCompanyB, subsidiariesB]) => {
+    // Get the parent company ID from the first subsidiary in each group
+    const parentIdA = subsidiariesA[0]?.parentCompanyId || ''
+    const parentIdB = subsidiariesB[0]?.parentCompanyId || ''
+
+    const orderA = orderMap.get(parentIdA) ?? 'zzzzzzzzzzzzzzz'
+    const orderB = orderMap.get(parentIdB) ?? 'zzzzzzzzzzzzzzz'
+
+    return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
+  })
+}
+
+/**
+ * Sorts nested group entries (for voted companies with checksum groups)
+ * @param nestedGroupEntries Array of [parentCompany, checksumGroups] entries
+ * @param orderMap Map of company ID to order string
+ * @returns Sorted nested group entries
+ */
+export function sortNestedGroupsByParentOrder<T extends { parentCompanyId?: string }>(
+  nestedGroupEntries: Array<[string, Map<string, T[]>]>,
+  orderMap: Map<string, string>,
+): Array<[string, Map<string, T[]>]> {
+  return nestedGroupEntries.sort(
+    ([parentCompanyA, checksumGroupsA], [parentCompanyB, checksumGroupsB]) => {
+      // Get the parent company ID from the first company in the first checksum group
+      const firstCompaniesA = Array.from(checksumGroupsA.values())[0] || []
+      const firstCompaniesB = Array.from(checksumGroupsB.values())[0] || []
+
+      const parentIdA = firstCompaniesA[0]?.parentCompanyId || ''
+      const parentIdB = firstCompaniesB[0]?.parentCompanyId || ''
+
+      const orderA = orderMap.get(parentIdA) ?? 'zzzzzzzzzzzzzzz'
+      const orderB = orderMap.get(parentIdB) ?? 'zzzzzzzzzzzzzzz'
+
+      return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
+    },
+  )
+}
+
+/**
+ * Sorts companies within a group by their order
+ * @param companies Array of companies within a group
+ * @param orderMap Map of company ID to order string
+ * @returns Sorted companies
+ */
+export function sortCompaniesWithinGroup<T extends { id: string }>(
+  companies: T[],
+  orderMap: Map<string, string>,
+): T[] {
+  return [...companies].sort((a, b) => {
+    const orderA = orderMap.get(a.id) ?? 'zzzzzzzzzzzzzzz'
+    const orderB = orderMap.get(b.id) ?? 'zzzzzzzzzzzzzzz'
+    return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
+  })
+}
