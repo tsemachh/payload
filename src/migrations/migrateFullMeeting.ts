@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId } from '@/utils/utils'
+// import { getSequenceMeetingId } from '@/utils/utils'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
@@ -272,7 +272,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Prepare meeting data with agenda inside the promise to avoid shared reference issues
             const meetingData: Partial<Meeting> = {
               primaryLegacyId: `${currentRow.id}`,
-              legacyIds: [{ value: `${currentRow.id}` }],
+              legacyIds: [`${currentRow.id}`],
               stock: currentStockId as string,
               magnaId: currentRow.proofId,
               meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
@@ -284,7 +284,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: currentRow.comments,
               resultsConfirmationStatus: !!currentRow.ResultConfirm,
               electronicVotingEnabled: !!currentRow.ElectronicVoting,
-              finalized: finalized,
+              /*finalized: finalized,*/
               _status: 'published' as const,
               agenda: currentAgendaItems.map((item) => ({
                 text: item.text,
@@ -302,12 +302,30 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               meetingData.invitationLink = currentRow.link2
             }
 
-            const id = await getSequenceMeetingId(payload, meetingData.primaryLegacyId as string)
-            if (id) {
-              // Update Payload CMS
+            // Find existing meeting by legacyIds containing the MSSQL meeting id
+            const existingRes = await payload.find({
+              collection: 'meetings',
+              where: { legacyIds: { contains: String(currentRow.id) } },
+              select: { id: true, finalized: true },
+              limit: 1,
+              depth: 0,
+            })
+
+            const existing = existingRes?.docs?.[0] as any
+
+            if (existing?.finalized === true) {
+              // Strictly skip finalized meetings
+              console.log(
+                `Skipping update for meeting ${currentRow.id} (Mongo ${existing.id}) — finalized=true`,
+              )
+              return
+            }
+
+            if (existing?.id) {
+              // Update existing meeting
               await payload.update({
                 collection: 'meetings',
-                id: id,
+                id: existing.id,
                 data: meetingData,
                 req: {
                   ...req,
