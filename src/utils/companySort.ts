@@ -1,6 +1,9 @@
 /**
  * Utility functions for sorting companies by their defined order (fractional indexing)
  */
+
+import { VoteData } from '@/admincomponents/custom-views/voting-form'
+
 /**
  * Sorts group entries by parent company order
  * @param groupEntries Array of [parentCompany, subsidiaries] entries
@@ -64,5 +67,23 @@ export function sortCompaniesWithinGroup<T extends { id: string }>(
     const orderA = orderMap.get(a.id) ?? 'zzzzzzzzzzzzzzz'
     const orderB = orderMap.get(b.id) ?? 'zzzzzzzzzzzzzzz'
     return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
+  })
+}
+export const sortFundsData = (fundsData: VoteData['fundsData']) => {
+  return [...fundsData].sort((a, b) => {
+    const companyOrderA = a.company._order ?? 'zzzzzzzzzzzzzzz'
+    const companyOrderB = b.company._order ?? 'zzzzzzzzzzzzzzz'
+
+    const companyComparison =
+      companyOrderA < companyOrderB ? -1 : companyOrderA > companyOrderB ? 1 : 0
+
+    if (companyComparison !== 0) {
+      return companyComparison
+    }
+
+    const fundOrderA = a.fund._order ?? 'zzzzzzzzzzzzzzz'
+    const fundOrderB = b.fund._order ?? 'zzzzzzzzzzzzzzz'
+
+    return fundOrderA < fundOrderB ? -1 : fundOrderA > fundOrderB ? 1 : 0
   })
 }
