@@ -111,6 +111,7 @@ export const Meetings: CollectionConfig = {
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
         { name: '_status', width: '130px' },
+        { name: 'finalized', width: '130px' },
       ],
       [
         { name: 'electronicVotingEnabled', width: '130px' },
@@ -692,6 +693,7 @@ export const Meetings: CollectionConfig = {
                   name: 'finalized',
                   label: 'סופית',
                   type: 'checkbox',
+                  index: true,
                 },
               ],
             },
