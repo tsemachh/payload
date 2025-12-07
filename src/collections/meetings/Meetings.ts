@@ -140,13 +140,7 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-    listSearchableFields: [
-      'fullName',
-      'magnaId',
-      'invitationLink',
-      'primaryLegacyId',
-      'legacyIds',
-    ],
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'primaryLegacyId', 'legacyIds'],
     defaultColumns: [
       'fullName',
       'type',
@@ -694,6 +688,11 @@ export const Meetings: CollectionConfig = {
                     },
                   },
                 },
+                {
+                  name: 'finalized',
+                  label: 'סופית',
+                  type: 'checkbox',
+                },
               ],
             },
             {
@@ -914,11 +913,6 @@ export const Meetings: CollectionConfig = {
         {
           label: 'סדר יום',
           fields: [
-            {
-              name: 'finalized',
-              label: 'הסתיימה',
-              type: 'checkbox',
-            },
             {
               name: 'agenda',
               label: 'נושאים',
