@@ -22,8 +22,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
-    // Get all meetings
-    console.log('Fetching all meetings...')
+    // Get all NON-finalized meetings missing stockValue
+    console.log('Fetching all non-finalized meetings (missing stockValue)...')
     const meetings = await payload.find({
       collection: 'meetings',
       select: {
@@ -32,7 +32,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         type: true,
       },
       where: {
-        stockValue: { exists: false },
+        and: [{ stockValue: { exists: false } }, { finalized: { not_equals: true } }],
       },
       limit: 0,
       depth: 1,

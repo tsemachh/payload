@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
-import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
+import { getCompanyIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
 import { createMSSqlPool } from '@/migrations/utils/utils'
@@ -55,8 +55,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const meetings = meetingsResult.recordset
     console.log(`Found ${meetings.length} meetings to process`)
 
-    const seqMap = await getMeetingIdToSequenceMap(req.payload)
-
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
@@ -71,17 +69,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       promises.push(
         promisePool.add(async () => {
           try {
-            // Find corresponding meeting in MongoDB
-            const mongoMeetingId = seqMap.get(meeting.id.toString())
+            // Find corresponding meeting in MongoDB by legacyIds and ensure not finalized
+            const mongoMeetingRes = await payload.find({
+              collection: 'meetings',
+              where: {
+                and: [
+                  { legacyIds: { contains: meeting.id.toString() } },
+                  { finalized: { not_equals: true } },
+                ],
+              },
+              select: { id: true, finalized: true },
+              limit: 1,
+              depth: 0,
+            })
+
+            const mongoMeetingId = mongoMeetingRes?.docs?.[0]?.id
 
             if (!mongoMeetingId) {
-              console.log(`Meeting with ID ${meeting.id} not found in MongoDB`)
+              console.log(
+                `Meeting with legacyId ${meeting.id} not found or is finalized in MongoDB; skipping votes`,
+              )
               skippedCount++
               await logMigrationFault({
                 payload,
                 type: 'vote',
                 typeId: `meeting-${meeting.id}`,
-                comments: `Meeting with ID ${meeting.id} not found in MongoDB and votes cannot be migrated`,
+                comments: `Meeting with legacyId ${meeting.id} not found or is finalized; votes cannot be migrated`,
                 row: meeting,
                 severity: 'warning',
               })

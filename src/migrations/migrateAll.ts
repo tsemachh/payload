@@ -12,6 +12,7 @@ import { up as migrateRecommendationReasons } from './migrateRecommendationReaso
 import { up as migrateMeetingHoldings } from './migrateMeetingHoldings'
 import { up as migrateMeetingStockValues } from './migrateMeetingStockValues'
 import { up as migrateVoteCounts } from './migrateVoteCounts'
+import { up as setFinalized } from './setFinalized'
 import { up as unifyMeetings } from './UnifyMeetings'
 import { up as postUnifyProcessCompaniesMeetings } from './postUnifyProcessCompaniesMeetings'
 
@@ -133,6 +134,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Magna Meetings Migration ===')
     await migrateMagnaMeetings({ payload, req })
     console.log('=== Magna Meetings Migration Completed ===\n')
+
+    // Recalculate finalized flags at the end
+    console.log('\n=== Starting setFinalized Migration ===')
+    await setFinalized({ payload, req })
+    console.log('=== setFinalized Migration Completed ===\n')
 
     console.log('migrateAll process completed successfully!')
   } catch (error) {
