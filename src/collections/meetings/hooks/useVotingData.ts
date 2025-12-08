@@ -8,7 +8,7 @@ import {
   groupCompaniesByParentAndChecksum,
 } from '@/utils/voteGrouping'
 import { getParentCompanyNamesByIds } from '@/utils/utils'
-import { sortGroupsByParentOrder, sortNestedGroupsByParentOrder, sortCompaniesWithinGroup } from '@/utils/companySort'
+import { sortGroupsByParentOrder, sortNestedGroupsByParentOrder, sortCompaniesWithinGroup, sortChecksumGroupsByFirstCompanyOrder } from '@/utils/companySort'
 
 interface Company {
   id: string
@@ -455,7 +455,13 @@ export const useVotingData = () => {
 
       // Add checksum subgroups only if parent company group is not collapsed
       if (!collapsedVotedGroups.has(parentGroupId)) {
-        Array.from(checksumGroups.entries()).forEach(([checksum, checksumCompanies]) => {
+        // ✅ Sort checksum groups by the _order of the first company in each group
+        const sortedChecksumEntries = sortChecksumGroupsByFirstCompanyOrder(
+          Array.from(checksumGroups.entries()),
+          companyOrderMap
+        )
+
+        sortedChecksumEntries.forEach(([checksum, checksumCompanies]) => {
           const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
           checksumGroupIndex++
 

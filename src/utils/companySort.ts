@@ -29,6 +29,9 @@ export function sortGroupsByParentOrder<T extends { parentCompanyId?: string }>(
 
 /**
  * Sorts nested group entries (for voted companies with checksum groups)
+ * This sorts the parent company groups by their order.
+ * Note: Checksum groups within each parent should be sorted separately in the calling code
+ * by the first company's order in each checksum group.
  * @param nestedGroupEntries Array of [parentCompany, checksumGroups] entries
  * @param orderMap Map of company ID to order string
  * @returns Sorted nested group entries
@@ -68,6 +71,26 @@ export function sortCompaniesWithinGroup<T extends { id: string }>(
     const orderA = orderMap.get(a.id) ?? ORDER_MAX_SENTINEL
     const orderB = orderMap.get(b.id) ?? ORDER_MAX_SENTINEL
     return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
+  })
+}
+
+/**
+ * Sorts checksum group entries by the order of the first company in each group
+ * This ensures that when multiple companies under the same parent have different checksums,
+ * they appear in the correct order based on their _order field
+ * @param checksumEntries Array of [checksum, companies] entries
+ * @param orderMap Map of company ID to order string
+ * @returns Sorted checksum entries
+ */
+export function sortChecksumGroupsByFirstCompanyOrder<T extends { id: string }>(
+  checksumEntries: Array<[string, T[]]>,
+  orderMap: Map<string, string>,
+): Array<[string, T[]]> {
+  return checksumEntries.sort(([_checksumA, companiesA], [_checksumB, companiesB]) => {
+    const firstCompanyOrderA = orderMap.get(companiesA[0]?.id) ?? ORDER_MAX_SENTINEL
+    const firstCompanyOrderB = orderMap.get(companiesB[0]?.id) ?? ORDER_MAX_SENTINEL
+    
+    return firstCompanyOrderA < firstCompanyOrderB ? -1 : firstCompanyOrderA > firstCompanyOrderB ? 1 : 0
   })
 }
 export const sortFundsData = (fundsData: VoteData['fundsData']) => {
