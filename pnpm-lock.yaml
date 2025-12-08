@@ -141,8 +141,8 @@ importers:
         specifier: ^1.0.8
         version: 1.0.8
       '@shefing/quickfilter':
-        specifier: ^1.0.88
-        version: 1.0.88(postcss@8.5.6)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^1.0.92
+        version: 1.0.92(postcss@8.5.6)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@shefing/reset-list-view':
         specifier: ^0.2.13
         version: 0.2.13(payload@3.65.0(graphql@16.12.0)(typescript@5.7.3))
@@ -2191,8 +2191,8 @@ packages:
   '@shefing/field-type-component-override@1.0.8':
     resolution: {integrity: sha512-inozpsHxasWJv+FeDzYOTj2zYuGTVaSKJ/I8oduRVtYDwHJdHzCRRPqs40utSHod2/QggjPlQiYWs0hkpfzbWg==}
 
-  '@shefing/quickfilter@1.0.88':
-    resolution: {integrity: sha512-Z9kzqWAK3xi5cJRJghaDQYc07tIpMRmmtirlDaiWsyAhXoz8an7L26hJ6bRdiu+OxdheMHlwEUw0RLnI0Dr6Ng==}
+  '@shefing/quickfilter@1.0.92':
+    resolution: {integrity: sha512-0J9756Cn8yq9hDDxJGtnOhkg8hTNmwjCZRKe2KPizABNK8RscbHMto7P1WJ9wibZ2tpZEP38/Nli8DX3x+lJ0w==}
 
   '@shefing/reset-list-view@0.2.13':
     resolution: {integrity: sha512-cMW6Zu6maXl+uTGLeo3qAp3eLZqY2maFugAMlS1+5EoHBakBfhh892Na7gR47c+CSYFyG8xzqE4oQWw61dmVlw==}
@@ -9328,7 +9328,7 @@ snapshots:
 
   '@shefing/field-type-component-override@1.0.8': {}
 
-  '@shefing/quickfilter@1.0.88(postcss@8.5.6)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@shefing/quickfilter@1.0.92(postcss@8.5.6)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
