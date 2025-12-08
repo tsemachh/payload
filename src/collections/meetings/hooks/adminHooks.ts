@@ -12,8 +12,8 @@ export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   req,
 }) => {
   if (operation == 'create') {
-    if (!data.meetingId) {
-      data.meetingId = `${Math.floor(Math.random() * 1000000)}`
+    if (!data.primaryLegacyId) {
+      data.primaryLegacyId = `${Math.floor(Math.random() * 1000000)}`
     }
   }
   return data

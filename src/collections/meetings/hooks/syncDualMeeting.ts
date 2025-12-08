@@ -3,7 +3,7 @@ import { Payload } from 'payload'
 const hasRelevantChanges = (currentDoc: any, previousDoc: any) => {
   const fieldsToCheck = [
     'type',
-    'meetingId',
+    'primaryLegacyId',
     'magnaId',
     'invitationLink',
     'invitationDocument',
@@ -132,8 +132,8 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
 
     const changeDescription =
       changesDescription.length > 0
-        ? `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id}): ${changesDescription.join(', ')}`
-        : `סנכרון שינויים מאסיפה מקורית (${currentDoc.meetingId || currentDoc.id})`
+        ? `סנכרון שינויים מאסיפה מקורית (${currentDoc.primaryLegacyId || currentDoc.id}): ${changesDescription.join(', ')}`
+        : `סנכרון שינויים מאסיפה מקורית (${currentDoc.primaryLegacyId || currentDoc.id})`
 
     migrationComments = `${changeDate} - [sync] ${changeDescription}`
 

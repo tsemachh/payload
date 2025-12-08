@@ -463,7 +463,7 @@ export async function upsertStockValueFromImport(
       data: stockValue as StockValue,
       req: {
         ...req,
-        context: { ...req.context, from: 'migration', process: 'migrateStockValue' },
+        context: { ...req.context, from: 'migration' },
       },
     })
     valueId = newStockValue?.id

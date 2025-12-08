@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
-import { getCompanyIdToSequenceMap, getMeetingIdToSequenceMap } from '@/utils/utils'
+import { getCompanyIdToSequenceMap } from '@/utils/utils'
 import { Vote } from '@/payload-types'
 import { PromisePool } from '@/utils/promisePool'
 import { createMSSqlPool } from '@/migrations/utils/utils'
@@ -47,19 +47,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const request = pool.request()
     request.input('dateCutoff', sql.VarChar, dateCutoff)
     const meetingsResult = await request.query(`
-        SELECT id
-        FROM [dbEmda].[dbo].[meetings] WHERE mdate > @dateCutoff;
+      SELECT id
+      FROM [dbEmda].[dbo].[meetings]
+      WHERE mdate > @dateCutoff;
     `)
 
     const meetings = meetingsResult.recordset
     console.log(`Found ${meetings.length} meetings to process`)
 
-    const seqMap = await getMeetingIdToSequenceMap(req.payload)
-
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
-
+    let skippedVotedCount = 0
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
@@ -70,17 +69,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       promises.push(
         promisePool.add(async () => {
           try {
-            // Find corresponding meeting in MongoDB
-            const mongoMeetingId = seqMap.get(meeting.id.toString())
+            // Find corresponding meeting in MongoDB by legacyIds and ensure not finalized
+            const mongoMeetingRes = await payload.find({
+              collection: 'meetings',
+              where: {
+                and: [
+                  { legacyIds: { contains: meeting.id.toString() } },
+                  { finalized: { not_equals: true } },
+                ],
+              },
+              select: { id: true, finalized: true },
+              limit: 1,
+              depth: 0,
+            })
+
+            const mongoMeetingId = mongoMeetingRes?.docs?.[0]?.id
 
             if (!mongoMeetingId) {
-              console.log(`Meeting with ID ${meeting.id} not found in MongoDB`)
+              console.log(
+                `Meeting with legacyId ${meeting.id} not found or is finalized in MongoDB; skipping votes`,
+              )
               skippedCount++
               await logMigrationFault({
                 payload,
                 type: 'vote',
                 typeId: `meeting-${meeting.id}`,
-                comments: `Meeting with ID ${meeting.id} not found in MongoDB and votes cannot be migrated`,
+                comments: `Meeting with legacyId ${meeting.id} not found or is finalized; votes cannot be migrated`,
                 row: meeting,
                 severity: 'warning',
               })
@@ -91,9 +105,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const agendaRequest = pool?.request()
             agendaRequest?.input('meetingId', sql.Int, meeting.id)
             const agendaResult = await agendaRequest?.query(`
-                SELECT id
-                FROM [dbEmda].[dbo].[meetingagenda]
-                WHERE mid = @meetingId
+              SELECT id
+              FROM [dbEmda].[dbo].[meetingagenda]
+              WHERE mid = @meetingId
             `)
 
             const agendaItems = agendaResult?.recordset
@@ -134,7 +148,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                   continue
                 }
-
+                const vote = await payload.find({
+                  collection: 'votes',
+                  select: { meeting: true },
+                  where: {
+                    meeting: { equals: mongoMeetingId },
+                    company: { equals: mongoCompanyId },
+                  },
+                  limit: 0,
+                  depth: 0,
+                })
+                if (vote.docs.length > 0) {
+                  console.warn(
+                    `Vote for company${mongoCompanyId}  and ${mongoMeetingId} already exists`,
+                  )
+                  skippedVotedCount++
+                  continue
+                }
                 // Get voting data for this company and meeting using stored procedure
                 const votingResult = await pool
                   ?.request()
@@ -166,16 +196,15 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 messageRequest?.input('meetingId', sql.Int, meeting.id)
                 messageRequest?.input('firmId', sql.Int, company.firmid)
                 const userMeetingMessageResult = await messageRequest?.query(`
-                  SELECT
-                      umm.Message
+                  SELECT umm.Message
                   FROM
-                      [dbEmda].[dbo].[UserMeetingMessage] umm
-                  INNER JOIN
-                      [dbEmda].[dbo].[userstofirms] utf
-                      ON umm.userId = utf.userID
+                    [dbEmda].[dbo].[UserMeetingMessage] umm
+                    INNER JOIN
+                    [dbEmda].[dbo].[userstofirms] utf
+                  ON umm.userId = utf.userID
                   WHERE
-                      umm.MeetingId = @meetingId
-                      AND utf.firmID = @firmId
+                    umm.MeetingId = @meetingId
+                    AND utf.firmID = @firmId
                 `)
                 const topLevelClientComment =
                   userMeetingMessageResult?.recordset?.[0]?.Message || ''
@@ -276,6 +305,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Successfully processed: ${successCount}`)
     console.log(`Failed processing: ${errorCount}`)
     console.log(`Skipped (meeting not found): ${skippedCount}`)
+    console.log(`Skipped (Vote exists): ${skippedVotedCount}`)
     console.log('Votes migration completed successfully.')
   } catch (error) {
     console.error('Critical error during votes migration:', error)

@@ -101,6 +101,7 @@ export const Meetings: CollectionConfig = {
   custom: {
     defaultFilter: {
       meetingDate: 'todayAndFuture',
+      _status: { equals: 'published' },
     },
     filterList: [
       [
@@ -110,6 +111,7 @@ export const Meetings: CollectionConfig = {
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
         { name: '_status', width: '130px' },
+        { name: 'finalized', width: '130px' },
       ],
       [
         { name: 'electronicVotingEnabled', width: '130px' },
@@ -139,7 +141,7 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'primaryLegacyId', 'legacyIds'],
     defaultColumns: [
       'fullName',
       'type',
@@ -432,10 +434,6 @@ export const Meetings: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'stocks',
                   filterOptions: ({ siblingData, req, data, id }: any) => {
-                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
-                      return true
-                    }
-
                     const baseFilter: Record<string, any> = {
                       or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
                     }
@@ -444,9 +442,15 @@ export const Meetings: CollectionConfig = {
                       baseFilter.or.push({ id: { equals: data.stock } })
                     }
 
+                    const tradableFilter = { tradable: { equals: true } }
+
+                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
+                      return tradableFilter
+                    }
+
                     if (!siblingData?.meetingDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
@@ -456,11 +460,13 @@ export const Meetings: CollectionConfig = {
 
                     if (isFutureDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
-                    return baseFilter
+                    return {
+                      and: [baseFilter, tradableFilter],
+                    }
                   },
                   index: true,
                   required: true,
@@ -513,11 +519,19 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'meetingId',
-                  label: 'מספר אסיפה',
+                  name: 'primaryLegacyId',
+                  label: 'מזהה לגאסי (ראשי)',
                   type: 'text',
                   index: true,
-                  admin: { width: '100px', hidden: true },
+                  admin: { width: '140px', hidden: true },
+                },
+                {
+                  name: 'legacyIds',
+                  label: 'מזהים בלגאסי (כללי)',
+                  type: 'text',
+                  hasMany: true,
+                  index: true,
+                  admin: { width: '330px', hidden: true },
                 },
                 {
                   name: 'magnaId',
@@ -670,6 +684,12 @@ export const Meetings: CollectionConfig = {
                     },
                   },
                 },
+                {
+                  name: 'finalized',
+                  label: 'סופית',
+                  type: 'checkbox',
+                  index: true,
+                },
               ],
             },
             {
@@ -732,7 +752,7 @@ export const Meetings: CollectionConfig = {
                   relationTo: 'stock-values',
                   label: 'ערך נייר מתאריך',
                   hasMany: false,
-                  required: true,
+                  required: false,
                   admin: {
                     width: '300px',
                     disableListColumn: true,
@@ -890,12 +910,6 @@ export const Meetings: CollectionConfig = {
         {
           label: 'סדר יום',
           fields: [
-            {
-              name: 'finalized',
-              label: 'הסתיימה',
-              type: 'checkbox',
-              admin: { disableListColumn: true, hidden: true },
-            },
             {
               name: 'agenda',
               label: 'נושאים',
@@ -1256,7 +1270,7 @@ export const Meetings: CollectionConfig = {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
-            delete dualMeeting.meetingId
+            delete dualMeeting.primaryLegacyId
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
             dualMeeting._status = 'published'

@@ -5,14 +5,17 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   console.log('Starting post-unify enrichment for meetings with no holdings...')
 
   try {
-    // Find meetings with no fundsWithHolding (missing or empty)
+    // Find NON-finalized meetings with no fundsWithHolding (missing or empty)
     const result = await payload.find({
       collection: 'meetings',
       select: {
         fullName: true,
       },
       where: {
-        or: [{ fundsWithHolding: { exists: false } }, { 'fundsWithHolding.id': { exists: false } }],
+        and: [
+          { finalized: { not_equals: true } },
+          { or: [{ fundsWithHolding: { exists: false } }, { 'fundsWithHolding.id': { exists: false } }] },
+        ],
       },
       limit: 0,
       depth: 0,
@@ -37,13 +40,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Connect dual meetings
     console.log('Starting dual meeting connection...')
 
-    // Find all main meetings that have dual stock
+    // Find all NON-finalized main meetings that have dual stock
     const mainMeetingsResult = await payload.find({
       collection: 'meetings',
       where: {
-        hasDualStock: {
-          equals: true,
-        },
+        and: [
+          { hasDualStock: { equals: true } },
+          { finalized: { not_equals: true } },
+        ],
       },
       limit: 0,
       depth: 1,
@@ -70,21 +74,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         // Zero out seconds and milliseconds for comparison
         mainMeetingDate.setSeconds(0, 0)
 
-        // Find meetings with the dual stock and matching date
+        // Find NON-finalized meetings with the dual stock and matching date
         const dualMeetingsResult = await payload.find({
           collection: 'meetings',
           where: {
             and: [
-              {
-                stock: {
-                  equals: dualStockId,
-                },
-              },
-              {
-                meetingDate: {
-                  exists: true,
-                },
-              },
+              { stock: { equals: dualStockId } },
+              { meetingDate: { exists: true } },
+              { finalized: { not_equals: true } },
             ],
           },
           select: {
@@ -136,7 +133,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           //create dual meeting
           const dualMeeting = JSON.parse(JSON.stringify(mainMeeting))
           delete dualMeeting.id
-          delete dualMeeting.meetingId
+          delete dualMeeting.primaryLegacyId
           delete dualMeeting.dualMeeting
           delete dualMeeting.votes
           delete dualMeeting.votesCount

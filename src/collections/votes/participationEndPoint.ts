@@ -186,7 +186,7 @@ function buildWhereConditions(params: VotesQueryParams, userCompanies: string[])
   if (searchTrim) {
     whereConditions.push({
       or: [
-        { 'meeting.meetingId': { contains: searchTrim } },
+        { 'meeting.primaryLegacyId': { contains: searchTrim } },
         { 'meeting.stock.stockId': { contains: searchTrim } },
         { 'meeting.stock.name': { contains: searchTrim } },
         { 'meeting.stock.symbol': { contains: searchTrim } },
@@ -294,7 +294,7 @@ async function fetchAndProcessVotesData(
     const fullMeetings = await req.payload.find({
       select: {
         id: true,
-        meetingId: true,
+        primaryLegacyId: true,
         agenda: true,
         companies: true,
         funds: true,
@@ -421,7 +421,7 @@ async function fetchAndProcessVotesData(
     const fullMeetings = await req.payload.find({
       select: {
         id: true,
-        meetingId: true,
+        primaryLegacyId: true,
         agenda: true,
         companies: true,
         funds: true,

@@ -18,8 +18,8 @@
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\"",
-    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=8192\" payload migrate ",
-    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=8192\" payload migrate "
+    "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=16192\" payload migrate ",
+    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=16384\" payload migrate "
   },
   "dependencies": {
     "@logtail/browser": "^0.5.6",
@@ -82,6 +82,7 @@
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.5.2",
     "exceljs": "^4.4.0",
+    "fractional-indexing": "^3.2.0",
     "framer-motion": "^12.4.7",
     "graphql": "^16.8.1",
     "iconv-lite": "^0.6.3",
