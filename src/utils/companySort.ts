@@ -10,6 +10,7 @@ import { VoteData } from '@/admincomponents/custom-views/voting-form'
  * @param orderMap Map of company ID to order string
  * @returns Sorted group entries
  */
+export const ORDER_MAX_SENTINEL ='zzzzzzzzzzzzzzz'
 export function sortGroupsByParentOrder<T extends { parentCompanyId?: string }>(
   groupEntries: Array<[string, T[]]>,
   orderMap: Map<string, string>,
@@ -19,8 +20,8 @@ export function sortGroupsByParentOrder<T extends { parentCompanyId?: string }>(
     const parentIdA = subsidiariesA[0]?.parentCompanyId || ''
     const parentIdB = subsidiariesB[0]?.parentCompanyId || ''
 
-    const orderA = orderMap.get(parentIdA) ?? 'zzzzzzzzzzzzzzz'
-    const orderB = orderMap.get(parentIdB) ?? 'zzzzzzzzzzzzzzz'
+    const orderA = orderMap.get(parentIdA) ?? ORDER_MAX_SENTINEL
+    const orderB = orderMap.get(parentIdB) ?? ORDER_MAX_SENTINEL
 
     return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
   })
@@ -45,8 +46,8 @@ export function sortNestedGroupsByParentOrder<T extends { parentCompanyId?: stri
       const parentIdA = firstCompaniesA[0]?.parentCompanyId || ''
       const parentIdB = firstCompaniesB[0]?.parentCompanyId || ''
 
-      const orderA = orderMap.get(parentIdA) ?? 'zzzzzzzzzzzzzzz'
-      const orderB = orderMap.get(parentIdB) ?? 'zzzzzzzzzzzzzzz'
+      const orderA = orderMap.get(parentIdA) ?? ORDER_MAX_SENTINEL
+      const orderB = orderMap.get(parentIdB) ?? ORDER_MAX_SENTINEL
 
       return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
     },
@@ -64,15 +65,15 @@ export function sortCompaniesWithinGroup<T extends { id: string }>(
   orderMap: Map<string, string>,
 ): T[] {
   return [...companies].sort((a, b) => {
-    const orderA = orderMap.get(a.id) ?? 'zzzzzzzzzzzzzzz'
-    const orderB = orderMap.get(b.id) ?? 'zzzzzzzzzzzzzzz'
+    const orderA = orderMap.get(a.id) ?? ORDER_MAX_SENTINEL
+    const orderB = orderMap.get(b.id) ?? ORDER_MAX_SENTINEL
     return orderA < orderB ? -1 : orderA > orderB ? 1 : 0
   })
 }
 export const sortFundsData = (fundsData: VoteData['fundsData']) => {
   return [...fundsData].sort((a, b) => {
-    const companyOrderA = a.company._order ?? 'zzzzzzzzzzzzzzz'
-    const companyOrderB = b.company._order ?? 'zzzzzzzzzzzzzzz'
+    const companyOrderA = a.company._order ?? ORDER_MAX_SENTINEL
+    const companyOrderB = b.company._order ?? ORDER_MAX_SENTINEL
 
     const companyComparison =
       companyOrderA < companyOrderB ? -1 : companyOrderA > companyOrderB ? 1 : 0
@@ -81,8 +82,8 @@ export const sortFundsData = (fundsData: VoteData['fundsData']) => {
       return companyComparison
     }
 
-    const fundOrderA = a.fund._order ?? 'zzzzzzzzzzzzzzz'
-    const fundOrderB = b.fund._order ?? 'zzzzzzzzzzzzzzz'
+    const fundOrderA = a.fund._order ?? ORDER_MAX_SENTINEL
+    const fundOrderB = b.fund._order ?? ORDER_MAX_SENTINEL
 
     return fundOrderA < fundOrderB ? -1 : fundOrderA > fundOrderB ? 1 : 0
   })
