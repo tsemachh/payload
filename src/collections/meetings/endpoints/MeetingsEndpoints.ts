@@ -48,6 +48,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   stockMarketValue: true,
   invitationLink: true,
   votes: true,
+  hasRelatedStocks: true,
 }
 
 /**
@@ -126,7 +127,7 @@ function createRegularFilters(filters: Record<string, string[]>) {
     if (values && values.length > 0) {
       // Map frontend field names to database field names
       const dbField = getDbFieldName(field)
-
+      //handle fromRelatedStock filter
       if (field === 'meetingState') {
         conditions.push({
           state: { in: values },
@@ -616,6 +617,7 @@ function createMeetingDataObject(
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
     votes: meeting.votes || [],
+    fromRelatedStock: meeting.hasRelatedStocks || false,
   }
 }
 
@@ -733,6 +735,7 @@ async function processMeetingsData(
             nominalValue,
             parentCompany,
             originalStockIds,
+            fromRelatedStock: match.fromRelatedStock,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
@@ -759,6 +762,7 @@ async function processMeetingsData(
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
           originalStockIds: fund.originalStockIds,
+          fromRelatedStock: fund.fromRelatedStock || false,
         }
         if (parentCompaniesMap.has(parentCompanyID)) {
           parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
@@ -792,6 +796,7 @@ async function processMeetingsData(
           const originalStockIds = [
             ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
           ]
+          const fromRelatedStock = funds.some((fund) => fund.fromRelatedStock)
 
           return {
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
@@ -800,6 +805,7 @@ async function processMeetingsData(
             nominalValue: totalNominalValue,
             originalStockIds,
             funds,
+            fromRelatedStock,
           }
         },
       )
@@ -887,7 +893,7 @@ async function processMeetingsData(
         )
         req?.payload.logger.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId
+            meeting.meetingId,
         )
         return null
       }

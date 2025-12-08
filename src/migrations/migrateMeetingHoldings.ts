@@ -162,14 +162,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               if (fundId) {
                 const verifiedHoldings =
                   holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
-                fromRelatedStock = holding.originalDataArray.some(
-                  (o: any) => o.stockId != meeting.stockId,
-                )
+
                 fundsWithHolding.push({
                   company: getCompanyIdFromFundId(fundId),
                   fund: fundId,
                   quantity: holding.qty,
-                  fromRelatedStock,
                   // Reset ownedQuantity when verifiedHoldings is true or null
                   ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
                   verifiedHoldings,

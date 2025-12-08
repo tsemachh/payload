@@ -16,6 +16,7 @@ export type MeetingTableDataType = {
   companyName: string //שם החברה
   stockTradable: boolean //האם נסחר
   stockOrigin: StockOrigin // מקור נייר הערך
+  fromRelatedStock: boolean // ניירות עוקבים
   marketValue: number //שווי שוק
   nominalValue: number // ערך נקוב ליום קובע
   percentageHolding: number //אחוז החזקות
@@ -52,6 +53,7 @@ export type CompanyTableDate = {
   nominalValue: number
   funds: FundType[]
   originalStockIds?: any[]
+  fromRelatedStock: boolean
 }
 
 export type FundType = {
@@ -63,6 +65,7 @@ export type FundType = {
   parentCompany?: TreeCompanyType // Parent company structure
   passiveFund?: boolean
   originalStockIds?: any[]
+  fromRelatedStock: boolean
 }
 
 export type AgendasType = {
