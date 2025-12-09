@@ -162,23 +162,36 @@ function createRegularFilters(filters: Record<string, string[]>) {
       } else if (field === 'electronicVotingEnabled') {
         if (values[0] == 'noOptionSelect') {
           conditions.push({
-            isDualStock: { equals: true },
+            electronicVotingEnabled: { equals: true },
           })
           conditions.push({
-            isDualStock: { equals: false },
+            electronicVotingEnabled: { equals: false },
           })
         }
         const booleanValues = values.map((v) => v === 'true')
         conditions.push({
           electronicVotingEnabled: { in: booleanValues },
         })
+      } else if (field === 'fromRelatedStock') {
+        if (values[0] == 'noOptionSelect') {
+          conditions.push({
+            fromRelatedStock: { equals: true },
+          })
+          conditions.push({
+            fromRelatedStock: { equals: false },
+          })
+        }
+        const booleanValues = values.map((v) => v === 'true')
+        conditions.push({
+          fromRelatedStock: { in: booleanValues },
+        })
       } else if (field === 'resultsConfirmationStatus') {
         if (values[0] == 'noOptionSelect') {
           conditions.push({
-            isDualStock: { equals: true },
+            resultsConfirmationStatus: { equals: true },
           })
           conditions.push({
-            isDualStock: { equals: false },
+            resultsConfirmationStatus: { equals: false },
           })
         }
         const booleanValues = values.map((v) => v === 'true')
@@ -188,10 +201,10 @@ function createRegularFilters(filters: Record<string, string[]>) {
       } else if (field === 'stockTradable') {
         if (values[0] == 'noOptionSelect') {
           conditions.push({
-            isDualStock: { equals: true },
+            'stock.tradable': { equals: true },
           })
           conditions.push({
-            isDualStock: { equals: false },
+            'stock.tradable': { equals: false },
           })
         }
         const booleanValues = values.map((v) => v === 'true')
@@ -201,10 +214,10 @@ function createRegularFilters(filters: Record<string, string[]>) {
       } else if (field === 'committeeInitiated') {
         if (values[0] == 'noOptionSelect') {
           conditions.push({
-            isDualStock: { equals: true },
+            'stock.isFinancial': { equals: true },
           })
           conditions.push({
-            isDualStock: { equals: false },
+            'stock.isFinancial': { equals: false },
           })
         }
         const booleanValues = values.map((v) => v === 'true')
