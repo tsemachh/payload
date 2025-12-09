@@ -48,6 +48,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   stockMarketValue: true,
   invitationLink: true,
   votes: true,
+  relatedQuestions: true,
 }
 
 /**
@@ -577,6 +578,23 @@ function createMeetingDataObject(
   displayVotingRecommendation: boolean,
   defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
+  // Process related questions
+  const relatedQuestions = Array.isArray(meeting.relatedQuestions)
+    ? meeting.relatedQuestions
+        .filter((q): q is any => typeof q === 'object' && q !== null)
+        .flatMap((questionDoc) => {
+          // Each questionDoc has a 'questions' array
+          if (Array.isArray(questionDoc.questions)) {
+            return questionDoc.questions.map((q: any) => ({
+              id: q.id || '',
+              questionText: q.questionText || '',
+              defaultValue: q.defaultValue ?? false,
+            }))
+          }
+          return []
+        })
+    : []
+
   return {
     meetingIdPayload: meeting.id,
     meetingId: meeting.meetingId || '' || '',
@@ -616,6 +634,7 @@ function createMeetingDataObject(
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
     votes: meeting.votes || [],
+    relatedQuestions,
   }
 }
 

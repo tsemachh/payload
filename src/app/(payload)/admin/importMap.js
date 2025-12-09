@@ -32,6 +32,7 @@ import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugi
 import { default as default_ce88691c04773935ab8c3f34f9cbaf09 } from '../../../admincomponents/BulkResetPasswordMenuItem'
 import { default as default_60e1fb8d59b01fba6bc2a987030079cb } from '../../../admincomponents/BulkRecalculateUserMembershipsMenuItem'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
+import { default as default_d5b39e159071deafd76f3f93ea503360 } from '../../../collections/questions/components/rowLabel'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
@@ -94,6 +95,7 @@ export const importMap = {
   "/admincomponents/BulkResetPasswordMenuItem#default": default_ce88691c04773935ab8c3f34f9cbaf09,
   "/admincomponents/BulkRecalculateUserMembershipsMenuItem#default": default_60e1fb8d59b01fba6bc2a987030079cb,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
+  "/collections/questions/components/rowLabel#default": default_d5b39e159071deafd76f3f93ea503360,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,

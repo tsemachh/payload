@@ -898,6 +898,41 @@ export const Meetings: CollectionConfig = {
               admin: { disableListColumn: true, hidden: true },
             },
             {
+              name: 'relatedQuestions',
+              label: 'שאלות קשורות',
+              type: 'relationship',
+              relationTo: 'questions',
+              hasMany: true,
+              admin: {
+                description:
+                  'שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.',
+              },
+              hooks: {
+                beforeChange: [
+                  async ({ value, data, req, operation }) => {
+                    if (value && value.length > 0) {
+                      return value
+                    }
+
+                    const meetingType = data?.type
+                    if (!meetingType) {
+                      return value
+                    }
+
+                    const matchingQuestions = await req.payload.find({
+                      collection: 'questions',
+                      where: {
+                        type: { equals: meetingType },
+                      },
+                      limit: 100,
+                      depth: 0,
+                    })
+                    return matchingQuestions.docs.map((q) => q.id)
+                  },
+                ],
+              },
+            },
+            {
               name: 'agenda',
               label: 'נושאים',
               type: 'array',

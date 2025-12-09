@@ -29,10 +29,9 @@ export default function YesNoQuestion({
 }: YesNoQuestionProps) {
   const [localExplanation, setLocalExplanation] = useState(explanationValue || '')
 
+  // Only update local state when explanationValue changes from parent (not from our own changes)
   useEffect(() => {
-    if (explanationValue !== localExplanation) {
-      setLocalExplanation(explanationValue || '')
-    }
+    setLocalExplanation(explanationValue || '')
   }, [explanationValue])
 
   const showExplanation = requiresExplanation && currentValue === true

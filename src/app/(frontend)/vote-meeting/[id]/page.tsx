@@ -37,6 +37,7 @@ import {
   UserVote,
   ValidationError,
   VoteDataType,
+  DynamicQuestionAnswer,
 } from '../../types/vote'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
@@ -287,6 +288,16 @@ export default function VotingForm() {
     let initialData: VoteDataType
     let publishedData: VoteDataType | null = null
 
+    // Initialize dynamic questions from meeting data
+    const dynamicQuestions: DynamicQuestionAnswer[] = (meetingData.relatedQuestions || []).map(
+      (q) => ({
+        questionId: q.id,
+        questionText: q.questionText,
+        answer: false,
+        explanation: '',
+      }),
+    )
+
     if (!fetchedVotes || fetchedVotes.length === 0) {
       initialData = {
         generalVotingData: {
@@ -300,6 +311,7 @@ export default function VotingForm() {
           meetingData.defaultVotingRecommendation,
         ),
         voteDocuments: [],
+        dynamicQuestions,
       }
       setUploadedDocs([])
     } else {
@@ -341,6 +353,22 @@ export default function VotingForm() {
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
         }
       })
+
+      // Load dynamic questions answers from saved vote
+      const savedDynamicQuestions: DynamicQuestionAnswer[] = (
+        meetingData.relatedQuestions || []
+      ).map((q) => {
+        const savedAnswer = firstVote.dynamicQuestions?.find(
+          (dq: any) => dq.questionId === q.id,
+        )
+        return {
+          questionId: q.id,
+          questionText: q.questionText,
+          answer: savedAnswer?.answer ?? false,
+          explanation: savedAnswer?.explanation || '',
+        }
+      })
+
       initialData = {
         generalVotingData: {
           isInterested: firstVote.isInterested ?? false,
@@ -354,6 +382,7 @@ export default function VotingForm() {
         voteDocuments: Array.isArray(firstVote.voteDocuments)
           ? firstVote.voteDocuments.map((doc: { id: any }) => doc.id)
           : [],
+        dynamicQuestions: savedDynamicQuestions,
       }
     }
 
@@ -380,6 +409,22 @@ export default function VotingForm() {
           isRemovedFromAgenda: agenda.isRemovedFromAgenda,
         }
       })
+
+      // Load published dynamic questions answers
+      const publishedDynamicQuestions: DynamicQuestionAnswer[] = (
+        meetingData.relatedQuestions || []
+      ).map((q) => {
+        const savedAnswer = firstPublishedVote.dynamicQuestions?.find(
+          (dq: any) => dq.questionId === q.id,
+        )
+        return {
+          questionId: q.id,
+          questionText: q.questionText,
+          answer: savedAnswer?.answer ?? false,
+          explanation: savedAnswer?.explanation || '',
+        }
+      })
+
       publishedData = {
         generalVotingData: {
           isInterested: firstPublishedVote.isInterested ?? false,
@@ -393,6 +438,7 @@ export default function VotingForm() {
         voteDocuments: Array.isArray(firstPublishedVote.voteDocuments)
           ? firstPublishedVote.voteDocuments.map((doc: { id: any }) => doc.id)
           : [],
+        dynamicQuestions: publishedDynamicQuestions,
       }
     }
 
@@ -412,24 +458,41 @@ export default function VotingForm() {
   const validateForm = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = []
 
-    // Validate general questions
-    const generalData = votingData.generalVotingData
+    // Check if we have dynamic questions (relatedQuestions)
+    const hasDynamicQuestions =
+      meetingData?.relatedQuestions && meetingData.relatedQuestions.length > 0
 
-    // Check if explanation is required for general questions
-    if (generalData.isInterested && !generalData.interestedExplanation?.trim()) {
-      errors.push({
-        field: 'interestedExplanation',
-        message: 'נדרש הסבר לעניין אישי',
-        type: 'general',
+    if (hasDynamicQuestions) {
+      // Validate dynamic questions
+      votingData.dynamicQuestions?.forEach((dq) => {
+        // If answer is true, explanation is required
+        if (dq.answer && !dq.explanation?.trim()) {
+          errors.push({
+            field: `dynamicQuestion_${dq.questionId}`,
+            message: 'נדרש הסבר',
+            type: 'general',
+          })
+        }
       })
-    }
+    } else {
+      // Validate static general questions (old behavior)
+      const generalData = votingData.generalVotingData
 
-    if (generalData.isSeniorOfficial && !generalData.seniorOfficialExplanation?.trim()) {
-      errors.push({
-        field: 'seniorOfficialExplanation',
-        message: 'נדרש הסבר לנושא תפקיד בכיר',
-        type: 'general',
-      })
+      if (generalData.isInterested && !generalData.interestedExplanation?.trim()) {
+        errors.push({
+          field: 'interestedExplanation',
+          message: 'נדרש הסבר לעניין אישי',
+          type: 'general',
+        })
+      }
+
+      if (generalData.isSeniorOfficial && !generalData.seniorOfficialExplanation?.trim()) {
+        errors.push({
+          field: 'seniorOfficialExplanation',
+          message: 'נדרש הסבר לנושא תפקיד בכיר',
+          type: 'general',
+        })
+      }
     }
 
     // Validate agenda items
@@ -517,12 +580,13 @@ export default function VotingForm() {
 
       // Use the latest votingData from state (updated after blur)
       const latestVotingData = votingData
-
+      console.log("latestVotingData",latestVotingData)
       // Clear previous errors
       setValidationErrors([])
 
       // Validate form
       const errors = validateForm()
+      console.log("errors",errors)
       if (errors.length > 0) {
         setValidationErrors(errors)
         // Scroll to the first error
@@ -583,7 +647,11 @@ export default function VotingForm() {
   )
 
   const saveDraftData = useCallback(
-    async (dataType: string, currentVotingData: VoteDataType): Promise<void> => {
+    async (
+      dataType: string,
+      currentVotingData: VoteDataType,
+      skipMutate: boolean = false,
+    ): Promise<void> => {
       if (!meetingIdPayload || companiesIDs.length === 0 || !currentVotingData || !meetingData) {
         console.warn('Missing data for saveDraftDataAction. Aborting save.')
 
@@ -615,8 +683,12 @@ export default function VotingForm() {
           description: `טיוטה עבור ${dataType} עודכנה בהצלחה`,
           duration: 1500,
         })
-        mutateDraft()
-        mutateAllLatestVotes()
+
+        // Skip mutate for dynamic questions to avoid overwriting state
+        if (!skipMutate) {
+          mutateDraft()
+          mutateAllLatestVotes()
+        }
       } catch (error) {
         //Handle rollback in UI level on Error
       }
@@ -764,6 +836,26 @@ export default function VotingForm() {
     }
   }
 
+  const handleDynamicQuestionChange = useCallback(
+    (questionId: string, answer: boolean, explanation?: string) => {
+      const newDynamicQuestions = (votingData.dynamicQuestions || []).map((q) =>
+        q.questionId === questionId
+          ? { ...q, answer, explanation: explanation || '' }
+          : q,
+      )
+
+      const updatedVotingData = {
+        ...votingData,
+        dynamicQuestions: newDynamicQuestions,
+      }
+
+      setVotingData(updatedVotingData)
+      // Use skipMutate=true to avoid re-fetching and overwriting state
+      saveDraftData('שאלה', updatedVotingData, true)
+    },
+    [votingData, saveDraftData],
+  )
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
@@ -910,6 +1002,26 @@ export default function VotingForm() {
                   onQuestionChangeAction={handleGeneralQuestionChangeWrapper}
                   getFieldErrorAction={getFieldError}
                   isReadOnly={isReadOnly}
+                  dynamicQuestions={
+                    meetingData.relatedQuestions && meetingData.relatedQuestions.length > 0
+                      ? votingData.dynamicQuestions?.map((dq) => {
+                          const questionDef = meetingData.relatedQuestions?.find(
+                            (q) => q.id === dq.questionId,
+                          )
+                          return {
+                            id: dq.questionId,
+                            questionText: questionDef?.questionText || '',
+                            answer: dq.answer,
+                            explanation: dq.explanation,
+                          }
+                        })
+                      : undefined
+                  }
+                  onDynamicQuestionChange={
+                    meetingData.relatedQuestions && meetingData.relatedQuestions.length > 0
+                      ? handleDynamicQuestionChange
+                      : undefined
+                  }
                 />
               </CardContent>
             </Card>

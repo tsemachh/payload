@@ -59,6 +59,12 @@ export interface VoteData {
     filename: string
     url: string
   }>
+  dynamicQuestions?: Array<{
+    questionId: string
+    questionText: string
+    answer: boolean
+    explanation?: string
+  }>
   votes: Array<{
     voteDecision?: string
     voteReason?: string
@@ -478,40 +484,64 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       </Card>
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-3 gap-4 pt-6 text-base">
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 dark:text-white font-medium ml-3">בעל עניין</label>
-                <Checkbox checked={formData.isInterested} disabled={true} />
-              </div>
-              {formData.isInterested && formData.interestedExplanation && (
-                <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                  {formData.interestedExplanation}
-                </span>
-              )}
+          {formData.dynamicQuestions && formData.dynamicQuestions.length > 0 ? (
+            // Show dynamic questions
+            <div className="grid grid-cols-3 gap-4 pt-6 text-base">
+              {formData.dynamicQuestions.map((question, index) => (
+                <div key={question.questionId} className="flex flex-col">
+                  <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                    <label className="text-gray-900 dark:text-white font-medium ml-3">
+                      {question.questionText}
+                    </label>
+                    <Checkbox checked={question.answer} disabled={true} />
+                  </div>
+                  {question.answer && question.explanation && (
+                    <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
+                      {question.explanation}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 dark:text-white font-medium ml-3">
-                  נושא משרה בכירה
-                </label>
-                <Checkbox checked={formData.isSeniorOfficial} disabled={true} />
+          ) : (
+            // Show default static questions
+            <div className="grid grid-cols-3 gap-4 pt-6 text-base">
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                  <label className="text-gray-900 dark:text-white font-medium ml-3">
+                    בעל עניין
+                  </label>
+                  <Checkbox checked={formData.isInterested} disabled={true} />
+                </div>
+                {formData.isInterested && formData.interestedExplanation && (
+                  <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
+                    {formData.interestedExplanation}
+                  </span>
+                )}
               </div>
-              {formData.isSeniorOfficial && formData.seniorOfficialExplanation && (
-                <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                  {formData.seniorOfficialExplanation}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                <label className="text-gray-900 dark:text-white font-medium ml-3">
-                  משקיע מוסדי
-                </label>
-                <Checkbox checked={formData.isInstitutionalInvestor} disabled={true} />
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                  <label className="text-gray-900 dark:text-white font-medium ml-3">
+                    נושא משרה בכירה
+                  </label>
+                  <Checkbox checked={formData.isSeniorOfficial} disabled={true} />
+                </div>
+                {formData.isSeniorOfficial && formData.seniorOfficialExplanation && (
+                  <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
+                    {formData.seniorOfficialExplanation}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-reverse space-x-2 justify-start">
+                  <label className="text-gray-900 dark:text-white font-medium ml-3">
+                    משקיע מוסדי
+                  </label>
+                  <Checkbox checked={formData.isInstitutionalInvestor} disabled={true} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">

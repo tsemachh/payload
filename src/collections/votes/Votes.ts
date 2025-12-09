@@ -20,15 +20,11 @@ import { isUserCompanyVote, isUserCompanyVoteWrite } from '@/utils/authUtils'
 import { handleReportApproval } from './hooks/voteActualReport'
 
 function calculateCheckSum(data: Vote) {
-  // Create a string representation of the fields to compute checksum
-  const checksumData = {
-    // Basic fields
-    isInterested: data.isInterested || false,
-    isSeniorOfficial: data.isSeniorOfficial || false,
-    isInstitutionalInvestor: data.isInstitutionalInvestor || false,
-    interestedExplanation: data.interestedExplanation || null,
-    seniorOfficialExplanation: data.seniorOfficialExplanation || null,
+  // Check if we have dynamic questions
+  const hasDynamicQuestions = data.dynamicQuestions && data.dynamicQuestions.length > 0
 
+  // Create a string representation of the fields to compute checksum
+  const checksumData: any = {
     // Votes array fields
     votes: (data.votes || []).map((vote: NonNullable<TopicVote>[number]) => ({
       topicIndex: vote.topicIndex,
@@ -48,6 +44,23 @@ function calculateCheckSum(data: Vote) {
       typeof doc === 'string' ? doc : doc.id,
     ),
     clientComment: data.clientComment || null,
+  }
+
+  // Add either dynamic questions OR static questions (not both)
+  if (hasDynamicQuestions) {
+    // Include dynamic questions
+    checksumData.dynamicQuestions = (data.dynamicQuestions || []).map((dq: any) => ({
+      questionId: dq.questionId,
+      answer: dq.answer || false,
+      explanation: dq.explanation || null,
+    }))
+  } else {
+    // Include static questions
+    checksumData.isInterested = data.isInterested || false
+    checksumData.isSeniorOfficial = data.isSeniorOfficial || false
+    checksumData.isInstitutionalInvestor = data.isInstitutionalInvestor || false
+    checksumData.interestedExplanation = data.interestedExplanation || null
+    checksumData.seniorOfficialExplanation = data.seniorOfficialExplanation || null
   }
 
   // Convert to string and create a simple hash
@@ -226,40 +239,6 @@ export const Votes: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'isInterested',
-                  label: 'בעל עניין',
-                  type: 'checkbox',
-                  defaultValue: false,
-                },
-                {
-                  name: 'interestedExplanation',
-                  label: 'הסבר בעל עניין',
-                  type: 'textarea',
-                  admin: {
-                    condition: (_, siblingData) => siblingData.isInterested === true,
-                  },
-                },
-                {
-                  name: 'isSeniorOfficial',
-                  label: 'נושא משרה בכירה',
-                  type: 'checkbox',
-                  defaultValue: false,
-                },
-                {
-                  name: 'seniorOfficialExplanation',
-                  label: 'הסבר נושא משרה בכירה',
-                  type: 'textarea',
-                  admin: {
-                    condition: (_, siblingData) => siblingData.isSeniorOfficial === true,
-                  },
-                },
-                {
-                  name: 'isInstitutionalInvestor',
-                  label: 'משקיע מוסדי',
-                  type: 'checkbox',
-                  defaultValue: true,
-                },
-                {
                   name: 'voteAgainstRecommendation',
                   label: 'הצבעה בניגוד המלצה',
                   type: 'checkbox',
@@ -278,6 +257,62 @@ export const Votes: CollectionConfig = {
                   defaultValue: false,
                 },
               ],
+            },
+            {
+              name: 'isInterested',
+              label: 'בעל עניין',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                condition: (data, siblingData) => {
+                  // Show only if no dynamicQuestions exist
+                  return !siblingData?.dynamicQuestions || siblingData.dynamicQuestions.length === 0
+                },
+              },
+            },
+            {
+              name: 'interestedExplanation',
+              label: 'הסבר בעל עניין',
+              type: 'textarea',
+              admin: {
+                condition: (_, siblingData) =>
+                  siblingData.isInterested === true &&
+                  (!siblingData?.dynamicQuestions || siblingData.dynamicQuestions.length === 0),
+              },
+            },
+            {
+              name: 'isSeniorOfficial',
+              label: 'נושא משרה בכירה',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                condition: (data, siblingData) => {
+                  // Show only if no dynamicQuestions exist
+                  return !siblingData?.dynamicQuestions || siblingData.dynamicQuestions.length === 0
+                },
+              },
+            },
+            {
+              name: 'seniorOfficialExplanation',
+              label: 'הסבר נושא משרה בכירה',
+              type: 'textarea',
+              admin: {
+                condition: (_, siblingData) =>
+                  siblingData.isSeniorOfficial === true &&
+                  (!siblingData?.dynamicQuestions || siblingData.dynamicQuestions.length === 0),
+              },
+            },
+            {
+              name: 'isInstitutionalInvestor',
+              label: 'משקיע מוסדי',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                condition: (data, siblingData) => {
+                  // Show only if no dynamicQuestions exist
+                  return !siblingData?.dynamicQuestions || siblingData.dynamicQuestions.length === 0
+                },
+              },
             },
             {
               type: 'row',
@@ -429,6 +464,70 @@ export const Votes: CollectionConfig = {
                   name: 'clientComment',
                   label: 'הערת לקוח',
                   type: 'textarea',
+                },
+              ],
+            },
+            {
+              name: 'dynamicQuestions',
+              label: 'תשובות לשאלות',
+              type: 'array',
+              admin: {
+                description: 'תשובות לשאלות דינאמיות שהוגדרו לאסיפה',
+                components: {
+                  RowLabel: {
+                    path: '/collections/votes/components/RowLabel',
+                    clientProps: {
+                      type: 'dynamicQuestions',
+                    },
+                  },
+                },
+                condition: (data, siblingData) => {
+                  // Show only if dynamicQuestions array has items
+                  return siblingData?.dynamicQuestions && siblingData.dynamicQuestions.length > 0
+                },
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'questionId',
+                      label: 'מזהה שאלה',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        hidden: true,
+                      },
+                    },
+                    {
+                      name: 'questionText',
+                      label: 'שאלה',
+                      type: 'text',
+                      admin: {
+                        readOnly: true,
+                        width: '40%',
+                        hidden: true,
+                      },
+                    },
+                    {
+                      name: 'answer',
+                      label: 'תשובה',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        width: '15%',
+                      },
+                    },
+                    {
+                      name: 'explanation',
+                      label: 'הסבר',
+                      type: 'textarea',
+                      admin: {
+                        condition: (_, siblingData) => siblingData.answer === true,
+                        width: '45%',
+                      },
+                    },
+                  ],
                 },
               ],
             },

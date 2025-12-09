@@ -274,6 +274,7 @@ export interface Config {
     'recommendation-reasons': RecommendationReason;
     'audit-logs': AuditLog;
     'audit-log-reads': AuditLogRead;
+    questions: Question;
     'company-meeting-notifications': CompanyMeetingNotification;
     votes: Vote;
     'holdings-feed': HoldingsFeed;
@@ -319,6 +320,7 @@ export interface Config {
     'recommendation-reasons': RecommendationReasonsSelect<false> | RecommendationReasonsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'audit-log-reads': AuditLogReadsSelect<false> | AuditLogReadsSelect<true>;
+    questions: QuestionsSelect<false> | QuestionsSelect<true>;
     'company-meeting-notifications': CompanyMeetingNotificationsSelect<false> | CompanyMeetingNotificationsSelect<true>;
     votes: VotesSelect<false> | VotesSelect<true>;
     'holdings-feed': HoldingsFeedSelect<false> | HoldingsFeedSelect<true>;
@@ -734,6 +736,10 @@ export interface Meeting {
       }[]
     | null;
   finalized?: boolean | null;
+  /**
+   * שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.
+   */
+  relatedQuestions?: (string | Question)[] | null;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
@@ -763,18 +769,30 @@ export interface Vote {
   title?: string | null;
   checksum?: string | null;
   publishedchecksum?: string | null;
+  voteAgainstRecommendation?: boolean | null;
+  voteDifferentFromResult?: boolean | null;
   isInterested?: boolean | null;
   interestedExplanation?: string | null;
   isSeniorOfficial?: boolean | null;
   seniorOfficialExplanation?: string | null;
   isInstitutionalInvestor?: boolean | null;
-  voteAgainstRecommendation?: boolean | null;
-  voteDifferentFromResult?: boolean | null;
   reported?: boolean | null;
   reportApproval?: (string | null) | Document;
   votes?: TopicVote;
   voteDocuments?: (string | Document)[] | null;
   clientComment?: string | null;
+  /**
+   * תשובות לשאלות דינאמיות שהוגדרו לאסיפה
+   */
+  dynamicQuestions?:
+    | {
+        questionId: string;
+        questionText?: string | null;
+        answer?: boolean | null;
+        explanation?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -805,6 +823,26 @@ export interface Document {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "questions".
+ */
+export interface Question {
+  id: string;
+  type: MeetingType;
+  questions?:
+    | {
+        questionText?: string | null;
+        defaultValue?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1291,6 +1329,10 @@ export interface PayloadLockedDocument {
         value: string | AuditLogRead;
       } | null)
     | ({
+        relationTo: 'questions';
+        value: string | Question;
+      } | null)
+    | ({
         relationTo: 'company-meeting-notifications';
         value: string | CompanyMeetingNotification;
       } | null)
@@ -1508,6 +1550,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   finalized?: T;
+  relatedQuestions?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
@@ -1870,6 +1913,25 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "questions_select".
+ */
+export interface QuestionsSelect<T extends boolean = true> {
+  type?: T;
+  questions?:
+    | T
+    | {
+        questionText?: T;
+        defaultValue?: T;
+        id?: T;
+      };
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "company-meeting-notifications_select".
  */
 export interface CompanyMeetingNotificationsSelect<T extends boolean = true> {
@@ -1897,18 +1959,27 @@ export interface VotesSelect<T extends boolean = true> {
   title?: T;
   checksum?: T;
   publishedchecksum?: T;
+  voteAgainstRecommendation?: T;
+  voteDifferentFromResult?: T;
   isInterested?: T;
   interestedExplanation?: T;
   isSeniorOfficial?: T;
   seniorOfficialExplanation?: T;
   isInstitutionalInvestor?: T;
-  voteAgainstRecommendation?: T;
-  voteDifferentFromResult?: T;
   reported?: T;
   reportApproval?: T;
   votes?: T | TopicVoteSelect<T>;
   voteDocuments?: T;
   clientComment?: T;
+  dynamicQuestions?:
+    | T
+    | {
+        questionId?: T;
+        questionText?: T;
+        answer?: T;
+        explanation?: T;
+        id?: T;
+      };
   creator?: T;
   updator?: T;
   process?: T;

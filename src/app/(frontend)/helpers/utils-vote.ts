@@ -61,10 +61,12 @@ export function isGeneralVote(votes: Vote[]): boolean {
 
   const ref = votes[0]
   const refVotes = ref.votes ?? []
+  const refDynamicQuestions = ref.dynamicQuestions ?? []
 
   for (let i = 1; i < votes.length; i++) {
     const current = votes[i]
     const currentVotes = current.votes ?? []
+    const currentDynamicQuestions = current.dynamicQuestions ?? []
 
     const generalFieldsToCompare: (keyof typeof ref)[] = [
       'isInterested',
@@ -78,6 +80,24 @@ export function isGeneralVote(votes: Vote[]): boolean {
 
     for (const field of generalFieldsToCompare) {
       if ((ref as any)[field] !== (current as any)[field]) {
+        return false
+      }
+    }
+
+    // Compare dynamic questions
+    if (refDynamicQuestions.length !== currentDynamicQuestions.length) {
+      return false
+    }
+
+    for (let j = 0; j < refDynamicQuestions.length; j++) {
+      const refDq = refDynamicQuestions[j]
+      const currentDq = currentDynamicQuestions[j]
+
+      if (
+        refDq.questionId !== currentDq.questionId ||
+        refDq.answer !== currentDq.answer ||
+        (refDq.explanation || '') !== (currentDq.explanation || '')
+      ) {
         return false
       }
     }
