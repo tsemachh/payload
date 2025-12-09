@@ -105,31 +105,25 @@ export const ManageMeetingCompanies = () => {
       })
       const stockData = await res.json()
 
-      // Check if stock is foreign (origin is not TASE)
-      const isForeign = stockData.origin !== 'TASE'
-      setIsForeignStock(isForeign)
+      // Build available stocks list: main stock + related stocks
+      const stocks = [
+        { id: stockData.id, name: `${stockData.name} (ראשי)`, stockId: stockData.stockId },
+      ]
 
-      if (isForeign) {
-        // Build available stocks list: main stock + related stocks
-        const stocks = [
-          { id: stockData.id, name: `${stockData.name} (ראשי)`, stockId: stockData.stockId },
-        ]
-
-        if (stockData.relations?.docs && stockData.relations.docs.length > 0) {
-          stockData.relations.docs.forEach((relatedStock: any) => {
-            stocks.push({
-              id: relatedStock.id,
-              name: `${relatedStock.name} (עוקב) `,
-              stockId: relatedStock.stockId,
-            })
+      if (stockData.relations?.docs && stockData.relations.docs.length > 0) {
+        stockData.relations.docs.forEach((relatedStock: any) => {
+          stocks.push({
+            id: relatedStock.id,
+            name: `${relatedStock.name} (עוקב) `,
+            stockId: relatedStock.stockId,
           })
-        }
-
-        setAvailableStocks(stocks)
-        setSelectedStockId(stockData.id) // Default to main stock
+        })
       }
 
-      return isForeign
+      setAvailableStocks(stocks)
+      setSelectedStockId(stockData.id) // Default to main stock
+
+      return true
     } catch (err) {
       console.error('Error fetching stock details:', err)
       toast.error('שגיאה בטעינת פרטי נייר ערך')
@@ -165,19 +159,17 @@ export const ManageMeetingCompanies = () => {
     }
     setShowAddModal(true)
   }
+  //   const handleAddClick = async () => {
+  //   setShowStockSelection(true)
+  //   fetchStockDetails()
+  // }
 
   // Handle company selection - show fund selection
   const handleCompanySelect = (companyId: string) => {
     setSelectedAddId(companyId)
     setOpenAdd(false)
 
-    // If foreign stock, move to fund selection directly
-    if (isForeignStock) {
-      fetchFundsForCompany(companyId)
-    } else {
-      // For non-foreign stocks, fetch funds directly
-      fetchFundsForCompany(companyId)
-    }
+    fetchFundsForCompany(companyId)
   }
 
   // Move from stock selection to company selection
