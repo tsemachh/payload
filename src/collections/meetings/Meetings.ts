@@ -485,6 +485,14 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'legacyStockNum',
+                  label: 'Legacy Stock Num',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'isFinancialStock',
                   label: 'תאגיד פיננסי',
                   type: 'checkbox',

@@ -236,15 +236,12 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           // Prepare holdings array
           const rawHoldingsArray: any[] = []
           for (const [_, holdingData] of Array.from(stocksMap.entries())) {
-            const isForeign = foreignStockIdSet.has(holdingData.stockId)
             const item: any = {
               stock: holdingData.stockId,
               quantity: holdingData.quantity,
               feedStockNum: holdingData.feedStockNum,
             }
-            if (isForeign) {
-              item.originalData = holdingData.originals
-            }
+            item.originalData = holdingData.originals
             rawHoldingsArray.push(item)
           }
 
@@ -610,13 +607,12 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
         try {
           const rawHoldingsArray: any[] = []
           for (const [, holdingData] of Array.from(stocksMap.entries())) {
-            const isForeign = foreignStockIdSet.has(holdingData.stockId)
             const item: any = {
               stock: holdingData.stockId,
               quantity: holdingData.quantity,
               feedStockNum: holdingData.feedStockNum,
             }
-            if (isForeign) item.originalForeignData = holdingData.originals
+            item.originalData = holdingData.originals
             rawHoldingsArray.push(item)
           }
 
@@ -625,11 +621,8 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
             const existing = consolidatedByStock.get(item.stock)
             if (existing) {
               existing.quantity += item.quantity
-              if (Array.isArray(item.originalForeignData)) {
-                existing.originalForeignData = [
-                  ...(existing.originalForeignData || []),
-                  ...item.originalForeignData,
-                ]
+              if (Array.isArray(item.originalData)) {
+                existing.originalData = [...(existing.originalData || []), ...item.originalData]
               }
             } else {
               consolidatedByStock.set(item.stock, { ...item })

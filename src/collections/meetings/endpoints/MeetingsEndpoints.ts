@@ -906,7 +906,7 @@ async function processMeetingsData(
         )
         req?.payload.logger.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId
+            meeting.primaryLegacyId,
         )
         return null
       }

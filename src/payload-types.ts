@@ -685,6 +685,7 @@ export interface Meeting {
   };
   stock: string | Stock;
   stockId?: string | null;
+  legacyStockNum?: string | null;
   isFinancialStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   stockType?:
@@ -1416,6 +1417,7 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
+  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1478,6 +1480,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   votes?: T;
   stock?: T;
   stockId?: T;
+  legacyStockNum?: T;
   isFinancialStock?: T;
   stockOrigin?: T;
   stockType?: T;
@@ -2221,6 +2224,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
+  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;
