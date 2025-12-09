@@ -41,6 +41,7 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  defaultSort: '_order',
   access: {
     create: isAdmin,
     read: isUserCompany,

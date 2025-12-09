@@ -29,10 +29,12 @@ export const detailsEndpoint = async (req: PayloadRequest) => {
         subCompanies: true,
         passiveFund: true,
         labels: true,
+        _order: true,
       },
       hidden: true,
       depth: 0,
       limit: 0,
+      sort: '_order', // ✅ Sort by the order defined in Payload admin
       where: {
         and: [
           {

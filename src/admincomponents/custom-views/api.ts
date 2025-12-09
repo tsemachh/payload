@@ -34,6 +34,7 @@ export async function getVoteData(
     },
     select: {
       id: true,
+      _order: true,
     },
     depth: 0,
     limit: 0,
@@ -118,6 +119,7 @@ export async function getVoteData(
     },
     select: {
       name: true,
+      _order: true,
       subCompanies: true,
       researchDocuments: { displayVotingRecommendation: true },
     },
@@ -126,10 +128,16 @@ export async function getVoteData(
   })
 
   const companyIdToNameMap: Map<string, string> = new Map()
+  const companyIdToOrderMap: Map<string, string> = new Map()
   const fundIdToNameMap: Map<string, string> = new Map()
+  const fundIdToOrderMap: Map<string, string> = new Map()
+
   companyData.docs.forEach((doc: Company) => {
     if (doc.id && doc.name) {
       companyIdToNameMap.set(doc.id as string, doc.name as string)
+      if (doc._order) {
+        companyIdToOrderMap.set(doc.id as string, doc._order as string)
+      }
     }
 
     doc?.subCompanies?.forEach((subCompany) => {
@@ -137,6 +145,9 @@ export async function getVoteData(
         const id: string = getIdOfRelationField(subCompany) as string
         if (id && typeof subCompany === 'object' && subCompany.name) {
           fundIdToNameMap.set(id, subCompany.name as string)
+          if (subCompany._order) {
+            fundIdToOrderMap.set(id, subCompany._order as string)
+          }
         }
       }
     })
@@ -147,8 +158,16 @@ export async function getVoteData(
 
   const fundsWithHoldings = fundsWithHolding.flatMap((fundHold: any) => {
     const baseData = {
-      company: { id: fundHold.company, name: companyIdToNameMap.get(fundHold?.company) },
-      fund: { id: fundHold.fund, name: fundIdToNameMap.get(fundHold?.fund) },
+      company: {
+        id: fundHold.company,
+        name: companyIdToNameMap.get(fundHold?.company),
+        _order: companyIdToOrderMap.get(fundHold?.company)
+      },
+      fund: {
+        id: fundHold.fund,
+        name: fundIdToNameMap.get(fundHold?.fund),
+        _order: fundIdToOrderMap.get(fundHold?.fund)
+      },
       fromRelatedStock: fundHold.fromRelatedStock,
     }
 

@@ -24,13 +24,16 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
-    // Get all meetings from MongoDB
+    // Get all NON-finalized meetings from MongoDB
     const meetings = await payload.find({
       collection: 'meetings',
       select: {
-        meetingId: true,
+        primaryLegacyId: true,
         stock: true,
         stockId: true,
+      },
+      where: {
+        finalized: { not_equals: true },
       },
       limit: 0,
       depth: 1,
@@ -53,7 +56,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           try {
             // Get the meeting ID from the sequence map
             const meetingId = meeting.id
-            const meetingSeq = meeting.meetingId
+
+            const meetingSeq = meeting.primaryLegacyId
 
             if (!meetingSeq) {
               console.log(`Meeting with ID ${meetingId} has no meetingId, skipping...`)
@@ -198,15 +202,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             )
           } catch (updateError: any) {
             errorCount++
-            console.error(`✗ Failed to update Meeting ${meeting.meetingId}:`, updateError)
+            console.error(`✗ Failed to update Meeting ${meeting.primaryLegacyId}:`, updateError)
             logMigrationFault({
               payload,
               type: 'meeting',
-              severity: 'error',
-              typeId: `${meeting.meetingId}`,
-              comments: `Failed to update Meeting ${meeting.meetingId} with holdings: ${updateError.message}`,
+              typeId: `${meeting.primaryLegacyId}`,
+              comments: `Failed to update Meeting ${meeting.primaryLegacyId} with holdings: ${updateError.message}`,
               row: JSON.stringify({
-                meetingId: meeting.meetingId,
+                primaryLegacyId: meeting.primaryLegacyId,
                 error: updateError.message,
               }),
             })

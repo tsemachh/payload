@@ -23,7 +23,7 @@ import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
  */
 const MEETING_SELECT_FIELDS: SelectType = {
   id: true,
-  meetingId: true,
+  primaryLegacyId: true,
   agenda: true,
   labels: true,
   companies: true,
@@ -422,7 +422,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     if (searchTerm) {
       whereConditions.push({
         or: [
-          { meetingId: { contains: searchTerm } },
+          { primaryLegacyId: { contains: searchTerm } },
           { 'stock.stockId': { contains: searchTerm } },
           { 'stock.name': { contains: searchTerm } },
           { 'stock.symbol': { contains: searchTerm } },
@@ -593,7 +593,7 @@ function createMeetingDataObject(
 ): MeetingTableDataType {
   return {
     meetingIdPayload: meeting.id,
-    meetingId: meeting.meetingId || '' || '',
+    meetingId: meeting.primaryLegacyId || '' || '',
     agendas,
     labels: (meeting.labels || []).filter(
       (label): label is { id: string; label: string; color: string } =>
@@ -699,7 +699,7 @@ async function processMeetingsData(
       // If stockNumber is undefined, log a message and skip this item
       if (!stockPresent?.stockId) {
         console.error(
-          `Emda Error:\nSkipping meeting with ID: "${meeting.meetingId}": stockNumber is missing`,
+          `Emda Error:\nSkipping meeting with ID: "${meeting.primaryLegacyId}": stockNumber is missing`,
         )
         return null
       }
@@ -901,12 +901,12 @@ async function processMeetingsData(
       if (companiesArray.length === 0) {
         console.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId,
+            meeting.primaryLegacyId,
           'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 4px;',
         )
         req?.payload.logger.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId,
+            meeting.meetingId
         )
         return null
       }

@@ -1,7 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { Meeting, MeetingState, MeetingType } from '@/payload-types'
-import { getSequenceMeetingId } from '@/utils/utils'
+// import { getSequenceMeetingId } from '@/utils/utils'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
 import { getStockIdToSequenceMap } from '@/migrations/utils/migrateStockUtils'
@@ -86,18 +86,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Using meetings_days_retro=${days} days; date cutoff: ${dateCutoff}`)
     const meetingsQuery = `
         SELECT  [id]
-             ,[proofId]
-             ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
-             ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
-             ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
-             ,[stockID]
-             ,[location]
-             ,[mtype]
-             ,[link2]
-             ,[comments]
-             ,[ResultConfirm]
-             ,[ElectronicVoting]
-             ,[CommiteeRequest]
+                ,[proofId]
+                ,CONVERT(VARCHAR, [mdate], 127) AS [mdate]
+                ,CONVERT(VARCHAR, [sdate], 127) AS [sdate]
+                ,CONVERT(VARCHAR, [proxyStatementDate], 127) AS [proxyStatementDate]
+                ,[stockID]
+                ,[location]
+                ,[mtype]
+                ,[link2]
+                ,[comments]
+                ,[ResultConfirm]
+                ,[ElectronicVoting]
+                ,[CommiteeRequest]
         FROM [dbEmda].[dbo].[meetings] WHERE mdate >= '${dateCutoff}';
     `
     const meetingsResult = await pool.request().query(meetingsQuery)
@@ -117,7 +117,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
              , a.[rec]
              , r.[Recommendation]
         FROM [dbEmda].[dbo].[meetingagenda] a
-                 LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
+            LEFT JOIN [dbEmda].[dbo].[meetingagendarecommendation] r ON a.[id] = r.[maid]
         ORDER by a.[mid], a.[id]
     `
     const agendaResult = await pool.request().query(agendaQuery)
@@ -271,7 +271,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           try {
             // Prepare meeting data with agenda inside the promise to avoid shared reference issues
             const meetingData: Partial<Meeting> = {
-              meetingId: `${currentRow.id}`,
+              primaryLegacyId: `${currentRow.id}`,
+              legacyIds: [`${currentRow.id}`],
               stock: currentStockId as string,
               magnaId: currentRow.proofId,
               meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
@@ -283,7 +284,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: currentRow.comments,
               resultsConfirmationStatus: !!currentRow.ResultConfirm,
               electronicVotingEnabled: !!currentRow.ElectronicVoting,
-              finalized: finalized,
+              /*finalized: finalized,*/
               _status: 'published' as const,
               agenda: currentAgendaItems.map((item) => ({
                 text: item.text,
@@ -301,12 +302,30 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               meetingData.invitationLink = currentRow.link2
             }
 
-            const id = await getSequenceMeetingId(payload, meetingData.meetingId as string)
-            if (id) {
-              // Update Payload CMS
+            // Find existing meeting by legacyIds containing the MSSQL meeting id
+            const existingRes = await payload.find({
+              collection: 'meetings',
+              where: { legacyIds: { contains: String(currentRow.id) } },
+              select: { id: true, finalized: true },
+              limit: 1,
+              depth: 0,
+            })
+
+            const existing = existingRes?.docs?.[0] as any
+
+            if (existing?.finalized === true) {
+              // Strictly skip finalized meetings
+              console.log(
+                `Skipping update for meeting ${currentRow.id} (Mongo ${existing.id}) — finalized=true`,
+              )
+              return
+            }
+
+            if (existing?.id) {
+              // Update existing meeting
               await payload.update({
                 collection: 'meetings',
-                id: id,
+                id: existing.id,
                 data: meetingData,
                 req: {
                   ...req,
