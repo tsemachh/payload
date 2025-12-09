@@ -90,6 +90,8 @@ async function processMeetingGroup(
     const legacyIdSet = new Set<string>(((meetingToKeep as any).legacyIds || []).filter(Boolean))
     // Track finalized across unified meetings: only true if ALL source meetings are finalized=true
     let allFinalized = !!(meetingToKeep as any)?.finalized
+    // Track hasRelatedStocks across unified meetings: true if ANY source meeting has it true
+    let hasRelatedStocksAcc = !!(meetingToKeep as any)?.hasRelatedStocks
     const removedMeetingIds: string[] = []
     let totalVotesMoved = 0
     let agendaChangesCount = 0
@@ -138,6 +140,9 @@ async function processMeetingGroup(
         fundsWithHoldingAcc.push(...incomingFundsWithHolding)
         fundsWithHoldingAddedFromRemoved += incomingFundsWithHolding.length
       }
+
+      // Update hasRelatedStocks aggregator (OR semantics)
+      hasRelatedStocksAcc = hasRelatedStocksAcc || !!(meetingToRemove as any)?.hasRelatedStocks
 
       // Move votes to the kept meeting
       await payload.update({
@@ -248,6 +253,7 @@ async function processMeetingGroup(
       const updatedAgenda = agendaMapGlobal ? Array.from(agendaMapGlobal.values()) : undefined
       const finalFunds = Array.from(fundsSet)
       const finalFundsWithHolding = fundsWithHoldingAcc
+      const finalHasRelatedStocks = hasRelatedStocksAcc
       const finalLegacyIds = Array.from(legacyIdSet)
 
       const existingMigrationComments = (meetingToKeep as any)?.migrationComments || ''
@@ -260,6 +266,7 @@ async function processMeetingGroup(
       const agendaSummary = `- Agenda items updated (base rec differed): ${agendaChangesCount}`
       const fundsSummary = `- Funds merged total: ${finalFunds.length} (+${fundsAddedFromRemoved} from removed)`
       const fundsWithHoldingSummary = `- FundsWithHolding rows merged total: ${finalFundsWithHolding.length} (+${fundsWithHoldingAddedFromRemoved} from removed)`
+      const relatedStocksSummary = `- hasRelatedStocks (ANY=true): ${finalHasRelatedStocks}`
       const legacyIdsSummary = `- LegacyIds appended from removed meetings: +${legacyIdsAddedFromRemoved}`
 
       const finalSummary = [
@@ -271,6 +278,7 @@ async function processMeetingGroup(
         fundsSummary,
         fundsWithHoldingSummary,
         legacyIdsSummary,
+        relatedStocksSummary,
         ...summaryLines,
       ].join('\n')
 
@@ -289,6 +297,8 @@ async function processMeetingGroup(
           legacyIds: finalLegacyIds as any,
           // finalized is unified: true only if all merged meetings were finalized=true; false otherwise
           finalized: allFinalized,
+          // hasRelatedStocks is unified: true if any merged meeting has it true
+          hasRelatedStocks: finalHasRelatedStocks,
           migrationComments: newMigrationComments,
         },
         req: {

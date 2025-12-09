@@ -16,6 +16,7 @@ interface Company {
   parentCompany?: string
   nominalValue: number
   percentageHolding: number
+  hasRelatedStock?: boolean
 }
 interface CompanyVoted extends Company {
   vote: {
@@ -29,7 +30,7 @@ interface CompanyVoted extends Company {
 }
 
 export const useVotingData = () => {
-  const { data } = useDocumentInfo()
+  const { data } = useDocumentInfo() //meeting data
   const [votedCompanies, setVotedCompanies] = useState<CompanyVoted[]>([])
   const [notVotedCompanies, setNotVotedCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,17 +68,14 @@ export const useVotingData = () => {
         try {
           const meetingId = data?.id
           if (meetingId) {
-            const votesQuery = stringify(
-              {
-                where: {
-                  and: [{ meeting: { equals: meetingId } }, { _status: { equals: 'published' } }],
-                },
-                depth: 0,
-                limit: 0,
+            const votesQuery = stringify({
+              where: {
+                meeting: { equals: meetingId },
               },
-              { addQueryPrefix: true },
-            )
-            const votesResponse = await fetch(`/api/votes${votesQuery}`)
+              depth: 0,
+              limit: 0,
+            })
+            const votesResponse = await fetch(`/api/votes?${votesQuery}`)
             if (votesResponse.ok) {
               const votesResponseData = await votesResponse.json()
               votesDetails = votesResponseData.docs || []
@@ -208,6 +206,7 @@ export const useVotingData = () => {
             holdingValueInMillions: 0,
           }
 
+          let hasRelatedStock = false
           if (Array.isArray(data.fundsWithHolding)) {
             // Filter fundsWithHolding by company id to get quantity
             const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
@@ -220,6 +219,10 @@ export const useVotingData = () => {
               }, 0)
               // Calculate holding values using the imported function
               calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
+              // Check if any holding has fromRelatedStock set to true
+              hasRelatedStock = companyHoldings.some(
+                (holding: any) => holding.fromRelatedStock === true,
+              )
             }
           }
 
@@ -235,6 +238,7 @@ export const useVotingData = () => {
             parentCompanyId: parentCompanyId,
             nominalValue: calculatedValues.nominalValue,
             percentageHolding: calculatedValues.percentageHolding,
+            hasRelatedStock,
             vote: {
               id: vote.id,
               voter:
@@ -264,6 +268,7 @@ export const useVotingData = () => {
               holdingValueInMillions: 0,
             }
 
+            let hasRelatedStock = false
             if (Array.isArray(data.fundsWithHolding)) {
               // Filter fundsWithHolding by company id to get quantity
               const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
@@ -276,6 +281,10 @@ export const useVotingData = () => {
                 }, 0)
                 // Calculate holding values using the imported function
                 calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
+                // Check if any holding has fromRelatedStock set to true
+                hasRelatedStock = companyHoldings.some(
+                  (holding: any) => holding.fromRelatedStock === true,
+                )
               }
             }
 
@@ -290,6 +299,7 @@ export const useVotingData = () => {
               parentCompanyId: companyInfo.parentCompanyId,
               nominalValue: calculatedValues.nominalValue,
               percentageHolding: calculatedValues.percentageHolding,
+              hasRelatedStock,
             }
           })
           .filter((company) => company !== null) as Company[]
@@ -515,6 +525,7 @@ export const useVotingData = () => {
       voter: { header: 'מצביע', field: 'vote.voter' },
       voteTime: { header: 'זמן הצבעה', field: 'vote.votedAt' },
       actualVoteAction: { header: 'הצבעה בפועל', field: 'vote.reported' },
+      hasRelatedStock: { header: 'ניירות עוקבים', field: 'hasRelatedStock' },
       checksum: { header: 'Checksum', field: 'vote.checksum' },
     }
 
@@ -543,6 +554,8 @@ export const useVotingData = () => {
             } else if (columnKey === 'voteTime' && value) {
               value = new Date(value).toLocaleString('he-IL')
             } else if (columnKey === 'actualVoteAction') {
+              value = value ? '✅' : '❌'
+            } else if (columnKey === 'hasRelatedStock') {
               value = value ? '✅' : '❌'
             }
             return value.toString().includes(',') ? `"${value}"` : value

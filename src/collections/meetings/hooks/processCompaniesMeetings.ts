@@ -90,21 +90,23 @@ async function processMeeting(
 
     const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
-
+    let fromRelatedStock = false
     const fundsWithHolding = flattenedHoldings.map((h) => {
-      const rawOriginal = h.holdings[0]?.originalForeignData
-      const originalForeignDataArray = rawOriginal
+      const rawOriginal = h.holdings[0]?.originalData
+      const originalDataArray = rawOriginal
         ? Array.isArray(rawOriginal)
           ? rawOriginal
           : [rawOriginal]
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
+      fromRelatedStock = originalDataArray.some((o) => o.stockId != meeting.stockId)
       const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
-        original: originalForeignDataArray.filter(Boolean).map((item: any) => ({
+        fromRelatedStock,
+        original: originalDataArray.filter(Boolean).map((item: any) => ({
           stockId: item.stockId,
           accountNum: item.accountNum,
           quantity: item.quantity,
@@ -156,6 +158,7 @@ async function processMeeting(
     const companiesCount = Array.from(new Set(compIds)).length
     const fundsCount = newFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
+    const hasRelatedStocks = fromRelatedStock
 
     const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
     const data: Partial<Meeting> = {
@@ -163,6 +166,7 @@ async function processMeeting(
       funds: [...newFunds],
       fundsWithHolding,
       migrationComments,
+      hasRelatedStocks,
     }
     if (stockValue) data.stockValue = stockValue
     await req.payload.update({

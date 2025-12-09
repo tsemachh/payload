@@ -30,6 +30,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       select: {
         primaryLegacyId: true,
         stock: true,
+        stockId: true,
+        legacyStockNum: true,
       },
       where: {
         finalized: { not_equals: true },
@@ -157,11 +159,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
             // Create fundsWithHolding array
             const fundsWithHolding = []
+            const fromRelatedStock = meeting.legacyStockNum !== meeting.stockId
 
             for (const holding of filteredHoldings) {
               const key = `${holding.firmid}_${holding.accountNum}`
               const fundId = fundMap.get(key)
-
               if (fundId) {
                 const verifiedHoldings =
                   holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
@@ -174,15 +176,23 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
                   verifiedHoldings,
                   feedStockNum: (meeting.stock as Stock).stockId || '', // Take stockNum from the meeting
+                  fromRelatedStock,
+                  original: [
+                    {
+                      quantity: holding.qty,
+                      stockId: meeting.legacyStockNum,
+                    },
+                  ],
                 })
               }
             }
 
             // Update the meeting with companies, funds, and fundsWithHolding
             const updatedMeeting = {
+              hasRelatedStocks: fromRelatedStock,
               funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
               companies: Array.from(new Set(fundsWithHolding.map((item) => item.company))),
-              fundsWithHolding: fundsWithHolding,
+              fundsWithHolding,
             } as Partial<Meeting>
 
             // Update the meeting in MongoDB

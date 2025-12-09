@@ -284,7 +284,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: currentRow.comments,
               resultsConfirmationStatus: !!currentRow.ResultConfirm,
               electronicVotingEnabled: !!currentRow.ElectronicVoting,
-              /*finalized: finalized,*/
+              finalized: finalized,
+              // Preserve the legacy stock number from the source system
+              // This is useful when the meeting stock is not the main stock
+              legacyStockNum: `${currentRow.stockID}`,
               _status: 'published' as const,
               agenda: currentAgendaItems.map((item) => ({
                 text: item.text,

@@ -48,6 +48,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   stockMarketValue: true,
   invitationLink: true,
   votes: true,
+  hasRelatedStocks: true,
 }
 
 /**
@@ -117,6 +118,40 @@ function createPublishedStatusFilter() {
 }
 
 /**
+ * Helper function to handle boolean filter values
+ * If 'noOptionSelect', adds both true and false conditions (shows all)
+ * Otherwise, converts string values to booleans and adds appropriate filter
+ */
+function handleBooleanFilter(
+  conditions: any[],
+  dbField: string,
+  values: string[],
+  useEqualsForSingle: boolean = false,
+) {
+  if (values[0] == 'noOptionSelect') {
+    conditions.push({
+      [dbField]: { equals: true },
+    })
+    conditions.push({
+      [dbField]: { equals: false },
+    })
+    return
+  }
+
+  const booleanValues = values.map((v) => v === 'true')
+
+  if (useEqualsForSingle && booleanValues.length === 1) {
+    conditions.push({
+      [dbField]: { equals: booleanValues[0] },
+    })
+  } else {
+    conditions.push({
+      [dbField]: { in: booleanValues },
+    })
+  }
+}
+
+/**
  * Creates filter conditions from regular filters
  */
 function createRegularFilters(filters: Record<string, string[]>) {
@@ -144,72 +179,20 @@ function createRegularFilters(filters: Record<string, string[]>) {
           type: { in: values.length ? values : [null] },
         })
       } else if (field === 'isDualStock') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
+        if (values[0] != 'noOptionSelect') {
+          console.log('!!!!! isDualStock filter values: ', values)
         }
-        const booleanValues = values.map((v) => v === 'true')
-        const booleanValue = booleanValues.length === 1 ? booleanValues[0] : booleanValues
-        console.log('!!!!! isDualStock filter values: ', values, booleanValue)
-        conditions.push({
-          isDualStock: { equals: booleanValue },
-        })
+        handleBooleanFilter(conditions, 'isDualStock', values, true)
       } else if (field === 'electronicVotingEnabled') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          electronicVotingEnabled: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'electronicVotingEnabled', values)
+      } else if (field === 'fromRelatedStock') {
+        handleBooleanFilter(conditions, 'hasRelatedStocks', values)
       } else if (field === 'resultsConfirmationStatus') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          resultsConfirmationStatus: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'resultsConfirmationStatus', values)
       } else if (field === 'stockTradable') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.tradable': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.tradable', values)
       } else if (field === 'committeeInitiated') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.isFinancial': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.isFinancial', values)
       } else {
         // Generic field filter
         conditions.push({
@@ -616,6 +599,7 @@ function createMeetingDataObject(
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
     votes: meeting.votes || [],
+    fromRelatedStock: meeting.hasRelatedStocks || false,
   }
 }
 
@@ -733,6 +717,7 @@ async function processMeetingsData(
             nominalValue,
             parentCompany,
             originalStockIds,
+            fromRelatedStock: match.fromRelatedStock,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
@@ -759,6 +744,7 @@ async function processMeetingsData(
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
           originalStockIds: fund.originalStockIds,
+          fromRelatedStock: fund.fromRelatedStock || false,
         }
         if (parentCompaniesMap.has(parentCompanyID)) {
           parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
@@ -792,6 +778,7 @@ async function processMeetingsData(
           const originalStockIds = [
             ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
           ]
+          const fromRelatedStock = funds.some((fund) => fund.fromRelatedStock)
 
           return {
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
@@ -800,6 +787,7 @@ async function processMeetingsData(
             nominalValue: totalNominalValue,
             originalStockIds,
             funds,
+            fromRelatedStock,
           }
         },
       )

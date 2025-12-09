@@ -120,6 +120,7 @@ export const Meetings: CollectionConfig = {
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
+        { name: 'hasRelatedStocks', width: '130px' },
       ],
       [
         { name: 'stock.type', width: '130px' },
@@ -472,6 +473,23 @@ export const Meetings: CollectionConfig = {
                   required: true,
                   admin: {
                     width: '330px',
+                  },
+                },
+                {
+                  name: 'stockId',
+                  label: 'מספר נייר',
+                  type: 'text',
+                  virtual: 'stock.stockId',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'legacyStockNum',
+                  label: 'Legacy Stock Num',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
                   },
                 },
                 {
@@ -840,6 +858,15 @@ export const Meetings: CollectionConfig = {
               ],
             },
             {
+              name: 'hasRelatedStocks',
+              type: 'checkbox',
+              defaultValue: false,
+              label: 'ניירות עוקבים',
+              admin: {
+                hidden: true,
+              },
+            },
+            {
               type: 'row',
               fields: [
                 {
@@ -1163,8 +1190,14 @@ export const Meetings: CollectionConfig = {
                       label: 'אימות החזקות',
                     },
                     {
+                      name: 'fromRelatedStock',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      label: 'החזקה בנייר עוקב',
+                    },
+                    {
                       name: 'original',
-                      label: 'מניה מקורית חול',
+                      label: 'מניה מקורית',
                       type: 'array',
                       admin: {
                         initCollapsed: true,
