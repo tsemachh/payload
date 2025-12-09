@@ -32,7 +32,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         type: true,
       },
       where: {
-        and: [{ stockValue: { exists: false } }, { finalized: { not_equals: true } }],
+        and: [{ stockValue: { exists: false } } /*, { finalized: { not_equals: true } }*/],
       },
       limit: 0,
       depth: 1,
@@ -137,8 +137,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, sqlStockId)
-              request.input('valueDate', sql.DateTime, new Date(dateToUse as string).toISOString())
+              request.input('stockId', sql.Int, Number(sqlStockId))
+              // Pass a JS Date object, not ISO string
+              request.input('valueDate', sql.DateTime, new Date(String(dateToUse)))
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result?.recordset[0] : null
@@ -161,7 +162,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.Int, sqlStockId)
+              request.input('stockId', sql.Int, Number(sqlStockId))
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null
@@ -175,16 +176,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
           let stockValueId
           try {
+            debugger
             // Upsert stock value
             stockValueId = await upsertStockValueFromImport(stockId as string, stockData, {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValue' },
             })
           } catch (e) {
-            console.log(
-              'Error with upsertStockValueFromImport:' + stockId,
-              JSON.stringify(stockData),
+            console.error(
+              'Error with upsertStockValueFromImport:' + stockId + JSON.stringify(stockData),
+              e,
             )
+            console.error('Error', JSON.stringify(e))
             // Also report to migrationFaults with type 'stock-value'
             await logMigrationFault({
               payload,

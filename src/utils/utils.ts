@@ -54,13 +54,20 @@ export async function getSequenceStockValueId(
   let id = null
 
   try {
+    // Normalize to a UTC day range to avoid strict ISO equality pitfalls
+    const d = new Date(valueDate)
+    const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+    const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1))
     const stock = await payload.find({
       collection: 'stock-values',
       limit: 1,
       depth: 0,
       where: {
-        stockId: { equals: stockSequence },
-        valueDate: { equals: new Date(valueDate).toISOString() },
+        and: [
+          { stockId: { equals: stockSequence } },
+          { valueDate: { greater_than_equal: start.toISOString() } },
+          { valueDate: { less_than: end.toISOString() } },
+        ],
       },
     })
     if (stock.docs.length > 0) id = stock.docs[0].id
