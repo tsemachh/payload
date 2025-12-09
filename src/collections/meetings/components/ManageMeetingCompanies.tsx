@@ -82,13 +82,7 @@ export const ManageMeetingCompanies = () => {
         headers: { 'Content-Type': 'application/json' },
       })
       const allData = await allRes.json()
-
-      const inMeetingIds = companiesInMeeting.map((c: any) => (typeof c === 'string' ? c : c.id))
-      const removedIds = removedCompaniesList.map((c: any) => (typeof c === 'string' ? c : c.id))
-      const available = allData.docs.filter((c: any) => {
-        return !inMeetingIds.includes(c.id) && !removedIds.includes(c.id)
-      })
-      setAvailableCompanies(available)
+      setAvailableCompanies(allData)
     } catch (err) {
       console.error('Error fetching meeting data:', err)
     }
@@ -122,12 +116,9 @@ export const ManageMeetingCompanies = () => {
 
       setAvailableStocks(stocks)
       setSelectedStockId(stockData.id) // Default to main stock
-
-      return true
     } catch (err) {
       console.error('Error fetching stock details:', err)
       toast.error('שגיאה בטעינת פרטי נייר ערך')
-      return false
     }
   }
 
@@ -152,17 +143,11 @@ export const ManageMeetingCompanies = () => {
 
   // Check stock and show selection if needed
   const handleAddClick = async () => {
-    const isForeign = await fetchStockDetails()
-    if (isForeign) {
-      //TODORachelBra update for all socks after dvora change
-      setShowStockSelection(true)
-    }
+    setShowStockSelection(true)
     setShowAddModal(true)
+
+    fetchStockDetails()
   }
-  //   const handleAddClick = async () => {
-  //   setShowStockSelection(true)
-  //   fetchStockDetails()
-  // }
 
   // Handle company selection - show fund selection
   const handleCompanySelect = (companyId: string) => {
@@ -188,10 +173,14 @@ export const ManageMeetingCompanies = () => {
       toast.error('יש לבחור חברה ולפחות תיק אחד')
       return
     }
+    if (!selectedStockId) {
+      toast.error('יש לבחור נייר עקך')
+      return
+    }
     setIsProcessing(true)
     try {
       // Use selected stock if foreign, otherwise use meeting stock
-      const stockToUse = isForeignStock && selectedStockId ? selectedStockId : meetingData.stock
+      const stockToUse = selectedStockId
 
       const res = await fetch('/api/meetings/add-company', {
         method: 'POST',

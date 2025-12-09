@@ -1,5 +1,6 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { getIdOfRelationField } from '@/utils/utils'
+import { processCompaniesMeetings } from '../hooks/processCompaniesMeetings'
 
 /**
  * Endpoint to add a company to a meeting
@@ -155,22 +156,25 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
         existingFunds: existingFunds.map((f) => f.name),
         addedFunds: [],
       })
-    } else if (existingFunds.length > 0) {
-      // Some funds exist, some were added
-      return Response.json({
-        success: true,
-        message: `נוספו ${addedFunds.length} תיקים. ${existingFunds.length} תיקים כבר היו קיימים.`,
-        addedFunds: addedFunds.map((f) => f.name),
-        existingFunds: existingFunds.map((f) => f.name),
-      })
     } else {
-      // All funds were added successfully
-      return Response.json({
-        success: true,
-        message: `נוספו ${addedFunds.length} תיקים בהצלחה`,
-        addedFunds: addedFunds.map((f) => f.name),
-        existingFunds: [],
-      })
+      processCompaniesMeetings(req, [meetingId || ''])
+      if (existingFunds.length > 0) {
+        // Some funds exist, some were added
+        return Response.json({
+          success: true,
+          message: `נוספו ${addedFunds.length} תיקים. ${existingFunds.length} תיקים כבר היו קיימים.`,
+          addedFunds: addedFunds.map((f) => f.name),
+          existingFunds: existingFunds.map((f) => f.name),
+        })
+      } else {
+        // All funds were added successfully
+        return Response.json({
+          success: true,
+          message: `נוספו ${addedFunds.length} תיקים בהצלחה`,
+          addedFunds: addedFunds.map((f) => f.name),
+          existingFunds: [],
+        })
+      }
     }
   } catch (error) {
     req.payload.logger.error(`Error adding company to meeting: ${error}`)

@@ -1317,12 +1317,6 @@ export const Meetings: CollectionConfig = {
           typeof item === 'string' ? item : item.id,
         )
         const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
-        console.log('***********holdingsRemovedCompanies', holdingsRemovedCompanies)
-        console.log('***********currentIds.toString()', currentIds.toString())
-        console.log('***********previousIds.toString()', previousIds.toString())
-        console.log('***************isPublish', doc?._status === 'published')
-        console.log('************!meetingAlreadyProcessed', !meetingAlreadyProcessed)
-        console.log('*************req.context?.from', req.context?.from)
 
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
@@ -1336,9 +1330,6 @@ export const Meetings: CollectionConfig = {
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
-            console.log(
-              '******************************************************************.    enter    .******************************************************************',
-            )
             await updateCompaniesMeetingsOnMeetingChange(req, doc)
           }
         }
