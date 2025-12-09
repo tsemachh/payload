@@ -24,7 +24,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Calculate date 3 days ago
     const today = new Date()
     const threeDaysAgo = new Date(today)
-    threeDaysAgo.setDate(today.getDate() - 30)
+    threeDaysAgo.setDate(today.getDate() - 3)
 
     // Format date as YYYY-MM-DD (e.g., '2025-06-06')
     const reportDate = `${threeDaysAgo.getFullYear()}-${String(threeDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(threeDaysAgo.getDate()).padStart(2, '0')}`

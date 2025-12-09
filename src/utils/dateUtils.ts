@@ -21,9 +21,14 @@ export const setToMidnight = (date: Date): Date => {
  * @param dateStr - The date string to parse (e.g., "30/04/2025 15:00:00")
  * @returns A JavaScript Date object
  */
-export function parseDateString(dateStr: string): Date {
+export function parseDateString(dateStr: string | Date): Date {
   if (!dateStr) {
     throw new Error('Date string is empty or undefined')
+  }
+
+  // New: if the incoming value is already a Date, return it as-is
+  if (dateStr instanceof Date) {
+    return dateStr
   }
 
   try {

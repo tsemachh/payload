@@ -78,6 +78,9 @@ export const updateStockRegisteredValue: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
+  if (req.context.from == 'migration' || req.context.from == 'process') {
+    return data
+  }
   // Update stockRegisteredValue when stockValue changes
   const currentStockValue = getIdOfRelationField(data?.stockValue)
   const previousStockValue = getIdOfRelationField(originalDoc?.stockValue)

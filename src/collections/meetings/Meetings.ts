@@ -759,9 +759,18 @@ export const Meetings: CollectionConfig = {
                   },
                   filterOptions: ({ data, req }) => {
                     const where: Where = {
-                      stockId: {
-                        equals: data?.stock,
-                      },
+                      or: [
+                        {
+                          stockId: {
+                            equals: data?.stock,
+                          },
+                        },
+                        {
+                          'stockId.dualStock': {
+                            equals: data?.stock,
+                          },
+                        },
+                      ],
                     }
                     if (data?.holdingsLimit) {
                       where.valueDate = {

@@ -95,11 +95,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // await backfillDiscontinuedHoldings({ payload, req })
     console.log('=== Discontinued Holdings Backfill Completed ===\n')
 
-    // 18. Migrate Meeting Stock Values
-    console.log('\n=== Starting Meeting Stock Values Migration ===')
-    await migrateMeetingStockValues({ payload, req })
-    console.log('=== Meeting Stock Values Migration Completed ===\n')
-
     // 17. Migrate Meeting Holdings
     console.log('\n=== Starting Meeting Holdings Migration ===')
     await migrateMeetingHoldings({ payload, req })
@@ -134,6 +129,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log('\n=== Starting Magna Meetings Migration ===')
     await migrateMagnaMeetings({ payload, req })
     console.log('=== Magna Meetings Migration Completed ===\n')
+
+    // 18. Migrate Meeting Stock Values
+    console.log('\n=== Starting Meeting Stock Values Migration ===')
+    await migrateMeetingStockValues({ payload, req })
+    console.log('=== Meeting Stock Values Migration Completed ===\n')
 
     // Recalculate finalized flags at the end
     console.log('\n=== Starting setFinalized Migration ===')
