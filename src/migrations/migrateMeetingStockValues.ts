@@ -22,6 +22,27 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
+    // Build Foreign stock mapping (ISIN -> MSSQL stockID)
+    // This allows us to fetch MSSQL values for foreign stocks whose `stockId` is an ISIN (non‑numeric)
+    const foreignIsinToSqlId = new Map<string, string>()
+    try {
+      const foreignMapping = await payload.find({
+        collection: 'stock-migration-mapping',
+        where: { type: { equals: 'Foreign' } },
+        limit: 0,
+      })
+      for (const doc of foreignMapping.docs as any[]) {
+        if (doc?.isin && doc?.stockId && /^\d+$/.test(String(doc.stockId))) {
+          foreignIsinToSqlId.set(String(doc.isin), String(doc.stockId))
+        }
+      }
+      console.log(
+        `Loaded ${foreignIsinToSqlId.size} foreign stock mappings (ISIN -> MSSQL stockID)`,
+      )
+    } catch (e) {
+      console.warn('Could not load foreign stock mapping. Will proceed without it.', e)
+    }
+
     // Get all NON-finalized meetings missing stockValue
     console.log('Fetching all non-finalized meetings (missing stockValue)...')
     const meetings = await payload.find({
@@ -104,6 +125,21 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               console.log(
                 `Meeting ${meeting.id}: error looking up source stock for dual stock ${stock.id}. Using dual stock MSSQL ID ${stock.stockId}.`,
                 e,
+              )
+            }
+          }
+
+          // If still non‑numeric and stock is Foreign, try mapping ISIN -> MSSQL stockID
+          if (!/^\d+$/.test(sqlStockId) && (stock as any)?.origin === 'Foreign') {
+            const mapped = foreignIsinToSqlId.get(String(sqlStockId))
+            if (mapped && /^\d+$/.test(mapped)) {
+              console.log(
+                `Meeting ${meeting.id}: mapped foreign ISIN ${sqlStockId} -> MSSQL ID ${mapped} via stock-migration-mapping.`,
+              )
+              sqlStockId = mapped
+            } else {
+              console.log(
+                `Meeting ${meeting.id}: foreign stock ${sqlStockId} has no mapping to MSSQL ID.`,
               )
             }
           }

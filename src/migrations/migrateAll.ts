@@ -132,6 +132,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // 18. Migrate Meeting Stock Values
     console.log('\n=== Starting Meeting Stock Values Migration ===')
+    await migrateMeetingStockValues({ payload, req }) // Running twice to fill the gaps
     await migrateMeetingStockValues({ payload, req })
     console.log('=== Meeting Stock Values Migration Completed ===\n')
 
