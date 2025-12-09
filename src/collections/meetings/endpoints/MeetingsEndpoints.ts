@@ -118,6 +118,40 @@ function createPublishedStatusFilter() {
 }
 
 /**
+ * Helper function to handle boolean filter values
+ * If 'noOptionSelect', adds both true and false conditions (shows all)
+ * Otherwise, converts string values to booleans and adds appropriate filter
+ */
+function handleBooleanFilter(
+  conditions: any[],
+  dbField: string,
+  values: string[],
+  useEqualsForSingle: boolean = false,
+) {
+  if (values[0] == 'noOptionSelect') {
+    conditions.push({
+      [dbField]: { equals: true },
+    })
+    conditions.push({
+      [dbField]: { equals: false },
+    })
+    return
+  }
+
+  const booleanValues = values.map((v) => v === 'true')
+
+  if (useEqualsForSingle && booleanValues.length === 1) {
+    conditions.push({
+      [dbField]: { equals: booleanValues[0] },
+    })
+  } else {
+    conditions.push({
+      [dbField]: { in: booleanValues },
+    })
+  }
+}
+
+/**
  * Creates filter conditions from regular filters
  */
 function createRegularFilters(filters: Record<string, string[]>) {
@@ -127,7 +161,7 @@ function createRegularFilters(filters: Record<string, string[]>) {
     if (values && values.length > 0) {
       // Map frontend field names to database field names
       const dbField = getDbFieldName(field)
-      //handle fromRelatedStock filter
+
       if (field === 'meetingState') {
         conditions.push({
           state: { in: values },
@@ -145,85 +179,20 @@ function createRegularFilters(filters: Record<string, string[]>) {
           type: { in: values.length ? values : [null] },
         })
       } else if (field === 'isDualStock') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
+        if (values[0] != 'noOptionSelect') {
+          console.log('!!!!! isDualStock filter values: ', values)
         }
-        const booleanValues = values.map((v) => v === 'true')
-        const booleanValue = booleanValues.length === 1 ? booleanValues[0] : booleanValues
-        console.log('!!!!! isDualStock filter values: ', values, booleanValue)
-        conditions.push({
-          isDualStock: { equals: booleanValue },
-        })
+        handleBooleanFilter(conditions, 'isDualStock', values, true)
       } else if (field === 'electronicVotingEnabled') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            electronicVotingEnabled: { equals: true },
-          })
-          conditions.push({
-            electronicVotingEnabled: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          electronicVotingEnabled: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'electronicVotingEnabled', values)
       } else if (field === 'fromRelatedStock') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            fromRelatedStock: { equals: true },
-          })
-          conditions.push({
-            fromRelatedStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          fromRelatedStock: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'hasRelatedStocks', values)
       } else if (field === 'resultsConfirmationStatus') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            resultsConfirmationStatus: { equals: true },
-          })
-          conditions.push({
-            resultsConfirmationStatus: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          resultsConfirmationStatus: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'resultsConfirmationStatus', values)
       } else if (field === 'stockTradable') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            'stock.tradable': { equals: true },
-          })
-          conditions.push({
-            'stock.tradable': { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.tradable': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.tradable', values)
       } else if (field === 'committeeInitiated') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            'stock.isFinancial': { equals: true },
-          })
-          conditions.push({
-            'stock.isFinancial': { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.isFinancial': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.isFinancial', values)
       } else {
         // Generic field filter
         conditions.push({
