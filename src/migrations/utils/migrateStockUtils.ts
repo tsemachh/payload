@@ -1,5 +1,6 @@
 import { StockType } from '@/payload-types'
 import { PayloadRequest } from 'payload'
+import { getIdOfRelationField } from '@/utils/utils'
 
 export interface StockRow {
   stockID: string
@@ -145,9 +146,9 @@ export async function getStockIdToSequenceMap(req: PayloadRequest) {
     depth: 0,
   })
   for (const stock of stockIdToSequenceMap.docs) {
-    if (stock.relatedStock && typeof stock.relatedStock === 'object' && 'id' in stock.relatedStock)
-      stockMap.set(`${stock.stockId}`, String(stock.relatedStock.id))
-    else {
+    if (stock.relatedStock) {
+      stockMap.set(`${stock.stockId}`, String(getIdOfRelationField(stock.relatedStock)))
+    } else {
       if (stock.stockId) {
         stockMap.set(`${stock.stockId}`, String(stock.id))
       }

@@ -23,7 +23,7 @@ import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
  */
 const MEETING_SELECT_FIELDS: SelectType = {
   id: true,
-  meetingId: true,
+  primaryLegacyId: true,
   agenda: true,
   labels: true,
   companies: true,
@@ -117,6 +117,40 @@ function createPublishedStatusFilter() {
 }
 
 /**
+ * Helper function to handle boolean filter values
+ * If 'noOptionSelect', adds both true and false conditions (shows all)
+ * Otherwise, converts string values to booleans and adds appropriate filter
+ */
+function handleBooleanFilter(
+  conditions: any[],
+  dbField: string,
+  values: string[],
+  useEqualsForSingle: boolean = false,
+) {
+  if (values[0] == 'noOptionSelect') {
+    conditions.push({
+      [dbField]: { equals: true },
+    })
+    conditions.push({
+      [dbField]: { equals: false },
+    })
+    return
+  }
+
+  const booleanValues = values.map((v) => v === 'true')
+
+  if (useEqualsForSingle && booleanValues.length === 1) {
+    conditions.push({
+      [dbField]: { equals: booleanValues[0] },
+    })
+  } else {
+    conditions.push({
+      [dbField]: { in: booleanValues },
+    })
+  }
+}
+
+/**
  * Creates filter conditions from regular filters
  */
 function createRegularFilters(filters: Record<string, string[]>) {
@@ -144,72 +178,20 @@ function createRegularFilters(filters: Record<string, string[]>) {
           type: { in: values.length ? values : [null] },
         })
       } else if (field === 'isDualStock') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
+        if (values[0] != 'noOptionSelect') {
+          console.log('!!!!! isDualStock filter values: ', values)
         }
-        const booleanValues = values.map((v) => v === 'true')
-        const booleanValue = booleanValues.length === 1 ? booleanValues[0] : booleanValues
-        console.log('!!!!! isDualStock filter values: ', values, booleanValue)
-        conditions.push({
-          isDualStock: { equals: booleanValue },
-        })
+        handleBooleanFilter(conditions, 'isDualStock', values, true)
       } else if (field === 'electronicVotingEnabled') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          electronicVotingEnabled: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'electronicVotingEnabled', values)
+      } else if (field === 'fromRelatedStock') {
+        handleBooleanFilter(conditions, 'hasRelatedStocks', values)
       } else if (field === 'resultsConfirmationStatus') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          resultsConfirmationStatus: { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'resultsConfirmationStatus', values)
       } else if (field === 'stockTradable') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.tradable': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.tradable', values)
       } else if (field === 'committeeInitiated') {
-        if (values[0] == 'noOptionSelect') {
-          conditions.push({
-            isDualStock: { equals: true },
-          })
-          conditions.push({
-            isDualStock: { equals: false },
-          })
-        }
-        const booleanValues = values.map((v) => v === 'true')
-        conditions.push({
-          'stock.isFinancial': { in: booleanValues },
-        })
+        handleBooleanFilter(conditions, 'stock.isFinancial', values)
       } else {
         // Generic field filter
         conditions.push({
@@ -408,7 +390,7 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     if (searchTerm) {
       whereConditions.push({
         or: [
-          { meetingId: { contains: searchTerm } },
+          { primaryLegacyId: { contains: searchTerm } },
           { 'stock.stockId': { contains: searchTerm } },
           { 'stock.name': { contains: searchTerm } },
           { 'stock.symbol': { contains: searchTerm } },
@@ -445,7 +427,52 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User, req)
+    let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User, req)
+
+    // Post-fetch filter for fromRelatedStock
+    if (filters.fromRelatedStock && filters.fromRelatedStock[0] !== 'noOptionSelect') {
+      const shouldShowRelatedStock = filters.fromRelatedStock.includes('true')
+
+      meetingData = meetingData
+        .map((meeting) => {
+          if (!meeting) return null
+
+          // Filter companies based on fromRelatedStock in their funds
+          const filteredCompanies = meeting.companies.filter((company) => {
+            // Check if any fund in this company has fromRelatedStock matching the filter
+            return company.funds.some((fund) => {
+              if (shouldShowRelatedStock) {
+                return fund.fromRelatedStock === true
+              } else {
+                return fund.fromRelatedStock !== true
+              }
+            })
+          })
+
+          // If no companies match the filter, exclude this meeting
+          if (filteredCompanies.length === 0) {
+            return null
+          }
+
+          // Return meeting with filtered companies
+          return {
+            ...meeting,
+            companies: filteredCompanies,
+            // Recalculate aggregated values based on filtered companies
+            nominalValue: filteredCompanies.reduce((acc, obj) => acc + obj.nominalValue, 0),
+            percentageHolding: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.percentageHolding,
+              0,
+            ),
+            holdingValueInMillions: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.holdingValueInMillions,
+              0,
+            ),
+            fromRelatedStock: filteredCompanies.some((c) => c.fromRelatedStock),
+          }
+        })
+        .filter((item): item is MeetingTableDataType => item !== null)
+    }
 
     return createSuccessResponse(
       meetingData.filter((item): item is MeetingTableDataType => item !== null),
@@ -579,7 +606,7 @@ function createMeetingDataObject(
 ): MeetingTableDataType {
   return {
     meetingIdPayload: meeting.id,
-    meetingId: meeting.meetingId || '' || '',
+    meetingId: meeting.primaryLegacyId || '' || '',
     agendas,
     labels: (meeting.labels || []).filter(
       (label): label is { id: string; label: string; color: string } =>
@@ -616,6 +643,7 @@ function createMeetingDataObject(
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
     votes: meeting.votes || [],
+    fromRelatedStock: companiesArray.some((c) => c.fromRelatedStock),
   }
 }
 
@@ -684,7 +712,7 @@ async function processMeetingsData(
       // If stockNumber is undefined, log a message and skip this item
       if (!stockPresent?.stockId) {
         console.error(
-          `Emda Error:\nSkipping meeting with ID: "${meeting.meetingId}": stockNumber is missing`,
+          `Emda Error:\nSkipping meeting with ID: "${meeting.primaryLegacyId}": stockNumber is missing`,
         )
         return null
       }
@@ -733,6 +761,7 @@ async function processMeetingsData(
             nominalValue,
             parentCompany,
             originalStockIds,
+            fromRelatedStock: match.fromRelatedStock,
           }
         }),
       ).then((results) => results.filter((result) => result !== null))
@@ -759,6 +788,7 @@ async function processMeetingsData(
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
           originalStockIds: fund.originalStockIds,
+          fromRelatedStock: fund.fromRelatedStock || false,
         }
         if (parentCompaniesMap.has(parentCompanyID)) {
           parentCompaniesMap.get(parentCompanyID)!.funds.push(tmpFund)
@@ -792,6 +822,7 @@ async function processMeetingsData(
           const originalStockIds = [
             ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
           ]
+          const fromRelatedStock = funds.some((fund) => fund.fromRelatedStock)
 
           return {
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
@@ -800,6 +831,7 @@ async function processMeetingsData(
             nominalValue: totalNominalValue,
             originalStockIds,
             funds,
+            fromRelatedStock,
           }
         },
       )
@@ -882,12 +914,12 @@ async function processMeetingsData(
       if (companiesArray.length === 0) {
         console.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId,
+            meeting.primaryLegacyId,
           'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 4px;',
         )
         req?.payload.logger.error(
           '%c--- EMDA CRITICAL ERROR! ---\nMeeting without funds. The company is invited to the meeting but fund data is missing.\nSkipping meeting with ID: ' +
-            meeting.meetingId
+            meeting.primaryLegacyId,
         )
         return null
       }

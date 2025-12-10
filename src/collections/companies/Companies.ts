@@ -2,7 +2,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
-import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies } from './createLabels'
+import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies, updateTagInCompany } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
 
@@ -41,6 +41,7 @@ export const Companies: CollectionConfig = {
     },
     group: 'ניהול',
   },
+  defaultSort: '_order',
   access: {
     create: isAdmin,
     read: isUserCompany,
@@ -561,6 +562,12 @@ export const Companies: CollectionConfig = {
       path: '/getLabels',
       method: 'post',
       handler: getLabelsForCompanies,
+    },
+    {
+      path: '/updateLabel',
+      method:'post',
+      handler: updateTagInCompany
+
     },
   ],
 }

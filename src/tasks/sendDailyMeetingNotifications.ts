@@ -310,8 +310,8 @@ export const generateEmailBody = (
       // Add meeting name/title if available
       if (meeting.fullName && typeof meeting.fullName === 'string') {
         html += `<strong>${meeting.fullName}</strong>`
-      } else if (meeting.meetingId && typeof meeting.meetingId === 'string') {
-        html += `<strong>אסיפה ${meeting.meetingId}</strong>`
+      } else if (meeting.primaryLegacyId && typeof meeting.primaryLegacyId === 'string') {
+        html += `<strong>אסיפה ${meeting.primaryLegacyId}</strong>`
       } else {
         html += '<strong>אסיפה</strong>'
       }

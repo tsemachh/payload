@@ -19,14 +19,16 @@ import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { ReportApprovalUpload } from './uploadApproval'
 import { OwnedQuantityInput } from './OwnedQuantityInput'
+import { sortFundsData } from '@/utils/companySort'
 
 export interface VoteData {
   fundsData: Array<{
-    company: { id: string; name: string }
-    fund: { id: string; name: string }
+    company: { id: string; name: string; _order?: string }
+    fund: { id: string; name: string; _order?: string }
     quantity: number
     ownedQuantity?: number
     verifiedHoldings: boolean
+    fromRelatedStock?: boolean
     original?: {
       stockId: string
       quantity: number
@@ -42,6 +44,7 @@ export interface VoteData {
   displayVotingRecommendation: boolean
   meeting: string
   meetingDate: string
+  meetingStockId: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -95,12 +98,17 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [hasErrors, setHasErrors] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [sortedFundsData, setSortedFundsData] = useState<VoteData['fundsData']>([])
   const router = useRouter()
 
   useEffect(() => {
     if (!voteData) return
     setFormData(JSON.parse(JSON.stringify(voteData)))
     setInitialFormData(JSON.parse(JSON.stringify(voteData))) // Deep copy for comparison
+
+    // Sort the funds data using the _order fields that come from the API
+    const sorted = sortFundsData(voteData.fundsData)
+    setSortedFundsData(sorted)
   }, [voteData])
 
   useEffect(() => {
@@ -118,7 +126,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     if (!currentData || !originalData) return false
 
     // Compare reported status
-    if (currentData.reported !== originalData.reported) return true
+    if (
+      currentData.reported !== originalData.reported ||
+      (currentData.reportApproval as any)?.id !== (originalData.reportApproval as any)?.id
+    )
+      return true
 
     // Compare funds data using JSON.stringify
     return JSON.stringify(currentData.fundsData) !== JSON.stringify(originalData.fundsData)
@@ -197,17 +209,25 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     }
   }
 
-  const updateFundData = (index: number, field: string, value: any) => {
+  const updateFundData = (sortedIndex: number, field: string, value: any) => {
     if (!formData) return
+
+    const sortedFund = sortedFundsData[sortedIndex]
+    const actualIndex = formData.fundsData.findIndex(
+      (fund) => fund.company.id === sortedFund.company.id && fund.fund.id === sortedFund.fund.id,
+    )
+
+    if (actualIndex === -1) return
+
     const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
     if (booleanValue) {
-      updatedFunds[index].ownedQuantity = undefined
+      updatedFunds[actualIndex].ownedQuantity = undefined
     }
     if (field.startsWith('original.')) {
       // Handle nested original fields
       const originalField = field.replace('original.', '')
-      const currentOriginal = updatedFunds[index].original || ({} as any)
+      const currentOriginal = updatedFunds[actualIndex].original || ({} as any)
       if (booleanValue) {
         currentOriginal.ownedQuantity = undefined
       }
@@ -215,8 +235,8 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
         originalField === 'ownedQuantity'
           ? Number.parseFloat(value.replace(/,/g, ''))
           : booleanValue
-      updatedFunds[index] = {
-        ...updatedFunds[index],
+      updatedFunds[actualIndex] = {
+        ...updatedFunds[actualIndex],
         original: {
           ...currentOriginal,
           [originalField]: numericValue,
@@ -226,9 +246,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       // Handle regular fields
       const numericValue =
         field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) : booleanValue
-      updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
+      updatedFunds[actualIndex] = { ...updatedFunds[actualIndex], [field]: numericValue }
     }
-    setFormData({ ...formData, fundsData: updatedFunds })
+
+    const newFormData = { ...formData, fundsData: updatedFunds }
+    setFormData(newFormData)
+
+    const newSorted = sortFundsData(newFormData.fundsData)
+    setSortedFundsData(newSorted)
   }
 
   const getVoteResultColor = (result: string) => {
@@ -253,7 +278,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       return 'text-gray-700 bg-gray-100 border-gray-200 dark:text-gray-800 dark:bg-gray-100 dark:border-gray-200'
     }
   }
-  const isOriginal = formData?.fundsData.some((fund) => fund.original)
+  const isOriginal =
+    formData?.fundsData.some((fund) => fund.original) &&
+    formData.fundsData.some((fund) => fund.fromRelatedStock)
 
   const saveDraftData = (label: string, updatedData: any) => {
     console.log(`Draft saved for ${label}`, updatedData)
@@ -325,7 +352,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 </TableHead>
                 {isOriginal && (
                   <TableHead className="text-right w-32 text-gray-900 dark:text-white">
-                    נייר מקורי
+                    נייר עוקב
                   </TableHead>
                 )}
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
@@ -340,7 +367,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {formData.fundsData.map((fund, index) => {
+              {sortedFundsData.map((fund, index) => {
                 const hasOriginal = fund.original
                 const displayData = hasOriginal ? fund.original : fund
                 return (
@@ -356,7 +383,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     </TableCell>
                     {isOriginal && (
                       <TableCell className="text-right text-base text-gray-900 dark:text-white">
-                        {fund.original?.stockId || ''}
+                        {fund.original?.stockId != voteData.meetingStockId
+                          ? fund.original?.stockId
+                          : ''}
                       </TableCell>
                     )}
                     <TableCell>
@@ -418,7 +447,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 </TableCell>
                 <TableCell className="text-right text-base text-gray-900 dark:text-white">
                   {formatNumberWithLocale(
-                    formData.fundsData.reduce((sum, fund) => {
+                    sortedFundsData.reduce((sum, fund) => {
                       const displayData = fund.original || fund
                       return sum + (displayData?.quantity || 0)
                     }, 0),
@@ -427,7 +456,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 <TableCell />
                 <TableCell className="text-right text-base text-gray-900 dark:text-white">
                   {(() => {
-                    const hasNullVerification = formData.fundsData.some((fund) => {
+                    const hasNullVerification = sortedFundsData.some((fund) => {
                       const displayData = fund.original || fund
                       return (
                         displayData?.verifiedHoldings === null ||
@@ -440,7 +469,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     }
 
                     return formatNumberWithLocale(
-                      formData.fundsData.reduce((sum, fund) => {
+                      sortedFundsData.reduce((sum, fund) => {
                         const displayData = fund.original || fund
                         const ownedQty = displayData?.ownedQuantity
                         return sum + (ownedQty != null && ownedQty !== 0 ? ownedQty : 0)
@@ -554,14 +583,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                           </div>
                         )}
                       <div
-                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision || '')}`}
+                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index]?.voteDecision || '')}`}
                       >
                         {voteItem?.voteDecision || '----'}
                       </div>
                     </div>
                   </div>
                 </div>
-                {voteItem.voteReason && (
+                {voteItem?.voteReason && (
                   <span
                     dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                     title={voteItem.voteReason}

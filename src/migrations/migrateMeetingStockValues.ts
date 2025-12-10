@@ -22,8 +22,29 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       return
     }
 
-    // Get all meetings
-    console.log('Fetching all meetings...')
+    // Build Foreign stock mapping (ISIN -> MSSQL stockID)
+    // This allows us to fetch MSSQL values for foreign stocks whose `stockId` is an ISIN (non‑numeric)
+    const foreignIsinToSqlId = new Map<string, string>()
+    try {
+      const foreignMapping = await payload.find({
+        collection: 'stock-migration-mapping',
+        where: { type: { equals: 'Foreign' } },
+        limit: 0,
+      })
+      for (const doc of foreignMapping.docs as any[]) {
+        if (doc?.isin && doc?.stockId && /^\d+$/.test(String(doc.stockId))) {
+          foreignIsinToSqlId.set(String(doc.isin), String(doc.stockId))
+        }
+      }
+      console.log(
+        `Loaded ${foreignIsinToSqlId.size} foreign stock mappings (ISIN -> MSSQL stockID)`,
+      )
+    } catch (e) {
+      console.warn('Could not load foreign stock mapping. Will proceed without it.', e)
+    }
+
+    // Get all NON-finalized meetings missing stockValue
+    console.log('Fetching all non-finalized meetings (missing stockValue)...')
     const meetings = await payload.find({
       collection: 'meetings',
       select: {
@@ -32,7 +53,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         type: true,
       },
       where: {
-        stockValue: { exists: false },
+        and: [{ stockValue: { exists: false } } /*, { finalized: { not_equals: true } }*/],
       },
       limit: 0,
       depth: 1,
@@ -108,6 +129,21 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             }
           }
 
+          // If still non‑numeric and stock is Foreign, try mapping ISIN -> MSSQL stockID
+          if (!/^\d+$/.test(sqlStockId) && (stock as any)?.origin === 'Foreign') {
+            const mapped = foreignIsinToSqlId.get(String(sqlStockId))
+            if (mapped && /^\d+$/.test(mapped)) {
+              console.log(
+                `Meeting ${meeting.id}: mapped foreign ISIN ${sqlStockId} -> MSSQL ID ${mapped} via stock-migration-mapping.`,
+              )
+              sqlStockId = mapped
+            } else {
+              console.log(
+                `Meeting ${meeting.id}: foreign stock ${sqlStockId} has no mapping to MSSQL ID.`,
+              )
+            }
+          }
+
           // Single numeric check on the final sqlStockId
           if (!/^\d+$/.test(sqlStockId)) {
             console.log(`Stock ${sqlStockId} has non-numeric ID, skipping meeting ${meeting.id}`)
@@ -137,8 +173,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.VarChar, sqlStockId)
-              request.input('valueDate', sql.DateTime, new Date(dateToUse as string).toISOString())
+              request.input('stockId', sql.Int, Number(sqlStockId))
+              // Pass a JS Date object, not ISO string
+              request.input('valueDate', sql.DateTime, new Date(String(dateToUse)))
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result?.recordset[0] : null
@@ -161,7 +198,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             `
             const request = pool?.request()
             if (request) {
-              request.input('stockId', sql.Int, sqlStockId)
+              request.input('stockId', sql.Int, Number(sqlStockId))
             }
             const result = await request?.query(query)
             if (result) stockData = result.recordset.length > 0 ? result.recordset[0] : null
@@ -175,16 +212,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           }
           let stockValueId
           try {
+            debugger
             // Upsert stock value
             stockValueId = await upsertStockValueFromImport(stockId as string, stockData, {
               ...req,
               context: { ...req.context, from: 'migration', process: 'migrateMeetingsStockValue' },
             })
           } catch (e) {
-            console.log(
-              'Error with upsertStockValueFromImport:' + stockId,
-              JSON.stringify(stockData),
+            console.error(
+              'Error with upsertStockValueFromImport:' + stockId + JSON.stringify(stockData),
+              e,
             )
+            console.error('Error', JSON.stringify(e))
             // Also report to migrationFaults with type 'stock-value'
             await logMigrationFault({
               payload,

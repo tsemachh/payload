@@ -8,9 +8,9 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 
   try {
     const body = await req.json()
-    const { companyIds, label, color, stocks: stock } = body
+    const { companyIds, label, color, stocks: stock, labelId } = body
     if (!Array.isArray(companyIds) || companyIds.length === 0 || !label || !color || !stock) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 })
+      return Response.json({ error: 'Missing fields' }, { status: 400 })
     }
 
     const results = []
@@ -24,30 +24,45 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 
         const existingLabels = company?.label?.labels || []
 
-        const companiesWithSameLabel = companyIds
+        const updatedLabels = existingLabels.map((lbl: any) => {
+          if (lbl.labelId === labelId) {
+            return {
+              ...lbl,
+              label,
+              color,
+              stock,
+              companiesWithSameLabel: companyIds,
+            }
+          }
+          return lbl
+        })
 
-        const updatedLabels = [...existingLabels, { label, color, stock, companiesWithSameLabel }]
-
+        const isExisting = existingLabels.some((lbl: any) => lbl.labelId === labelId)
+        if (!isExisting) {
+          updatedLabels.push({
+            labelId,
+            label,
+            color,
+            stock,
+            companiesWithSameLabel: companyIds,
+          })
+        }
         const updatedCompany = await req.payload.update({
           collection: 'companies',
           id: companyId,
           data: {
-            label: {
-              labels: updatedLabels,
-            },
+            label: { labels: updatedLabels },
           },
         })
 
         results.push({ success: true, companyId, updatedCompany })
       } catch (err) {
-        console.error(`❌ Failed to update company ${companyId}:`, err)
         results.push({ success: false, companyId, error: (err as Error).message })
       }
     }
 
     return Response.json({ results })
   } catch (error) {
-    console.error('❌ Failed to add tag:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -92,7 +107,6 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
           },
         },
       })
-      console.log('✅ Updated company:', updatedCompany?.id)
 
       results.push(updatedCompany)
     }
@@ -135,6 +149,111 @@ export const getLabelsForCompanies = async (req: PayloadRequest) => {
     return Response.json({ results })
   } catch (err) {
     console.error('❌ getLabelsForCompanies error:', err)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
+export const updateTagInCompany = async (req: PayloadRequest) => {
+  if (typeof req.json !== 'function') {
+    return Response.json({ error: 'Invalid request' }, { status: 400 })
+  }
+
+  try {
+    const body = await req.json()
+    const {
+      companyIds,
+      prevComp,
+      prevStocks,
+      prevColor,
+      prevLabel,
+      labelId,
+      label,
+      color,
+      stocks,
+    } = body
+    if (
+      !Array.isArray(companyIds) ||
+      companyIds.length === 0 ||
+      !Array.isArray(stocks) ||
+      stocks.length === 0 ||
+      !labelId ||
+      !label ||
+      !color
+    ) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const prevCompIds: string[] = prevComp || []
+
+    const removedCompanyIds = prevCompIds.filter((id) => !companyIds.includes(id))
+    const removeStockIds = prevStocks.filter((id: any) => !stocks.includes(id))
+    if (removedCompanyIds.length && removeStockIds.length) {
+      await deleteTagFromCompany({
+        ...req,
+        json: async () => ({
+          companyIds: prevCompIds,
+          stocks: removeStockIds,
+          labelId,
+          action: 'delete',
+          tagLabel: prevLabel,
+          tagColor: prevColor,
+        }),
+      } as any)
+    } else {
+      if (removedCompanyIds.length) {
+        await deleteTagFromCompany({
+          ...req,
+          json: async () => ({
+            companyIds: prevCompIds,
+            stocks: prevStocks,
+            labelId,
+            action: 'delete',
+            tagLabel: prevLabel,
+            tagColor: prevColor,
+          }),
+        } as any)
+      } else {
+        if (removeStockIds.length) {
+          await deleteTagFromCompany({
+            ...req,
+            json: async () => ({
+              companyIds: prevCompIds,
+              stocks: removeStockIds,
+              labelId,
+              action: 'delete',
+              tagLabel: prevLabel,
+              tagColor: prevColor,
+            }),
+          } as any)
+        } else {
+          await deleteTagFromCompany({
+            ...req,
+            json: async () => ({
+              companyIds: prevCompIds,
+              stocks: prevStocks,
+              labelId,
+              action: 'delete',
+              tagLabel: prevLabel,
+              tagColor: prevColor,
+            }),
+          } as any)
+        }
+      }
+    }
+
+    await addTagToCompany({
+      ...req,
+      json: async () => ({
+        companyIds,
+        label,
+        color,
+        stocks,
+        labelId,
+      }),
+    } as any)
+
+    return Response.json({ success: true })
+  } catch (error) {
+    console.error('❌ Failed to update tag:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

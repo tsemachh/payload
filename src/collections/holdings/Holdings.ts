@@ -133,8 +133,8 @@ export const Holdings: CollectionConfig = {
               },
             },
             {
-              name: 'originalForeignData',
-              label: 'החזקה מקורית מניית חול',
+              name: 'originalData',
+              label: 'החזקה מקורית',
               type: 'array',
               admin: {
                 initCollapsed: true,
@@ -144,8 +144,7 @@ export const Holdings: CollectionConfig = {
                 },
                 condition: (data, siblingData) => {
                   return (
-                    Array.isArray(siblingData.originalForeignData) &&
-                    siblingData.originalForeignData.length > 0
+                    Array.isArray(siblingData.originalData) && siblingData.originalData.length > 0
                   )
                 },
               },
