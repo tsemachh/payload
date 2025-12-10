@@ -260,8 +260,7 @@ export const createMeetingColumns = (
     header: 'ניירות עוקבים',
     type: 'boolean',
     filterable: true,
-    positionCenter: true,
-    render: (row) => <BooleanIcon iconType={Boolean(row.fromRelatedStock)} />,
+    render: (row) => <BooleanIcon iconType={Boolean(row.fromRelatedStock)} showX={false} />,
     minWidth: 90,
   },
   {

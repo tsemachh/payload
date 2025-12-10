@@ -153,6 +153,7 @@ export const Meetings: CollectionConfig = {
       'totalHoldings',
       'electronicVotingEnabled',
       'invitationLink',
+      'hasRelatedStocks',
     ],
     pagination: {
       defaultLimit: 300,

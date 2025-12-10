@@ -48,7 +48,6 @@ const MEETING_SELECT_FIELDS: SelectType = {
   stockMarketValue: true,
   invitationLink: true,
   votes: true,
-  hasRelatedStocks: true,
 }
 
 /**
@@ -428,7 +427,52 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
     const safeFunds = getSafeFunds(user?.funds)
 
     // Process results to standardized format
-    const meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User, req)
+    let meetingData = await processMeetingsData(meetings.docs, safeFunds, user as User, req)
+
+    // Post-fetch filter for fromRelatedStock
+    if (filters.fromRelatedStock && filters.fromRelatedStock[0] !== 'noOptionSelect') {
+      const shouldShowRelatedStock = filters.fromRelatedStock.includes('true')
+
+      meetingData = meetingData
+        .map((meeting) => {
+          if (!meeting) return null
+
+          // Filter companies based on fromRelatedStock in their funds
+          const filteredCompanies = meeting.companies.filter((company) => {
+            // Check if any fund in this company has fromRelatedStock matching the filter
+            return company.funds.some((fund) => {
+              if (shouldShowRelatedStock) {
+                return fund.fromRelatedStock === true
+              } else {
+                return fund.fromRelatedStock !== true
+              }
+            })
+          })
+
+          // If no companies match the filter, exclude this meeting
+          if (filteredCompanies.length === 0) {
+            return null
+          }
+
+          // Return meeting with filtered companies
+          return {
+            ...meeting,
+            companies: filteredCompanies,
+            // Recalculate aggregated values based on filtered companies
+            nominalValue: filteredCompanies.reduce((acc, obj) => acc + obj.nominalValue, 0),
+            percentageHolding: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.percentageHolding,
+              0,
+            ),
+            holdingValueInMillions: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.holdingValueInMillions,
+              0,
+            ),
+            fromRelatedStock: filteredCompanies.some((c) => c.fromRelatedStock),
+          }
+        })
+        .filter((item): item is MeetingTableDataType => item !== null)
+    }
 
     return createSuccessResponse(
       meetingData.filter((item): item is MeetingTableDataType => item !== null),
@@ -599,7 +643,7 @@ function createMeetingDataObject(
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
     votes: meeting.votes || [],
-    fromRelatedStock: meeting.hasRelatedStocks || false,
+    fromRelatedStock: companiesArray.some((c) => c.fromRelatedStock),
   }
 }
 

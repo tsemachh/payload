@@ -192,7 +192,7 @@ export default function VoteCompanySelector({
                 {company.originalStockIds?.length ? (
                   <div className="flex flex-col">
                     <div className="flex justify-between gap-4 font-bold">
-                      <div>נייר מקורי</div>
+                      <div>מס׳ נייר</div>
                       <div>ע׳ נקוב</div>
                     </div>
                     {company.originalStockIds.map((stock: any, index: number) => (

@@ -583,14 +583,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                           </div>
                         )}
                       <div
-                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision || '')}`}
+                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index]?.voteDecision || '')}`}
                       >
                         {voteItem?.voteDecision || '----'}
                       </div>
                     </div>
                   </div>
                 </div>
-                {voteItem.voteReason && (
+                {voteItem?.voteReason && (
                   <span
                     dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                     title={voteItem.voteReason}

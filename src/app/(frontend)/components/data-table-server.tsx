@@ -1186,7 +1186,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                               return new Intl.NumberFormat('he-IL').format(value)
                                             }
                                             if (typeof value === 'boolean') {
-                                              return <BooleanIcon iconType={value} />
+                                              return <BooleanIcon iconType={value} showX={false} />
                                             }
                                           })()}
                                         </TableCell>
@@ -1249,7 +1249,12 @@ export function DataTableServer<T extends Record<string, any>>({
                                                       )
                                                     }
                                                     if (typeof value === 'boolean') {
-                                                      return <BooleanIcon iconType={value} />
+                                                      return (
+                                                        <BooleanIcon
+                                                          iconType={value}
+                                                          showX={false}
+                                                        />
+                                                      )
                                                     }
                                                   })()}
                                                 </TableCell>
