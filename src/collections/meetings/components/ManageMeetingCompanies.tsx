@@ -1,5 +1,5 @@
 'use client'
-import { Plus, Trash2, ChevronsUpDown, Check, ArchiveRestore } from 'lucide-react'
+import { Plus, Trash2, ChevronsUpDown, Check, ArchiveRestore, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDocumentInfo, toast } from '@payloadcms/ui'
 import { useState, useEffect } from 'react'
@@ -21,9 +21,10 @@ import {
   CommandItem,
   CommandList,
 } from '@/app/(frontend)/components/ui/command'
+import { Company } from '@/payload-types'
 
 export const ManageMeetingCompanies = () => {
-  const { id, data } = useDocumentInfo()
+  const { id, data: dataChange } = useDocumentInfo()
 
   const router = useRouter()
 
@@ -44,6 +45,7 @@ export const ManageMeetingCompanies = () => {
   const [availableFunds, setAvailableFunds] = useState<any[]>([])
   const [selectedFunds, setSelectedFunds] = useState<string[]>([])
   const [showFundSelection, setShowFundSelection] = useState(false)
+  const [fundHoldingValues, setFundHoldingValues] = useState<Record<string, number>>({})
 
   // Stock selection state (for foreign stocks)
   const [availableStocks, setAvailableStocks] = useState<any[]>([])
@@ -56,11 +58,14 @@ export const ManageMeetingCompanies = () => {
   const [openRemove, setOpenRemove] = useState(false)
   const [openRestore, setOpenRestore] = useState(false)
 
+  // Loading states
+  const [isLoadingStocks, setIsLoadingStocks] = useState(false)
+  const [isLoadingFunds, setIsLoadingFunds] = useState(false)
+
   // Fetch data
   useEffect(() => {
-    console.log('Current document id:', id)
     if (id) fetchMeetingData()
-  }, [id, data?.companies])
+  }, [id, dataChange])
 
   const fetchMeetingData = async () => {
     try {
@@ -82,7 +87,8 @@ export const ManageMeetingCompanies = () => {
         headers: { 'Content-Type': 'application/json' },
       })
       const allData = await allRes.json()
-      setAvailableCompanies(allData)
+      const activeCompanies = allData.docs.filter((company: Company) => company.active)
+      setAvailableCompanies(activeCompanies)
     } catch (err) {
       console.error('Error fetching meeting data:', err)
     }
@@ -90,6 +96,7 @@ export const ManageMeetingCompanies = () => {
 
   // Fetch stock details and check if foreign
   const fetchStockDetails = async () => {
+    setIsLoadingStocks(true)
     try {
       const stockId =
         typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
@@ -119,11 +126,14 @@ export const ManageMeetingCompanies = () => {
     } catch (err) {
       console.error('Error fetching stock details:', err)
       toast.error('שגיאה בטעינת פרטי נייר ערך')
+    } finally {
+      setIsLoadingStocks(false)
     }
   }
 
   // Fetch funds for selected company
   const fetchFundsForCompany = async (companyId: string) => {
+    setIsLoadingFunds(true)
     try {
       const res = await fetch(
         `/api/companies?where[type][equals]=fund&where[parentCompany][equals]=${companyId}&limit=0&depth=0`,
@@ -138,6 +148,8 @@ export const ManageMeetingCompanies = () => {
     } catch (err) {
       console.error('Error fetching funds:', err)
       toast.error('שגיאה בטעינת תיקים')
+    } finally {
+      setIsLoadingFunds(false)
     }
   }
 
@@ -191,17 +203,27 @@ export const ManageMeetingCompanies = () => {
           companyId: selectedAddId,
           stockId: stockToUse,
           holdingLimit: meetingData.holdingsLimit,
-          fundsIds: selectedFunds,
+          funds: selectedFunds.map((fundId) => ({
+            fundId,
+            holdingValue: fundHoldingValues[fundId] || 1,
+          })),
         }),
       })
       const result = await res.json()
       if (result.success) {
         // Show detailed message
         let message = result.message
-        if (result.existingFunds && result.existingFunds.length > 0) {
-          message += `\n\nתיקים שנוספו: ${result.addedFunds.join(', ')}`
-          message += `\n\nתיקים שכבר היו קיימים: ${result.existingFunds.join(', ')}`
-          toast.warning(message)
+        const added = result.addedFunds.length
+        const existing = result.existingFunds.length || 0
+        if (existing > 0) {
+          message += '\n\nפרטים:\n'
+          if (added > 0) {
+            message += `\n\n${added === 1 ? 'תיק שנוסף' : 'תיקים שנוספו'}: ${result.addedFunds.join(', ')}\n`
+          }
+          if (existing > 0) {
+            message += `\n\n${existing === 1 ? 'תיק שכבר היה קיים' : 'תיקים שכבר היו קיימים'}: ${result.existingFunds.join(', ')}`
+          }
+          toast.warning(message, { duration: 10000 })
         } else {
           toast.success(message)
         }
@@ -210,6 +232,7 @@ export const ManageMeetingCompanies = () => {
         setSelectedFunds([])
         setShowFundSelection(false)
         setAvailableFunds([])
+        setFundHoldingValues({})
         setSelectedStockId('')
         setShowStockSelection(false)
         setAvailableStocks([])
@@ -236,19 +259,42 @@ export const ManageMeetingCompanies = () => {
 
   // Toggle fund selection
   const toggleFund = (fundId: string) => {
-    setSelectedFunds((prev) =>
-      prev.includes(fundId) ? prev.filter((id) => id !== fundId) : [...prev, fundId],
-    )
+    setSelectedFunds((prev) => {
+      if (prev.includes(fundId)) {
+        // Deselecting - remove from selected and clear holding value
+        setFundHoldingValues((values) => {
+          const newValues = { ...values }
+          delete newValues[fundId]
+          return newValues
+        })
+        return prev.filter((id) => id !== fundId)
+      } else {
+        // Selecting - add to selected and initialize with default value of 1
+        setFundHoldingValues((values) => ({
+          ...values,
+          [fundId]: 1,
+        }))
+        return [...prev, fundId]
+      }
+    })
   }
 
   // Select all funds
   const selectAllFunds = () => {
-    setSelectedFunds(availableFunds.map((p) => p.id))
+    const allFundIds = availableFunds.map((p) => p.id)
+    setSelectedFunds(allFundIds)
+    // Initialize all with default value of 1
+    const initialValues: Record<string, number> = {}
+    allFundIds.forEach((id) => {
+      initialValues[id] = fundHoldingValues[id] || 1
+    })
+    setFundHoldingValues(initialValues)
   }
 
   // Deselect all funds
   const deselectAllFunds = () => {
     setSelectedFunds([])
+    setFundHoldingValues({})
   }
 
   // Remove company
@@ -371,7 +417,7 @@ export const ManageMeetingCompanies = () => {
             setShowRemoveModal(true)
           }}
           variant="outline"
-          className="gap-2 border-red-600 text-red-600 hover:bg-red-50"
+          className="gap-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
         >
           <Trash2 className="h-4 w-4" /> הסר חברה
         </Button>
@@ -382,7 +428,7 @@ export const ManageMeetingCompanies = () => {
               setShowRestoreModal(true)
             }}
             variant="outline"
-            className="gap-2 border-green-600 text-green-600 hover:bg-green-50"
+            className="gap-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
           >
             <ArchiveRestore className="h-4 w-4" /> החזר חברה שהוסרה
           </Button>
@@ -399,6 +445,7 @@ export const ManageMeetingCompanies = () => {
             setSelectedFunds([])
             setShowFundSelection(false)
             setAvailableFunds([])
+            setFundHoldingValues({})
             setSelectedStockId('')
             setShowStockSelection(false)
             setAvailableStocks([])
@@ -425,26 +472,32 @@ export const ManageMeetingCompanies = () => {
                 בחר את נייר הערך שעבורו תתווסף ההחזקה:
               </div>
 
-              <div className="border rounded-md">
-                {availableStocks.map((stock) => (
-                  <label
-                    key={stock.id}
-                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                  >
-                    <input
-                      type="radio"
-                      name="stock-selection"
-                      checked={selectedStockId === stock.id}
-                      onChange={() => setSelectedStockId(stock.id)}
-                      className="h-4 w-4 cursor-pointer"
-                    />
-                    <span className="flex-1">{stock.name}</span>
-                    <span className="text-sm text-gray-500">{stock.stockId}</span>
-                  </label>
-                ))}
-              </div>
+              {isLoadingStocks ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                </div>
+              ) : (
+                <div className="border rounded-md dark:border-gray-700">
+                  {availableStocks.map((stock) => (
+                    <label
+                      key={stock.id}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b last:border-b-0 dark:border-gray-700"
+                    >
+                      <input
+                        type="radio"
+                        name="stock-selection"
+                        checked={selectedStockId === stock.id}
+                        onChange={() => setSelectedStockId(stock.id)}
+                        className="h-4 w-4 cursor-pointer"
+                      />
+                      <span className="flex-1">{stock.name}</span>
+                      <span className="text-sm text-gray-500">{stock.stockId}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
 
-              <Button onClick={handleStockSelected} className="w-full">
+              <Button onClick={handleStockSelected} className="w-full" disabled={isLoadingStocks}>
                 המשך לבחירת חברה
               </Button>
             </div>
@@ -483,23 +536,24 @@ export const ManageMeetingCompanies = () => {
                           } as React.CSSProperties
                         }
                       >
-                        {availableCompanies.map((company) => (
-                          <CommandItem
-                            key={company.id}
-                            value={company.id}
-                            keywords={[company.name]}
-                            onSelect={() => handleCompanySelect(company.id)}
-                            className="cursor-pointer"
-                          >
-                            <Check
-                              className={cn(
-                                'mr-2 h-4 w-4',
-                                selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
-                              )}
-                            />
-                            {company.name}
-                          </CommandItem>
-                        ))}
+                        {Array.isArray(availableCompanies) &&
+                          availableCompanies.map((company) => (
+                            <CommandItem
+                              key={company.id}
+                              value={company.id}
+                              keywords={[company.name]}
+                              onSelect={() => handleCompanySelect(company.id)}
+                              className="cursor-pointer"
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {company.name}
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     </CommandList>
                   </Command>
@@ -525,13 +579,18 @@ export const ManageMeetingCompanies = () => {
                     setSelectedAddId('')
                     setSelectedFunds([])
                     setAvailableFunds([])
+                    setFundHoldingValues({})
                   }}
                 >
                   שנה חברה
                 </Button>
               </div>
 
-              {availableFunds.length === 0 ? (
+              {isLoadingFunds ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                </div>
+              ) : availableFunds.length === 0 ? (
                 <div className="text-center text-red-600 py-4">
                   לא נמצאו תיקים (קרנות) עבור חברה זו
                 </div>
@@ -558,11 +617,11 @@ export const ManageMeetingCompanies = () => {
                     </div>
                   )}
 
-                  <div className="border rounded-md max-h-60 overflow-y-auto">
+                  <div className="border rounded-md max-h-60 overflow-y-auto dark:border-gray-700">
                     {availableFunds.map((fund) => (
-                      <label
+                      <div
                         key={fund.id}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b last:border-b-0 dark:border-gray-700"
                       >
                         <input
                           type="checkbox"
@@ -571,7 +630,23 @@ export const ManageMeetingCompanies = () => {
                           className="h-4 w-4 cursor-pointer"
                         />
                         <span className="flex-1">{fund.name}</span>
-                      </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="ערך החזקה"
+                          value={fundHoldingValues[fund.id] || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value, 10)
+                            setFundHoldingValues((prev) => ({
+                              ...prev,
+                              [fund.id]: value,
+                            }))
+                          }}
+                          disabled={!selectedFunds.includes(fund.id)}
+                          className="w-24 px-2 py-1 text-sm border rounded dark:bg-gray-900 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
                     ))}
                   </div>
                   {availableFunds.length > 1 && (
@@ -589,16 +664,11 @@ export const ManageMeetingCompanies = () => {
               {selectedFunds.length > 0 ? (
                 <DialogDescription className="text-sm">
                   לחיצה על אישור תוסיף לחברה <strong className="font-bold">{getAddName()}</strong>{' '}
-                  החזקה עם ערך של 1{isForeignStock && ` עבור נייר ערך ${getSelectedStockName()}`}{' '}
-                  עבור{' '}
+                  החזקה ב
                   {selectedFunds.length === 1
-                    ? 'תיק' + ' ' + selectedFunds.length
-                    : selectedFunds.length + ' ' + 'תיקים'}{' '}
-                  לתאריך{' '}
-                  <strong className="font-bold">
-                    {new Date(meetingData.holdingsLimit).toLocaleDateString('he-IL')}
-                  </strong>
-                  .
+                    ? 'תיק אחד'
+                    : '- ' + selectedFunds.length + ' ' + 'תיקים'}
+                  , עבור הנייר <strong className="font-bold">{getSelectedStockName()}</strong>.
                 </DialogDescription>
               ) : (
                 <DialogDescription className="text-sm text-gray-400">
@@ -618,6 +688,7 @@ export const ManageMeetingCompanies = () => {
                 setSelectedFunds([])
                 setShowFundSelection(false)
                 setAvailableFunds([])
+                setFundHoldingValues({})
                 setSelectedStockId('')
                 setShowStockSelection(false)
                 setAvailableStocks([])

@@ -103,7 +103,7 @@ export const useVotingData = () => {
         // Get all company IDs from the meeting
         const meetingCompanyIds = (data.companies || []) as string[]
 
-        let companyNamesMap = new Map<string, { name: string; parentCompanyId: string }>()
+        const companyNamesMap = new Map<string, { name: string; parentCompanyId: string }>()
         if (meetingCompanyIds.length > 0) {
           try {
             const companiesQuery = stringify(
