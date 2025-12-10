@@ -162,7 +162,8 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
         addedFunds: [],
       })
     } else {
-      processCompaniesMeetings(req, [meetingId || ''])
+      // Wait for processCompaniesMeetings to complete before returning
+      await processCompaniesMeetings(req, [meetingId || ''])
       if (existingFunds.length > 0) {
         // Some funds exist, some were added
         return Response.json({
