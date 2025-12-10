@@ -40,7 +40,7 @@ export default function GeneralQuestions({
   if (dynamicQuestions && dynamicQuestions.length > 0 && onDynamicQuestionChange) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           {dynamicQuestions.map((question) => {
             const hasExplanationError = !!getFieldErrorAction(
               `dynamicQuestion_${question.id}`,
@@ -71,7 +71,7 @@ export default function GeneralQuestions({
   // Otherwise, show the default static questions
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
         {Object.values(GeneralQuestionId).map((questionId) => {
           const config = GENERAL_QUESTIONS_CONFIG[questionId]
           const explanationFieldName = getExplanationFieldName(questionId)

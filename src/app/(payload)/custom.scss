@@ -66,10 +66,10 @@
 form[action*="/api/research-documents"] .file-field__remove,
 form[action*="/api/research-documents"] .file-details__remove,
 .id-label,
-.clear-indicator,
-.doc-controls__dots {
+.clear-indicator {
   display: none !important;
 }
+
 
 .bulk-upload--actions-bar__navigation {
   visibility: hidden;

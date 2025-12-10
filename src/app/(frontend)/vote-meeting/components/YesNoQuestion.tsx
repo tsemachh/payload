@@ -57,11 +57,11 @@ export default function YesNoQuestion({
 
   return (
     <div>
-      <div className={`flex items-center ${isAgendaQuestion ? 'justify-between' : ''}`}>
-        <span className={`text-sm font-medium ml-2 ${isReadOnly ? 'text-muted-foreground' : ''}`}>
+      <div className="flex items-start justify-between mb-2">
+        <span className={`text-sm font-medium ${isReadOnly ? 'text-muted-foreground' : ''}`}>
           {label}
         </span>
-        <div className={`flex bg-muted rounded-full p-0.5 mr-2 ${isReadOnly ? 'opacity-75' : ''}`}>
+        <div className={`flex bg-muted rounded-full p-0.5 ${isReadOnly ? 'opacity-75' : ''}`}>
           <button
             type="button"
             onClick={() => onValueChangeAction(true)}

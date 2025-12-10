@@ -290,12 +290,14 @@ export default function VotingForm() {
 
     // Initialize dynamic questions from meeting data
     const dynamicQuestions: DynamicQuestionAnswer[] = (meetingData.relatedQuestions || []).map(
-      (q) => ({
-        questionId: q.id,
-        questionText: q.questionText,
-        answer: false,
-        explanation: '',
-      }),
+      (q) => {
+        return {
+          questionId: q.id,
+          questionText: q.questionText,
+          answer: q.defaultValue || false,
+          explanation: '',
+        }
+      },
     )
 
     if (!fetchedVotes || fetchedVotes.length === 0) {
@@ -358,17 +360,14 @@ export default function VotingForm() {
       const savedDynamicQuestions: DynamicQuestionAnswer[] = (
         meetingData.relatedQuestions || []
       ).map((q) => {
-        const savedAnswer = firstVote.dynamicQuestions?.find(
-          (dq: any) => dq.questionId === q.id,
-        )
+        const savedAnswer = firstVote.dynamicQuestions?.find((dq: any) => dq.questionId === q.id)
         return {
           questionId: q.id,
           questionText: q.questionText,
-          answer: savedAnswer?.answer ?? false,
+          answer: q.defaultValue ?? false,
           explanation: savedAnswer?.explanation || '',
         }
       })
-
       initialData = {
         generalVotingData: {
           isInterested: firstVote.isInterested ?? false,
@@ -420,7 +419,7 @@ export default function VotingForm() {
         return {
           questionId: q.id,
           questionText: q.questionText,
-          answer: savedAnswer?.answer ?? false,
+          answer: savedAnswer?.answer ?? q.defaultValue ?? false,
           explanation: savedAnswer?.explanation || '',
         }
       })
@@ -442,6 +441,7 @@ export default function VotingForm() {
       }
     }
 
+    console.log('Setting votingData with initialData:', initialData)
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
   }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes, setIsDraftSaved])
@@ -839,9 +839,7 @@ export default function VotingForm() {
   const handleDynamicQuestionChange = useCallback(
     (questionId: string, answer: boolean, explanation?: string) => {
       const newDynamicQuestions = (votingData.dynamicQuestions || []).map((q) =>
-        q.questionId === questionId
-          ? { ...q, answer, explanation: explanation || '' }
-          : q,
+        q.questionId === questionId ? { ...q, answer, explanation: explanation || '' } : q,
       )
 
       const updatedVotingData = {

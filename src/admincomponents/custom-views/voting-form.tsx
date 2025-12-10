@@ -486,11 +486,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
         <CardContent className="space-y-3">
           {formData.dynamicQuestions && formData.dynamicQuestions.length > 0 ? (
             // Show dynamic questions
-            <div className="grid grid-cols-3 gap-4 pt-6 text-base">
+            <div className="grid grid-cols-3 gap-4 pt-6 text-base items-start">
               {formData.dynamicQuestions.map((question, index) => (
                 <div key={question.questionId} className="flex flex-col">
-                  <div className="flex items-center space-x-reverse space-x-2 justify-start">
-                    <label className="text-gray-900 dark:text-white font-medium ml-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <label className="text-gray-900 dark:text-white font-medium">
                       {question.questionText}
                     </label>
                     <Checkbox checked={question.answer} disabled={true} />
@@ -505,7 +505,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
             </div>
           ) : (
             // Show default static questions
-            <div className="grid grid-cols-3 gap-4 pt-6 text-base">
+            <div className="grid grid-cols-3 gap-4 pt-6 text-base items-start">
               <div className="flex flex-col">
                 <div className="flex items-center space-x-reverse space-x-2 justify-start">
                   <label className="text-gray-900 dark:text-white font-medium ml-3">
