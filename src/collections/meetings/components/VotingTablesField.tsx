@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
+import ManageMeetingCompanies from './ManageMeetingCompanies'
 import { getGroupedVotesUrl } from '../../../utils/voteGrouping'
 
 export const VotingTablesField = () => {
@@ -454,6 +455,7 @@ export const VotingTablesField = () => {
           </Table>
         </CardContent>
       </Card>
+      <ManageMeetingCompanies />
     </div>
   )
 }
