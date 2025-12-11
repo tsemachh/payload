@@ -81,7 +81,7 @@ export const ResearchDocument: CollectionConfig = {
       defaultValue: () => new Date(),
     },
   ],
-  hooks: {
-    beforeValidate: [beforeValidaCompaniesFromFilename],
-  },
+  // hooks: {
+  //   beforeValidate: [beforeValidaCompaniesFromFilename],
+  // },
 }

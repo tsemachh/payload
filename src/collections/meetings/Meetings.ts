@@ -11,6 +11,8 @@ import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
+import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
+import removeCompanyEndpoint, { restoreCompanyEndpoint } from './endpoints/RemoveCompanyEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -111,6 +113,7 @@ export const Meetings: CollectionConfig = {
         { name: 'state', width: '200px' },
         { name: 'type', width: '200px' },
         { name: '_status', width: '130px' },
+        { name: 'finalized', width: '130px' },
       ],
       [
         { name: 'electronicVotingEnabled', width: '130px' },
@@ -119,6 +122,7 @@ export const Meetings: CollectionConfig = {
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
+        { name: 'hasRelatedStocks', width: '130px' },
       ],
       [
         { name: 'stock.type', width: '130px' },
@@ -140,7 +144,7 @@ export const Meetings: CollectionConfig = {
   admin: {
     useAsTitle: 'fullName',
     group: 'פעילות',
-    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'meetingId'],
+    listSearchableFields: ['fullName', 'magnaId', 'invitationLink', 'primaryLegacyId', 'legacyIds'],
     defaultColumns: [
       'fullName',
       'type',
@@ -151,6 +155,7 @@ export const Meetings: CollectionConfig = {
       'totalHoldings',
       'electronicVotingEnabled',
       'invitationLink',
+      'hasRelatedStocks',
     ],
     pagination: {
       defaultLimit: 300,
@@ -256,6 +261,19 @@ export const Meetings: CollectionConfig = {
                   },
                 }
               },
+              admin: {
+                hidden: true,
+                readOnly: true,
+              },
+            },
+            {
+              type: 'relationship',
+              relationTo: 'companies',
+              hasMany: true,
+              name: 'removedCompanies',
+              label: 'חברות שהוסרו',
+              index: true,
+              maxDepth: 1,
               admin: {
                 hidden: true,
                 readOnly: true,
@@ -402,7 +420,6 @@ export const Meetings: CollectionConfig = {
                 ],
               },
             },
-
             {
               name: 'votes',
               label: 'הצבעות',
@@ -433,10 +450,6 @@ export const Meetings: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'stocks',
                   filterOptions: ({ siblingData, req, data, id }: any) => {
-                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
-                      return true
-                    }
-
                     const baseFilter: Record<string, any> = {
                       or: [{ isDual: { exists: false } }, { isDual: { equals: false } }],
                     }
@@ -445,9 +458,15 @@ export const Meetings: CollectionConfig = {
                       baseFilter.or.push({ id: { equals: data.stock } })
                     }
 
+                    const tradableFilter = { tradable: { equals: true } }
+
+                    if (req?.context?.from == 'migration' || req?.context?.from == 'process') {
+                      return tradableFilter
+                    }
+
                     if (!siblingData?.meetingDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
@@ -457,16 +476,35 @@ export const Meetings: CollectionConfig = {
 
                     if (isFutureDate) {
                       return {
-                        and: [{ active: { equals: true } }, baseFilter],
+                        and: [{ active: { equals: true } }, baseFilter, tradableFilter],
                       }
                     }
 
-                    return baseFilter
+                    return {
+                      and: [baseFilter, tradableFilter],
+                    }
                   },
                   index: true,
                   required: true,
                   admin: {
                     width: '330px',
+                  },
+                },
+                {
+                  name: 'stockId',
+                  label: 'מספר נייר',
+                  type: 'text',
+                  virtual: 'stock.stockId',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'legacyStockNum',
+                  label: 'Legacy Stock Num',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
                   },
                 },
                 {
@@ -514,11 +552,19 @@ export const Meetings: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'meetingId',
-                  label: 'מספר אסיפה',
+                  name: 'primaryLegacyId',
+                  label: 'מזהה לגאסי (ראשי)',
                   type: 'text',
                   index: true,
-                  admin: { width: '100px', hidden: true },
+                  admin: { width: '140px', hidden: true },
+                },
+                {
+                  name: 'legacyIds',
+                  label: 'מזהים בלגאסי (כללי)',
+                  type: 'text',
+                  hasMany: true,
+                  index: true,
+                  admin: { width: '330px', hidden: true },
                 },
                 {
                   name: 'magnaId',
@@ -671,6 +717,12 @@ export const Meetings: CollectionConfig = {
                     },
                   },
                 },
+                {
+                  name: 'finalized',
+                  label: 'סופית',
+                  type: 'checkbox',
+                  index: true,
+                },
               ],
             },
             {
@@ -740,9 +792,18 @@ export const Meetings: CollectionConfig = {
                   },
                   filterOptions: ({ data, req }) => {
                     const where: Where = {
-                      stockId: {
-                        equals: data?.stock,
-                      },
+                      or: [
+                        {
+                          stockId: {
+                            equals: data?.stock,
+                          },
+                        },
+                        {
+                          'stockId.dualStock': {
+                            equals: data?.stock,
+                          },
+                        },
+                      ],
                     }
                     if (data?.holdingsLimit) {
                       where.valueDate = {
@@ -810,6 +871,15 @@ export const Meetings: CollectionConfig = {
                   },
                 },
               ],
+            },
+            {
+              name: 'hasRelatedStocks',
+              type: 'checkbox',
+              defaultValue: false,
+              label: 'ניירות עוקבים',
+              admin: {
+                hidden: true,
+              },
             },
             {
               type: 'row',
@@ -928,7 +998,7 @@ export const Meetings: CollectionConfig = {
                       limit: 1,
                       depth: 0,
                     })
-                    
+
                     // Return the first matching question (since hasMany: false)
                     return matchingQuestions.docs.length > 0 ? matchingQuestions.docs[0].id : null
                   },
@@ -1179,8 +1249,14 @@ export const Meetings: CollectionConfig = {
                       label: 'אימות החזקות',
                     },
                     {
+                      name: 'fromRelatedStock',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      label: 'החזקה בנייר עוקב',
+                    },
+                    {
                       name: 'original',
-                      label: 'מניה מקורית חול',
+                      label: 'מניה מקורית',
                       type: 'array',
                       admin: {
                         initCollapsed: true,
@@ -1243,7 +1319,7 @@ export const Meetings: CollectionConfig = {
 
           const meetingName = doc.fullName || 'אסיפה'
           const url = `${req.payload.config.serverURL}//vote-meeting/${doc.id}`
-          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), לשינויים \nהערות: ${doc.changeDetails}.`
+          const message = `אסיפה ${meetingName} עודכנה בתאריך (${formattedDate}), לשינויים \n  הערות:  ${doc.changeDetails}.`
 
           for (const companyId of companies) {
             try {
@@ -1295,7 +1371,7 @@ export const Meetings: CollectionConfig = {
             // Create dual meeting by cloning the current meeting
             const dualMeeting = JSON.parse(JSON.stringify(doc))
             delete dualMeeting.id
-            delete dualMeeting.meetingId
+            delete dualMeeting.primaryLegacyId
             delete dualMeeting.dualMeeting
             dualMeeting.stock = stock.dualStock
             dualMeeting._status = 'published'
@@ -1333,6 +1409,15 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
+        const currentIds = (doc?.removedCompanies || []).map((item: any) =>
+          typeof item === 'string' ? item : item.id,
+        )
+
+        const previousIds = (previousDoc?.removedCompanies || []).map((item: any) =>
+          typeof item === 'string' ? item : item.id,
+        )
+        const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
+
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
@@ -1341,7 +1426,7 @@ export const Meetings: CollectionConfig = {
 
         if (
           isPublish &&
-          (holdingsLimitChanged || stockChanged || firstPublish) &&
+          (holdingsLimitChanged || stockChanged || firstPublish || holdingsRemovedCompanies) &&
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
@@ -1409,6 +1494,21 @@ export const Meetings: CollectionConfig = {
       path: '/voting-report',
       method: 'get',
       handler: meetingForVotingEndPoint,
+    },
+    {
+      path: '/add-company',
+      method: 'post',
+      handler: addCompanyEndpoint,
+    },
+    {
+      path: '/remove-company',
+      method: 'post',
+      handler: removeCompanyEndpoint,
+    },
+    {
+      path: '/restore-company',
+      method: 'post',
+      handler: restoreCompanyEndpoint,
     },
   ],
 }

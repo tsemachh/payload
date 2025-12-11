@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { useDocumentInfo } from '@payloadcms/ui'
 import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
+import ManageMeetingCompanies from './ManageMeetingCompanies'
 import { getGroupedVotesUrl } from '../../../utils/voteGrouping'
 
 export const VotingTablesField = () => {
@@ -63,6 +64,7 @@ export const VotingTablesField = () => {
     company: true,
     nominalValue: true,
     percentageHolding: true,
+    hasRelatedStock: true,
   }
 
   const votedColumns = {
@@ -72,6 +74,7 @@ export const VotingTablesField = () => {
     voter: true,
     voteTime: true,
     actualVoteAction: true,
+    hasRelatedStock: true,
   }
 
   if (loading) {
@@ -94,7 +97,7 @@ export const VotingTablesField = () => {
     <div className="useTw space-y-6 p-6 text-base" dir="rtl">
       {/* Companies that haven't voted */}
       {processedNotVotedData.length ? (
-        <Card style={{ width: '40%' }}>
+        <Card style={{ width: '50%' }}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -184,6 +187,7 @@ export const VotingTablesField = () => {
                       )}
                     </div>
                   </TableHead>
+                  <TableHead>ניירות עוקבים</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -225,6 +229,11 @@ export const VotingTablesField = () => {
                     </TableCell>
                     <TableCell>{item.nominalValue.toLocaleString()}</TableCell>
                     <TableCell>{`${item.percentageHolding.toFixed(4)}%`}</TableCell>
+                    <TableCell>
+                      {!item.isGroupHeader && (
+                        <span className="text-lg">{item.hasRelatedStock ? '✅' : '❌'}</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -343,6 +352,7 @@ export const VotingTablesField = () => {
                   </div>
                 </TableHead>
                 <TableHead>הצבעה בפועל</TableHead>
+                <TableHead>ניירות עוקבים</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -432,6 +442,12 @@ export const VotingTablesField = () => {
                         <span className="text-lg">{item.vote?.reported ? '✅' : '❌'}</span>
                       )}
                     </TableCell>
+
+                    <TableCell>
+                      {!item.isGroupHeader && (
+                        <span className="text-lg">{item.hasRelatedStock ? '✅' : '❌'}</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 )
               })}
@@ -439,6 +455,7 @@ export const VotingTablesField = () => {
           </Table>
         </CardContent>
       </Card>
+      <ManageMeetingCompanies />
     </div>
   )
 }

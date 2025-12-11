@@ -1,7 +1,7 @@
 'use client'
 
 import React, { Suspense, useRef, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import LogoImage from '@/graphics/Logo/emda_logo.png'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,6 @@ import { TwoFactorSetup } from '@/components/TwoFactorSetup'
 
 // Client component that uses useSearchParams
 function SignInContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({

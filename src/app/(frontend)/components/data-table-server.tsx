@@ -1128,10 +1128,7 @@ export function DataTableServer<T extends Record<string, any>>({
                                           key={`company-${company.id}-reported`}
                                           className="py-2 px-3 whitespace-nowrap text-center"
                                         >
-                                          <BooleanIcon
-                                            iconType={companyVote?.reported}
-                                            showX={false}
-                                          />
+                                          <BooleanIcon iconType={companyVote?.reported} />
                                         </TableCell>
                                       )
                                     }
@@ -1187,6 +1184,9 @@ export function DataTableServer<T extends Record<string, any>>({
                                               company[column.key as keyof CompanyTableDate]
                                             if (typeof value === 'number') {
                                               return new Intl.NumberFormat('he-IL').format(value)
+                                            }
+                                            if (typeof value === 'boolean') {
+                                              return <BooleanIcon iconType={value} showX={false} />
                                             }
                                           })()}
                                         </TableCell>
@@ -1246,6 +1246,14 @@ export function DataTableServer<T extends Record<string, any>>({
                                                     if (typeof value === 'number') {
                                                       return new Intl.NumberFormat('he-IL').format(
                                                         value,
+                                                      )
+                                                    }
+                                                    if (typeof value === 'boolean') {
+                                                      return (
+                                                        <BooleanIcon
+                                                          iconType={value}
+                                                          showX={false}
+                                                        />
                                                       )
                                                     }
                                                   })()}

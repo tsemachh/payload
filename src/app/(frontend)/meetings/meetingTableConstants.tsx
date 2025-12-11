@@ -256,6 +256,14 @@ export const createMeetingColumns = (
     minWidth: 100,
   },
   {
+    key: 'fromRelatedStock',
+    header: 'ניירות עוקבים',
+    type: 'boolean',
+    filterable: true,
+    render: (row) => <BooleanIcon iconType={Boolean(row.fromRelatedStock)} showX={false} />,
+    minWidth: 90,
+  },
+  {
     key: 'isDualStock',
     header: 'אסיפה דואלית',
     type: 'boolean',

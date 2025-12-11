@@ -17,6 +17,7 @@ export async function getVoteData(
       agenda: true,
       meetingDate: true,
       holdingsLimit: true,
+      stockId: true,
     },
     depth: 0,
     limit: 0,
@@ -130,7 +131,7 @@ export async function getVoteData(
   const companyIdToOrderMap: Map<string, string> = new Map()
   const fundIdToNameMap: Map<string, string> = new Map()
   const fundIdToOrderMap: Map<string, string> = new Map()
-  
+
   companyData.docs.forEach((doc: Company) => {
     if (doc.id && doc.name) {
       companyIdToNameMap.set(doc.id as string, doc.name as string)
@@ -157,16 +158,17 @@ export async function getVoteData(
 
   const fundsWithHoldings = fundsWithHolding.flatMap((fundHold: any) => {
     const baseData = {
-      company: { 
-        id: fundHold.company, 
+      company: {
+        id: fundHold.company,
         name: companyIdToNameMap.get(fundHold?.company),
         _order: companyIdToOrderMap.get(fundHold?.company)
       },
-      fund: { 
-        id: fundHold.fund, 
+      fund: {
+        id: fundHold.fund,
         name: fundIdToNameMap.get(fundHold?.fund),
         _order: fundIdToOrderMap.get(fundHold?.fund)
       },
+      fromRelatedStock: fundHold.fromRelatedStock,
     }
 
     if (fundHold.original && fundHold.original.length > 0) {
@@ -199,6 +201,7 @@ export async function getVoteData(
     ),
     meeting: meetingData.fullName,
     meetingDate: meetingData.meetingDate,
+    meetingStockId: meetingData.stockId,
     holdingsLimit: meetingData.holdingsLimit,
     fundsData: fundsWithHoldings,
     agenda: meetingData.agenda,

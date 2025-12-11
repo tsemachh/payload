@@ -64,7 +64,24 @@ async function processMeeting(
   const flattenedHoldings = holdings.flat()
 
   if (flattenedHoldings.length === 0) {
-    req.payload.logger.info(`No holdings found for meeting ${meeting.id}, skipping update`)
+    const stockDetails = await req.payload.findByID({
+      collection: 'stocks',
+      id: getIdOfRelationField(meeting.stock) || '',
+      depth: 0,
+    })
+    req.payload.logger.error(
+      {
+        meetingId: meeting.id,
+        stock: {
+          id: stockDetails.id,
+          name: stockDetails.name,
+          isTracking: stockDetails.tradable,
+        },
+        holdingsLimit: meeting.holdingsLimit,
+        totalFunds: funds.length,
+      },
+      `No holdings found for ANY fund in meeting ${meeting.id} — skipping update`,
+    )
     return
   }
 
@@ -90,21 +107,23 @@ async function processMeeting(
 
     const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
-
+    let fromRelatedStock = false
     const fundsWithHolding = flattenedHoldings.map((h) => {
-      const rawOriginal = h.holdings[0]?.originalForeignData
-      const originalForeignDataArray = rawOriginal
+      const rawOriginal = h.holdings[0]?.originalData
+      const originalDataArray = rawOriginal
         ? Array.isArray(rawOriginal)
           ? rawOriginal
           : [rawOriginal]
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
+      fromRelatedStock = originalDataArray.some((o) => o.stockId != meeting.stockId)
       const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
-        original: originalForeignDataArray.filter(Boolean).map((item: any) => ({
+        fromRelatedStock,
+        original: originalDataArray.filter(Boolean).map((item: any) => ({
           stockId: item.stockId,
           accountNum: item.accountNum,
           quantity: item.quantity,
@@ -148,22 +167,51 @@ async function processMeeting(
       }
     })
 
+    // Filter out removed companies
+    // removedCompanies is an array of company IDs (strings) or company objects
+    const removedCompanyIds = (meeting.removedCompanies || [])
+      .map((item) => (typeof item === 'string' ? item : item?.id))
+      .filter((id): id is string => typeof id === 'string')
+
+    const filteredCompIds = compIds.filter((compId) => {
+      if (!compId) return false
+      const compIdStr = typeof compId === 'string' ? compId : compId.id
+      return compIdStr && !removedCompanyIds.includes(compIdStr)
+    })
+
+    // Filter out funds that belong to removed companies
+    const filteredFunds = newFunds.filter((fundId) => {
+      const companyId = getCompanyIdFromFundId(fundId)
+      return companyId && !removedCompanyIds.includes(companyId)
+    })
+
+    // Filter out fundsWithHolding that belong to removed companies
+    const filteredFundsWithHolding = fundsWithHolding.filter((fwh: any) => {
+      const companyId = getIdOfRelationField(fwh.company)
+      if (!companyId) return false
+      const companyIdStr = String(companyId)
+      return !removedCompanyIds.includes(companyIdStr)
+    })
+
     // Prepare change details
     const changeDate = new Date().toISOString()
     const changeSource = req.context?.from || 'process'
 
     // Create a detailed description of what was changed
-    const companiesCount = Array.from(new Set(compIds)).length
-    const fundsCount = newFunds.length
+    const companiesCount = Array.from(new Set(filteredCompIds)).length
+    const fundsCount = filteredFunds.length
     const changeDescription = `עדכון חברות ותיקים: ${companiesCount} חברות, ${fundsCount} תיקים`
+    const hasRelatedStocks = fromRelatedStock
 
     const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
     const data: Partial<Meeting> = {
-      companies: Array.from(new Set(compIds)) as string[],
-      funds: [...newFunds],
-      fundsWithHolding,
+      companies: Array.from(new Set(filteredCompIds)) as string[],
+      funds: [...filteredFunds],
+      fundsWithHolding: filteredFundsWithHolding,
       migrationComments,
+      hasRelatedStocks,
     }
+
     if (stockValue) data.stockValue = stockValue
     await req.payload.update({
       collection: 'meetings',

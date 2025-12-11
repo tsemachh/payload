@@ -28,6 +28,7 @@ export interface VoteData {
     quantity: number
     ownedQuantity?: number
     verifiedHoldings: boolean
+    fromRelatedStock?: boolean
     original?: {
       stockId: string
       quantity: number
@@ -43,6 +44,7 @@ export interface VoteData {
   displayVotingRecommendation: boolean
   meeting: string
   meetingDate: string
+  meetingStockId: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -282,7 +284,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       return 'text-gray-700 bg-gray-100 border-gray-200 dark:text-gray-800 dark:bg-gray-100 dark:border-gray-200'
     }
   }
-  const isOriginal = formData?.fundsData.some((fund) => fund.original)
+  const isOriginal =
+    formData?.fundsData.some((fund) => fund.original) &&
+    formData.fundsData.some((fund) => fund.fromRelatedStock)
 
   const saveDraftData = (label: string, updatedData: any) => {
     console.log(`Draft saved for ${label}`, updatedData)
@@ -354,7 +358,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 </TableHead>
                 {isOriginal && (
                   <TableHead className="text-right w-32 text-gray-900 dark:text-white">
-                    נייר מקורי
+                    נייר עוקב
                   </TableHead>
                 )}
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
@@ -385,7 +389,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     </TableCell>
                     {isOriginal && (
                       <TableCell className="text-right text-base text-gray-900 dark:text-white">
-                        {fund.original?.stockId || ''}
+                        {fund.original?.stockId != voteData.meetingStockId
+                          ? fund.original?.stockId
+                          : ''}
                       </TableCell>
                     )}
                     <TableCell>
@@ -607,14 +613,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                           </div>
                         )}
                       <div
-                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index].voteDecision || '')}`}
+                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index]?.voteDecision || '')}`}
                       >
                         {voteItem?.voteDecision || '----'}
                       </div>
                     </div>
                   </div>
                 </div>
-                {voteItem.voteReason && (
+                {voteItem?.voteReason && (
                   <span
                     dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
                     title={voteItem.voteReason}

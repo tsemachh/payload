@@ -138,6 +138,7 @@ export type FundWithHolding =
       quantity?: number | null;
       ownedQuantity?: number | null;
       verifiedHoldings?: boolean | null;
+      fromRelatedStock?: boolean | null;
       original?:
         | {
             stockId?: string | null;
@@ -158,7 +159,7 @@ export type FundWithHolding =
 export type HoldingsPerDay = {
   stock: string | Stock;
   quantity: number;
-  originalForeignData?:
+  originalData?:
     | {
         stockId?: string | null;
         accountNum?: number | null;
@@ -674,6 +675,7 @@ export interface Meeting {
   reportVotesCount?: number | null;
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
+  removedCompanies?: (string | Company)[] | null;
   companiesNotYetVoted?: (string | Company)[] | null;
   totalHoldings?: number | null;
   activity?: string | null;
@@ -685,6 +687,8 @@ export interface Meeting {
     totalDocs?: number;
   };
   stock: string | Stock;
+  stockId?: string | null;
+  legacyStockNum?: string | null;
   isFinancialStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
   stockType?:
@@ -705,7 +709,8 @@ export interface Meeting {
       )
     | null;
   type: MeetingType;
-  meetingId?: string | null;
+  primaryLegacyId?: string | null;
+  legacyIds?: string[] | null;
   magnaId?: string | null;
   invitationLink?: string | null;
   invitationDocument?: (string | null) | Document;
@@ -723,6 +728,7 @@ export interface Meeting {
   stockRegisteredValue?: number | null;
   stockMarketValue?: number | null;
   location?: string | null;
+  hasRelatedStocks?: boolean | null;
   comments?: string | null;
   migrationComments?: string | null;
   changeDetails?: string | null;
@@ -1509,6 +1515,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   reportVotesCount?: T;
   votesReportStatus?: T;
   companies?: T;
+  removedCompanies?: T;
   companiesNotYetVoted?: T;
   totalHoldings?: T;
   activity?: T;
@@ -1516,11 +1523,14 @@ export interface MeetingsSelect<T extends boolean = true> {
   hasVoteRecommendation?: T;
   votes?: T;
   stock?: T;
+  stockId?: T;
+  legacyStockNum?: T;
   isFinancialStock?: T;
   stockOrigin?: T;
   stockType?: T;
   type?: T;
-  meetingId?: T;
+  primaryLegacyId?: T;
+  legacyIds?: T;
   magnaId?: T;
   invitationLink?: T;
   invitationDocument?: T;
@@ -1538,6 +1548,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   stockRegisteredValue?: T;
   stockMarketValue?: T;
   location?: T;
+  hasRelatedStocks?: T;
   comments?: T;
   migrationComments?: T;
   changeDetails?: T;
@@ -1551,7 +1562,6 @@ export interface MeetingsSelect<T extends boolean = true> {
         id?: T;
       };
   finalized?: T;
-  relatedQuestions?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
@@ -1604,6 +1614,7 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   quantity?: T;
   ownedQuantity?: T;
   verifiedHoldings?: T;
+  fromRelatedStock?: T;
   original?:
     | T
     | {
@@ -1675,7 +1686,7 @@ export interface HoldingsSelect<T extends boolean = true> {
 export interface HoldingsPerDaySelect<T extends boolean = true> {
   stock?: T;
   quantity?: T;
-  originalForeignData?:
+  originalData?:
     | T
     | {
         stockId?: T;
