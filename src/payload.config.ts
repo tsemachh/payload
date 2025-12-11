@@ -45,7 +45,7 @@ import { openapi, swaggerUI } from 'payload-oapi'
 import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
 import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 import versionsPlugin from '@shefing/custom-version-view'
-import { Questions } from './collections/questions/questions'
+import { Questions } from './collections/questions/Questions'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)

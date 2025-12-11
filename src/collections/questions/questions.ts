@@ -4,7 +4,7 @@ import { CollectionConfig } from 'payload'
 export const Questions: CollectionConfig = {
   slug: 'questions',
   labels: {
-    singular: ' שאלה לאסיפות',
+    singular: 'שאלות לאסיפה',
     plural: ' שאלות לאסיפות',
   },
 
@@ -69,6 +69,7 @@ export const Questions: CollectionConfig = {
               name: 'questionText',
               label: 'שאלה',
               type: 'text',
+              required: true,
               admin: {
                 width: '85%',
               },
