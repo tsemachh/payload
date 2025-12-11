@@ -15,6 +15,7 @@ interface Company {
   parentCompany?: string
   nominalValue: number
   percentageHolding: number
+  passiveFunds: boolean
 }
 interface CompanyVoted extends Company {
   vote: {
@@ -61,6 +62,41 @@ export const useVotingData = () => {
       }
 
       try {
+        // Fetch all funds to create passiveMap
+        let passiveMap = new Map<string, boolean>()
+        const meetingFundIds = (data.funds || []) as string[]
+        if (meetingFundIds.length > 0) {
+          const fundsQuery = stringify(
+            {
+              where: {
+                id: { in: meetingFundIds },
+              },
+              select: {
+                id: true,
+                passiveFund: true,
+              },
+              depth: 0,
+              limit: 0,
+            },
+            { addQueryPrefix: true },
+          )
+
+          const fundsResponse = await fetch(`/api/companies${fundsQuery}`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          })
+
+          if (fundsResponse.ok) {
+            const fundsJson = await fundsResponse.json()
+            passiveMap = new Map<string, boolean>(
+              fundsJson.docs?.map((fund: any) => [fund.id as string, fund.passiveFund || false]) ||
+                [],
+            )
+          } else {
+            console.error('Error fetching funds:', fundsResponse.statusText)
+          }
+        }
+
         let votesDetails: any[] = []
         try {
           const meetingId = data?.id
@@ -182,6 +218,13 @@ export const useVotingData = () => {
             ? parentCompanyNamesMap.get(parentCompanyId) || vote.companyName
             : vote.companyName
 
+          // Check if all funds holding this company are passive
+          const companyFunds =
+            data.fundsWithHolding?.filter((holding: any) => holding.company === vote.company) || []
+          const hasOnlyPassiveFunds =
+            companyFunds.length > 0 &&
+            companyFunds.every((holding: any) => passiveMap.get(holding.fund) === true)
+
           return {
             id: vote.company,
             name: vote.companyName,
@@ -189,6 +232,7 @@ export const useVotingData = () => {
             parentCompanyId: parentCompanyId,
             nominalValue: calculatedValues.nominalValue,
             percentageHolding: calculatedValues.percentageHolding,
+            passiveFunds: hasOnlyPassiveFunds,
             vote: {
               id: vote.id,
               voter:
@@ -237,6 +281,14 @@ export const useVotingData = () => {
               ? parentCompanyNamesMap.get(companyInfo.parentCompanyId) || companyInfo.name
               : companyInfo.name
 
+            // Check if all funds holding this company are passive
+            const companyFunds =
+              data.fundsWithHolding?.filter((holding: any) => holding.company === companyId) || []
+
+            const hasOnlyPassiveFunds =
+              companyFunds.length > 0 &&
+              companyFunds.every((holding: any) => passiveMap.get(holding.fund) === true)
+
             return {
               id: companyId,
               name: companyInfo.name,
@@ -244,6 +296,7 @@ export const useVotingData = () => {
               parentCompanyId: companyInfo.parentCompanyId,
               nominalValue: calculatedValues.nominalValue,
               percentageHolding: calculatedValues.percentageHolding,
+              passiveFunds: hasOnlyPassiveFunds,
             }
           })
           .filter((company) => company !== null) as Company[]
@@ -402,7 +455,7 @@ export const useVotingData = () => {
 
       // Add checksum subgroups only if parent company group is not collapsed
       if (!collapsedVotedGroups.has(parentGroupId)) {
-        Array.from(checksumGroups.entries()).forEach(([checksum, checksumCompanies]) => {
+        Array.from(checksumGroups.entries()).forEach(([_checksum, checksumCompanies]) => {
           const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
           checksumGroupIndex++
 
