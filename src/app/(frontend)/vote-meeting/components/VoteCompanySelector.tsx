@@ -13,6 +13,7 @@ interface VoteCompanySelectorProps {
   setCompaniesIDsAction: (selectedCompanyIds: string[]) => void
   isGeneralVoteOption: boolean
   votedCompanies: Set<string>
+  companiesWithErrors?: Set<string>
 }
 
 export default function VoteCompanySelector({
@@ -22,6 +23,7 @@ export default function VoteCompanySelector({
   setCompaniesIDsAction,
   isGeneralVoteOption,
   votedCompanies,
+  companiesWithErrors = new Set(),
 }: VoteCompanySelectorProps) {
   const { companies: companiesMap, funds } = useCompaniesContext()
   const [selectedCompanies, setSelectedCompanies] = useState<string>(
@@ -166,7 +168,7 @@ export default function VoteCompanySelector({
                     selectedCompanies === company.id
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
-                  }`}
+                  } ${companiesWithErrors.has(company.id) ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}
                 >
                   <input
                     type="radio"

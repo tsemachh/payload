@@ -94,7 +94,13 @@ export default function VotingForm() {
   const [isGeneralVoteOption, setIsGeneralVoteOption] = useState<boolean>(true)
   const [lastPublishedVoteInfo, setLastPublishedVoteInfo] = useState<{ user: string; date: Date }>()
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [publishSuccessAll, setPublishSuccessAll] = useState<{
+    updatedCount: number
+    companyNames: string[]
+    isPrivateVote: boolean
+  }>({ updatedCount: 0, companyNames: [], isPrivateVote: false })
   const [isDraftSaved, setIsDraftSaved] = useState(false)
+  const [companiesWithErrors, setCompaniesWithErrors] = useState<Set<string>>(new Set())
 
   const {
     data: meetingData,
@@ -502,6 +508,115 @@ export default function VotingForm() {
     [validationErrors],
   )
 
+  const validateAllCompaniesVotes = useCallback(async (): Promise<{
+    isValid: boolean
+    invalidCompanies: string[]
+  }> => {
+    if (!meetingIdPayload || !meetingCompanies.length || !meetingData) {
+      return { isValid: false, invalidCompanies: [] }
+    }
+
+    try {
+      // Fetch all draft votes for all companies
+      const response = await fetch(
+        `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=draft`,
+      )
+      const allVotes = await response.json()
+
+      const invalidCompanies: string[] = []
+
+      // Check if all companies have draft votes
+      for (const companyId of meetingCompanies) {
+        const vote = allVotes.find(
+          (v: any) => (typeof v.company === 'string' ? v.company : v.company?.id) === companyId,
+        )
+
+        if (!vote) {
+          // No draft vote for this company - it's invalid
+          invalidCompanies.push(companyId)
+          continue
+        }
+
+        // Validate general questions
+        if (vote.isInterested && !vote.interestedExplanation?.trim()) {
+          invalidCompanies.push(companyId)
+          continue
+        }
+
+        if (vote.isSeniorOfficial && !vote.seniorOfficialExplanation?.trim()) {
+          invalidCompanies.push(companyId)
+          continue
+        }
+
+        // Validate agenda items
+        let hasAgendaError = false
+        for (const agenda of meetingData.agendas) {
+          if (agenda.isRemovedFromAgenda) continue
+
+          const voteItem = (vote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
+
+          if (!voteItem?.voteDecision) {
+            hasAgendaError = true
+            break
+          }
+
+          if (
+            voteItem.hasConflictOfInterest &&
+            !voteItem.conflictOfInterestExplanation?.trim()
+          ) {
+            hasAgendaError = true
+            break
+          }
+
+          if (voteItem.isRelatedParty && !voteItem.relatedPartyExplanation?.trim()) {
+            hasAgendaError = true
+            break
+          }
+
+          if (voteItem.hasPersonalInterest && !voteItem.personalInterestExplanation?.trim()) {
+            hasAgendaError = true
+            break
+          }
+        }
+
+        if (hasAgendaError) {
+          invalidCompanies.push(companyId)
+        }
+      }
+
+      return {
+        isValid: invalidCompanies.length === 0,
+        invalidCompanies,
+      }
+    } catch (error) {
+      console.error('Error validating all companies votes:', error)
+      return { isValid: false, invalidCompanies: [] }
+    }
+  }, [meetingIdPayload, meetingCompanies, meetingData])
+
+  // When switching to a company with errors, validate and show field errors
+  useEffect(() => {
+    if (companiesWithErrors.size > 0 && companiesIDs.length === 1) {
+      if (companiesWithErrors.has(companiesIDs[0])) {
+        // This company has errors - validate and show them
+        const errors = validateForm()
+        if (errors.length > 0) {
+          setValidationErrors(errors)
+        } else {
+          // Company was marked as having errors but now it's valid - remove from error set
+          setCompaniesWithErrors((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(companiesIDs[0])
+            return newSet
+          })
+        }
+      } else {
+        // Switched to a company without errors - clear field errors
+        setValidationErrors([])
+      }
+    }
+  }, [companiesIDs, companiesWithErrors, validateForm])
+
   const savePublish = useCallback(
     async () => {
       // Trigger blur on all textareas to ensure all changes are saved
@@ -544,7 +659,7 @@ export default function VotingForm() {
       setIsSubmitting(true)
 
       try {
-        await postWithErrorHandling(
+        const response = await postWithErrorHandling(
           '/api/votes/publish-votes',
           {
             meetingId: meetingIdPayload,
@@ -557,11 +672,22 @@ export default function VotingForm() {
         )
 
         window.scrollTo({ top: 0, behavior: 'smooth' })
+
+        // Determine if this is a private vote (single company)
+        const isPrivate = companiesIDs.length === 1
+
+        // Set success data for popup
+        setPublishSuccessAll({
+          updatedCount: response.actuallyUpdated || 0,
+          companyNames: response.updatedCompanyNames || [],
+          isPrivateVote: isPrivate,
+        })
+
         setPublishSuccess(true)
         mutatePublish()
         mutateAllLatestVotes()
         mutateVotedCompaniesArray()
-      } catch (error: any) {
+      } catch (_error) {
         // Error already logged and notified by postWithErrorHandling
         // Additional error handling if needed
       } finally {
@@ -576,6 +702,107 @@ export default function VotingForm() {
       companiesIDs,
       toast,
       router,
+      mutatePublish,
+      mutateAllLatestVotes,
+      mutateVotedCompaniesArray,
+    ],
+  )
+
+  const savePublishAll = useCallback(
+    async () => {
+      // Trigger blur on all textareas to ensure all changes are saved
+      const textareas = document.querySelectorAll('textarea')
+      textareas.forEach((textarea) => {
+        if (textarea === document.activeElement) {
+          textarea.blur()
+        }
+      })
+
+      // Wait for blur handlers to complete and state to update
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // First validate current company's form to show field-level errors
+      const currentErrors = validateForm()
+      if (currentErrors.length > 0) {
+        setValidationErrors(currentErrors)
+        // Scroll to the first error
+        const firstError = currentErrors[0]
+        const errorElement = document.querySelector(
+          `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
+        )
+        errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setTimeout(() => {
+          toast({
+            title: '⚠️  נדרש מידע נוסף',
+            description: 'יש למלא את כל השדות החובה המסומנים בחברה הנוכחית',
+            duration: 3000,
+          })
+        }, 0)
+      }
+
+      // Validate ALL companies votes
+      const validationResult = await validateAllCompaniesVotes()
+
+      if (!validationResult.isValid) {
+        // Set companies with errors
+        setCompaniesWithErrors(new Set(validationResult.invalidCompanies))
+
+        setTimeout(() => {
+          toast({
+            title: '⚠️  חברות עם שדות חובה חסרים',
+            description: `לא ניתן לשלוח הצבעות. נמצאו ${validationResult.invalidCompanies.length} חברות עם שדות חובה חסרים (מסומנות באדום). אנא השלם את השדות החובה בכל החברות.`,
+            duration: 5000,
+          })
+        }, 0)
+        return
+      }
+
+      // Clear any previous errors
+      setCompaniesWithErrors(new Set())
+      setValidationErrors([])
+
+      setIsSubmitting(true)
+
+      try {
+        // Publish votes for ALL companies in the meeting
+        const response = await postWithErrorHandling(
+          '/api/votes/publish-votes',
+          {
+            meetingId: meetingIdPayload,
+            companiesIds: meetingCompanies,
+          },
+          {
+            errorMessage: 'שגיאה בשליחת ההצבעה',
+          },
+        )
+
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+
+        // Set success data for popup
+        setPublishSuccessAll({
+          updatedCount: response.actuallyUpdated || 0,
+          companyNames: response.updatedCompanyNames || [],
+          isPrivateVote: false,
+        })
+
+        setPublishSuccess(true)
+        mutatePublish()
+        mutateAllLatestVotes()
+        mutateVotedCompaniesArray()
+      } catch (_error) {
+        // Error already logged and notified by postWithErrorHandling
+        // Additional error handling if needed
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      validateAllCompaniesVotes,
+      meetingIdPayload,
+      meetingCompanies,
+      meetingData,
+      toast,
       mutatePublish,
       mutateAllLatestVotes,
       mutateVotedCompaniesArray,
@@ -617,7 +844,7 @@ export default function VotingForm() {
         })
         mutateDraft()
         mutateAllLatestVotes()
-      } catch (error) {
+      } catch (_error) {
         //Handle rollback in UI level on Error
       }
     },
@@ -897,6 +1124,7 @@ export default function VotingForm() {
                   setCompaniesIDsAction={setCompaniesIDs}
                   isGeneralVoteOption={isGeneralVoteOption}
                   votedCompanies={votedCompanies}
+                  companiesWithErrors={companiesWithErrors}
                 />
               </CardContent>
             </Card>
@@ -1184,34 +1412,100 @@ export default function VotingForm() {
               </CardContent>
             </Card>
 
-            {/* כפתור שליחת הצבעה */}
-            <div className="flex justify-end mt-6">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <Button
-                        onClick={() => savePublish()}
-                        disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
-                        className="px-8"
-                      >
-                        {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
-                    <TooltipContent className="m-1 mx-3">
-                      {!isDirty
-                        ? 'אין שינוי מההצבעה שנשלחה לעמדה'
-                        : isUploading
-                          ? 'אנא המתן לסיום העלאת הקבצים'
-                          : isReadOnly
-                            ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
-                            : 'הצבעה נשלחת, אנא המתן'}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+            {/* כפתורי שליחת הצבעה */}
+            <div className="flex justify-end gap-4 mt-6">
+              {meetingCompanies.length === 1 ? (
+                /* Single button for single company */
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <Button
+                          onClick={() => savePublish()}
+                          disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
+                          className="px-8"
+                        >
+                          {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
+                      <TooltipContent className="m-1 mx-3">
+                        {!isDirty
+                          ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                          : isUploading
+                            ? 'אנא המתן לסיום העלאת הקבצים'
+                            : isReadOnly
+                              ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
+                              : 'הצבעה נשלחת, אנא המתן'}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <>
+                  {/* Button for current selection (general or private) */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            onClick={() => savePublish()}
+                            disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
+                            className="px-8"
+                          >
+                            {isSubmitting
+                              ? 'שולח...'
+                              : isGeneralVoteOption
+                                ? 'שליחת הצבעה כללית'
+                                : 'שליחת הצבעה פרטנית'}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
+                        <TooltipContent className="m-1 mx-3">
+                          {!isDirty
+                            ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                            : isUploading
+                              ? 'אנא המתן לסיום העלאת הקבצים'
+                              : isReadOnly
+                                ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
+                                : 'הצבעה נשלחת, אנא המתן'}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {/* Button to send ALL votes */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            onClick={() => savePublishAll()}
+                            disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
+                            className="px-8"
+                            variant="secondary"
+                          >
+                            {isSubmitting ? 'שולח...' : 'שלח את כל ההצבעות'}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
+                        <TooltipContent className="m-1 mx-3">
+                          {!isDirty
+                            ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                            : isUploading
+                              ? 'אנא המתן לסיום העלאת הקבצים'
+                              : isReadOnly
+                                ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
+                                : 'הצבעה נשלחת, אנא המתן'}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1224,7 +1518,13 @@ export default function VotingForm() {
       )}
 
       <Toaster />
-      <PublishSuccessPopup isOpen={publishSuccess} onCloseAction={() => setPublishSuccess(false)} />
+      <PublishSuccessPopup
+        isOpen={publishSuccess}
+        onCloseAction={() => setPublishSuccess(false)}
+        updatedCount={publishSuccessAll.updatedCount}
+        companyNames={publishSuccessAll.companyNames}
+        isPrivateVote={publishSuccessAll.isPrivateVote}
+      />
     </>
   )
 }
