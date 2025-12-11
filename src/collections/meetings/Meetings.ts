@@ -962,12 +962,6 @@ export const Meetings: CollectionConfig = {
           label: 'סדר יום',
           fields: [
             {
-              name: 'finalized',
-              label: 'הסתיימה',
-              type: 'checkbox',
-              admin: { disableListColumn: true, hidden: true },
-            },
-            {
               name: 'relatedQuestions',
               label: 'שאלות קשורות',
               type: 'relationship',

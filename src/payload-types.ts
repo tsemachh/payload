@@ -719,6 +719,7 @@ export interface Meeting {
   holdingsLimit: string;
   proxyVotingDate?: string | null;
   meetingDate: string;
+  finalized?: boolean | null;
   isDualStock?: boolean | null;
   mainMeetingForDualMeeting?: (string | null) | Meeting;
   hasDualStock?: boolean | null;
@@ -741,7 +742,6 @@ export interface Meeting {
         id?: string | null;
       }[]
     | null;
-  finalized?: boolean | null;
   /**
    * שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.
    */
@@ -1461,6 +1461,7 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
+  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1539,6 +1540,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   holdingsLimit?: T;
   proxyVotingDate?: T;
   meetingDate?: T;
+  finalized?: T;
   isDualStock?: T;
   mainMeetingForDualMeeting?: T;
   hasDualStock?: T;
@@ -1561,7 +1563,7 @@ export interface MeetingsSelect<T extends boolean = true> {
         color?: T;
         id?: T;
       };
-  finalized?: T;
+  relatedQuestions?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
   funds?: T;
@@ -2297,6 +2299,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
+  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;
