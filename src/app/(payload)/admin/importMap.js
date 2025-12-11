@@ -32,6 +32,8 @@ import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugi
 import { default as default_ce88691c04773935ab8c3f34f9cbaf09 } from '../../../admincomponents/BulkResetPasswordMenuItem'
 import { default as default_60e1fb8d59b01fba6bc2a987030079cb } from '../../../admincomponents/BulkRecalculateUserMembershipsMenuItem'
 import { default as default_d47dd81cf417d85b77fb12a71829ea41 } from '../../../admincomponents/cell/FormattedErrorsCell'
+import { default as default_6132be85f7e2337fab46a9604532d986 } from '../../../collections/questions/components/TitleField'
+import { default as default_d5b39e159071deafd76f3f93ea503360 } from '../../../collections/questions/components/rowLabel'
 import { default as default_decfc0febdd7408d7612d32145131a9e } from '../../../collections/votes/components/RowLabel'
 import { default as default_04bff1aaa7fcf3f952edfa2bf19f0e15 } from '../../../collections/votes/components/VoteSubTitle'
 import { default as default_5d8225adaebf43e1e640836b9165c5bf } from '../../../collections/research-documents/components/ResearchRelationshipValidationFilename'
@@ -48,6 +50,8 @@ import { QueryPresetsWhereCell as QueryPresetsWhereCell_3817bf644402e67bfe6577f6
 import { QueryPresetsWhereField as QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnsCell as QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnField as QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
+import { QueryPresetsGroupByCell as QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
+import { QueryPresetsGroupByField as QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { default as default_a5852a3a735d9299b693b4d2e7b266de } from '@shefing/quickfilter/nav'
 import { UnImpersonate as UnImpersonate_30fd60f7d4c856977e9f58a871290892 } from '@/plugins/impersonate/ui/UnImpersonate'
 import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../graphics/Logo'
@@ -94,6 +98,8 @@ export const importMap = {
   "/admincomponents/BulkResetPasswordMenuItem#default": default_ce88691c04773935ab8c3f34f9cbaf09,
   "/admincomponents/BulkRecalculateUserMembershipsMenuItem#default": default_60e1fb8d59b01fba6bc2a987030079cb,
   "/admincomponents/cell/FormattedErrorsCell#default": default_d47dd81cf417d85b77fb12a71829ea41,
+  "/collections/questions/components/TitleField#default": default_6132be85f7e2337fab46a9604532d986,
+  "/collections/questions/components/rowLabel#default": default_d5b39e159071deafd76f3f93ea503360,
   "/collections/votes/components/RowLabel#default": default_decfc0febdd7408d7612d32145131a9e,
   "/collections/votes/components/VoteSubTitle#default": default_04bff1aaa7fcf3f952edfa2bf19f0e15,
   "/collections/research-documents/components/ResearchRelationshipValidationFilename#default": default_5d8225adaebf43e1e640836b9165c5bf,
@@ -110,6 +116,8 @@ export const importMap = {
   "@payloadcms/ui#QueryPresetsWhereField": QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnsCell": QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnField": QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsGroupByCell": QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsGroupByField": QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de,
   "@shefing/quickfilter/nav#default": default_a5852a3a735d9299b693b4d2e7b266de,
   "@/plugins/impersonate/ui/UnImpersonate#UnImpersonate": UnImpersonate_30fd60f7d4c856977e9f58a871290892,
   "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,

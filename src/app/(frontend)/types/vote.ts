@@ -5,6 +5,14 @@ export type VoteDataType = {
   userVotes: UserVote[]
   voterNotes: string
   voteDocuments: string[]
+  dynamicQuestions?: DynamicQuestionAnswer[]
+}
+
+export type DynamicQuestionAnswer = {
+  questionId: string
+  questionText: string
+  answer: boolean
+  explanation?: string
 }
 
 export type GeneralVotingData = {

@@ -550,6 +550,32 @@ export const Meetings: CollectionConfig = {
                     },
                     width: '150px',
                   },
+                  hooks: {
+                    beforeChange: [
+                      async ({ value, data, req, operation }) => {
+                        // Only auto-fill relatedQuestions if it's empty/null and we have a meeting type
+                        if (!value || !data || data.relatedQuestions) {
+                          return value
+                        }
+
+                        const matchingQuestions = await req.payload.find({
+                          collection: 'questions',
+                          where: {
+                            type: { equals: value },
+                          },
+                          limit: 1,
+                          depth: 0,
+                        })
+
+                        // Auto-populate relatedQuestions if we found matching questions
+                        if (matchingQuestions.docs.length > 0) {
+                          data.relatedQuestions = matchingQuestions.docs[0].id
+                        }
+
+                        return value
+                      },
+                    ],
+                  },
                 },
                 {
                   name: 'primaryLegacyId',
@@ -961,6 +987,17 @@ export const Meetings: CollectionConfig = {
         {
           label: 'סדר יום',
           fields: [
+            {
+              name: 'relatedQuestions',
+              label: 'שאלות קשורות',
+              type: 'relationship',
+              relationTo: 'questions',
+              hasMany: false,
+              admin: {
+                description:
+                  'שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.',
+              },
+            },
             {
               name: 'agenda',
               label: 'נושאים',

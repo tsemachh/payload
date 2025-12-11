@@ -317,6 +317,7 @@ const upsertVotesInternal = async ({
     isInstitutionalInvestor: votingData.generalVotingData.isInstitutionalInvestor,
     clientComment: votingData.voterNotes,
     voteDocuments: votingData.voteDocuments || [],
+    dynamicQuestions: votingData.dynamicQuestions || [],
   }
 
   const agendaVotesFormatted = votingData.userVotes.map((userVote: UserVote) => ({

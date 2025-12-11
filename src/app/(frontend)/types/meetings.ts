@@ -39,6 +39,7 @@ export type MeetingTableDataType = {
   displayMode?: string
   selectedCompanyIds?: string[]
   labels: { id: string; label: string; color: string }[]
+  relatedQuestions?: { id: string; questions: Array<{ id: string; questionText: string; defaultValue: boolean }> }
 }
 
 export type DateFilterOption = {

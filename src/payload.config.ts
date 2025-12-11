@@ -45,6 +45,7 @@ import { openapi, swaggerUI } from 'payload-oapi'
 import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
 import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 import versionsPlugin from '@shefing/custom-version-view'
+import { MeetingQuestions } from './collections/questions/MeetingQuestions'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -280,6 +281,7 @@ export default buildConfig({
     RecommendationReasons,
     AuditLogs,
     AuditLogReads,
+    MeetingQuestions,
     // תחזוקה
     CompanyMeetingNotifications,
     Votes,
