@@ -289,16 +289,16 @@ export default function VotingForm() {
     let publishedData: VoteDataType | null = null
 
     // Initialize dynamic questions from meeting data
-    const dynamicQuestions: DynamicQuestionAnswer[] = (meetingData.relatedQuestions || []).map(
-      (q) => {
-        return {
-          questionId: q.id,
-          questionText: q.questionText,
-          answer: q.defaultValue || false,
-          explanation: '',
-        }
-      },
-    )
+    const dynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+      ? meetingData.relatedQuestions.questions.map((q) => {
+          return {
+            questionId: q.id,
+            questionText: q.questionText,
+            answer: q.defaultValue || false,
+            explanation: '',
+          }
+        })
+      : []
 
     if (!fetchedVotes || fetchedVotes.length === 0) {
       initialData = {
@@ -357,17 +357,17 @@ export default function VotingForm() {
       })
 
       // Load dynamic questions answers from saved vote
-      const savedDynamicQuestions: DynamicQuestionAnswer[] = (
-        meetingData.relatedQuestions || []
-      ).map((q) => {
-        const savedAnswer = firstVote.dynamicQuestions?.find((dq: any) => dq.questionId === q.id)
-        return {
-          questionId: q.id,
-          questionText: q.questionText,
-          answer: q.defaultValue ?? false,
-          explanation: savedAnswer?.explanation || '',
-        }
-      })
+      const savedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+        ? meetingData.relatedQuestions.questions.map((q) => {
+            const savedAnswer = firstVote.dynamicQuestions?.find((dq: any) => dq.questionId === q.id)
+            return {
+              questionId: q.id,
+              questionText: q.questionText,
+              answer: savedAnswer?.answer ?? q.defaultValue ?? false,
+              explanation: savedAnswer?.explanation || '',
+            }
+          })
+        : []
       initialData = {
         generalVotingData: {
           isInterested: firstVote.isInterested ?? false,
@@ -410,19 +410,19 @@ export default function VotingForm() {
       })
 
       // Load published dynamic questions answers
-      const publishedDynamicQuestions: DynamicQuestionAnswer[] = (
-        meetingData.relatedQuestions || []
-      ).map((q) => {
-        const savedAnswer = firstPublishedVote.dynamicQuestions?.find(
-          (dq: any) => dq.questionId === q.id,
-        )
-        return {
-          questionId: q.id,
-          questionText: q.questionText,
-          answer: savedAnswer?.answer ?? q.defaultValue ?? false,
-          explanation: savedAnswer?.explanation || '',
-        }
-      })
+      const publishedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+        ? meetingData.relatedQuestions.questions.map((q) => {
+            const savedAnswer = firstPublishedVote.dynamicQuestions?.find(
+              (dq: any) => dq.questionId === q.id,
+            )
+            return {
+              questionId: q.id,
+              questionText: q.questionText,
+              answer: savedAnswer?.answer ?? q.defaultValue ?? false,
+              explanation: savedAnswer?.explanation || '',
+            }
+          })
+        : []
 
       publishedData = {
         generalVotingData: {
@@ -460,7 +460,7 @@ export default function VotingForm() {
 
     // Check if we have dynamic questions (relatedQuestions)
     const hasDynamicQuestions =
-      meetingData?.relatedQuestions && meetingData.relatedQuestions.length > 0
+      meetingData?.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
 
     if (hasDynamicQuestions) {
       // Validate dynamic questions
@@ -1001,9 +1001,9 @@ export default function VotingForm() {
                   getFieldErrorAction={getFieldError}
                   isReadOnly={isReadOnly}
                   dynamicQuestions={
-                    meetingData.relatedQuestions && meetingData.relatedQuestions.length > 0
+                    meetingData.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
                       ? votingData.dynamicQuestions?.map((dq) => {
-                          const questionDef = meetingData.relatedQuestions?.find(
+                          const questionDef = meetingData.relatedQuestions?.questions?.find(
                             (q) => q.id === dq.questionId,
                           )
                           return {
@@ -1016,7 +1016,7 @@ export default function VotingForm() {
                       : undefined
                   }
                   onDynamicQuestionChange={
-                    meetingData.relatedQuestions && meetingData.relatedQuestions.length > 0
+                    meetingData.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
                       ? handleDynamicQuestionChange
                       : undefined
                   }

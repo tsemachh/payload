@@ -739,7 +739,7 @@ export interface Meeting {
   /**
    * שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.
    */
-  relatedQuestions?: (string | Question)[] | null;
+  relatedQuestions?: (string | null) | Question;
   agenda?: MeetingAgenda;
   /**
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.

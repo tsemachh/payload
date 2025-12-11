@@ -579,21 +579,18 @@ function createMeetingDataObject(
   defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
   // Process related questions
-  const relatedQuestions = Array.isArray(meeting.relatedQuestions)
-    ? meeting.relatedQuestions
-        .filter((q): q is any => typeof q === 'object' && q !== null)
-        .flatMap((questionDoc) => {
-          // Each questionDoc has a 'questions' array
-          if (Array.isArray(questionDoc.questions)) {
-            return questionDoc.questions.map((q: any) => ({
+  const relatedQuestions = meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
+    ? {
+        id: meeting.relatedQuestions.id || '',
+        questions: Array.isArray(meeting.relatedQuestions.questions)
+          ? meeting.relatedQuestions.questions.map((q: any) => ({
               id: q.id || '',
               questionText: q.questionText || '',
               defaultValue: q.defaultValue ?? false,
             }))
-          }
-          return []
-        })
-    : []
+          : []
+      }
+    : undefined
 
   return {
     meetingIdPayload: meeting.id,

@@ -902,7 +902,7 @@ export const Meetings: CollectionConfig = {
               label: 'שאלות קשורות',
               type: 'relationship',
               relationTo: 'questions',
-              hasMany: true,
+              hasMany: false,
               admin: {
                 description:
                   'שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.',
