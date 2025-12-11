@@ -12,7 +12,6 @@ interface QuestionRow {
   const [label, setLabel] = useState('')
 
   useEffect(() => {
-    console.log("data",data)
     if (data?.questionText) {
       setLabel(data.questionText)
     } else {

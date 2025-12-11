@@ -830,11 +830,12 @@ export interface Document {
  */
 export interface Question {
   id: string;
+  title?: string | null;
   type: MeetingType;
   questions?:
     | {
         questionText?: string | null;
-        defaultValue?: boolean | null;
+        defaultValue?: ('false' | 'true') | null;
         id?: string | null;
       }[]
     | null;
@@ -1916,6 +1917,7 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
  * via the `definition` "questions_select".
  */
 export interface QuestionsSelect<T extends boolean = true> {
+  title?: T;
   type?: T;
   questions?:
     | T

@@ -586,7 +586,7 @@ function createMeetingDataObject(
           ? meeting.relatedQuestions.questions.map((q: any) => ({
               id: q.id || '',
               questionText: q.questionText || '',
-              defaultValue: q.defaultValue ?? false,
+              defaultValue: q.defaultValue === 'true',
             }))
           : []
       }

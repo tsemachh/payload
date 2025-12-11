@@ -289,7 +289,7 @@ export default function VotingForm() {
     let publishedData: VoteDataType | null = null
 
     // Initialize dynamic questions from meeting data
-    const dynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+    const dynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions
       ? meetingData.relatedQuestions.questions.map((q) => {
           return {
             questionId: q.id,
@@ -357,13 +357,15 @@ export default function VotingForm() {
       })
 
       // Load dynamic questions answers from saved vote
-      const savedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+      const savedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions
         ? meetingData.relatedQuestions.questions.map((q) => {
-            const savedAnswer = firstVote.dynamicQuestions?.find((dq: any) => dq.questionId === q.id)
+            const savedAnswer = firstVote.dynamicQuestions?.find(
+              (dq: any) => dq.questionId === q.id,
+            )
             return {
               questionId: q.id,
               questionText: q.questionText,
-              answer: savedAnswer?.answer ?? q.defaultValue ?? false,
+              answer: savedAnswer?.answer ?? (q.defaultValue || false),
               explanation: savedAnswer?.explanation || '',
             }
           })
@@ -410,7 +412,8 @@ export default function VotingForm() {
       })
 
       // Load published dynamic questions answers
-      const publishedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions 
+      const publishedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions
+        ?.questions
         ? meetingData.relatedQuestions.questions.map((q) => {
             const savedAnswer = firstPublishedVote.dynamicQuestions?.find(
               (dq: any) => dq.questionId === q.id,
@@ -418,7 +421,7 @@ export default function VotingForm() {
             return {
               questionId: q.id,
               questionText: q.questionText,
-              answer: savedAnswer?.answer ?? q.defaultValue ?? false,
+              answer: savedAnswer?.answer ?? (q.defaultValue || false),
               explanation: savedAnswer?.explanation || '',
             }
           })
@@ -460,7 +463,9 @@ export default function VotingForm() {
 
     // Check if we have dynamic questions (relatedQuestions)
     const hasDynamicQuestions =
-      meetingData?.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
+      meetingData?.relatedQuestions &&
+      meetingData.relatedQuestions.questions &&
+      meetingData.relatedQuestions.questions.length > 0
 
     if (hasDynamicQuestions) {
       // Validate dynamic questions
@@ -580,13 +585,11 @@ export default function VotingForm() {
 
       // Use the latest votingData from state (updated after blur)
       const latestVotingData = votingData
-      console.log("latestVotingData",latestVotingData)
       // Clear previous errors
       setValidationErrors([])
 
       // Validate form
       const errors = validateForm()
-      console.log("errors",errors)
       if (errors.length > 0) {
         setValidationErrors(errors)
         // Scroll to the first error
@@ -848,8 +851,8 @@ export default function VotingForm() {
       }
 
       setVotingData(updatedVotingData)
-      // Use skipMutate=true to avoid re-fetching and overwriting state
-      saveDraftData('שאלה', updatedVotingData, true)
+      // Save draft data and trigger re-fetch to update fetchedAllLatestVotes
+      saveDraftData('שאלה', updatedVotingData)
     },
     [votingData, saveDraftData],
   )
@@ -1001,7 +1004,9 @@ export default function VotingForm() {
                   getFieldErrorAction={getFieldError}
                   isReadOnly={isReadOnly}
                   dynamicQuestions={
-                    meetingData.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
+                    meetingData.relatedQuestions &&
+                    meetingData.relatedQuestions.questions &&
+                    meetingData.relatedQuestions.questions.length > 0
                       ? votingData.dynamicQuestions?.map((dq) => {
                           const questionDef = meetingData.relatedQuestions?.questions?.find(
                             (q) => q.id === dq.questionId,
@@ -1016,7 +1021,9 @@ export default function VotingForm() {
                       : undefined
                   }
                   onDynamicQuestionChange={
-                    meetingData.relatedQuestions && meetingData.relatedQuestions.questions && meetingData.relatedQuestions.questions.length > 0
+                    meetingData.relatedQuestions &&
+                    meetingData.relatedQuestions.questions &&
+                    meetingData.relatedQuestions.questions.length > 0
                       ? handleDynamicQuestionChange
                       : undefined
                   }

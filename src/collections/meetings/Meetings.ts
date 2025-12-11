@@ -910,7 +910,8 @@ export const Meetings: CollectionConfig = {
               hooks: {
                 beforeChange: [
                   async ({ value, data, req, operation }) => {
-                    if (value && value.length > 0) {
+                    // Only auto-fill if relatedQuestions is empty/null
+                    if (value) {
                       return value
                     }
 
@@ -924,10 +925,12 @@ export const Meetings: CollectionConfig = {
                       where: {
                         type: { equals: meetingType },
                       },
-                      limit: 100,
+                      limit: 1,
                       depth: 0,
                     })
-                    return matchingQuestions.docs.map((q) => q.id)
+                    
+                    // Return the first matching question (since hasMany: false)
+                    return matchingQuestions.docs.length > 0 ? matchingQuestions.docs[0].id : null
                   },
                 ],
               },

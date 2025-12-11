@@ -1,15 +1,15 @@
-import { meetingTypeOptions } from "@/consts/otipns-const";
-import { CollectionConfig } from "payload";
+import { meetingTypeOptions } from '@/consts/otipns-const'
+import { CollectionConfig } from 'payload'
 
 export const Questions: CollectionConfig = {
   slug: 'questions',
   labels: {
-    singular: 'שאלה',
-    plural: 'שאלות',
+    singular: ' שאלה לאסיפות',
+    plural: ' שאלות לאסיפות',
   },
 
   admin: {
-    useAsTitle: 'type',
+    useAsTitle: 'title',
     group: 'ניהול',
     pagination: {
       defaultLimit: 100,
@@ -19,19 +19,33 @@ export const Questions: CollectionConfig = {
 
   fields: [
     {
-      name: 'type',
-      label: 'סוג',
-      type: 'select',
-      interfaceName: 'MeetingType',
-      required: true,
-      index: true,
-      options: meetingTypeOptions,
-      admin: {
-        custom: {
-          cellWidth: '50px',
+      type: 'row',
+      fields: [
+        {
+          name: 'title',
+          label: 'כותרת',
+          type: 'text',
+          unique: true,
+          admin: {
+            width: '70%',
+            components: {
+              Field: '/collections/questions/components/TitleField',
+            },
+          },
         },
-        width: '30px',
-      },
+        {
+          name: 'type',
+          label: 'סוג',
+          type: 'select',
+          interfaceName: 'MeetingType',
+          required: true,
+          index: true,
+          options: meetingTypeOptions,
+          admin: {
+            width: '30%',
+          },
+        },
+      ],
     },
 
     {
@@ -62,8 +76,13 @@ export const Questions: CollectionConfig = {
 
             {
               name: 'defaultValue',
-              label: 'ערך דיפולטיבי',
-              type: 'checkbox',
+              label: 'ברירת מחדל',
+              type: 'select',
+              options: [
+                { label: 'לא', value: 'false' },
+                { label: 'כן', value: 'true' },
+              ],
+              defaultValue: 'false',
               admin: {
                 width: '15%',
               },
@@ -73,4 +92,4 @@ export const Questions: CollectionConfig = {
       ],
     },
   ],
-};
+}

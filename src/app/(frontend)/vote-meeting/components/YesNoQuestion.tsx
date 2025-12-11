@@ -57,7 +57,7 @@ export default function YesNoQuestion({
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start gap-4 mb-2">
         <span className={`text-sm font-medium ${isReadOnly ? 'text-muted-foreground' : ''}`}>
           {label}
         </span>
