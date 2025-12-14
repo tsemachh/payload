@@ -161,12 +161,12 @@ export async function getVoteData(
       company: {
         id: fundHold.company,
         name: companyIdToNameMap.get(fundHold?.company),
-        _order: companyIdToOrderMap.get(fundHold?.company)
+        _order: companyIdToOrderMap.get(fundHold?.company),
       },
       fund: {
         id: fundHold.fund,
         name: fundIdToNameMap.get(fundHold?.fund),
-        _order: fundIdToOrderMap.get(fundHold?.fund)
+        _order: fundIdToOrderMap.get(fundHold?.fund),
       },
       fromRelatedStock: fundHold.fromRelatedStock,
     }
@@ -201,7 +201,7 @@ export async function getVoteData(
     ),
     meeting: meetingData.fullName,
     meetingDate: meetingData.meetingDate,
-    meetingStockId: meetingData.stockId,
+    meetingStockNum: meetingData.stockId,
     holdingsLimit: meetingData.holdingsLimit,
     fundsData: fundsWithHoldings,
     agenda: meetingData.agenda,
