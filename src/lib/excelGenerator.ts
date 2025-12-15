@@ -17,35 +17,127 @@ export async function generateParticipationsExcel(
 
     worksheet.views = [{ rightToLeft: true }]
 
-    const baseHeaders: (typeof SHARED_COLUMNS)[keyof typeof SHARED_COLUMNS][] = [
-      SHARED_COLUMNS.STOCK_NUMBER,
-      SHARED_COLUMNS.CORPORATE_NAME,
-      SHARED_COLUMNS.COMPANY_NAME,
-      SHARED_COLUMNS.STOCK_NAME,
-      SHARED_COLUMNS.MARKET_VALUE,
-      SHARED_COLUMNS.PERCENTAGE_HOLDING,
-      SHARED_COLUMNS.HOLDING_VALUE,
-      SHARED_COLUMNS.MEETING_DATE,
-      SHARED_COLUMNS.MEETING_TYPE,
+    // Column mapping from frontend keys to Excel headers
+    const columnMapping: Record<string, string> = {
+      stockNumber: SHARED_COLUMNS.STOCK_NUMBER,
+      corporateName: SHARED_COLUMNS.CORPORATE_NAME,
+      companyName: SHARED_COLUMNS.COMPANY_NAME,
+      stockName: SHARED_COLUMNS.STOCK_NAME,
+      marketValue: SHARED_COLUMNS.MARKET_VALUE,
+      percentageHolding: SHARED_COLUMNS.PERCENTAGE_HOLDING,
+      holdingValueInMillions: SHARED_COLUMNS.HOLDING_VALUE,
+      meetingDate: SHARED_COLUMNS.MEETING_DATE,
+      meetingType: SHARED_COLUMNS.MEETING_TYPE,
+      recommendation: SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
+      vote: SHARED_COLUMNS.VOTE,
+      meetingResults: SHARED_COLUMNS.MEETING_RESULTS,
+      simpleMajority: SHARED_COLUMNS.REGULAR_MAJORITY,
+      privilegedMajority: SHARED_COLUMNS.SPECIAL_MAJORITY,
+      policyCompliance: SHARED_COLUMNS.POLICY_COMPLIANCE,
+      conflictOfInterest: SHARED_COLUMNS.CONFLICT_OF_INTEREST,
+      relatedParty: SHARED_COLUMNS.RELATED_PARTY,
+      personalInterest: SHARED_COLUMNS.PERSONAL_INTEREST,
+      subject: SHARED_COLUMNS.SUBJECT,
+    }
+
+    // Parse selected columns from options or use defaults
+    let selectedColumns: string[] = []
+    if (options.selectedColumns && Array.isArray(options.selectedColumns)) {
+      selectedColumns = options.selectedColumns
+    } else if (typeof options.selectedColumns === 'string') {
+      try {
+        selectedColumns = JSON.parse(options.selectedColumns)
+      } catch {
+        selectedColumns = []
+      }
+    }
+
+    // Default columns if no selection provided
+    const defaultColumns = [
+      'stockNumber',
+      'corporateName',
+      'companyName',
+      'stockName',
+      'marketValue',
+      'percentageHolding',
+      'holdingValueInMillions',
+      'meetingDate',
+      'meetingType',
+      'subject',
+      'vote',
+      'meetingResults',
+      'simpleMajority',
+      'privilegedMajority',
+      'policyCompliance',
+      'conflictOfInterest',
+      'relatedParty',
+      'personalInterest',
     ]
 
-    // Conditionally define agenda headers based on displayVotingRecommendation
+    // Use selected columns or defaults
+    const columnsToUse = selectedColumns.length > 0 ? selectedColumns : defaultColumns
+    
+    // Always ensure subject column is included (add if missing)
+    if (!columnsToUse.includes('subject')) {
+      // Add subject column after meetingType or at a reasonable position
+      const meetingTypeIndex = columnsToUse.indexOf('meetingType')
+      if (meetingTypeIndex !== -1) {
+        columnsToUse.splice(meetingTypeIndex + 1, 0, 'subject')
+      } else {
+        // If meetingType not found, add subject after the meeting-related columns
+        const insertIndex = Math.max(
+          columnsToUse.findIndex(col => ['vote', 'meetingResults', 'recommendation'].includes(col)),
+          0
+        )
+        columnsToUse.splice(insertIndex, 0, 'subject')
+      }
+    }
+    
+    // Check if advisor column should be shown
     const showAdvisorColumn = data.some((meeting) => meeting.displayVotingRecommendation === true)
-    const agendaHeaders = [
-      SHARED_COLUMNS.SUBJECT,
-      ...(showAdvisorColumn ? [SHARED_COLUMNS.ADVISOR_RECOMMENDATION] : []),
-      SHARED_COLUMNS.VOTE,
-      SHARED_COLUMNS.MEETING_RESULTS,
-      SHARED_COLUMNS.REGULAR_MAJORITY,
-      SHARED_COLUMNS.SPECIAL_MAJORITY,
-      SHARED_COLUMNS.POLICY_COMPLIANCE,
-      SHARED_COLUMNS.CONFLICT_OF_INTEREST,
-      SHARED_COLUMNS.RELATED_PARTY,
-      SHARED_COLUMNS.PERSONAL_INTEREST,
-    ]
+    
+    // Add recommendation column if needed and not already present
+    if (showAdvisorColumn && !columnsToUse.includes('recommendation')) {
+      const subjectIndex = columnsToUse.indexOf('subject')
+      if (subjectIndex !== -1) {
+        columnsToUse.splice(subjectIndex + 1, 0, 'recommendation')
+      }
+    }
 
-    const headers = [...baseHeaders, ...agendaHeaders]
-    const agendaTextIndex = headers.indexOf(SHARED_COLUMNS.SUBJECT) + 1
+    // Filter out columns that don't have mapping
+    const validColumns = columnsToUse.filter(col => columnMapping[col])
+    
+    // Create headers from valid columns
+    const headers = validColumns.map(col => columnMapping[col])
+
+    // Separate meeting columns from agenda columns
+    const meetingColumns = validColumns.filter(col => col !== 'subject' && col !== 'recommendation' && col !== 'vote' && col !== 'meetingResults' && col !== 'simpleMajority' && col !== 'privilegedMajority' && col !== 'policyCompliance' && col !== 'conflictOfInterest' && col !== 'relatedParty' && col !== 'personalInterest')
+    const agendaColumns = validColumns.filter(col => col === 'subject' || col === 'recommendation' || col === 'vote' || col === 'meetingResults' || col === 'simpleMajority' || col === 'privilegedMajority' || col === 'policyCompliance' || col === 'conflictOfInterest' || col === 'relatedParty' || col === 'personalInterest')
+    const includeAgendaColumns = agendaColumns.length > 0
+
+    // Column width mapping by column key (not position)
+    const columnWidthMapping: Record<string, number> = {
+      stockNumber: 12,
+      corporateName: 22,
+      companyName: 22,
+      stockName: 17,
+      marketValue: 12,
+      percentageHolding: 12,
+      holdingValueInMillions: 14,
+      meetingDate: 12,
+      meetingType: 12,
+      subject: 72, // Wide for agenda text
+      recommendation: 12,
+      vote: 13,
+      meetingResults: 13,
+      simpleMajority: 13,
+      privilegedMajority: 13,
+      policyCompliance: 33,
+      conflictOfInterest: 13,
+      relatedParty: 13,
+      personalInterest: 13,
+    }
+
 
     // First, create the title rows directly (not using addRow)
     // Row 1: Title
@@ -113,49 +205,45 @@ export async function generateParticipationsExcel(
     let voteReasonCounter = 1
 
     data.forEach((meeting) => {
-      const formattedMarketValue = formatNumberWithLocale(
-        parseNumber(meeting.marketValue) / 1_000_000,
-        0,
-      )
-      const formattedPercentageHolding = formatNumberWithLocale(meeting.percentageHolding, 4)
-      const formattedHoldingValueInMillions = formatNumberWithLocale(
-        meeting.holdingValueInMillions,
-        2,
-      )
-      const meetingData = [
-        meeting.stockNumber,
-        meeting.corporateName,
-        meeting.currentCompany.name,
-        meeting.stockName,
-        formattedMarketValue,
-        formattedPercentageHolding,
-        formattedHoldingValueInMillions,
-        meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
-        meeting.meetingType,
-      ]
+      // Create complete data mapping for all possible columns
+      const completeDataMap: Record<string, any> = {
+        stockNumber: meeting.stockNumber,
+        corporateName: meeting.corporateName,
+        companyName: meeting.currentCompany?.name || '',
+        stockName: meeting.stockName,
+        marketValue: formatNumberWithLocale(parseNumber(meeting.marketValue) / 1_000_000, 0),
+        percentageHolding: formatNumberWithLocale(meeting.percentageHolding, 4),
+        holdingValueInMillions: formatNumberWithLocale(meeting.holdingValueInMillions, 2),
+        meetingDate: meeting.meetingDate ? formatNormalDate(new Date(meeting.meetingDate)) : '',
+        meetingType: meeting.meetingType,
+      }
+
+      // Create meeting data based on meeting columns only
+      const meetingData = meetingColumns.map(colKey => completeDataMap[colKey] || '')
 
       if (meeting.agendas.length === 0) {
-        const emptyAgendaData = Array(agendaHeaders.length).fill('')
-        const excelRow = worksheet.addRow([...meetingData, ...emptyAgendaData])
+        // Create row data based on selected columns
+        const rowData = validColumns.map(colKey => {
+          if (colKey === 'subject') return '' // Empty subject for meetings without agendas
+          return completeDataMap[colKey] || ''
+        })
+        
+        const excelRow = worksheet.addRow(rowData)
         const fillColor = 'FFD2E4FF'
 
-        // First pass: set fill color for ALL cells in the row
-        for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
-          const cell = excelRow.getCell(colNumber)
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: fillColor },
-          }
-        }
-
-        // Second pass: set styling
+        // Set styling
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: fillColor },
+            }
             cell.font = { name: 'Arial', size: 10 }
             cell.alignment = { horizontal: 'right', vertical: 'middle' }
           }
         })
+
         const cellStyles: { col: number; font: any }[] = []
         excelRow.eachCell((cell, colNumber) => {
           if (colNumber <= headers.length) {
@@ -189,12 +277,12 @@ export async function generateParticipationsExcel(
             const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
             const alignment = isEnglish ? 'left' : 'right'
 
-            // Prepare agenda text - will handle removed notice separately for rich text
+            // Prepare agenda text
             const baseAgendaText = agenda.text || ''
             const numberedPrefix = isEnglish ? `${index + 1}. ` : `\u200F${index + 1}. `
             const numberedAgendaText = baseAgendaText ? numberedPrefix + baseAgendaText : ''
 
-            // Check if voteReason exists and is not empty (only if not removed)
+            // Check if voteReason exists and is not empty
             let voteContent = !isRemoved ? agenda.vote || '' : ''
             if (!isRemoved && agenda.voteReason && agenda.voteReason.trim() !== '') {
               voteContent = `${voteContent} [${voteReasonCounter}]`
@@ -202,63 +290,70 @@ export async function generateParticipationsExcel(
               voteReasonCounter++
             }
 
-            // If removed, show empty strings for voting details
-            const agendaData = [
-              numberedAgendaText,
-              ...(showAdvisorColumn
-                ? [
-                    isRemoved
-                      ? ''
-                      : meeting.displayVotingRecommendation
-                        ? agenda.recommendation?.votingRecommendation
-                        : '',
-                  ]
-                : []),
-              voteContent,
-              isRemoved
+            // Create agenda data map
+            const agendaDataMap: Record<string, any> = {
+              subject: numberedAgendaText,
+              recommendation: isRemoved
+                ? ''
+                : meeting.displayVotingRecommendation
+                  ? agenda.recommendation?.votingRecommendation
+                  : '',
+              vote: voteContent,
+              meetingResults: isRemoved
                 ? ''
                 : agenda.result
                   ? resultMapping[agenda.result] || agenda.result
                   : agenda.meetingResults || '',
-              isRemoved
+              simpleMajority: isRemoved
                 ? ''
                 : agenda.simpleMajority && agenda.percentResult
                   ? `${formatNumberWithLocale(agenda.percentResult)}%`
                   : booleanToIcon(agenda.simpleMajority),
-              isRemoved
+              privilegedMajority: isRemoved
                 ? ''
                 : agenda.privilegedMajority && agenda.percentResult
                   ? `${formatNumberWithLocale(agenda.percentResult)}%`
                   : booleanToIcon(agenda.privilegedMajority),
-              isRemoved ? '' : booleanToIcon(agenda.policyCompliance),
-              isRemoved ? '' : booleanToIcon(agenda.conflictOfInterest),
-              isRemoved ? '' : booleanToIcon(agenda.relatedParty),
-              isRemoved ? '' : booleanToIcon(agenda.personalInterest),
-            ]
+              policyCompliance: isRemoved ? '' : booleanToIcon(agenda.policyCompliance),
+              conflictOfInterest: isRemoved ? '' : booleanToIcon(agenda.conflictOfInterest),
+              relatedParty: isRemoved ? '' : booleanToIcon(agenda.relatedParty),
+              personalInterest: isRemoved ? '' : booleanToIcon(agenda.personalInterest),
+            }
+
+            // Filter agenda data based on selected columns
+            const agendaData = includeAgendaColumns
+              ? agendaColumns.map((col) => agendaDataMap[col] || '')
+              : []
 
             const excelRow = worksheet.addRow([...meetingData, ...agendaData])
             const fillColor = isFirstAgenda ? 'FFD2E4FF' : 'F5FAFF'
 
-            // First pass: set fill color for ALL cells in the row
-            for (let colNumber = 1; colNumber <= headers.length; colNumber++) {
-              const cell = excelRow.getCell(colNumber)
-              cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: fillColor },
-              }
-            }
+            // Allow row height to auto-adjust based on content (remove fixed height)
+            // excelRow.height = 20 - removed to allow auto-sizing
 
-            // Second pass: set content and styling
+            // Set styling
             excelRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
-                const isVIcon = cell.value === '\u2713'
-                const textColor = isRemoved ? 'FF808080' : isVIcon ? 'FF008000' : undefined
+                const isVIcon = cell.value === '✓'
+                const isXIcon = cell.value === '✗'
+                const isAgendaText =
+                  agendaColumns.indexOf('subject') !== -1 &&
+                  colNumber ===
+                    meetingColumns.length + agendaColumns.indexOf('subject') + 1
+                let textColor: string | undefined
 
-                // Special handling for agenda text cell when removed
-                if (isRemoved && colNumber === agendaTextIndex) {
+                if (isRemoved) {
+                  textColor = 'FF808080' // Gray color for removed items
+                }
+
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: fillColor },
+                }
+
+                if (isAgendaText && isRemoved) {
                   const removedNotice = isEnglish ? ' (Removed from agenda)' : ' (הוסר מסדר היום)'
-                  // Use rich text to apply strikethrough only to agenda text
                   cell.value = {
                     richText: [
                       {
@@ -291,11 +386,11 @@ export async function generateParticipationsExcel(
                 }
 
                 cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
-                if (colNumber === agendaTextIndex) {
+                if (isAgendaText) {
                   cell.alignment = {
                     horizontal: alignment,
-                    vertical: 'middle',
-                    wrapText: true,
+                    vertical: 'top', // Changed to top alignment for better readability
+                    wrapText: true, // Enable text wrapping for subject column
                   }
                 }
               }
@@ -310,12 +405,13 @@ export async function generateParticipationsExcel(
             rowFormats.push({ rowIndex: excelRow.number, fillColor, cellStyles })
           },
         )
-        // Add vote reasons as merged rows with white background
+
+        // Add vote reasons if any
         if (voteReasons.length > 0) {
-          // Add title row
           const titleText = voteReasons.length === 1 ? 'נימוק הצבעה' : 'נימוקי הצבעה'
           const titleRow = worksheet.addRow([titleText, ...Array(headers.length - 1).fill('')])
           worksheet.mergeCells(titleRow.number, 1, titleRow.number, headers.length)
+
           titleRow.eachCell((cell, colNumber) => {
             if (colNumber <= headers.length) {
               cell.fill = {
@@ -324,19 +420,14 @@ export async function generateParticipationsExcel(
                 fgColor: { argb: 'FFFFFFFF' },
               }
               cell.font = { name: 'Arial', size: 11, bold: true }
-              cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+              cell.alignment = { horizontal: 'right', vertical: 'middle' }
             }
           })
-          const titleCellStyles: { col: number; font: any }[] = []
-          titleRow.eachCell((cell, colNumber) => {
-            if (colNumber <= headers.length) {
-              titleCellStyles.push({ col: colNumber, font: cell.font })
-            }
-          })
+
           rowFormats.push({
             rowIndex: titleRow.number,
             fillColor: 'FFFFFFFF',
-            cellStyles: titleCellStyles,
+            cellStyles: [{ col: 1, font: { name: 'Arial', size: 11, bold: true } }],
           })
 
           voteReasons.forEach(({ index, reason }) => {
@@ -344,6 +435,7 @@ export async function generateParticipationsExcel(
             const reasonText = isEnglishReason ? `${reason} .${index}` : `${index}. ${reason}`
             const reasonRow = worksheet.addRow([reasonText, ...Array(headers.length - 1).fill('')])
             worksheet.mergeCells(reasonRow.number, 1, reasonRow.number, headers.length)
+
             reasonRow.eachCell((cell, colNumber) => {
               if (colNumber <= headers.length) {
                 cell.fill = {
@@ -352,24 +444,20 @@ export async function generateParticipationsExcel(
                   fgColor: { argb: 'FFFFFFFF' },
                 }
                 cell.font = { name: 'Arial', size: 10 }
-                cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true }
+                cell.alignment = { horizontal: 'right', vertical: 'middle' }
               }
             })
-            const cellStyles: { col: number; font: any }[] = []
-            reasonRow.eachCell((cell, colNumber) => {
-              if (colNumber <= headers.length) {
-                cellStyles.push({ col: colNumber, font: cell.font })
-              }
+
+            rowFormats.push({
+              rowIndex: reasonRow.number,
+              fillColor: 'FFFFFFFF',
+              cellStyles: [{ col: 1, font: { name: 'Arial', size: 10 } }],
             })
-            rowFormats.push({ rowIndex: reasonRow.number, fillColor: 'FFFFFFFF', cellStyles })
           })
-          voteReasons.length = 0 // Reset vote reasons for the next meeting
+
+          voteReasons.length = 0 // Reset for next meeting
         }
       }
-      // Add empty row as separator between meetings
-      const emptyRow = worksheet.addRow(Array(headers.length).fill(''))
-      worksheet.mergeCells(emptyRow.number, 1, emptyRow.number, headers.length)
-      rowFormats.push({ rowIndex: emptyRow.number, fillColor: 'FFFFFFFF', cellStyles: [] })
     })
 
     // Add Excel table with explicit header configuration
@@ -431,54 +519,16 @@ export async function generateParticipationsExcel(
       }
     })
 
-    // Define fixed column widths with comments indicating corresponding columns
-    const columnWidths = showAdvisorColumn
-      ? [
-          12, // Column 1: מספר נייר ערך (Stock Number)
-          22, // Column 2: שם תאגיד (Corporate Name)
-          22, // Column 3: שם החברה (Company Name)
-          17, // Column 4: שם נייר ערך (Stock Name)
-          12, // Column 5: שווי שוק (Market Value)
-          12, // Column 6: אחוז החזקה (Percentage Holding)
-          14, // Column 7: שווי החזקה (Holding Value)
-          12, // Column 8: תאריך אסיפה (Meeting Date)
-          12, // Column 9: סוג אסיפה (Meeting Type)
-          72, // Column 10: נושא (Subject)
-          12, // Column 11: המלצת יועץ (Advisor Recommendation)
-          12, // Column 12: הצבעה (Vote)
-          12, // Column 13: תוצאות האסיפה (Meeting Results)
-          12, // Column 14: רוב רגיל (Regular Majority)
-          12, // Column 15: רוב מיוחד (%) (Special Majority)
-          33, // Column 16: בהתאם למדיניות (Policy Compliance)
-          12, // Column 17: ניגוד עניינים (Conflict of Interest)
-          12, // Column 18: קשר (Related Party)
-          12, // Column 19: אישי (Personal Interest)
-        ]
-      : [
-          12, // Column 1: מספר נייר ערך (Stock Number)
-          22, // Column 2: שם תאגיד (Corporate Name)
-          22, // Column 3: שם החברה (Company Name)
-          17, // Column 4: שם נייר ערך (Stock Name)
-          12, // Column 5: שווי שוק (Market Value)
-          12, // Column 6: אחוז החזקה (Percentage Holding)
-          14, // Column 7: שווי החזקה (Holding Value)
-          12, // Column 8: תאריך אסיפה (Meeting Date)
-          12, // Column 9: סוג אסיפה (Meeting Type)
-          72, // Column 10: נושא (Subject)
-          13, // Column 11: הצבעה (Vote) +1
-          13, // Column 12: תוצאות האסיפה (Meeting Results) +1
-          13, // Column 13: רוב רגיל (Regular Majority) +1
-          13, // Column 14: רוב מיוחד (%) (Special Majority) +1
-          33, // Column 15: בהתאם למדיניות (Policy Compliance) +2
-          13, // Column 16: ניגוד עניינים (Conflict of Interest) +1
-          13, // Column 17: קשר (Related Party) +1
-          13, // Column 18: אישי (Personal Interest) +1
-        ]
 
-    // Apply fixed column widths
+
+    // Apply column widths based on actual columns present
     worksheet.columns.forEach((column, i) => {
-      if (i < columnWidths.length) {
-        column.width = columnWidths[i]
+      const columnKey = validColumns[i]
+      if (columnKey && columnWidthMapping[columnKey]) {
+        column.width = columnWidthMapping[columnKey]
+      } else {
+        // Default width for unknown columns
+        column.width = 15
       }
     })
 

@@ -9,6 +9,7 @@ export interface ExportOptions {
   selectedCompaniesCount: number
   totalRecords: number
   selectedRecords: number
+  selectedColumns?: string[] | null
 }
 
 export interface GroupedMeetingData {

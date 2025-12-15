@@ -12,9 +12,18 @@ import { CompanyTreeSelector } from '../holdings/components/CompanySelector'
 import { fetcher } from '../helpers/utils-data-table'
 import LoadingSpinnerDiamond from '../components/ui/loading-spinner-diamond'
 import type { ParticipationTableDataType } from './types'
+import type { Column } from '../types/meetings'
 import { DataTableServer } from '../components/data-table-server'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ExportDropdownButton, type ExportFormat } from '../components/export-dropdown-button'
+import { Button } from '@/components/ui/button'
+import { Search, Settings2, X } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { createParticipationColumns, renderAgendaRows } from './participationTableConstants'
 import { downloadFileWithErrorHandling } from '../helpers/fetch-helpers'
 import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
@@ -73,6 +82,13 @@ export default function Participations() {
   const [isExporting, setIsExporting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [showAdvisorColumn, setShowAdvisorColumn] = useState(false)
+  const [currentVisibleColumns, setCurrentVisibleColumns] = useState<Column<ParticipationTableDataType>[]>([])
+
+  // Callback to receive visible columns from DataTableServer
+  const handleVisibleColumnsChange = useCallback((visibleColumns: Column<ParticipationTableDataType>[]) => {
+    setCurrentVisibleColumns(visibleColumns)
+  }, [])
+
 
   const selectedCompanyIds = useMemo(() => {
     const companyIds = new Set<string>()
@@ -240,6 +256,8 @@ export default function Participations() {
     )
   }, [selectedCompaniesCount, allSelected, participationData, deselectedIds])
 
+
+
   // Form handlers
   const handleFundsSelectionChange = (selected: string[]) => {
     setSelectedFundIds(selected)
@@ -367,6 +385,14 @@ export default function Participations() {
         params.append('dualMeetingsOnly', 'true')
       }
 
+      // Add selected columns for Excel export only
+      if (format === 'excel') {
+        const storedColumns = localStorage.getItem(`columnVisibility-participations-table`)
+        if (storedColumns) {
+          params.append('columns', storedColumns)
+        }
+      }
+
       const fileName = `${reportName.trim()}.${format === 'excel' ? 'xlsx' : 'pdf'}`
 
       await downloadFileWithErrorHandling(
@@ -408,10 +434,10 @@ export default function Participations() {
   }
 
   const renderAgendaRowsCallback = useCallback(
-    (row: ParticipationTableDataType) => {
-      return renderAgendaRows(row, participationColumns, selectedCompaniesCount)
+    (row: ParticipationTableDataType, visibleColumns?: Column<ParticipationTableDataType>[]) => {
+      return renderAgendaRows(row, visibleColumns || [], selectedCompaniesCount)
     },
-    [participationColumns, selectedCompaniesCount],
+    [selectedCompaniesCount],
   )
 
   const showTable = !!appliedFilters.rangeType && selectedCompanyIds.length > 0
@@ -518,80 +544,18 @@ export default function Participations() {
             שגיאה בטעינת נתונים: {votesError.message}
           </div>
         ) : (
-          <div style={{ marginTop: '5px' }}>
-            <div className="flex justify-end pr-10 mb-[-25px]">
-              <div className="flex gap-6 items-center pl-10">
-                {showAdvisorColumn && (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="vote-against-recommendation"
-                      checked={voteAgainstRecommendation}
-                      onCheckedChange={handleVoteAgainstRecommendationChange}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                    />
-                    <Label
-                      htmlFor="vote-against-recommendation"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-                    >
-                      הצבעה בניגוד להמלצה
-                    </Label>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="vote-different-from-result"
-                    checked={voteDifferentFromResult}
-                    onCheckedChange={handleVoteDifferentFromResultChange}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  />
-                  <Label
-                    htmlFor="vote-different-from-result"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-                  >
-                    הצבעה שונה מהתוצאה
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="foreign-stocks-only"
-                    checked={foreignStocksOnly}
-                    onCheckedChange={handleForeignStocksOnlyChange}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  />
-                  <Label
-                    htmlFor="foreign-stocks-only"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-                  >
-                    מניות חו״ל
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="dual-meetings-only"
-                    checked={dualMeetingsOnly}
-                    onCheckedChange={handleDualMeetingsOnlyChange}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  />
-                  <Label
-                    htmlFor="dual-meetings-only"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
-                  >
-                    אסיפות דואליות
-                  </Label>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-4">
 
             <DataTableServer
               key="participations-table"
               data={participationData}
-              columns={participationColumns}
+              columns={participationColumns} // Pass ALL columns, let the table handle visibility
               idField="id"
               defaultVisibleColumns={participationColumns.map((col) => col.key)}
               tableId="participations-table"
               searchOption={true}
               filterOption={false}
-              columnsOption={false}
+              columnsOption={true}
               tableHeightOffset={300}
               isLoading={votesLoading}
               renderExpandedRowContent={renderAgendaRowsCallback}
@@ -608,6 +572,69 @@ export default function Participations() {
               onServerSearch={handleSearch}
               initialSearchTerm={searchTerm}
               searchPlaceholder="חיפוש בשדות הטקסט והמספרים..."
+              customFilters={
+                <div className="flex gap-6 items-center">
+                  {showAdvisorColumn && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="vote-against-recommendation"
+                        checked={voteAgainstRecommendation}
+                        onCheckedChange={handleVoteAgainstRecommendationChange}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                      />
+                      <Label
+                        htmlFor="vote-against-recommendation"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                      >
+                        הצבעה בניגוד להמלצה
+                      </Label>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="vote-different-from-result"
+                      checked={voteDifferentFromResult}
+                      onCheckedChange={handleVoteDifferentFromResultChange}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                    />
+                    <Label
+                      htmlFor="vote-different-from-result"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                    >
+                      הצבעה שונה מהתוצאה
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="foreign-stocks-only"
+                      checked={foreignStocksOnly}
+                      onCheckedChange={handleForeignStocksOnlyChange}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                    />
+                    <Label
+                      htmlFor="foreign-stocks-only"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                    >
+                      מניות חו״ל
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="dual-meetings-only"
+                      checked={dualMeetingsOnly}
+                      onCheckedChange={handleDualMeetingsOnlyChange}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                    />
+                    <Label
+                      htmlFor="dual-meetings-only"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-right"
+                    >
+                      אסיפות דואליות
+                    </Label>
+                  </div>
+                </div>
+              }
+
             />
           </div>
         ))}
