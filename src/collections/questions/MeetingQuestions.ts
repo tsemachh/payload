@@ -1,7 +1,7 @@
 import { meetingTypeOptions } from '@/consts/otipns-const'
 import { CollectionConfig } from 'payload'
 
-export const Questions: CollectionConfig = {
+export const MeetingQuestions: CollectionConfig = {
   slug: 'questions',
   labels: {
     singular: 'שאלות לאסיפה',
