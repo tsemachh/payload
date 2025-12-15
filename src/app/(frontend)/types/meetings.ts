@@ -166,7 +166,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
-  renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
+  renderExpandedRowContent?: (row: T, visibleColumns?: Column<T>[]) => React.ReactNode // New prop
   expanderColumnKey?: keyof T
   searchOption?: boolean
   selectAll?: string
@@ -193,6 +193,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   showViewModeToggle?: boolean
   viewMode?: 'companies' | 'agenda'
   onViewModeChange?: (mode: 'companies' | 'agenda') => void
+  customFilters?: React.ReactNode
 }
 
 export interface ServerDataTableProps<T extends Record<string, any>> extends DataTableProps<T> {

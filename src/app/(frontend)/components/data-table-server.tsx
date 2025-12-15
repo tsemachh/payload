@@ -109,6 +109,7 @@ export function DataTableServer<T extends Record<string, any>>({
   showViewModeToggle = false,
   viewMode,
   onViewModeChange,
+  customFilters,
 }: ServerDataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
@@ -678,6 +679,9 @@ export function DataTableServer<T extends Record<string, any>>({
             </div>
           )}
 
+          {/* Custom Filters */}
+          {customFilters && customFilters}
+
           {filterOption && (
             <Button
               variant="outline"
@@ -1101,7 +1105,7 @@ export function DataTableServer<T extends Record<string, any>>({
                     </TableRow>
                     {renderExpandedRowContent &&
                       expandedRowIds.has(row[idField] as string) &&
-                      renderExpandedRowContent(row)}
+                      renderExpandedRowContent(row, visibleColumns)}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (

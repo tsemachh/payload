@@ -523,6 +523,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
       export: exportParam,
       exportFormat: exportFormatParam,
       reportName: reportNameParam,
+      columns: columnsParam,
     } = req.query
 
     if (!companiesIds) {
@@ -581,6 +582,7 @@ export const getVotesByCompanies = async (req: PayloadRequest) => {
         selectedCompaniesCount: (companiesIds as string).split(',').length,
         totalRecords: processedData.length,
         selectedRecords: processedData.length,
+        selectedColumns: columnsParam ? JSON.parse(columnsParam as string) : null,
       }
 
       const encodedFilename = encodeURIComponent(reportName).replace(/'/g, '%27')
