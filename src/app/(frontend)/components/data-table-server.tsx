@@ -1105,7 +1105,7 @@ export function DataTableServer<T extends Record<string, any>>({
                     </TableRow>
                     {renderExpandedRowContent &&
                       expandedRowIds.has(row[idField] as string) &&
-                      renderExpandedRowContent(row, visibleColumns)}
+                      renderExpandedRowContent(row, visibleColumns as Column<T>[])}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (
