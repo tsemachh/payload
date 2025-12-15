@@ -1,5 +1,5 @@
 import { PayloadRequest, Where } from 'payload'
-import type { Meeting, StockValue } from '@/payload-types'
+import type { HoldingsPerDay, Meeting, StockValue } from '@/payload-types'
 import {
   getCompanyIdFromFundId,
   getIdOfRelationField,
@@ -193,6 +193,79 @@ async function processMeeting(
       return !removedCompanyIds.includes(companyIdStr)
     })
 
+    // Calculate historical holdings (30 days before holdingsLimit)
+    const historicalHoldings: any[] = []
+    if (meeting.holdingsLimit) {
+      const historicalDate = new Date(meeting.holdingsLimit)
+      historicalDate.setDate(historicalDate.getDate() - 30)
+      const historicalDateStr = historicalDate.toISOString()
+
+      // Get all companies that are currently invited (to exclude them)
+      const invitedCompanyIds = new Set(
+        filteredCompIds.filter(
+          (id): id is string => typeof id === 'string' || typeof id === 'object',
+        ),
+      )
+
+      // Track which company+fund combinations we've already found holdings for
+      const processedCombinations = new Set<string>()
+
+      // Query only holdings that contain the specific stock
+      const { docs: allHistoricalHoldings } = await req.payload.find({
+        collection: 'holdings',
+        depth: 0,
+        where: {
+          and: [
+            { valueDate: { greater_than_equal: historicalDateStr } },
+            { valueDate: { less_than: meeting.holdingsLimit } },
+            { fund: { in: funds } },
+            { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
+          ],
+        },
+        sort: '-valueDate',
+        limit: 0,
+      })
+
+      // Process holdings from newest to oldest
+      for (const holdingDoc of allHistoricalHoldings) {
+        const fundId = getIdOfRelationField(holdingDoc.fund) as string
+        const companyId = getCompanyIdFromFundId(fundId)
+
+        // Skip if company is invited or removed
+        if (!companyId || invitedCompanyIds.has(companyId) || removedCompanyIds.includes(companyId)) {
+          continue
+        }
+
+        // Create a unique key for this company+fund combination
+        const combinationKey = `${companyId}|${fundId}`
+
+        // Skip if we've already processed this company+fund combination
+        if (processedCombinations.has(combinationKey)) {
+          continue
+        }
+
+        // Find the matching holding (we know it exists because of the query filter)
+        const matchedHolding = holdingDoc.holdings.find((holding: HoldingsPerDay[number]) => {
+          return holding.stock == getIdOfRelationField(meeting.stock)
+        })
+
+        if (matchedHolding) {
+          historicalHoldings.push({
+            company: companyId,
+            fund: fundId,
+            lastHoldingDate: holdingDoc.valueDate,
+            quantity: matchedHolding.quantity ?? 0,
+          })
+
+          processedCombinations.add(combinationKey)
+        }
+      }
+
+      req.payload.logger.info(
+        `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
+      )
+    }
+
     // Prepare change details
     const changeDate = new Date().toISOString()
     const changeSource = req.context?.from || 'process'
@@ -208,6 +281,7 @@ async function processMeeting(
       companies: Array.from(new Set(filteredCompIds)) as string[],
       funds: [...filteredFunds],
       fundsWithHolding: filteredFundsWithHolding,
+      historicalHoldings,
       migrationComments,
       hasRelatedStocks,
     }
