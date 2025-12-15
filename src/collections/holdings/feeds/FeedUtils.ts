@@ -69,3 +69,60 @@ export const standardizeRows = (results: any[]): StandardizedRow[] => {
 
   return standardizedRows
 }
+/**
+ * Generic helper function to convert text values to numbers in a specific column
+ * @param results The parsed file content
+ * @param hasHebrewHeader Whether the file has a Hebrew header row
+ * @param columnIndex The column index to process
+ * @param removeQuotes Whether to remove quotes from the value
+ */
+export const convertTextToNumbers = (
+  results: Array<any>,
+  hasHebrewHeader: boolean,
+  columnIndex: number,
+  removeQuotes: boolean = false,
+): void => {
+  const startIndex = hasHebrewHeader ? 1 : 0
+
+  for (let i = startIndex; i < results.length; i++) {
+    const row = results[i]
+
+    if (Array.isArray(row)) {
+      // For XLSX files
+      const value = row[columnIndex]
+
+      if (typeof value === 'string' && value.trim() !== '') {
+        // Remove commas and optionally quotes
+        let cleanedValue = value.replace(/,/g, '')
+        if (removeQuotes) {
+          cleanedValue = cleanedValue.replace(/['"]/g, '')
+        }
+
+        if (!isNaN(Number(cleanedValue))) {
+          row[columnIndex] = Number(cleanedValue)
+        } else if (removeQuotes) {
+          // If not a number, just remove quotes
+          row[columnIndex] = value.replace(/['"]/g, '')
+        }
+      }
+    } else {
+      // For CSV files
+      const value = row[columnIndex.toString()]
+
+      if (typeof value === 'string' && value.trim() !== '') {
+        // Remove commas and optionally quotes
+        let cleanedValue = value.replace(/,/g, '')
+        if (removeQuotes) {
+          cleanedValue = cleanedValue.replace(/['"]/g, '')
+        }
+
+        if (!isNaN(Number(cleanedValue))) {
+          row[columnIndex.toString()] = Number(cleanedValue)
+        } else if (removeQuotes) {
+          // If not a number, just remove quotes
+          row[columnIndex.toString()] = value.replace(/['"]/g, '')
+        }
+      }
+    }
+  }
+}
