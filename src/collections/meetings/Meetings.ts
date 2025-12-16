@@ -12,7 +12,10 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
-import removeCompanyEndpoint, { restoreCompanyEndpoint } from './endpoints/RemoveCompanyEndpoint'
+import removeCompanyEndpoint, {
+  restoreCompanyEndpoint,
+  removeFundEndpoint,
+} from './endpoints/RemoveCompanyEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -1502,6 +1505,11 @@ export const Meetings: CollectionConfig = {
       path: '/restore-company',
       method: 'post',
       handler: restoreCompanyEndpoint,
+    },
+    {
+      path: '/removeFund',
+      method: 'post',
+      handler: removeFundEndpoint,
     },
   ],
 }

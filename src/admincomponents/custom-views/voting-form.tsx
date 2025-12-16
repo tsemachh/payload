@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -14,12 +14,15 @@ import {
   TableFooter,
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmationDialog } from '@/app/(frontend)/components/ui/confirmation-dialog'
 import { CheckboxFilter } from '@/collections/votes/components/CheckboxFilter'
 import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { ReportApprovalUpload } from './uploadApproval'
 import { OwnedQuantityInput } from './OwnedQuantityInput'
 import { sortFundsData } from '@/utils/companySort'
+import { Trash2 } from 'lucide-react'
+import { toast } from '@payloadcms/ui'
 
 export interface VoteData {
   fundsData: Array<{
@@ -44,7 +47,7 @@ export interface VoteData {
   displayVotingRecommendation: boolean
   meeting: string
   meetingDate: string
-  meetingStockId: string
+  meetingStockNum: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -98,6 +101,7 @@ interface VotingFormProps {
 }
 
 export function VotingForm({ voteData, meetingId }: VotingFormProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState<VoteData>()
   const [initialFormData, setInitialFormData] = useState<VoteData>()
   const [hasChanges, setHasChanges] = useState(false)
@@ -105,7 +109,13 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [sortedFundsData, setSortedFundsData] = useState<VoteData['fundsData']>([])
-  const router = useRouter()
+  const [fundToRemove, setFundToRemove] = useState<number | null>(null)
+  const [removingFundIndex, setRemovingFundIndex] = useState<number | null>(null)
+
+  const shouldDisplayRemoveFund = useMemo(
+    () => formData && formData.fundsData.length > 1,
+    [formData],
+  )
 
   useEffect(() => {
     if (!voteData) return
@@ -293,6 +303,64 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     setFormData(updatedData)
   }
 
+  const handleRemoveFund = (sortedIndex: number) => {
+    setFundToRemove(sortedIndex)
+  }
+
+  const confirmRemoveFund = async () => {
+    if (fundToRemove === null || !formData || !shouldDisplayRemoveFund) return
+
+    const fundToDelete = sortedFundsData[fundToRemove]
+
+    // Set the removing state and close dialog
+    setRemovingFundIndex(fundToRemove)
+    setFundToRemove(null)
+
+    try {
+      const response = await fetch(`/api/meetings/removeFund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meetingId,
+          companyId: fundToDelete.company.id,
+          fundId: fundToDelete.fund.id,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to remove fund:', result.message)
+        toast.error(`שגיאה בהסרת התיק ${result.message}`)
+        setRemovingFundIndex(null)
+        return
+      }
+
+      console.log('Fund removed successfully:', result.message)
+
+      // Update local state by removing the fund
+      const updatedFunds = formData.fundsData.filter(
+        (fund) =>
+          !(fund.company.id === fundToDelete.company.id && fund.fund.id === fundToDelete.fund.id),
+      )
+
+      const newFormData = { ...formData, fundsData: updatedFunds }
+      setFormData(newFormData)
+      setInitialFormData(newFormData)
+
+      const newSorted = sortFundsData(newFormData.fundsData)
+      setSortedFundsData(newSorted)
+
+      setRemovingFundIndex(null)
+    } catch (error) {
+      console.error('Error removing fund:', error)
+      toast.error(`שגיאה בהסרת התיק ${error}`)
+      setRemovingFundIndex(null)
+    }
+  }
+
   return formData ? (
     <div
       className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] text-gray-900 dark:text-white`}
@@ -370,6 +438,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
                   ערך נקוב ברשות
                 </TableHead>
+                {shouldDisplayRemoveFund && (
+                  <TableHead className="text-center w-16 text-gray-900 dark:text-white">
+                    הסרה
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -389,7 +462,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     </TableCell>
                     {isOriginal && (
                       <TableCell className="text-right text-base text-gray-900 dark:text-white">
-                        {fund.original?.stockId != voteData.meetingStockId
+                        {fund.original?.stockId != voteData.meetingStockNum
                           ? fund.original?.stockId
                           : ''}
                       </TableCell>
@@ -439,6 +512,24 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                         }
                       />
                     </TableCell>
+                    {shouldDisplayRemoveFund && (
+                      <TableCell className="text-center">
+                        {removingFundIndex === index ? (
+                          <div className="flex justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 dark:border-red-400" />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleRemoveFund(index)}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                            title="הסר תיק"
+                            disabled={removingFundIndex !== null}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 )
               })}
@@ -483,11 +574,22 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     )
                   })()}
                 </TableCell>
+                {shouldDisplayRemoveFund && <TableCell />}
               </TableRow>
             </TableFooter>
           </Table>
         </CardContent>
       </Card>
+
+      {shouldDisplayRemoveFund && (
+        <ConfirmationDialog
+          open={fundToRemove !== null}
+          onOpenChange={() => setFundToRemove(null)}
+          onConfirm={confirmRemoveFund}
+          title="הסרת תיק"
+          description={`פעולה זו תסיר את תיק ${fundToRemove !== null ? sortedFundsData[fundToRemove]?.fund.name : ''}`}
+        />
+      )}
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardContent className="space-y-3">
           {formData.dynamicQuestions && formData.dynamicQuestions.length > 0 ? (

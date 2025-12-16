@@ -218,6 +218,9 @@ export const VotingTablesField = () => {
                         )}
                         <span className={cn(item.isGroupHeader && 'font-semibold')}>
                           {item.name}
+                          {item.passiveFunds && !item.isGroupHeader && (
+                            <b className="mr-1"> מחקות בלבד</b>
+                          )}
                           {item.isGroupHeader && (
                             <span className="text-base text-muted-foreground mr-2">
                               ({item.subsidiaryCount} חברות)
@@ -406,10 +409,16 @@ export const VotingTablesField = () => {
                                 className="flex items-center gap-2 text-inherit no-underline hover:no-underline cursor-pointer hover:text-blue-600"
                                 title="פתח דף הצבעה קבוצתי"
                               >
-                                <span>{item.name}</span>
+                                <span>
+                                  {item.name}
+                                  {item.passiveFunds && <b className="mr-1"> מחקות בלבד</b>}
+                                </span>
                               </a>
                             ) : (
-                              <span>{item.name}</span>
+                              <span>
+                                {item.name}
+                                {item.passiveFunds && <b className="mr-1"> מחקות בלבד</b>}
+                              </span>
                             )}
                           </>
                         )}

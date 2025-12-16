@@ -435,7 +435,6 @@ export default function Participations() {
 
   const renderAgendaRowsCallback = useCallback(
     (row: ParticipationTableDataType, visibleColumns?: Column<ParticipationTableDataType>[]) => {
-      console.log("visibleColumns from DataTableServer:", visibleColumns?.map(c => c.key))
       return renderAgendaRows(row, visibleColumns || [], selectedCompaniesCount)
     },
     [selectedCompaniesCount],
