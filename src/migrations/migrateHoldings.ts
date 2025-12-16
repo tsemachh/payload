@@ -259,6 +259,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             }
           }
           const holdingsArray = Array.from(consolidatedByStock.values())
+          // Calculate stats: number of original feed records that formed this holding day
+          const recordCount = rawHoldingsArray.length
 
           if (holdingsArray.length === 0) {
             console.warn(`No valid stocks found for company: ${companyId}`)
@@ -287,6 +289,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             fund: companyId,
             valueDate: holdingDate,
             holdings: holdingsArray,
+            stats: {
+              recordCount,
+            },
           }
 
           await payload.create({
@@ -629,6 +634,11 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
             }
           }
           const holdingsArray = Array.from(consolidatedByStock.values())
+          // Calculate stats: sum of originalData items across all holdings
+          const recordCount = holdingsArray.reduce(
+            (sum, item) => sum + (Array.isArray(item.originalData) ? item.originalData.length : 0),
+            0,
+          )
           if (holdingsArray.length === 0) {
             console.warn(
               `[backfillDiscontinuedHoldings] No valid stocks found for company: ${companyId} (date ${holdingDate})`,
@@ -640,6 +650,9 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
             fund: companyId,
             valueDate: holdingDate,
             holdings: holdingsArray,
+            stats: {
+              recordCount,
+            },
           }
           console.log(
             '[backfillDiscontinuedHoldings] creating holdings for:',

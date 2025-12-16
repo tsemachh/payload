@@ -753,6 +753,14 @@ async function processCompany(
       })
 
       companyId = result.id
+      // If we have a parentId for this newly created company, set it now
+      if (parentId) {
+        await payload.update({
+          collection: 'companies',
+          id: result.id,
+          data: { parentCompany: parentId },
+        })
+      }
       console.log(`Created new company: ${company.name}`)
     }
 
@@ -799,6 +807,17 @@ async function processCompany(
 
         console.log(`Updated subCompanies for ${company.name}`)
       }
+
+      // Ensure each child points back to its parent via parentCompany
+      await Promise.all(
+        childIds.map((childId) =>
+          payload.update({
+            collection: 'companies',
+            id: childId,
+            data: { parentCompany: companyId },
+          }),
+        ),
+      )
     }
 
     return companyId
@@ -1003,6 +1022,7 @@ async function migrateAccountCompaniesToCompanies({ payload, req }: MigrateUpArg
                   subAccounts: accountInfo.subAccounts,
                 },
               ],
+              parentCompany: company.id,
             }
             if (existingCompanyResult.docs.length > 0) {
               // Update existing company

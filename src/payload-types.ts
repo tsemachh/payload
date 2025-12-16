@@ -316,11 +316,11 @@ export interface Config {
       relations: 'stocks';
     };
     companies: {
-      parentCompany: 'companies';
       'researchDocuments.researchDocuments': 'research-documents';
       usersWrite: 'users';
       usersRead: 'users';
       holdings: 'holdings';
+      companyHoldings: 'holdings';
       meetings: 'meetings';
     };
   };
@@ -498,15 +498,11 @@ export interface Company {
   companyId?: number | null;
   legacyCompanyId?: number | null;
   privateRegistrationNumber?: number[] | null;
-  subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
    */
-  parentCompany?: {
-    docs?: (string | Company)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  parentCompany?: (string | null) | Company;
+  subCompanies?: (string | Company)[] | null;
   researchDocuments?: {
     showResearchTrusteeship?: boolean | null;
     showResearchBond?: boolean | null;
@@ -539,6 +535,11 @@ export interface Company {
     totalDocs?: number;
   };
   holdings?: {
+    docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  companyHoldings?: {
     docs?: (string | Holding)[];
     hasNextPage?: boolean;
     totalDocs?: number;
@@ -596,6 +597,7 @@ export interface ResearchDocument {
 export interface Holding {
   id: string;
   fund: string | Company;
+  company?: (string | null) | Company;
   valueDate: string;
   stats?: {
     recordCount?: number | null;
@@ -1694,6 +1696,7 @@ export interface StocksSelect<T extends boolean = true> {
  */
 export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
+  company?: T;
   valueDate?: T;
   stats?:
     | T
@@ -1738,8 +1741,8 @@ export interface CompaniesSelect<T extends boolean = true> {
   companyId?: T;
   legacyCompanyId?: T;
   privateRegistrationNumber?: T;
-  subCompanies?: T;
   parentCompany?: T;
+  subCompanies?: T;
   researchDocuments?:
     | T
     | {
@@ -1762,6 +1765,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   usersWrite?: T;
   usersRead?: T;
   holdings?: T;
+  companyHoldings?: T;
   meetings?: T;
   silencedStocks?: T;
   label?:

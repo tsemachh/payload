@@ -148,16 +148,22 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
     const company = companyData.company
     if (company) {
       const hasAccount = company.mainAccount && company.mainAccount.length > 0
-      const parentCompany = company?.parentCompany as { docs: Company[] }
-      const hasParent =
-        parentCompany !== undefined && parentCompany !== null && parentCompany.docs.length > 0
-      let hasGrandParent = false
-      if (hasParent) {
-        const parentCompanyDocs = parentCompany.docs[0]
-        if (parentCompanyDocs && parentCompanyDocs.parentCompany) {
-          hasGrandParent = true
+      // Normalize parentCompany (relationship can be string ID or populated object)
+      const pc: any = (company as any)?.parentCompany
+      const getId = (val: any): string | undefined => {
+        if (!val) return undefined
+        if (typeof val === 'string') return val
+        if (typeof val === 'object') {
+          // common shapes: { id }, { value }, populated Company
+          if (typeof val.id === 'string') return val.id
+          if (typeof val.value === 'string') return val.value
         }
+        return undefined
       }
+      const hasParent = Boolean(getId(pc))
+      const hasGrandParent = Boolean(
+        pc && typeof pc === 'object' && getId((pc as any).parentCompany),
+      )
       const treeNode: TreeNode = {
         id: company.id || String(company.companyId),
         name: company.name || '',
@@ -260,67 +266,53 @@ export const transformCompaniesToTree = (userCompanies: CompanyData[]): TreeNode
 
     // Process parentCompany if it exists
     if (company && company.parentCompany) {
-      let parentCompanies: Company[] = []
+        const pcAny: any = company.parentCompany as any
+        const addLinkToParent = (parentId: string, parentName?: string, parentCompanyObj?: Company) => {
+          const childNode = companyMap.get(company.id || String(company.companyId))
+          if (!childNode) return
+          let parentNode = companyMap.get(parentId)
+          if (!parentNode) {
+            parentNode = {
+              id: parentId,
+              name: parentName || '',
+              children: [childNode],
+              hasAccount: false,
+              hasParent: false,
+              companyId: parentCompanyObj?.companyId ?? undefined,
+              hasGrandParent: false,
+              type: companyData.company.type as string,
+              privateRegistrationNumber: parentCompanyObj?.privateRegistrationNumber,
+            }
+            companyMap.set(parentId, parentNode)
+          } else {
+            if (!parentNode.children) parentNode.children = []
+            const childExistsById = parentNode.children.some((child) => child.id === childNode.id)
+            const childExistsByName = parentNode.children.some((child) => child.name === childNode.name)
+            if (!childExistsById && !childExistsByName) parentNode.children.push(childNode)
+          }
+        }
 
-      // Handle different parentCompany data structures
-      if (typeof company.parentCompany === 'object') {
-        if ('docs' in company.parentCompany && Array.isArray(company.parentCompany.docs)) {
-          // If parentCompany has a docs array
-          parentCompanies = company.parentCompany.docs
-        } else if (Array.isArray(company.parentCompany)) {
-          // If parentCompany is an array
-          parentCompanies = company.parentCompany
-        } else {
-          // If parentCompany is a single object
-          parentCompanies = [company.parentCompany as Company]
+        // Handle different parentCompany data structures
+        if (typeof pcAny === 'string') {
+          addLinkToParent(pcAny)
+        } else if (typeof pcAny === 'object') {
+          if ('docs' in pcAny && Array.isArray(pcAny.docs)) {
+            pcAny.docs.forEach((parentCompany: Company) => {
+              const parentId = parentCompany.id || String(parentCompany.companyId)
+              addLinkToParent(parentId, parentCompany.name || '', parentCompany)
+            })
+          } else if (Array.isArray(pcAny)) {
+            pcAny.forEach((parentCompany: Company) => {
+              const parentId = parentCompany.id || String(parentCompany.companyId)
+              addLinkToParent(parentId, parentCompany.name || '', parentCompany)
+            })
+          } else {
+            const parentCompany = pcAny as Company
+            const parentId = parentCompany.id || String(parentCompany.companyId)
+            addLinkToParent(parentId, parentCompany.name || '', parentCompany)
+          }
         }
       }
-
-      // Process each parent company
-      parentCompanies.forEach((parentCompany) => {
-        if (!parentCompany) return
-
-        const childNode = companyMap.get(company.id || String(company.companyId))
-        if (!childNode) return
-
-        const parentId = parentCompany.id || String(parentCompany.companyId)
-        const parentName = parentCompany.name || ''
-
-        // Check if this parent company already exists in the map
-        let parentNode = companyMap.get(parentId)
-        if (!parentNode) {
-          // If it doesn't exist yet, create a new node and add it
-          parentNode = {
-            id: parentId,
-            name: parentName,
-            children: [childNode],
-            hasAccount: false, // Default to false for parent companies as we don't have this info
-            hasParent: false, // Default to false, will be updated if it has a parent
-            companyId: parentCompany.companyId ?? undefined,
-            hasGrandParent: false,
-            type: companyData.company.type as string,
-            privateRegistrationNumber: parentCompany.privateRegistrationNumber,
-          }
-          if (parentNode) {
-            companyMap.set(parentId, parentNode)
-          }
-        } else {
-          // If it exists, add the child to it if not already added
-          if (!parentNode.children) {
-            parentNode.children = []
-          }
-
-          // Check if child is already in parent's children by ID or name
-          const childExistsById = parentNode.children.some((child) => child.id === childNode.id)
-          const childExistsByName = parentNode.children.some(
-            (child) => child.name === childNode.name,
-          )
-          if (!childExistsById && !childExistsByName) {
-            parentNode.children.push(childNode)
-          }
-        }
-      })
-    }
   })
 
   // First, get all companies that are already in the tree (either as parents or children)
