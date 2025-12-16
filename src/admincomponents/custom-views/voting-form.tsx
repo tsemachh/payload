@@ -112,10 +112,32 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [fundToRemove, setFundToRemove] = useState<number | null>(null)
   const [removingFundIndex, setRemovingFundIndex] = useState<number | null>(null)
 
-  const shouldDisplayRemoveFund = useMemo(
-    () => formData && formData.fundsData.length > 1,
-    [formData],
-  )
+  // Calculate which funds should show remove button based on company fund count
+  const fundRemoveability = useMemo(() => {
+    if (!formData) return new Map<string, boolean>()
+
+    // Count funds per company
+    const companyFundCounts = new Map<string, number>()
+    formData.fundsData.forEach((fund) => {
+      const companyId = fund.company.id
+      companyFundCounts.set(companyId, (companyFundCounts.get(companyId) || 0) + 1)
+    })
+
+    // Create map of fund keys to removability
+    const removeabilityMap = new Map<string, boolean>()
+    formData.fundsData.forEach((fund) => {
+      const key = `${fund.company.id}-${fund.fund.id}`
+      const companyFundCount = companyFundCounts.get(fund.company.id) || 0
+      removeabilityMap.set(key, companyFundCount > 1)
+    })
+
+    return removeabilityMap
+  }, [formData])
+
+  // Check if any fund can be removed (to determine if column should be shown)
+  const shouldDisplayRemoveColumn = useMemo(() => {
+    return Array.from(fundRemoveability.values()).some((canRemove) => canRemove)
+  }, [fundRemoveability])
 
   useEffect(() => {
     if (!voteData) return
@@ -308,7 +330,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   }
 
   const confirmRemoveFund = async () => {
-    if (fundToRemove === null || !formData || !shouldDisplayRemoveFund) return
+    if (fundToRemove === null || !formData) return
 
     const fundToDelete = sortedFundsData[fundToRemove]
 
@@ -438,7 +460,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
                   ערך נקוב ברשות
                 </TableHead>
-                {shouldDisplayRemoveFund && (
+                {shouldDisplayRemoveColumn && (
                   <TableHead className="text-center w-16 text-gray-900 dark:text-white">
                     הסרה
                   </TableHead>
@@ -449,6 +471,8 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
               {sortedFundsData.map((fund, index) => {
                 const hasOriginal = fund.original
                 const displayData = hasOriginal ? fund.original : fund
+                const fundKey = `${fund.company.id}-${fund.fund.id}`
+                const canRemoveFund = fundRemoveability.get(fundKey) || false
                 return (
                   <TableRow
                     key={index}
@@ -512,22 +536,24 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                         }
                       />
                     </TableCell>
-                    {shouldDisplayRemoveFund && (
+                    {shouldDisplayRemoveColumn && (
                       <TableCell className="text-center">
-                        {removingFundIndex === index ? (
-                          <div className="flex justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 dark:border-red-400" />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleRemoveFund(index)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                            title="הסר תיק"
-                            disabled={removingFundIndex !== null}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        )}
+                        {canRemoveFund ? (
+                          removingFundIndex === index ? (
+                            <div className="flex justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 dark:border-red-400" />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleRemoveFund(index)}
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                              title="הסר תיק"
+                              disabled={removingFundIndex !== null}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          )
+                        ) : null}
                       </TableCell>
                     )}
                   </TableRow>
@@ -574,14 +600,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     )
                   })()}
                 </TableCell>
-                {shouldDisplayRemoveFund && <TableCell />}
+                {shouldDisplayRemoveColumn && <TableCell />}
               </TableRow>
             </TableFooter>
           </Table>
         </CardContent>
       </Card>
 
-      {shouldDisplayRemoveFund && (
+      {shouldDisplayRemoveColumn && (
         <ConfirmationDialog
           open={fundToRemove !== null}
           onOpenChange={() => setFundToRemove(null)}
