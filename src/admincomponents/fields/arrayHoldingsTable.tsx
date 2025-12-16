@@ -76,7 +76,7 @@ const ArrayHoldingsTableField: React.FC<ArrayTabelProps> = ({ path }) => {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-[346px] overflow-y-auto">
           <Table className="min-w-full">
             <TableHeader className="sticky top-0 z-10 bg-gray-50">
               <TableRow>
