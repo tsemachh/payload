@@ -2,7 +2,7 @@ import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'paylo
 import { Company, Meeting, MeetingAgenda, ResearchDocument, Stock } from '@/payload-types'
 import {
   AgendasType,
-  CompanyTableDate,
+  CompanyTableData,
   DateFilterType,
   FundType,
   MeetingTableDataType,
@@ -460,6 +460,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
             ...meeting,
             companies: filteredCompanies,
             // Recalculate aggregated values based on filtered companies
+            nominalValueClientReported: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.nominalValueClientReported,
+              0,
+            ),
             nominalValue: filteredCompanies.reduce((acc, obj) => acc + obj.nominalValue, 0),
             percentageHolding: filteredCompanies.reduce(
               (acc, obj) => acc + obj.percentageHolding,
@@ -507,7 +511,8 @@ export const meetingColumnsForServer = [
   { key: 'meetingDate', header: 'מועד אסיפה' },
   { key: 'holdingsLimit', header: 'מועד קובע' },
   { key: 'proxyVotingDate', header: 'מועד מסירת הצבעות' },
-  { key: 'nominalValue', header: 'ערך נקוב ליום קובע' },
+  { key: 'nominalValueClientReported', header: 'ערך נקוב מדווח ' },
+  { key: 'nominalValue', header: 'ערך נקוב בפועל ' },
   { key: 'percentageHolding', header: 'החזקה (%)' },
   { key: 'holdingValueInMillions', header: 'שווי החזקה  (מיליוני ₪)' },
   { key: 'reference', header: 'אסמכתא' },
@@ -600,24 +605,25 @@ function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: Stock,
   agendas: AgendasType[],
-  companiesArray: CompanyTableDate[],
+  companiesArray: CompanyTableData[],
   researchDocuments: UrlFilenameMap[],
   displayVotingRecommendation: boolean,
   defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
   // Process related questions
-  const relatedQuestions = meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
-    ? {
-        id: meeting.relatedQuestions.id || '',
-        questions: Array.isArray(meeting.relatedQuestions.questions)
-          ? meeting.relatedQuestions.questions.map((q: any) => ({
-              id: q.id || '',
-              questionText: q.questionText || '',
-              defaultValue: q.defaultValue === 'true',
-            }))
-          : []
-      }
-    : undefined
+  const relatedQuestions =
+    meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
+      ? {
+          id: meeting.relatedQuestions.id || '',
+          questions: Array.isArray(meeting.relatedQuestions.questions)
+            ? meeting.relatedQuestions.questions.map((q: any) => ({
+                id: q.id || '',
+                questionText: q.questionText || '',
+                defaultValue: q.defaultValue === 'true',
+              }))
+            : [],
+        }
+      : undefined
 
   return {
     meetingIdPayload: meeting.id,
@@ -646,6 +652,8 @@ function createMeetingDataObject(
     location: meeting.location || '-',
     holdingsLimit: meeting.holdingsLimit || '-',
     proxyVotingDate: meeting.proxyVotingDate || '-',
+    nominalValueClientReported:
+      companiesArray?.reduce((acc, obj) => acc + obj.nominalValueClientReported, 0) || 0,
     nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0) || 0,
     percentageHolding: companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0) || 0,
     holdingValueInMillions:
@@ -764,6 +772,7 @@ async function processMeetingsData(
           // Calculate values for this company's holdings
           const { percentageHolding, holdingValueInMillions, nominalValue } =
             calculateHoldingValues(quantity, meeting.stockValue)
+          const nominalValueClientReported = Math.round(match.quantity || 0)
           const parentCompany = fundToParentMap.get(fundId as string)
           const holdingsCompanyName = findSubCompanyNameById(parentCompany, fundId)
           const originalStockIds = match.original?.map((o) => {
@@ -774,6 +783,7 @@ async function processMeetingsData(
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,
+            nominalValueClientReported,
             nominalValue,
             parentCompany,
             originalStockIds,
@@ -801,6 +811,7 @@ async function processMeetingsData(
           holdingsCompanyName: fund.holdingsCompanyName || ' ',
           percentageHolding: fund.percentageHolding,
           holdingValueInMillions: fund.holdingValueInMillions,
+          nominalValueClientReported: fund.nominalValueClientReported,
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
           originalStockIds: fund.originalStockIds,
@@ -817,7 +828,7 @@ async function processMeetingsData(
       }
 
       // Create the final companiesArray
-      const companiesArray: CompanyTableDate[] = Array.from(parentCompaniesMap.values()).map(
+      const companiesArray: CompanyTableData[] = Array.from(parentCompaniesMap.values()).map(
         ({ parentCompany, funds }) => {
           // Calculate aggregated values for the parent company
           const totalPercentageHolding = funds.reduce((sum, fund) => {
@@ -835,6 +846,11 @@ async function processMeetingsData(
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
 
+          const totalNominalValueClientReported = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.nominalValueClientReported || 0)
+          }, 0)
+
           const originalStockIds = [
             ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
           ]
@@ -844,6 +860,7 @@ async function processMeetingsData(
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
+            nominalValueClientReported: totalNominalValueClientReported,
             nominalValue: totalNominalValue,
             originalStockIds,
             funds,

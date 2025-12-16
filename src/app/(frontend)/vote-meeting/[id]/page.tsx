@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useParams, useRouter } from 'next/navigation'
 import { useNavigationGuard } from 'next-navigation-guard'
-import { CompanyTableDate } from '../../types/meetings'
+import { CompanyTableData } from '../../types/meetings'
 import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import VoteDetails from '../components/VoteDetails'
 import VoteCompanySelector from '../components/VoteCompanySelector'
@@ -160,7 +160,7 @@ export default function VotingForm() {
 
   const meetingIdPayload = meetingData?.meetingIdPayload || ''
   const meetingCompanies =
-    meetingData?.companies.map((company: CompanyTableDate) => company.id) || []
+    meetingData?.companies.map((company: CompanyTableData) => company.id) || []
 
   const swrKeyPublish =
     meetingIdPayload && companiesIDs.length > 0
@@ -249,14 +249,14 @@ export default function VotingForm() {
 
   useEffect(() => {
     if (meetingData?.companies && companiesIDs.length === 0) {
-      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      const defaultIds = meetingData.companies.map((comp: CompanyTableData) => comp.id)
       setCompaniesIDs(defaultIds)
     }
   }, [meetingData, companiesIDs.length])
 
   useEffect(() => {
     if (meetingData?.companies.length && fetchedVotes?.length) {
-      const defaultIds = meetingData.companies.map((comp: CompanyTableDate) => comp.id)
+      const defaultIds = meetingData.companies.map((comp: CompanyTableData) => comp.id)
       let isGeneralVoteOptionTmp
       if (
         fetchedAllLatestVotes &&
