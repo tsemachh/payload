@@ -66,6 +66,9 @@ export const Holdings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'companies',
           index: true,
+          admin: {
+            readOnly: true,
+          },
           filterOptions: () => ({
             type: {
               equals: 'regular',
