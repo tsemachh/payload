@@ -520,6 +520,7 @@ export const meetingColumnsForServer = [
   { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
   { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
   { key: 'reported', header: 'הצבעה בפועל' },
+  { key: 'fromRelatedStock', header: 'ניירות עוקבים' },
 ]
 
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
@@ -606,18 +607,19 @@ function createMeetingDataObject(
   defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
   // Process related questions
-  const relatedQuestions = meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
-    ? {
-        id: meeting.relatedQuestions.id || '',
-        questions: Array.isArray(meeting.relatedQuestions.questions)
-          ? meeting.relatedQuestions.questions.map((q: any) => ({
-              id: q.id || '',
-              questionText: q.questionText || '',
-              defaultValue: q.defaultValue === 'true',
-            }))
-          : []
-      }
-    : undefined
+  const relatedQuestions =
+    meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
+      ? {
+          id: meeting.relatedQuestions.id || '',
+          questions: Array.isArray(meeting.relatedQuestions.questions)
+            ? meeting.relatedQuestions.questions.map((q: any) => ({
+                id: q.id || '',
+                questionText: q.questionText || '',
+                defaultValue: q.defaultValue === 'true',
+              }))
+            : [],
+        }
+      : undefined
 
   return {
     meetingIdPayload: meeting.id,

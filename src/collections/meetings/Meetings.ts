@@ -1489,7 +1489,7 @@ export const Meetings: CollectionConfig = {
       },
       afterChangeDeleteResearchDocs,
     ],
-    beforeValidate: [validateResearchDocsInMeetings],
+    //beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [
       handleRecommendationReason,
       clearCompaniesInSingleBondResearchDoc,
