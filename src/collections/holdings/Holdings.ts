@@ -84,7 +84,7 @@ export const Holdings: CollectionConfig = {
           index: true,
           admin: {
             date: {
-              displayFormat: 'dd MMM yyy',
+              displayFormat: 'dd/MM/yyyy',
               pickerAppearance: 'default',
             },
           },
@@ -97,6 +97,7 @@ export const Holdings: CollectionConfig = {
       type: 'group',
       admin: {
         readOnly: true,
+        hidden: true,
       },
       fields: [
         {
@@ -108,6 +109,9 @@ export const Holdings: CollectionConfig = {
           name: 'accountIds',
           label: 'מזהי חשבונות',
           type: 'json',
+          admin: {
+            hidden: true,
+          },
         },
       ],
     },
@@ -117,6 +121,11 @@ export const Holdings: CollectionConfig = {
       type: 'array',
       required: true,
       interfaceName: 'HoldingsPerDay',
+      admin: {
+        components: {
+          Field: '/admincomponents/fields/arrayHoldingsTable',
+        },
+      },
       fields: [
         {
           type: 'row',

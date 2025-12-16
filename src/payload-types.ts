@@ -599,6 +599,10 @@ export interface Holding {
   fund: string | Company;
   company?: (string | null) | Company;
   valueDate: string;
+  holdings: HoldingsPerDay;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
   stats?: {
     recordCount?: number | null;
     accountIds?:
@@ -611,10 +615,6 @@ export interface Holding {
       | boolean
       | null;
   };
-  holdings: HoldingsPerDay;
-  creator?: string | null;
-  updator?: string | null;
-  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1479,6 +1479,7 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
+  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1698,16 +1699,16 @@ export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
   company?: T;
   valueDate?: T;
+  holdings?: T | HoldingsPerDaySelect<T>;
+  creator?: T;
+  updator?: T;
+  process?: T;
   stats?:
     | T
     | {
         recordCount?: T;
         accountIds?: T;
       };
-  holdings?: T | HoldingsPerDaySelect<T>;
-  creator?: T;
-  updator?: T;
-  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -2330,6 +2331,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
+  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;
