@@ -445,7 +445,7 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'company',
               name: 'companyHoldings',
-              defaultSort: ['fund', 'valueDate'],
+              defaultSort: ['fund', '-valueDate'],
               maxDepth: 0,
               // The `where` field expects a `Where` object, not a function.
               // Compute the date once at module load and pass the static object.
