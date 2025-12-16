@@ -319,7 +319,8 @@ export const useVotingData = () => {
         setNotVotedCompanies(notVoted)
 
         // Process historical holdings (companies that held 30 days before but not invited)
-        const historicalHoldingsData = (data.historicalHoldings || []) as HistoricalHolding
+        const raw = data.historicalHoldings
+        const historicalHoldingsData = Array.isArray(raw) ? raw : ([] as HistoricalHolding)
         if (historicalHoldingsData && historicalHoldingsData.length > 0) {
           // Get unique company IDs from historical holdings
           const historicalCompanyIds = [
@@ -368,7 +369,10 @@ export const useVotingData = () => {
                 {
                   lastDate: string
                   totalQuantity: number
-                  fundDetails: Map<string, { fundName: string; quantity: number; lastHoldingDate: string }>
+                  fundDetails: Map<
+                    string,
+                    { fundName: string; quantity: number; lastHoldingDate: string }
+                  >
                 }
               >()
               historicalHoldingsData.forEach((holding: NonNullable<HistoricalHolding>[number]) => {

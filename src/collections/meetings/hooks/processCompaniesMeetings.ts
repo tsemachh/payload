@@ -1,5 +1,5 @@
 import { PayloadRequest, Where } from 'payload'
-import type { HoldingsPerDay, Meeting, StockValue } from '@/payload-types'
+import type { HistoricalHolding, HoldingsPerDay, Meeting, StockValue } from '@/payload-types'
 import {
   getCompanyIdFromFundId,
   getIdOfRelationField,
@@ -194,7 +194,7 @@ async function processMeeting(
     })
 
     // Calculate historical holdings (30 days before holdingsLimit)
-    const historicalHoldings: any[] = []
+    const historicalHoldings: NonNullable<HistoricalHolding> = []
     if (meeting.holdingsLimit) {
       const historicalDate = new Date(meeting.holdingsLimit)
       historicalDate.setDate(historicalDate.getDate() - 30)
@@ -202,9 +202,9 @@ async function processMeeting(
 
       // Get all companies that are currently invited (to exclude them)
       const invitedCompanyIds = new Set(
-        filteredCompIds.filter(
-          (id): id is string => typeof id === 'string' || typeof id === 'object',
-        ),
+        filteredCompIds
+          .map((id) => getIdOfRelationField(id || ''))
+          .filter((id): id is string => typeof id === 'string' || typeof id === 'object'),
       )
 
       // Track which company+fund combinations we've already found holdings for
@@ -232,7 +232,11 @@ async function processMeeting(
         const companyId = getCompanyIdFromFundId(fundId)
 
         // Skip if company is invited or removed
-        if (!companyId || invitedCompanyIds.has(companyId) || removedCompanyIds.includes(companyId)) {
+        if (
+          !companyId ||
+          invitedCompanyIds.has(companyId) ||
+          removedCompanyIds.includes(companyId)
+        ) {
           continue
         }
 
