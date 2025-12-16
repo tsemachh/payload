@@ -35,6 +35,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const { docs: meetings } = await payload.find({
       collection: 'meetings',
       select: { _status: true },
+      where: { finalized: { equals: false } },
       limit: 0,
       depth: 0,
     })
@@ -43,7 +44,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Found ${meetings.length} meetings to process`)
 
     // Process meetings in parallel with a pool size of 20
-    const POOL_SIZE = 1
+    const POOL_SIZE = 20
     const pool = new PromisePool(POOL_SIZE)
     const results: Array<{ success: boolean; meetingId: string; result?: any; error?: any }> =
       new Array(meetings.length)
