@@ -1285,6 +1285,56 @@ export const Meetings: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'historicalHoldings',
+              label: 'החזקות היסטוריות (30 יום לפני)',
+              admin: {
+                readOnly: true,
+                description: 'חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה',
+              },
+              labels: {
+                plural: 'החזקות היסטוריות',
+                singular: 'החזקה היסטורית',
+              },
+              type: 'array',
+              interfaceName: 'HistoricalHolding',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'company',
+                      label: 'מזהה חברה',
+                      type: 'text',
+                      index: true,
+                      required: true,
+                    },
+                    {
+                      name: 'fund',
+                      label: 'מזהה תיק',
+                      type: 'text',
+                    },
+                    {
+                      name: 'lastHoldingDate',
+                      label: 'תאריך החזקה אחרון',
+                      type: 'date',
+                      required: true,
+                      admin: {
+                        date: {
+                          pickerAppearance: 'dayOnly',
+                        },
+                      },
+                    },
+                    {
+                      name: 'quantity',
+                      label: 'כמות',
+                      type: 'number',
+                      required: true,
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
       ],
