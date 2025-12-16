@@ -153,6 +153,21 @@ export type FundWithHolding =
     }[]
   | null;
 /**
+ * חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HistoricalHolding".
+ */
+export type HistoricalHolding =
+  | {
+      company: string;
+      fund?: string | null;
+      lastHoldingDate: string;
+      quantity: number;
+      id?: string | null;
+    }[]
+  | null;
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
  */
@@ -753,6 +768,7 @@ export interface Meeting {
   researchDocuments?: (string | ResearchDocument)[] | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
+  historicalHoldings?: HistoricalHolding;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -1461,7 +1477,6 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
-  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1568,6 +1583,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   researchDocuments?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
+  historicalHoldings?: T | HistoricalHoldingSelect<T>;
   creator?: T;
   updator?: T;
   process?: T;
@@ -1627,6 +1643,17 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
         ownedQuantity?: T;
         id?: T;
       };
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HistoricalHolding_select".
+ */
+export interface HistoricalHoldingSelect<T extends boolean = true> {
+  company?: T;
+  fund?: T;
+  lastHoldingDate?: T;
+  quantity?: T;
   id?: T;
 }
 /**
@@ -2299,7 +2326,6 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
-  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;
