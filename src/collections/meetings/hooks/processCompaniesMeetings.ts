@@ -192,7 +192,7 @@ async function processMeeting(
       const companyIdStr = String(companyId)
       return !removedCompanyIds.includes(companyIdStr)
     })
-
+    /* 
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
     if (meeting.holdingsLimit) {
@@ -268,7 +268,7 @@ async function processMeeting(
       req.payload.logger.info(
         `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
       )
-    }
+    }*/
 
     // Prepare change details
     const changeDate = new Date().toISOString()
@@ -285,7 +285,7 @@ async function processMeeting(
       companies: Array.from(new Set(filteredCompIds)) as string[],
       funds: [...filteredFunds],
       fundsWithHolding: filteredFundsWithHolding,
-      historicalHoldings,
+      // historicalHoldings,
       migrationComments,
       hasRelatedStocks,
     }
