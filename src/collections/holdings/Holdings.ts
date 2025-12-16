@@ -61,6 +61,19 @@ export const Holdings: CollectionConfig = {
           }),
         },
         {
+          name: 'company',
+          label: 'חברה',
+          type: 'relationship',
+          relationTo: 'companies',
+          index: true,
+          filterOptions: () => ({
+            type: {
+              equals: 'regular',
+            },
+          }),
+          virtual: 'fund.parentCompany',
+        },
+        {
           name: 'valueDate',
           label: 'תאריך ערך',
           type: 'date',

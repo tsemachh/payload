@@ -93,7 +93,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
           return {
             id: fullCompany.id,
             name: fullCompany.name,
-            parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
+            parentCompany: fullCompany.parentCompany ?? null,
             subCompanies: fullCompany.subCompanies,
             labels: fullCompany.label?.labels,
           }
@@ -109,7 +109,7 @@ export const CompaniesProvider = ({ children }: { children: ReactNode }) => {
           return {
             id: fullCompany.id,
             name: fullCompany.name,
-            parentCompany: fullCompany.parentCompany?.docs?.[0] ?? null,
+            parentCompany: fullCompany.parentCompany ?? null,
             passiveFund: fullCompany.passiveFund || false,
           }
         })

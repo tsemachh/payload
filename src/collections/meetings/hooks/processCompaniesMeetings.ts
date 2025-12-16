@@ -162,8 +162,8 @@ async function processMeeting(
       },
     })
     const compIds = companies.docs.map((comp) => {
-      if (comp?.parentCompany?.docs) {
-        return comp.parentCompany.docs[0]
+      if (comp?.parentCompany) {
+        return comp.parentCompany
       }
     })
 
