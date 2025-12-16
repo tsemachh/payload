@@ -458,15 +458,67 @@ export async function upsertStockValueFromImport(
     })
   } else {
     // Insert into Payload CMS
-    const newStockValue = await req.payload.create({
-      collection: 'stock-values',
-      data: stockValue as StockValue,
-      req: {
-        ...req,
-        context: { ...req.context, from: 'migration' },
-      },
-    })
-    valueId = newStockValue?.id
+    try {
+      const newStockValue = await req.payload.create({
+        collection: 'stock-values',
+        data: stockValue as StockValue,
+        req: {
+          ...req,
+          context: { ...req.context, from: 'migration' },
+        },
+      })
+      valueId = newStockValue?.id
+    } catch (err: any) {
+      // Handle race-condition: another worker created the unique (stockId, valueDate) just now
+      const isValidation = err && (err.name === 'ValidationError' || err.status === 400)
+      const msg = typeof err?.message === 'string' ? err.message : ''
+      const pathStockId = Array.isArray(err?.data?.errors)
+        ? err.data.errors.some((e: any) => e?.path === 'stockId')
+        : false
+      const looksUnique =
+        msg.includes('ייחודי') || msg.toLowerCase().includes('unique') || pathStockId
+
+      if (isValidation && looksUnique) {
+        // One concise warning, then retry fetching id and update
+        console.warn(
+          '[upsertStockValueFromImport] Create hit unique constraint, retrying fetch/update',
+          {
+            stockId: stockSequence,
+            valueDate: row.valueDate,
+          },
+        )
+        // Small delay 100ms
+        await new Promise((r) => setTimeout(r, 100))
+        const existingId = await getSequenceStockValueId(
+          req.payload,
+          stockSequence,
+          row.valueDate,
+        )
+        if (existingId) {
+          // Update the newly discovered document and return its id
+          await req.payload.update({
+            collection: 'stock-values',
+            id: existingId,
+            data: stockValue as StockValue,
+            req,
+          })
+          valueId = existingId
+        } else {
+          console.error(
+            '[upsertStockValueFromImport] Retry failed to locate created stock-value after unique error',
+            {
+              stockId: stockSequence,
+              valueDate: row.valueDate,
+              error: msg || err,
+            },
+          )
+          throw err
+        }
+      } else {
+        // Not a handled validation/unique case
+        throw err
+      }
+    }
   }
   return valueId
 }
