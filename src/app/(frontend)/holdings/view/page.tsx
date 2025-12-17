@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/providers/auth-provider'
+import { useCompaniesContext } from '../../context/companiesContext'
 import { DataTableStatic as DataTable } from '../../components/data-table-client'
 import { columns } from './columns'
 import { ExportButton } from '@/components/export-button'
 import { DateSelector } from '../components/DateSelector'
+import { CompaniesList } from '../components/companies-list'
 import { stringify } from 'qs-esm'
 import type { Where } from 'payload'
 import { useSearchParams } from 'next/navigation'
@@ -16,13 +18,36 @@ import { fetcher } from '../../helpers/utils-data-table'
 import { getWithErrorHandling } from '../../helpers/fetch-helpers'
 import { handleAndNotifyError } from '../../helpers/error-handler'
 
+interface DateRecord {
+  date: string
+  recordCount: number
+}
+
+interface Company {
+  id: string
+  name: string
+  currentRecordCount: number
+  dateRecords: DateRecord[]
+}
+
 export default function HoldingsView() {
   const { user } = useAuth()
+  const { companies: contextCompanies } = useCompaniesContext()
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [processedHoldings, setProcessedHoldings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [companies, setCompanies] = useState<Company[]>([])
+
+  // Create a map for quick company lookup by ID
+  const companyMap = useMemo(() => {
+    const map = new Map<string, string>()
+    contextCompanies.forEach((company) => {
+      map.set(company.id, company.name)
+    })
+    return map
+  }, [contextCompanies])
 
   const searchParams = useSearchParams()
   const dateFormUrl = searchParams.get('date')
@@ -118,13 +143,15 @@ export default function HoldingsView() {
           limit: 0,
           select: {
             fund: true,
+            company: true,
+            stats: true,
             holdings: {
               stock: true,
               fund: true,
               quantity: true,
             },
           },
-          depth: 1, // Need to get stock details
+          depth: 1,
         },
         { addQueryPrefix: true },
       )
@@ -144,9 +171,30 @@ export default function HoldingsView() {
 
       // Process the holding days data for display
       const processed = []
+      const companiesMap = new Map<string, { id: string; name: string; recordCount: number }>()
+
       for (const holdingDay of data.docs) {
         const fundName = holdingDay.fund?.name || 'N/A'
         const accountId = holdingDay.fund.mainAccount[0].accountNumber
+        const companyId =
+          typeof holdingDay.company === 'string' ? holdingDay.company : holdingDay.company?.id
+        const recordCount = holdingDay.stats?.recordCount || 0
+
+        // Aggregate by parent company
+        if (companyId) {
+          const companyName = companyMap.get(companyId) || 'Unknown'
+
+          if (!companiesMap.has(companyId)) {
+            companiesMap.set(companyId, {
+              id: companyId,
+              name: companyName,
+              recordCount: 0,
+            })
+          }
+          const companyData = companiesMap.get(companyId)!
+          companyData.recordCount += recordCount
+        }
+
         // Process each holding item in the holdings array
         if (holdingDay.holdings && Array.isArray(holdingDay.holdings)) {
           for (const item of holdingDay.holdings) {
@@ -163,6 +211,18 @@ export default function HoldingsView() {
       }
 
       setProcessedHoldings(processed)
+
+      // Convert companies map to array and sort by name
+      const companiesArray = Array.from(companiesMap.values())
+        .map((company) => ({
+          id: company.id,
+          name: company.name,
+          currentRecordCount: company.recordCount,
+          dateRecords: [], // Will be loaded on demand
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+
+      setCompanies(companiesArray)
       setError('')
     } catch (error) {
       setProcessedHoldings([]) // Clear data on error
@@ -173,21 +233,35 @@ export default function HoldingsView() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 px-4 pt-1">
-      <div className="h-[400px] mt-3 mb-6 md:mb-0">
-        <div>
+    <div className="flex flex-col md:flex-row gap-6 px-4 pt-1 h-full">
+      <div className="mt-3 min-w-[30%] mb-6 md:mb-0 space-y-6">
+        <div className="flex flex-col items-center">
           <label className="text-base font-semibold mb-2 block h-100 text-center">תאריך ערך</label>
           <DateSelector
             date={date}
             isDateAlwaysOpen={true}
             onDateChangeAction={handleDateChangeAction}
-            className="w-full"
             filterDate={(date) => {
               return !markedDates.some((markedDate) => {
                 return markedDate.toDateString() === date.toDateString()
               })
             }}
           />
+        </div>
+
+        <div>
+          <label className="text-base font-semibold mb-2 block text-center">סיכום לפי חברות</label>
+          {!date ? (
+            <div className="text-center text-muted-foreground text-sm">בחר תאריך</div>
+          ) : isLoading ? (
+            <div className="flex justify-center items-center h-[200px]">
+              <LoadingSpinnerDiamond />
+            </div>
+          ) : companies.length > 0 ? (
+            <CompaniesList companies={companies} selectedDate={date} />
+          ) : (
+            <div className="text-center text-muted-foreground text-sm">אין נתונים</div>
+          )}
         </div>
       </div>
 
