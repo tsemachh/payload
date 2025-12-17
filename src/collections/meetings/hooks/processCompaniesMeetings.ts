@@ -192,7 +192,7 @@ async function processMeeting(
       const companyIdStr = String(companyId)
       return !removedCompanyIds.includes(companyIdStr)
     })
-    /* 
+    /*
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
     if (meeting.holdingsLimit) {

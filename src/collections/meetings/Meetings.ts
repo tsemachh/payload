@@ -441,7 +441,6 @@ export const Meetings: CollectionConfig = {
                 allowCreate: false,
                 disableListColumn: true,
                 disableListFilter: true,
-                disabled: true,
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
