@@ -61,7 +61,8 @@ export async function downloadMeetingsExcel(
     'אימות תוצאות': (m) => (m.resultsConfirmationStatus ? '✅' : '❌'),
     'נייר ערך נסחר': (m) => (m.stockTradable ? '✅' : '❌'),
     מחקר: (m) => m.researchDocuments?.length || '',
-    'ערך נקוב ליום קובע': (m) => m.nominalValue,
+    'ערך נקוב  מדווח': (m) => m.nominalValueClientReported,
+    'ערך נקוב  בפועל': (m) => m.nominalValue,
     מיקום: (m) => {
       if (!m.location) return ''
       const maxLength = 120

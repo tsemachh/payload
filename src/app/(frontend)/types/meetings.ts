@@ -8,7 +8,7 @@ export type MeetingTableDataType = {
   votingPercentage: number | null // אחוז ההצבעה של המשתש מתוך חברות המשתמש
   displayVotingRecommendation: boolean
   defaultVotingRecommendation: boolean
-  companies: CompanyTableDate[]
+  companies: CompanyTableData[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
@@ -18,7 +18,8 @@ export type MeetingTableDataType = {
   stockOrigin: StockOrigin // מקור נייר הערך
   fromRelatedStock: boolean // ניירות עוקבים
   marketValue: number //שווי שוק
-  nominalValue: number // ערך נקוב ליום קובע
+  nominalValueClientReported: number // ערך נקוב מדיווח לקוחות
+  nominalValue: number // ערך נקוב בפועל
   percentageHolding: number //אחוז החזקות
   holdingValueInMillions: number //שווי החזקה במיליונים
   meetingType: string //סוג האסיפה
@@ -39,7 +40,10 @@ export type MeetingTableDataType = {
   displayMode?: string
   selectedCompanyIds?: string[]
   labels: { id: string; label: string; color: string }[]
-  relatedQuestions?: { id: string; questions: Array<{ id: string; questionText: string; defaultValue: boolean }> }
+  relatedQuestions?: {
+    id: string
+    questions: Array<{ id: string; questionText: string; defaultValue: boolean }>
+  }
 }
 
 export type DateFilterOption = {
@@ -47,10 +51,11 @@ export type DateFilterOption = {
   label: string
 }
 
-export type CompanyTableDate = {
+export type CompanyTableData = {
   id: string
   percentageHolding: number
   holdingValueInMillions: number
+  nominalValueClientReported: number
   nominalValue: number
   funds: FundType[]
   originalStockIds?: any[]
@@ -62,6 +67,7 @@ export type FundType = {
   holdingsCompanyName: string
   percentageHolding: number
   holdingValueInMillions: number
+  nominalValueClientReported: number
   nominalValue: number
   parentCompany?: TreeCompanyType // Parent company structure
   passiveFund?: boolean

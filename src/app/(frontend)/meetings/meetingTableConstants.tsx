@@ -224,10 +224,31 @@ export const createMeetingColumns = (
     minWidth: 130,
   },
   {
-    key: 'nominalValue',
-    header: 'ערך נקוב ליום קובע',
+    key: 'nominalValueClientReported',
+    header: 'ערך נקוב מדווח ',
     type: 'number',
-    render: (row) => formatNumberWithLocale(row.nominalValue, 0, 'he-IL'),
+    render: (row) => {
+      const mismatch = row.nominalValue !== row.nominalValueClientReported
+      return (
+        <span className={mismatch ? 'text-red-600' : ''}>
+          {formatNumberWithLocale(row.nominalValueClientReported, 0, 'he-IL')}
+        </span>
+      )
+    },
+    minWidth: 90,
+  },
+  {
+    key: 'nominalValue',
+    header: 'ערך נקוב בפועל',
+    type: 'number',
+    render: (row) => {
+      const mismatch = row.nominalValue !== row.nominalValueClientReported
+      return (
+        <span className={mismatch ? 'text-red-600' : ''}>
+          {formatNumberWithLocale(row.nominalValue, 0, 'he-IL')}
+        </span>
+      )
+    },
     minWidth: 90,
   },
   {
