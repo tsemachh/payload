@@ -2,6 +2,7 @@ import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+import ResearchWarningsEndpoint from './endpoints/ResearchWarningsEndpoint'
 import {
   allMeetingsEndpoint,
   futureMeetingsEndpoint,
@@ -124,6 +125,7 @@ export const Meetings: CollectionConfig = {
         { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
+        {name:'researchDocumentsStatus',width:'130px'},
         { name: 'resultsConfirmationStatus', width: '130px' },
         { name: 'hasRelatedStocks', width: '130px' },
       ],
@@ -1179,6 +1181,89 @@ export const Meetings: CollectionConfig = {
                 },
               },
             },
+            {
+              name: 'researchDocumentsStatus',
+              label: 'סטטוס מסמכי מחקר',
+              type: 'select',
+              options: [
+                { label: 'ריק', value: 'empty' },
+                { label: 'חלקי', value: 'partial' },
+                { label: 'מלא', value: 'complete' },
+              ],
+              admin: {
+                description: 'מציין את סטטוס מסמכי המחקר עבור חברות האסיפה',
+                readOnly: true,
+              },
+              hooks: {
+                beforeChange: [
+                  async ({ data, req }) => {
+                    // Calculate research documents status
+                    if (
+                      !data?.companies ||
+                      !Array.isArray(data.companies) ||
+                      data.companies.length === 0
+                    ) {
+                      return 'empty'
+                    }
+
+                    try {
+                      // Get all research documents for this meeting
+                      const researchDocs = data.researchDocuments || []
+                      if (researchDocs.length === 0) {
+                        return 'empty'
+                      }
+
+                      // Get company details to check research document coverage
+                      const companyIds = data.companies.map((company: any) =>
+                        typeof company === 'string' ? company : company.id,
+                      )
+
+                      // For each company, check if there's a research document
+                      const companiesWithDocs = new Set()
+
+                      for (const docId of researchDocs) {
+                        try {
+                          const doc = await req.payload.findByID({
+                            collection: 'research-documents',
+                            id: typeof docId === 'string' ? docId : docId.id,
+                          })
+
+                          if (doc?.companies && Array.isArray(doc.companies)) {
+                            doc.companies.forEach((companyId: any) => {
+                              const id = typeof companyId === 'string' ? companyId : companyId.id
+                              if (companyIds.includes(id)) {
+                                companiesWithDocs.add(id)
+                              }
+                            })
+                          }
+                        } catch (error: any) {
+                          req.payload.logger.error(
+                            `Error fetching research document ${docId}:`,
+                            error,
+                          )
+                        }
+                      }
+
+                      // Determine status based on coverage
+                      const totalCompanies = companyIds.length
+                      const companiesWithDocsCount = companiesWithDocs.size
+
+                      if (companiesWithDocsCount === 0) {
+                        return 'empty'
+                      } else if (companiesWithDocsCount === totalCompanies) {
+                        return 'complete'
+                      } else {
+                        return 'partial'
+                      }
+                    } catch (error: any) {
+                      req.payload.logger.error('Error calculating researchDocumentsStatus:', error)
+                      return 'empty'
+                    }
+                  },
+                ],
+              },
+            },
+
           ],
         },
         {
@@ -1439,7 +1524,7 @@ export const Meetings: CollectionConfig = {
       },
       afterChangeDeleteResearchDocs,
     ],
-    //beforeValidate: [validateResearchDocsInMeetings],
+    beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [
       handleRecommendationReason,
       clearCompaniesInSingleBondResearchDoc,
@@ -1460,6 +1545,11 @@ export const Meetings: CollectionConfig = {
       path: '/process-companies',
       method: 'post',
       handler: ProcessMeetingCompaniesEndPoint,
+    },
+    {
+      path: '/:id/research-warnings',
+      method: 'get',
+      handler: ResearchWarningsEndpoint,
     },
     {
       path: '/upload-meetings-csv',

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { beforeValidaCompaniesFromFilename } from './hooks'
+import { beforeValidaCompaniesFromFilename, updateMeetingResearchStatus } from './hooks'
 import { isAdmin, isUserCompanyResearchDoc } from '@/utils/authUtils'
 
 export const ResearchDocument: CollectionConfig = {
@@ -81,7 +81,8 @@ export const ResearchDocument: CollectionConfig = {
       defaultValue: () => new Date(),
     },
   ],
-  // hooks: {
-  //   beforeValidate: [beforeValidaCompaniesFromFilename],
-  // },
+  hooks: {
+    beforeValidate: [beforeValidaCompaniesFromFilename],
+    afterChange: [updateMeetingResearchStatus],
+  },
 }
