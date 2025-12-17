@@ -198,6 +198,17 @@ export const Holdings: CollectionConfig = {
       ],
     },
   ],
+  // Performance: add compound indexes to support historical lookups
+  // - {'holdings.stock': 1, fund: 1, valueDate: -1} optimizes scans by stock+fund within a date range and supports sorting by newest first
+  // - {fund: 1, valueDate: -1} optimizes current-day queries that fetch latest holdings per fund
+  indexes: [
+    {
+      fields: ['fund', 'valueDate'],
+    },
+    {
+      fields: ['holdings.stock', 'fund', 'valueDate'],
+    },
+  ],
   endpoints: [
     {
       path: '/upload-holdings',
