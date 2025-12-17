@@ -175,6 +175,11 @@ export const Meetings: CollectionConfig = {
     drafts: true,
     maxPerDoc: 20,
   },
+  indexes: [
+    {
+      fields: ['_status', 'meetingDate'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
@@ -431,9 +436,12 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
+              _sanitized: true,
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
+                disableListFilter: true,
+                disabled: true,
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
