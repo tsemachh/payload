@@ -192,84 +192,83 @@ async function processMeeting(
       const companyIdStr = String(companyId)
       return !removedCompanyIds.includes(companyIdStr)
     })
-    // Historical holdings (30-day lookback) — re-enabled behind a feature flag with minimal changes
-    // Uses per-fund top-1 lookups leveraging the {'holdings.stock':1, fund:1, valueDate:-1} index
-    // to avoid the previous unbounded scan. Telemetry is included; no scripts.
-    let historicalHoldingsResult: NonNullable<HistoricalHolding> | undefined
-    if (process.env.MEETINGS_ENABLE_HISTORICAL === 'true' && meeting.holdingsLimit) {
-      const t0 = Date.now()
-      const historicalHoldings: NonNullable<HistoricalHolding> = []
-
+    /*
+    // Calculate historical holdings (30 days before holdingsLimit)
+    const historicalHoldings: NonNullable<HistoricalHolding> = []
+    if (meeting.holdingsLimit) {
       const historicalDate = new Date(meeting.holdingsLimit)
       historicalDate.setDate(historicalDate.getDate() - 30)
       const historicalDateStr = historicalDate.toISOString()
 
-      // Build invited company ids set — strings only (avoid object refs that break .has())
+      // Get all companies that are currently invited (to exclude them)
       const invitedCompanyIds = new Set(
         filteredCompIds
           .map((id) => getIdOfRelationField(id || ''))
-          .filter((id): id is string => typeof id === 'string'),
+          .filter((id): id is string => typeof id === 'string' || typeof id === 'object'),
       )
 
-      let examinedFunds = 0
-      let skippedInvitedOrRemoved = 0
-      let matched = 0
+      // Track which company+fund combinations we've already found holdings for
+      const processedCombinations = new Set<string>()
 
-      // Per-fund top-1 query within the 30-day window and specific stock
-      for (const fundId of filteredFunds) {
-        examinedFunds++
+      // Query only holdings that contain the specific stock
+      const { docs: allHistoricalHoldings } = await req.payload.find({
+        collection: 'holdings',
+        depth: 0,
+        where: {
+          and: [
+            { valueDate: { greater_than_equal: historicalDateStr } },
+            { valueDate: { less_than: meeting.holdingsLimit } },
+            { fund: { in: funds } },
+            { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
+          ],
+        },
+        sort: '-valueDate',
+        limit: 0,
+      })
 
-        const { docs } = await req.payload.find({
-          collection: 'holdings',
-          depth: 0,
-          where: {
-            and: [
-              { valueDate: { greater_than_equal: historicalDateStr } },
-              { valueDate: { less_than: meeting.holdingsLimit } },
-              { fund: { equals: fundId } },
-              { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
-            ],
-          },
-          select: { fund: true, valueDate: true, holdings: true },
-          sort: '-valueDate',
-          limit: 1,
-        })
-
-        if (!docs.length) continue
-        const holdingDoc = docs[0]
+      // Process holdings from newest to oldest
+      for (const holdingDoc of allHistoricalHoldings) {
+        const fundId = getIdOfRelationField(holdingDoc.fund) as string
         const companyId = getCompanyIdFromFundId(fundId)
-        if (!companyId || invitedCompanyIds.has(companyId) || removedCompanyIds.includes(companyId)) {
-          skippedInvitedOrRemoved++
+
+        // Skip if company is invited or removed
+        if (
+          !companyId ||
+          invitedCompanyIds.has(companyId) ||
+          removedCompanyIds.includes(companyId)
+        ) {
           continue
         }
 
-        const matchedHolding = (holdingDoc as any).holdings.find(
-          (holding: HoldingsPerDay[number]) => holding.stock == getIdOfRelationField(meeting.stock),
-        )
-        if (!matchedHolding) continue
+        // Create a unique key for this company+fund combination
+        const combinationKey = `${companyId}|${fundId}`
 
-        historicalHoldings.push({
-          company: companyId,
-          fund: fundId,
-          lastHoldingDate: (holdingDoc as any).valueDate,
-          quantity: matchedHolding.quantity ?? 0,
+        // Skip if we've already processed this company+fund combination
+        if (processedCombinations.has(combinationKey)) {
+          continue
+        }
+
+        // Find the matching holding (we know it exists because of the query filter)
+        const matchedHolding = holdingDoc.holdings.find((holding: HoldingsPerDay[number]) => {
+          return holding.stock == getIdOfRelationField(meeting.stock)
         })
-        matched++
+
+        if (matchedHolding) {
+          historicalHoldings.push({
+            company: companyId,
+            fund: fundId,
+            lastHoldingDate: holdingDoc.valueDate,
+            quantity: matchedHolding.quantity ?? 0,
+          })
+
+          processedCombinations.add(combinationKey)
+        }
       }
 
       req.payload.logger.info(
-        {
-          meetingId: meeting.id,
-          examinedFunds,
-          matched,
-          skippedInvitedOrRemoved,
-          durationMs: Date.now() - t0,
-        },
-        `Historical holdings scan complete for meeting ${meeting.id}`,
+        `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
       )
-
-      historicalHoldingsResult = historicalHoldings
-    }
+    }*/
 
     // Prepare change details
     const changeDate = new Date().toISOString()
@@ -286,13 +285,9 @@ async function processMeeting(
       companies: Array.from(new Set(filteredCompIds)) as string[],
       funds: [...filteredFunds],
       fundsWithHolding: filteredFundsWithHolding,
+      // historicalHoldings,
       migrationComments,
       hasRelatedStocks,
-    }
-
-    // Only set historicalHoldings if the feature flag is enabled and results exist
-    if (historicalHoldingsResult && historicalHoldingsResult.length > 0) {
-      ;(data as any).historicalHoldings = historicalHoldingsResult
     }
 
     if (stockValue) data.stockValue = stockValue
