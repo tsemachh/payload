@@ -162,8 +162,11 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
         addedFunds: [],
       })
     } else {
+      // Pass only the added/updated funds to processCompaniesMeetings
+      const allAffectedFundIds = [...addedFunds.map((f) => f.id)]
+
       // Wait for processCompaniesMeetings to complete before returning
-      await processCompaniesMeetings(req, [meetingId || ''])
+      await processCompaniesMeetings(req, [meetingId || ''], allAffectedFundIds)
       if (existingFunds.length > 0) {
         // Some funds exist, some were added
         return Response.json({
