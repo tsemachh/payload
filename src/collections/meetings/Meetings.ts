@@ -300,7 +300,7 @@ export const Meetings: CollectionConfig = {
               hooks: {
                 afterRead: [
                   async ({ data, req }) => {
-                    if (!data?.votes?.docs || !data?.companies) {
+                    if (!data?.companies) {
                       return []
                     }
                     const votes = await req.payload.find({
