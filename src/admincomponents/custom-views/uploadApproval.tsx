@@ -56,7 +56,7 @@ export function ReportApprovalUpload({
   }
 
   return (
-    <div className="flex items-center space-x-4 space-x-reverse">
+    <div className="flex items-center space-x-4 space-x-reverse print:hidden">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
