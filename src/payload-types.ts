@@ -309,9 +309,6 @@ export interface Config {
     'payload-query-presets': PayloadQueryPreset;
   };
   collectionsJoins: {
-    meetings: {
-      votes: 'votes';
-    };
     stocks: {
       relations: 'stocks';
     };
