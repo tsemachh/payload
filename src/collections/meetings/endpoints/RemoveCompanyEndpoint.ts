@@ -93,16 +93,9 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
-    // Get all funds that belong to the removed company
-    const { docs: fundsForCompany } = await req.payload.find({
-      collection: 'companies',
-      depth: 0,
-      limit: 0,
-      where: {
-        and: [{ type: { equals: 'fund' } }, { id: { in: company.subCompanies } }],
-      },
-    })
-    const affectedFundIds = fundsForCompany.map((fund) => fund.id)
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
 
     // Process the meeting with only the affected funds
     await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
@@ -207,16 +200,9 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
-    // Get all funds that belong to the restored company
-    const { docs: fundsForCompany } = await req.payload.find({
-      collection: 'companies',
-      depth: 0,
-      limit: 0,
-      where: {
-        and: [{ type: { equals: 'fund' } }, { id: { in: company.subCompanies } }],
-      },
-    })
-    const affectedFundIds = fundsForCompany.map((fund) => fund.id)
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
 
     // Process the meeting with only the affected funds
     await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
