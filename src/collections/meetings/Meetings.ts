@@ -288,43 +288,6 @@ export const Meetings: CollectionConfig = {
               },
             },
             {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companiesNotYetVoted',
-              label: 'חברות שטרם הצביעו',
-              virtual: true,
-              admin: {
-                hidden: true,
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data, req }) => {
-                    if (!data?.companies) {
-                      return []
-                    }
-                    const votes = await req.payload.find({
-                      collection: 'votes',
-                      select: {
-                        company: true,
-                      },
-                      where: {
-                        id: {
-                          in: data?.votes?.docs,
-                        },
-                      },
-                      limit: 0,
-                      depth: 0,
-                    })
-                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    return data.companies.filter(
-                      (companyId: string) => !votedCompanyIds.includes(companyId),
-                    )
-                  },
-                ],
-              },
-            },
-            {
               name: 'totalHoldings',
               label: 'החזקות(%)',
               type: 'number',

@@ -690,7 +690,6 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   removedCompanies?: (string | Company)[] | null;
-  companiesNotYetVoted?: (string | Company)[] | null;
   totalHoldings?: number | null;
   activity?: string | null;
   hasResearchDoc?: boolean | null;
@@ -1476,6 +1475,7 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
+  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1531,7 +1531,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   removedCompanies?: T;
-  companiesNotYetVoted?: T;
   totalHoldings?: T;
   activity?: T;
   hasResearchDoc?: T;
@@ -2327,6 +2326,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
+  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;

@@ -51,6 +51,8 @@ import { QueryPresetsWhereCell as QueryPresetsWhereCell_3817bf644402e67bfe6577f6
 import { QueryPresetsWhereField as QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnsCell as QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsColumnField as QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
+import { QueryPresetsGroupByCell as QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
+import { QueryPresetsGroupByField as QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { default as default_a5852a3a735d9299b693b4d2e7b266de } from '@shefing/quickfilter/nav'
 import { UnImpersonate as UnImpersonate_30fd60f7d4c856977e9f58a871290892 } from '@/plugins/impersonate/ui/UnImpersonate'
 import { default as default_18511c0cf9cf95761601ec48f5703bd5 } from '../../../graphics/Logo'
@@ -116,6 +118,8 @@ export const importMap = {
   "@payloadcms/ui#QueryPresetsWhereField": QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnsCell": QueryPresetsColumnsCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsColumnField": QueryPresetsColumnField_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsGroupByCell": QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de,
+  "@payloadcms/ui#QueryPresetsGroupByField": QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de,
   "@shefing/quickfilter/nav#default": default_a5852a3a735d9299b693b4d2e7b266de,
   "@/plugins/impersonate/ui/UnImpersonate#UnImpersonate": UnImpersonate_30fd60f7d4c856977e9f58a871290892,
   "/graphics/Logo#default": default_18511c0cf9cf95761601ec48f5703bd5,
