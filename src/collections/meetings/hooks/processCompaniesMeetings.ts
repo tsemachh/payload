@@ -1,5 +1,11 @@
 import { PayloadRequest, Where } from 'payload'
-import type { HistoricalHolding, HoldingsPerDay, Meeting, StockValue } from '@/payload-types'
+import type {
+  FundWithHolding,
+  HistoricalHolding,
+  HoldingsPerDay,
+  Meeting,
+  StockValue,
+} from '@/payload-types'
 import {
   getCompanyIdFromFundId,
   getIdOfRelationField,
@@ -10,9 +16,19 @@ async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
   funds: string[],
+  isPartialUpdate = false,
 ): Promise<void> {
   let isDirty = false
   console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
+  req.payload.logger.info(
+    {
+      timestamp: new Date().toISOString(),
+      meetingId: meeting.id,
+      fundsCount: funds.length,
+      isPartialUpdate,
+    },
+    `Processing meeting ${meeting.id}`,
+  )
   // Cache for holding documents to avoid redundant API calls
   const holdingDocsCache = new Map<string, any>()
 
@@ -108,7 +124,7 @@ async function processMeeting(
     const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
     let fromRelatedStock = false
-    const fundsWithHolding = flattenedHoldings.map((h) => {
+    const newFundsWithHolding = flattenedHoldings.map((h) => {
       const rawOriginal = h.holdings[0]?.originalData
       const originalDataArray = rawOriginal
         ? Array.isArray(rawOriginal)
@@ -132,6 +148,20 @@ async function processMeeting(
       const prev = prevByFund.get(fundId) || {}
       return { ...prev, ...base }
     })
+
+    // If this is a partial update, merge with existing fundsWithHolding
+    let fundsWithHolding = newFundsWithHolding
+    if (isPartialUpdate) {
+      const updatedFundIds = new Set(newFundsWithHolding.map((f: any) => String(f.fund)))
+      // Keep existing fundsWithHolding that were not in the update
+      const existingFundsToKeep = prevFwh.filter(
+        (f: NonNullable<FundWithHolding>[number]) => !updatedFundIds.has(String(f.fund)),
+      )
+      fundsWithHolding = [...existingFundsToKeep, ...newFundsWithHolding]
+      req.payload.logger.info(
+        `Partial update: kept ${existingFundsToKeep.length} existing funds, updated ${newFundsWithHolding.length} funds`,
+      )
+    }
     let stockValue: string | StockValue | null = meeting.stockValue as string
     if (!stockValue) {
       const { docs: stockValueDocs } = await req.payload.find({
@@ -148,6 +178,11 @@ async function processMeeting(
       })
       stockValue = stockValueDocs.length > 0 ? stockValueDocs[0].id : null
     }
+    // Get all unique fund IDs from fundsWithHolding (both new and existing)
+    const allFundIdsInMeeting = Array.from(
+      new Set(fundsWithHolding.map((f: any) => String(f.fund))),
+    )
+
     const companies = await req.payload.find({
       collection: 'companies',
       depth: 0,
@@ -157,7 +192,7 @@ async function processMeeting(
       },
       where: {
         id: {
-          in: newFunds,
+          in: allFundIdsInMeeting,
         },
       },
     })
@@ -179,8 +214,8 @@ async function processMeeting(
       return compIdStr && !removedCompanyIds.includes(compIdStr)
     })
 
-    // Filter out funds that belong to removed companies
-    const filteredFunds = newFunds.filter((fundId) => {
+    // Filter out funds that belong to removed companies (from all funds in meeting)
+    const filteredFunds = allFundIdsInMeeting.filter((fundId) => {
       const companyId = getCompanyIdFromFundId(fundId)
       return companyId && !removedCompanyIds.includes(companyId)
     })
@@ -192,7 +227,7 @@ async function processMeeting(
       const companyIdStr = String(companyId)
       return !removedCompanyIds.includes(companyIdStr)
     })
-    /* 
+
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
     if (meeting.holdingsLimit) {
@@ -268,7 +303,7 @@ async function processMeeting(
       req.payload.logger.info(
         `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
       )
-    }*/
+    }
 
     // Prepare change details
     const changeDate = new Date().toISOString()
@@ -285,7 +320,7 @@ async function processMeeting(
       companies: Array.from(new Set(filteredCompIds)) as string[],
       funds: [...filteredFunds],
       fundsWithHolding: filteredFundsWithHolding,
-      // historicalHoldings,
+      historicalHoldings,
       migrationComments,
       hasRelatedStocks,
     }
@@ -314,12 +349,24 @@ async function processMeeting(
  *
  * @param req PayloadRequest object
  * @param meetingIds Optional array of meeting IDs to process. If not provided, all meetings will be processed.
+ * @param fundsToProcess Optional array of fund IDs to process. If not provided, all active funds will be queried.
  */
 export const processCompaniesMeetings = async (
   req: PayloadRequest,
   meetingIds?: string[],
+  fundsToProcess?: string[],
 ): Promise<void> => {
   try {
+    const startTime = Date.now()
+    req.payload.logger.info(
+      {
+        timestamp: new Date().toISOString(),
+        meetingIds: meetingIds?.length || 'all',
+        fundsProvided: fundsToProcess ? fundsToProcess.length : 'none',
+      },
+      'Starting processCompaniesMeetings',
+    )
+
     // Initialize the map of fundId -> companyId
     req.payload.logger.info('Initializing fundId -> companyId map')
     await initFundIdToCompanyIdMap(req.payload)
@@ -343,16 +390,24 @@ export const processCompaniesMeetings = async (
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
-    const { docs } = await req.payload.find({
-      collection: 'companies',
-      depth: 0,
-      limit: 0,
-      where: {
-        type: { equals: 'fund' },
-        active: { equals: true },
-      },
-    })
-    const funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+    // Use provided funds or query all active funds
+    let funds: string[]
+    if (fundsToProcess && fundsToProcess.length > 0) {
+      funds = fundsToProcess
+      req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
+    } else {
+      const { docs } = await req.payload.find({
+        collection: 'companies',
+        depth: 0,
+        limit: 0,
+        where: {
+          type: { equals: 'fund' },
+          active: { equals: true },
+        },
+      })
+      funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+      req.payload.logger.info(`Queried all active funds: ${funds.length} funds`)
+    }
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
@@ -373,7 +428,9 @@ export const processCompaniesMeetings = async (
           continue
         }
         console.log('meeting started', meeting.id)
-        const promise = processMeeting(meeting, req, funds)
+        // If funds were provided, this is a partial update
+        const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
+        const promise = processMeeting(meeting, req, funds, isPartialUpdate)
           .then(() => {
             console.log('meeting finished', meeting.id)
           })
@@ -392,7 +449,17 @@ export const processCompaniesMeetings = async (
       req.payload.logger.info(`Completed batch ${i / batchSize + 1}`)
     }
 
-    req.payload.logger.info('End of process: All meetings have been processed')
+    const endTime = Date.now()
+    const duration = ((endTime - startTime) / 1000).toFixed(2)
+    req.payload.logger.info(
+      {
+        timestamp: new Date().toISOString(),
+        duration: `${duration}s`,
+        meetingsProcessed: meetings.length,
+        fundsUsed: funds.length,
+      },
+      'End of process: All meetings have been processed',
+    )
   } catch (error: unknown) {
     req.payload.logger.error(
       { error },

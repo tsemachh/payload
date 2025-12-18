@@ -1455,15 +1455,6 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const currentIds = (doc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-
-        const previousIds = (previousDoc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-        const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
-
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
@@ -1472,7 +1463,7 @@ export const Meetings: CollectionConfig = {
 
         if (
           isPublish &&
-          (holdingsLimitChanged || stockChanged || firstPublish || holdingsRemovedCompanies) &&
+          (holdingsLimitChanged || stockChanged || firstPublish) &&
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {

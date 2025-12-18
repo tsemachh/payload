@@ -93,6 +93,19 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
+    // Get all funds that belong to the removed company
+    const { docs: fundsForCompany } = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      limit: 0,
+      where: {
+        and: [{ type: { equals: 'fund' } }, { id: { in: company.subCompanies } }],
+      },
+    })
+    const affectedFundIds = fundsForCompany.map((fund) => fund.id)
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
     return Response.json({
       success: true,
       message: `החברה ${company?.name || companyId} נוספה בהצלחה לחברות המוסרות מהאסיפה`,
@@ -193,6 +206,20 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       context: { from: 'user-action' },
       req,
     })
+
+    // Get all funds that belong to the restored company
+    const { docs: fundsForCompany } = await req.payload.find({
+      collection: 'companies',
+      depth: 0,
+      limit: 0,
+      where: {
+        and: [{ type: { equals: 'fund' } }, { id: { in: company.subCompanies } }],
+      },
+    })
+    const affectedFundIds = fundsForCompany.map((fund) => fund.id)
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
 
     return Response.json({
       success: true,
@@ -325,7 +352,8 @@ export const removeFundEndpoint = async (req: PayloadRequest) => {
     }
 
     // Remove the fund from fundsWithHolding array
-    await processCompaniesMeetings(req, [meetingId || ''])
+    // Pass only the affected fund to processCompaniesMeetings
+    await processCompaniesMeetings(req, [meetingId || ''], [fundId])
 
     return Response.json({
       success: true,
