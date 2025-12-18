@@ -1465,7 +1465,9 @@ export const Meetings: CollectionConfig = {
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
+          previousDoc?._status === 'draft' &&
+          doc?._status === 'published' &&
+          (!previousDoc.companies || previousDoc.companies.length === 0)
         const isPublish = doc?._status === 'published'
 
         if (
