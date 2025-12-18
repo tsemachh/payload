@@ -19,7 +19,15 @@ async function processMeeting(
   isPartialUpdate = false,
 ): Promise<void> {
   let isDirty = false
-  console.log(`Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`)
+  // Structured log instead of console.log
+  req.payload.logger.info(
+    {
+      meetingId: meeting.id,
+      holdingsLimit: meeting.holdingsLimit,
+      mode: isPartialUpdate ? 'partial' : 'full',
+    },
+    `Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`,
+  )
   req.payload.logger.info(
     {
       timestamp: new Date().toISOString(),
@@ -124,6 +132,8 @@ async function processMeeting(
     const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
     let fromRelatedStock = false
+    const meetingStockId = String(getIdOfRelationField(meeting.stock))
+
     const newFundsWithHolding = flattenedHoldings.map((h) => {
       const rawOriginal = h.holdings[0]?.originalData
       const originalDataArray = rawOriginal
@@ -133,7 +143,8 @@ async function processMeeting(
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
-      fromRelatedStock = originalDataArray.some((o) => o.stockId != meeting.stockId)
+      // Compare against the current meeting stock id (fix: meeting.stockId may not exist)
+      fromRelatedStock = originalDataArray.some((o) => String(o.stockId) !== meetingStockId)
       const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
@@ -227,6 +238,12 @@ async function processMeeting(
       const companyIdStr = String(companyId)
       return !removedCompanyIds.includes(companyIdStr)
     })
+
+    // Optional determinism: sort funds and fundsWithHolding by fund id to reduce noisy diffs
+    filteredFunds.sort((a, b) => String(a).localeCompare(String(b)))
+    filteredFundsWithHolding.sort((a: any, b: any) =>
+      String(a.fund).localeCompare(String(b.fund)),
+    )
 
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
@@ -378,8 +395,11 @@ export const processCompaniesMeetings = async (
     const where = meetingIds
       ? { id: { in: meetingIds } }
       : ({
-          holdingsLimit: { greater_than: new Date().toISOString() },
-          state: { not_equals: 'completed' },
+          and: [
+            { holdingsLimit: { greater_than: new Date().toISOString() } },
+            { finalized: { not_equals: true } },
+            { state: { not_equals: 'completed' } },
+          ],
         } as Where)
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
@@ -427,12 +447,12 @@ export const processCompaniesMeetings = async (
         if (!meeting.stock || !meeting.holdingsLimit) {
           continue
         }
-        console.log('meeting started', meeting.id)
+        req.payload.logger.info({ meetingId: meeting.id }, 'meeting started')
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
         const promise = processMeeting(meeting, req, funds, isPartialUpdate)
           .then(() => {
-            console.log('meeting finished', meeting.id)
+            req.payload.logger.info({ meetingId: meeting.id }, 'meeting finished')
           })
           .catch((error) => {
             req.payload.logger.error(
