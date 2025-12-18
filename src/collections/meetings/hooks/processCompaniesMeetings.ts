@@ -32,50 +32,88 @@ async function processMeeting(
   // Cache for holding documents to avoid redundant API calls
   const holdingDocsCache = new Map<string, any>()
 
-  // Get holdings for each company
-  const holdings = await Promise.all(
-    funds.map(async (fund) => {
-      // Create a cache key using fund and meeting.holdingsLimit
+  // Pre-filter funds by removed companies to avoid unnecessary lookups for this meeting
+  const removedCompanyIds = (meeting.removedCompanies || [])
+    .map((item) => (typeof item === 'string' ? item : item?.id))
+    .filter((id): id is string => typeof id === 'string')
+
+  const filteredFundsForMeeting = funds.filter((fundId) => {
+    const companyId = getCompanyIdFromFundId(fundId)
+    return companyId && !removedCompanyIds.includes(companyId)
+  })
+
+  // Helper: chunk an array to process in batches
+  const chunk = <T>(arr: T[], size: number): T[][] => {
+    const out: T[][] = []
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+    return out
+  }
+
+  // Batch fetch: for this meeting, get the latest holdings doc per fund (that contains the stock),
+  // using a single query per chunk instead of one query per fund.
+  const stockId = String(getIdOfRelationField(meeting.stock) || '')
+  const latestByFund = new Map<string, any>()
+
+  for (const group of chunk(filteredFundsForMeeting, 200)) {
+    // Check cache first for the whole chunk; we still might have partial cache hits
+    const toQuery: string[] = []
+    for (const fund of group) {
       const cacheKey = `${fund}_${meeting.holdingsLimit}`
-
-      // Check if the holdingDoc exists in cache
-      let holdingDoc = null
       if (holdingDocsCache.has(cacheKey)) {
-        holdingDoc = holdingDocsCache.get(cacheKey)
+        const cached = holdingDocsCache.get(cacheKey)
+        if (cached) {
+          latestByFund.set(String(getIdOfRelationField(cached.fund)), cached)
+        }
       } else {
-        // Get the holdings matching the less than equal holdings date
-        const { docs: holdingsDocs } = await req.payload.find({
-          collection: 'holdings',
-          depth: 0,
-          where: {
-            and: [
-              { valueDate: { less_than_equal: meeting.holdingsLimit } },
-              { fund: { equals: fund } },
-            ],
-          },
-          sort: '-valueDate',
-          limit: 1,
-        })
-        holdingDoc = holdingsDocs.length > 0 ? holdingsDocs[0] : null
+        toQuery.push(fund)
+      }
+    }
 
+    if (toQuery.length === 0) continue
+
+    const { docs } = await req.payload.find({
+      collection: 'holdings',
+      depth: 0,
+      where: {
+        and: [
+          { valueDate: { less_than_equal: meeting.holdingsLimit } },
+          { fund: { in: toQuery } },
+          { 'holdings.stock': { equals: stockId } },
+        ],
+      },
+      // Sort by newest first globally; first encounter per fund is the latest for that fund
+      sort: '-valueDate',
+      limit: 0,
+      select: {
+        fund: true,
+        valueDate: true,
+        holdings: true,
+      },
+    })
+
+    for (const doc of docs) {
+      const fundId = String(getIdOfRelationField(doc.fund))
+      if (!latestByFund.has(fundId)) {
+        latestByFund.set(fundId, doc)
         // Store in cache for future use
-        holdingDocsCache.set(cacheKey, holdingDoc)
+        const cacheKey = `${fundId}_${meeting.holdingsLimit}`
+        holdingDocsCache.set(cacheKey, doc)
       }
-      const nearestHoldingsLimitDate = holdingDoc?.valueDate
-      if (!nearestHoldingsLimitDate) {
-        return [] // No holdings found
-      }
-      const matchedHoldings = holdingDoc.holdings.filter((holding: any) => {
-        return holding.stock == getIdOfRelationField(meeting.stock)
-      })
-      if (matchedHoldings.length == 0) return [] // No holdings found for this stock
+      if (latestByFund.size === group.length) break
+    }
+  }
 
-      return {
-        fund: getIdOfRelationField(holdingDoc.fund) as string,
-        holdings: matchedHoldings,
-      }
-    }),
-  )
+  // Transform to the same structure the old loop returned
+  const holdings = Array.from(latestByFund.values()).map((holdingDoc) => {
+    const matchedHoldings = holdingDoc.holdings.filter((holding: any) => {
+      return holding.stock == stockId
+    })
+    if (matchedHoldings.length === 0) return []
+    return {
+      fund: getIdOfRelationField(holdingDoc.fund) as string,
+      holdings: matchedHoldings,
+    }
+  })
 
   const flattenedHoldings = holdings.flat()
 
@@ -185,35 +223,13 @@ async function processMeeting(
       new Set(fundsWithHolding.map((f: any) => String(f.fund))),
     )
 
-    const companies = await req.payload.find({
-      collection: 'companies',
-      depth: 0,
-      limit: 0,
-      select: {
-        parentCompany: true,
-      },
-      where: {
-        id: {
-          in: allFundIdsInMeeting,
-        },
-      },
-    })
-    const compIds = companies.docs.map((comp) => {
-      if (comp?.parentCompany) {
-        return comp.parentCompany
-      }
-    })
+    // Build compIds using the initialized fund->company map to avoid a per-meeting DB query
+    const parentCompanyIds = allFundIdsInMeeting
+      .map((fundId) => getCompanyIdFromFundId(String(fundId)))
+      .filter(Boolean)
 
-    // Filter out removed companies
-    // removedCompanies is an array of company IDs (strings) or company objects
-    const removedCompanyIds = (meeting.removedCompanies || [])
-      .map((item) => (typeof item === 'string' ? item : item?.id))
-      .filter((id): id is string => typeof id === 'string')
-
-    const filteredCompIds = compIds.filter((compId) => {
-      if (!compId) return false
-      const compIdStr = typeof compId === 'string' ? compId : compId.id
-      return compIdStr && !removedCompanyIds.includes(compIdStr)
+    const filteredCompIds = parentCompanyIds.filter((compId) => {
+      return compId && !removedCompanyIds.includes(compId)
     })
 
     // Filter out funds that belong to removed companies (from all funds in meeting)
@@ -246,6 +262,14 @@ async function processMeeting(
           .filter((id): id is string => typeof id === 'string' || typeof id === 'object'),
       )
 
+      // Query only funds that belong to companies that are NOT already invited and not removed
+      const uninvitedFunds = funds.filter((fundId) => {
+        const companyId = getCompanyIdFromFundId(fundId)
+        return (
+          companyId && !invitedCompanyIds.has(companyId) && !removedCompanyIds.includes(companyId)
+        )
+      })
+
       // Track which company+fund combinations we've already found holdings for
       const processedCombinations = new Set<string>()
 
@@ -253,16 +277,18 @@ async function processMeeting(
       const { docs: allHistoricalHoldings } = await req.payload.find({
         collection: 'holdings',
         depth: 0,
+        pagination: false as any,
         where: {
           and: [
             { valueDate: { greater_than_equal: historicalDateStr } },
             { valueDate: { less_than: meeting.holdingsLimit } },
-            { fund: { in: funds } },
+            { fund: { in: uninvitedFunds } },
             { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
           ],
         },
         sort: '-valueDate',
         limit: 0,
+        select: { fund: true, valueDate: true, holdings: true },
       })
 
       // Process holdings from newest to oldest
@@ -393,6 +419,16 @@ export const processCompaniesMeetings = async (
       limit: 0,
       where,
       depth: 0,
+      select: {
+        id: true,
+        stock: true,
+        holdingsLimit: true,
+        fundsWithHolding: true,
+        removedCompanies: true,
+        stockValue: true,
+        finalized: true,
+        state: true,
+      },
       sort: '-holdingsLimit',
     })
     req.payload.logger.info('loaded meetings:' + meetings.length)
@@ -411,6 +447,7 @@ export const processCompaniesMeetings = async (
           type: { equals: 'fund' },
           active: { equals: true },
         },
+        select: { name: true },
       })
       funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
       req.payload.logger.info(`Queried all active funds: ${funds.length} funds`)
@@ -434,12 +471,12 @@ export const processCompaniesMeetings = async (
         if (!meeting.stock || !meeting.holdingsLimit) {
           continue
         }
-        console.log('meeting started', meeting.id)
+        req.payload.logger.info({ meetingId: meeting.id }, 'meeting started')
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
         const promise = processMeeting(meeting, req, funds, isPartialUpdate)
           .then(() => {
-            console.log('meeting finished', meeting.id)
+            req.payload.logger.info({ meetingId: meeting.id }, 'meeting finished')
           })
           .catch((error) => {
             req.payload.logger.error(

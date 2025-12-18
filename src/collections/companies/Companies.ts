@@ -72,6 +72,11 @@ export const Companies: CollectionConfig = {
     defaultFilter: { active: { equals: 'true' } },
   },
   versions: {},
+  indexes: [
+    {
+      fields: ['type', 'active'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
