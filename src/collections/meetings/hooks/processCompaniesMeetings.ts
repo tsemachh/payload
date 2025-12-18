@@ -22,14 +22,6 @@ async function processMeeting(
   // Structured log instead of console.log
   req.payload.logger.info(
     {
-      meetingId: meeting.id,
-      holdingsLimit: meeting.holdingsLimit,
-      mode: isPartialUpdate ? 'partial' : 'full',
-    },
-    `Handling meeting ${meeting.id} - ${meeting.holdingsLimit}`,
-  )
-  req.payload.logger.info(
-    {
       timestamp: new Date().toISOString(),
       meetingId: meeting.id,
       fundsCount: funds.length,
@@ -143,7 +135,6 @@ async function processMeeting(
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
-      // Compare against the current meeting stock id (fix: meeting.stockId may not exist)
       fromRelatedStock = originalDataArray.some((o) => String(o.stockId) !== meetingStockId)
       const base = {
         company: getCompanyIdFromFundId(fundId),
@@ -239,11 +230,7 @@ async function processMeeting(
       return !removedCompanyIds.includes(companyIdStr)
     })
 
-    // Optional determinism: sort funds and fundsWithHolding by fund id to reduce noisy diffs
     filteredFunds.sort((a, b) => String(a).localeCompare(String(b)))
-    filteredFundsWithHolding.sort((a: any, b: any) =>
-      String(a.fund).localeCompare(String(b.fund)),
-    )
 
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
@@ -447,12 +434,12 @@ export const processCompaniesMeetings = async (
         if (!meeting.stock || !meeting.holdingsLimit) {
           continue
         }
-        req.payload.logger.info({ meetingId: meeting.id }, 'meeting started')
+        console.log('meeting started', meeting.id)
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
         const promise = processMeeting(meeting, req, funds, isPartialUpdate)
           .then(() => {
-            req.payload.logger.info({ meetingId: meeting.id }, 'meeting finished')
+            console.log('meeting finished', meeting.id)
           })
           .catch((error) => {
             req.payload.logger.error(
