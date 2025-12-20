@@ -19,14 +19,6 @@ export const processHoldingsChangeHandler: TaskHandler<'processHoldingsChange'> 
         output: { success: false, error: 'No holding ID provided' },
       }
     }
-    if (isHolidayOrShabbat(new Date())) {
-      return {
-        output: {
-          success: true,
-          message: 'non working day',
-        },
-      }
-    }
     // Fetch the holding document
     const holding = await req.payload.findByID({
       collection: 'holdings',

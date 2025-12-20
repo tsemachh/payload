@@ -1,4 +1,5 @@
 import { PayloadRequest, Where } from 'payload'
+import { ObjectId } from 'mongodb'
 import type {
   FundWithHolding,
   HistoricalHolding,
@@ -12,12 +13,68 @@ import {
   initFundIdToCompanyIdMap,
 } from '@/utils/utils'
 
+// -------- Performance helpers (scoped to this file) --------
+// High-resolution timestamp in milliseconds
+const __nowMs = (): number => {
+  // @ts-ignore - bigint is available in Node
+  if (typeof process !== 'undefined' && process.hrtime && (process.hrtime as any).bigint) {
+    // @ts-ignore
+    return Number((process.hrtime as any).bigint() / BigInt(1e6))
+  }
+  return Date.now()
+}
+
+class PerfTimer {
+  private starts = new Map<string, number>()
+  public durationsMs: Record<string, number> = {}
+  public counts: Record<string, number> = {}
+
+  start(label: string): void {
+    this.starts.set(label, __nowMs())
+  }
+
+  end(label: string): number {
+    const s = this.starts.get(label)
+    const d = s ? __nowMs() - s : 0
+    this.durationsMs[label] = (this.durationsMs[label] || 0) + d
+    this.starts.delete(label)
+    return d
+  }
+
+  inc(label: string, by = 1): void {
+    this.counts[label] = (this.counts[label] || 0) + by
+  }
+
+  addDuration(label: string, ms: number): void {
+    this.durationsMs[label] = (this.durationsMs[label] || 0) + ms
+  }
+
+  summary(): {
+    durationsMs: Record<string, number>
+    counts: Record<string, number>
+    totalMs: number
+  } {
+    const totalMs = Object.values(this.durationsMs).reduce((a, b) => a + b, 0)
+    return { durationsMs: this.durationsMs, counts: this.counts, totalMs }
+  }
+}
+
 async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
   funds: string[],
   isPartialUpdate = false,
+  runAgg?: PerfTimer,
+  crossMeetingCache?: Map<string, any>,
 ): Promise<void> {
+  // perf toggle and thresholds
+  const perfMode = String((req.context as any)?.perf ?? process.env.PERF_LOG ?? '').toLowerCase()
+  const perfEnabled = perfMode === '1' || perfMode === 'true' || perfMode === 'verbose'
+  const perfVerbose = perfMode === 'verbose'
+  const slowThresholdMs = Number(process.env.PERF_SLOW_MS || '1000')
+
+  const mt = new PerfTimer()
+  mt.start('meetingTotal')
   let isDirty = false
   // Structured log instead of console.log
   req.payload.logger.info(
@@ -29,10 +86,11 @@ async function processMeeting(
     },
     `Processing meeting ${meeting.id}`,
   )
-  // Cache for holding documents to avoid redundant API calls
+  // Cache for holding documents to avoid redundant API calls (scoped to this meeting)
   const holdingDocsCache = new Map<string, any>()
 
   // Pre-filter funds by removed companies to avoid unnecessary lookups for this meeting
+  mt.start('prefilterFunds')
   const removedCompanyIds = (meeting.removedCompanies || [])
     .map((item) => (typeof item === 'string' ? item : item?.id))
     .filter((id): id is string => typeof id === 'string')
@@ -41,6 +99,9 @@ async function processMeeting(
     const companyId = getCompanyIdFromFundId(fundId)
     return companyId && !removedCompanyIds.includes(companyId)
   })
+  mt.inc('fundsIn', funds.length)
+  mt.inc('fundsFiltered', filteredFundsForMeeting.length)
+  mt.end('prefilterFunds')
 
   // Helper: chunk an array to process in batches
   const chunk = <T>(arr: T[], size: number): T[][] => {
@@ -52,56 +113,172 @@ async function processMeeting(
   // Batch fetch: for this meeting, get the latest holdings doc per fund (that contains the stock),
   // using a single query per chunk instead of one query per fund.
   const stockId = String(getIdOfRelationField(meeting.stock) || '')
+  // Build a stable cross‑meeting cache key: <stockId>|<YYYY-MM-DD>|<fundId>
+  const __dayKey = (): string => {
+    try {
+      return new Date(String(meeting.holdingsLimit)).toISOString().slice(0, 10)
+    } catch {
+      // Fallback to raw if parsing fails (shouldn't happen)
+      return String(meeting.holdingsLimit)
+    }
+  }
+  const cacheKeyFor = (fundId: string): string => `${stockId}|${__dayKey()}|${String(fundId)}`
   const latestByFund = new Map<string, any>()
 
-  for (const group of chunk(filteredFundsForMeeting, 200)) {
-    // Check cache first for the whole chunk; we still might have partial cache hits
+  // Config
+  const CHUNK_SIZE = Number(process.env.HOLDINGS_CHUNK_SIZE || '200')
+
+  mt.start('latestHoldingsQuery')
+  let __chunkIdx = 0
+  for (const group of chunk(filteredFundsForMeeting, CHUNK_SIZE)) {
+    // Check caches first for the whole chunk; we still might have partial cache hits
     const toQuery: string[] = []
     for (const fund of group) {
-      const cacheKey = `${fund}_${meeting.holdingsLimit}`
-      if (holdingDocsCache.has(cacheKey)) {
-        const cached = holdingDocsCache.get(cacheKey)
+      const key = cacheKeyFor(fund)
+      if (holdingDocsCache.has(key)) {
+        const cached = holdingDocsCache.get(key)
         if (cached) {
           latestByFund.set(String(getIdOfRelationField(cached.fund)), cached)
+          mt.inc('cacheHit.local', 1)
+          runAgg?.inc('cacheHit.local', 1)
+          continue
         }
-      } else {
-        toQuery.push(fund)
       }
+      if (crossMeetingCache?.has(key)) {
+        const cached = crossMeetingCache.get(key)
+        if (cached) {
+          latestByFund.set(String(getIdOfRelationField(cached.fund)), cached)
+          mt.inc('cacheHit.cross', 1)
+          runAgg?.inc('cacheHit.cross', 1)
+          // Also promote to meeting-local cache for faster subsequent checks in this meeting
+          holdingDocsCache.set(key, cached)
+          continue
+        }
+      }
+      toQuery.push(fund)
+      mt.inc('cacheMiss', 1)
+      runAgg?.inc('cacheMiss', 1)
     }
 
     if (toQuery.length === 0) continue
 
-    const { docs } = await req.payload.find({
-      collection: 'holdings',
-      depth: 0,
-      where: {
-        and: [
-          { valueDate: { less_than_equal: meeting.holdingsLimit } },
-          { fund: { in: toQuery } },
-          { 'holdings.stock': { equals: stockId } },
-        ],
-      },
-      // Sort by newest first globally; first encounter per fund is the latest for that fund
-      sort: '-valueDate',
-      limit: 0,
-      select: {
-        fund: true,
-        valueDate: true,
-        holdings: true,
-      },
-    })
+    mt.inc('chunks', 1)
+    __chunkIdx++
+    const chunkLabel = `latestHoldingsQuery.chunk#${__chunkIdx}`
+    mt.start(chunkLabel)
 
-    for (const doc of docs) {
-      const fundId = String(getIdOfRelationField(doc.fund))
-      if (!latestByFund.has(fundId)) {
-        latestByFund.set(fundId, doc)
-        // Store in cache for future use
-        const cacheKey = `${fundId}_${meeting.holdingsLimit}`
-        holdingDocsCache.set(cacheKey, doc)
+    // Aggregation fast-path: returns only the matching holding element per fund
+    try {
+      if ((req.payload as any)?.db?.collections?.['holdings']) {
+        const holdingsColl: any = (req.payload as any).db.collections['holdings']
+        // Convert IDs to ObjectId when valid, otherwise keep as string (in case IDs are stored as strings)
+        const toObjectIds = (ids: string[]) =>
+          ids.map((s) => (ObjectId.isValid(s) ? new ObjectId(s) : (s as any)))
+
+        const stockMatchId: any = ObjectId.isValid(stockId)
+          ? new ObjectId(stockId)
+          : (stockId as any)
+        const fundsIn = toObjectIds(toQuery)
+        const limitDate = new Date(String(meeting.holdingsLimit))
+
+        const pipeline: any[] = [
+          {
+            $match: {
+              fund: { $in: fundsIn },
+              valueDate: { $lte: limitDate },
+              'holdings.stock': stockMatchId,
+            },
+          },
+          { $sort: { fund: 1, valueDate: -1 } },
+          {
+            $project: {
+              fund: 1,
+              valueDate: 1,
+              holding: {
+                $first: {
+                  $filter: {
+                    input: '$holdings',
+                    as: 'h',
+                    cond: { $eq: ['$$h.stock', stockMatchId] },
+                  },
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: '$fund',
+              valueDate: { $first: '$valueDate' },
+              holding: { $first: '$holding' },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              fund: { $toString: '$_id' },
+              valueDate: 1,
+              holdings: [
+                {
+                  // Guard with $ifNull to avoid errors if holding is unexpectedly null
+                  stock: { $toString: { $ifNull: ['$holding.stock', ''] } },
+                  quantity: '$holding.quantity',
+                  originalData: '$holding.originalData',
+                },
+              ],
+            },
+          },
+        ]
+
+        // Adapter-agnostic aggregate execution: supports Mongoose (array/promise),
+        // Mongo driver (cursor with toArray), or async iterable.
+        const aggOpts: any = { allowDiskUse: true }
+        const maxTime = Number(process.env.AGG_MAX_TIME_MS || '5000')
+        if (!Number.isNaN(maxTime) && maxTime > 0) aggOpts.maxTimeMS = maxTime
+
+        const out: any = await holdingsColl.aggregate(pipeline, aggOpts)
+        let aggResults: any[]
+        if (Array.isArray(out)) {
+          aggResults = out
+        } else if (out && typeof out.toArray === 'function') {
+          aggResults = await out.toArray()
+        } else if (out && typeof out.exec === 'function') {
+          // Mongoose Aggregate instance
+          aggResults = await out.exec()
+        } else if (out && typeof out[Symbol.asyncIterator] === 'function') {
+          aggResults = []
+          for await (const d of out as any) aggResults.push(d)
+        } else {
+          aggResults = out ? [out] : []
+        }
+        mt.inc('queryCalls', 1)
+        mt.inc('docsMatched', aggResults.length)
+        runAgg?.inc('findCalls', 1)
+        runAgg?.inc('docsRead', aggResults.length)
+
+        for (const doc of aggResults) {
+          const fundId = String(doc.fund)
+          if (!latestByFund.has(fundId)) {
+            latestByFund.set(fundId, doc)
+            const key = cacheKeyFor(fundId)
+            holdingDocsCache.set(key, doc)
+            // Populate cross‑meeting cache so other meetings on the same day/stock can reuse it
+            crossMeetingCache?.set(key, doc)
+          }
+          if (latestByFund.size === group.length) break
+        }
+      } else {
+        throw new Error('holdings collection not available on payload.db')
       }
-      if (latestByFund.size === group.length) break
+    } catch (e) {
+      req.payload.logger.error({ err: e }, 'Aggregation latestHoldingsQuery failed')
+      throw e
     }
+
+    // Shadow comparison removed — aggregation is the standard path
+
+    mt.end(chunkLabel)
   }
+  mt.end('latestHoldingsQuery')
 
   // Transform to the same structure the old loop returned
   const holdings = Array.from(latestByFund.values()).map((holdingDoc) => {
@@ -123,6 +300,8 @@ async function processMeeting(
       id: getIdOfRelationField(meeting.stock) || '',
       depth: 0,
     })
+    runAgg?.inc('findCalls', 1)
+    runAgg?.inc('docsRead', 1)
     req.payload.logger.error(
       {
         meetingId: meeting.id,
@@ -155,6 +334,7 @@ async function processMeeting(
 
   // Update meeting if necessary
   if (isDirty || !meeting.fundsWithHolding?.length) {
+    mt.start('mergeFundsWithHolding')
     req.payload.logger.info(
       `Successfully processed companies-meeting: ${meeting.id} with companies: ${newFunds.join(', ')}`,
     )
@@ -204,6 +384,7 @@ async function processMeeting(
     }
     let stockValue: string | StockValue | null = meeting.stockValue as string
     if (!stockValue) {
+      mt.start('stockValueLookup')
       const { docs: stockValueDocs } = await req.payload.find({
         collection: 'stock-values',
         depth: 0,
@@ -216,7 +397,10 @@ async function processMeeting(
         limit: 1,
         sort: '-valueDate',
       })
+      runAgg?.inc('findCalls', 1)
+      runAgg?.inc('docsRead', stockValueDocs.length)
       stockValue = stockValueDocs.length > 0 ? stockValueDocs[0].id : null
+      mt.end('stockValueLookup')
     }
     // Get all unique fund IDs from fundsWithHolding (both new and existing)
     const allFundIdsInMeeting = Array.from(
@@ -251,6 +435,7 @@ async function processMeeting(
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
     if (meeting.holdingsLimit) {
+      mt.start('historicalQuery')
       const historicalDate = new Date(meeting.holdingsLimit)
       historicalDate.setDate(historicalDate.getDate() - 30)
       const historicalDateStr = historicalDate.toISOString()
@@ -290,6 +475,10 @@ async function processMeeting(
         limit: 0,
         select: { fund: true, valueDate: true, holdings: true },
       })
+      mt.inc('queryCalls', 1)
+      mt.inc('historicalDocs', allHistoricalHoldings.length)
+      runAgg?.inc('findCalls', 1)
+      runAgg?.inc('docsRead', allHistoricalHoldings.length)
 
       // Process holdings from newest to oldest
       for (const holdingDoc of allHistoricalHoldings) {
@@ -333,6 +522,8 @@ async function processMeeting(
       req.payload.logger.info(
         `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
       )
+      mt.inc('historicalFound', historicalHoldings.length)
+      mt.end('historicalQuery')
     }
 
     // Prepare change details
@@ -356,6 +547,7 @@ async function processMeeting(
     }
 
     if (stockValue) data.stockValue = stockValue
+    mt.start('updateMeeting')
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -365,8 +557,44 @@ async function processMeeting(
       },
       data,
     })
+    mt.end('updateMeeting')
     // Use the new cleanup API to remove invalid votes for this meeting
-    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)])
+    mt.start('cleanupVotes')
+    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], runAgg)
+    mt.end('cleanupVotes')
+  }
+  const totalMs = mt.end('meetingTotal')
+
+  // Aggregate up and/or log per-meeting when enabled
+  if (perfEnabled) {
+    const summary = mt.summary()
+    // merge into runAgg if provided
+    if (runAgg) {
+      for (const [k, v] of Object.entries(summary.durationsMs))
+        runAgg.addDuration(`meeting.${k}`, v)
+      for (const [k, v] of Object.entries(summary.counts)) runAgg.inc(`meeting.${k}`, v)
+      runAgg.addDuration('meetingTotal', totalMs)
+    }
+    if (perfVerbose || totalMs >= slowThresholdMs) {
+      const total = summary.durationsMs['meetingTotal'] || totalMs
+      const share: Record<string, number> = {}
+      for (const [k, v] of Object.entries(summary.durationsMs)) {
+        if (k === 'meetingTotal') continue
+        share[k] = total > 0 ? Math.round((v / total) * 1000) / 10 : 0
+      }
+      req.payload.logger.info(
+        {
+          meetingId: meeting.id,
+          perf: {
+            totalMs: total,
+            stagesMs: summary.durationsMs,
+            sharePct: share,
+            counts: summary.counts,
+          },
+        },
+        'processMeeting perf summary',
+      )
+    }
   }
 }
 
@@ -388,6 +616,12 @@ export const processCompaniesMeetings = async (
 ): Promise<void> => {
   try {
     const startTime = Date.now()
+    // Perf toggles
+    const perfMode = String((req.context as any)?.perf ?? process.env.PERF_LOG ?? '').toLowerCase()
+    const perfEnabled = perfMode === '1' || perfMode === 'true' || perfMode === 'verbose'
+    const runTimer = new PerfTimer()
+    const runAgg = new PerfTimer() // used as aggregator for inner meeting stats
+    runTimer.start('total')
     req.payload.logger.info(
       {
         timestamp: new Date().toISOString(),
@@ -399,12 +633,15 @@ export const processCompaniesMeetings = async (
 
     // Initialize the map of fundId -> companyId
     req.payload.logger.info('Initializing fundId -> companyId map')
+    runTimer.start('initMap')
     await initFundIdToCompanyIdMap(req.payload)
+    runTimer.end('initMap')
     req.payload.logger.info('Map initialized successfully')
 
     req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
+    runTimer.start('loadMeetings')
     const where = meetingIds
       ? { id: { in: meetingIds } }
       : ({
@@ -431,6 +668,9 @@ export const processCompaniesMeetings = async (
       },
       sort: '-holdingsLimit',
     })
+    runTimer.end('loadMeetings')
+    runAgg.inc('findCalls', 1)
+    runAgg.inc('docsRead', meetings.length)
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
     // Use provided funds or query all active funds
@@ -439,6 +679,7 @@ export const processCompaniesMeetings = async (
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
+      runTimer.start('loadFunds')
       const { docs } = await req.payload.find({
         collection: 'companies',
         depth: 0,
@@ -449,13 +690,21 @@ export const processCompaniesMeetings = async (
         },
         select: { name: true },
       })
+      runTimer.end('loadFunds')
+      runAgg.inc('findCalls', 1)
+      runAgg.inc('docsRead', docs.length)
       funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
       req.payload.logger.info(`Queried all active funds: ${funds.length} funds`)
     }
 
+    // Cross‑meeting cache: reuse latest-holding results across meetings that share the same
+    // holdingsLimit day and stock. Key format: <stockId>|<YYYY-MM-DD>|<fundId>
+    const crossMeetingCache = new Map<string, any>()
+
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
     // Process meetings in batches
+    runTimer.start('batchLoop')
     for (let i = 0; i < meetings.length; i += batchSize) {
       const batchPromises: Promise<void>[] = []
       const batchEnd = Math.min(i + batchSize, meetings.length)
@@ -474,7 +723,14 @@ export const processCompaniesMeetings = async (
         req.payload.logger.info({ meetingId: meeting.id }, 'meeting started')
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
-        const promise = processMeeting(meeting, req, funds, isPartialUpdate)
+        const promise = processMeeting(
+          meeting,
+          req,
+          funds,
+          isPartialUpdate,
+          perfEnabled ? runAgg : undefined,
+          crossMeetingCache,
+        )
           .then(() => {
             req.payload.logger.info({ meetingId: meeting.id }, 'meeting finished')
           })
@@ -492,9 +748,34 @@ export const processCompaniesMeetings = async (
       await Promise.all(batchPromises)
       req.payload.logger.info(`Completed batch ${i / batchSize + 1}`)
     }
+    runTimer.end('batchLoop')
 
     const endTime = Date.now()
     const duration = ((endTime - startTime) / 1000).toFixed(2)
+    if (perfEnabled) {
+      const runSummary = runTimer.summary()
+      const total = runSummary.durationsMs['total'] || runSummary.totalMs
+      const share: Record<string, number> = {}
+      for (const [k, v] of Object.entries(runSummary.durationsMs)) {
+        if (k === 'total') continue
+        share[k] = total > 0 ? Math.round((v / total) * 1000) / 10 : 0
+      }
+      req.payload.logger.info(
+        {
+          perf: {
+            totalMs: total,
+            stagesMs: runSummary.durationsMs,
+            sharePct: share,
+            counts: {
+              meetingsProcessed: meetings.length,
+              fundsUsed: funds.length,
+              ...runAgg.counts,
+            },
+          },
+        },
+        'processCompaniesMeetings perf summary',
+      )
+    }
     req.payload.logger.info(
       {
         timestamp: new Date().toISOString(),
@@ -522,6 +803,7 @@ export const processCompaniesMeetings = async (
 export const cleanupInvalidVotesForMeetings = async (
   req: PayloadRequest,
   meetingIds: string[],
+  runAgg?: PerfTimer,
 ): Promise<void> => {
   const total = meetingIds.length
   for (let idx = 0; idx < meetingIds.length; idx++) {
@@ -534,6 +816,8 @@ export const cleanupInvalidVotesForMeetings = async (
         select: { companies: true },
         depth: 0,
       })
+      runAgg?.inc('findCalls', 1)
+      runAgg?.inc('docsRead', 1)
 
       const companies: string[] = Array.isArray((meeting as any).companies)
         ? ((meeting as any).companies as string[])
@@ -553,6 +837,7 @@ export const cleanupInvalidVotesForMeetings = async (
         },
         req,
       } as any)
+      runAgg?.inc('deleteCalls', 1)
       req.payload.logger.info(
         `meeting ${meetingId}: cleanup completed (${idx + 1} of ${total}) - removed votes for companies not in [${validCompanyIds.join(
           ', ',
