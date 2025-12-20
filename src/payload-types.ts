@@ -690,7 +690,6 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   removedCompanies?: (string | Company)[] | null;
-  companiesNotYetVoted?: (string | Company)[] | null;
   totalHoldings?: number | null;
   activity?: string | null;
   hasResearchDoc?: boolean | null;
@@ -1532,7 +1531,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   removedCompanies?: T;
-  companiesNotYetVoted?: T;
   totalHoldings?: T;
   activity?: T;
   hasResearchDoc?: T;
