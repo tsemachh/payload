@@ -48,7 +48,6 @@ export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
           docIDs = body.researchDocuments.map((doc: any) => 
             typeof doc === 'string' ? doc : doc.id
           ).filter(Boolean)
-          console.log("Using current research documents from POST:", docIDs)
         }
         
         // Use current companies from POST body if provided
@@ -56,7 +55,6 @@ export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
           companies = body.companies.map((company: any) => 
             typeof company === 'string' ? company : company.id
           ).filter(Boolean)
-          console.log("Using current companies from POST:", companies)
         }
       } catch (error) {
         console.log("Failed to parse POST body, using meeting data:", error)

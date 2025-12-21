@@ -39,6 +39,7 @@ import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 import { syncLabelsOnStockChange } from './hooks/syncLabelsOnStockChange'
+import { updateResearchDocumentsStatus } from './hooks/researchDocumentsStatusHook'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -1180,6 +1181,9 @@ export const Meetings: CollectionConfig = {
                   Field: '/collections/meetings/components/ResearchUploadDisplay',
                 },
               },
+              hooks: {
+                afterChange: [updateResearchDocumentsStatus],
+              },
             },
             {
               name: 'researchDocumentsStatus',
@@ -1193,74 +1197,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 description: 'מציין את סטטוס מסמכי המחקר עבור חברות האסיפה',
                 readOnly: true,
-              },
-              hooks: {
-                beforeChange: [
-                  async ({ data, req }) => {
-                    // Calculate research documents status
-                    if (
-                      !data?.companies ||
-                      !Array.isArray(data.companies) ||
-                      data.companies.length === 0
-                    ) {
-                      return 'empty'
-                    }
-
-                    try {
-                      // Get all research documents for this meeting
-                      const researchDocs = data.researchDocuments || []
-                      if (researchDocs.length === 0) {
-                        return 'empty'
-                      }
-
-                      // Get company details to check research document coverage
-                      const companyIds = data.companies.map((company: any) =>
-                        typeof company === 'string' ? company : company.id,
-                      )
-
-                      // For each company, check if there's a research document
-                      const companiesWithDocs = new Set()
-
-                      for (const docId of researchDocs) {
-                        try {
-                          const doc = await req.payload.findByID({
-                            collection: 'research-documents',
-                            id: typeof docId === 'string' ? docId : docId.id,
-                          })
-
-                          if (doc?.companies && Array.isArray(doc.companies)) {
-                            doc.companies.forEach((companyId: any) => {
-                              const id = typeof companyId === 'string' ? companyId : companyId.id
-                              if (companyIds.includes(id)) {
-                                companiesWithDocs.add(id)
-                              }
-                            })
-                          }
-                        } catch (error: any) {
-                          req.payload.logger.error(
-                            `Error fetching research document ${docId}:`,
-                            error,
-                          )
-                        }
-                      }
-
-                      // Determine status based on coverage
-                      const totalCompanies = companyIds.length
-                      const companiesWithDocsCount = companiesWithDocs.size
-
-                      if (companiesWithDocsCount === 0) {
-                        return 'empty'
-                      } else if (companiesWithDocsCount === totalCompanies) {
-                        return 'complete'
-                      } else {
-                        return 'partial'
-                      }
-                    } catch (error: any) {
-                      req.payload.logger.error('Error calculating researchDocumentsStatus:', error)
-                      return 'empty'
-                    }
-                  },
-                ],
+                //hidden: true,
               },
             },
 

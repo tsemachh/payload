@@ -83,6 +83,7 @@ export const ResearchDocument: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [beforeValidaCompaniesFromFilename],
+    // Temporarily disabled to debug file upload issues
     afterChange: [updateMeetingResearchStatus],
   },
 }

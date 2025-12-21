@@ -210,7 +210,7 @@ export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
   previousDoc,
 }) => {
   // Skip processing during migrations
-  if (req.context?.from === 'migration') {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return
   }
 
