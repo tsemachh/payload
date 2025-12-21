@@ -4,9 +4,6 @@ import { withPayload } from '@payloadcms/next/withPayload'
 const nextConfig = {
   experimental: {
     serverSourceMaps: true,
-    serverActions: {
-      bodySizeLimit: '50mb', // הגדלת מגבלת ה-body ל־50MB
-    },
   },
   productionBrowserSourceMaps: true,
   output: 'standalone',
