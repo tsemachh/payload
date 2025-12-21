@@ -179,9 +179,6 @@ export const Meetings: CollectionConfig = {
     {
       fields: ['_status', 'meetingDate'],
     },
-    {
-      fields: ['finalized', 'state', 'holdingsLimit'],
-    },
   ],
   fields: [
     {
