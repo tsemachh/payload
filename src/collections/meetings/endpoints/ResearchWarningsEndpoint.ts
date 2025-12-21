@@ -25,7 +25,7 @@ export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
     // Get meeting data
     const meeting = await req.payload.findByID({
       collection: 'meetings',
-      id: meetingId,
+      id: meetingId as string,
       depth: 1,
     })
     console.log("meeting",meeting)
@@ -34,9 +34,35 @@ export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
     }
 
     const warnings: Array<{ message: string; type: 'warning' | 'error' }> = []
-    const docIDs = meeting.researchDocuments || []
-    console.log("docIDs",docIDs)
-    const companies = meeting.companies || []
+    
+    // Check if we have POST data with current research documents and companies
+    let docIDs = meeting.researchDocuments || []
+    let companies = meeting.companies || []
+    
+    if (req.method === 'POST' && req.json) {
+      try {
+        const body = await req.json()
+        
+        // Use current research documents from POST body if provided
+        if (body.researchDocuments && Array.isArray(body.researchDocuments)) {
+          docIDs = body.researchDocuments.map((doc: any) => 
+            typeof doc === 'string' ? doc : doc.id
+          ).filter(Boolean)
+          console.log("Using current research documents from POST:", docIDs)
+        }
+        
+        // Use current companies from POST body if provided
+        if (body.companies && Array.isArray(body.companies)) {
+          companies = body.companies.map((company: any) => 
+            typeof company === 'string' ? company : company.id
+          ).filter(Boolean)
+          console.log("Using current companies from POST:", companies)
+        }
+      } catch (error) {
+        console.log("Failed to parse POST body, using meeting data:", error)
+      }
+    }
+    
 
     if (!Array.isArray(docIDs) || docIDs.length === 0) {
       return Response.json({ warnings })

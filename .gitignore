@@ -1,60 +1,44 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
 /.pnpm-store
 .pnp.js
 .yarn/install-state.gz
-
 /.idea/*
 !/.idea/runConfigurations
 /.vscode/*
 # testing
 /coverage
-
 # next.js
 /.next/
 /out/
 /holdings-feed/*
 # production
 /build
-
 # misc
 .DS_Store
 *.pem
-
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
 # local env files
 .env*.local
-
 # vercel
 .vercel
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
 .env
 continue.config.yaml
-
-
 /document
-
 # Ignore all .terraform directories
 **/.terraform/
-
 # Ignore any files starting with .terraform at any depth
 **/.terraform*
-
 /scripts/bin
 /scripts/dump
 /scripts/dev/mongo/data
-
 /stocks-feed/*.csv
 /src/uploads/*.csv
 /src/uploads/*.json
@@ -78,3 +62,12 @@ continue.config.yaml
 /test-date.js
 /vercel.json
 /**/migrate*.log
+
+
+
+
+
+
+
+
+

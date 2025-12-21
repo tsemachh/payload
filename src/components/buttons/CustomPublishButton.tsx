@@ -10,6 +10,7 @@ import {
   useModal,
   useTranslation,
   toast,
+  useField,
 } from '@payloadcms/ui'
 
 export const CustomPublishButton: React.FC = () => {
@@ -25,6 +26,8 @@ export const CustomPublishButton: React.FC = () => {
     setUnpublishedVersionCount,
     setMostRecentVersionIsAutosaved,
   } = useDocumentInfo()
+  const { value: researchDocumentsValue } = useField({ path: 'researchDocuments' })
+  const { value: companiesValue } = useField({ path: 'companies' })
   // Use data from useDocumentInfo instead of useField to avoid marking form as modified
   const meetingDate = useMemo(
     () => (data?.meetingDate ? new Date(data.meetingDate) : null),
@@ -46,22 +49,37 @@ export const CustomPublishButton: React.FC = () => {
 
   // Function to check research document warnings
   const checkResearchWarnings = useCallback(async (): Promise<string[]> => {
-    console.log("hiiiiii",collectionSlug)
     if (collectionSlug !== 'meetings' || !id) {
       return []
     }
 
     try {
-      const response = await fetch(`/api/meetings/${id}/research-warnings`)
+      // Get current data from the form fields (not published data)
+      const currentResearchDocs = researchDocumentsValue || []
+      const currentCompanies = companiesValue || []
+      
+      
+      // Send current form data via POST
+      const response = await fetch(`/api/meetings/${id}/research-warnings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          researchDocuments: currentResearchDocs,
+          companies: currentCompanies
+        })
+      })
+      
       if (response.ok) {
-        const data = await response.json()
-        return data.warnings?.map((w: any) => w.message) || []
+        const responseData = await response.json()
+        return responseData.warnings?.map((w: any) => w.message) || []
       }
     } catch (error) {
       console.error('Error fetching research document warnings:', error)
     }
     return []
-  }, [collectionSlug, id])
+  }, [collectionSlug, id, researchDocumentsValue, companiesValue])
 
   // Simple publish function
   const handlePublish = useCallback(async () => {

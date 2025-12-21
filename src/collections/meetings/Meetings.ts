@@ -1548,7 +1548,7 @@ export const Meetings: CollectionConfig = {
     },
     {
       path: '/:id/research-warnings',
-      method: 'get',
+      method: 'post',
       handler: ResearchWarningsEndpoint,
     },
     {

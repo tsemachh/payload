@@ -6,10 +6,12 @@ import { UploadFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { useCustomContext } from '@/providers/CustomContext'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import ResearchDocumentsView from './ResearchDocumentsView'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
   const [uploadsData, setUploadsData] = useState<any[]>([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const { setMeetingCompanies, setStockId } = useCustomContext()
   const documentInfo = useDocumentInfo()
 
@@ -33,6 +35,38 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     return data?.docs?.length > 0
   }
 
+
+  const interceptSaveButton = () => {
+    // Find the save button
+    const saveButton = document.querySelector('button[type="submit"]') as HTMLButtonElement
+    if (!saveButton || saveButton.dataset.intercepted) return
+
+    // Mark as intercepted to avoid multiple event listeners
+    saveButton.dataset.intercepted = 'true'
+
+    // Store original click handler
+    const originalClick = saveButton.onclick
+
+    saveButton.onclick = async (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const meetingId = String(documentInfo.id)
+      if (!meetingId || !value || !Array.isArray(value) || value.length === 0) {
+        // No research documents, proceed with normal save
+        if (originalClick) {
+          originalClick.call(saveButton, event)
+        } else {
+          saveButton.form?.submit()
+        }
+        return
+      }
+
+    }
+  }
+
+
+
   useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
     const stock = documentInfo.initialData?.stock || []
@@ -51,6 +85,13 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     if (orText) {
       ;(orText as HTMLElement).style.display = 'none'
     }
+
+    // Set up save button interception
+    const timer = setTimeout(() => {
+      interceptSaveButton()
+    }, 1000)
+
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -85,6 +126,9 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     }
 
     getAllUploads()
+    
+    // Trigger refresh of the research documents view when uploads change
+    setRefreshTrigger(prev => prev + 1)
   }, [value])
 
   useEffect(() => {
@@ -126,9 +170,31 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     updateFilenames().catch((err) => console.error('Error updating filenames:', err))
   }, [uploadsData])
 
+  // Re-intercept save button when value changes (new uploads)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      interceptSaveButton()
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [value])
+
   return (
-    <div>
-      <UploadField {...props} />
+    <div className="space-y-6">
+      {/* Upload Field */}
+      <div>
+        <UploadField {...props} />
+      </div>
+      
+      {/* Research Documents View */}
+      {documentInfo.id && (
+        <div className="mt-8">
+          <ResearchDocumentsView 
+            refreshTrigger={refreshTrigger}
+          />
+        </div>
+      )}
+      
     </div>
   )
 }
