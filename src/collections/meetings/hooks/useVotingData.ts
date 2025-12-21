@@ -15,6 +15,7 @@ import {
   sortChecksumGroupsByFirstCompanyOrder,
 } from '@/utils/companySort'
 import { FundWithHolding } from '@/payload-types'
+import { HistoricalHolding } from '@/payload-types'
 
 interface Company {
   id: string
@@ -36,12 +37,27 @@ interface CompanyVoted extends Company {
   }
 }
 
+interface HistoricalHoldingUi {
+  id: string
+  companyId: string
+  companyName: string
+  lastHoldingDate: string
+  quantity: number
+  fundDetails: Array<{
+    fundId: string
+    fundName: string
+    quantity: number
+    lastHoldingDate: string
+  }>
+}
+
 export const useVotingData = () => {
   const { data } = useDocumentInfo() //meeting data
   const [votedCompanies, setVotedCompanies] = useState<CompanyVoted[]>([])
   const [notVotedCompanies, setNotVotedCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [companyOrderMap, setCompanyOrderMap] = useState<Map<string, string>>(new Map())
+  const [historicalHoldings, setHistoricalHoldings] = useState<HistoricalHoldingUi[]>([])
 
   // Grouping states
   const [groupByNotVoted, setGroupByNotVoted] = useState(true)
@@ -373,6 +389,139 @@ export const useVotingData = () => {
           })
           .filter((company) => company !== null) as Company[]
         setNotVotedCompanies(notVoted)
+
+        // Process historical holdings (companies that held 30 days before but not invited)
+        const historicalHoldingsData = (data.historicalHoldings || []) as HistoricalHolding
+        if (historicalHoldingsData && historicalHoldingsData.length > 0) {
+          // Get unique company IDs from historical holdings
+          const historicalCompanyIds = [
+            ...new Set(historicalHoldingsData.map((h) => h.company)),
+          ] as string[]
+
+          // Get unique fund IDs from historical holdings
+          const historicalFundIds = [
+            ...new Set(historicalHoldingsData.map((h) => h.fund)),
+          ] as string[]
+
+          // Fetch company names and fund names for historical holdings
+          if (historicalCompanyIds.length > 0) {
+            try {
+              // Combine company IDs and fund IDs into a single query since both are in companies collection
+              const allIds = [...new Set([...historicalCompanyIds, ...historicalFundIds])]
+
+              const companiesQuery = stringify(
+                {
+                  where: {
+                    id: { in: allIds },
+                  },
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                  depth: 0,
+                  limit: 0,
+                },
+                { addQueryPrefix: true },
+              )
+              const companiesResponse = await fetch(`/api/companies${companiesQuery}`)
+
+              const namesMap = new Map<string, string>()
+
+              if (companiesResponse.ok) {
+                const companiesData = await companiesResponse.json()
+                companiesData.docs?.forEach((item: { id: string; name: string }) => {
+                  namesMap.set(item.id, item.name)
+                })
+              }
+
+              // Group historical holdings by company and aggregate quantities
+              const groupedByCompany = new Map<
+                string,
+                {
+                  lastDate: string
+                  totalQuantity: number
+                  fundDetails: Map<
+                    string,
+                    { fundName: string; quantity: number; lastHoldingDate: string }
+                  >
+                }
+              >()
+              historicalHoldingsData.forEach((holding: NonNullable<HistoricalHolding>[number]) => {
+                const companyId = holding.company
+                const fundId = holding.fund
+
+                // Skip if companyId or fundId is null/undefined
+                if (!companyId || !fundId) return
+
+                const existing = groupedByCompany.get(companyId)
+                const holdingDate = holding.lastHoldingDate || ''
+                const quantity = holding.quantity || 0
+
+                if (!existing) {
+                  const fundDetailsMap = new Map<
+                    string,
+                    { fundName: string; quantity: number; lastHoldingDate: string }
+                  >()
+                  fundDetailsMap.set(fundId, {
+                    fundName: namesMap.get(fundId) || fundId,
+                    quantity,
+                    lastHoldingDate: holdingDate,
+                  })
+                  groupedByCompany.set(companyId, {
+                    lastDate: holdingDate,
+                    totalQuantity: quantity,
+                    fundDetails: fundDetailsMap,
+                  })
+                } else {
+                  // Update last date if this holding is more recent
+                  if (new Date(holdingDate) > new Date(existing.lastDate)) {
+                    existing.lastDate = holdingDate
+                  }
+                  // Add to total quantity
+                  existing.totalQuantity += quantity
+                  // Add or update fund details
+                  const existingFund = existing.fundDetails.get(fundId)
+                  if (existingFund) {
+                    existingFund.quantity += quantity
+                    // Update fund's last holding date if this one is more recent
+                    if (new Date(holdingDate) > new Date(existingFund.lastHoldingDate)) {
+                      existingFund.lastHoldingDate = holdingDate
+                    }
+                  } else {
+                    existing.fundDetails.set(fundId, {
+                      fundName: namesMap.get(fundId) || fundId,
+                      quantity,
+                      lastHoldingDate: holdingDate,
+                    })
+                  }
+                }
+              })
+
+              // Create historical holdings array
+              const processedHistoricalHoldings: HistoricalHoldingUi[] = Array.from(
+                groupedByCompany.entries(),
+              ).map(([companyId, holdingData]) => ({
+                id: companyId,
+                companyId,
+                companyName: namesMap.get(companyId) || companyId,
+                lastHoldingDate: holdingData.lastDate,
+                quantity: holdingData.totalQuantity,
+                fundDetails: Array.from(holdingData.fundDetails.entries()).map(
+                  ([fundId, fundData]) => ({
+                    fundId,
+                    fundName: fundData.fundName,
+                    quantity: fundData.quantity,
+                    lastHoldingDate: fundData.lastHoldingDate,
+                  }),
+                ),
+              }))
+
+              setHistoricalHoldings(processedHistoricalHoldings)
+            } catch (error) {
+              console.error('Error fetching historical holdings company names:', error)
+            }
+          }
+        }
       } catch (error) {
         console.error('Error fetching companies data:', error)
         setVotedCompanies([])
@@ -711,6 +860,7 @@ export const useVotingData = () => {
     votedCompanies: votedCompanies,
     processedNotVotedData,
     processedVotedData,
+    historicalHoldings,
     loading,
     exportToCSV,
     // Grouping state and controls
