@@ -250,7 +250,6 @@ export default function HoldingsView() {
         </div>
 
         <div>
-          <label className="text-base font-semibold mb-2 block text-center">סיכום לפי חברות</label>
           {!date ? (
             <div className="text-center text-muted-foreground text-sm">בחר תאריך</div>
           ) : isLoading ? (

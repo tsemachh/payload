@@ -114,9 +114,13 @@ export function CompaniesList({ companies, selectedDate }: CompaniesListProps) {
   }
   return (
     <>
-      <Card className="p-4 max-h-[400px]">
-        <ScrollArea className="h-full">
-          <div className="space-y-2">
+      <Card className="max-h-[400px] flex flex-col">
+        <div className="grid grid-cols-2 gap-4 px-4 py-3 bg-muted font-semibold text-sm">
+          <div className="text-right">שם חברה</div>
+          <div className="text-left">מספר רשומות</div>
+        </div>
+        <ScrollArea className="h-[350px]">
+          <div className="space-y-2 p-4">
             {companies.map((company) => (
               <button
                 key={company.id}
