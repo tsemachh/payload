@@ -13,6 +13,7 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
+import ExportMeetingsExcelEndpoint from './endpoints/ExportMeetingsExcelEndpoint'
 import removeCompanyEndpoint, {
   restoreCompanyEndpoint,
   removeFundEndpoint,
@@ -168,9 +169,11 @@ export const Meetings: CollectionConfig = {
       limits: [100, 200, 300, 500],
     },
     components: {
+      beforeListTable: ['/collections/meetings/components/MeetingsListTableHeader'],
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
+        
       },
     },
   },
@@ -1490,6 +1493,11 @@ export const Meetings: CollectionConfig = {
     ],
   },
   endpoints: [
+    {
+      path: '/export-excel',
+      method: 'get',
+      handler: ExportMeetingsExcelEndpoint,
+    },
     {
       path: '/process-meetings',
       method: 'post',
