@@ -63,6 +63,7 @@ import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 import { default as default_b7ce0dd15673c054966f89b2a35e3a65 } from '../../../admincomponents/custom-views/VotePage'
 import { default as default_f828cce1950382b69f94d117f188940f } from '@shefing/quickfilter/Dashboard'
+import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
   "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
@@ -129,5 +130,6 @@ export const importMap = {
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
   "/admincomponents/custom-views/VotePage#default": default_b7ce0dd15673c054966f89b2a35e3a65,
-  "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f
+  "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f,
+  "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }
