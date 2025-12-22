@@ -120,65 +120,90 @@ async function processMeeting(
 
   // Get holdings for each company
   mt.start('holdingsLookupTotal')
-  const holdings = await Promise.all(
-    funds.map(async (fund) => {
-      // Create a cache key using fund and meeting.holdingsLimit
-      const cacheKey = `${fund}_${meeting.holdingsLimit}`
+  // Precompute identifiers to avoid repeated conversions
+  const stockDocId = String(getIdOfRelationField(meeting.stock))
+  const holdingsLimit = meeting.holdingsLimit
 
-      // Check if the holdingDoc exists in cache
-      let holdingDoc = null
-      if (holdingDocsCache.has(cacheKey)) {
-        holdingDoc = holdingDocsCache.get(cacheKey)
-      } else {
-        // Get the holdings matching the less than equal holdings date
-        mt.start('query.holdings.find')
-        const { docs: holdingsDocs } = await req.payload.find({
-          collection: 'holdings',
-          depth: 0,
-          pagination: false,
-          select: {
-            valueDate: true,
-            holdings: true,
-          },
-          where: {
-            and: [
-              { valueDate: { less_than_equal: meeting.holdingsLimit } },
-              { fund: { equals: fund } },
-            ],
-          },
-          sort: '-valueDate',
-          limit: 1,
-        })
-        mt.end('query.holdings.find')
-        holdingDoc = holdingsDocs.length > 0 ? holdingsDocs[0] : null
+  // Optional simple concurrency cap via env (default 48)
+  const CONCURRENCY = Math.max(1, Number(process.env.HOLDINGS_CONCURRENCY || 48))
+  const results: any[] = []
 
-        // Store in cache for future use
-        holdingDocsCache.set(cacheKey, holdingDoc)
-      }
-      const nearestHoldingsLimitDate = holdingDoc?.valueDate
-      if (!nearestHoldingsLimitDate) {
-        return [] // No holdings found
-      }
-      const matchedHoldings = holdingDoc.holdings.filter((holding: any) => {
-        return holding.stock == getIdOfRelationField(meeting.stock)
-      })
-      if (matchedHoldings.length == 0) return [] // No holdings found for this stock
+  for (let i = 0; i < funds.length; i += CONCURRENCY) {
+    const slice = funds.slice(i, i + CONCURRENCY)
+    const batch = await Promise.all(
+      slice.map(async (fund) => {
+        // Create a cache key using fund and meeting.holdingsLimit
+        const cacheKey = `${fund}_${holdingsLimit}`
 
-      return {
-        fund,
-        holdings: matchedHoldings,
-      }
-    }),
-  )
+        // Check if the holdingDoc exists in cache
+        let holdingDoc = null as any
+        if (holdingDocsCache.has(cacheKey)) {
+          holdingDoc = holdingDocsCache.get(cacheKey)
+        } else {
+          // Get the holdings matching the less than equal holdings date
+          mt.start('query.holdings.find')
+          const { docs: holdingsDocs } = await req.payload.find({
+            collection: 'holdings',
+            depth: 0,
+            pagination: false,
+            select: {
+              valueDate: true,
+              holdings: true,
+            },
+            where: {
+              and: [
+                { valueDate: { less_than_equal: holdingsLimit } },
+                { fund: { equals: fund } },
+                // If adapter supports elemMatch-like filtering, this reduces returned holdings array size
+                { 'holdings.stock': { equals: stockDocId } },
+              ],
+            },
+            sort: '-valueDate',
+            limit: 1,
+          })
+          mt.end('query.holdings.find')
+          holdingDoc = holdingsDocs.length > 0 ? holdingsDocs[0] : null
+
+          // Store in cache for future use
+          holdingDocsCache.set(cacheKey, holdingDoc)
+        }
+
+        const nearestHoldingsLimitDate = holdingDoc?.valueDate
+        if (!nearestHoldingsLimitDate) {
+          return null // No holdings found
+        }
+
+        // Find first matching holding without creating intermediate arrays
+        let matched: any | null = null
+        const arr = holdingDoc.holdings as any[]
+        for (let k = 0; k < arr.length; k++) {
+          const h = arr[k]
+          if (h && h.stock == stockDocId) {
+            matched = h
+            break
+          }
+        }
+        if (!matched) return null
+
+        return {
+          fund,
+          holdings: [matched],
+        }
+      }),
+    )
+    for (const item of batch) if (item) results.push(item)
+  }
+  const holdings = results
   mt.end('holdingsLookupTotal')
 
-  const flattenedHoldings = holdings.flat()
+  // holdings already flattened by construction
+  const flattenedHoldings = holdings
 
   if (flattenedHoldings.length === 0) {
     mt.start('query.stocks.findByID')
     const stockDetails = await req.payload.findByID({
       collection: 'stocks',
-      id: getIdOfRelationField(meeting.stock) || '',
+      id: stockDocId || '',
       depth: 0,
     })
     mt.end('query.stocks.findByID')
@@ -268,7 +293,7 @@ async function processMeeting(
         depth: 0,
         where: {
           and: [
-            { stockId: { equals: getIdOfRelationField(meeting.stock) } },
+            { stockId: { equals: stockDocId } },
             { valueDate: { less_than_equal: meeting.holdingsLimit } },
           ],
         },
