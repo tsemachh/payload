@@ -856,6 +856,10 @@ export interface Question {
   id: string;
   title?: string | null;
   type: MeetingType;
+  /**
+   * האם למלא אוטומטית במפגשים מאותו סוג
+   */
+  autoFillInMeetings?: boolean | null;
   questions?:
     | {
         questionText: string;
@@ -1964,6 +1968,7 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
 export interface QuestionsSelect<T extends boolean = true> {
   title?: T;
   type?: T;
+  autoFillInMeetings?: T;
   questions?:
     | T
     | {
