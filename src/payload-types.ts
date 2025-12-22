@@ -153,6 +153,21 @@ export type FundWithHolding =
     }[]
   | null;
 /**
+ * חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HistoricalHolding".
+ */
+export type HistoricalHolding =
+  | {
+      company: string;
+      fund?: string | null;
+      lastHoldingDate: string;
+      quantity: number;
+      id?: string | null;
+    }[]
+  | null;
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HoldingsPerDay".
  */
@@ -294,18 +309,15 @@ export interface Config {
     'payload-query-presets': PayloadQueryPreset;
   };
   collectionsJoins: {
-    meetings: {
-      votes: 'votes';
-    };
     stocks: {
       relations: 'stocks';
     };
     companies: {
-      parentCompany: 'companies';
       'researchDocuments.researchDocuments': 'research-documents';
       usersWrite: 'users';
       usersRead: 'users';
       holdings: 'holdings';
+      companyHoldings: 'holdings';
       meetings: 'meetings';
     };
   };
@@ -483,15 +495,11 @@ export interface Company {
   companyId?: number | null;
   legacyCompanyId?: number | null;
   privateRegistrationNumber?: number[] | null;
-  subCompanies?: (string | Company)[] | null;
   /**
    * חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם
    */
-  parentCompany?: {
-    docs?: (string | Company)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  parentCompany?: (string | null) | Company;
+  subCompanies?: (string | Company)[] | null;
   researchDocuments?: {
     showResearchTrusteeship?: boolean | null;
     showResearchBond?: boolean | null;
@@ -524,6 +532,11 @@ export interface Company {
     totalDocs?: number;
   };
   holdings?: {
+    docs?: (string | Holding)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  companyHoldings?: {
     docs?: (string | Holding)[];
     hasNextPage?: boolean;
     totalDocs?: number;
@@ -581,7 +594,12 @@ export interface ResearchDocument {
 export interface Holding {
   id: string;
   fund: string | Company;
+  company?: (string | null) | Company;
   valueDate: string;
+  holdings: HoldingsPerDay;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
   stats?: {
     recordCount?: number | null;
     accountIds?:
@@ -594,10 +612,6 @@ export interface Holding {
       | boolean
       | null;
   };
-  holdings: HoldingsPerDay;
-  creator?: string | null;
-  updator?: string | null;
-  process?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -676,7 +690,6 @@ export interface Meeting {
   votesReportStatus?: VotesReportStatus;
   companies?: (string | Company)[] | null;
   removedCompanies?: (string | Company)[] | null;
-  companiesNotYetVoted?: (string | Company)[] | null;
   totalHoldings?: number | null;
   activity?: string | null;
   hasResearchDoc?: boolean | null;
@@ -757,6 +770,7 @@ export interface Meeting {
   researchDocumentsStatus?: ('empty' | 'partial' | 'complete') | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
+  historicalHoldings?: HistoricalHolding;
   creator?: string | null;
   updator?: string | null;
   process?: string | null;
@@ -842,9 +856,6 @@ export interface Question {
   id: string;
   title?: string | null;
   type: MeetingType;
-  /**
-   * האם למלא אוטומטית במפגשים מאותו סוג
-   */
   autoFillInMeetings?: boolean | null;
   questions?:
     | {
@@ -1525,7 +1536,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   votesReportStatus?: T;
   companies?: T;
   removedCompanies?: T;
-  companiesNotYetVoted?: T;
   totalHoldings?: T;
   activity?: T;
   hasResearchDoc?: T;
@@ -1577,6 +1587,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   researchDocumentsStatus?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
+  historicalHoldings?: T | HistoricalHoldingSelect<T>;
   creator?: T;
   updator?: T;
   process?: T;
@@ -1640,6 +1651,17 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HistoricalHolding_select".
+ */
+export interface HistoricalHoldingSelect<T extends boolean = true> {
+  company?: T;
+  fund?: T;
+  lastHoldingDate?: T;
+  quantity?: T;
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stocks_select".
  */
 export interface StocksSelect<T extends boolean = true> {
@@ -1676,17 +1698,18 @@ export interface StocksSelect<T extends boolean = true> {
  */
 export interface HoldingsSelect<T extends boolean = true> {
   fund?: T;
+  company?: T;
   valueDate?: T;
+  holdings?: T | HoldingsPerDaySelect<T>;
+  creator?: T;
+  updator?: T;
+  process?: T;
   stats?:
     | T
     | {
         recordCount?: T;
         accountIds?: T;
       };
-  holdings?: T | HoldingsPerDaySelect<T>;
-  creator?: T;
-  updator?: T;
-  process?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -1720,8 +1743,8 @@ export interface CompaniesSelect<T extends boolean = true> {
   companyId?: T;
   legacyCompanyId?: T;
   privateRegistrationNumber?: T;
-  subCompanies?: T;
   parentCompany?: T;
+  subCompanies?: T;
   researchDocuments?:
     | T
     | {
@@ -1744,6 +1767,7 @@ export interface CompaniesSelect<T extends boolean = true> {
   usersWrite?: T;
   usersRead?: T;
   holdings?: T;
+  companyHoldings?: T;
   meetings?: T;
   silencedStocks?: T;
   label?:

@@ -47,7 +47,7 @@ import type {
   Column,
   ClientDataTableProps,
   FacetedFilterItem,
-  CompanyTableDate,
+  CompanyTableData,
   FundType,
   MeetingTableDataType,
 } from '../types/meetings'
@@ -1521,10 +1521,10 @@ export function DataTableStatic<T extends Record<string, any>>({
                       displayMode === 'companies' && (
                         <>
                           {row.companies
-                            .filter((company: CompanyTableDate) =>
+                            .filter((company: CompanyTableData) =>
                               selectedCompanyIds?.includes(company.id),
                             )
-                            .map((company: CompanyTableDate) => (
+                            .map((company: CompanyTableData) => (
                               <React.Fragment key={row.meetingId + uuidv4()}>
                                 <TableRow
                                   key={`company-${uuidv4()}`}
@@ -1597,9 +1597,20 @@ export function DataTableStatic<T extends Record<string, any>>({
                                         >
                                           {(() => {
                                             const value =
-                                              company[column.key as keyof CompanyTableDate]
+                                              company[column.key as keyof CompanyTableData]
                                             if (typeof value === 'number') {
-                                              return new Intl.NumberFormat('he-IL').format(value)
+                                              const isNominalValueField =
+                                                column.key === 'nominalValue' ||
+                                                column.key === 'nominalValueClientReported'
+                                              const mismatch =
+                                                isNominalValueField &&
+                                                company.nominalValue !==
+                                                  company.nominalValueClientReported
+                                              return (
+                                                <span className={mismatch ? 'text-red-600' : ''}>
+                                                  {new Intl.NumberFormat('he-IL').format(value)}
+                                                </span>
+                                              )
                                             }
                                             if (typeof value === 'boolean') {
                                               return <BooleanIcon iconType={value} showX={false} />
@@ -1662,8 +1673,17 @@ export function DataTableStatic<T extends Record<string, any>>({
                                                   {(() => {
                                                     const value = fund[column.key as keyof FundType]
                                                     if (typeof value === 'number') {
-                                                      return new Intl.NumberFormat('he-IL').format(
-                                                        value,
+                                                      const isNominalValueField =
+                                                        column.key === 'nominalValue' ||
+                                                        column.key === 'nominalValueClientReported'
+                                                      const mismatch =
+                                                        isNominalValueField &&
+                                                        fund.nominalValue !==
+                                                          fund.nominalValueClientReported
+                                                      return (
+                                                        <span className={mismatch ? 'text-red-600' : ''}>
+                                                          {new Intl.NumberFormat('he-IL').format(value)}
+                                                        </span>
                                                       )
                                                     }
                                                     if (typeof value === 'boolean') {

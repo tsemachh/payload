@@ -28,7 +28,7 @@ interface Company {
   id: string
   name: string
   parentCompany?: {
-    docs: any
+    name: string
     hasNextPage: boolean
   }
   percentageHolding?: number
@@ -219,7 +219,7 @@ const ResearchDocumentsView: React.FC<ResearchDocumentsViewProps> = ({ refreshTr
     }
     
    const mappedCompanies = companies.map(company => {
-  const parentName = company.parentCompany?.docs?.[0]?.name || company.name
+   const parentName = company.parentCompany?.name || company.name
   
   return {
     ...company,

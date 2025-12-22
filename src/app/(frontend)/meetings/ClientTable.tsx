@@ -6,7 +6,7 @@ import {
   renderMeetingActions,
 } from './meetingTableConstants'
 import { DataTableStatic } from '@/components/data-table-client'
-import type { CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import type { CompanyTableData, MeetingTableDataType } from '../types/meetings'
 import useSWR from 'swr'
 import { fetcher, postFetcher } from '../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../helpers/swr-helpers'
@@ -64,7 +64,7 @@ export function MeetingsTableClient() {
 
     const meetingsPayload = meetingsResponse?.data.map((meeting: MeetingTableDataType) => ({
       meetingId: meeting.meetingIdPayload,
-      companyIds: meeting.companies.map((company: CompanyTableDate) => company.id),
+      companyIds: meeting.companies.map((company: CompanyTableData) => company.id),
     }))
 
     return { meetings: meetingsPayload }

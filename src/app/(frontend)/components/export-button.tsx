@@ -7,9 +7,7 @@ export function ExportButton({ data, filename }: { data: any[]; filename: string
     // Convert data to CSV - extract only stockNumber, accountNumber, quantity in that order
     // Wrap values in quotes to force text format in Excel
     const headers = ['מספר נייר', 'כמות', 'מספר חשבון'].join(',')
-    const rows = data.map((row) =>
-      [`"${row.stockId}"`, `"${row.quantity}"`, `"${row.accountId}"`].join(','),
-    )
+    const rows = data.map((row) => [row.stockId, row.quantity, row.accountId].join(','))
     const csv = [headers, ...rows].join('\n')
     console.log(data)
     // Create a Blob with the CSV data

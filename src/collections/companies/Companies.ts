@@ -1,8 +1,13 @@
-import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
-import { addTagToCompany, deleteTagFromCompany, getLabelsForCompanies, updateTagInCompany } from './createLabels'
+import {
+  addTagToCompany,
+  deleteTagFromCompany,
+  getLabelsForCompanies,
+  updateTagInCompany,
+} from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
 
@@ -159,6 +164,24 @@ export const Companies: CollectionConfig = {
                     condition: (data) => data?.type == 'regular',
                   },
                 },
+                {
+                  name: 'parentCompany',
+                  type: 'relationship',
+                  label: 'חברת אם',
+                  relationTo: 'companies',
+                  index: true,
+                  hasMany: false,
+                  admin: {
+                    custom: {
+                      cellWidth: '100px',
+                    },
+                    disableListColumn: true,
+                    width: '500px',
+                    className: 'truncate',
+                    allowCreate: false,
+                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
+                  },
+                },
               ],
             },
             {
@@ -171,34 +194,67 @@ export const Companies: CollectionConfig = {
                   index: true,
                   relationTo: 'companies',
                   hasMany: true,
+                  hooks: {
+                    afterChange: [
+                      async ({ req, siblingData, value, previousValue }) => {
+                        try {
+                          const added: string[] = []
+                          const removed: string[] = []
+
+                          const prev = Array.isArray(previousValue) ? previousValue : []
+                          const curr = Array.isArray(value) ? value : []
+
+                          // Determine additions and removals
+                          for (const id of curr) if (!prev.includes(id)) added.push(id)
+                          for (const id of prev) if (!curr.includes(id)) removed.push(id)
+
+                          // Set parentCompany for added children
+                          await Promise.all(
+                            added.map((childId) =>
+                              req.payload.update({
+                                collection: 'companies',
+                                id: String(childId),
+                                data: { parentCompany: (siblingData as any)?.id },
+                                req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                              }),
+                            ),
+                          )
+
+                          // Clear parentCompany for removed children if they still point to this parent
+                          await Promise.all(
+                            removed.map(async (childId) => {
+                              try {
+                                const child = await req.payload.findByID({
+                                  collection: 'companies',
+                                  id: String(childId),
+                                  depth: 0,
+                                })
+                                if (child?.parentCompany === (siblingData as any)?.id) {
+                                  await req.payload.update({
+                                    collection: 'companies',
+                                    id: String(childId),
+                                    data: { parentCompany: null },
+                                    req: {
+                                      ...req,
+                                      context: { ...req.context, from: 'relation-sync' },
+                                    },
+                                  })
+                                }
+                              } catch {}
+                            }),
+                          )
+                        } catch (e) {
+                          req?.payload?.logger?.warn?.(
+                            { e },
+                            'Failed to sync parentCompany on subCompanies change',
+                          )
+                        }
+                      },
+                    ],
+                  },
                   admin: {
                     className: 'subCompanies',
                     condition: (data) => data?.type != 'fund',
-                  },
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'parentCompany',
-                  type: 'join',
-                  label: 'חברת אם',
-                  collection: 'companies',
-                  on: 'subCompanies',
-                  defaultLimit: 100,
-                  maxDepth: 2,
-                  admin: {
-                    custom: {
-                      cellWidth: '100px',
-                    },
-                    disableListColumn: true,
-                    width: '100px',
-                    className: 'truncate',
-                    allowCreate: false,
-                    defaultColumns: ['name', 'type', 'subCompanies', 'parentCompany', 'companyId'],
-                    description: 'חברת האם , חברות בנות של חברת האם וחברת האם של חברת האם',
                   },
                 },
               ],
@@ -360,9 +416,8 @@ export const Companies: CollectionConfig = {
             },
           ],
         },
-
         {
-          label: 'החזקות',
+          label: 'החזקות תיק',
           admin: {
             condition: (data) => data?.type == 'fund',
           },
@@ -374,6 +429,40 @@ export const Companies: CollectionConfig = {
               name: 'holdings',
               admin: {
                 disableListColumn: true,
+              },
+            },
+          ],
+        },
+        {
+          label: 'החזקות חברה',
+          admin: {
+            condition: (data) => data?.type == 'regular',
+          },
+          fields: [
+            {
+              label: 'החזקות חברה',
+              type: 'join',
+              collection: 'holdings',
+              on: 'company',
+              name: 'companyHoldings',
+              defaultSort: ['fund', '-valueDate'],
+              maxDepth: 0,
+              // The `where` field expects a `Where` object, not a function.
+              // Compute the date once at module load and pass the static object.
+              where: ((): Where => {
+                const now = new Date()
+                const lastMonth = new Date(now)
+                lastMonth.setMonth(now.getMonth() - 1)
+                return {
+                  valueDate: {
+                    greater_than: lastMonth.toISOString(),
+                  },
+                }
+              })(),
+              admin: {
+                disableListColumn: true,
+                allowCreate: false,
+                defaultColumns: ['fund', 'valueDate', 'stats.recordCount'],
               },
             },
           ],
@@ -565,9 +654,8 @@ export const Companies: CollectionConfig = {
     },
     {
       path: '/updateLabel',
-      method:'post',
-      handler: updateTagInCompany
-
+      method: 'post',
+      handler: updateTagInCompany,
     },
   ],
 }

@@ -309,10 +309,10 @@ export default function HoldingsFeedView() {
         <>
           {date && file && (
             <h4 className="text-xl text-center">
-              החזקות מקובץ{' '}
+              החזקות מקובץ
               <bdi className="inline-block font-mono" dir={'ltr'}>
                 {file.name}
-              </bdi>{' '}
+              </bdi>
               לתאריך {format(date, 'dd/MM/yyyy')}
             </h4>
           )}

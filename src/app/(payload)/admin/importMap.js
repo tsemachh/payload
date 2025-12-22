@@ -26,6 +26,7 @@ import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
 import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
+import { default as default_9b3d6aeb3db734d1413eca27dd67abd5 } from '../../../admincomponents/fields/arrayHoldingsTable'
 import { default as default_51e05ca78c70f16bd7413fe7043e650d } from '../../../admincomponents/components/UserRowLabel'
 import { ImpersonateCell as ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5 } from '@/plugins/impersonate/ui/ImpersonateCell'
 import { NullField as NullField_41c2e55eccc188eaaadc33d1fb4da3e3 } from '@/plugins/impersonate/ui/NullField'
@@ -93,6 +94,7 @@ export const importMap = {
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
   "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
+  "/admincomponents/fields/arrayHoldingsTable#default": default_9b3d6aeb3db734d1413eca27dd67abd5,
   "/admincomponents/components/UserRowLabel#default": default_51e05ca78c70f16bd7413fe7043e650d,
   "@/plugins/impersonate/ui/ImpersonateCell#ImpersonateCell": ImpersonateCell_bfe9aa16f66dd6d2e16be92c830093c5,
   "@/plugins/impersonate/ui/NullField#NullField": NullField_41c2e55eccc188eaaadc33d1fb4da3e3,

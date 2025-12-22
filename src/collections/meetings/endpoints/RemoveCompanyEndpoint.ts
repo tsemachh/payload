@@ -93,6 +93,12 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
     return Response.json({
       success: true,
       message: `החברה ${company?.name || companyId} נוספה בהצלחה לחברות המוסרות מהאסיפה`,
@@ -193,6 +199,13 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       context: { from: 'user-action' },
       req,
     })
+
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
 
     return Response.json({
       success: true,
@@ -325,7 +338,8 @@ export const removeFundEndpoint = async (req: PayloadRequest) => {
     }
 
     // Remove the fund from fundsWithHolding array
-    await processCompaniesMeetings(req, [meetingId || ''])
+    // Pass only the affected fund to processCompaniesMeetings
+    await processCompaniesMeetings(req, [meetingId || ''], [fundId])
 
     return Response.json({
       success: true,

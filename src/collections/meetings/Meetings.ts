@@ -178,6 +178,11 @@ export const Meetings: CollectionConfig = {
     drafts: true,
     maxPerDoc: 20,
   },
+  indexes: [
+    {
+      fields: ['_status', 'meetingDate'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
@@ -283,43 +288,6 @@ export const Meetings: CollectionConfig = {
               admin: {
                 hidden: true,
                 readOnly: true,
-              },
-            },
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companiesNotYetVoted',
-              label: 'חברות שטרם הצביעו',
-              virtual: true,
-              admin: {
-                hidden: true,
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data, req }) => {
-                    if (!data?.votes?.docs || !data?.companies) {
-                      return []
-                    }
-                    const votes = await req.payload.find({
-                      collection: 'votes',
-                      select: {
-                        company: true,
-                      },
-                      where: {
-                        id: {
-                          in: data?.votes?.docs,
-                        },
-                      },
-                      limit: 0,
-                      depth: 0,
-                    })
-                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    return data.companies.filter(
-                      (companyId: string) => !votedCompanyIds.includes(companyId),
-                    )
-                  },
-                ],
               },
             },
             {
@@ -434,9 +402,11 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
+              _sanitized: true,
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
+                disableListFilter: true,
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
@@ -1311,6 +1281,56 @@ export const Meetings: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'historicalHoldings',
+              label: 'החזקות היסטוריות (30 יום לפני)',
+              admin: {
+                readOnly: true,
+                description: 'חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה',
+              },
+              labels: {
+                plural: 'החזקות היסטוריות',
+                singular: 'החזקה היסטורית',
+              },
+              type: 'array',
+              interfaceName: 'HistoricalHolding',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'company',
+                      label: 'מזהה חברה',
+                      type: 'text',
+                      index: true,
+                      required: true,
+                    },
+                    {
+                      name: 'fund',
+                      label: 'מזהה תיק',
+                      type: 'text',
+                    },
+                    {
+                      name: 'lastHoldingDate',
+                      label: 'תאריך החזקה אחרון',
+                      type: 'date',
+                      required: true,
+                      admin: {
+                        date: {
+                          pickerAppearance: 'dayOnly',
+                        },
+                      },
+                    },
+                    {
+                      name: 'quantity',
+                      label: 'כמות',
+                      type: 'number',
+                      required: true,
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
       ],
@@ -1431,24 +1451,17 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const currentIds = (doc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-
-        const previousIds = (previousDoc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-        const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
-
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
+          previousDoc?._status === 'draft' &&
+          doc?._status === 'published' &&
+          (!previousDoc.companies || previousDoc.companies.length === 0)
         const isPublish = doc?._status === 'published'
 
         if (
           isPublish &&
-          (holdingsLimitChanged || stockChanged || firstPublish || holdingsRemovedCompanies) &&
+          (holdingsLimitChanged || stockChanged || firstPublish) &&
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {

@@ -2,7 +2,7 @@ import { isWithinInterval } from 'date-fns'
 import {
   Column,
   DateFilterOption,
-  CompanyTableDate,
+  CompanyTableData,
   MeetingTableDataType,
   FacetedFilterItemServer,
   CustomDate,
@@ -73,7 +73,7 @@ export const calculateColumnWidths = (
 
 export const calculatePrecedingColumnsWidth = (
   columns: Column<MeetingTableDataType>[],
-  company: CompanyTableDate,
+  company: CompanyTableData,
   fund: boolean = false,
 ) => {
   const firstValueColumnIndex = columns.findIndex(

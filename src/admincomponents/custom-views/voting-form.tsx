@@ -21,7 +21,7 @@ import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { ReportApprovalUpload } from './uploadApproval'
 import { OwnedQuantityInput } from './OwnedQuantityInput'
 import { sortFundsData } from '@/utils/companySort'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Copy } from 'lucide-react'
 import { toast } from '@payloadcms/ui'
 
 export interface VoteData {
@@ -112,10 +112,32 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [fundToRemove, setFundToRemove] = useState<number | null>(null)
   const [removingFundIndex, setRemovingFundIndex] = useState<number | null>(null)
 
-  const shouldDisplayRemoveFund = useMemo(
-    () => formData && formData.fundsData.length > 1,
-    [formData],
-  )
+  // Calculate which funds should show remove button based on company fund count
+  const fundRemoveability = useMemo(() => {
+    if (!formData) return new Map<string, boolean>()
+
+    // Count funds per company
+    const companyFundCounts = new Map<string, number>()
+    formData.fundsData.forEach((fund) => {
+      const companyId = fund.company.id
+      companyFundCounts.set(companyId, (companyFundCounts.get(companyId) || 0) + 1)
+    })
+
+    // Create map of fund keys to removability
+    const removeabilityMap = new Map<string, boolean>()
+    formData.fundsData.forEach((fund) => {
+      const key = `${fund.company.id}-${fund.fund.id}`
+      const companyFundCount = companyFundCounts.get(fund.company.id) || 0
+      removeabilityMap.set(key, companyFundCount > 1)
+    })
+
+    return removeabilityMap
+  }, [formData])
+
+  // Check if any fund can be removed (to determine if column should be shown)
+  const shouldDisplayRemoveColumn = useMemo(() => {
+    return Array.from(fundRemoveability.values()).some((canRemove) => canRemove)
+  }, [fundRemoveability])
 
   useEffect(() => {
     if (!voteData) return
@@ -307,8 +329,18 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     setFundToRemove(sortedIndex)
   }
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('הועתק ללוח')
+    } catch (error) {
+      console.error('Failed to copy:', error)
+      toast.error('שגיאה בהעתקה')
+    }
+  }
+
   const confirmRemoveFund = async () => {
-    if (fundToRemove === null || !formData || !shouldDisplayRemoveFund) return
+    if (fundToRemove === null || !formData) return
 
     const fundToDelete = sortedFundsData[fundToRemove]
 
@@ -363,7 +395,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
 
   return formData ? (
     <div
-      className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] text-gray-900 dark:text-white`}
+      className={`useTw ${isDarkMode ? 'dark' : ''} space-y-3 p-4 max-w-[80%] print:max-w-full text-gray-900 dark:text-white`}
       dir="rtl"
     >
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
@@ -438,8 +470,8 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 <TableHead className="text-right w-32 text-gray-900 dark:text-white">
                   ערך נקוב ברשות
                 </TableHead>
-                {shouldDisplayRemoveFund && (
-                  <TableHead className="text-center w-16 text-gray-900 dark:text-white">
+                {shouldDisplayRemoveColumn && (
+                  <TableHead className="text-center w-16 text-gray-900 dark:text-white print:hidden">
                     הסרה
                   </TableHead>
                 )}
@@ -449,6 +481,8 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
               {sortedFundsData.map((fund, index) => {
                 const hasOriginal = fund.original
                 const displayData = hasOriginal ? fund.original : fund
+                const fundKey = `${fund.company.id}-${fund.fund.id}`
+                const canRemoveFund = fundRemoveability.get(fundKey) || false
                 return (
                   <TableRow
                     key={index}
@@ -512,22 +546,24 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                         }
                       />
                     </TableCell>
-                    {shouldDisplayRemoveFund && (
-                      <TableCell className="text-center">
-                        {removingFundIndex === index ? (
-                          <div className="flex justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 dark:border-red-400" />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleRemoveFund(index)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                            title="הסר תיק"
-                            disabled={removingFundIndex !== null}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        )}
+                    {shouldDisplayRemoveColumn && (
+                      <TableCell className="text-center print:hidden">
+                        {canRemoveFund ? (
+                          removingFundIndex === index ? (
+                            <div className="flex justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 dark:border-red-400" />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleRemoveFund(index)}
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                              title="הסר תיק"
+                              disabled={removingFundIndex !== null}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          )
+                        ) : null}
                       </TableCell>
                     )}
                   </TableRow>
@@ -574,14 +610,14 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     )
                   })()}
                 </TableCell>
-                {shouldDisplayRemoveFund && <TableCell />}
+                {shouldDisplayRemoveColumn && <TableCell className="print:hidden" />}
               </TableRow>
             </TableFooter>
           </Table>
         </CardContent>
       </Card>
 
-      {shouldDisplayRemoveFund && (
+      {shouldDisplayRemoveColumn && (
         <ConfirmationDialog
           open={fundToRemove !== null}
           onOpenChange={() => setFundToRemove(null)}
@@ -658,157 +694,209 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
             סדר יום להצבעה
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {(formData.agenda || []).map((item, index) => {
-            const voteItem = voteData.votes[index]
-            return (
-              <div
-                key={item.id}
-                className="border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 rounded p-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-blue-600 dark:text-blue-400">
-                    {index + 1}.
-                  </span>
-                  <div
-                    className={`flex-1 flex items-center text-base text-gray-900 dark:text-white mx-3 min-w-0 ${
-                      /[\u0590-\u05FF]/.test(item.text) ? 'text-right' : 'text-left'
-                    }`}
-                    style={item.isRemovedFromAgenda ? { color: 'gray' } : {}}
-                    title={item.text}
-                    dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="text-base">
+                <TableHead className="text-right text-gray-900 dark:text-white">נושא</TableHead>
+                {formData.displayVotingRecommendation && (
+                  <TableHead className="text-right w-32 text-gray-900 dark:text-white">
+                    המלצה
+                  </TableHead>
+                )}
+                <TableHead className="text-right w-32 text-gray-900 dark:text-white">
+                  הצבעה
+                </TableHead>
+                <TableHead className="text-right max-w-64 text-gray-900 dark:text-white">
+                  נימוק הצבעה
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(formData.agenda || []).map((item, index) => {
+                const voteItem = voteData.votes[index]
+                return (
+                  <TableRow
+                    key={item.id}
+                    className="text-base border-b border-gray-100 dark:border-gray-800"
                   >
-                    <span
-                      className="truncate"
-                      style={item.isRemovedFromAgenda ? { textDecoration: 'line-through' } : {}}
-                    >
-                      {item.text}
-                    </span>
-                    {item.isRemovedFromAgenda && (
-                      <span
-                        style={{
-                          textDecoration: 'none',
-                          color: 'gray',
-                          marginLeft: '4px',
-                          flexShrink: 0,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {/[\u0590-\u05FF]/.test(item.text)
-                          ? '(הוסר מסדר היום)'
-                          : '(Removed from agenda)'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-6 flex-shrink-0">
-                      {formData.displayVotingRecommendation &&
-                        item.recommendation?.votingRecommendation && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              המלצה:
+                    <TableCell className="text-right">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">
+                          {index + 1}.
+                        </span>
+                        <div className="flex-1 flex flex-col gap-4">
+                          <div
+                            className={`text-base text-gray-900 dark:text-white ${
+                              /[\u0590-\u05FF]/.test(item.text) ? 'text-right' : 'text-left'
+                            }`}
+                            style={item.isRemovedFromAgenda ? { color: 'gray' } : {}}
+                            dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
+                          >
+                            <span
+                              style={
+                                item.isRemovedFromAgenda ? { textDecoration: 'line-through' } : {}
+                              }
+                            >
+                              {item.text}
                             </span>
-                            <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                              {item.recommendation.votingRecommendation}
-                            </span>
+                            {item.isRemovedFromAgenda && (
+                              <span
+                                style={{
+                                  textDecoration: 'none',
+                                  color: 'gray',
+                                  marginLeft: '4px',
+                                }}
+                              >
+                                {/[\u0590-\u05FF]/.test(item.text)
+                                  ? '(הוסר מסדר היום)'
+                                  : '(Removed from agenda)'}
+                              </span>
+                            )}
                           </div>
+                          <div className="flex gap-4 flex-wrap" dir="rtl">
+                            <div className="flex flex-col w-[160px] print:w-auto">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-900 dark:text-white text-sm font-medium">
+                                  ניגוד עניינים:
+                                </span>
+                                <div
+                                  className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
+                                >
+                                  {voteItem?.hasConflictOfInterest ? 'כן' : 'לא'}
+                                </div>
+                              </div>
+                              {voteItem?.hasConflictOfInterest &&
+                                voteItem?.conflictOfInterestExplanation && (
+                                  <div className="flex items-start gap-1 mt-1">
+                                    <span
+                                      className="text-gray-700 dark:text-gray-300 text-sm flex-1"
+                                      dir="rtl"
+                                    >
+                                      {voteItem?.conflictOfInterestExplanation}
+                                    </span>
+                                    <button
+                                      onClick={() =>
+                                        copyToClipboard(voteItem.conflictOfInterestExplanation!)
+                                      }
+                                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors print:hidden"
+                                      title="העתק"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
+                            </div>
+                            <div className="flex flex-col w-[160px] print:w-auto">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-900 dark:text-white text-sm font-medium">
+                                  צד קשור:
+                                </span>
+                                <div
+                                  className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
+                                >
+                                  {voteItem?.isRelatedParty ? 'כן' : 'לא'}
+                                </div>
+                              </div>
+                              {voteItem?.isRelatedParty && voteItem?.relatedPartyExplanation && (
+                                <div className="flex items-start gap-1 mt-1">
+                                  <span
+                                    className="text-gray-700 dark:text-gray-300 text-sm flex-1"
+                                    dir="rtl"
+                                  >
+                                    {voteItem?.relatedPartyExplanation}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      copyToClipboard(voteItem.relatedPartyExplanation!)
+                                    }
+                                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors print:hidden"
+                                    title="העתק"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col w-[160px] print:w-auto">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-900 dark:text-white text-sm font-medium">
+                                  ועדת השקעות:
+                                </span>
+                                <div
+                                  className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
+                                >
+                                  {voteItem?.isInvestmentCommittee ? 'כן' : 'לא'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col w-[160px] print:w-auto">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-900 dark:text-white text-sm font-medium">
+                                  עניין אישי:
+                                </span>
+                                <div
+                                  className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
+                                >
+                                  {voteItem?.hasPersonalInterest ? 'כן' : 'לא'}
+                                </div>
+                              </div>
+                              {voteItem?.hasPersonalInterest &&
+                                voteItem?.personalInterestExplanation && (
+                                  <div className="flex items-start gap-1 mt-1">
+                                    <span
+                                      className="text-gray-700 dark:text-gray-300 text-sm flex-1"
+                                      dir="rtl"
+                                    >
+                                      {voteItem?.personalInterestExplanation}
+                                    </span>
+                                    <button
+                                      onClick={() =>
+                                        copyToClipboard(voteItem.personalInterestExplanation!)
+                                      }
+                                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors print:hidden"
+                                      title="העתק"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    {formData.displayVotingRecommendation && (
+                      <TableCell className="text-right align-top">
+                        {item.recommendation?.votingRecommendation ? (
+                          <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
+                            {item.recommendation.votingRecommendation}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-600">----</span>
                         )}
+                      </TableCell>
+                    )}
+                    <TableCell className="text-right align-top">
                       <div
-                        className={`px-2 py-0.5 rounded text-base font-medium ${getVoteResultColor(voteData.votes[index]?.voteDecision || '')}`}
+                        className={`px-2 py-0.5 rounded text-base font-medium inline-block ${getVoteResultColor(voteItem?.voteDecision || '')}`}
                       >
                         {voteItem?.voteDecision || '----'}
                       </div>
-                    </div>
-                  </div>
-                </div>
-                {voteItem?.voteReason && (
-                  <span
-                    dir={/[\u0590-\u05FF]/.test(item.text) ? 'rtl' : 'ltr'}
-                    title={voteItem.voteReason}
-                    className="text-gray-700 dark:text-gray-300 text-sm mt-1 block overflow-hidden text-ellipsis whitespace-nowrap"
-                  >
-                    נימוק הצבעה: {voteItem.voteReason}
-                  </span>
-                )}
-                <div
-                  className={`flex justify-${item.majorityType === 'privileged' ? 'between' : 'end'} mt-2 w-full`}
-                >
-                  {item.majorityType === 'privileged' && (
-                    <span className="inline-block bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900 h-fit">
-                      דורש רוב מיוחד
-                    </span>
-                  )}
-                  <div className="flex gap-4" dir="rtl">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-900 dark:text-white text-sm font-medium">
-                          ניגוד עניינים:
-                        </span>
-                        <div
-                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasConflictOfInterest)}`}
-                        >
-                          {voteItem?.hasConflictOfInterest ? 'כן' : 'לא'}
-                        </div>
+                    </TableCell>
+                    <TableCell className="text-right align-top max-w-64">
+                      <div
+                        className="text-gray-900 dark:text-white text-base break-words"
+                        dir={/[\u0590-\u05FF]/.test(voteItem?.voteReason || '') ? 'rtl' : 'ltr'}
+                      >
+                        {voteItem?.voteReason || '----'}
                       </div>
-                      {voteItem?.hasConflictOfInterest &&
-                        voteItem?.conflictOfInterestExplanation && (
-                          <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                            {voteItem?.conflictOfInterestExplanation}
-                          </span>
-                        )}
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-900 dark:text-white text-sm font-medium">
-                          צד קשור:
-                        </span>
-                        <div
-                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isRelatedParty)}`}
-                        >
-                          {voteItem?.isRelatedParty ? 'כן' : 'לא'}
-                        </div>
-                      </div>
-                      {voteItem?.isRelatedParty && voteItem?.relatedPartyExplanation && (
-                        <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                          {voteItem?.relatedPartyExplanation}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-900 dark:text-white text-sm font-medium">
-                          ועדת השקעות:
-                        </span>
-                        <div
-                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.isInvestmentCommittee)}`}
-                        >
-                          {voteItem?.isInvestmentCommittee ? 'כן' : 'לא'}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-900 dark:text-white text-sm font-medium">
-                          עניין אישי:
-                        </span>
-                        <div
-                          className={`px-2 py-0.5 rounded text-sm font-medium ${getAgendaItemColor(voteItem?.hasPersonalInterest)}`}
-                        >
-                          {voteItem?.hasPersonalInterest ? 'כן' : 'לא'}
-                        </div>
-                      </div>
-                      {voteItem?.hasPersonalInterest && voteItem?.personalInterestExplanation && (
-                        <span className="text-gray-700 dark:text-gray-300 text-sm mt-1" dir="rtl">
-                          {voteItem?.personalInterestExplanation}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
@@ -837,7 +925,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                       href={doc.url || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate max-w-[150px] hover:underline text-gray-900 dark:text-white"
+                      className="truncate max-w-[160px] hover:underline text-gray-900 dark:text-white"
                     >
                       {doc.filename}
                     </a>
