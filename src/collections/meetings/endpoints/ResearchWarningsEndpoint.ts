@@ -17,7 +17,6 @@ const companyIsNotRegular = async (companyName: string, req: PayloadRequest): Pr
 export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
   try {
     const meetingId = req.routeParams?.id
-    console.log("meetingId",meetingId)
     if (!meetingId) {
       return Response.json({ error: 'Meeting ID is required' }, { status: 400 })
     }
@@ -28,7 +27,6 @@ export default async function ResearchWarningsEndpoint(req: PayloadRequest) {
       id: meetingId as string,
       depth: 1,
     })
-    console.log("meeting",meeting)
     if (!meeting) {
       return Response.json({ error: 'Meeting not found' }, { status: 404 })
     }
