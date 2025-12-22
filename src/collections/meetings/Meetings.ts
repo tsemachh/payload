@@ -564,10 +564,14 @@ export const Meetings: CollectionConfig = {
                           return value
                         }
 
+                        // Find questions that are marked for auto-fill for this meeting type
                         const matchingQuestions = await req.payload.find({
                           collection: 'questions',
                           where: {
-                            type: { equals: value },
+                            and: [
+                              { type: { equals: value } },
+                              { autoFillInMeetings: { equals: true } }
+                            ]
                           },
                           limit: 1,
                           depth: 0,
@@ -1197,7 +1201,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 description: 'מציין את סטטוס מסמכי המחקר עבור חברות האסיפה',
                 readOnly: true,
-                //hidden: true,
+                hidden: true,
               },
             },
 
