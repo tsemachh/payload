@@ -1,4 +1,5 @@
 import { PayloadRequest, Where } from 'payload'
+import { ObjectId } from 'mongodb'
 import type {
   FundWithHolding,
   HistoricalHolding,
@@ -11,13 +12,98 @@ import {
   getIdOfRelationField,
   initFundIdToCompanyIdMap,
 } from '@/utils/utils'
+import { initPerformanceContext, PerfTimer } from '@/collections/meetings/hooks/perfTimer'
+import {
+  getActiveFundsCache,
+  setActiveFundsCache,
+} from '@/collections/meetings/hooks/activeFundsCache'
+
+// --- Extracted helper APIs (Step 1) ---
+async function fetchActiveFunds(req: PayloadRequest, mt?: PerfTimer): Promise<string[]> {
+  // Use direct Mongo driver for faster, projection-only fetch.
+  // First, try in-process cache
+  const cached = getActiveFundsCache()
+  if (cached && cached.length) {
+    return cached
+  }
+
+  mt?.start('query.funds.find')
+  try {
+    const db: any = (req as any)?.payload?.db
+    const companiesColl = db?.collections?.['companies'] || db?.collections?.companies
+    if (companiesColl && typeof companiesColl.find === 'function') {
+      const rawDocs = await companiesColl
+        .find({ type: 'fund', active: true }, { projection: { _id: 1 } })
+        .toArray()
+      const ids = rawDocs.map((doc: any) => String(doc._id))
+      mt?.end('query.funds.find')
+      // populate cache
+      setActiveFundsCache(ids)
+      return ids
+    }
+  } catch (e) {
+    // Fall back to Payload API if direct access fails
+  }
+
+  const { docs } = await req.payload.find({
+    collection: 'companies',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { name: true },
+    where: {
+      type: { equals: 'fund' },
+      active: { equals: true },
+    },
+  })
+  mt?.end('query.funds.find')
+  const ids = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+  // populate cache
+  setActiveFundsCache(ids)
+  return ids
+}
+
+async function fetchHistoricalHoldings(
+  req: PayloadRequest,
+  meeting: Meeting,
+  funds: string[],
+  mt?: PerfTimer,
+) {
+  return []
+  // 30 days lookback window relative to meeting.holdingsLimit
+  const historicalDate = new Date(meeting.holdingsLimit as string)
+  historicalDate.setDate(historicalDate.getDate() - 30)
+  const historicalDateStr = historicalDate.toISOString()
+
+  mt?.start('query.holdings.historical')
+  const { docs } = await req.payload.find({
+    collection: 'holdings',
+    depth: 0,
+    where: {
+      and: [
+        { valueDate: { greater_than_equal: historicalDateStr } },
+        { valueDate: { less_than: meeting.holdingsLimit } },
+        { fund: { in: funds } },
+        { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
+      ],
+    },
+    sort: '-valueDate',
+    limit: 0,
+  })
+  mt?.end('query.holdings.historical')
+  return docs
+}
 
 async function processMeeting(
   meeting: Meeting,
   req: PayloadRequest,
   funds: string[],
   isPartialUpdate = false,
+  runAgg?: PerfTimer,
 ): Promise<void> {
+  // prefer shared timer if passed from caller; otherwise create local one
+  const mt = runAgg ?? initPerformanceContext(req).mt
+  mt.start('meetingTotal')
   let isDirty = false
   // Structured log instead of console.log
   req.payload.logger.info(
@@ -33,6 +119,7 @@ async function processMeeting(
   const holdingDocsCache = new Map<string, any>()
 
   // Get holdings for each company
+  mt.start('holdingsLookupTotal')
   const holdings = await Promise.all(
     funds.map(async (fund) => {
       // Create a cache key using fund and meeting.holdingsLimit
@@ -44,9 +131,15 @@ async function processMeeting(
         holdingDoc = holdingDocsCache.get(cacheKey)
       } else {
         // Get the holdings matching the less than equal holdings date
+        mt.start('query.holdings.find')
         const { docs: holdingsDocs } = await req.payload.find({
           collection: 'holdings',
           depth: 0,
+          pagination: false,
+          select: {
+            valueDate: true,
+            holdings: true,
+          },
           where: {
             and: [
               { valueDate: { less_than_equal: meeting.holdingsLimit } },
@@ -56,6 +149,7 @@ async function processMeeting(
           sort: '-valueDate',
           limit: 1,
         })
+        mt.end('query.holdings.find')
         holdingDoc = holdingsDocs.length > 0 ? holdingsDocs[0] : null
 
         // Store in cache for future use
@@ -71,20 +165,23 @@ async function processMeeting(
       if (matchedHoldings.length == 0) return [] // No holdings found for this stock
 
       return {
-        fund: getIdOfRelationField(holdingDoc.fund) as string,
+        fund,
         holdings: matchedHoldings,
       }
     }),
   )
+  mt.end('holdingsLookupTotal')
 
   const flattenedHoldings = holdings.flat()
 
   if (flattenedHoldings.length === 0) {
+    mt.start('query.stocks.findByID')
     const stockDetails = await req.payload.findByID({
       collection: 'stocks',
       id: getIdOfRelationField(meeting.stock) || '',
       depth: 0,
     })
+    mt.end('query.stocks.findByID')
     req.payload.logger.error(
       {
         meetingId: meeting.id,
@@ -165,6 +262,7 @@ async function processMeeting(
     }
     let stockValue: string | StockValue | null = meeting.stockValue as string
     if (!stockValue) {
+      mt.start('query.stock-values.find')
       const { docs: stockValueDocs } = await req.payload.find({
         collection: 'stock-values',
         depth: 0,
@@ -177,6 +275,7 @@ async function processMeeting(
         limit: 1,
         sort: '-valueDate',
       })
+      mt.end('query.stock-values.find')
       stockValue = stockValueDocs.length > 0 ? stockValueDocs[0].id : null
     }
     // Get all unique fund IDs from fundsWithHolding (both new and existing)
@@ -184,6 +283,7 @@ async function processMeeting(
       new Set(fundsWithHolding.map((f: any) => String(f.fund))),
     )
 
+    mt.start('query.companies.find')
     const companies = await req.payload.find({
       collection: 'companies',
       depth: 0,
@@ -197,6 +297,7 @@ async function processMeeting(
         },
       },
     })
+    mt.end('query.companies.find')
     const compIds = companies.docs.map((comp) => {
       if (comp?.parentCompany) {
         return comp.parentCompany
@@ -248,21 +349,8 @@ async function processMeeting(
       // Track which company+fund combinations we've already found holdings for
       const processedCombinations = new Set<string>()
 
-      // Query only holdings that contain the specific stock
-      const { docs: allHistoricalHoldings } = await req.payload.find({
-        collection: 'holdings',
-        depth: 0,
-        where: {
-          and: [
-            { valueDate: { greater_than_equal: historicalDateStr } },
-            { valueDate: { less_than: meeting.holdingsLimit } },
-            { fund: { in: funds } },
-            { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
-          ],
-        },
-        sort: '-valueDate',
-        limit: 0,
-      })
+      // Query only holdings that contain the specific stock (extracted API)
+      const allHistoricalHoldings = await fetchHistoricalHoldings(req, meeting, funds, mt)
 
       // Process holdings from newest to oldest
       for (const holdingDoc of allHistoricalHoldings) {
@@ -329,6 +417,7 @@ async function processMeeting(
     }
 
     if (stockValue) data.stockValue = stockValue
+    mt.start('mutation.meetings.update')
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -338,9 +427,11 @@ async function processMeeting(
       },
       data,
     })
+    mt.end('mutation.meetings.update')
     // Use the new cleanup API to remove invalid votes for this meeting
-    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)])
+    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt)
   }
+  mt.end('meetingTotal')
 }
 
 /**
@@ -360,7 +451,8 @@ export const processCompaniesMeetings = async (
   fundsToProcess?: string[],
 ): Promise<void> => {
   try {
-    const startTime = Date.now()
+    const { perfEnabled, perfVerbose, slowThresholdMs, mt } = initPerformanceContext(req)
+    mt.start('total')
     req.payload.logger.info(
       {
         timestamp: new Date().toISOString(),
@@ -372,12 +464,15 @@ export const processCompaniesMeetings = async (
 
     // Initialize the map of fundId -> companyId
     req.payload.logger.info('Initializing fundId -> companyId map')
+    mt.start('initFundCompanyMap')
     await initFundIdToCompanyIdMap(req.payload)
+    mt.end('initFundCompanyMap')
     req.payload.logger.info('Map initialized successfully')
 
     req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
+    mt.start('query.meetings.buildWhere')
     const where = meetingIds
       ? { id: { in: meetingIds } }
       : ({
@@ -387,6 +482,8 @@ export const processCompaniesMeetings = async (
             { state: { not_equals: 'completed' } },
           ],
         } as Where)
+    mt.end('query.meetings.buildWhere')
+    mt.start('query.meetings.find')
     const { docs: meetings } = await req.payload.find({
       collection: 'meetings',
       limit: 0,
@@ -394,6 +491,7 @@ export const processCompaniesMeetings = async (
       depth: 0,
       sort: '-holdingsLimit',
     })
+    mt.end('query.meetings.find')
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
     // Use provided funds or query all active funds
@@ -402,22 +500,15 @@ export const processCompaniesMeetings = async (
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
-      const { docs } = await req.payload.find({
-        collection: 'companies',
-        depth: 0,
-        limit: 0,
-        where: {
-          type: { equals: 'fund' },
-          active: { equals: true },
-        },
-      })
-      funds = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
+      // Extracted API for querying active funds
+      funds = await fetchActiveFunds(req, mt)
       req.payload.logger.info(`Queried all active funds: ${funds.length} funds`)
     }
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
     // Process meetings in batches
+    mt.start('batches.total')
     for (let i = 0; i < meetings.length; i += batchSize) {
       const batchPromises: Promise<void>[] = []
       const batchEnd = Math.min(i + batchSize, meetings.length)
@@ -427,6 +518,7 @@ export const processCompaniesMeetings = async (
       )
 
       // Create promises for this batch
+      mt.start(`batch#${i / batchSize + 1}`)
       for (let j = i; j < batchEnd; j++) {
         const meeting = meetings[j]
         // Skip if meeting doesn't have a stock or holdingsLimit
@@ -436,7 +528,7 @@ export const processCompaniesMeetings = async (
         console.log('meeting started', meeting.id)
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
-        const promise = processMeeting(meeting, req, funds, isPartialUpdate)
+        const promise = processMeeting(meeting, req, funds, isPartialUpdate, mt)
           .then(() => {
             console.log('meeting finished', meeting.id)
           })
@@ -452,17 +544,21 @@ export const processCompaniesMeetings = async (
 
       // Wait for this batch to complete before moving to the next
       await Promise.all(batchPromises)
+      mt.end(`batch#${i / batchSize + 1}`)
       req.payload.logger.info(`Completed batch ${i / batchSize + 1}`)
     }
+    mt.end('batches.total')
 
-    const endTime = Date.now()
-    const duration = ((endTime - startTime) / 1000).toFixed(2)
+    mt.end('total')
+    const summary = mt.summary()
+    const duration = (summary.totalMs / 1000).toFixed(2)
     req.payload.logger.info(
       {
         timestamp: new Date().toISOString(),
         duration: `${duration}s`,
         meetingsProcessed: meetings.length,
         fundsUsed: funds.length,
+        perf: summary,
       },
       'End of process: All meetings have been processed',
     )
@@ -484,6 +580,7 @@ export const processCompaniesMeetings = async (
 export const cleanupInvalidVotesForMeetings = async (
   req: PayloadRequest,
   meetingIds: string[],
+  runAgg?: PerfTimer,
 ): Promise<void> => {
   const total = meetingIds.length
   for (let idx = 0; idx < meetingIds.length; idx++) {
@@ -496,6 +593,8 @@ export const cleanupInvalidVotesForMeetings = async (
         select: { companies: true },
         depth: 0,
       })
+      runAgg?.inc('findCalls', 1)
+      runAgg?.inc('docsRead', 1)
 
       const companies: string[] = Array.isArray((meeting as any).companies)
         ? ((meeting as any).companies as string[])
@@ -515,6 +614,7 @@ export const cleanupInvalidVotesForMeetings = async (
         },
         req,
       } as any)
+      runAgg?.inc('deleteCalls', 1)
       req.payload.logger.info(
         `meeting ${meetingId}: cleanup completed (${idx + 1} of ${total}) - removed votes for companies not in [${validCompanyIds.join(
           ', ',

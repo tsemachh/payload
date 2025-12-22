@@ -10,6 +10,7 @@ import {
 } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
+import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeFundsCache'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -72,6 +73,11 @@ export const Companies: CollectionConfig = {
     defaultFilter: { active: { equals: 'true' } },
   },
   versions: {},
+  indexes: [
+    {
+      fields: ['type', 'active'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
@@ -617,6 +623,21 @@ export const Companies: CollectionConfig = {
           } catch (error) {
             console.error('Error updating users after fund company change:', error)
           }
+        }
+
+        // Invalidate active funds cache when relevant changes occur on funds
+        try {
+          const isFund = doc?.type === 'fund' || previousDoc?.type === 'fund'
+          const activeChanged = previousDoc && doc?.active !== previousDoc?.active
+          const typeChanged = previousDoc && doc?.type !== previousDoc?.type
+          const createdOrDeleted = operation === 'create'
+          if (isFund && (activeChanged || typeChanged || createdOrDeleted)) {
+            // Invalidate so next run refreshes the cache
+            invalidateActiveFundsCache()
+            req?.payload?.logger?.info?.('Invalidated active funds cache due to company change')
+          }
+        } catch (e) {
+          req?.payload?.logger?.warn?.({ e }, 'Failed to invalidate active funds cache')
         }
       },
     ],
