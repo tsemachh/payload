@@ -210,7 +210,7 @@ export const Holdings: CollectionConfig = {
       fields: ['fund', 'valueDate'],
     },
     {
-      fields: ['holdings.stock', 'fund', 'valueDate'],
+      fields: ['fund', 'valueDate', 'holdings.stock'],
     },
   ],
   endpoints: [

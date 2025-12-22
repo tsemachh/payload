@@ -856,6 +856,9 @@ export interface Question {
   id: string;
   title?: string | null;
   type: MeetingType;
+  /**
+   * האם למלא אוטומטית באסיפות מאותו סוג
+   */
   autoFillInMeetings?: boolean | null;
   questions?:
     | {
