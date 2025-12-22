@@ -6,6 +6,71 @@ import {
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
+
+
+// Hook to update hasCompleteResearchDocuments in meetings when research documents change
+export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
+  doc,
+  previousDoc,
+  req,
+  operation,
+}) => {
+  try {
+    // Get all meetings that reference this research document
+    const meetings = await req.payload.find({
+      collection: 'meetings',
+      where: {
+        researchDocuments: {
+          contains: doc.id
+        }
+      },
+      limit: 0
+    })
+
+    // Update each meeting's researchDocumentsStatus
+    for (const meeting of meetings.docs) {
+      await req.payload.update({
+        collection: 'meetings',
+        id: meeting.id,
+        data: {
+          // This will trigger the beforeChange hook that calculates researchDocumentsStatus
+          researchDocuments: meeting.researchDocuments
+        }
+      })
+    }
+
+    // Update companies' hasResearchDocuments status
+    const companyIds = doc.companies || []
+    for (const companyId of companyIds) {
+      try {
+        const companyIdStr = typeof companyId === 'string' ? companyId : companyId.id
+        const company = await req.payload.findByID({
+          collection: 'companies',
+          id: companyIdStr
+        })
+        
+        if (company) {
+          // Trigger a simple update to recalculate hasResearchDocuments
+          await req.payload.update({
+            collection: 'companies',
+            id: company.id,
+            data: {
+              // Just update the same data to trigger the beforeChange hook
+              name: company.name
+            }
+          })
+        }
+      } catch (error: any) {
+        req.payload.logger.error(`Error updating company ${companyId} research status:`, error)
+      }
+    }
+
+    req.payload.logger.info(`Updated research document status for ${meetings.totalDocs} meetings and ${companyIds.length} companies`)
+  } catch (error: any) {
+    req.payload.logger.error('Error updating meeting research status:', error)
+  }
+}
+
 const companyIsNotRegular = async (companyName: string, req: any): Promise<boolean> => {
   const result = await req.payload.find({
     collection: 'companies',
@@ -28,7 +93,10 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   const docIDs = data?.researchDocuments
   const companies = data?.companies || []
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) return data
+  
   const validationErrors: { message: string; path: string }[] = []
+  
+  // This is still a critical error that should block
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
       message: 'לפגישות מסוג "אג"ח" או "אג"ח כהונת נאמן" ניתן לצרף רק מסמך מחקר (כללי) אחד בלבד.',
@@ -36,112 +104,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     })
     throw new ValidationError({ errors: validationErrors })
   }
-  // הבאת מסמכי המחקר הרלוונטיים
-  const { docs: researchDocs } = await req.payload.find({
-    collection: 'research-documents',
-    select: { companies: true, filename: true },
-    depth: 0,
-    limit: 0,
-    where: { id: { in: docIDs } },
-  })
-  type ResearchDoc = { id: string; companies?: string[]; filename?: string }
-  const docs = researchDocs as ResearchDoc[]
-  // --- בדיקות על מסמכים כלליים ---
-  if (docIDs.length > 1) {
-    const generalDocs = docs.filter((doc) => !doc.companies || doc.companies.length === 0)
-    const invalidGeneral: string[] = []
-    for (const doc of generalDocs) {
-      const filename = doc.filename || ''
-      const result = parseResearchFilename(filename)
-      const companyExists =
-        result.isValid &&
-        !result.isGeneric &&
-        result.companyName &&
-        (await companyIsNotRegular(result.companyName, req))
-      if (companyExists) {
-        validationErrors.push({
-          message: `המסמך "${filename}" מתייחס לחברה לא קיימת במערכת`,
-          path: 'researchDocuments',
-        })
-      } else {
-        invalidGeneral.push(doc.id)
-      }
-    }
-    if (invalidGeneral.length > 1) {
-      validationErrors.push({
-        message: 'לא ניתן לצרף יותר ממסמך מחקר כללי אחד',
-        path: 'researchDocuments',
-      })
-    }
-  }
-  // --- בדיקת חברות שאינן מוזמנות לפגישה זו ---
-  const invalidFilenames: string[] = []
-  docs.forEach((doc) => {
-    if (!doc.companies || doc.companies.length === 0) return
-    const unmatched = doc.companies.filter((c) => !companies.includes(c))
-    if (unmatched.length > 0 && doc.filename) {
-      invalidFilenames.push(doc.filename)
-    }
-  })
-  if (invalidFilenames.length === 1) {
-    validationErrors.push({
-      message: `${invalidFilenames[0]} - מסמך זה מכיל חברות שאינן מוזמנות לפגישה זו.`,
-      path: 'researchDocuments',
-    })
-  } else if (invalidFilenames.length > 1) {
-    const list = invalidFilenames.map((f) => `- ${f}`).join('\n')
-    validationErrors.push({
-      message: `מסמכים אלו מכילים חברות שאינן מוזמנות לפגישה זו:\n${list}`,
-      path: 'researchDocuments',
-    })
-  }
-  // --- בדיקת כפילות חברות בין המסמכים ---
-  const companyToDocsMap: Record<string, string[]> = {}
-  docs.forEach((doc) => {
-    const name = doc.filename || 'מסמך ללא שם'
-    doc.companies?.forEach((cid) => {
-      if (!companyToDocsMap[cid]) companyToDocsMap[cid] = []
-      companyToDocsMap[cid].push(name)
-    })
-  })
-  const duplicates = Object.entries(companyToDocsMap).filter(([, files]) => files.length > 1)
-  if (duplicates.length > 0) {
-    // שליפת שמות החברות לפי ID
-    const dupIds = duplicates.map(([cid]) => cid)
-    const { docs: companyDocs } = await req.payload.find({
-      collection: 'companies',
-      select: { id: true, name: true },
-      depth: 0,
-      limit: 0,
-      where: { id: { in: dupIds } },
-    })
-    const idToName = Object.fromEntries(
-      (companyDocs as { id: string; name?: string }[]).map((c) => [c.id, c.name || c.id]),
-    )
-    if (duplicates.length === 1) {
-      const [cid, files] = duplicates[0]
-      const list = files.map((f) => `- ${f}`).join('\n')
-      validationErrors.push({
-        message: `החברה "${idToName[cid]}" מופיעה ביותר ממסמך אחד:\n${list}`,
-        path: 'researchDocuments',
-      })
-    } else {
-      const groups = duplicates
-        .map(([cid, files]) => {
-          const header = `החברה "${idToName[cid]}" מופיעה ב־${files.length} מסמכים:`
-          const list = files.map((f) => `  - ${f}`).join('\n')
-          return `${header}\n${list}`
-        })
-        .join('\n\n')
-      validationErrors.push({
-        message: `החברות הבאות מופיעות ביותר ממסמך אחד:\n\n${groups}`,
-        path: 'researchDocuments',
-      })
-    }
-  }
-  if (validationErrors.length > 0) {
-    throw new ValidationError({ errors: validationErrors })
-  }
+  
   return data
 }
 
@@ -247,7 +210,7 @@ export const afterChangeDeleteResearchDocs: CollectionAfterChangeHook = async ({
   previousDoc,
 }) => {
   // Skip processing during migrations
-  if (req.context?.from === 'migration') {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return
   }
 

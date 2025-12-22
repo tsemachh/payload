@@ -764,6 +764,10 @@ export interface Meeting {
    * יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.
    */
   researchDocuments?: (string | ResearchDocument)[] | null;
+  /**
+   * מציין את סטטוס מסמכי המחקר עבור חברות האסיפה
+   */
+  researchDocumentsStatus?: ('empty' | 'partial' | 'complete') | null;
   funds?: (string | Company)[] | null;
   fundsWithHolding?: FundWithHolding;
   historicalHoldings?: HistoricalHolding;
@@ -852,6 +856,7 @@ export interface Question {
   id: string;
   title?: string | null;
   type: MeetingType;
+  autoFillInMeetings?: boolean | null;
   questions?:
     | {
         questionText: string;
@@ -1579,6 +1584,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   relatedQuestions?: T;
   agenda?: T | MeetingAgendaSelect<T>;
   researchDocuments?: T;
+  researchDocumentsStatus?: T;
   funds?: T;
   fundsWithHolding?: T | FundWithHoldingSelect<T>;
   historicalHoldings?: T | HistoricalHoldingSelect<T>;
@@ -1959,6 +1965,7 @@ export interface AuditLogReadsSelect<T extends boolean = true> {
 export interface QuestionsSelect<T extends boolean = true> {
   title?: T;
   type?: T;
+  autoFillInMeetings?: T;
   questions?:
     | T
     | {

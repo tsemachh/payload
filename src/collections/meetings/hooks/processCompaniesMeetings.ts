@@ -124,7 +124,6 @@ async function processMeeting(
     const prevFwh = Array.isArray(meeting.fundsWithHolding) ? meeting.fundsWithHolding : []
     const prevByFund = new Map(prevFwh.map((p: any) => [String(p.fund), p]))
     let fromRelatedStock = false
-    const meetingStockId = String(getIdOfRelationField(meeting.stock))
 
     const newFundsWithHolding = flattenedHoldings.map((h) => {
       const rawOriginal = h.holdings[0]?.originalData
@@ -135,7 +134,7 @@ async function processMeeting(
         : []
 
       const fundId = String(getIdOfRelationField(h.fund))
-      fromRelatedStock = originalDataArray.some((o) => String(o.stockId) !== meetingStockId)
+      fromRelatedStock = originalDataArray.some((o) => o.stockId != meeting.stockId)
       const base = {
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,

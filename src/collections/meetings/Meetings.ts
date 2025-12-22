@@ -2,6 +2,7 @@ import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+import ResearchWarningsEndpoint from './endpoints/ResearchWarningsEndpoint'
 import {
   allMeetingsEndpoint,
   futureMeetingsEndpoint,
@@ -39,6 +40,7 @@ import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 import { syncLabelsOnStockChange } from './hooks/syncLabelsOnStockChange'
+import { updateResearchDocumentsStatus } from './hooks/researchDocumentsStatusHook'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -125,6 +127,7 @@ export const Meetings: CollectionConfig = {
         { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
+        {name:'researchDocumentsStatus',width:'130px'},
         { name: 'resultsConfirmationStatus', width: '130px' },
         { name: 'hasRelatedStocks', width: '130px' },
       ],
@@ -532,10 +535,14 @@ export const Meetings: CollectionConfig = {
                           return value
                         }
 
+                        // Find questions that are marked for auto-fill for this meeting type
                         const matchingQuestions = await req.payload.find({
                           collection: 'questions',
                           where: {
-                            type: { equals: value },
+                            and: [
+                              { type: { equals: value } },
+                              { autoFillInMeetings: { equals: true } }
+                            ]
                           },
                           limit: 1,
                           depth: 0,
@@ -1149,7 +1156,26 @@ export const Meetings: CollectionConfig = {
                   Field: '/collections/meetings/components/ResearchUploadDisplay',
                 },
               },
+              hooks: {
+                afterChange: [updateResearchDocumentsStatus],
+              },
             },
+            {
+              name: 'researchDocumentsStatus',
+              label: 'סטטוס מסמכי מחקר',
+              type: 'select',
+              options: [
+                { label: 'ריק', value: 'empty' },
+                { label: 'חלקי', value: 'partial' },
+                { label: 'מלא', value: 'complete' },
+              ],
+              admin: {
+                description: 'מציין את סטטוס מסמכי המחקר עבור חברות האסיפה',
+                readOnly: true,
+                hidden: true,
+              },
+            },
+
           ],
         },
         {
@@ -1453,7 +1479,7 @@ export const Meetings: CollectionConfig = {
       },
       afterChangeDeleteResearchDocs,
     ],
-    //beforeValidate: [validateResearchDocsInMeetings],
+    beforeValidate: [validateResearchDocsInMeetings],
     beforeChange: [
       handleRecommendationReason,
       clearCompaniesInSingleBondResearchDoc,
@@ -1475,6 +1501,11 @@ export const Meetings: CollectionConfig = {
       path: '/process-companies',
       method: 'post',
       handler: ProcessMeetingCompaniesEndPoint,
+    },
+    {
+      path: '/:id/research-warnings',
+      method: 'post',
+      handler: ResearchWarningsEndpoint,
     },
     {
       path: '/upload-meetings-csv',

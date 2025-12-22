@@ -27,7 +27,7 @@ export const MeetingQuestions: CollectionConfig = {
           type: 'text',
           unique: true,
           admin: {
-            width: '70%',
+            width: '50%',
             components: {
               Field: '/collections/questions/components/TitleField',
             },
@@ -43,6 +43,16 @@ export const MeetingQuestions: CollectionConfig = {
           options: meetingTypeOptions,
           admin: {
             width: '30%',
+          },
+        },
+        {
+          name: 'autoFillInMeetings',
+          label: 'מילוי אוטומטי',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            width: '20%',
+            description: 'האם למלא אוטומטית באסיפות מאותו סוג',
           },
         },
       ],
