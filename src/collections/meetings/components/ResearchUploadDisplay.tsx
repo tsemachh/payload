@@ -28,54 +28,22 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       },
     }
 
-    const stringifiedQuery = stringify(query, { addQueryPrefix: true })
-    const res = await fetch(`/api/companies${stringifiedQuery}`)
+    const res = await fetch(`/api/companies${stringify(query, { addQueryPrefix: true })}`)
     if (!res.ok) return false
     const data = await res.json()
     return data?.docs?.length > 0
   }
 
-
-  const interceptSaveButton = () => {
-    // Find the save button
-    const saveButton = document.querySelector('button[type="submit"]') as HTMLButtonElement
-    if (!saveButton || saveButton.dataset.intercepted) return
-
-    // Mark as intercepted to avoid multiple event listeners
-    saveButton.dataset.intercepted = 'true'
-
-    // Store original click handler
-    const originalClick = saveButton.onclick
-
-    saveButton.onclick = async (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-
-      const meetingId = String(documentInfo.id)
-      if (!meetingId || !value || !Array.isArray(value) || value.length === 0) {
-        // No research documents, proceed with normal save
-        if (originalClick) {
-          originalClick.call(saveButton, event)
-        } else {
-          saveButton.form?.submit()
-        }
-        return
-      }
-
-    }
-  }
-
-
-
+  /**
+   * init context + hide unused upload UI parts
+   */
   useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
     const stock = documentInfo.initialData?.stock || []
-    if (companies) {
-      setMeetingCompanies(companies)
-    }
-    if (stock) {
-      setStockId(stock)
-    }
+
+    setMeetingCompanies(companies)
+    setStockId(stock)
+
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
       ;(chooseExistingBtn as HTMLElement).style.display = 'none'
@@ -85,54 +53,43 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     if (orText) {
       ;(orText as HTMLElement).style.display = 'none'
     }
+  }, [documentInfo.initialData])
 
-    // Set up save button interception
-    const timer = setTimeout(() => {
-      interceptSaveButton()
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
-
+  /**
+   * fetch research documents when value changes
+   */
   useEffect(() => {
     const getAllUploads = async () => {
-      if (!value || !Array.isArray(value) || value.length === 0) return
+      if (!Array.isArray(value) || value.length === 0) return
 
       const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v))
       const query = {
-        where: {
-          id: {
-            in: ids,
-          },
-        },
+        where: { id: { in: ids } },
         depth: 1,
         limit: 0,
-        select: {
-          companies: true,
-          filename: true,
-        },
+        select: { companies: true, filename: true },
       }
 
-      const stringifiedQuery = stringify(query, { addQueryPrefix: true })
       try {
-        const res = await fetch(`/api/research-documents${stringifiedQuery}`)
+        const res = await fetch(`/api/research-documents${stringify(query, { addQueryPrefix: true })}`)
         const { docs } = await res.json()
+
         const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]))
-        const sortedDocs = ids.map((id) => uploadsMap.get(id)).filter(Boolean)
-        setUploadsData(sortedDocs)
+        setUploadsData(ids.map((id) => uploadsMap.get(id)).filter(Boolean))
       } catch (err) {
         console.error('Failed to fetch uploads', err)
       }
     }
 
     getAllUploads()
-    
-    // Trigger refresh of the research documents view when uploads change
-    setRefreshTrigger(prev => prev + 1)
+    setRefreshTrigger((prev) => prev + 1)
   }, [value])
 
+  /**
+   * enrich upload list UI (filename metadata)
+   */
   useEffect(() => {
-    if (!uploadsData || uploadsData.length === 0) return
+    if (!uploadsData.length) return
 
     const updateFilenames = async () => {
       const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
@@ -145,56 +102,38 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
         const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
         const result = parseResearchFilename(upload.filename)
+        const companyExists = await fetchCompanyIsRegular(result.companyName || '')
 
-        if (!el.querySelector('.withMeta-span')) {
-          const newSpan = document.createElement('p')
-          newSpan.className = 'withMeta-span'
+        const metaText =
+          !result.isGeneric && result.companyName && companyNames.length === 0 && !companyExists
+            ? 'מסמך לחברה לא קיימת'
+            : companyNames.length > 0
+              ? companyNames.join(', ')
+              : 'מסמך מחקר כללי'
 
-          const companyExists = await fetchCompanyIsRegular(result.companyName || '')
-          newSpan.textContent =
-            !result.isGeneric && result.companyName && companyNames.length === 0 && !companyExists
-              ? 'מסמך לחברה לא קיימת'
-              : companyNames.length > 0
-                ? companyNames.join(', ')
-                : 'מסמך מחקר כללי'
+        const meta = document.createElement('p')
+        meta.className = 'withMeta-span'
+        meta.textContent = metaText
+        meta.style.marginLeft = '8px'
+        meta.style.fontFamily = 'Arial, sans-serif'
+        meta.style.fontStyle = 'italic'
 
-          newSpan.style.marginLeft = '8px'
-          newSpan.style.fontFamily = 'Arial, sans-serif'
-          newSpan.style.fontStyle = 'italic'
-
-          el.appendChild(newSpan)
-        }
+        el.appendChild(meta)
       }
     }
 
-    updateFilenames().catch((err) => console.error('Error updating filenames:', err))
+    updateFilenames().catch(console.error)
   }, [uploadsData])
-
-  // Re-intercept save button when value changes (new uploads)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      interceptSaveButton()
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [value])
 
   return (
     <div className="space-y-6">
-      {/* Upload Field */}
-      <div>
-        <UploadField {...props} />
-      </div>
-      
-      {/* Research Documents View */}
+      <UploadField {...props} />
+
       {documentInfo.id && (
         <div className="mt-8">
-          <ResearchDocumentsView 
-            refreshTrigger={refreshTrigger}
-          />
+          <ResearchDocumentsView refreshTrigger={refreshTrigger} />
         </div>
       )}
-      
     </div>
   )
 }
