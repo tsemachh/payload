@@ -191,14 +191,21 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 {company.originalStockIds?.length ? (
                   <div className="flex flex-col">
-                    <div className="flex justify-between gap-4 font-bold">
-                      <div>מס׳ נייר</div>
-                      <div>ע׳ נקוב</div>
+                    <div className="grid grid-cols-[1fr_4rem_7rem] gap-4 font-bold">
+                      <div className="text-right">תיק</div>
+                      <div className="text-left">מס׳ נייר</div>
+                      <div className="text-left">ע׳ נקוב</div>
                     </div>
                     {company.originalStockIds.map((stock: any, index: number) => (
-                      <div className="flex justify-between gap-4" key={`${index}-${stock.stockId}`}>
-                        <div>{stock.stockId}</div>
-                        <div>{stock.quantity.toLocaleString()}</div>
+                      <div
+                        className="grid grid-cols-[1fr_4rem_7rem] gap-4"
+                        key={`${index}-${stock.stockId}`}
+                      >
+                        <div className="text-right">
+                          {funds.find((f) => f.id === stock.fundId)?.name || stock.fundId}
+                        </div>
+                        <div className="text-left">{stock.stockId}</div>
+                        <div className="text-left">{stock.quantity.toLocaleString()}</div>
                       </div>
                     ))}
                   </div>
