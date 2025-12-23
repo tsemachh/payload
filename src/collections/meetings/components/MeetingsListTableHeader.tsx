@@ -92,7 +92,7 @@ const ExportExcelButton: React.FC = () => {
         disabled={isExporting}
         style={{ borderRadius: '7px' }}
         className={`
-          flex items-center gap-2 h-9 px-3 py-2 
+          flex items-center gap-2 h-8 px-3 py-2 
           bg-gradient-to-r from-green-600 to-green-700 
           hover:from-green-700 hover:to-green-800 
           text-white font-medium
@@ -111,7 +111,7 @@ const ExportExcelButton: React.FC = () => {
         ) : (
           <>
             <FileSpreadsheet className="h-4 w-4" />
-            <span className="text-sm font-medium">ייצוא</span>
+            <span className="text-sm font-medium">ייצוא המלצות</span>
           </>
         )}
       </Button>
