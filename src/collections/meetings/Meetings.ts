@@ -31,6 +31,7 @@ import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
   handleResult,
+  setStockValueOnCreateOrHoldingsChange,
   updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
@@ -1487,6 +1488,7 @@ export const Meetings: CollectionConfig = {
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
+      setStockValueOnCreateOrHoldingsChange, // Auto-pick stockValue on create / holdingsLimit change
       updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
       syncLabelsOnStockChange,
       handleResult, // Automatically update state to 'ended' when all results are filled

@@ -108,6 +108,71 @@ export const updateStockRegisteredValue: CollectionBeforeChangeHook = async ({
   return data
 }
 
+/**
+ * Auto-selects the appropriate stockValue on meeting create or when holdingsLimit/stock changes.
+ * Logic:
+ * - If holdingsLimit exists: choose the latest stock-value with valueDate <= holdingsLimit.
+ * - Otherwise: choose the latest stock-value (no date constraint).
+ * - Consider both the meeting stock and its dual counterpart (same OR used in field filterOptions).
+ * Skips when called from migration/process contexts.
+ */
+export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook = async ({
+  data,
+  originalDoc,
+  operation,
+  req,
+}) => {
+  try {
+    if (req.context?.from === 'migration' || req.context?.from === 'process') {
+      return data
+    }
+
+    // Only when creating, or when holdingsLimit/stock changed
+    const stockChanged = String(getIdOfRelationField(originalDoc?.stock) || '') !== String(
+      getIdOfRelationField(data?.stock) || '',
+    )
+    const holdingsChanged = (originalDoc?.holdingsLimit || '')?.toString() !== (data?.holdingsLimit || '')?.toString()
+
+    if (!(operation === 'create' || stockChanged || holdingsChanged)) {
+      return data
+    }
+
+    const stockId = getIdOfRelationField(data?.stock)
+    if (!stockId) return data
+
+    const where: any = {
+      or: [
+        { stockId: { equals: stockId } },
+        { 'stockId.dualStock': { equals: stockId } },
+      ],
+    }
+
+    if (data?.holdingsLimit) {
+      const limit = new Date(String(data.holdingsLimit)).toISOString()
+      where.valueDate = { less_than_equal: limit }
+    }
+
+    const res = await req.payload.find({
+      collection: 'stock-values',
+      depth: 0,
+      where,
+      sort: '-valueDate',
+      limit: 1,
+    })
+
+    const sv = res?.docs?.[0]
+    if (sv?.id) {
+      const current = String(getIdOfRelationField(data?.stockValue) || '')
+      if (current !== String(sv.id)) {
+        data.stockValue = sv.id
+      }
+    }
+  } catch (e) {
+    console.error('setStockValueOnCreateOrHoldingsChange error:', e)
+  }
+  return data
+}
+
 export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) => {
   // Skip if context is from migration or process
   if (req.context?.from === 'migration' || req.context?.from === 'process') {
