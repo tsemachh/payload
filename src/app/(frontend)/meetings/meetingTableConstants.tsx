@@ -301,7 +301,14 @@ export const createMeetingColumns = (
     render: (row) => <VotingStatusCell row={row} />,
     minWidth: 50,
   },
-
+  {
+    key: 'votingPercentage',
+    header: 'הצבעות התקבלו בעמדה',
+    type: 'boolean',
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.votingPercentage === 100} showX={false} />,
+    minWidth: 80,
+  },
   {
     key: 'researchDocuments',
     header: 'מחקר',

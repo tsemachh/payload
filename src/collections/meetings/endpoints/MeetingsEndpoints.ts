@@ -16,6 +16,7 @@ import {
   findRelevantCompanyIds,
 } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
+import { calculateVotingPercentages } from '@/collections/votes/votingPercentagesEndPoint'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -526,6 +527,7 @@ export const meetingColumnsForServer = [
   { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
   { key: 'reported', header: 'הצבעה בפועל' },
   { key: 'fromRelatedStock', header: 'ניירות עוקבים' },
+  { key: 'votingPercentage', header: 'הצבעות התקבלו בעמדה' },
 ]
 
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
@@ -566,6 +568,29 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
     if (req.query.export === 'true') {
+      // Fetch voting percentages for export using the reusable helper
+      const meetingsPayload = meetingData
+        .filter((meeting): meeting is MeetingTableDataType => meeting !== null)
+        .map((meeting) => ({
+          meetingId: meeting.meetingIdPayload,
+          companyIds: meeting.companies.map((company: CompanyTableData) => company.id),
+        }))
+
+      const userCompanyIds = req.user.companies?.map((c) => c.companyId as string) || []
+      const percentagesMap = await calculateVotingPercentages(
+        payload,
+        meetingsPayload,
+        userCompanyIds,
+      )
+
+      // Add voting percentages to meeting data
+      const meetingDataWithPercentages = meetingData
+        .filter((meeting): meeting is MeetingTableDataType => meeting !== null)
+        .map((meeting) => ({
+          ...meeting,
+          votingPercentage: percentagesMap[meeting.meetingIdPayload]?.votingPercentage ?? null,
+        }))
+
       const columns = req.query.columns ? JSON.parse(req.query.columns as string) : []
       const headerMap: Record<string, string> = {}
       meetingColumnsForServer.forEach((col) => {
@@ -574,7 +599,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
       const mappedColumns = columns.map((colKey: string) => headerMap[colKey] || colKey)
       const viewMode = req.query.viewMode || ''
-      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
+      const buffer = await downloadMeetingsExcel(
+        meetingDataWithPercentages,
+        mappedColumns,
+        viewMode as string,
+      )
 
       const encodedFilename = encodeURIComponent('דו׳׳ח אסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
