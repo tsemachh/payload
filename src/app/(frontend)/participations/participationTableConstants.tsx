@@ -66,17 +66,11 @@ export const createParticipationColumns = (
     //     </div>
     //   ),
     // },
-    {
+   {
       key: 'stockNumber',
       header: 'מספר נייר /  \n נושאי האסיפה',
       type: 'string',
       isAlwaysVisible: true,
-      minWidth: 80,
-    },
-    {
-      key: 'corporateName',
-      header: 'שם תאגיד',
-      type: 'string',
       minWidth: 80,
     },
   ]
@@ -96,12 +90,28 @@ export const createParticipationColumns = (
   baseColumns.push(
     { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
     {
+      key: 'corporateName',
+      header: 'שם התאגיד',
+      type: 'string',
+      minWidth: 80,
+    },
+    {
       key: 'marketValue',
       header: `שווי שוק (מ' ₪)`,
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
         return formatNumberWithLocale(marketValue / 1_000_000, 0, 'he-IL')
+      },
+      minWidth: 80,
+    },
+    {
+      key: 'holdingQuantity',
+      header: 'ערך נקוב בפועל',
+      type: 'number',
+      render: (row) => {
+        // Display the holdingQuantity which is now the nominalValue equivalent
+        return formatNumberWithLocale(row.holdingQuantity || 0, 0, 'he-IL')
       },
       minWidth: 80,
     },
@@ -124,6 +134,24 @@ export const createParticipationColumns = (
       header: 'מועד האסיפה',
       type: 'datetime',
       render: (row) => formatDateTime(row.meetingDate, true),
+      minWidth: 80,
+    },
+    {
+      key: 'meetingTime',
+      header: 'שעת האסיפה',
+      type: 'datetime',
+      render: (row) => {
+        if (!row.meetingDate) return ''
+        const date = new Date(row.meetingDate)
+        return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+      },
+      minWidth: 80,
+    },
+    {
+      key: 'holdingsLimit',
+      header: ' מועד קובע',
+      type: 'datetime',
+      render: (row) => formatDateTime(row.holdingsLimit, true),
       minWidth: 80,
     },
     { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
@@ -163,14 +191,14 @@ export const createParticipationColumns = (
     },
     {
       key: 'privilegedMajority',
-      header: 'רוב מיוחד (%)',
+      header: 'רוב מיוחד',
       type: 'string',
       render: () => null,
       minWidth: 40,
     },
     {
       key: 'policyCompliance',
-      header: 'בהתאם למדיניות דריקטוריון ו/או וועדת השקעות',
+      header: 'בהתאם למדיניות דירקטוריון ו/או ועדת השקעות',
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -186,7 +214,7 @@ export const createParticipationColumns = (
     },
     {
       key: 'relatedParty',
-      header: 'צד קשר',
+      header: 'צד קשור',
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -195,6 +223,14 @@ export const createParticipationColumns = (
     {
       key: 'personalInterest',
       header: 'עניין אישי',
+      type: 'boolean',
+      render: () => null,
+      positionCenter: true,
+      minWidth: 50,
+    },
+    {
+      key: 'isFinancialCorporation',
+      header: 'תאגיד פיננסי',
       type: 'boolean',
       render: () => null,
       positionCenter: true,

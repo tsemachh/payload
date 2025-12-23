@@ -52,36 +52,44 @@ export const resultMapping: { [key: string]: string } = {
 // Shared column headers
 export const SHARED_COLUMNS = {
   STOCK_NUMBER: 'מספר נייר',
-  CORPORATE_NAME: 'שם תאגיד',
   STOCK_NAME: 'שם נייר',
+  CORPORATE_NAME: 'שם התאגיד',
   MARKET_VALUE: `שווי שוק (מ' ₪)`,
+  COMPANY_NAME: 'שם חברה',
+  HOLDING_QUANTITY: 'ערך נקוב בפועל',
   PERCENTAGE_HOLDING: 'החזקה (%)',
   HOLDING_VALUE: `שווי החזקה (מ' ₪)`,
   MEETING_DATE: 'מועד האסיפה',
+  MEETING_TIME: 'שעת האסיפה',
+  HOLDINGS_LIMIT: 'מועד קובע ',
   MEETING_TYPE: 'סוג האסיפה',
-  COMPANY_NAME: 'שם חברה',
-  SUBJECT: 'נושא',
-  ADVISOR_RECOMMENDATION: 'המלצת גורם מייעץ',
+  SUBJECT: 'נושאים',
+  ADVISOR_RECOMMENDATION: 'המלצת הצבעה',
+  VOTING_METHOD: 'אופן ההצבעה',
   VOTE: 'הצבעה',
   MEETING_RESULTS: 'תוצאות האסיפה',
   REGULAR_MAJORITY: 'רוב רגיל',
-  SPECIAL_MAJORITY: 'רוב מיוחד (%)',
-  POLICY_COMPLIANCE: 'בהתאם למדיניות דירקטוריון ו/או וועדת השקעות',
+  SPECIAL_MAJORITY: 'רוב מיוחד',
+  POLICY_COMPLIANCE: 'בהתאם למדיניות דירקטוריון ו/או ועדת השקעות',
   CONFLICT_OF_INTEREST: 'ניגוד עניינים',
-  RELATED_PARTY: 'צד קשר',
+  RELATED_PARTY: 'צד קשור',
   PERSONAL_INTEREST: 'עניין אישי',
+  FINANCIAL_CORPORATION: 'תאגיד פיננסי',
 } as const
 
 // Company sub-headers for detailed view
 export const COMPANY_SUB_HEADERS = [
-  SHARED_COLUMNS.STOCK_NUMBER,
-  SHARED_COLUMNS.CORPORATE_NAME,
   SHARED_COLUMNS.COMPANY_NAME,
+  SHARED_COLUMNS.STOCK_NUMBER,
   SHARED_COLUMNS.STOCK_NAME,
+  SHARED_COLUMNS.CORPORATE_NAME,
   SHARED_COLUMNS.MARKET_VALUE,
+  SHARED_COLUMNS.HOLDING_QUANTITY,
   SHARED_COLUMNS.PERCENTAGE_HOLDING,
   SHARED_COLUMNS.HOLDING_VALUE,
   SHARED_COLUMNS.MEETING_DATE,
+  SHARED_COLUMNS.MEETING_TIME,
+  SHARED_COLUMNS.HOLDINGS_LIMIT,
   SHARED_COLUMNS.MEETING_TYPE,
 ] as const
 
@@ -89,7 +97,7 @@ export const COMPANY_SUB_HEADERS = [
 export const AGENDA_HEADERS = [
   SHARED_COLUMNS.SUBJECT,
   SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
-  SHARED_COLUMNS.VOTE,
+  SHARED_COLUMNS.VOTING_METHOD,
   SHARED_COLUMNS.MEETING_RESULTS,
   SHARED_COLUMNS.REGULAR_MAJORITY,
   SHARED_COLUMNS.SPECIAL_MAJORITY,
@@ -97,4 +105,5 @@ export const AGENDA_HEADERS = [
   SHARED_COLUMNS.CONFLICT_OF_INTEREST,
   SHARED_COLUMNS.RELATED_PARTY,
   SHARED_COLUMNS.PERSONAL_INTEREST,
+  SHARED_COLUMNS.FINANCIAL_CORPORATION,
 ] as const

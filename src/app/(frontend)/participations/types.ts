@@ -5,6 +5,7 @@ export interface ParticipationAgendaType {
   text: string
   advisoryRecommendation: string // "המלצת גורם מייעץ"
   vote: string // "הצבעה"
+  votingMethod?: string // "אופן ההצבעה" - same as vote but for column mapping
   simpleMajority: boolean
   privilegedMajority: boolean // Assuming this is "רוב מיוחד"
   policyCompliance: boolean
@@ -63,4 +64,9 @@ export interface ParticipationTableDataType {
     name: string
   }
   votes: any[] // Consider creating a more specific type
+  
+  // New fields for additional columns
+  holdingQuantity?: number // ערך נקוב בפועל
+  meetingTime?: string // שעת האסיפה
+  isFinancialCorporation?: boolean // תאגיד פיננסי
 }
