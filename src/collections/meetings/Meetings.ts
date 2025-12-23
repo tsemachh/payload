@@ -170,7 +170,7 @@ export const Meetings: CollectionConfig = {
       limits: [100, 200, 300, 500],
     },
     components: {
-      beforeListTable: ['/collections/meetings/components/MeetingsListTableHeader'],
+      listMenuItems: ['/collections/meetings/components/ExportMeetingsMenuItem'],
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
